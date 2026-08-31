@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -36,6 +40,8 @@ encapsulated package DataReconciliation
 
 
 public import BackendDAE;
+import ProgramUtil;
+import Types;
 public import DAE;
 public import SymbolicJacobian;
 public import BackendDump;
@@ -46,6 +52,7 @@ import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import Error;
 import Flags;
@@ -56,6 +63,10 @@ import Matching;
 import Util;
 import System;
 import Settings;
+import SCode;
+import SymbolTable;
+import Absyn;
+import StringUtil;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
 protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
@@ -69,26 +80,26 @@ public function newExtractionAlgorithm
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
+  BackendDAE.EquationArray outOtherEqns, outResidualEqns;
+  list<BackendDAE.Equation> setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, residualVars, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
-  BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, setC, tempSetS = {}, setS, boundaryConditionEquations, bindingEquations = {};
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
+  list<BackendDAE.Var> paramVars, residualVars, unMeasuredVariables;
+  BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
-  list<tuple<Integer, list<Integer>>> mappedEbltSetS;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
+  list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
+  list<Integer> allVarsList, knowns = {}, boundaryConditionVars = {}, exactEquationVars = {}, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest = {};
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
   Integer procedureCount;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -233,6 +244,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
   (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
@@ -241,8 +258,8 @@ algorithm
 
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
-  // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  // extract parameters from set-s and set-c equations
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
@@ -285,21 +302,39 @@ algorithm
   // Prepare the final DAE System with Set-C equations as residual equations
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outResidualVars, outOtherVars));
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outResidualEqns, outOtherEqns));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/13710
+   * the shared.globalKnownVars should be updated with the  only input and parameter variables that are part of the
+   * extraction algorithm, to avoid binding equations from the original model to avoid problems in code generation of removed vars and equations
+  */
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
   end if;
 
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
+  end if;
+
   // write the new Reconciled vars and equations to .mo File
-  modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
-  modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
-  modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
+  modelicaFileName := shared.info.fileNamePrefix + "_Reconciled_tmp";
+  modelName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
+  modelicaOutput := "/* This is a Reconciled Model which is generated by the Data Reconciliation extraction algorithm */\n";
+  modelicaOutput := modelicaOutput + "model " + modelName ;
   // Variables Declaration section
   modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
   modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters in SET-S");
@@ -309,13 +344,133 @@ algorithm
   modelicaOutput := modelicaOutput + "\nequation";
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outResidualEqns, "set-C Canonical form");
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
-  modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
+  modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
-  // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
-
 end newExtractionAlgorithm;
+
+// extract the "-sx =.csv" file path from simflags
+function extractSxPath
+  input String simflags;
+  output String csvFilePath;
+protected
+  Integer nummatches;
+  String filePath = "";
+algorithm
+  // if there is no -sx in the simflags, return
+  if  System.stringFind(simflags, "-sx") < 0 then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No -sx flag found in simflags, hence no csv file will be read for setting start values of the variables of interest for data reconciliation initialization."});
+    fail();
+  end if;
+
+  // should never fail!
+  try
+    (nummatches, {_, filePath}) := System.regex(simflags, "-sx[ \t]*=[ \t]*(\"[^\"]*\"|[^, \t]+)", 2, true);
+    if nummatches == 2 then
+      csvFilePath := System.stringReplace(filePath, " ", ""); // remove the double quotes if present in the file path
+      csvFilePath := System.stringReplace(csvFilePath, "\"", ""); // remove the double quotes if present in the file path
+      return;
+    end if;
+  else
+    return "";
+  end try;
+end extractSxPath;
+
+// read the csv file and extract the measurement data for setting start values for data reconciliation initialization.
+protected function readMeasurementsFromCSV
+  input BackendDAE.Shared shared;
+  output String csvFileName;
+  output list<tuple<String, String>> measurementData = {};
+protected
+  String content;
+  list<String> tokens, lines;
+  Absyn.Program p;
+algorithm
+  if isNone(shared.info.simflags) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": simflags is NONE, expected the simulation flags to be present in shared.info.simflags for reading measurements from csv file for data reconciliation initialization."});
+    fail();
+  end if;
+
+  // extract the csv file path from simflags
+  csvFileName := extractSxPath(Util.getOption(shared.info.simflags));
+
+  if stringEmpty(csvFileName) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});
+    fail();
+  end if;
+
+  // resolve uri if the csv file path is provided as a uri (e.g) modelica:// or file://, otherwise get the absolute path for the csv file
+  if (StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://")) then
+    p := SymbolTable.getAbsyn();
+    csvFileName := ProgramUtil.getFullPathFromUri(p, csvFileName, true);
+  end if;
+
+  content := System.readFile(csvFileName);
+
+  if stringEmpty(content) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": Failed to read csv file content from " + csvFileName + " and hence start values can not be set."});
+    fail();
+  end if;
+
+  lines := System.strtok(content, "\n");
+  for line in lines loop
+    line := System.stringReplace(line, ";", ",");
+    line := System.trim(line);
+    tokens := Util.stringSplitAtChar(line, ",");
+    if not listEmpty(tokens) and listLength(tokens) >= 2 then
+      measurementData := (listGet(tokens, 1), listGet(tokens, 2)) :: measurementData;
+    end if;
+  end for;
+  //print("Extracted measurement data from csv file:\n" + anyString(listReverse(measurementData)) + "=>" + anyString(listLength(measurementData)) + "\n");
+end readMeasurementsFromCSV;
+
+protected function setStartValuesToMeasurements
+  input BackendDAE.Variables inVariables;
+  input list<tuple<String, String>> measurementData;
+  input String csvFileName;
+  output BackendDAE.Variables outVariables;
+protected
+  list<BackendDAE.Var> varList;
+  String varName, valueStr;
+  Real value;
+  Boolean foundMeasurement;
+algorithm
+  varList := {};
+  for var in BackendVariable.varList(inVariables) loop
+    (valueStr, foundMeasurement) := checkVarExistenceInMeasurementData(var, measurementData);
+    if not foundMeasurement then
+      Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + ComponentReferenceBasics.printComponentRefStr(var.varName) + " not found in the measurement csv file " + csvFileName});
+      fail();
+    end if;
+    try
+      value := stringReal(valueStr);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + valueStr + "\" for variable of interest " + ComponentReferenceBasics.printComponentRefStr(var.varName) + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
+      fail();
+    end try;
+    var := BackendVariable.setVarStartValue(var, DAE.RCONST(value));
+    varList := var :: varList;
+  end for;
+  outVariables := BackendVariable.listVar(listReverse(varList));
+end setStartValuesToMeasurements;
+
+protected function checkVarExistenceInMeasurementData
+  input BackendDAE.Var var;
+  input list<tuple<String, String>> measurementData;
+  output String valueStr = "";
+  output Boolean exists = false;
+protected
+  String varName;
+algorithm
+  for measurement in measurementData loop
+    (varName, valueStr) := measurement;
+    if varName == ComponentReference.crefStr(var.varName) then
+      exists := true;
+      break;
+    end if;
+  end for;
+end checkVarExistenceInMeasurementData;
 
 protected function dumpRelatedBoundaryConditionsEquations
   input list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
@@ -349,26 +504,26 @@ public function extractBoundaryCondition
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns, outBoundaryConditionEquations;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations;
+  BackendDAE.EquationArray outOtherEqns, outBoundaryConditionEquations;
+  list<BackendDAE.Equation> setS_Eq, failedboundaryConditionEquations;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, tempSetS, setS, boundaryConditionEquations, bindingEquations = {}, setSPrime;
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
+  list<BackendDAE.Var> paramVars, setSVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
-  BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars;
+  list<Integer> allVarsList, knowns = {}, boundaryConditionVars = {}, exactEquationVars, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest = {};
+  BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outBoundaryConditionVars;
   Integer procedureCount;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -521,6 +676,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // set boundaryConditionsVars unreplaceable attributes to be true
   outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(failedboundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
 
@@ -564,9 +725,14 @@ algorithm
   // Prepare the final DAE System with Set-B and Set-S' equations
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outBoundaryConditionEquations, outOtherEqns));
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outBoundaryConditionVars, outOtherVars));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   // BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
   // BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
@@ -578,9 +744,10 @@ algorithm
 
 
   // write the new Reconciled vars and equations to .mo File
-  modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
-  modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
-  modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
+  modelicaFileName := shared.info.fileNamePrefix + "_Reconciled_tmp";
+  modelName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
+  modelicaOutput := "/* This is a Reconciled Model which is generated by the Boundary condition extraction algorithm */\n";
+  modelicaOutput := modelicaOutput + "model " + modelName;
   // Variables Declaration section
   modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
   modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters in SET-S");
@@ -591,7 +758,7 @@ algorithm
   modelicaOutput := modelicaOutput + "\nequation";
   modelicaOutput := dumpExtractedEquations(modelicaOutput, BackendEquation.listEquation(failedboundaryConditionEquations), "boundary condition equations");
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S'");
-  modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
+  modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
@@ -606,26 +773,26 @@ public function stateEstimation
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outOtherEqnsSetSPrime, outResidualEqns, outBoundaryConditionEquations;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations, allDaeEqs;
+  BackendDAE.EquationArray outOtherEqns, outOtherEqnsSetSPrime, outResidualEqns, outBoundaryConditionEquations;
+  list<BackendDAE.Equation> setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, failedboundaryConditionEquations, allDaeEqs;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, setSPrime_, boundaryConditionEquations, bindingEquations, setSPrime, unMeasuredEqsLst;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, setCVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, setC, tempSetS = {}, setS, boundaryConditionEquations, bindingEquations = {}, setSPrime, unMeasuredEqsLst;
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
+  list<BackendDAE.Var> paramVars, setSVars, residualVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
+  list<Integer> allVarsList, knowns = {}, unMeasuredVariablesOfInterest = {}, failedboundaryConditionEquationIndex, boundaryConditionVars = {}, exactEquationVars = {}, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars, outOtherVarsSetSPrime;
   Integer procedureCount, numRelatedBoundaryConditions;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -761,6 +928,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
   (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
@@ -770,7 +943,7 @@ algorithm
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
   // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
@@ -944,9 +1117,14 @@ algorithm
 
   currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.listEquation(allDaeEqs));
   currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.listVar(listAppend(setSVars, residualVars)));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12277
+   * the removed equations should be set to empty, otherwise the removed equations
+   * will be added to the final DAE system and cause the assertion failure in the data reconciliation problem which should not be the case
+  */
+  currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   if debug then
     BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
@@ -962,14 +1140,23 @@ algorithm
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
   end if;
 
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
+  end if;
+
   // write the list of unmeasured variables variables to txt file "XXX_BoundaryConditionVars.txt"
   str := dumpToCsv("", BackendVariable.varList(outBoundaryConditionVars));
   System.writeFile(shared.info.fileNamePrefix + "_BoundaryConditionVars.txt", str);
 
   // write the new Reconciled vars and equations to .mo File
-  modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
-  modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
-  modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
+  modelicaFileName := shared.info.fileNamePrefix + "_Reconciled_tmp";
+  modelName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
+  modelicaOutput := "/* This is a Reconciled Model which is generated by the State Estimation extraction algorithm */\n";
+  modelicaOutput := modelicaOutput + "model " + modelName;
   // Variables Declaration section
   modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
   modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters");
@@ -978,8 +1165,10 @@ algorithm
 
   // Equation Declaration section
   modelicaOutput := modelicaOutput + "\nequation";
-  modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "extracted equations");
-  modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
+  //modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "extracted equations");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, BackendEquation.listEquation(residualEquations), "residual equations");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, BackendEquation.listEquation(setSPrime_Eq), "remaining equations in Set-S'");
+  modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
@@ -1006,7 +1195,6 @@ protected function dumpFailedBoundaryConditionEquationAndVars
 protected
   BackendDAE.Equation failedboundaryConditionEquation;
   Integer count, varIndex;
-  BackendDAE.Var var;
   list<BackendDAE.Var> varlist;
 algorithm
   if stateEstimation then
@@ -1044,7 +1232,7 @@ protected function prepareUnmeasuredVariablesEquations
   input output list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations = {};
   output list<Integer> failedboundaryConditionEquationIndex = {};
 protected
-  Integer varIndex, eqIndex;
+  Integer varIndex;
   list<Integer> intermediateVars;
   BackendDAE.Equation unmeasuredEq;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> unMeasuredVariablesAndEquations;
@@ -1076,7 +1264,6 @@ protected function addUnmeasuredEquationtoBoundaryConditionEquationAndVars
 protected
   BackendDAE.Equation failedboundaryConditionEquation;
   Integer count, varIndex;
-  BackendDAE.Var var;
   list<BackendDAE.Var> varlist;
 algorithm
   print("\nStart of extraction procedure for boundary conditions\nSet of boundary conditions equations that failed the extraction of set S: ("+ intString(listLength(setBFailedBoundaryConditionEquations)) + ")\n" + UNDERLINE);
@@ -1288,13 +1475,10 @@ protected function ExtractSetSPrime
   output Boolean outStatus = false;
   //output list<tuple<Integer, Integer, list<Integer>>> setB;
 protected
-  list<Integer> intermediateVars, minimalSetS, visitedVars, intermediateVarsInBoundaryConditionEquation;
+  list<Integer> intermediateVars, minimalSetS, visitedVars;
   Boolean status;
-  Integer varnumber, eqnumber, boundaryConditionVarIndex;
-  BackendDAE.Var var;
-  DAE.Exp lhs, rhs;
+  Integer boundaryConditionVarIndex;
   BackendDAE.Equation eq;
-  list<BackendDAE.Equation> newEqnLst;
 algorithm
   print("\nExtract set-S' to compute the boundary conditions\nProcedure is applied on each equation in the failed boundary conditions\n" + UNDERLINE);
   finalSetS := {};
@@ -1371,10 +1555,9 @@ protected function extractNewMinimalSetS
   input Boolean debug;
   output Integer boundaryConditionVarIndex = -1;
 protected
-  Integer firstMatchedEquation, mappedEq, varIndex;
+  Integer mappedEq, varIndex;
   BackendDAE.Var var;
-  BackendDAE.Equation tmpEq;
-  list<Integer> rest, vars, intermediateVars, V_EQ, intermediateVarsInMatchedEquation;
+  list<Integer> rest, vars, intermediateVars, intermediateVarsInMatchedEquation;
 algorithm
   while not listEmpty(unknownsInSetC) loop
     varIndex :: rest := unknownsInSetC;
@@ -1383,7 +1566,7 @@ algorithm
 
     // break the loop, when boundary condition detected only for D.1 when extracting setC and setS
     if listMember(varIndex, boundaryConditionVars) and extractSetCAndSetS then
-      print("\n"+ ComponentReference.printComponentRefStr(var.varName) + " is a boundary condition ---> exit procedure");
+      print("\n"+ ComponentReferenceBasics.printComponentRefStr(var.varName) + " is a boundary condition ---> exit procedure");
       status := false;
       boundaryConditionVarIndex := varIndex;
       break;
@@ -1423,15 +1606,15 @@ public function extractionAlgorithm
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns;
+  BackendDAE.EquationArray outOtherEqns, outResidualEqns;
   list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations;
-  BackendDAE.AdjacencyMatrix adjacencyMatrix, newAdjacencyMatrix;
+  BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
   list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
-  Integer varCount, eqCount, setEBLTRank, eqIndex;
-  list<Integer> matchedEqsLst, unMatchedEqsLst, unMatchedEqsLstCorrectIndex, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations;
-  list<list<Integer>> s_BLTBlocks, e_BLTBlocks, allBlocks, tmpAdjacencyMatrix;
+  Integer varCount, eqCount;
+  list<Integer> matchedEqsLst, unMatchedEqsLst, unMatchedEqsLstCorrectIndex, approximatedEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations;
+  list<list<Integer>> s_BLTBlocks, e_BLTBlocks, allBlocks;
   list<list<String>> allBlocksStatusVarInfo;
   list<tuple<Integer, BackendDAE.Equation>> e_BLT_EquationsWithIndex;
   ExtAdjacencyMatrix eBltAdjacencyMatrix, sBltAdjacencyMatrix, setS_BLTAdjacencyMatrix;
@@ -1439,13 +1622,12 @@ protected
   list<tuple<list<Integer>, Integer>> e_BLTBlockRanks, s_BLTBlockRanks;
   list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>>> s_BLTBlockTargetInfo;
   list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>, list<Integer>, list<Integer>, list<Integer>>> predecessorBlockTargetInfo;
-  list<BackendDAE.Var> paramVars, setSVars, residualVars;
-  list<DAE.ComponentRef> cr_lst;
+  list<BackendDAE.Var> paramVars, residualVars;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
+  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
 
   Boolean debug = false;
@@ -1795,15 +1977,16 @@ algorithm
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
   end if;
 
   // write the new Reconciled vars and equations to .mo File
-  modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
-  modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
-  modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
+  modelicaFileName := shared.info.fileNamePrefix + "_Reconciled_tmp";
+  modelName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
+  modelicaOutput := "/* This is a Reconciled Model which is generated by the Data Reconciliation extraction algorithm */\n";
+  modelicaOutput := modelicaOutput + "model " + modelName ;
   // Variables Declaration section
   modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
   modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters in SET-S");
@@ -1813,7 +1996,7 @@ algorithm
   modelicaOutput := modelicaOutput + "\nequation";
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outResidualEqns, "set-C Canonical form");
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
-  modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
+  modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
@@ -1848,9 +2031,8 @@ protected function extractMinimalSetS
   input output list<Integer> minimalSetS = {};
   input Boolean debug;
 protected
-  Integer firstMatchedEquation, mappedEq;
+  Integer firstMatchedEquation;
   BackendDAE.Var var;
-  BackendDAE.Equation tmpEq;
   list<Integer> rest, vars, intermediateVars = {}, V_EQ;
 algorithm
   for varIndex in unknownsInSetC loop
@@ -1903,7 +2085,7 @@ protected
 algorithm
   if falseBlock then
     print("\nVarIndex           : " + intString(varIndex));
-    print("\nVariable Name      : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nVariable Name      : " + ComponentReferenceBasics.printComponentRefStr(var.varName));
     print("\nEquation Not Exist : " + "NIL");
     print("\nRemainingVars      : " + dumplistInteger(rest) + "\n");
   else
@@ -1911,7 +2093,7 @@ algorithm
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     //print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(firstMatchedEquation)  + "): " + BackendDump.equationString(tmpEq) + "\n");
     print("\nVarIndex                     : " + intString(varIndex));
-    print("\nVariable Name                : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nVariable Name                : " + ComponentReferenceBasics.printComponentRefStr(var.varName));
     print("\nEquation Exist               : " + intString(firstMatchedEquation));
     print("\nmappedEquation               : " + intString(mappedEq));
     print("\nMatched Equation             : " + BackendDump.equationString(tmpEq));
@@ -1933,8 +2115,8 @@ protected function getVariableFirstOccurrenceInEquation
   input list<Integer> minimalSetS;
   output tuple<Integer, list<Integer>> matchedEquation = (0, {}) "default value 0 means equation does not exist";
 protected
-  list<Integer> ret, vars, matchedeq;
-  Integer eq, eqnum, varnum;
+  list<Integer> vars;
+  Integer eq;
 algorithm
   for i in m loop
     (eq, vars) := i;
@@ -1976,16 +2158,27 @@ protected function dumpExtractedVars
   input String comment;
   output String outstring="";
 protected
-  DAE.ComponentRef cr;
+  DAE.ComponentRef cr, cr1, creflast;
+  Boolean isRec;
+  Absyn.Path path;
+  list<String> recordvarlist;
 algorithm
   outstring := "\n  //"+ comment;
+  recordvarlist := {};
   for var in invar loop
     cr := BackendVariable.varCref(var);
+    // check for record type variable and extract the path of the record to print in modelica format
+    (cr1, isRec) := ComponentReference.crefGetFirstRec(cr);
     if BackendVariable.varHasUncertainValueRefine(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     elseif BackendVariable.isParam(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + " = " + ExpressionDump.printOptExpStr(var.bindExp) +";";
-    else
+    elseif isRec and not listMember(ComponentReference.crefStr(cr1), recordvarlist) then
+      creflast := ComponentReferenceBasics.crefLastCref(cr1);
+      path := Types.getRecordPath(ComponentReference.crefType(creflast));
+      recordvarlist := ComponentReference.crefStr(cr1) :: recordvarlist;
+      outstring := outstring + "\n  "  + AbsynUtil.pathString(path) + " " + System.stringReplace(ComponentReference.crefStr(cr1), ".", "_") + ";";
+    elseif not isRec then
       outstring := outstring + "\n  "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     end if;
   end for;
@@ -2050,7 +2243,7 @@ algorithm
       var := BackendVariable.setBindExp(var, NONE());
       daeVarsLst := var :: daeVarsLst;
     elseif (BackendVariable.isIntParam(var) or BackendVariable.isBoolParam(var)) and BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
-      Error.addMessage(Error.INTERNAL_ERROR, {": Boundary Condition cannot be set on Integer or Boolean parameters: " + ComponentReference.printComponentRefStr(var.varName)  + " must be Real, The extraction algorithm will fail"});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Boundary Condition cannot be set on Integer or Boolean parameters: " + ComponentReferenceBasics.printComponentRefStr(var.varName)  + " must be Real, The extraction algorithm will fail"});
       fail();
     else
       updatedGlobalKnownVarsLst := var :: updatedGlobalKnownVarsLst;
@@ -2073,7 +2266,7 @@ protected function deleteEquationsFromEqSyst
   input output BackendDAE.EqSystem currentSystem;
   input list<Integer> eqIndex;
 protected
-  BackendDAE.EquationArray newEqArray, newOrderedEquationArray;
+  BackendDAE.EquationArray newOrderedEquationArray;
 algorithm
   currentSystem.orderedEqs := BackendEquation.deleteList(currentSystem.orderedEqs, eqIndex);
   //currentSystem.orderedEqs :=BackendEquation.addList(unMatchedEquations, BackendEquation.deleteList(currentSystem.orderedEqs, unMatchedEqsLst));
@@ -2184,9 +2377,10 @@ algorithm
     (index, eq) := eqs;
     if intEq(eBLTIndex, index) then
       outEquations := eq;
-      break;
+      return;
     end if;
   end for;
+  fail();
 end getEquationsFromEBLT;
 
 protected function getAbsoluteIndexHelper
@@ -2223,7 +2417,7 @@ algorithm
   var := BackendVariable.getVarAt(orderedVars, varNumber);
   mappedEq := mapIncRowEqn[eq];
   tmpEq := BackendEquation.get(orderedEqs, mappedEq);
-  print("\n" + heading + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
+  print("\n" + heading + intString(varNumber) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
   count := count + 1;
 end dumpSetSTargetEquations;
 
@@ -2248,7 +2442,7 @@ algorithm
     var := BackendVariable.getVarAt(orderedVars, varNumber);
     mappedEq := mapIncRowEqn[eq];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
-    print("\n" + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
+    print("\n" + intString(varNumber) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
     count := count + 1;
   end for;
   print("\n\n");
@@ -2259,12 +2453,12 @@ protected function dumpSetSVars
   input BackendDAE.Variables setSVars;
   input String heading;
 protected
-  Integer count = 1, varNumber;
+  Integer count = 1;
   BackendDAE.Var var;
 algorithm
   print("\n" + heading + " (" + intString(BackendVariable.varsSize(setSVars)) + ")\n" + "========================================" + "\n");
   for var in BackendVariable.varList(setSVars) loop
-    print("\n" + intString(count) + ": "  + ComponentReference.printComponentRefStr(var.varName) + " type: " + DAEDump.daeTypeStr(var.varType));
+    print("\n" + intString(count) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + " type: " + DAEDump.daeTypeStr(var.varType));
     count := count + 1;
   end for;
   print("\n\n");
@@ -2600,6 +2794,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedVariableNumber;
 
 public function getSolvedEquationNumber
@@ -2616,6 +2811,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedEquationNumber;
 
 public function getSolvedEquationAndVarsInfo
@@ -2650,7 +2846,7 @@ protected
 algorithm
   for index in variableIndexList loop
     var := BackendVariable.getVarAt(allVariables, index);
-    //print("\n name :" +  ComponentReference.printComponentRefStr(var.varName) + " => " + anyString(var.comment));
+    //print("\n name :" +  ComponentReferenceBasics.printComponentRefStr(var.varName) + " => " + anyString(var.comment));
     if BackendVariable.varHasUncertainValueRefine(BackendVariable.getVarAt(allVariables, index)) then
       knowns := index :: knowns;
     elseif BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
@@ -2717,16 +2913,16 @@ protected function isEquationTaggedApproximatedOrBoundaryCondition
   output Boolean approximatedEquations;
   output Boolean boundaryConditionEquations;
 algorithm
-  (approximatedEquations, boundaryConditionEquations) := match(eqn)
+  (approximatedEquations, boundaryConditionEquations) := match eqn
     local
       list<SCode.Comment> comment;
       Boolean isApproximatedEquation, isboundaryConditionEquations;
-    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
-      equation
-        (isApproximatedEquation, isboundaryConditionEquations) = isEquationTaggedApproximatedOrBoundaryConditionHelper(comment);
+    case BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment))
+      algorithm
+        (isApproximatedEquation, isboundaryConditionEquations) := isEquationTaggedApproximatedOrBoundaryConditionHelper(comment);
       then
         (isApproximatedEquation, isboundaryConditionEquations);
-    case(_) then (false, false);
+    case _ then (false, false);
   end match;
 end isEquationTaggedApproximatedOrBoundaryCondition;
 
@@ -2735,22 +2931,21 @@ protected function isEquationTaggedApproximatedOrBoundaryConditionHelper
   output Boolean approximatedEquations;
   output Boolean boundaryConditionEquations;
 algorithm
-  (approximatedEquations, boundaryConditionEquations) := matchcontinue(commentIn)
+  (approximatedEquations, boundaryConditionEquations) := matchcontinue commentIn
     local
-      SCode.Comment h;
       list<SCode.Comment> t;
       Boolean isApproximatedEquation, isboundaryConditionEquation;
       list<SCode.SubMod> subModLst;
-    case({}) then (false, false);
-    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
-      equation
-        isApproximatedEquation = List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
-        isboundaryConditionEquation = List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+    case {} then (false, false);
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t
+      algorithm
+        isApproximatedEquation := List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isboundaryConditionEquation := List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
-    case(_::t)
-      equation
-        (isApproximatedEquation, isboundaryConditionEquation) = isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+    case _::t
+      algorithm
+        (isApproximatedEquation, isboundaryConditionEquation) := isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
   end matchcontinue;
@@ -2761,8 +2956,8 @@ protected function isEquationTaggedApproximated
   input SCode.SubMod m;
   output Boolean approximatedEquations;
 algorithm
-  approximatedEquations := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  approximatedEquations := match m
+    case SCode.NAMEMOD("__OpenModelica_ApproximatedEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedApproximated;
@@ -2772,8 +2967,8 @@ protected function isEquationTaggedBoundaryCondition
   input SCode.SubMod m;
   output Boolean boundaryCondition;
 algorithm
-  boundaryCondition := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_BoundaryCondition", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  boundaryCondition := match m
+    case SCode.NAMEMOD("__OpenModelica_BoundaryCondition", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedBoundaryCondition;
@@ -2783,8 +2978,8 @@ protected function isEquationTaggedConstant
   input SCode.SubMod m;
   output Boolean constantEquations;
 algorithm
-  constantEquations := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_ExactConstantEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  constantEquations := match m
+    case SCode.NAMEMOD("__OpenModelica_ExactConstantEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedConstant;
@@ -2868,7 +3063,7 @@ public function findBlockTargetsHelper
 algorithm
   (outSBLT, outEBLT) := match(inlist1, inlist2, solvedvariables, mxt, actualblocks, debug)
    local
-     list<Integer> first, dependencyequation, targetblockslist;
+     list<Integer> first, dependencyequation;
      list<list<Integer>> rest, targetblocks, targetblocks1, originalblocks, eBLTList1, eBLTList2;
      list<list<String>> restitem;
      list<String> firstitem;
@@ -2876,13 +3071,13 @@ algorithm
      ExtAdjacencyMatrix mxt1;
      Boolean b;
    case(first::rest, firstitem::restitem, solvar, mxt1, originalblocks, b)
-     equation
-       (dependencyequation, eBLTList1) = findBlockTargetsHelper1((first::rest), solvar, mxt1);
+     algorithm
+       (dependencyequation, eBLTList1) := findBlockTargetsHelper1((first::rest), solvar, mxt1);
        if debug then
          print("\nTargetBlocks :" + anyString(dependencyequation) + " || EBLT_Block" + anyString(eBLTList1) + "\n");
        end if;
-       targetblocks = getActualBlocks(dependencyequation, originalblocks, first);
-       (targetblocks1, eBLTList2) = findBlockTargetsHelper(targetblocks, firstitem::restitem, solvar, mxt1, originalblocks, b);
+       targetblocks := getActualBlocks(dependencyequation, originalblocks, first);
+       (targetblocks1, eBLTList2) := findBlockTargetsHelper(targetblocks, firstitem::restitem, solvar, mxt1, originalblocks, b);
      then
        (List.unique(listAppend(targetblocks,targetblocks1)), List.unique(listAppend(eBLTList1,eBLTList2)));
    case(_, _, _, _, _, _) then ({}, {});
@@ -2918,9 +3113,9 @@ public function getDependencyequation
   input list<tuple<Integer,Integer>> solvedvariables;
   input ExtAdjacencyMatrix m;
   output list<Integer> outSBLT;
-  output list<Integer> outEBLT;
+  output list<Integer> outEBLT = {};
 protected
-  list<Integer> t={}, nonsq, e_BltList;
+  list<Integer> t={}, nonsq;
   Integer eqnumber, varnumber;
 algorithm
   for eqnumber in inlist loop
@@ -2945,8 +3140,8 @@ public function getdirectOccurrencesinEquation
   output list<Integer> outSBLT = {};
   output list<Integer> outEBLT = {};
 protected
-  list<Integer> ret,vars,matchedeq;
-  Integer eq,eqnum,varnum;
+  list<Integer> vars;
+  Integer eq;
 algorithm
   for i in m loop
     (eq, vars) := i;
@@ -3001,7 +3196,7 @@ public function sortBlocks
   input list<tuple<list<Integer>,Integer>> inlist2;
   output list<tuple<list<Integer>,Integer>> outlist={};
 protected
-  Integer e1, e2;
+  Integer e1;
   list<Integer> blocks;
 algorithm
   for i in sortedranklist loop
@@ -3069,13 +3264,11 @@ public function findPredecessorBlocks
   output list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>, list<Integer>, list<Integer>, list<Integer>>> outblockinfo={};
 protected
   list<Integer> dependencyequation, constantEquations;
-  list<tuple<list<Integer>, Integer>> blockstoupdate, targetblocks, tmptargetblocks;
+  list<tuple<list<Integer>, Integer>> targetblocks, tmptargetblocks;
   list<tuple<list<String>,Integer>> targetblocksvar;
-  list<Integer> blockitem, blockitems1, blockitems2, foundblockranks;
-  list<String> blockvarlst, blockvarlst1, blockvarlst2;
-  Integer foundblock, count=1, foundblockrank, tmpcount;
-  Boolean visited, square, status, checkknowns, finalsquarestauts, exist, exist1, targetexist;
-  list<tuple<list<Integer>, list<String>, Boolean, Integer>> outlist1={};
+  list<Integer> blockitems1, foundblockranks;
+  Integer count=1, tmpcount;
+  Boolean exist, targetexist;
 algorithm
   //print("Targets of blocks without predecessors\n" + "=====================================\n");
   for blocks in blockinfo loop
@@ -3248,12 +3441,10 @@ protected function VerifyDataReconciliation
   input Integer unMeasuredVariablesOfInterest = 0;
 protected
   list<Integer> matchedeq, matchedknownssetc, matchedunknownssetc, matchedknownssets, matchedunknownssets;
-  list<Integer> tmpunknowns, tmpknowns, tmplist1, tmplist2, tmplist3, tmplist1sets, setstmp;
-  list<Integer> tmplistvar1, tmplistvar2, tmplistvar3, sets_eqs, sets_vars, extractedeqs;
-  Integer eqnumber, varnumber;
-  list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
+  list<Integer> tmplist1, tmplist2, tmplist3, tmplist1sets;
+  list<Integer> tmplistvar1, tmplistvar2, tmplistvar3;
   String str, resstr, condition1, condition2, condition3, condition4, condition5, auxilliaryConditions, varsToReconcile;
-  list<BackendDAE.Var> var, convar;
+  list<BackendDAE.Var> var;
   Boolean rule2 = true;
   list<BackendDAE.Equation> condition1_eqs;
 algorithm
@@ -3396,9 +3587,9 @@ protected function generateCompileTimeHtmlReport
   input Integer numRelatedBoundaryConditions = 0;
   input Integer unMeasuredVariables = 0;
 protected
-  String data, condition1_msg, condition2_msg, condition4_msg;
+  String data, condition1_msg, condition4_msg;
   list<BackendDAE.Equation> condition1_eqs;
-  list<BackendDAE.Var> condition2_vars, condition4_vars;
+  list<BackendDAE.Var> condition4_vars;
 algorithm
     if boundaryCondition then
       data := "<html> \n <head> <h1> Boundary Condition Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
@@ -3533,6 +3724,21 @@ algorithm
   outstring := instring+outstring;
 end dumpToCsv;
 
+/* function which dumps the variable names to csv file */
+public function dumpCorrelationVarsToCsv
+  input list<BackendDAE.Var> invar;
+  output String outstring="";
+protected
+  DAE.ComponentRef cr;
+  String str = "Sxij,";
+algorithm
+  for i in invar loop
+    cr := BackendVariable.varCref(i);
+    outstring := outstring + ComponentReference.crefStr(cr) + ",";
+  end for;
+  outstring := str + outstring;
+end dumpCorrelationVarsToCsv;
+
 /* function which dumps non reconciledVars failing for condition -2 to a log file*/
 public function dumpNonReconciledVars
   input list<BackendDAE.Var> invar;
@@ -3550,79 +3756,77 @@ protected function dumpEquationString "Helper function to e.g. dump equations"
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := match (inEquation)
+  outString := match inEquation
     local
-      String s1, s2, s3, s4, res;
-      DAE.Exp e1, e2, e, cond, start, stop, iter;
+      String s1, s2, s3, res;
+      DAE.Exp e1, e2, e, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.Equation eqn;
       BackendDAE.WhenEquation weqn;
-      BackendDAE.EquationAttributes attr;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse, eqns;
-      list<BackendDAE.WhenOperator> whenStmtLst;
-    case (BackendDAE.EQUATION(exp = e1, scalar = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+    case BackendDAE.EQUATION(exp = e1, scalar = e2)
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+    case BackendDAE.COMPLEX_EQUATION(left = e1, right = e2)
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.ARRAY_EQUATION(left = e1, right = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+    case BackendDAE.ARRAY_EQUATION(left = e1, right = e2)
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s1 = System.stringReplace(s1, ".", "_");
-        s1 = System.stringReplace(s1, "$", "");
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s1 := System.stringReplace(s1, ".", "_");
+        s1 := System.stringReplace(s1, "$", "");
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
-      equation
-        res = BackendDump.whenEquationString(weqn, true);
+    case BackendDAE.WHEN_EQUATION(whenEquation = weqn)
+      algorithm
+        res := BackendDump.whenEquationString(weqn, true);
       then
         res;
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
-      equation
-        s1 = ExpressionDump.printExp2Str(e, "", NONE(), NONE());
-        res = stringAppendList({s1, "= 0"});
+    case BackendDAE.RESIDUAL_EQUATION(exp = e)
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e, "", NONE(), NONE());
+        res := stringAppendList({s1, "= 0"});
       then
         res;
-    case (BackendDAE.ALGORITHM(alg = alg, source = source))
-      equation
-        res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
+    case BackendDAE.ALGORITHM(alg = alg, source = source)
+      algorithm
+        res := DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
       then
         res;
-    case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");
-        s3 = stringAppendList({"if ",s1," then\n  ",s2});
-        res = BackendDump.ifequationString(expl, eqnstrue, eqnsfalse, s3);
+    case BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse)
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");
+        s3 := stringAppendList({"if ",s1," then\n  ",s2});
+        res := BackendDump.ifequationString(expl, eqnstrue, eqnsfalse, s3);
       then
         res;
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
-      equation
-        s1 = ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
-        s2 = dumpEquationString(eqn);
-        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
+        s2 := dumpEquationString(eqn);
+        res := stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
         res;
   end match;

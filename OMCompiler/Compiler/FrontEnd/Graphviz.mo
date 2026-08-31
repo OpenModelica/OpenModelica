@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -100,31 +104,31 @@ function dumpNode "Dumps a node to a string."
   input Node inNode;
   output Ident outIdent;
 algorithm
-  outIdent := match (inNode)
+  outIdent := match inNode
     local
       Label nm,typlbl,out,typ,lblstr;
       Attributes newattr,attr;
       Children children;
       list<Label> lbl_1,lbl;
 
-    case (NODE(type_ = typ,attributes = attr,children = children))
-      equation
-        nm = nodename(typ);
-        typlbl = makeLabel({typ});
-        newattr = ATTR("label",typlbl)::attr;
-        out = makeNode(nm, newattr);
+    case NODE(type_ = typ,attributes = attr,children = children)
+      algorithm
+        nm := nodename(typ);
+        typlbl := makeLabel({typ});
+        newattr := ATTR("label",typlbl)::attr;
+        out := makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);
       then
         nm;
 
-    case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
-      equation
-        nm = nodename(typ);
-        lbl_1 = typ::lbl;
-        lblstr = makeLabel(lbl_1);
-        newattr = ATTR("label",lblstr)::attr;
-        out = makeNode(nm, newattr);
+    case LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children)
+      algorithm
+        nm := nodename(typ);
+        lbl_1 := typ::lbl;
+        lblstr := makeLabel(lbl_1);
+        newattr := ATTR("label",lblstr)::attr;
+        out := makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);
       then
@@ -148,7 +152,7 @@ function makeLabelReq "Helper function to makeLabel"
   input String inString;
   output String outString;
 algorithm
-  outString := match (inStringLst)
+  outString := match inStringLst
     local
       Label s,s1,s2;
       list<Label> rest;
@@ -156,16 +160,16 @@ algorithm
     case {s} then stringAppend(inString, s);
 
     case {s1,s2}
-      equation
-        s = stringAppend(inString, s1);
-        s = stringAppend(s, "\\n");
-        s = stringAppend(s, s2);
+      algorithm
+        s := stringAppend(inString, s1);
+        s := stringAppend(s, "\\n");
+        s := stringAppend(s, s2);
       then s;
 
-    case (s1 :: rest)
-      equation
-        s = stringAppend(inString, s1);
-        s = stringAppend(s, "\\n");
+    case s1 :: rest
+      algorithm
+        s := stringAppend(inString, s1);
+        s := stringAppend(s, "\\n");
       then
         makeLabelReq(rest, s);
   end match;
@@ -175,7 +179,7 @@ function dumpChildren "Helper function to dumpNode"
   input Ident inIdent;
   input Children inChildren;
 algorithm
-  _ := match (inIdent,inChildren)
+  () := match (inIdent,inChildren)
     local
       Label nm,parent;
       Node node;
@@ -184,8 +188,8 @@ algorithm
     case (_,{}) then ();
 
     case (parent,(node :: rest))
-      equation
-        nm = dumpNode(node);
+      algorithm
+        nm := dumpNode(node);
         printEdge(nm, parent);
         dumpChildren(parent, rest);
       then
@@ -256,28 +260,28 @@ function makeAttrReq "Helper function to makeAttr."
   input String inString;
   output String outString;
 algorithm
-  outString := match (inAttributeLst)
+  outString := match inAttributeLst
     local
       Label s,name,v;
       list<Attribute> rest;
 
     case {ATTR(name = name,value = v)}
-      equation
-        s = stringAppend(inString, name);
-        s = stringAppend(s, "=");
+      algorithm
+        s := stringAppend(inString, name);
+        s := stringAppend(s, "=");
       then
         stringAppend(s, v);
 
-    case ((ATTR(name = name,value = v) :: rest))
-      equation
-        s = stringAppend(inString, name);
-        s = stringAppend(s, "=");
-        s = stringAppend(s, v);
-        s = stringAppend(s, ",");
+    case ATTR(name = name,value = v) :: rest
+      algorithm
+        s := stringAppend(inString, name);
+        s := stringAppend(s, "=");
+        s := stringAppend(s, v);
+        s := stringAppend(s, ",");
       then
         makeAttrReq(rest, s);
   end match;
 end makeAttrReq;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end Graphviz;

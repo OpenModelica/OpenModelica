@@ -1,43 +1,62 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NSimCode
 "file:        NSimCode.mo
  package:     NSimCode
  description: This file contains the main data type for the backend containing
               all data. It further contains the lower and solve main function.
 "
+import SimCodeFunction;
+import AvlTreeCRToInt;
+import AvlTreePathFunction;
+import ComponentReference;
+import Flags;
+import HashTableCrefSimVar;
+import List;
+import Pointer;
+import UnorderedMap;
+import Util;
+import ProgramUtil;
+
 protected
   // OF imports
   import Absyn;
   import AbsynUtil;
+  import DAE;
+  import HashTable;
   import OldExpression = Expression;
 
   // NF imports
@@ -48,7 +67,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -73,21 +92,22 @@ protected
   import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
-  import SymbolTable;
 
   // Old SimCode imports
+  import HashTableCrIListArray;
+  import HashTableCrILst;
   import HpcOmSimCode;
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;
   import OldSimCodeFunctionUtil = SimCodeFunctionUtil;
-  import OldSimCodeUtil = SimCodeUtil;
+  import SimCodeUtilShared;
+  import System;
 
   // Util imports
   import Error;
   import StringUtil;
 
   // Script imports
-  import CevalScriptBackend;
 
 public
   uniontype SimCodeIndices
@@ -242,17 +262,17 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
-      str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      str := str + SimStrongComponent.Block.listToString(simCode.event_blocks, "  ", "Event Partition") + "\n";
       if not listEmpty(simCode.clockedPartitions) then
         str := str + SimPartition.listToString(simCode.clockedPartitions, "  ", "Clocked Partitions") + "\n";
       end if;
       if not listEmpty(simCode.literals) then
         str := str + StringUtil.headline_3("Shared Literals");
-        str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
+        str := str + List.toString(simCode.literals, Expression.toString, List.Style.NEWLINE_INDENT) + "\n\n";
       end if;
       if not listEmpty(simCode.generic_loop_calls) then
         str := str + StringUtil.headline_3("Generic Calls");
-        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
+        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString,  List.Style.NEWLINE_INDENT) + "\n\n";
       end if;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
@@ -269,7 +289,9 @@ public
       input Absyn.Path name;
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
+      input Absyn.Program program "the instantiated program; passed in by the caller (e.g. from SymbolTable.getAbsyn) so NSimCode does not depend on the old backend's SymbolTable";
       output SimCode simCode;
+      output AvlTreePathFunction.Tree oldFunctionTree;
     protected
       partial function mapExp
         input output Expression exp;
@@ -280,13 +302,12 @@ public
           // auxillaries
           VarData varData;
           EqData eqData;
-          FunctionTree funcTree;
+          UnorderedMap<Absyn.Path, Function> funcMap;
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
-          Absyn.Program program;
-          list<String> libs, includes, includeDirs, libPaths;
-          String directory;
+          list<String> libs, includeDirs, libPaths;
+          String directory, fileName;
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
@@ -310,18 +331,18 @@ public
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
-          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
+          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            funcTree := BackendDAE.getFunctionTree(bdae);
+            funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
-            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -331,8 +352,6 @@ public
 
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
-
-            externalFunctionIncludes := {};
 
             independent := {};
             nominal := {};
@@ -351,9 +370,6 @@ public
               init_0 := {};
             end if;
 
-            // create clocked partitions
-            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
-
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
             init_no_ret := {};
@@ -364,11 +380,7 @@ public
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
-              algebraic := if listEmpty(no_ret) then {} else {no_ret};
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
+              algebraic := {};
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map, equation_map);
             else
               // Normal Simulation
@@ -377,17 +389,23 @@ public
               (algebraic, allSim, simCodeIndices)               := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, simcode_map, equation_map);
               (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
-              if not listEmpty(no_ret) then
-                algebraic := listReverse(no_ret :: listReverse(algebraic));
-              end if;
-              // append event_clocks to no_return after adding them to algebraic
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
             end if;
 
+            // create clocked partitions
+            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+
+            // add no return equations (without clocks) to algebraics
+            if not listEmpty(no_ret) then
+              algebraic := listReverse(no_ret :: listReverse(algebraic));
+            end if;
+
+            // append event_clocks to no_return after adding them to algebraic
+            no_ret := listAppend(event_clocks, no_ret);
+
+            if not listEmpty(no_ret) then
+              // append them to the end, compiler won't let me do it unless i double reverse the lists
+              allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
+            end if;
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
 
@@ -398,18 +416,22 @@ public
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.
             // Will probably be mostly the same in all other regards
-            program := SymbolTable.getAbsyn();
-            directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
-            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
-            makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
+            directory := ProgramUtil.getFileDir(AbsynUtil.pathToCref(name), program);
+            // The OB function tree is needed both here and when dumping the flat model,
+            // but converting it is destructive so return it to avoid doing it again.
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
+            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := SimCodeUtilShared.createFunctions(program, oldFunctionTree);
+            makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
+            fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              // should jacAdjoint be added aswell? -> for now no
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
             else
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -417,25 +439,31 @@ public
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
-            //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+
+            (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+
+            //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
+            jacobians := listReverse(jacR0 :: jacMrf :: jacLfg :: jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
             for jac in jacobians loop
-              if Util.isSome(jac.jac_map) then
+              if isSome(jac.jac_map) then
                 vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
               end if;
             end for;
 
             // jacobian blocks only from simulation jacobians
-            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
-            (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
+            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint, jacLfg, jacMrf, jacR0});
+            // (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
+
+            // TODO: these should be collected prior, and are the linear systems of Jacobian (inner linear to compute pDers)
+            // (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoopsSingle(jac_blocks, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
 
             // generate the generic loop calls and replace literal expressions
             generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -489,6 +517,7 @@ public
       list<OldBackendDAE.ZeroCrossing> zeroCrossings;
       list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
       list<OldBackendDAE.TimeEvent> timeEvents;
+      OldSimCode.SpatialDistributionInfo spatialInfo;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       HashTableCrILst.HashTable varToIndexMapping;
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
@@ -496,9 +525,9 @@ public
       list<SimVar> residualVars;
     algorithm
       modelInfo := ModelInfo.convert(simCode.modelInfo);
-      (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
+      (zeroCrossings, relations, timeEvents, spatialInfo) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
-      (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
+      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
@@ -543,7 +572,7 @@ public
         extObjInfo                    = ExtObjInfo.convert(simCode.extObjInfo), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
-        spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
+        spatialInfo                   = spatialInfo,
         jacobianMatrices              = list(SimJacobian.convert(jac) for jac in simCode.jacobians),
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = simCode.fileNamePrefix,
@@ -641,6 +670,7 @@ public
     function create
       input SimVars vars;
       input Absyn.Path name;
+      input String fileName;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
       input list<SimStrongComponent.Block> linearLoops;
@@ -661,16 +691,16 @@ public
         license                         = "",
         copyright                       = "",
         directory                       = directory,
-        fileName                        = "",
+        fileName                        = fileName,
         vars                            = vars,
         varInfo                         = info,
         functions                       = functions,
         labels                          = {},
         resourcePaths                   = {},
         sortedClasses                   = {},
-        nClocks                         = UnorderedMap.size(clockedInfo.baseClocks),
-        nSubClocks                      = UnorderedMap.size(clockedInfo.subClocks),
-        nSpatialDistributions           = 0,
+        nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
+        nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
+        nSpatialDistributions           = listLength(eventInfo.spatial_lst),
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
         nonlinearLoops                  = nonlinearLoops);
@@ -761,7 +791,7 @@ public
       input UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
     protected
       list<list<SimStrongComponent.Block>> blcks;
-      list<SimVar> residualVars, algebraicVars;
+      list<SimVar> residualVars;
     algorithm
       (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
       data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
@@ -824,8 +854,6 @@ public
       daeModeDataOpt := match daeModeDataOpt
         local
           DaeModeData daeModeData;
-          SimJacobian jac;
-          Option<SimJacobian> daeModeJac;
 
         case SOME(daeModeData)
           algorithm
@@ -910,5 +938,5 @@ public
 
   type DaeModeConfig = enumeration(ALL, DYNAMIC);
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimCode;

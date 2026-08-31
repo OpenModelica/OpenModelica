@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -38,7 +42,7 @@ encapsulated package NFTypeCheck
   Functions used by SCodeInst for type checking and type conversion where needed.
 "
 
-import DAE;
+import Absyn;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
@@ -47,11 +51,9 @@ import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
 
 protected
-import DAEExpression = Expression;
 import Error;
 import Flags;
 import List;
-import Types;
 import Operator = NFOperator;
 import Type = NFType;
 import Class = NFClass;
@@ -83,12 +85,12 @@ import Inline = NFInline;
 
 public
 type MatchKind = enumeration(
-  EXACT "Exact match",
-  CAST  "Matched by casting, e.g. Integer to Real",
+  EXACT            "Exact match",
+  CAST             "Matched by casting, e.g. Integer to Real",
   UNKNOWN_EXPECTED "The expected type was unknown",
   UNKNOWN_ACTUAL   "The actual type was unknown",
-  GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
-  PLUG_COMPATIBLE "Component by component matching, e.g. class A R r; end A; is plug compatible with class B R r; end B;",
+  GENERIC          "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
+  PLUG_COMPATIBLE  "Component by component matching, e.g. class A R r; end A; is plug compatible with class B R r; end B;",
   NOT_COMPATIBLE
 );
 
@@ -135,8 +137,7 @@ end isValidArgumentMatch;
 function isValidPlugCompatibleMatch
   input MatchKind kind;
   output Boolean v = kind == MatchKind.EXACT
-                     or kind == MatchKind.PLUG_COMPATIBLE
-                     ;
+                     or kind == MatchKind.PLUG_COMPATIBLE;
 end isValidPlugCompatibleMatch;
 
 type MatchOptions = Integer;
@@ -271,11 +272,9 @@ function matchOverloadedBinaryOperator
   output Type outType;
 protected
   list<TypedArg> args;
-  FunctionMatchKind matchKind;
   MatchedFunction matchedFunc;
   list<MatchedFunction> matchedFunctions, exactMatches;
   Function fn;
-  Operator.Op oop;
 algorithm
   args := {
     TypedArg.TYPED_ARG(NONE(), exp1, type1, var1, Purity.PURE),
@@ -313,6 +312,7 @@ algorithm
         end match;
       else
         printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
+        fail();
       end if;
     end try;
   elseif listLength(exactMatches) == 1 then
@@ -373,8 +373,8 @@ function checkConditionalBinaryOperator
   output Expression outExp;
   output Type outType;
 protected
-  Type tty1, fty1, tty2, fty2, ty1, ty2;
-  Expression e1, e2;
+  Type tty1, fty1, tty2, fty2, ty1 = Type.UNKNOWN(), ty2 = Type.UNKNOWN();
+  Expression e1 = exp1, e2 = exp2;
   Boolean valid1, valid2;
   NFType.Branch branch;
 algorithm
@@ -412,6 +412,7 @@ algorithm
     outExp := e2;
   else
     printUnresolvableTypeError(exp1, {type1, type2}, info);
+    fail();
   end if;
 
   outExp := Expression.setType(outType, outExp);
@@ -470,6 +471,7 @@ algorithm
 
     case (Expression.ARRAY(elements = arr1), Expression.ARRAY(elements = arr2))
       algorithm
+        ty := Type.UNKNOWN();
         if arrayEmpty(arr1) then
           // If the arrays are empty, match against the element types to get the expected return type.
           ty1 := Type.arrayElementType(type1);
@@ -520,7 +522,7 @@ function checkOverloadedBinaryArrayMul
 protected
   Boolean valid;
   list<Dimension> dims1, dims2;
-  Dimension dim11, dim12, dim21, dim22;
+  Dimension dim11, dim12, dim21;
 algorithm
   dims1 := Type.arrayDims(type1);
   dims2 := Type.arrayDims(type2);
@@ -548,7 +550,7 @@ algorithm
       then
         (valid, outExp);
     // matrix[n, m] * matrix[m, p] = vector[n, p]
-    case ({dim11, dim12}, {dim21, dim22})
+    case ({dim11, dim12}, {dim21, _})
       algorithm
         valid := Dimension.isEqual(dim12, dim21);
         // TODO: Implement me!
@@ -600,7 +602,6 @@ function checkOverloadedBinaryScalarArray2
   output Expression outExp;
   output Type outType;
 protected
-  list<Expression> expl;
   Type ty;
   array<Expression> arr;
   Expression e2;
@@ -615,6 +616,7 @@ algorithm
             exp1, type1, var1, op, Expression.EMPTY(type2), ty, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp2.ty}, info);
+          fail();
         end try;
 
         outType := Type.setArrayElementType(exp2.ty, outType);
@@ -673,7 +675,6 @@ function checkOverloadedBinaryArrayScalar2
   output Type outType;
 protected
   Expression e1;
-  list<Expression> expl;
   Type ty;
   array<Expression> arr;
 algorithm
@@ -687,6 +688,7 @@ algorithm
             Expression.EMPTY(type1), ty, var1, op, exp2, type2, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp1.ty}, info);
+          fail();
         end try;
 
         outType := Type.setArrayElementType(exp1.ty, outType);
@@ -730,6 +732,7 @@ algorithm
     (outExp, outType) := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   else
     printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
+    fail();
   end if;
 end checkOverloadedBinaryArrayDiv;
 
@@ -749,7 +752,6 @@ function checkOverloadedBinaryArrayEW
 protected
   Expression e1, e2;
   MatchKind mk;
-  Type ty;
 algorithm
   if Type.isArray(type1) and Type.isArray(type2) then
     (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
@@ -786,7 +788,7 @@ protected
   Expression e1, e2;
   list<Expression> expl;
   array<Expression> expl1, expl2;
-  Type ty, ty1, ty2;
+  Type ty = Type.UNKNOWN(), ty1, ty2;
   Boolean is_array1, is_array2;
 algorithm
   is_array1 := Type.isArray(type1);
@@ -861,13 +863,11 @@ function implicitConstructAndMatch
   output Type outType;
 protected
   list<InstNode> inputs;
-  InstNode in1, in2, scope;
-  MatchKind mk1,mk2;
-  ComponentRef fn_ref;
+  InstNode in1, in2;
   Function operfn;
   list<tuple<Function, list<Expression>, Variability>> matchedfuncs = {};
   Expression exp1,exp2;
-  Type ty, arg1_ty, arg2_ty;
+  Type arg1_ty, arg2_ty;
   Variability var;
   Boolean matched;
   SourceInfo arg1_info, arg2_info;
@@ -1290,7 +1290,11 @@ algorithm
       then
         (resultType, op);
 
-    // scalar * scalar and array * array => elemOp.
+    // array * array => Op.{elemOp}_EW
+    case (true, true)
+      then (resultType, Operator.makeEW(Operator.OPERATOR(resultType, elemOp)));
+
+    // scalar * scalar => Op.{elemOp}
     else (resultType, Operator.OPERATOR(resultType, elemOp));
   end match;
 
@@ -1311,7 +1315,6 @@ public function checkUnaryOperation
   output Expression unaryExp;
   output Type unaryType;
 protected
-  Boolean valid = true;
   Operator op;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
@@ -1343,13 +1346,8 @@ public function checkOverloadedUnaryOperator
   output Type outType;
 protected
   String opstr;
-  Function operfn;
-  InstNode node1, fn_node;
-  ComponentRef fn_ref;
   list<Function> candidates;
-  Boolean matched;
   list<TypedArg> args;
-  FunctionMatchKind matchKind;
   MatchedFunction matchedFunc;
   list<MatchedFunction> matchedFunctions = {}, exactMatches;
 algorithm
@@ -1431,9 +1429,6 @@ function checkLogicalUnaryOperation
   input SourceInfo info;
   output Expression outExp;
   output Type resultType = type1;
-protected
-  Expression e1, e2;
-  MatchKind mk;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
     (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, context, info);
@@ -1513,7 +1508,7 @@ protected
 algorithm
   if printError then
     exp_str := Expression.toString(exp);
-    ty_str := List.toString(types, Type.toString, "", "", ", ", "", false);
+    ty_str := List.toStringCustom(types, Type.toString, "", "", ", ", "", false);
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
   end if;
 
@@ -1570,7 +1565,7 @@ algorithm
     case Type.TUPLE()
       algorithm
         (exp1, compatibleType, matchKind) :=
-          matchTupleTypes(type1, type1, exp1, options);
+          matchTupleTypes(type1, type2, exp1, options);
       then
         compatibleType;
 
@@ -1597,7 +1592,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
       then
         fail();
 
@@ -1699,7 +1694,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
       then
         fail();
 
@@ -1840,16 +1835,11 @@ protected
   ClassTree ctree;
   InstNode anode, enode;
   array<InstNode> comps1, comps2;
-  Absyn.Path path;
   Type ty;
   ComplexType cty1, cty2;
-  Expression e;
   list<Expression> matched_elements = {};
   array<Expression> elem_arr;
-  MatchKind mk;
-  Component comp1, comp2;
   MatchOptions opt = options;
-  Integer idx;
   list<Dimension> dims;
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
@@ -1867,9 +1857,8 @@ algorithm
     opt := setOption(opt, IGNORE_DIMENSIONS);
   end if;
 
-  () := match (cls1, actualType, cls2, expectedType, expression)
-    case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()),
-          _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()), _)
+  () := match (cls1, actualType, cls2, expectedType)
+    case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()), _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()))
       algorithm
         matchKind := matchComponentList(cty1.potentials, cty2.potentials, options);
         if matchKind <> MatchKind.NOT_COMPATIBLE then
@@ -1885,8 +1874,7 @@ algorithm
       then
         ();
 
-    case (Class.INSTANCED_CLASS(elements = ctree as ClassTree.FLAT_TREE(components = comps1)), _,
-          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _, _)
+    case (Class.INSTANCED_CLASS(elements = ctree as ClassTree.FLAT_TREE(components = comps1)), _, Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
       algorithm
         // Both types must contain the same number of components.
         if arrayLength(comps1) <> arrayLength(comps2) then
@@ -2088,11 +2076,9 @@ function matchFunctionTypes
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
-  list<InstNode> inputs1, inputs2, remaining_inputs, outputs1, outputs2;
+  list<InstNode> inputs1, inputs2, outputs1, outputs2;
   list<Slot> slots1, slots2;
-  InstNode input2, output2;
   Slot slot1, slot2;
-  Boolean matching;
 algorithm
   Type.FUNCTION(fn =
     Function.FUNCTION(inputs = inputs1, outputs = outputs1, slots = slots1)) := actualType;
@@ -2240,6 +2226,7 @@ protected
   list<Dimension> rest_dims2 = dims2, cdims = {};
   Dimension dim2;
   Boolean compat;
+  MatchKind match_kind;
 algorithm
   if not isCompatibleMatch(matchKind) then
     return;
@@ -2271,18 +2258,17 @@ function matchDimensions
   input Dimension dim1;
   input Dimension dim2;
   output Dimension compatibleDim;
-  output Boolean compatible;
+  output Boolean compatible = true;
 algorithm
   if Dimension.isEqualKnown(dim1, dim2) then
     compatibleDim := dim1;
-    compatible := true;
   else
     if not Dimension.isKnown(dim1) then
       compatibleDim := dim2;
-      compatible := true;
     elseif not Dimension.isKnown(dim2) then
       compatibleDim := dim1;
-      compatible := true;
+    elseif Dimension.isResizable(dim1) and Dimension.isResizable(dim2) then
+      compatibleDim := dim1;
     else
       compatibleDim := dim1;
       compatible := false;
@@ -2698,7 +2684,6 @@ function getRangeType
   input SourceInfo info;
   output Type rangeType;
 protected
-  Expression step_exp;
   Dimension dim;
 algorithm
   dim := match rangeElemType
@@ -2955,7 +2940,6 @@ algorithm
       MatchKind ty_match;
       Expression exp;
       Type ty, bind_ty, comp_ty;
-      list<list<Dimension>> dims;
 
     case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
@@ -2971,7 +2955,7 @@ algorithm
           end if;
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.purity, binding.eachType,
-            binding.evalState, binding.isFlattened, binding.source, binding.info);
+            binding.evalState, binding.isFlattened, binding.source, binding.confidence, binding.info);
         end if;
       then
         ();
@@ -2980,7 +2964,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding " + Binding.toString(binding), sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding " + Binding.toString(binding), sourceInfo());
       then
         fail();
   end match;
@@ -3089,7 +3073,6 @@ function printBindingTypeError
   input InstContext.Type context;
 protected
   SourceInfo binding_info, comp_info;
-  String bind_ty_str, comp_ty_str;
   MatchKind mk;
 algorithm
   binding_info := Binding.getInfo(binding);
@@ -3146,7 +3129,6 @@ function checkReductionType
   input Expression exp;
   input SourceInfo info;
 protected
-  Type ety;
   String err;
 algorithm
   err := match name
@@ -3226,15 +3208,12 @@ function matchIfBranches
   input Type trueType;
   input output Expression falseBranch;
   input Type falseType;
+  input InstContext.Type context;
   input MatchOptions options = DEFAULT_OPTIONS;
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
   (compatibleType, matchKind) := match (trueType, falseType)
-    local
-      MatchKind mk1, mk2;
-      Type cty1, cty2;
-
     case (Type.ARRAY(), Type.ARRAY())
       algorithm
         // Check that both branches have the same element type.
@@ -3250,13 +3229,23 @@ algorithm
         (compatibleType, matchKind) :=
           matchArrayDims(trueType.dimensions, falseType.dimensions, compatibleType, matchKind, options);
 
-        if isIncompatibleMatch(matchKind) and
-           listLength(trueType.dimensions) == listLength(falseType.dimensions) then
-          // If the branches have the same element type and number of dimensions
-          // but the dimensions aren't the same, create a conditional array type.
-          compatibleType := Type.CONDITIONAL_ARRAY(Type.copyElementType(trueType, compatibleType),
-                                                   Type.copyElementType(falseType, compatibleType),
-                                                   NFType.Branch.NONE);
+        if listLength(trueType.dimensions) == listLength(falseType.dimensions) and
+           (isIncompatibleMatch(matchKind) or
+            not List.isEqualOnTrue(trueType.dimensions, falseType.dimensions, Dimension.isSame)) then
+          // The branches are allowed to have different array dimensions as long as
+          // they have compatible element types and the same number of dimensions.
+          if InstContext.inSubexpression(context) or InstContext.inFunction(context) then
+            // Unify the types if the if-expression is part of a larger expression or we're in
+            // a function, because we can't really handle conditional array sizes in that case.
+            compatibleType := Type.unifyArrays(Type.copyElementType(trueType, compatibleType),
+                                               Type.copyElementType(falseType, compatibleType));
+          else
+            // Otherwise, create a conditional array type to allow determining the actual type later.
+            compatibleType := Type.CONDITIONAL_ARRAY(Type.copyElementType(trueType, compatibleType),
+                                                     Type.copyElementType(falseType, compatibleType),
+                                                     NFType.Branch.NONE);
+          end if;
+
           matchKind := MatchKind.EXACT;
         end if;
       then
@@ -3289,5 +3278,5 @@ algorithm
   end match;
 end matchIfBranches;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFTypeCheck;

@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -39,6 +44,8 @@
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+
+#include <QTimer>
 
 class CustomExpressionBox;
 class OutputPlainTextEdit;
@@ -162,21 +169,22 @@ public:
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
-  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false);
+  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false, bool printErrors = true);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   bool loadClassContentString(const QString &data, const QString &className, int offsetX = 0, int offsetY = 0);
-  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
+  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8, bool printErrors = true);
   QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool existClass(QString className);
-  bool renameClass(QString oldName, QString newName);
+  QList<QString> renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);
   bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
+  QString getTotalModel(QString className, bool stripAnnotations = false, bool stripComments = false, bool obfuscate = false);
   QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
   QString runScript(QString fileName);
@@ -211,7 +219,7 @@ public:
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   OMCInterface::getSimulationOptions_res getSimulationOptions(QString className, double defaultTolerance = 1e-6);
-  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
+  QString buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method = "<default>");
   bool translateModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources);
   QString translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors, QString modelName);
@@ -225,6 +233,7 @@ public:
   QList<QString> getCommandLineOptions();
   bool setCommandLineOptions(QString options);
   bool clearCommandLineOptions();
+  void setOMEditDebugFlag();
   bool enableNewInstantiation();
   bool disableNewInstantiation();
   QString makeDocumentationUriToFileName(QString documentation);
@@ -275,10 +284,12 @@ public:
   QStringList getAvailablePackageVersions(QString pkg, QString version);
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
-  QJsonObject getModelInstance(const QString &className, const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
+  QJsonObject getModelInstance(const QString &className, const QString &context = QString(""), const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
+  static QJsonValue jsonValueFromMM(void *value);
   QJsonObject modifierToJSON(const QString &modifier, bool prettyPrint = false);
   int storeAST();
   bool restoreAST(int id);
+  QJsonArray reverseLookup(const QString &className, const QString &scope = QString("AllLoadedClasses"), bool exactMatch = true, bool prettyPrint = false);
   bool clear();
 signals:
   void commandFinished();
@@ -290,6 +301,27 @@ public slots:
   void openOMCLoggerWidget();
   void sendCustomExpression();
   void openOMCDiffWidget();
+};
+
+/*!
+ * \class OMCLongOperation
+ * \brief Scopes an omc call worth interrupting: a translation, an FMU export or
+ * an in-process (wasm-jit) simulation.
+ *
+ * omc only gets its event-pump callback while such a scope is alive; running the
+ * event loop at every cancel check is what keeps a long call interruptible, but
+ * for the short commands behind e.g. undo/redo it is pure flicker. Nested scopes
+ * are no-ops.
+ */
+class OMCLongOperation
+{
+public:
+  OMCLongOperation();
+  ~OMCLongOperation();
+  OMCLongOperation(const OMCLongOperation &) = delete;
+  OMCLongOperation& operator=(const OMCLongOperation &) = delete;
+private:
+  QTimer mShowCancelButtonTimer;
 };
 
 class CustomExpressionBox : public QLineEdit

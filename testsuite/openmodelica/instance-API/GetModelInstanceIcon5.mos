@@ -1,0 +1,145 @@
+// name: GetModelInstanceIcon5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type T
+    extends Integer;
+    annotation (
+      Icon(graphics={Rectangle(extent={{-66,78},{70,-56}}, lineColor={28,108,200})}),
+      Diagram(graphics={Ellipse(extent={{-62,68},{56,-60}}, lineColor={28,108,200})}));
+  end T;
+");
+
+getModelInstanceAnnotation(T, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"T\",
+//   \"restriction\": \"type\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"extends\",
+//       \"baseClass\": {
+//         \"name\": \"Integer\",
+//         \"restriction\": \"type\"
+//       }
+//     }
+//   ],
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Rectangle\",
+//           \"elements\": [
+//             true,
+//             [
+//               0,
+//               0
+//             ],
+//             0,
+//             [
+//               28,
+//               108,
+//               200
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.None\",
+//               \"index\": 1
+//             },
+//             0.25,
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"BorderPattern.None\",
+//               \"index\": 1
+//             },
+//             [
+//               [
+//                 -66,
+//                 78
+//               ],
+//               [
+//                 70,
+//                 -56
+//               ]
+//             ],
+//             0
+//           ]
+//         }
+//       ]
+//     },
+//     \"Diagram\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Ellipse\",
+//           \"elements\": [
+//             true,
+//             [
+//               0,
+//               0
+//             ],
+//             0,
+//             [
+//               28,
+//               108,
+//               200
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.None\",
+//               \"index\": 1
+//             },
+//             0.25,
+//             [
+//               [
+//                 -62,
+//                 68
+//               ],
+//               [
+//                 56,
+//                 -60
+//               ]
+//             ],
+//             0,
+//             360,
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"EllipseClosure.Chord\",
+//               \"index\": 2
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   }
+// }"
+// ""
+// endResult

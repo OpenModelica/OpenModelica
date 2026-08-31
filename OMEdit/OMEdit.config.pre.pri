@@ -1,44 +1,41 @@
+# This file is part of OpenModelica.
 #
- # This file is part of OpenModelica.
- #
- # Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- # c/o Linköpings universitet, Department of Computer and Information Science,
- # SE-58183 Linköping, Sweden.
- #
- # All rights reserved.
- #
- # THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- # THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- # ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- # OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
- #
- # The OpenModelica software and the Open Source Modelica
- # Consortium (OSMC) Public License (OSMC-PL) are obtained
- # from OSMC, either from the above address,
- # from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- # http://www.openmodelica.org, and in the OpenModelica distribution.
- # GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- #
- # This program is distributed WITHOUT ANY WARRANTY; without
- # even the implied warranty of  MERCHANTABILITY or FITNESS
- # FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- # IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
- #
- # See the full OSMC Public License conditions for more details.
- #
- #/
+# Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+# c/o Linköpings universitet, Department of Computer and Information Science,
+# SE-58183 Linköping, Sweden.
+#
+# All rights reserved.
+#
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+#
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+# Public License (OSMC-PL) are obtained from OSMC, either from the above
+# address, from the URLs:
+# http://www.openmodelica.org or
+# https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica,
+# and in the OpenModelica distribution.
+#
+# GNU AGPL version 3 is obtained from:
+# https://www.gnu.org/licenses/licenses.html#GPL
+#
+# This program is distributed WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+#
+# See the full OSMC Public License conditions for more details.
 
-QT += network core gui xml svg opengl printsupport widgets concurrent
+QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
-  win32 {
-    # disable documentation since we don't have webkit on qt6 and webengine is not yet supported.
-    QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
-  } else {
-    QT += webenginewidgets
+  greaterThan(QT_MINOR_VERSION, 4) {
+    QT += httpserver
   }
-} else {
-  QT += webkit webkitwidgets
 }
 
 # Set the C++ standard.
@@ -48,15 +45,31 @@ CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
 
+# Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
+# Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing
+# qmake CONFIG+=rust_omc. The env var is preferred: a recursive build regenerates
+# the subproject Makefiles with a plain `qmake` (no CONFIG+= propagation), but the
+# env var is read on every qmake run.
+# This switches the OMC interface from the MMC value/runtime ABI to the port's
+# self-contained replacement (omc_rust_embedding.h, installed alongside the
+# scripting-API headers); see OMC/OMCProxy.cpp. The Rust .so must be installed as
+# libOpenModelicaCompiler.so (the same name/path the C build links).
+OMEDIT_RUST_OMC_ENV = $$(OMEDIT_RUST_OMC)
+equals(OMEDIT_RUST_OMC_ENV, 1) {
+  CONFIG += rust_omc
+}
+rust_omc {
+  DEFINES += OMC_RUST_ABI
+}
+
 win32 {
   _cxx = $$(CXX)
-  contains(_cxx, clang++) {
+  equals(_cxx, clang++) {
     message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   } else {
-    # -Wno-clobbered is not recognized by clang
     QMAKE_CXXFLAGS += -Wno-clobbered
   }
 
@@ -72,5 +85,3 @@ UI_DIR = generatedfiles/ui
 MOC_DIR = generatedfiles/moc
 
 RCC_DIR = generatedfiles/rcc
-
-TARGET = OMEdit

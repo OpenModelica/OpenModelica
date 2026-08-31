@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -94,6 +98,7 @@ uniontype InstNodeType
     "The root of the instance tree, i.e. the class that the instantiation starts from."
     InstNode parent "The parent of the class, e.g. when instantiating a function
                      in a component where the component is the parent.";
+    Option<Absyn.Path> context "Used by getModelInstance to add context to instances.";
   end ROOT_CLASS;
 
   record NORMAL_COMP
@@ -178,7 +183,7 @@ uniontype CachedData
                                     func_cache.specialBuiltin or specialBuiltin);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + ": Invalid cache for function", sourceInfo());
+          Error.terminate(getInstanceName() + ": Invalid cache for function", sourceInfo());
         then
           fail();
     end match;
@@ -194,8 +199,8 @@ uniontype CachedData
   function setFuncCache
     input array<CachedData> in_caches;
     input CachedData in_cache;
-    algorithm
-      arrayUpdate(in_caches, 1, in_cache);
+  algorithm
+    arrayUpdate(in_caches, 1, in_cache);
   end setFuncCache;
 
   function getPackageCache
@@ -332,7 +337,7 @@ uniontype InstNode
   end newIterator;
 
   function newUniqueIterator
-    input SourceInfo info = AbsynUtil.dummyInfo;
+    input SourceInfo info = Absyn.dummyInfo;
     input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
@@ -342,7 +347,7 @@ uniontype InstNode
   function newIndexedIterator
     input Integer index;
     input String name = "i";
-    input SourceInfo info = AbsynUtil.dummyInfo;
+    input SourceInfo info = Absyn.dummyInfo;
     input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
@@ -409,6 +414,14 @@ uniontype InstNode
     end match;
   end isDerivedClass;
 
+  function makeRootClass
+    input output InstNode node;
+    input InstNode parent = EMPTY_NODE();
+    input Option<Absyn.Path> context = NONE();
+  algorithm
+    node := setNodeType(InstNodeType.ROOT_CLASS(parent, context), node);
+  end makeRootClass;
+
   function isRootClass
     input InstNode node;
     output Boolean res;
@@ -418,6 +431,16 @@ uniontype InstNode
       else false;
     end match;
   end isRootClass;
+
+  function rootClassContext
+    input InstNode node;
+    output Option<Absyn.Path> context;
+  algorithm
+    context := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS(context = context)) then context;
+      else NONE();
+    end match;
+  end rootClassContext;
 
   function isFunction
     input InstNode node;
@@ -748,7 +771,13 @@ uniontype InstNode
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(enclosingScope(scope, ignoreRedeclare, ignoreBaseClass));
+      scope := enclosingScope(scope, ignoreRedeclare, ignoreBaseClass);
+
+      if isEmpty(scope) then
+        break;
+      end if;
+
+      scope := classScope(scope);
     end while;
   end enclosingScopeList;
 
@@ -758,7 +787,6 @@ uniontype InstNode
     input Boolean ignoreBaseClass = false;
     output InstNode scope;
   protected
-    InstNodeType it;
     InstNode orig_node;
   algorithm
     scope := match node
@@ -1043,7 +1071,7 @@ uniontype InstNode
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end definition;
@@ -1056,16 +1084,23 @@ uniontype InstNode
       case CLASS_NODE()     then node.definition;
       case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end classDefinition;
 
   function extendsDefinition
     input InstNode node;
-    output SCode.Element definition;
+    output Option<SCode.Element> definition;
+  protected
+    InstNodeType ty;
   algorithm
-    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
+    ty := derivedNodeType(node);
+
+    definition := match ty
+      case InstNodeType.BASE_CLASS() then SOME(ty.definition);
+      else NONE();
+    end match;
   end extendsDefinition;
 
   function setDefinition
@@ -1116,7 +1151,7 @@ uniontype InstNode
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end matchcontinue;
   end info;
 
@@ -1132,6 +1167,7 @@ uniontype InstNode
       case VAR_NODE() algorithm
         var := Pointer.access(node.varPointer);
       then var.ty;
+      case NAME_NODE()      then Type.UNKNOWN();
     end match;
   end getType;
 
@@ -1222,7 +1258,7 @@ uniontype InstNode
         then scopeList(parent(clsNode), includeRoot, accumScopes);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown node type", sourceInfo());
         then
           fail();
     end match;
@@ -1341,7 +1377,7 @@ uniontype InstNode
         then scopePath2(classParent(node), scopeType, accumPath);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown node type", sourceInfo());
         then
           fail();
     end match;
@@ -1452,7 +1488,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.initFunc(node.caches); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end cacheInitFunc;
 
@@ -1463,9 +1499,20 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.addFunc(fn, specialBuiltin, node.caches); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end cacheAddFunc;
+
+  function newFuncCache
+    "overwrites the old cache. use only for entirely new inst nodes from cloning!"
+    input output InstNode node;
+    input CachedData in_func_cache;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm node.caches := arrayCreate(1, in_func_cache); then ();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
+    end match;
+  end newFuncCache;
 
   function getFuncCache
     input InstNode inNode;
@@ -1473,7 +1520,7 @@ uniontype InstNode
   algorithm
     func_cache := match inNode
       case CLASS_NODE() then CachedData.getFuncCache(inNode.caches);
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end getFuncCache;
 
@@ -1483,7 +1530,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.setFuncCache(node.caches, in_func_cache); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setFuncCache;
 
@@ -1493,7 +1540,7 @@ uniontype InstNode
   algorithm
     pack_cache := match inNode
       case CLASS_NODE() then CachedData.getPackageCache(inNode.caches);
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end getPackageCache;
 
@@ -1504,7 +1551,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(packageNode, state)); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;
 
@@ -1513,7 +1560,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.clearPackageCache(node.caches); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+      else algorithm Error.terminate(getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end clearPackageCache;
 
@@ -2127,7 +2174,7 @@ uniontype InstNode
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " did not get an instanced class", sourceInfo());
+          Error.terminate(getInstanceName() + " did not get an instanced class", sourceInfo());
         then fail();
     end match;
   end getSections;
@@ -2137,6 +2184,14 @@ uniontype InstNode
     input InstNode node;
     output Integer hash = stringHashDjb2(name(node));
   end hash;
+
+  function hashContinue
+    "Returns the hash of an InstNode's name."
+    input InstNode node;
+    input output Integer hash;
+  algorithm
+    hash := stringHashDjb2Continue(name(node), hash);
+  end hashContinue;
 
   function dimensionCount
     input InstNode node;
@@ -2207,7 +2262,6 @@ uniontype InstNode
   function clearGeneratedInners
     input InstNode node;
   protected
-    InstNode top;
     UnorderedMap<String, InstNode> inners;
   algorithm
     InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));
@@ -2242,5 +2296,5 @@ uniontype InstNode
   end getAccessLevel;
 end InstNode;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFInstNode;

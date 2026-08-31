@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBVariable
 " file:         NBVariable.mo
   description:  This ONLY contains the backend variable functions!
@@ -46,7 +51,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, StateSelect, VariableAttributes, VariableKind};
+  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
   import Ceval = NFCeval;
   import Class = NFClass;
@@ -79,7 +84,9 @@ public
   import Util;
 
 public
-  type VariablePointer = Pointer<Variable> "mainly used for mapping purposes";
+  // mainly used for mapping purposes
+  type VariablePointer = Pointer<Variable>;
+  type VarSlice = Slice<Pointer<Variable>>;
 
   // ==========================================================================
   //               Single Variable constants and functions
@@ -95,7 +102,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, SCode.noComment, SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -104,12 +111,14 @@ public
   constant String FUNCTION_STR            = "$FUN";
   constant String PREVIOUS_STR            = "$PRE";
   constant String AUXILIARY_STR           = "$AUX";
+  constant String STATE_ALIAS_STR         = "$STA";
   constant String START_STR               = "$START";
   constant String RESIDUAL_STR            = "$RES";
   constant String TEMPORARY_STR           = "$TMP";
   constant String SEED_STR                = "$SEED";
   constant String TIME_EVENT_STR          = "$TEV";
   constant String STATE_EVENT_STR         = "$SEV";
+  constant String WHEN_CONDITION_STR      = "$WC";
   constant String CLOCK_STR               = "$CLK";
 
   function toString
@@ -172,11 +181,9 @@ public
   protected
     InstNode node, class_node;
     array<InstNode> child_nodes;
-    ComponentRef child_cref;
     Type ty;
     Prefixes.Visibility vis;
     SourceInfo info;
-    Integer complexSize;
     list<Variable> children = {};
   algorithm
     node := ComponentRef.node(cref);
@@ -314,8 +321,7 @@ public
     Variable var = Pointer.access(var_ptr);
   end checkVar;
 
-  function isArray
-    extends checkVar;
+  function isArray extends checkVar;
   algorithm
     b := Type.isArray(var.ty);
   end isArray;
@@ -330,14 +336,22 @@ public
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
-  function isEmpty
-    extends checkVar;
+  function isEmpty extends checkVar;
   algorithm
     b := ComponentRef.isEmpty(var.name);
   end isEmpty;
 
-  function isState
-    extends checkVar;
+  function isForcedState extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Boolean natural;
+      case VariableKind.STATE(natural = natural) then not natural;
+      else false;
+    end match;
+  end isForcedState;
+
+  function isState extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.STATE() then true;
@@ -345,8 +359,7 @@ public
     end match;
   end isState;
 
-  function isStateDerivative
-    extends checkVar;
+  function isStateDerivative extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.STATE_DER() then true;
@@ -354,8 +367,7 @@ public
     end match;
   end isStateDerivative;
 
-  function isAlgebraic
-    extends checkVar;
+  function isAlgebraic extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.ALGEBRAIC() then true;
@@ -363,8 +375,7 @@ public
     end match;
   end isAlgebraic;
 
-  function isStart
-    extends checkVar;
+  function isStart extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.START() then true;
@@ -372,8 +383,7 @@ public
     end match;
   end isStart;
 
-  function isExtObj
-    extends checkVar;
+  function isExtObj extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.EXTOBJ() then true;
@@ -381,8 +391,7 @@ public
     end match;
   end isExtObj;
 
-  function isTime
-    extends checkVar;
+  function isTime extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.TIME() then true;
@@ -390,9 +399,8 @@ public
     end match;
   end isTime;
 
-  function isContinuous
-    extends checkVar;
-    input Boolean init  "true if it's an initial system";
+  function isContinuous extends checkVar;
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE()  then false; // like parameter?
@@ -401,13 +409,32 @@ public
       case VariableKind.CONSTANT()        then false;
       case VariableKind.ITERATOR()        then false;
       case VariableKind.EXTOBJ()          then false;
-      case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
+      case VariableKind.PARAMETER()       then staticAsContinuous and Type.isContinuous(var.ty);
+      case VariableKind.RECORD()          then List.all(getRecordChildren(var_ptr), function isContinuous(staticAsContinuous = staticAsContinuous));
       else true;
     end match;
   end isContinuous;
 
-  function isDiscreteState
+  function isDiscontinuous "only for function interface purposes" extends checkVar;
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
+  algorithm
+    b := not isContinuous(var_ptr, staticAsContinuous);
+  end isDiscontinuous;
+
+  function isContinuousRecordAware
+    "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
     extends checkVar;
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isContinuousRecordAware(parent, staticAsContinuous);
+      else isContinuous(var_ptr, staticAsContinuous);
+    end match;
+  end isContinuousRecordAware;
+
+  function isDiscreteState extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE() then true;
@@ -415,8 +442,7 @@ public
     end match;
   end isDiscreteState;
 
-  function isDiscrete
-    extends checkVar;
+  function isDiscrete extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE() then true;
@@ -424,8 +450,7 @@ public
     end match;
   end isDiscrete;
 
-  function isPrevious
-    extends checkVar;
+  function isPrevious extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.PREVIOUS() then true;
@@ -433,8 +458,7 @@ public
     end match;
   end isPrevious;
 
-  function isRecord
-    extends checkVar;
+  function isRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.RECORD() then true;
@@ -442,8 +466,7 @@ public
     end match;
   end isRecord;
 
-  function isKnownRecord
-    extends checkVar;
+  function isKnownRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       local
@@ -453,8 +476,7 @@ public
     end match;
   end isKnownRecord;
 
- function isUnknownRecord
-    extends checkVar;
+ function isUnknownRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       local
@@ -464,8 +486,17 @@ public
     end match;
   end isUnknownRecord;
 
-  function isClock
-    extends checkVar;
+  function isConstRecord extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(max_var = variability) guard(variability == NFPrefixes.Variability.CONSTANT) then true;
+      else false;
+    end match;
+  end isConstRecord;
+
+  function isClock extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CLOCK() then true;
@@ -473,8 +504,7 @@ public
     end match;
   end isClock;
 
-  function isClocked
-    extends checkVar;
+  function isClocked extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CLOCKED() then true;
@@ -482,14 +512,45 @@ public
     end match;
   end isClocked;
 
-  function isIterator
-    extends checkVar;
+  function isClockOrClocked extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.CLOCK()   then true;
+      case VariableKind.CLOCKED() then true;
+      else false;
+    end match;
+  end isClockOrClocked;
+
+  function isIterator extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.ITERATOR() then true;
       else false;
     end match;
   end isIterator;
+
+  function isPDer extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR()     then true;
+      case VariableKind.JAC_TMP_VAR() then true;
+      else false;
+    end match;
+  end isPDer;
+
+  function hasTearingSelect
+    "checks if the variable has given tearing select.
+    When provided with different functions can also check other relations.
+    intEq, intNe, intGt, intGe, intLt, intLe"
+    input Pointer<Variable> varPointer;
+    input TearingSelect compareTS;
+    input compare func = intEq;
+    output Boolean b = func(Integer(getTearingSelect(varPointer)), Integer(compareTS));
+    partial function compare
+      input Integer i1, i2;
+      output Boolean b;
+    end compare;
+  end hasTearingSelect;
 
   partial function getVarPartner
     input Pointer<Variable> var_ptr;
@@ -518,9 +579,15 @@ public
   function getVarPDer
     "Gets the partial derivative of a residual or the other way around."
     extends getVarPartner;
+    input Boolean isTmp;
   algorithm
-    partnerName := "partial derivative";
-    partner := var.backendinfo.var_pder;
+    if isTmp then
+      partnerName := "partial derivative (temp)";
+      partner := var.backendinfo.var_pder_tmp;
+    else
+      partnerName := "partial derivative (result)";
+      partner := var.backendinfo.var_pder_res;
+    end if;
   end getVarPDer;
 
   function getVarDer
@@ -561,6 +628,13 @@ public
     end match;
   end getVarDummyDer;
 
+  function getVarStart
+    extends getVarPartner;
+  algorithm
+    partnerName := "start";
+    partner := var.backendinfo.var_start;
+  end getVarStart;
+
   function getPartnerCref
     "Like getVarPartner but for cref. Fails if there is no partner."
     input ComponentRef cref;
@@ -588,15 +662,40 @@ public
   function hasStartAttr
     extends checkVar;
   algorithm
-    b := Util.isSome(VariableAttributes.getStartAttribute(var.backendinfo.attributes));
+    b := isSome(VariableAttributes.getStartAttribute(var.backendinfo.attributes));
   end hasStartAttr;
 
   function hasPre
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
   algorithm
-    b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
+    b := not isPrevious(var_ptr) and isSome(getVarPre(var_ptr));
   end hasPre;
+
+function isJacobianResultVar
+    "returns true if the variable has a (non-temp or temp) result partial derivative set"
+    extends checkVar;
+  algorithm
+    b := match getVarPDer(var_ptr, false)
+      local
+        Pointer<Variable> der_var;
+      case SOME(der_var) then isJacobianResultVarPDer(der_var);
+      else match getVarPDer(var_ptr, true)
+        case SOME(der_var) then isJacobianResultVarPDer(der_var);
+        else false;
+      end match;
+    end match;
+  end isJacobianResultVar;
+
+  function isJacobianResultVarPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR() then true;
+      else false;
+    end match;
+  end isJacobianResultVarPDer;
+
 
   function isDummyState
     extends checkVar;
@@ -622,6 +721,7 @@ public
     b := match var.backendinfo.varKind
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isParamOrConst;
@@ -631,6 +731,7 @@ public
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CONSTANT() then true;
+      case VariableKind.RECORD()   then isConstRecord(var_ptr);
       else false;
     end match;
   end isConst;
@@ -642,9 +743,170 @@ public
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
       case VariableKind.STATE()     then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isKnown;
+
+  function isOptimizable
+    "Returns true if the variable is an optimizable parameter or input."
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(), annotations = BackendExtension.ANNOTATIONS(optimizable = true)) then true;
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizable = true)) guard(isInput(var_ptr)) then true;
+      else false;
+    end match;
+  end isOptimizable;
+
+  function isStateOrOptimizable
+    "Returns true if the variable is a state or an optimizable parameter/input."
+    extends checkVar;
+  algorithm
+    b := isState(var_ptr) or isOptimizable(var_ptr);
+  end isStateOrOptimizable;
+
+  function isInitialTime
+    "Returns true if the variable represents the initial time t0."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.INITIAL_TIME;
+      else false;
+    end match;
+  end isInitialTime;
+
+  function isFinalTime
+    "Returns true if the variable represents the final time tf."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.FINAL_TIME;
+      else false;
+    end match;
+  end isFinalTime;
+
+  function isLagrange
+    "Returns true if the variable is a Lagrange term (L, integral objective)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.LAGRANGE;
+      else false;
+    end match;
+  end isLagrange;
+
+  function isMayer
+    "Returns true if the variable is a Mayer term (M, terminal objective)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.MAYER;
+      else false;
+    end match;
+  end isMayer;
+
+  function isPathConstraint
+    "Returns true if the variable is a path constraint (g, active over the horizon)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.PATH_CONSTRAINT;
+      else false;
+    end match;
+  end isPathConstraint;
+
+  function isFinalConstraint
+    "Returns true if the variable is a final constraint (rf, evaluated at tf)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.FINAL_CONSTRAINT;
+      else false;
+    end match;
+  end isFinalConstraint;
+
+  function isInitialConstraint
+    "Returns true if the variable is an initial constraint (r0, evaluated at t0)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.INITIAL_CONSTRAINT;
+      else false;
+    end match;
+  end isInitialConstraint;
+
+  function isLfgFunction
+    "Returns true if the variable is a row of the LFG Jacobian: Lagrange (L), state derivative (f), or path constraint (g)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    if isStateDerivative(var_ptr) then
+      b := true;
+      return;
+    end if;
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT;
+      else false;
+    end match;
+  end isLfgFunction;
+
+  function isMrfFunction
+    "Returns true if the variable is a row of the MRF Jacobian: Mayer term (M) or final constraint (rf)."
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT;
+      else false;
+    end match;
+  end isMrfFunction;
+
+  function isLfgVariable
+    "Lfg seed candidates: x (states), u (controls) and p (parameters), excludes t0 and tf."
+    extends checkVar;
+  algorithm
+    b := not (isFinalTime(var_ptr) or isInitialTime(var_ptr));
+  end isLfgVariable;
+
+  function isMrfVariable
+    "Mrf seed candidates: x (states), u (controls) at final time, p (parameters) and tf (final time), excludes t0."
+    extends checkVar;
+  algorithm
+    b := not isInitialTime(var_ptr);
+  end isMrfVariable;
+
+  function isR0Variable
+    "R0 seed candidates: x (states), u (controls) at initial time, p (parameters) and t0 (initial time), excludes tf."
+    extends checkVar;
+  algorithm
+    b := not isFinalTime(var_ptr);
+  end isR0Variable;
 
   function isResizable
     extends checkVar;
@@ -669,7 +931,7 @@ public
     Variable var = Pointer.access(var_ptr);
     Option<Expression> val = UnorderedMap.get(var.name, optimal_values);
   algorithm
-    _ := match (val, var.backendinfo)
+    () := match (val, var.backendinfo)
       local
         Integer i;
         VariableKind varKind;
@@ -688,7 +950,7 @@ public
   protected
     Variable var = Pointer.access(var_ptr);
   algorithm
-    _ := match var.backendinfo
+    val := match var.backendinfo
       case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(val))) then val;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because following variable is not a resizable parameter: " + toString(var)});
@@ -732,12 +994,12 @@ public
     // FIXME use VariableAttributes.isFixed()?
     b := match var.backendinfo.attributes
       local
-        Expression fixed;
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(fixed);
+        Binding fixed;
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
       else false;
     end match;
   end isFixed;
@@ -767,15 +1029,11 @@ public
   function setVariableAttributes
     input output Variable var;
     input VariableAttributes variableAttributes;
+  protected
+    BackendInfo backendinfo = var.backendinfo;
   algorithm
-    var := match var
-      local
-        BackendInfo backendinfo;
-      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
-        backendinfo.attributes := variableAttributes;
-        var.backendinfo := backendinfo;
-      then var;
-    end match;
+    backendinfo.attributes := variableAttributes;
+    var.backendinfo := backendinfo;
   end setVariableAttributes;
 
   function setMin
@@ -848,7 +1106,7 @@ public
 
   function setTearingSelect
     input output Variable var;
-    input BackendExtension.TearingSelect tearingSelect_val;
+    input TearingSelect tearingSelect_val;
     input Boolean overwrite = false;
   algorithm
     var := match var
@@ -856,12 +1114,27 @@ public
         BackendExtension.BackendInfo backendinfo;
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
-
         backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
+      else var;
     end match;
   end setTearingSelect;
+
+  function getTearingSelect
+    input Pointer<Variable> varPointer;
+    output BackendExtension.TearingSelect tearingSelect_val;
+  algorithm
+    tearingSelect_val :=  match Pointer.access(varPointer)
+      local
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = variableAttributes))
+      then BackendExtension.VariableAttributes.getTearingSelect(variableAttributes);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + BVariable.pointerToString(varPointer)});
+      then fail();
+    end match;
+  end getTearingSelect;
 
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
@@ -945,6 +1218,19 @@ public
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
     Pointer.update(varPointer, var);
   end setStateDerivativeVar;
+
+  function setStateDerKind
+    "Updates a variable pointer to STATE_DER kind, linking it to its state.
+    Used when an existing frontend derivative variable is promoted to STATE_DER."
+    input Pointer<Variable> varPointer;
+    input Pointer<Variable> statePointer;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
+    Pointer.update(varPointer, var);
+  end setStateDerKind;
 
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
@@ -1064,6 +1350,13 @@ public
     end match;
   end getRecordChildren;
 
+  function getRecordChildrenOrSelf
+    input Pointer<Variable> var;
+    output list<Pointer<Variable>> children = getRecordChildren(var);
+  algorithm
+    children := if listEmpty(children) then {var} else children;
+  end getRecordChildrenOrSelf;
+
   function getRecordChildrenCref
     input ComponentRef cref;
     output list<ComponentRef> children;
@@ -1072,7 +1365,7 @@ public
     list<Pointer<Variable>> arg_children;
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
-    arg_children  := BVariable.getRecordChildren(getVarPointer(cref, sourceInfo()));
+    arg_children  := getRecordChildren(getVarPointer(cref, sourceInfo()));
     children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child), true, true) for child in arg_children);
   end getRecordChildrenCref;
 
@@ -1083,22 +1376,40 @@ public
     children := if listEmpty(children) then {cref} else children;
   end getRecordChildrenCrefOrSelf;
 
+  function setRecordVariability
+    input Pointer<Variable> var_ptr;
+    input Prefixes.Variability variability;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    _ := match var.backendinfo.varKind
+      local
+        VariableKind varKind;
+      case varKind as VariableKind.RECORD() algorithm
+        varKind.min_var := variability;
+        varKind.max_var := variability;
+        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+        Pointer.update(var_ptr, var);
+      then ();
+      else();
+    end match;
+  end setRecordVariability;
+
   function makeDummyState
     input Pointer<Variable> varPointer;
     output Pointer<Variable> derivative;
   protected
-    Variable var;
+    Variable var = Pointer.access(varPointer);
   algorithm
-    var := Pointer.access(varPointer);
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
-        VariableKind varKind;
         Variable der_var;
 
-      case varKind as VariableKind.STATE(derivative = SOME(derivative)) algorithm
+      case VariableKind.STATE(derivative = SOME(derivative)) algorithm
         // also update the derivative to be a dummy derivative
         der_var := Pointer.access(derivative);
         der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
+        der_var.backendinfo := BackendInfo.setStateSelect(der_var.backendinfo, NFBackendExtension.StateSelect.AVOID);
         Pointer.update(derivative, der_var);
       then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
@@ -1136,7 +1447,7 @@ public
         Variable pre;
       case qual as InstNode.VAR_NODE()
         algorithm
-          var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          var_ptr := getVarPointer(cref, sourceInfo());
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
@@ -1166,11 +1477,25 @@ public
         Option<Pointer<Variable>> ovar;
         Variable var;
         VariableKind varKind;
+        ComponentRef original_cref;
 
       case qual as InstNode.VAR_NODE() algorithm
+        original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        ovar := getVarSeed(old_var_ptr);
+        // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
+        // so that each outer element gets its own scalar seed var instead of all elements
+        // sharing the first element's seed via the array ptr cache.
+        if ComponentRef.hasSubscripts(original_cref) then
+          ovar := NONE();
+        else
+          ovar := getVarSeed(old_var_ptr);
+          // var_seed is a single-slot cache shared across all Jacobians; reject a hit
+          // cached under a different Jacobian's name (cref root is always $SEED_<name>).
+          if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> SEED_STR + "_" + name then
+            ovar := NONE();
+          end if;
+        end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
@@ -1192,7 +1517,12 @@ public
 
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          // For subscripted element crefs (partial-slice NLS iter vars), skip linking back to
+          // the base array ptr so the shared cache is not populated, allowing each element to
+          // create its own independent seed on subsequent calls.
+          if not ComponentRef.hasSubscripts(original_cref) then
+            connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          end if;
         end if;
       then ();
 
@@ -1222,7 +1552,12 @@ public
       // regular case for jacobians
       case qual as InstNode.VAR_NODE() algorithm
         res_ptr := getVarPointer(cref, sourceInfo());
-        ovar := getVarPDer(res_ptr);
+        ovar := getVarPDer(res_ptr, isTmp);
+        // var_pder_res/tmp is a single-slot cache shared across all Jacobians; reject a hit
+        // cached under a different Jacobian's name (cref root is always $pDER_<name>).
+        if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> PARTIAL_DERIVATIVE_STR + "_" + name then
+          ovar := NONE();
+        end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
@@ -1242,10 +1577,9 @@ public
           end match;
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
 
-
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);
+          connectPartners(res_ptr, var_ptr, function BackendInfo.setVarPDer(isTmp = isTmp));
         end if;
       then ();
 
@@ -1262,25 +1596,33 @@ public
     for interface reasons they have to be a single cref without restCref (gets converted to InstNode)"
     input output ComponentRef cref    "old component reference to new component reference";
   algorithm
-    cref := match ComponentRef.node(cref)
-      local
-        InstNode qual;
+    cref := match cref
+      // add the $FDER to the deepest cref
+      case ComponentRef.CREF(restCref = ComponentRef.EMPTY()) then match ComponentRef.node(cref)
+        local
+          InstNode qual;
 
-      // inside a function body
-      case qual as InstNode.COMPONENT_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+        // inside a function body
+        case qual as InstNode.COMPONENT_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        // partial function application (passing function pointers)
+        case qual as InstNode.CLASS_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+        then fail();
+      end match;
+
+      // recurse deeper
+      case ComponentRef.CREF() algorithm
+        cref.restCref := makeFDerVar(cref.restCref);
       then cref;
 
-      // partial function application (passing function pointers)
-      case qual as InstNode.CLASS_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
-      then cref;
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-      then fail();
+      else cref;
     end match;
   end makeFDerVar;
 
@@ -1291,24 +1633,48 @@ public
     output ComponentRef start_cref    "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    () := match ComponentRef.node(cref)
+    (start_cref, var_ptr) := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
-        Variable var;
+        Variable var, old_var;
+
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
-          // prepend the start str
-          qual.name := START_STR;
-          start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
-          // update the variable to be a start variable and pass the pointer to the original variable
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
-      then ();
+          old_var_ptr := getVarPointer(cref, sourceInfo());
+
+          // try to see if it already has a start variable
+          (start_cref, var_ptr) := match getVarStart(old_var_ptr)
+            // there is already a start variable, take it
+            case SOME(var_ptr) then (getVarName(var_ptr), var_ptr);
+
+            // create a new start variable
+            else algorithm
+              // prepend the start str
+              qual.name := START_STR;
+              // remove the subscripts before creating the new cref for the new variable
+              start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+              var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
+              // update the variable to be a start variable and pass the pointer to the original variable
+              if BVariable.isRecord(old_var_ptr) then
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RECORD({}, NFPrefixes.Variability.PARAMETER, NFPrefixes.Variability.CONTINUOUS));
+              else
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+              end if;
+              var.backendinfo := BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
+              // create the new variable pointer and safe it to the component reference
+              (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
+              // save the var_ptr to the old var as its start var
+              old_var := Pointer.access(old_var_ptr);
+              old_var.backendinfo := BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
+              Pointer.update(old_var_ptr, old_var);
+            then (start_cref, var_ptr);
+          end match;
+
+          // copy back all the subscripts
+          start_cref := ComponentRef.copySubscripts(cref, start_cref);
+      then (start_cref, var_ptr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -1327,7 +1693,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -1354,19 +1719,15 @@ public
     InstNode node;
     ComponentRef var_cref;
     Variable var;
-    list<ComponentRef> iter_crefs;
     list<Subscript> iter_subs;
-    list<Integer> sub_sizes;
     Type ty;
   algorithm
     // get subscripts from optional iterator
-    (iter_crefs, _) := Iterator.getFrames(iterator);
-    iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
+    iter_subs := Iterator.normalizedSubscripts(iterator);
     if listEmpty(iter_subs) then
       ty := var_ty;
     else
-      sub_sizes := Iterator.sizes(iterator);
-      ty := Type.liftArrayLeftList(var_ty, list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+      ty := Type.liftArrayLeftList(var_ty, Iterator.dimensions(iterator));
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -1393,7 +1754,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
     function updateBackendInfo
       input output Variable var;
       input Boolean makeParam;
@@ -1435,12 +1795,13 @@ public
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
-      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.FLAT_BINDING(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
+      var := fromCref(cref, NFAttributes.DEFAULT_ATTR, Binding.makeFlat(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
     else
       var := fromCref(cref);
     end if;
-    // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALGEBRAIC());
+    // update the variable to have StateSelect.AVOID as it has no good start values
+    var.backendinfo := BackendInfo.setStateSelect(var.backendinfo, NFBackendExtension.StateSelect.AVOID);
+
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
     (der_cref, der_var) := makeDerVar(cref);
@@ -1463,7 +1824,7 @@ public
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the tmp str
           qual.name := TEMPORARY_STR;
           tmp_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
@@ -1489,7 +1850,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -1525,8 +1885,7 @@ public
   function hasEvaluableBinding
     extends checkVar;
   protected
-    Expression binding, start;
-    Option<Expression> opt_start;
+    Expression binding;
     function isEvaluable
       input Expression exp;
       output Boolean b;
@@ -1573,7 +1932,7 @@ public
 
     // map start exp
     opt_start   := getStartAttribute(var_ptr);
-    if Util.isSome(opt_start) then
+    if isSome(opt_start) then
       SOME(start) := opt_start;
       new_start   := mapFunc(start, funcExp);
 
@@ -1749,8 +2108,8 @@ public
       Integer numberOfElements = VariablePointers.size(variables);
       Integer length, scal_start;
       String index;
-      Boolean useMapping = Util.isSome(mapping_opt);
-      array<tuple<Integer,Integer>> mapping;
+      Boolean useMapping = isSome(mapping_opt);
+      array<tuple<Integer,Integer>> mapping = listArray({});
     algorithm
       if useMapping then
         length := 15;
@@ -1931,6 +2290,16 @@ public
       variables := compress(variables);
     end removeList;
 
+    function removeCheck
+      input output VariablePointers variables;
+      input checkVar func;
+    protected
+      list<Pointer<Variable>> vars;
+    algorithm
+      vars := list(var for var guard(not func(var)) in toList(variables));
+      variables := fromList(vars);
+    end removeCheck;
+
     function add
       "Adds a variable pointer to the set, or updates it if it already exists."
       input Pointer<Variable> varPointer;
@@ -1941,7 +2310,15 @@ public
     algorithm
       var := Pointer.access(varPointer);
       () := match UnorderedMap.get(var.name, variables.map)
-        case SOME(index) guard(index > 0) algorithm
+        case SOME(index) guard(index > 0 and (variables.scalarized or ComponentRef.isEqual(var.name, BVariable.getVarName(ExpandableArray.get(index, variables.varArr))))) algorithm
+          // In non-scalarized (stripped) mode the map key ignores subscripts, so a lookup
+          // hit here can be a DIFFERENT literal-indexed sibling of the same base array
+          // (e.g. x[1] found while adding x[2]) rather than a genuine re-add of the same
+          // variable. Overwriting that slot would silently drop x[1] from the collection
+          // (VariablePointers.toList/mapPtr only see the array, not the map, so a lost
+          // slot is a lost variable). Only take the "update in place" path when the
+          // stored variable's FULL cref actually matches -- otherwise fall through and
+          // add this as a new, separate entry, same as any other unseen variable.
           ExpandableArray.update(index, varPointer, variables.varArr);
         then ();
         else algorithm
@@ -2005,7 +2382,7 @@ public
       var_ptr := match UnorderedMap.get(cref, variables.map)
         case SOME(index) guard(index > 0) then ExpandableArray.get(index, variables.varArr);
         else algorithm
-          if Util.isSome(info) then
+          if isSome(info) then
             Error.addInternalError(getInstanceName() + " failed for " + ComponentRef.toString(cref), Util.getOption(info));
           end if;
         then fail();
@@ -2047,6 +2424,7 @@ public
     function getScalarVarNames
       "Returns the names of all variables, with arrays and records expanded."
       input VariablePointers variables;
+      input Boolean resize;
       output list<ComponentRef> names = {};
     protected
       Variable var;
@@ -2055,7 +2433,7 @@ public
         var := Pointer.access(var_ptr);
 
         if Type.isArray(var.ty) then
-          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), true) loop
+          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize) loop
             if Type.isComplex(ComponentRef.nodeType(cr)) then
               names := listAppend(ComponentRef.getRecordChildren(cr), names);
             else
@@ -2178,21 +2556,33 @@ public
     function varSlice
       input VariablePointers vars;
       input Integer scal;
+      input Integer arr;
       input Mapping mapping;
+      input Boolean resize;
       output ComponentRef cref;
     protected
       Pointer<Variable> var;
-      Integer arr, start, size;
+      Integer start;
       Type ty;
+      list<Dimension> dims;
       list<Integer> sizes, vals;
+      list<Subscript> subs;
     algorithm
-      arr := mapping.var_StA[scal];
-      (start, size) := mapping.var_AtS[arr];
+      // get array index, start of scalar index and size
+      (start, _) := mapping.var_AtS[arr];
+
+      // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
       Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
-      vals := listReverse(Slice.indexToLocation(scal-start, sizes));
-      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+
+      // get the dimensions, their sizes and the respective index values for the subscripts
+      dims  := Type.arrayDims(ty);
+      sizes := list(Dimension.size(dim, resize) for dim in dims);
+      vals  := listReverse(Slice.indexToLocation(scal-start, sizes));
+
+      // thread them to the apropriate subscripts and merge them to the cref
+      subs := list(Subscript.nth(dim, val+1) threaded for dim in dims, val in vals);
+      cref := ComponentRef.mergeSubscripts(subs, cref, true, true);
     end varSlice;
 
   protected
@@ -2223,6 +2613,7 @@ public
 
     record VAR_DATA_SIM
       "Only to be used for simulation systems."
+      Pointer<Integer> uniqueIndex        "use when trying to create unique variables";
       VariablePointers variables          "All variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
@@ -2262,7 +2653,6 @@ public
       VariablePointers variables          "All jacobian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All result and temporary vars"; // FIXME unused?
-      VariablePointers knowns             "Parameters, constants";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";
@@ -2385,7 +2775,7 @@ public
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
-              VariablePointers.toString(varData.resizables, "Resizable Parameters", NONE(), false) +
+              VariablePointers.toString(varData.resizables, "Resizable Parameter", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
               VariablePointers.toString(varData.records, "Record", NONE(), false) +
@@ -2404,7 +2794,6 @@ public
               VariablePointers.toString(varData.resultVars, "Residual", NONE(), false) +
               VariablePointers.toString(varData.tmpVars, "Inner", NONE(), false) +
               VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
-              VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
               VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
               VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           end if;
@@ -2458,6 +2847,18 @@ public
       end match;
     end setVariables;
 
+    function getUniqueIndex
+      input VarData varData;
+      output Pointer<Integer> uniqueIndex;
+    algorithm
+      uniqueIndex := match varData
+        case VAR_DATA_SIM() then varData.uniqueIndex;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because of incorrect record type."});
+        then fail();
+      end match;
+    end getUniqueIndex;
+
     function getStateOrder
       input VarData varData;
       output UnorderedMap<ComponentRef, ComponentRef> state_order;
@@ -2479,6 +2880,8 @@ public
       input list<Pointer<Variable>> var_lst;
       input VarType varType;
     algorithm
+      if listEmpty(var_lst) then return; end if;
+
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
@@ -2523,6 +2926,7 @@ public
         then varData;
 
         case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.parameters  := VariablePointers.addList(var_lst, varData.parameters);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;
@@ -2542,7 +2946,7 @@ public
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.records     := VariablePointers.addList(var_lst, varData.records);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
-          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
+          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerUnkownRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases
@@ -2553,6 +2957,76 @@ public
       end match;
     end addTypedList;
 
+    function removeTypedCheck
+      "can also be used to add single variables"
+      input output VarData varData;
+      input checkVar func;
+      input VarType varType;
+    algorithm
+      varData := match (varData, varType)
+
+        case (VAR_DATA_SIM(), VarType.STATE) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+          varData.states      := VariablePointers.removeCheck(varData.states, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.STATE_DER) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.derivatives := VariablePointers.removeCheck(varData.derivatives, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.ALGEBRAIC) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.algebraics  := VariablePointers.removeCheck(varData.algebraics, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.discretes   := VariablePointers.removeCheck(varData.discretes, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.START) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.parameters  := VariablePointers.removeCheck(varData.parameters, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+          varData.artificials := VariablePointers.removeCheck(varData.artificials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.CLOCK) algorithm
+          varData.clocks      := VariablePointers.removeCheck(varData.clocks, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.RECORD) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.records     := VariablePointers.removeCheck(varData.records, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+        then varData;
+
+        // ToDo: other cases
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end removeTypedCheck;
   end VarData;
 
   // ==========================================================================
@@ -2566,5 +3040,5 @@ protected
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;

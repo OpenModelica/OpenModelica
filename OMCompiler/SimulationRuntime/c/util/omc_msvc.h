@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 #ifndef __OPENMODELICA_MSVC_H
@@ -57,8 +54,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define NAN (__NAN.Value)
 #endif
 
-/* for non GNU compilers */
-#ifndef __GNUC__
+/* for non GNU compilers (clang-cl supports __attribute__, so exclude it) */
+#if !defined(__GNUC__) && !defined(__clang__)
 #define __attribute__(x)
 #endif
 
@@ -100,10 +97,10 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 
 #include <float.h>
-#if !defined(isinf)
+#if !defined(isinf) && !defined(__clang__)
 #define isinf(d) (!_finite(d) && !_isnan(d))
 #endif
-#if !defined(isnan)
+#if !defined(isnan) && !defined(__clang__)
 #define isnan _isnan
 #endif
 #define fpu_error(x) (isinf(x) || isnan(x))
@@ -115,6 +112,9 @@ unsigned int alarm (unsigned int seconds);
 #define snprintf snprintf_s
 #endif
 #endif
+
+/* POSIX strtok_r is strtok_s on MSVC (identical signature). */
+#define strtok_r strtok_s
 
 #else /* not msvc */
 
@@ -159,13 +159,13 @@ typedef struct {
 
 char* mkdtemp(char *tpl);
 void* omc_dlopen(const char *filename, int flag);
-const char* omc_dlerror();
+const char* omc_dlerror(void);
 void* omc_dlsym(void *handle, const char *symbol);
 int omc_dlclose(void *handle);
 int omc_dladdr(void *addr, Dl_info *info);
 
 void* dlopen(const char *filename, int flag);
-const char* dlerror();
+const char* dlerror(void);
 void* dlsym(void *handle, const char *symbol);
 int dlclose(void *handle);
 int dladdr(void *addr, Dl_info *info);

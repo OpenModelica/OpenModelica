@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -54,7 +58,7 @@ public
 
 encapsulated package AvailableLibraries
   import BaseAvlTree;
-  import VersionMap;
+  import PackageManagement.VersionMap;
   extends BaseAvlTree;
   redeclare type Key = String;
   redeclare type Value = PackageManagement.VersionMap.Tree;
@@ -168,7 +172,7 @@ protected
   String str;
   SemanticVersion.Version thisVersion;
 algorithm
-  _ := match wantedVersion
+  () := match wantedVersion
     case SemanticVersion.NONSEMVER(str) guard str == "default" or str == ""
       algorithm
         matches := true; /* Any version matches the empty */
@@ -321,7 +325,6 @@ function getAllProvidedVersionsForLibrary
 protected
   JSON obj, libobject, vers, provides;
   AvlSetString.Tree tree;
-  list<JSON> values;
 algorithm
   result := {};
   tree := AvlSetString.new();
@@ -412,7 +415,6 @@ function versionsThatConvertToTheWanted
 protected
   JSON obj, libobject, vers;
   SemanticVersion.Version wantedVersion, libVersion;
-  String versionStr;
 algorithm
   result := {};
   try
@@ -629,7 +631,7 @@ protected
   SemanticVersion.Version semverToInstall, semver;
   JSON index, versionObj, versionsObj, usesObj;
   Boolean indexHasPkg;
-  PackageInstallInfo packageToInstall;
+  Option<PackageInstallInfo> packageToInstall = NONE();
 algorithm
   candidates := versionsThatProvideTheWanted(pkg, version, printError=true);
   candidatesSemver := list(SemanticVersion.parse(candidate) for candidate in candidates);
@@ -681,7 +683,7 @@ algorithm
       else
         zip := "";
       end if;
-      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject());
+      packageToInstall := SOME(PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject()));
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
@@ -702,25 +704,25 @@ algorithm
   end if;
 
   if not indexHasPkg then
-    packagesToInstall := packageToInstall :: packagesToInstall;
+    packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
     return;
   end if;
 
   versionsObj := JSON.get(JSON.get(JSON.get(index, "libs"), pkg), "versions");
   if success and not JSON.hasKey(versionsObj, versionToInstall) then
-    packagesToInstall := packageToInstall :: packagesToInstall;
+    packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
     return;
   end if;
   versionObj := JSON.get(versionsObj, versionToInstall);
 
   if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
     success := true;
-    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj);
+    packageToInstall := SOME(PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj));
   end if;
 
   usesObj := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
 
-  packagesToInstall := packageToInstall :: packagesToInstall;
+  packagesToInstall := Util.getOption(packageToInstall) :: packagesToInstall;
 
   for usesPackage in JSON.getKeys(usesObj) loop
     JSON.STRING(usedVersion) := JSON.get(usesObj, usesPackage);
@@ -810,5 +812,5 @@ algorithm
   info := SOURCEINFO(fileName, true, 0, 0, 0, 0, 0.0);
 end makeSourceInfo;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end PackageManagement;

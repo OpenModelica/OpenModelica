@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -111,6 +108,91 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo)
 }
 
 /**
+ * @brief Allocate memory for reverse index maps.
+ *
+ * Free with `freeArrayReverseIndexMaps`.
+ *
+ * TODO: Allocate memory for missing maps or remove.
+ *
+ * @param modelData         Model data containing number of scalarized variables.
+ * @param simulationInfo    Simulation information with reverse index arrays to
+ *                          allocate memory for.
+ * @param threadData        Thread data for error handling.
+ */
+void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
+                                   SIMULATION_INFO *simulationInfo,
+                                   threadData_t *threadData)
+{
+  // Variables
+  simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = NULL;
+  // simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = NULL;
+  // simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = NULL;
+  // simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+
+  // Parameters
+  simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = NULL;
+  // simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = NULL;
+  // simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = NULL;
+  // simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+
+  // Alias variables
+  simulationInfo->realAliasReverseIndex = NULL;
+  // simulationInfo->realAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasReal, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->realAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerAliasReverseIndex = NULL;
+  // simulationInfo->integerAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanAliasReverseIndex = NULL;
+  // simulationInfo->booleanAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringAliasReverseIndex = NULL;
+  // simulationInfo->stringAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringAliasReverseIndex != NULL, "Out of memory");
+}
+
+/**
+ * @brief Free memory of reverse variable index maps.
+ *
+ * Free memory allocated by `allocateArrayReverseIndexMaps`.
+ *
+ * @param simulationInfo    Simulation info with reverse index arrays to free.
+ */
+void freeArrayReverseIndexMaps(SIMULATION_INFO *simulationInfo)
+{
+  // Variables
+  free(simulationInfo->realVarsReverseIndex);
+  free(simulationInfo->integerVarsReverseIndex);
+  free(simulationInfo->booleanVarsReverseIndex);
+  free(simulationInfo->stringVarsReverseIndex);
+
+  // Parameters
+  free(simulationInfo->realParamsReverseIndex);
+  free(simulationInfo->integerParamsReverseIndex);
+  free(simulationInfo->booleanParamsReverseIndex);
+  free(simulationInfo->stringParamsReverseIndex);
+
+  // Alias variables
+  free(simulationInfo->realAliasReverseIndex);
+  free(simulationInfo->integerAliasReverseIndex);
+  free(simulationInfo->booleanAliasReverseIndex);
+  free(simulationInfo->stringAliasReverseIndex);
+}
+
+/**
  * @brief Get parameter by ID.
  *
  * @param id                    Identifier (value reference) to search for.
@@ -188,7 +270,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
     case DIMENSION_BY_VALUE_REFERENCE:
       structuralParameter = getParamById(dimensionAttribute->valueReference, integerParameterData, nParametersIntegerArray);
       assertStreamPrint(NULL, structuralParameter != NULL,
-                        "Could not find parameter with id '%ld'.\n"
+                        "Could not find parameter with id '" OMC_INT_FORMAT "'.\n"
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
@@ -213,35 +295,25 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
  * @param name            Name of array variable.
  * @param dimension_info  Dimension info for array variable.
  */
-void printFlattenedNames(FILE *stream, const char* separator, const char *name, DIMENSION_INFO *dimension_info)
+void printFlattenedNames(FILE *stream,
+                         const char* separator,
+                         const char *name,
+                         DIMENSION_INFO *dimension_info)
 {
-  if (dimension_info == NULL || dimension_info->numberOfDimensions <= 0 || dimension_info->dimensions == NULL)
-  {
-    throwStreamPrint(NULL, "Invalid dimension info.");
-  }
-  if (stream == NULL)
-  {
-    throwStreamPrint(NULL, "Invalid stream.");
-  }
-  if (separator == NULL)
-  {
-    throwStreamPrint(NULL, "Invalid separator.");
-  }
+  assertStreamPrint(NULL, dimension_info != NULL && dimension_info->numberOfDimensions > 0 && dimension_info->dimensions != NULL, "Invalid dimension info.");
+  assertStreamPrint(NULL, stream != NULL, "Invalid stream.");
+  assertStreamPrint(NULL, separator != NULL, "Invalid separator.");
 
   /* Temporary index array */
-  size_t *idx = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t));
-  if (!idx)
-  {
-    throwStreamPrint(NULL, "Out of memory.");
-  }
+  size_t *idx = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t)); // FIXME allocate once, outside this function
+  assertStreamPrint(NULL, idx != NULL, "Out of memory");
 
   /* initialize with all ones (Modelica subscripts are one-based) */
   for (size_t k = 0; k < dimension_info->numberOfDimensions; k++) {
     idx[k] = 1;
   }
 
-  for (size_t linear = 0; linear < dimension_info->scalar_length; linear++)
-  {
+  for (size_t linear = 0; linear < dimension_info->scalar_length; linear++) {
     /* write indices */
     fprintf(stream, "%s\"%s[%zu", separator, name, idx[0]);
     for (size_t k = 1; k < dimension_info->numberOfDimensions; ++k) {
@@ -250,7 +322,7 @@ void printFlattenedNames(FILE *stream, const char* separator, const char *name, 
     fprintf(stream, "]\"");
 
     /* increment multi-dimensional indices (row-major) */
-    for (size_t k = dimension_info->numberOfDimensions - 1; k < dimension_info->numberOfDimensions; k--) {
+    for (size_t k = dimension_info->numberOfDimensions - 1; k < dimension_info->numberOfDimensions; --k) {
       if (idx[k] < (size_t)dimension_info->dimensions[k].start) {
         idx[k]++;   /* increment minor index if possible */
         break;      /* done */
@@ -298,30 +370,65 @@ void printFlattenedNames(FILE *stream, const char* separator, const char *name, 
  * @return size_t*          Array of indices (zero-based),
  *                          caller is responsible to free with `free`.
  */
-size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info, size_t linear_address)
+size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
+                                   size_t linear_address)
 {
-  if (dimension_info == NULL || dimension_info->numberOfDimensions <= 0 || dimension_info->dimensions == NULL)
-  {
-    throwStreamPrint(NULL, "Invalid dimension info.");
-  }
-
-  if(linear_address >= dimension_info->scalar_length) {
-    throwStreamPrint(NULL, "Array out of range: %zu not in [0, %zu]", linear_address, dimension_info->scalar_length);
-  }
+  assertStreamPrint(NULL, dimension_info != NULL && dimension_info->numberOfDimensions > 0 && dimension_info->dimensions != NULL, "Invalid dimension info.");
+  assertStreamPrint(NULL, linear_address < dimension_info->scalar_length, "Array out of range: %zu not in [0, %zu]", linear_address, dimension_info->scalar_length);
 
   /* Allocate array for indices; caller is responsible for freeing */
   size_t *array_index = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t));
-  if (!array_index)
-  {
-    throwStreamPrint(NULL, "Out of memory.");
-  }
+  assertStreamPrint(NULL, array_index != NULL, "Out of memory");
 
-  for (size_t k = dimension_info->numberOfDimensions; k; k++) {
+  for (size_t k = dimension_info->numberOfDimensions -1; k < dimension_info->numberOfDimensions; --k) {
     array_index[k] = linear_address % dimension_info->dimensions[k].start;
     linear_address = linear_address / dimension_info->dimensions[k].start;
   }
 
   return array_index;
+}
+
+/**
+ * @brief Format a flattened (row-major) index into multi-dimensional indices.
+ *
+ * Converts `linear_address` into a sequence of multi-dimensional indices
+ * according to `dimension_info` and writes the result into `buffer` as
+ * for example "[i][j][k]". If `dimension_info` is NULL or has zero
+ * dimensions an empty string is written.
+ *
+ * The caller must ensure `buffer` has sufficient space for the output. When
+ * `dimension_info` is non-NULL the `linear_address` must be within bounds
+ * (i.e. less than `dimension_info->scalar_length`).
+ *
+ * @param dimension_info Pointer to the dimension metadata (may be NULL).
+ * @param linear_address Flattened (row-major) index to convert.
+ * @param buffer         Destination buffer where formatted indices are written.
+ * @param buffer_size    Size of `buffer` in bytes.
+ */
+void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
+                             size_t linear_address,
+                             char* buffer,
+                             size_t buffer_size)
+{
+  if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
+  {
+    if (buffer_size > 0)
+    {
+      buffer[0] = '\0';
+    }
+    return;
+  }
+
+  size_t written = 0;
+  size_t *array_index = linearToMultiDimArrayIndex(dimension_info, linear_address);
+
+  for (size_t dim = 0; dim < dimension_info->numberOfDimensions; dim++)
+  {
+    written += snprintf(buffer + written, buffer_size - written - 1, "[%zu]", array_index[dim]);
+  }
+
+  free(array_index);
+  return;
 }
 
 /**
@@ -356,24 +463,18 @@ size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info, size_t linear
  * @param array_index       Array of indices (zero-based)
  * @return size_t           Linear array address.
  */
-size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension_info, size_t* array_index) {
+size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension_info,
+                                  size_t* array_index)
+{
   size_t linear_address = 0;
 
-  if (dimension_info == NULL || dimension_info->numberOfDimensions <= 0 || dimension_info->dimensions == NULL)
-  {
-    throwStreamPrint(NULL, "Invalid dimension info.");
-  }
+  assertStreamPrint(NULL, dimension_info != NULL && dimension_info->numberOfDimensions > 0 && dimension_info->dimensions != NULL, "Invalid dimension info.");
+  assertStreamPrint(NULL, array_index != NULL, "Array index pointer is NULL.");
 
-  if (array_index == NULL)
-  {
-    throwStreamPrint(NULL, "Array index pointer is NULL.");
-  }
-
-  for (size_t k = 0; k < dimension_info->numberOfDimensions; k++) {
-    if (array_index[k] >= dimension_info->dimensions[k].start) {
-      throwStreamPrint(NULL, "Index out of bounds: array_index[%zu] = %zu >= %zu",
+  for (size_t k = 0; k < dimension_info->numberOfDimensions; ++k) {
+    assertStreamPrint(NULL, array_index[k] <  dimension_info->dimensions[k].start,
+                      "Index out of bounds: array_index[%zu] = %zu >= %zu",
                       k, array_index[k], dimension_info->dimensions[k].start);
-    }
 
     linear_address = linear_address * dimension_info->dimensions[k].start + array_index[k];
   }
@@ -466,24 +567,24 @@ void computeVarsIndex(void *variableData,
   {
     switch (type)
     {
-    case T_REAL:
+    case VAR_TYPE_REAL:
       dimensionInfo = &((STATIC_REAL_DATA *)variableData)[i].dimension;
       id = ((STATIC_REAL_DATA *)variableData)[i].info.id;
       break;
-    case T_INTEGER:
+    case VAR_TYPE_INTEGER:
       dimensionInfo = &((STATIC_INTEGER_DATA *)variableData)[i].dimension;
       id = ((STATIC_INTEGER_DATA *)variableData)[i].info.id;
       break;
-    case T_BOOLEAN:
+    case VAR_TYPE_BOOLEAN:
       dimensionInfo = &((STATIC_BOOLEAN_DATA *)variableData)[i].dimension;
       id = ((STATIC_BOOLEAN_DATA *)variableData)[i].info.id;
       break;
-    case T_STRING:
+    case VAR_TYPE_STRING:
       dimensionInfo = &((STATIC_STRING_DATA *)variableData)[i].dimension;
       id = ((STATIC_STRING_DATA *)variableData)[i].info.id;
       break;
     default:
-      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
+      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type %d.", (int) type);
     }
 
     assertStreamPrint(NULL, id == 0 || id > previous_id,      // TODO: FMUs don't set id
@@ -528,17 +629,17 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
                        MODEL_DATA *modelData)
 {
   // Variables
-  computeVarsIndex(modelData->realVarsData, T_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsIndex);
+  computeVarsIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsIndex);
   // TODO: Are states, state derivatives, algebraic variables and discrete algebraic variables handled with this?
-  computeVarsIndex(modelData->integerVarsData, T_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsIndex);
-  computeVarsIndex(modelData->booleanVarsData, T_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsIndex);
-  computeVarsIndex(modelData->stringVarsData, T_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsIndex);
+  computeVarsIndex(modelData->integerVarsData, VAR_TYPE_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsIndex);
+  computeVarsIndex(modelData->booleanVarsData, VAR_TYPE_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsIndex);
+  computeVarsIndex(modelData->stringVarsData, VAR_TYPE_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsIndex);
 
   // Parameters
-  computeVarsIndex(modelData->realParameterData, T_REAL, modelData->nParametersRealArray, simulationInfo->realParamsIndex);
-  computeVarsIndex(modelData->integerParameterData, T_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsIndex);
-  computeVarsIndex(modelData->booleanParameterData, T_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsIndex);
-  computeVarsIndex(modelData->stringParameterData, T_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsIndex);
+  computeVarsIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsIndex);
+  computeVarsIndex(modelData->integerParameterData, VAR_TYPE_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsIndex);
+  computeVarsIndex(modelData->booleanParameterData, VAR_TYPE_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsIndex);
+  computeVarsIndex(modelData->stringParameterData, VAR_TYPE_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsIndex);
 
   // TODO: Sensitivity parameter array + index
 
@@ -547,4 +648,308 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
   computeAliasIndex(simulationInfo->integerAliasIndex, modelData->nAliasIntegerArray);
   computeAliasIndex(simulationInfo->booleanAliasIndex, modelData->nAliasBooleanArray);
   computeAliasIndex(simulationInfo->stringAliasIndex, modelData->nAliasStringArray);
+}
+
+/**
+ * @brief Compute variable reverse index map of one type.
+ *
+ * Compute where a variable `SIMULATION_DATA-><TYPE>Vars` originates from in
+ * `MODEL_DATA-><TYPE>VarsData`. So for every scalarized index this functions
+ * computes a look up to get the index of the corresponding scalar/ array
+ * varible and the index inside the array variable.
+ *
+ * @param variableData    Model variable data. Is of type `STATIC_REAL_DATA*`,
+ *                        `STATIC_INTEGER_DATA*`, `STATIC_BOOLEAN_DATA*` or
+ *                        `STATIC_STRING_DATA*`.
+ * @param type            Specifies type of model variable `variableData`.
+ * @param num_variables   Number of scalar + array variables (before flattening).
+ * @param reverseIndex    Variable reverse index to compute.
+ */
+void computeVarsReverseIndex(void *variableData,
+                             enum var_type type,
+                             size_t num_variables,
+                             array_index_t* reverseIndex)
+{
+  size_t scalar_length;
+  size_t i = 0;
+
+  for (size_t var_count = 0; var_count < num_variables; var_count++)
+  {
+    switch (type)
+    {
+    case VAR_TYPE_REAL:
+      scalar_length = ((STATIC_REAL_DATA *)variableData)[var_count].dimension.scalar_length;
+      break;
+    case VAR_TYPE_INTEGER:
+      scalar_length = ((STATIC_INTEGER_DATA *)variableData)[var_count].dimension.scalar_length;
+      break;
+    case VAR_TYPE_BOOLEAN:
+      scalar_length = ((STATIC_BOOLEAN_DATA *)variableData)[var_count].dimension.scalar_length;
+      break;
+    case VAR_TYPE_STRING:
+      scalar_length = ((STATIC_STRING_DATA *)variableData)[var_count].dimension.scalar_length;
+      break;
+    default:
+      throwStreamPrint(NULL, "computeVarsReverseIndex: Illegal variable type case.");
+    }
+
+    for (size_t dim = 0; dim < scalar_length; dim++, i++) {
+      reverseIndex[i].array_idx = var_count;
+      reverseIndex[i].dim_idx = dim;
+    }
+  }
+}
+/**
+ * @brief Compute all mappings for scalarized variables to array variables.
+ *
+ * TODO: Add rest
+ *
+ * @param simulationInfo  Simulation info with index maps to set.
+ * @param modelData       Model data with number of variables.
+ */
+void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
+                              MODEL_DATA *modelData)
+{
+  // Variables
+  computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+
+  // Parameters
+  computeVarsReverseIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsReverseIndex);
+}
+
+/**
+ * @brief Get start attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing start.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get start for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  start attribute value
+ */
+modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                    const MODEL_DATA *modelData,
+                                    enum var_type type,
+                                    enum var_kind kind,
+                                    size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nStates,
+                            "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nStates);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
+                            "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nVariablesReal);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
+                            "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nParametersReal);
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getStartFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getStartFromScalarIdx only implemented for VAR_TYPE_REAL.");
+  }
+}
+
+/**
+ * @brief Get nominal attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing nominal.
+ * @param kind            Kind of variable to get nominal for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index of real variable.
+ * @return modelica_real  Nominal value
+ */
+modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                      const MODEL_DATA *modelData,
+                                      enum var_kind kind,
+                                      size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch(kind)
+  {
+    case VAR_KIND_STATE:
+      assertStreamPrint(NULL, scalar_idx < modelData->nStates,
+                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                        scalar_idx, modelData->nStates);
+      revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    case VAR_KIND_VARIABLE:
+      assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
+                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                        scalar_idx, modelData->nVariablesReal);
+      revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    case VAR_KIND_PARAMETER:
+      assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
+                        "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                        scalar_idx, modelData->nParametersReal);
+      revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+      return real_get(modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    default:
+      throwStreamPrint(NULL,
+        "getNominalFromScalarIdx not implemented for variables of kind %s.",
+        var_kind_names[kind]);
+  }
+}
+
+/**
+ * @brief Get min attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing min.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get min for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  min attribute value
+ */
+modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                  const MODEL_DATA *modelData,
+                                  enum var_type type,
+                                  enum var_kind kind,
+                                  size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nStates,
+                            "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nStates);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
+                            "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nVariablesReal);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
+                            "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nParametersReal);
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getMinFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getMinFromScalarIdx only implemented for VAR_TYPE_REAL.");
+  }
+}
+
+/**
+ * @brief Get max attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing max.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get max for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  max attribute value
+ */
+modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                  const MODEL_DATA *modelData,
+                                  enum var_type type,
+                                  enum var_kind kind,
+                                  size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nStates,
+                            "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nStates);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          assertStreamPrint(NULL, scalar_idx < modelData->nVariablesReal,
+                            "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nVariablesReal);
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          assertStreamPrint(NULL, scalar_idx < modelData->nParametersReal,
+                            "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                            scalar_idx, modelData->nParametersReal);
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getMaxFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getMaxFromScalarIdx only implemented for VAR_TYPE_REAL.");
+  }
 }

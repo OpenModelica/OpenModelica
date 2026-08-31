@@ -2,6 +2,7 @@
 // depends: test.json
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 
 setCommandLineOptions("-g=MetaModelica -d=gen,rml,noevalfunc");
 echo(false);
@@ -23,8 +24,6 @@ getErrorString();
 loadFile(pathPrefix + "Util/ErrorTypes.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Flags.mo");
-getErrorString();
-loadFile(pathPrefix + "Util/Gettext.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Mutable.mo");
 getErrorString();
@@ -55,8 +54,6 @@ getErrorString();
 // Result:
 // true
 // true
-// true
-// ""
 // true
 // ""
 // true

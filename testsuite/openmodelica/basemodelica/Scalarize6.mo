@@ -19,8 +19,8 @@ end Scalarize6;
 // //! base 0.1.0
 // package 'Scalarize6'
 //   function 'f'
-//     input Real[3] 'x';
-//     output Real[3] 'y' = {'x'[1] * 2.0, 'x'[2] * 2.0, 'x'[3] * 2.0};
+//     input Real 'x'[3];
+//     output Real 'y'[3] = {'x'[1] * 2.0, 'x'[2] * 2.0, 'x'[3] * 2.0};
 //   end 'f';
 //
 //   model 'Scalarize6'

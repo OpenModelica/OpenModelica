@@ -18,7 +18,6 @@ algorithm
   M[4] := fill(5, 4, 2);
   M[4] := v; // Updates M to become
   // {{5, 5}, {5, 5},{5, 5}, {10, 11}}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubArrayIndex;
 
 // insert expected flat file here. Can be done by issuing the command

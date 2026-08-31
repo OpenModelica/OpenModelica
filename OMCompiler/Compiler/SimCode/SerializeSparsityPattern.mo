@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -41,17 +45,40 @@ function serialize
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
+  list<tuple<Integer, list<Integer>>> pattern;
+  list<list<Integer>> colorList;
 algorithm
   for jac in code.jacobianMatrices loop
-    if not listEmpty(jac.sparsity) then
-      fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
-      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
-      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
-      serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
-      for color in jac.coloredCols loop
-        columns := listArray(color);
-        serializeColor(fname, arrayLength(columns), columns);
-      end for;
+    // NBackEnd jacobians carry sparsity in sparsityMatrix (SPARSITY) and use
+    // computeColumnColoring at runtime — no .bin file is needed for them.
+    // Old backend jacobians have sparsityMatrix = EMPTY() and store integer-indexed
+    // sparsity/coloring in sparsity/coloredCols/coloredRows, which we serialize here.
+    if match jac.sparsityMatrix case SimCode.Sparsity.EMPTY() then true; else false; end match then
+      // pick sparsity and coloring depending on isAdjoint boolean
+      if jac.isAdjoint then
+        pattern := jac.sparsityT;
+        // if adjoint then row coloring must exist else fail
+        if not listEmpty(jac.coloredRows) then
+          colorList := jac.coloredRows;
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no row coloring for the adjoint jacobian exists."});
+          fail();
+        end if;
+      else
+        pattern := jac.sparsity;
+        colorList := jac.coloredCols;
+      end if;
+
+      if not listEmpty(pattern) then
+        fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
+        columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in pattern));
+        rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in pattern)));
+        serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
+        for color in colorList loop
+          columns := listArray(color);
+          serializeColor(fname, arrayLength(columns), columns);
+        end for;
+      end if;
     end if;
   end for;
 end serialize;
@@ -135,5 +162,5 @@ protected
   ");
   end serializeColor;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end SerializeSparsityPattern;

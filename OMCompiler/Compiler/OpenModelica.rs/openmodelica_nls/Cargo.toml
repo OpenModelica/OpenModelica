@@ -1,0 +1,45 @@
+# The nonlinear algebraic solver every `SES_NONLINEAR` system is put through:
+# C's `solve_nonlinear_system` and the Newton / homotopy / MINPACK ladder under it
+# (`nonlinearSystem.c`, `nonlinearSolverHomotopy.c`, `nonlinearSolverNewton.c`,
+# `nonlinearSolverHybrd.c`, `newton_diagnostics.c`).
+#
+# Its own crate because it has two hosts and no host of its own: the wasm-jit
+# runtime drives it over `__indirect_function_table` indices and linear-memory
+# addresses, `openmodelica_simulation_runtime` over `NONLINEAR_SYSTEM_DATA`.
+# Everything here is a port of OpenModelica's own runtime; the upstream numerics
+# it calls stay in the crates that own them (`minpack`, `openmodelica_lapack`,
+# and the SUNDIALS archives, which reach it through `NlsBackend`).
+[package]
+name = "openmodelica_nls"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+std = ["openmodelica_solvers/std"]
+# `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
+# KINSOL/KLU calls undefined, as imports the FMU's SUNDIALS side module resolves.
+sundials_extern = ["openmodelica_solvers/sundials_extern"]
+# PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. The wasm
+# archive already carries `src/primme_svds.c`; a native host names
+# `OMC_PRIMME_NATIVE_DIR` and build.rs compiles the shim there.
+primme = []
+
+[dependencies]
+# The `-lv` stream table and message layout it logs through, the flag-derived
+# solver selections it dispatches on, the per-system statistics it measures into,
+# and the diagnostic counters it keeps.
+openmodelica_solvers = { path = "../openmodelica_solvers", default-features = false }
+# C's default nonlinear solver: `hybrd`/`hybrj` (`nonlinearSolverHybrd.c` is a
+# wrapper over exactly these). no_std + libm, so the in-wasm runtime compiles the
+# same code.
+minpack = { path = "../minpack", default-features = false }
+# `dgetrf`/`dgetrs`/`dgesv` for the dense factorizations, and `dgetri` for the
+# Newton diagnostics. Without `fortran-abi`: the callers link the system liblapack,
+# and defining the `d*_` symbols here would collide with it.
+openmodelica_lapack = { path = "../openmodelica_lapack" }
+# no_std `fabs`/`sqrt`/`pow` for the solver math.
+libm = "0.2"
+
+[build-dependencies]
+cc.workspace = true

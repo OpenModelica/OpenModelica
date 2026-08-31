@@ -1,0 +1,68 @@
+cargo-features = ["panic-immediate-abort"]
+
+# Model-agnostic FMI 3.0 Model-Exchange adapter, compiled ONCE to
+# wasm32-unknown-unknown and merged (wasm-merge) with a per-model kernel module
+# emitted by CodegenWasmJit, then componentized (wit-component) into an
+# fmi-ls-wasm component. It implements the `fmi:fmi3/model-exchange-fmu` world
+# and drives the model through the kernel functions imported from module `model`.
+#
+# It links `openmodelica_codegen_wasm_jit_runtime` (default-features off, so the
+# `rt_sim_*` session driver and its `env` table import are dropped, as is the
+# `host_log` sink — there is no `env` host to import one from) purely for the
+# shared dlmalloc allocator + `rt_*` primitives + linear memory: the merged module
+# then has ONE allocator/heap shared by the model's `rt_alloc` and wit-bindgen's
+# `cabi_realloc`. See openmodelica_codegen_wasm_jit/build.rs for how it is built
+# and embedded (same pattern as the linear-memory runtime).
+#
+# Standalone `[workspace]` so the host (native) workspace never builds this
+# wasm-only cdylib.
+[package]
+name = "openmodelica_fmi3_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
+openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+# The result-file serializers, for the `om:sim/simulation` export: the same
+# writers the standalone export and the host use, so the three cannot drift.
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_plt_writer = { path = "../openmodelica_plt_writer" }
+openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+# Not just `abort`: a panic here can only become a wasm trap anyway (no stderr on
+# wasm32-unknown-unknown), so aborting at the site makes std's formatting/hook
+# machinery unreachable to LTO as well — ~61 KB per adapter.
+panic = "immediate-abort"
+strip = true
+
+[workspace]
+
+[features]
+# The FMI interfaces this build exports. `me` alone → Model Exchange, `cs` alone
+# → Co-Simulation, both → a single me_cs component exporting both.
+default = ["me"]
+me = []
+cs = []
+# Export the FMI 3.0 C API from the core module (src/capi.rs) beside the
+# component's WIT exports, for a host that links this module as a dylink library
+# instead of composing it into a per-model component — and can then compile it
+# once and keep the `.cwasm`, as it already does for the simulation runtime.
+capi = []
+# Both sparse-solve paths, chosen at run time by `rt_set_host_lin_solve`: the
+# host's native solver when one is instantiating this (1.3-2.7x on the large
+# systems of ScalableTestSuite's advection models), the in-wasm one otherwise.
+host_lin_solve = ["openmodelica_codegen_wasm_jit_runtime/host_lin_solve",
+                  "openmodelica_codegen_wasm_jit_runtime/inwasm_solve"]
+# The SUNDIALS/SuiteSparse/Lis solvers for the embedded driver -- CVODE, IDA, KINSOL,
+# KLU, UMFPACK, Lis -- as imports the FMU's SUNDIALS side module resolves. On for the
+# `me_cs` blob, which is the only one that embeds a driver.
+sundials = ["openmodelica_sim_meta/sundials_extern",
+            "openmodelica_codegen_wasm_jit_runtime/sundials_extern"]

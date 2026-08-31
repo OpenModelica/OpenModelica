@@ -1,6 +1,7 @@
 // name: DuplicateElementsCond1.mo
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 //
 

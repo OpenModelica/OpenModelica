@@ -83,11 +83,12 @@ package MatchCaseInteractive1
     output Real out;
   algorithm
     out := matchcontinue (tup)
+      local Real r;
       case (2,1.0,true,"abc") then 1;
       case (1,2.0,true,"abc") then 2;
       case (1,1.0,false,"abc") then 3;
       case (1,1.0,true,"abcd") then 4;
-      case (_,r,_,_) local Real r; then r;
+      case (_,r,_,_) then r;
       case _ then -1;
     end matchcontinue;
   end tupleFunc;

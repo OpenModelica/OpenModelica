@@ -7,7 +7,7 @@ OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/@host_short@/omc
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
 BOOST_HOME = @BOOSTHOME@
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/oneTBB/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=@CC@
 CXX=@CXX@

@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -272,14 +278,15 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
-    QList<Shape*> getGraphics() const {return mGraphics;}
+    QVector<Shape*> getGraphics() const {return mGraphics;}
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
-    CoordinateSystem mMergedCoordinateSystem;
+
+    static IconDiagramAnnotation defaultIconDiagramAnnotation;
   private:
     Model *mpParentModel;
-    QList<Shape*> mGraphics;
+    QVector<Shape*> mGraphics;
   };
 
   class Transformation
@@ -332,6 +339,7 @@ private:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
     const StringAnnotation &getTab() const {return mTab;}
+    bool isTabDefined() const {return mTabDefined;}
     const StringAnnotation &getGroup() const {return mGroup;}
     const BooleanAnnotation &isEnabled() const {return mEnable;}
     bool hasShowStartAttribute() const {return mHasShowStartAttribute;}
@@ -340,10 +348,12 @@ private:
     const Selector &getLoadSelector() const {return mLoadSelector;}
     const Selector &getSaveSelector() const {return mSaveSelector;}
     const Selector &getDirectorySelector() const {return mDirectorySelector;}
+    bool hasGroupImage() const {return mHasGroupImage;}
     const QString &getGroupImage() const {return mGroupImage;}
     const BooleanAnnotation &isConnectorSizing() const {return mConnectorSizing;}
   private:
     StringAnnotation mTab;
+    bool mTabDefined = false;
     StringAnnotation mGroup;
     BooleanAnnotation mEnable;
     bool mHasShowStartAttribute = false;
@@ -352,6 +362,7 @@ private:
     Selector mLoadSelector;
     Selector mSaveSelector;
     Selector mDirectorySelector;
+    bool mHasGroupImage = false;
     StringAnnotation mGroupImage;
     BooleanAnnotation mConnectorSizing;
   };
@@ -366,14 +377,15 @@ private:
 
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
-    const QList<Modifier*> &getChoices() const {return mChoices;}
+    const QVector<Modifier*> &getChoices() const {return mChoices;}
+    QStringList getChoicesDisplayStringList() const;
     QStringList getChoicesValueStringList() const;
     QStringList getChoicesCommentStringList() const;
   private:
     Model *mpParentModel;
     BooleanAnnotation mCheckBox;
     BooleanAnnotation mDymolaCheckBox;
-    QList<Modifier*> mChoices;
+    QVector<Modifier*> mChoices;
   };
 
   class IconDiagramMap
@@ -410,8 +422,10 @@ private:
     ~Annotation();
     void deserialize(const QJsonObject &jsonObject);
 
-    IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
-    IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
+    IconDiagramAnnotation *getIconAnnotation() const;
+    IconDiagramAnnotation *getIconAnnotationWithoutDefault() const;
+    IconDiagramAnnotation *getDiagramAnnotation() const;
+    IconDiagramAnnotation *getDiagramAnnotationWithoutDefault() const;
     const BooleanAnnotation &isState() const {return mState;}
     // Element annotation
     const BooleanAnnotation &isChoicesAllMatching() const {return mChoicesAllMatching;}
@@ -485,14 +499,17 @@ private:
     Model* getParentModel() const {return mpParentModel;}
     const QString &getName() const {return mName;}
     void setName(const QString &newName) {mName = newName;}
+    void setValue(const QString &value) {mValue = value; mValueDefined = true;}
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false, bool includeComment = false) const;
-    Modifier *getModifier(const QString &modifier) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false, bool skipDisplayUnit = false) const;
+    static Modifier *mergeModifiersIntoOne(QVector<const Modifier *> extendsModifiers, Model *pParentModel);
+    static void mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2);
+    Modifier *getModifier(const QString &modifier, bool recursive = false) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
-    const QList<Modifier*> &getModifiers() const {return mModifiers;}
+    const QVector<Modifier*> &getModifiers() const {return mModifiers;}
     void addModifier(const Modifier *pModifier);
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
@@ -501,6 +518,8 @@ private:
     bool isReplaceable() const;
     const QString &getValue() const {return mValue;}
     const QString &getComment() const {return mComment;}
+    bool hasElement() const {return mpElement != 0;}
+    Element *getElement() const {return mpElement;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -512,7 +531,7 @@ private:
     bool mValueDefined = false;
     QString mComment;
     Element *mpElement = 0;
-    QList<Modifier*> mModifiers;
+    QVector<Modifier*> mModifiers;
 
     QString toStringEach() const;
     QString toStringFinal() const;
@@ -600,7 +619,7 @@ private:
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
-    void deserializeElements(const QJsonArray elements);
+    void deserializeElements(const QJsonArray &elements);
     void updateMergedCoordinateSystem();
 
     Element *getParentElement() const {return mpParentElement;}
@@ -623,25 +642,27 @@ private:
     bool isType() const;
     bool isDerivedType() const;
     bool isPartial() const;
+    bool isParameter() const;
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const;
+    Annotation *getAnnotationWithoutDefault() const;
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
     void removeElement(const QString &name);
-    const QList<Element *> &getElements() const {return mElements;}
-    QList<Element *> getComponents() const;
+    const QVector<Element *> &getElements() const {return mElements;}
+    QVector<Element *> getComponents() const;
     size_t componentCount() const;
-    const QList<Import> &getImports() const {return mImports;}
+    const QVector<Import> &getImports() const {return mImports;}
     void addConnection(Connection *pConnection) {mConnections.append(pConnection);}
     void removeConnection(const QString &startConnectorName, const QString &endConnectorName);
-    const QList<Connection *> &getConnections() const {return mConnections;}
+    const QVector<Connection *> &getConnections() const {return mConnections;}
     void addTransition(Transition *pTransition) {mTransitions.append(pTransition);}
     void removeTransition(const QString &startConnectorName, const QString &endConnectorName);
-    const QList<Transition *> &getTransitions() const {return mTransitions;}
+    const QVector<Transition *> &getTransitions() const {return mTransitions;}
     void addInitialState(InitialState *pInitialState) {mInitialStates.append(pInitialState);}
     void removeInitialState(const QString &startConnectorName);
-    const QList<InitialState *> &getInitialStates() const {return mInitialStates;}
+    const QVector<InitialState *> &getInitialStates() const {return mInitialStates;}
     const Source &getSource() const {return mSource;}
 
     bool isParameterConnectorSizing(const QString &parameter);
@@ -650,12 +671,14 @@ private:
     QPair<QString, bool> getVariableValue(QStringList variables);
     QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
+    const FlatModelica::Expression *getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
     Element *lookupElement(const Name &name);
 
+    CoordinateSystem mMergedIconCoordinateSystem;
+    CoordinateSystem mMergedDiagramCoordinateSystem;
   private:
     void initialize();
 
@@ -668,12 +691,12 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
-    QList<Element*> mGeneratedInnerComponents;
-    QList<Element*> mElements;
-    QList<Import> mImports;
-    QList<Connection*> mConnections;
-    QList<Transition*> mTransitions;
-    QList<InitialState*> mInitialStates;
+    QVector<Element*> mGeneratedInnerComponents;
+    QVector<Element*> mElements;
+    QVector<Import> mImports;
+    QVector<Connection*> mConnections;
+    QVector<Transition*> mTransitions;
+    QVector<InitialState*> mInitialStates;
     Source mSource;
   };
 
@@ -685,13 +708,14 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
-    QString getTopLevelExtendName() const;
-    Element *getTopLevelExtendElement() const;
+    QString getTopLevelParentElementName() const;
+    Element *getTopLevelParentElement() const;
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier *getModifier() const {return mpModifier;}
     QPair<QString, bool> getVariableValue(QStringList variables);
     QPair<QString, bool> getModifierValueFromType(QStringList modifierNames);
+    static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
     const Dimensions &getDimensions() const {return mDims;}
     bool isPublic() const;
     bool isFinal() const;
@@ -709,10 +733,10 @@ private:
     const QString &getComment() const;
     Annotation *getAnnotation() const;
     const FlatModelica::Expression &getValue() const {return mValue;}
-    FlatModelica::Expression &getValue() {return mValue;}
+    FlatModelica::Expression &getValue() = delete;
     const FlatModelica::Expression &getBinding() const {return mBinding;}
-    FlatModelica::Expression &getBinding() {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    FlatModelica::Expression &getBinding() = delete;
+    void setBinding(const FlatModelica::Expression &expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
@@ -727,12 +751,15 @@ private:
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const;
 
     QString getDirection() const;
   private:
     virtual void deserialize_impl(const QJsonObject &jsonObject) = 0;
-    static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
+    bool isParameterInPrefixes() const;
+    bool isParameter(const QString &name) const;
+    bool isInputInPrefixes() const;
+    bool isInput(const QString &name) const;
   protected:
     Model *mpParentModel;
     Model *mpModel = 0;
@@ -766,7 +793,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Component : public Element
@@ -780,9 +807,7 @@ private:
     void setType(const QString &type) {mType = type;}
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
-    QList<Modifier*> getExtendsModifiers(const Model *pParentModel) const;
-    Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers) const;
-    static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
+    QVector<const Modifier *> getExtendsModifiers(const Model *pParentModel) const;
   private:
     QString mName;
     bool mCondition = true;
@@ -798,7 +823,7 @@ private:
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class ReplaceableClass : public Element
@@ -826,7 +851,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Part
@@ -851,13 +876,13 @@ private:
 
     QString getName() const;
     QStringList getNameParts() const;
-    const QList<Part> getParts() const { return mParts; }
+    const QVector<Part> getParts() const { return mParts; }
 
     size_t size() const { return mParts.size(); }
     Part first() const { return mParts.empty() ? Part() : mParts[0]; }
 
   private:
-    QList<Part> mParts;
+    QVector<Part> mParts;
   };
 
   class Connector
@@ -889,9 +914,8 @@ private:
   class Connection
   {
   public:
-    Connection(Model *pParentModel);
+    Connection(const QJsonObject &jsonObject, Model *pParentModel);
     Connection(Model *pParentModel, const QString &startConnector, const QString &endConnector, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -903,15 +927,16 @@ private:
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Connector> mpEndConnector;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 
   class Transition
   {
   public:
-    Transition(Model *pParentModel);
+    Transition(const QJsonObject &jsonObject, Model *pParentModel);
     Transition(Model *pParentModel, const QString &startConnector, const QString &endConnector, bool condition, bool immediate, bool reset,
                bool synchronize, int priority, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -938,14 +963,15 @@ private:
     bool mSynchronize;
     int mPriority;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 
   class InitialState
   {
   public:
-    InitialState(Model *pParentModel);
+    InitialState(const QJsonObject &jsonObject, Model *pParentModel);
     InitialState(Model *pParentModel, const QString &startConnector, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -955,6 +981,8 @@ private:
     Model *mpParentModel;
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 } // namespace ModelInstance
 

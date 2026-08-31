@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -149,7 +154,6 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
   mpMessagesTextBrowser->setOpenExternalLinks(false);
-  mpMessagesTextBrowser->setFrameStyle(QFrame::NoFrame);
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
   connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
@@ -288,6 +292,22 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
 }
 
 /*!
+ * \brief MessageWidget::showContextMenu
+ * Shows a context menu when user right click on the Messages tree.
+ * Slot activated when mpMessagesTextBrowser customContextMenuRequested signal is raised.
+ * \param point
+ */
+void MessageWidget::showContextMenu(QPoint point)
+{
+  QMenu menu(this);
+  menu.addAction(mpSelectAllAction);
+  menu.addAction(mpCopyAction);
+  menu.addAction(mpClearThisTabAction);
+  menu.addAction(mpClearAllTabsAction);
+  menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
+}
+
+/*!
  * \brief MessageWidget::openErrorMessageClass
  * Slot activated when a link e.g., "<a href="omeditmessagesbrowser:///className?lineNumber=4></a>" is clicked from MessagesWidget.\n
  * Parses the url and loads the Modelica class with the line selected.
@@ -326,22 +346,6 @@ void MessageWidget::openErrorMessageClass(QUrl url)
                              GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND)
                              .arg(className), QMessageBox::Ok);
   }
-}
-
-/*!
- * \brief MessageWidget::showContextMenu
- * Shows a context menu when user right click on the Messages tree.
- * Slot activated when mpMessagesTextBrowser customContextMenuRequested signal is raised.
- * \param point
- */
-void MessageWidget::showContextMenu(QPoint point)
-{
-  QMenu menu(this);
-  menu.addAction(mpSelectAllAction);
-  menu.addAction(mpCopyAction);
-  menu.addAction(mpClearThisTabAction);
-  menu.addAction(mpClearAllTabsAction);
-  menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
 }
 
 /*!
@@ -549,7 +553,39 @@ SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString 
       return pSimulationOutputWidget;
     }
   }
-  return 0;
+  return nullptr;
+}
+
+/*!
+ * \brief MessagesWidget::getActiveSimulationOutputWidget
+ * Returns the active SimulationOutputWidget if active tab is SimulationOutputWidget.
+ * \return
+ */
+SimulationOutputWidget* MessagesWidget::getActiveSimulationOutputWidget()
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->currentWidget());
+  if (pSimulationOutputWidget) {
+    return pSimulationOutputWidget;
+  }
+  return nullptr;
+}
+
+/*!
+ * \brief MessagesWidget::closeSimulationOutputWidgets
+ * Closes all completed SimulationOutputWidget tabs for \a className.
+ * Tabs whose compilation or simulation is still running are left open.
+ * \param className The Modelica class name to match against.
+ */
+void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
+{
+  for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(i));
+    if (pSimulationOutputWidget && pSimulationOutputWidget->getSimulationOptions().getClassName() == className) {
+      if (closeTab(i)) {
+        --i;
+      }
+    }
+  }
 }
 
 /*!
@@ -560,6 +596,7 @@ SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString 
  */
 bool MessagesWidget::closeTab(int index)
 {
+#if !defined(__EMSCRIPTEN__)
   // Close SimulationOutputWidget
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pSimulationOutputWidget
@@ -586,6 +623,7 @@ bool MessagesWidget::closeTab(int index)
     emit messageTabClosed(index);
     return true;
   }
+#endif
   // Close CRMLTranslatorOutputWidget
   CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {
@@ -610,6 +648,10 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     if (rx.exactMatch(messageItem.getMessage())) {
       return;
     }
+  }
+
+  if (mMCPCollecting) {
+    mMCPMessages.append(messageItem);
   }
 
   switch (messageItem.getErrorType()) {
@@ -685,4 +727,16 @@ void MessagesWidget::clearMessages()
   mpNotificationMessageWidget->clearThisTabMessages();
   mpWarningMessageWidget->clearThisTabMessages();
   mpErrorMessageWidget->clearThisTabMessages();
+}
+
+void MessagesWidget::startMCPMessageCollection()
+{
+  mMCPMessages.clear();
+  mMCPCollecting = true;
+}
+
+QList<MessageItem> MessagesWidget::takeMCPMessages()
+{
+  mMCPCollecting = false;
+  return std::move(mMCPMessages);
 }

@@ -1,0 +1,46 @@
+// name: OpenIPSL_AC8B_total
+// keywords: initialization, tearing, start, saveTotalModel
+// status: correct
+// teardown_command: rm -rf OpenIPSL.Tests.Controls.PSSE.ES.AC8B* _OpenIPSL* output.log
+//
+// Regression test for ticket #15433 (the OpenIPSL side of the start-value-cycle
+// fix). AC8B exercises the two start-cycle patterns that must NOT trigger the
+// initialization degree-1 forcing:
+//
+//   B) $START.x->x cycles (TransducerDelay.state, rotatingExciter...I_C) where the
+//      plain Cellier matching gives $START.x its own defining equation. The start
+//      value is ill-posed but initialization is sound, so forcing must stay off.
+//   C) a non-$START degree-1 variable
+//      (rotatingExciterWithDemagnetizationVarLim.feedback.y) whose unique solvable
+//      equation is taken by another variable; it becomes the iteration variable of
+//      a residual it occurs in - non-singular, so forcing must stay off.
+//
+// A previous fix over-forced these via a component-level cycle gate, reordering a
+// healthy init system and breaking it (residualFunc failed at time=0 for ~13
+// OpenIPSL PSSE controllers). The structural-singularity discriminator only forces
+// when a $START.x is actually orphaned (pattern A, see initStartTearingDegree1.mos),
+// so AC8B initializes on the plain result and emits no start-value-cycle warning.
+//
+// The model is captured with saveTotalModel so the test does not need OpenIPSL.
+//
+loadFile("OpenIPSL_AC8B_total.mo"); getErrorString();
+simulate(OpenIPSL.Tests.Controls.PSSE.ES.AC8B, stopTime=0.1, numberOfIntervals=2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "OpenIPSL.Tests.Controls.PSSE.ES.AC8B_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'OpenIPSL.Tests.Controls.PSSE.ES.AC8B', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: Initialization start-value cycle: the start attribute of 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// Warning: Initialization start-value cycle: the start attribute of 'aC8B.TransducerDelay.state' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'aC8B.TransducerDelay.state' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'aC8B.TransducerDelay.state' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// Warning: Initialization start-value cycle: the start attribute of 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'aC8B.rotatingExciterWithDemagnetizationVarLim.I_C' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// Warning: Initialization start-value cycle: the start attribute of 'aC8B.TransducerDelay.state' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'aC8B.TransducerDelay.state' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'aC8B.TransducerDelay.state' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// endResult

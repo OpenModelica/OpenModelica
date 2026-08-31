@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
@@ -42,6 +47,11 @@
 
 #include <QColor>
 #include <QImage>
+
+// The OpenSceneGraph renderer (OSGScene/UpdateVisitor/...) does not build for
+// Emscripten; on wasm only the renderer-neutral data classes and math helpers of
+// this header are used, with a Qt Quick 3D backend (see Animation/Quick3D/).
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 #include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/Version>
@@ -65,22 +75,20 @@
 #include <OpenThreads/Mutex>
 
 #include "ExtraShapes.h"
+#endif
 
 #include "AnimationUtil.h"
 #include "TimeManager.h"
 #include "rapidxml.hpp"
 
+#include "AnimationScene.h"
 #include "AbstractVisualizer.h"
 #include "Shape.h"
 #include "Vector.h"
 
 class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
 
-struct UserSimSettingsMAT
-{
-  double speedup;
-};
-
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 class UpdateVisitor : public osg::NodeVisitor
 {
 public:
@@ -156,7 +164,7 @@ private:
   AbstractVisualizerObject* _visualizer;
 };
 
-class OSGScene
+class OSGScene : public AnimationScene
 {
 public:
   OSGScene(VisualizationAbstract* visualization);
@@ -164,14 +172,17 @@ public:
   OSGScene(const OSGScene& osgs) = delete;
   OSGScene& operator=(const OSGScene& osgs) = delete;
   osg::ref_ptr<osg::Group> getRootNode();
-  std::string getPath() const;
-  void setPath(const std::string path);
-  void setUpScene(std::vector<ShapeObject>& shapes);
-  void setUpScene(std::vector<VectorObject>& vectors);
+  std::string getPath() const override;
+  void setPath(const std::string& path) override;
+  void setUpShapes(std::vector<ShapeObject>& shapes) override;
+  void setUpVectors(std::vector<VectorObject>& vectors) override;
+  void updateVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
+  void modifyVisualizer(AbstractVisualizerObject* visualizer, bool changeMaterialProperties) override;
 private:
   osg::ref_ptr<AutoTransformCullCallback> _atCullCallback;
   osg::ref_ptr<osg::Group> _rootNode;
   std::string _path;
+  UpdateVisitor _updateVisitor;
 };
 
 class OMVisScene
@@ -186,6 +197,7 @@ public:
 private:
   OSGScene _scene;
 };
+#endif // !OMEDIT_ANIMATION_QUICK3D
 
 class OMVisualBase
 {
@@ -219,12 +231,18 @@ public:
   void setUpScene();
 
   void updateVectorCoords(VectorObject& vector, const double time);
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   void chooseVectorScales(osgViewer::View* view, OpenThreads::Mutex* mutex = nullptr, std::function<void()> frame = nullptr);
+#else
+  // Quick 3D has no OSG view/AutoTransform: pick the radius scale (median
+  // heuristic) and the per-quantity length scale from the data alone; the
+  // iterative camera-fit refinement is replaced by the viewer's fitToScene.
+  void chooseVectorScales();
+#endif
 private:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
-  UpdateVisitor _updateVisitor;
   VisualizationAbstract* _visualization;
   std::vector<ShapeObject> _shapes;
   std::vector<VectorObject> _vectors;
@@ -233,12 +251,19 @@ private:
 class VisualizationAbstract
 {
 public:
-  VisualizationAbstract();
   VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizationAbstract() = default;
 
   VisType getVisType() const;
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   OMVisScene* getOMVisScene() const;
+#else
+  // On wasm the scene is the Qt Quick 3D scene owned by the viewer widget, injected here.
+  void setScene(AnimationScene* scene) {mpScene = scene;}
+#endif
+  // Renderer-neutral scene the data classes drive (the OSG scene natively, the
+  // Qt Quick 3D scene on wasm).
+  AnimationScene* getScene() const;
   OMVisualBase* getBaseData() const;
   TimeManager* getTimeManager() const;
 
@@ -260,19 +285,23 @@ public:
 private:
   const VisType _visType;
 protected:
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   OMVisScene* mpOMVisScene;
+#else
+  AnimationScene* mpScene = nullptr;
+#endif
   OMVisualBase* mpOMVisualBase;
   TimeManager* mpTimeManager;
 };
 
-osg::Vec3f Mat3mulV3(osg::Matrix3 M, osg::Vec3f V);
-osg::Vec3f V3mulMat3(osg::Vec3f V, osg::Matrix3 M);
-osg::Matrix3 Mat3mulMat3(osg::Matrix3 M1, osg::Matrix3 M2);
-osg::Vec3f normalize(osg::Vec3f vec);
-osg::Vec3f cross(osg::Vec3f vec1, osg::Vec3f vec2);
-Directions fixDirections(osg::Vec3f lDir, osg::Vec3f wDir);
-void assemblePokeMatrix(osg::Matrix& M, const osg::Matrix3& T, const osg::Vec3f& r);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f r_shape, osg::Vec3f lDir, osg::Vec3f wDir, std::string type);
-rAndT rotateModelica2OSG(osg::Matrix3 T, osg::Vec3f r, osg::Vec3f dir);
+Vec3 Mat3mulV3(Mat3 M, Vec3 V);
+Vec3 V3mulMat3(Vec3 V, Mat3 M);
+Mat3 Mat3mulMat3(Mat3 M1, Mat3 M2);
+Vec3 normalize(Vec3 vec);
+Vec3 cross(Vec3 vec1, Vec3 vec2);
+Directions fixDirections(Vec3 lDir, Vec3 wDir);
+void assemblePokeMatrix(Mat4& M, const Mat3& T, const Vec3& r);
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 r_shape, Vec3 lDir, Vec3 wDir, std::string type);
+rAndT rotateModelica2OSG(Mat3 T, Vec3 r, Vec3 dir);
 
 #endif

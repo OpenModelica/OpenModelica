@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5...4.3)
 include_directories ("../../../../../OMSI/include")
 project(${ExtendedSystemName})
 set(BASE_LIB "" CACHE INTERNAL "" )
@@ -16,9 +16,9 @@ target_link_libraries(${ExtendedSystemName} ${SystemBaseName}  ${Boost_LIBRARIES
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ExtendedSystemName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
-IF(MSVC)
-  install(FILES $<TARGET_PDB_FILE:${ExtendedSystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-ENDIF(MSVC)
+  if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:${ExtendedSystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 
@@ -32,7 +32,7 @@ install(TARGETS ${ExtendedSystemName} DESTINATION ${LIBINSTALLEXT})
 #install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})
 #ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/IExtendedSimObjects.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/ExtendedSimObjects.h
-   ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/ExtendedSystem.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/IExtendedSimObjects.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/ExtendedSimObjects.h
+   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/ExtendedSystem.h
   DESTINATION include/omc/omsicpp/Core/System)

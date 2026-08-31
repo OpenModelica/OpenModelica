@@ -107,7 +107,6 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, piDiscrete.cOut );
   connect(tank.tSensor, piDiscrete.cIn );
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TankHybridPI;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -61,13 +67,11 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
-  // tab widget
-  QTabWidget *pTabWidget = new QTabWidget;
+  // tab widget — stored as member so exec() can add/remove the Solver Settings tab
+  mpTabWidget = new QTabWidget;
+  mpSystemSimulationInformationWidget = nullptr;
   // General tab
   QWidget *pGeneralWidget = new QWidget;
-  // system simulation information groupbox
-  mpSystemSimulationInformationWidget = 0;
-  mpSystemSimulationInformationGroupBox = new QGroupBox(Helper::systemSimulationInformation);
   // start time
   mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
   mpStartTimeTextBox = new QLineEdit;
@@ -88,22 +92,21 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
   mpStopTimeTextBox->setValidator(pDoubleValidator);
-  // General tab widget layout
+  // General tab layout — experiment settings only; solver settings go in a separate tab
   QGridLayout *pGeneralTabWidgetGridLayout = new QGridLayout;
   pGeneralTabWidgetGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGeneralTabWidgetGridLayout->addWidget(mpSystemSimulationInformationGroupBox, 1, 0, 1, 2);
-  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeLabel, 2, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeTextBox, 2, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeLabel, 3, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeTextBox, 3, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileLabel, 4, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileTextBox, 4, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeLabel, 5, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeLabel,              0, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeTextBox,            0, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeLabel,               1, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeTextBox,             1, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileLabel,             2, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileTextBox,           2, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeLabel,   3, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 3, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel,        4, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox,      4, 1);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
-  pTabWidget->addTab(pGeneralWidget, Helper::general);
+  mpTabWidget->addTab(pGeneralWidget, Helper::general);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -120,7 +123,7 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pMainGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainGridLayout->addWidget(mpSimulationHeading, 0, 0);
   pMainGridLayout->addWidget(mpHorizontalLine, 1, 0);
-  pMainGridLayout->addWidget(pTabWidget, 2, 0);
+  pMainGridLayout->addWidget(mpTabWidget, 2, 0);
   pMainGridLayout->addWidget(mpButtonBox, 3, 0);
   setLayout(pMainGridLayout);
 }
@@ -132,14 +135,16 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
 
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::simulationSetup, mModelCref));
   mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::simulationSetup, mModelCref));
-  // initialize system simulation information
-  if (mpSystemSimulationInformationWidget) {
-    delete mpSystemSimulationInformationGroupBox->layout();
-    delete mpSystemSimulationInformationWidget;
-    mpSystemSimulationInformationWidget = 0;
+  // Remove the existing Solver Settings tab if present (always tab index 1)
+  if (mpTabWidget->count() > 1) {
+    mpTabWidget->removeTab(1);
   }
-  LibraryTreeItem *pTopLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
-  LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
+  delete mpSystemSimulationInformationWidget;
+  mpSystemSimulationInformationWidget = nullptr;
+
+  // Add a fresh Solver Settings tab for this model
+  LibraryTreeItem *pTopLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pRootSystemLibraryTreeItem = nullptr;
   if (pTopLibraryTreeItem && pTopLibraryTreeItem->childrenSize() > 0) {
     pRootSystemLibraryTreeItem = pTopLibraryTreeItem->childAt(0);
     if (pRootSystemLibraryTreeItem) {
@@ -147,24 +152,23 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pRootSystemLibraryTreeItem, false);
       }
       mpSystemSimulationInformationWidget = new SystemSimulationInformationWidget(pRootSystemLibraryTreeItem->getModelWidget());
-      QHBoxLayout *pSystemSimulationInformationGroupBoxLayout = new QHBoxLayout;
-      pSystemSimulationInformationGroupBoxLayout->addWidget(mpSystemSimulationInformationWidget);
-      mpSystemSimulationInformationGroupBox->setLayout(pSystemSimulationInformationGroupBoxLayout);
+      mpTabWidget->addTab(mpSystemSimulationInformationWidget, tr("Solver Settings"));
     }
   }
+
   // start time
   double startTime;
-  OMSProxy::instance()->getStartTime(mModelCref, &startTime);
+  OMSProxy::instance()->getStartTime(mModelCref, startTime);
   mpStartTimeTextBox->setText(QString::number(startTime));
   // stop time
   double stopTime;
-  OMSProxy::instance()->getStopTime(mModelCref, &stopTime);
+  OMSProxy::instance()->getStopTime(mModelCref, stopTime);
   mpStopTimeTextBox->setText(QString::number(stopTime));
   // result file
-  char *fileName = (char*)"";
+  QString fileName;
   int bufferSize;
-  OMSProxy::instance()->getResultFile(mModelCref, &fileName, &bufferSize);
-  mpResultFileTextBox->setText(QString(fileName));
+  OMSProxy::instance()->getResultFile(mModelCref, fileName, bufferSize);
+  mpResultFileTextBox->setText(fileName);
   // result file buffer size
   mpResultFileBufferSizeSpinBox->setValue(bufferSize);
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
@@ -182,9 +186,11 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem, bool inter
   // export the model to a temp directory and send the file location.
   QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
+#if !defined(__EMSCRIPTEN__)
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName, interactive);
     MessagesWidget::instance()->addSimulationOutputTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
+#endif
   }
 }
 
@@ -231,8 +237,10 @@ void OMSSimulationDialog::saveSimulationSettings()
     return;
   }
 
+  // Save solver settings from the Solver Settings tab
   if (mpSystemSimulationInformationWidget) {
-    mpSystemSimulationInformationWidget->setSystemSimulationInformation(false);
+    if (!mpSystemSimulationInformationWidget->setSystemSimulationInformation(false))
+      return;
   }
 
   // set the simulation settings

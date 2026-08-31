@@ -1,0 +1,25 @@
+// name: DistributionSystemModelicaIndividual_N_10_M_10 sparse solver selection
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+// suite: cSources
+
+// #16458: NB must select the sparse solver for this system's torn loop (density
+// well below the 0.2 linear threshold), same as OB does.
+
+loadModel(ScalableTestSuite); getErrorString();
+
+translateModel(ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10); getErrorString();
+
+system("grep -c 'matrixFormat = OMC_MATRIX_SPARSE' ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_03lsy.c > sparse_count.txt");
+readFile("sparse_count.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// "1
+// "
+// endResult

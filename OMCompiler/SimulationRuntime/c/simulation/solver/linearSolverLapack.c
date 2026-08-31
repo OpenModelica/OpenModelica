@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -39,17 +36,12 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "../../util/omc_error.h"
-#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
-
-#ifdef USE_PARJAC
-  #include <omp.h>
-#endif
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -110,8 +102,8 @@ int freeLapackData(void **voiddata)
 void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, double* jac)
 {
   int k;
-  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
@@ -142,7 +134,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   int i, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
-  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->solverData[0];
   int success = 1;
 
   /* We are given the number of the linear system.
@@ -159,16 +151,15 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
 
   /* set data */
   _omc_setVectorData(solverData->x, aux_x);
-  _omc_setVectorData(solverData->b, systemData->parDynamicData[omc_get_thread_num()].b);
-  _omc_setMatrixData(solverData->A, systemData->parDynamicData[omc_get_thread_num()].A);
+  _omc_setVectorData(solverData->b, systemData->b);
+  _omc_setMatrixData(solverData->A, systemData->A);
 
-  // ToDo: Make time variables thread safe as this can be called in a parallel region
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
     if (!reuseMatrixJac) {
       /* reset matrix A */
-      memset(systemData->parDynamicData[omc_get_thread_num()].A, 0, (systemData->size)*(systemData->size)*sizeof(double));
+      memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
       /* update matrix A */
       systemData->setA(data, threadData, systemData);
     }
@@ -276,12 +267,12 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
       _omc_copyVector(solverData->x, solverData->b);
     }
 
-    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)){
-        if (1 == systemData->method) {
-          infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
-        } else {
-          infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
-        }
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)) {
+      if (1 == systemData->method) {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
+      }
       infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {

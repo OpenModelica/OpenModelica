@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBSorting
 "file:        NBSorting.mo
  package:     NBSorting
@@ -49,7 +54,6 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
-  import NFFlatten.FunctionTree;
 
   // Util imports
   import BackendUtil = NBBackendUtil;
@@ -141,7 +145,7 @@ public
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
         mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
-        if Util.isSome(mode_opt) then
+        if isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
           if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
             // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
@@ -167,7 +171,7 @@ public
       Option<Value> val_opt = UnorderedMap.get(mode, buckets);
       Value val;
     algorithm
-      if Util.isSome(val_opt) then
+      if isSome(val_opt) then
         SOME(val) := val_opt;
         val := Value.addEquation(val, eqn_scal_idx);
         UnorderedMap.add(mode, val, buckets);
@@ -186,7 +190,7 @@ public
       Option<Value> val_opt = UnorderedMap.get(mode, buckets);
       Value val;
     algorithm
-      if Util.isSome(val_opt) then
+      if isSome(val_opt) then
         SOME(val) := val_opt;
         val := Value.addCref(val, cref);
         val := Value.addEquation(val, eqn_scal_idx);
@@ -244,7 +248,6 @@ public
       comps := match adj
         local
           list<list<Integer>> comps_indices, phase2_indices;
-          Option<StrongComponent> comp_opt;
           Adjacency.Matrix phase2_adj;
           Matching phase2_matching;
           array<SuperNode> super_nodes;
@@ -260,7 +263,7 @@ public
           comps_indices := tarjanScalar(adj.m, matching);
 
           // phase 2 tarjan
-          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, eqns.map, comps_indices, buckets);
+          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, adj.mapping, matching, eqns.map, comps_indices, buckets);
 
           // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
           // it is just safer if something is changed in the future
@@ -336,6 +339,45 @@ public
     comps := listReverse(comps);
   end tarjanScalar;
 
+  type SCC = list<Integer>;
+
+  uniontype LoopIdentifier
+    "used to identify algebraic loops that are structurally equal just differ in local indexing"
+    record LOOP_IDENTIFIER
+      UnorderedSet<Integer> eqns;
+      UnorderedSet<Integer> vars;
+    end LOOP_IDENTIFIER;
+
+    function hash
+      input LoopIdentifier li;
+      output Integer i = stringHashDjb2(toString(li));
+    end hash;
+
+    function isEqual
+      input LoopIdentifier li1;
+      input LoopIdentifier li2;
+      output Boolean b = UnorderedSet.isEqual(li1.eqns, li2.eqns) and UnorderedSet.isEqual(li1.vars, li2.vars);
+    end isEqual;
+
+    function toString
+      input LoopIdentifier li;
+      output String str;
+    algorithm
+      str := " eqns: " + UnorderedSet.toString(li.eqns, intString) + "\n vars:" + UnorderedSet.toString(li.vars, intString) + "\n";
+    end toString;
+
+    function fromSCC
+      input list<Integer> scc;
+      input Adjacency.Mapping mapping;
+      input Matching matching;
+      output LoopIdentifier li;
+    algorithm
+      li := LOOP_IDENTIFIER(
+        eqns = UnorderedSet.fromList(list(mapping.eqn_StA[i] for i in scc), Util.id, intEq),
+        vars = UnorderedSet.fromList(list(mapping.var_StA[matching.eqn_to_var[i]] for i in scc), Util.id, intEq));
+    end fromSCC;
+  end LoopIdentifier;
+
   uniontype SuperNode
     record SINGLE
       "does not belong to an algebraic loop or array"
@@ -405,15 +447,18 @@ public
 
     function create
       input Adjacency.Matrix adj;
+      input Adjacency.Mapping mapping;
       input Matching matching;
       input UnorderedMap<ComponentRef, Integer> eqn_map;
-      input list<list<Integer>> scc_phase1;
+      input list<SCC> scc_phase1;
       input UnorderedMap<Mode, Value> buck;
       output Adjacency.Matrix phase2_adj = adj;
       output Matching phase2_matching = matching;
       output array<SuperNode> super_nodes;
     protected
-      list<list<Integer>> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
+      LoopIdentifier li;
+      UnorderedMap<LoopIdentifier, SCC> loop_map = UnorderedMap.new<SCC>(LoopIdentifier.hash, LoopIdentifier.isEqual);
+      list<SCC> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
       list<tuple<Mode, Value>> buckets = UnorderedMap.toList(buck);
       Mode mode;
       Value val;
@@ -423,6 +468,14 @@ public
     algorithm
       phase2_adj := match phase2_adj
         case Adjacency.FINAL() algorithm
+          // merge algebraic loops with identical interface (array based)
+          // ToDo: proper handling without merging them all and having a for-loop around instead
+          for scc in algebraic_loops loop
+            li := LoopIdentifier.fromSCC(scc, mapping, matching);
+            UnorderedMap.add(li, listAppend(scc, UnorderedMap.getOrDefault(li, loop_map, {})), loop_map);
+          end for;
+          algebraic_loops := UnorderedMap.valueList(loop_map);
+
           //### 1. store all loop indices ###
           for scc in algebraic_loops loop for idx in scc loop
             UnorderedSet.add(idx, alg_loop_set);
@@ -465,7 +518,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             var_lst := list(phase2_matching.eqn_to_var[idx] for idx in Value.getEquations(val));
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
             end match;
@@ -486,7 +539,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             eqn_lst := Value.getEquations(val);
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), true); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
             end match;
@@ -549,7 +602,7 @@ public
             Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName()
               + " crucially failed for the following Phase II strong component"
               + " because the body turned out to still have strong components:\n"
-              + List.toString(node_comp, SuperNode.toString, "", "\t", "\n\t", "\n")});
+              + List.toString(node_comp, SuperNode.toString, List.Style.NEWLINE_TAB) + "\n"});
           end if;
 
           // check for independence of the element equations
@@ -560,24 +613,17 @@ public
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
-        // entwined array equations
-        case _ guard(List.all(node_comp, isArrayBucket)) algorithm
+        // entwined equations: at least one array bucket mixed with scalar equations
+        case _ guard(List.any(node_comp, isArrayBucket)) algorithm
           // sort local system to determine in what order the equations have to be solved
           (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
           sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
-
-          if List.compareLength(sorted_body_components, sorted_body_indices) == 0 then
-            // create entwined for loop if there was no algebraic loop
-            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
-          else
-            // create algebraic loop
-            comp := StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
-          end if;
+          comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
         then comp;
 
-        // create algebraic loop (body components not actually sorted)
+        // fallback: pure scalar or algebraic loop phase III nodes (body components not actually sorted)
         else algorithm
           sorted_body_indices := List.flatten(list(getEqnIndices(n) for n in node_comp));
         then StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
@@ -700,5 +746,5 @@ protected
   end predecessors;
 
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSorting;

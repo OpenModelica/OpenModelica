@@ -3,7 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 ComplexTypeEquationCount.mos \
 ComplexTypeEquationCount2.mos \
-IntegerTest.mos
+IntegerTest.mos \
+ExtRecordMemberArguments.mos
 
 
 # test that currently fail. Move up when fixed.
@@ -52,4 +53,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -6,8 +6,7 @@ checkHumModOMC.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
-xxx.mos
+FAILINGTESTFILES=
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -56,7 +55,7 @@ failingtest : hmtr_toOMC
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 hmtr_toOMC: mkdir_forOMC
 	@sed -f $(TransformSedFile) <./HumMod/package.mo >./HumMod_OMC/HumMod/package.mo

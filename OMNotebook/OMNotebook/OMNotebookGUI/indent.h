@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 #ifndef INDENT_H
@@ -36,13 +39,13 @@
 #include <QTextStream>
 #include <QMap>
 
-class IndentationState {
-public:
-  IndentationState(int state_, int level_, int nextMod_, QString current_, QString next_, bool skipNext_, bool lMod_, bool equation_, bool equationSection_, bool loopBlock_):
-    state(state_), level(level_), nextMod(nextMod_), current(current_), next(next_), skipNext(skipNext_), lMod(lMod_), equation(equation_), equationSection(equationSection_), loopBlock(loopBlock_) {
-    }
-
-    ~IndentationState();
+struct IndentationState {
+  IndentationState(int state, int level, int nextMod, QString current, QString next, bool skipNext,
+                   bool lMod, bool equation, bool equationSection, bool loopBlock)
+    : level(level), state(state), nextMod(nextMod), current(current), next(next), skipNext(skipNext),
+      lMod(lMod), equation(equation), equationSection(equationSection), loopBlock(loopBlock)
+  {
+  }
 
   int level, state, nextMod;
   QString current, next;
@@ -51,11 +54,11 @@ public:
 
 class Indent {
 public:
-  Indent(QString t = QString(), bool a = false);
-  ~Indent();
+  Indent(QString s = QString(), bool aggressive = false);
 
-  QString indentedText(QMap<int, IndentationState*>* states = 0);
+  QString indentedText(QMap<int, IndentationState>* states = 0);
   void setText(QString);
+  void setState(const IndentationState &state);
   int level();
   bool lMod();
 
@@ -66,20 +69,22 @@ private:
   bool aggressive, lmod;
   QString buffer1, buffer2;
 
-  class ISM {
-  public:
-    ISM();
-    ~ISM();
-
+  struct ISM {
+    ISM() = default;
     void newToken(QString, QString);
-    int level, lineModifiers, state, nextMod;
-    bool equation, equationSection, loopBlock;
-    bool skipNext;
-    bool lMod;
-    int oldState;
+
+    int level = 0;
+    int lineModifiers = 0;
+    int state = 0;
+    int nextMod = 0;
+    bool equation = false;
+    bool equationSection = false;
+    bool loopBlock = false;
+    bool skipNext = false;
+    bool lMod = false;
+    int oldState = 0;
   };
 
-public:
   ISM ism;
   QString current, next;
 };

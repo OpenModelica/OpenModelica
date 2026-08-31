@@ -62,7 +62,7 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (1)
 // ========================================
-// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real
+// 1: B:VARIABLE(fixed = true final = true )  = 4.0  type: Real
 //
 //
 // ########### CSE Replacements (1/46)
@@ -97,7 +97,7 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (1)
 // ========================================
-// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real
+// 1: B:VARIABLE(fixed = true final = true )  = 4.0  type: Real
 //
 //
 // ########### CSE Replacements (3/46)
@@ -107,7 +107,7 @@ simulate(CSE.TestCall1); getErrorString();
 // 3: D - log(A) - {}
 // record SimulationResult
 //     resultFile = "CSE.TestCall1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.TestCall1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

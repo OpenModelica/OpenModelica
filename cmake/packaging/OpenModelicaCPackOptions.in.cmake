@@ -3,9 +3,9 @@ set(CPACK_VERBATIM_VARIABLES ON)
 
 # Common variables for most package generators.
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set(CPACK_PACKAGE_VENDOR "Open Source Modelica Consoritum")
+set(CPACK_PACKAGE_VENDOR "Open Source Modelica Consortium")
 set(CPACK_PACKAGE_VERSION ${SOURCE_REVISION})
-set(CPACK_PACKAGE_CONTACT "build@openmodelica.org")
+set(CPACK_PACKAGE_CONTACT "openmodelica@openmodelica.org")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/OSMC-License.txt")
 # set(CPACK_RESOURCE_FILE_README "${PROJECT_SOURCE_DIR}/README.md")
 

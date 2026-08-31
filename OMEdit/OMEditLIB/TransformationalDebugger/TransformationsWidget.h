@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -59,7 +64,7 @@ public:
   bool isRootItem() {return mIsRootItem;}
   QString getVariableName() {return mVariableName;}
   QString getFilePath() {return mFilePath;}
-  void insertChild(int position, TVariablesTreeItem *pVariablesTreeItem);
+  void appendChild(TVariablesTreeItem *pVariablesTreeItem);
   TVariablesTreeItem *child(int row);
   void removeChildren();
   int columnCount() const;
@@ -146,13 +151,61 @@ private:
   TransformationsWidget *mpTransformationsWidget;
 };
 
-class EquationTreeWidget : public QTreeWidget
+class EquationTreeItem
+{
+public:
+  EquationTreeItem(const OMEquation *pOMEquation, EquationTreeItem *pParent = nullptr, bool isRootItem = false);
+  ~EquationTreeItem();
+  int childrenSize() const {return mChildren.size();}
+  bool isRootItem() {return mIsRootItem;}
+  void insertChild(int position, EquationTreeItem *pVariablesTreeItem);
+  EquationTreeItem *child(int row);
+  void removeChildren();
+  QVariant data(int column, int role = Qt::DisplayRole) const;
+  int row() const;
+  EquationTreeItem *parent() {return mpParentEquationTreeItem;}
+  int getEquationIndex();
+private:
+  const OMEquation *mpOMEquation = nullptr;
+  QVector<EquationTreeItem*> mChildren;
+  EquationTreeItem *mpParentEquationTreeItem;
+  bool mIsRootItem;
+};
+
+class EquationTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 public:
-  EquationTreeWidget(TransformationsWidget *pTransformationWidget);
+  EquationTreeModel(QObject *parent = nullptr);
+  int columnCount(const QModelIndex &parent = QModelIndex()) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QModelIndex parent(const QModelIndex & index) const;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  void insertEquations(const QList<OMEquation*>& equations, bool nestedEquations);
+  EquationTreeItem* findEquationTreeItem(int equationIndex, EquationTreeItem *pEquationTreeItem = 0) const;
+  QModelIndex equationTreeItemIndex(const EquationTreeItem *pEquationTreeItem) const;
 private:
-  TransformationsWidget *mpTransformationWidget;
+  EquationTreeItem *mpRootEquationTreeItem;
+
+  void insertNestedEquations(EquationTreeItem *pParentItem, int index, const QList<OMEquation*> &equations);
+};
+
+class EquationTreeProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  explicit EquationTreeProxyModel(QObject *parent = nullptr);
+protected:
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+};
+
+class EquationTreeView : public QTreeView
+{
+  Q_OBJECT
+public:
+  EquationTreeView(QWidget *pParent = nullptr);
 };
 
 class InfoBar;
@@ -162,8 +215,8 @@ class TransformationsWidget : public QWidget
   Q_OBJECT
 public:
   TransformationsWidget(QString infoJSONFullFileName, bool profiling, bool checkForProfilingFiles, QWidget *pParent = 0);
+  ~TransformationsWidget();
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
-  QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
   QSplitter* getVariablesNestedHorizontalSplitter() {return mpVariablesNestedHorizontalSplitter;}
   QSplitter* getVariablesNestedVerticalSplitter() {return mpVariablesNestedVerticalSplitter;}
@@ -176,29 +229,34 @@ public:
   void fetchDefinedInEquations(const OMVariable &variable);
   void fetchUsedInEquations(const OMVariable &variable);
   void fetchOperations(const OMVariable &variable);
-  void fetchEquations();
-  void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index);
-  QTreeWidgetItem* findEquationTreeItem(int equationIndex);
+  EquationTreeItem *findEquationTreeItem(int equationIndex);
+  void selectEquation(int equationIndex);
   void fetchEquationData(int equationIndex);
   void fetchDefines(OMEquation *equation);
   void fetchDepends(OMEquation *equation);
   void fetchOperations(OMEquation *equation, HtmlDiff htmlDiff);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
-  QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mProfilingDataRealFileName;
+  QString mInfoJSONFullFileName, mProfilingJSONFullFileName;
   bool mProfilingEnabled = false;
   bool mCheckForProfilingFiles = false;
   int profilingNumSteps;
   int mCurrentEquationIndex;
-  MyHandler *mpInfoXMLFileHandler;
+  MyHandler *mpInfoXMLFileHandler = nullptr;
   TreeSearchFilters *mpTreeSearchFilters;
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeModel *mpTVariablesTreeModel;
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;
-  EquationTreeWidget *mpDefinedInEquationsTreeWidget;
-  EquationTreeWidget *mpUsedInEquationsTreeWidget;
+  EquationTreeView *mpDefinedInEquationTreeView;
+  EquationTreeModel *mpDefinedInEquationTreeModel;
+  EquationTreeProxyModel *mpDefinedInEquationProxyModel;
+  EquationTreeView *mpUsedInEquationTreeView;
+  EquationTreeModel *mpUsedInEquationTreeModel;
+  EquationTreeProxyModel *mpUsedInEquationProxyModel;
   QTreeWidget *mpVariableOperationsTreeWidget;
-  EquationTreeWidget *mpEquationsTreeWidget;
+  EquationTreeView *mpEquationTreeView;
+  EquationTreeModel *mpEquationTreeModel;
+  EquationTreeProxyModel *mpEquationProxyModel;
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
   QComboBox *mpEquationDiffFilterComboBox;
@@ -218,13 +276,12 @@ private:
   bool hasOperationsEnabled;
 
   void parseProfiling(QString fileName);
-  QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);
 private slots:
   void loadTransformations();
 public slots:
   void findVariables();
   void fetchVariableData(const QModelIndex &index);
-  void fetchEquationData(QTreeWidgetItem *pEquationTreeItem, int column);
+  void fetchEquationData(const QModelIndex &index);
   void filterEquationOperations(int index);
 };
 

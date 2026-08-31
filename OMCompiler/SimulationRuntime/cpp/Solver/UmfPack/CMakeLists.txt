@@ -1,8 +1,11 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${UmfPackName})
 
-add_library(${UmfPackName} UmfPack.cpp UmfPackSettings.cpp FactoryExport)
+add_library(${UmfPackName}
+  UmfPack.cpp
+  UmfPackSettings.cpp
+  FactoryExport.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${UmfPackName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
@@ -10,7 +13,9 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${UmfPackName}  ${SolverName}  ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${UmfPackName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

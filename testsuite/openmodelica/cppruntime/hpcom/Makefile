@@ -71,35 +71,35 @@ test:
 	@$(TEST) $(TESTFILES)
 
 testSerial:
-	@$(TEST) $(TESTFILES_SERIAL)
+	@$(TEST) -disabled $(TESTFILES_SERIAL)
 
 testLevelfix:
-	@$(TEST) $(TESTFILES_LEVELFIX)
+	@$(TEST) -disabled $(TESTFILES_LEVELFIX)
 
 testLevel:
-	@$(TEST) $(TESTFILES_LEVEL)
+	@$(TEST) -disabled $(TESTFILES_LEVEL)
 
 testMetis:
-	@$(TEST) $(TESTFILES_METIS)
+	@$(TEST) -disabled $(TESTFILES_METIS)
 
 testList:
-	@$(TEST) $(TESTFILES_LIST)
+	@$(TEST) -disabled $(TESTFILES_LIST)
 
 testListr:
-	@$(TEST) $(TESTFILES_LISTR)
+	@$(TEST) -disabled $(TESTFILES_LISTR)
 
 testTbb:
-	@$(TEST) $(TESTFILES_TBB)
+	@$(TEST) -disabled $(TESTFILES_TBB)
 
 testMcp:
-	@$(TEST) $(TESTFILES_MCP)
+	@$(TEST) -disabled $(TESTFILES_MCP)
 
 testAll:
 	@echo
 	@echo Running all tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@$(TEST) $(TESTFILES_ALL)
+	@$(TEST) -disabled $(TESTFILES_ALL)
 
 # Cleans all files that are not listed as dependencies
 clean :
@@ -122,4 +122,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

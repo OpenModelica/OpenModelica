@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -50,6 +54,7 @@ import Subscript = NFSubscript;
 import Type = NFType;
 
 protected
+import Absyn;
 import Array;
 import Autoconf;
 import Ceval = NFCeval;
@@ -102,7 +107,6 @@ function evaluateNormal
   output Expression result;
 protected
   list<Statement> fn_body;
-  list<Binding> bindings;
   ArgumentMap arg_map;
   Integer call_count, limit;
   Pointer<Integer> call_counter = fn.callCounter;
@@ -218,7 +222,7 @@ function evaluateRecordConstructor
 protected
   ArgumentMap arg_map;
   list<Expression> expl = {};
-  InstNode node, out_ty;
+  InstNode out_ty;
 algorithm
   // Map the record fields to the arguments of the constructor.
   arg_map := createArgumentMap(fn.inputs, {}, fn.locals, args, mutableParams = false);
@@ -255,7 +259,6 @@ protected
   Expression arg;
   list<Expression> rest_args = args;
   Function fn;
-  CachedData cache;
 algorithm
   map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
 
@@ -322,7 +325,6 @@ function getBindingExp
 protected
   Component comp;
   Binding binding;
-  Type ty;
 algorithm
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
@@ -468,7 +470,7 @@ protected
   InstNode parent, node;
 algorithm
   // Explode the cref into a list of parts in reverse order.
-  cref_parts := ComponentRef.toListReverse(cref, includeScope = false);
+  cref_parts := ComponentRef.toListReverse(cref, includeScope = true);
 
   // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
   if listEmpty(cref_parts) then
@@ -499,7 +501,7 @@ algorithm
           outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
         end for;
       else
-        Error.assertion(false, getInstanceName() + " could not find replacement for " +
+        Error.terminate(getInstanceName() + " could not find replacement for " +
           ComponentRef.toString(cref), sourceInfo());
       end try;
     end if;
@@ -516,11 +518,9 @@ function applyReplacementCall
   input Expression exp;
   output Expression outExp;
 protected
-  InstNode repl_node;
   Option<Expression> repl_oexp;
   Expression repl_exp;
   list<Expression> args;
-  list<String> names;
   Function fn;
 algorithm
   outExp := match call
@@ -750,13 +750,13 @@ algorithm
     case Statement.BREAK()      then FlowControl.BREAK;
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed on " + anyString(stmt) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " failed on " + anyString(stmt) + "\n", sourceInfo());
       then
         fail();
 
   end match;
   //else
-  //   Error.assertion(false, getInstanceName() + " failed to evaluate statement " + Statement.toString(stmt) + "\n", sourceInfo());
+  //   Error.terminate(getInstanceName() + " failed to evaluate statement " + Statement.toString(stmt) + "\n", sourceInfo());
   //   fail();
   //end try;
 end evaluateStatement;
@@ -813,7 +813,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed on " +
+        Error.terminate(getInstanceName() + " failed on " +
           Expression.toString(variable) + " := " + Expression.toString(value), sourceInfo());
       then
         fail();
@@ -899,7 +899,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + ": unimplemented case for " +
+        Error.terminate(getInstanceName() + ": unimplemented case for " +
           Expression.toString(arrayExp) +
           Subscript.toStringList(subscripts) + " = " +
           Expression.toString(value), sourceInfo());
@@ -935,7 +935,6 @@ algorithm
       Expression e, val;
       ClassTree cls_tree;
       array<InstNode> comps;
-      Option<Expression> binding_exp;
       Type ty;
 
     case Expression.RECORD()
@@ -1043,7 +1042,7 @@ function evaluateAssert
   input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
-  Expression cond, msg, lvl;
+  Expression msg, lvl;
   EvalTarget target = evalTargetFromSource(source, STATEMENT_CONTEXT, context);
 algorithm
   if Expression.isFalse(Ceval.evalExp(condition, target)) then
@@ -1067,7 +1066,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed to evaluate assert(false, " +
+          Error.terminate(getInstanceName() + " failed to evaluate assert(false, " +
             Expression.toString(msg) + ", " + Expression.toString(lvl) + ")", sourceInfo());
         then
           fail();
@@ -1192,6 +1191,7 @@ algorithm
     (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
     ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
     (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+    freeLibraryFunction(fn_handle, debug);
   else
     freeLibraryFunction(fn_handle, debug);
     fail();
@@ -1264,11 +1264,10 @@ function loadLibraryFunction
   input Option<SCode.Annotation> extAnnotation;
   input Boolean debug;
   input SourceInfo info;
-  output Integer fnHandle;
+  output Integer fnHandle = -1;
 protected
-  Integer lib_handle;
   SCode.Annotation ann;
-  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {};
+  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {}, failures = {};
   Boolean found = false;
   String installLibDir;
 algorithm
@@ -1339,42 +1338,112 @@ algorithm
     paths := "" :: paths;
   end if;
 
-  // Disable error messages, we don't care if some paths can't be found.
+  // The messages the search produces are about paths the user never asked for,
+  // so keep them out of the way; what went wrong is collected separately and
+  // reported below if nothing worked.
   ErrorExt.setCheckpoint(getInstanceName());
 
-  // Go through each path and try to find the function.
-  for path in paths loop
-    try
-      if not stringEmpty(path) then
-        path := uriToFilename(path);
-      end if;
+  // First ask for every symbol in the library to be resolved, which is what
+  // calling through it will need.
+  (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = false, debug = debug);
 
-      lib_handle := lookupLibraryInCache(path);
-
-      if lib_handle == -1 then
-        lib_handle := System.loadLibrary(path, relativePath = false, printDebug = debug);
-        cacheLibrary(path, lib_handle);
-      end if;
-
-      fnHandle := System.lookupFunction(lib_handle, fnName);
-      found := true;
-    else
-    end try;
-
-    if found then
-      break;
-    end if;
-  end for;
+  if not found then
+    // Nothing. Try again binding lazily: a library that has an unresolvable
+    // symbol somewhere else in it can still provide this function.
+    (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = true, debug = debug);
+  end if;
 
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
-      {fnName, stringDelimitList(paths, "\n")}, info);
+      {fnName, stringDelimitList(failures, "\n")}, info);
     fail();
   end if;
 end loadLibraryFunction;
+
+function searchLibraryPaths
+  "Tries each candidate path in turn, and says of each one why it did not
+   provide the function: there is nothing there, it would not load, or it
+   loaded and does not define it."
+  input list<String> paths;
+  input String fnName;
+  input Boolean lazy;
+  input Boolean debug;
+  output Integer fnHandle = -1;
+  output Boolean found = false;
+  output list<String> failures = {};
+protected
+  Integer lib_handle;
+  String file, reason;
+  Boolean resolved;
+algorithm
+  for path in paths loop
+    reason := "";
+    resolved := true;
+
+    try
+      file := if stringEmpty(path) then "" else uriToFilename(path);
+    else
+      file := path;
+      resolved := false;
+      reason := "not a usable file name";
+    end try;
+
+    if resolved then
+      lib_handle := lookupLibraryInCache(file);
+
+      if lib_handle == -1 then
+        try
+          lib_handle := if lazy then
+            System.loadLibraryLazy(file, relativePath = false, printDebug = debug) else
+            System.loadLibrary(file, relativePath = false, printDebug = debug);
+          cacheLibrary(file, lib_handle);
+        else
+          lib_handle := -1;
+          reason := System.getLoadLibraryError();
+          reason := if stringEmpty(reason) then "cannot be loaded" else
+                    "cannot be loaded: " + reason;
+        end try;
+      end if;
+
+      if lib_handle <> -1 then
+        try
+          fnHandle := System.lookupFunction(lib_handle, fnName);
+          found := true;
+        else
+          reason := "loaded, but does not define it";
+        end try;
+      end if;
+    end if;
+
+    if found then
+      break;
+    end if;
+
+    // The empty path means the compiler's own image, which is not a path worth
+    // listing back to the user.
+    if not stringEmpty(file) then
+      failures := describeLibraryFailure(file, reason) :: failures;
+    end if;
+  end for;
+
+  failures := listReverse(failures);
+end searchLibraryPaths;
+
+function describeLibraryFailure
+  input String file;
+  input String reason;
+  output String str;
+algorithm
+  str := "  " + Testsuite.friendly(file);
+
+  if not System.regularFileExists(file) then
+    str := str + " (no such file)";
+  elseif not stringEmpty(reason) then
+    str := str + " (" + Testsuite.friendly(reason) + ")";
+  end if;
+end describeLibraryFailure;
 
 function parseExternalAnnotation
   input String name;
@@ -1502,7 +1571,6 @@ protected
   ArgumentMap arg_map;
   Expression val;
   list<Expression> vals, ret_vals;
-  Option<Expression> ret_val;
   ComponentRef cref;
 algorithm
   arg_map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
@@ -1556,7 +1624,7 @@ algorithm
     exp := Expression.makeRecord(InstNode.fullPath(cls_node),
       InstNode.getType(cls_node), listReverseInPlace(expl));
   else
-    Error.assertion(false, getInstanceName() +
+    Error.terminate(getInstanceName() +
       " failed to find return value for output " + InstNode.name(outputNode), sourceInfo());
   end if;
 end getExternalOutputResult;
@@ -1574,5 +1642,5 @@ algorithm
   end if;
 end checkExtReturnValue;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFEvalFunction;

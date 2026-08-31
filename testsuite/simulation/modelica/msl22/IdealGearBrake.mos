@@ -26,19 +26,15 @@ val(inertia2.w,0.5);
 // "
 // record SimulationResult
 //     resultFile = "TestModels.RotationalModels.Gears.IdealGearBrake_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.Gears.IdealGearBrake', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.Gears.IdealGearBrake', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 2.2.2+maint.om/package.mo:19:10-19:42:writable] Warning: Conversion-annotation contains unknown element: ModelicaAdditions.
-// [Modelica 2.2.2+maint.om/package.mo:20:10-20:36:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
-// [Modelica 2.2.2+maint.om/package.mo:21:10-21:34:writable] Warning: Conversion-annotation contains unknown element: MultiBody.
-// [Modelica 2.2.2+maint.om/package.mo:22:10-22:33:writable] Warning: Conversion-annotation contains unknown element: Matrices.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// 0.01163200428262507
+// 0.011632004282625067
 // 0.1126936797219051
-// 0.02435508953123749
-// 0.2245075767959462
+// 0.024355089531237495
+// 0.22450757679594616
 // endResult

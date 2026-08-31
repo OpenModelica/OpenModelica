@@ -26,5 +26,4 @@ class NamedCall
   Real p;
 equation
   p = PolynomialEvaluator3(A = {1, 2, 3, 4}, x = 21);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NamedCall;

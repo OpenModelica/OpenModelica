@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBModule
 " file:         NBModule.mo
   package:      NBModule
@@ -61,10 +66,11 @@ public
 
 protected
   // OF imports
+  import Absyn.Path;
   import DAE;
 
   // NF imports
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -73,6 +79,7 @@ protected
   import Jacobian = NBackendDAE;
   import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
+  import Matching = NBMatching;
   import Partition = NBPartition;
   import NBPartitioning.ClockedInfo;
   import BVariable = NBVariable;
@@ -128,7 +135,7 @@ public
     input output Partition.Partition partition;
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
   end causalizeInterface;
 
 //                           RESOLVING SINGULARITIES
@@ -141,7 +148,8 @@ public
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input Partition.Kind kind;
+    input UnorderedMap<Path, Function> funcMap;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
     output Boolean changed;
@@ -168,10 +176,10 @@ public
      This function is only allowed to read and change equations and create new
      discrete zero crossing equations and variables. ($TEV, $SEV)
      It also fills the EventInfo object."
-    input output VarData varData          "Data containing variable pointers";
-    input output EqData eqData            "Data containing equation pointers";
-    input output EventInfo eventInfo      "object containing all zero crossings";
-    input FunctionTree funcTree           "function tree for differentiation (solve)";
+    input output VarData varData                "Data containing variable pointers";
+    input output EqData eqData                  "Data containing equation pointers";
+    input output EventInfo eventInfo            "object containing all zero crossings";
+    input UnorderedMap<Path, Function> funcMap  "function tree for differentiation (solve)";
   end eventsInterface;
 
 //                               DETECT STATES
@@ -184,8 +192,8 @@ public
      Sub-Modules:
       - DetectContinuousStates
       - DetectDiscreteStates"
-    input output VarData varData                "Data containing variable pointers";
-    input output EqData eqData                  "Data containing equation pointers";
+    input output VarData varData                          "Data containing variable pointers";
+    input output EqData eqData                            "Data containing equation pointers";
     input detectContinuousStatesInterface continuousFunc  "Subroutine for continuous states";
     input detectDiscreteStatesInterface discreteFunc      "Subroutine for discrete states";
   end detectStatesInterface;
@@ -234,6 +242,7 @@ public
      are pointers, so no return value."
     input output VarData varData         "Data containing variable pointers";
     input output EqData eqData           "Data containing equation pointers";
+    input Partition.Kind kind;
   end functionAliasInterface;
 
 
@@ -245,6 +254,7 @@ public
      are pointers, so no return value."
     input output VarData varData         "Data containing variable pointers";
     input output EqData eqData           "Data containing equation pointers";
+    input Partition.Kind kind;
   end aliasInterface;
 
 //                                 INLINE
@@ -253,11 +263,11 @@ public
     "Inline
      This module is allowed to read, change and add equations. It uses the
      function tree to evaluate and inline functions."
-    input output EqData eqData                "Data containing equation pointers";
-    input output VarData varData              "Data containing variable pointers, for lowering purposes";
-    input FunctionTree funcTree               "function tree for differentiation (solve)";
-    input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
-    input Boolean init                        "true if for initial partition";
+    input output EqData eqData                  "Data containing equation pointers";
+    input output VarData varData                "Data containing variable pointers, for lowering purposes";
+    input UnorderedMap<Path, Function> funcMap  "function tree for differentiation (solve)";
+    input list<DAE.InlineType> inline_types     "Inline types for which to inline at the current state";
+    input Boolean init                          "true if for initial partition";
   end inlineInterface;
 
 // =========================================================================
@@ -277,11 +287,11 @@ public
     input VariablePointers seedCandidates                 "differentiate by these";
     input VariablePointers partialCandidates              "solve the equations for these";
     input EquationPointers equations                      "Equations array";
-    input VariablePointers knowns                         "Variable array of knowns";
     input Option<array<StrongComponent>> strongComponents "Strong Components";
+    input Option<Adjacency.Matrix> full                   "full adjacency matrix to create sparsity pattern";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
-    input output FunctionTree funcTree                    "Function call bodies";
-    input Boolean init;
+    input UnorderedMap<Path, Function> funcMap            "Function call bodies";
+    input Boolean staticAsContinuous                      "Treat static variables (constant over time, e.g. params) as continuous if these have a continuous type (Real)";
   end jacobianInterface;
 
 // =========================================================================
@@ -295,15 +305,15 @@ public
      The tearing module analyzes each strong component and applies tearing if
      necessary. Only has access to the strong component itself, everything else
      accessable with pointers."
-    input output StrongComponent comp     "the suspected algebraic loop.";
-    input output Adjacency.Matrix full    "the full adjacency matrix containing solvability info";
-    input output FunctionTree funcTree    "Function call bodies";
-    input output Integer index            "current unique loop index";
-    input VariablePointers variables      "all variables";
-    input EquationPointers equations      "all equations";
-    input Pointer<Integer> eq_index       "equation index";
-    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
+    input output StrongComponent comp                 "the suspected algebraic loop.";
+    input output Adjacency.Matrix full                "the full adjacency matrix containing solvability info";
+    input UnorderedMap<Path, Function> funcMap        "Function call bodies";
+    input output Integer index                        "current unique loop index";
+    input VariablePointers variables                  "all variables";
+    input EquationPointers equations                  "all equations";
+    input Pointer<Integer> eq_index                   "equation index";
+    input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   end tearingInterface;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBModule;

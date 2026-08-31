@@ -1,0 +1,18 @@
+# Pinned toolchain for the mmtorust omc port — the single source of truth.
+# rustup auto-installs this on any cargo invocation in the workspace.
+#
+# nightly is required: Cargo.toml enables the unstable `codegen-backend`
+# cargo-feature and profile.dev uses the cranelift rustc backend
+# (rustc-codegen-cranelift-preview). wasm32-unknown-unknown is for the web /
+# wasm-jit builds; wasm32-wasip1 is for the standalone-export runtime that
+# openmodelica_codegen_wasm_jit/build.rs embeds (its unit tests need it, so it
+# must be present in the CI test container too, not just the cmake build).
+#
+# rust-src: the FMI3 wasm adapters build.rs compiles need `-Z build-std`, which
+# builds the std sources; without this component the adapter silently falls back
+# to an empty placeholder and FMI3 FMU export fails at runtime.
+[toolchain]
+channel = "nightly-2026-05-31"
+profile = "minimal"
+components = ["rustc-codegen-cranelift-preview", "clippy", "rustfmt", "rust-src"]
+targets = ["wasm32-unknown-unknown", "wasm32-wasip1"]

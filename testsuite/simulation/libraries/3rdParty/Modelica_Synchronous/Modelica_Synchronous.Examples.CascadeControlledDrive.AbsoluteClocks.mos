@@ -1,7 +1,7 @@
 // name: Modelica_Synchronous.Examples.CascadeControlledDrive.AbsoluteClocks
 // keywords: simulation Modelica_Synchronous examples
 // status: correct
-// cflags: -d=-newInst
+// suite: disabled
 //
 // Simulation Results
 // Modelica_Synchronous

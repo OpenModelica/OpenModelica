@@ -1,4 +1,5 @@
 // name : recompileFMU.mos
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf simpleLoop* model_res.mat build_simpleLoop.log
 //
@@ -23,30 +24,40 @@ end simpleLoop;
 "); getErrorString();
 
 // Build FMU
-setCommandLineOptions("-d=newInst"); getErrorString();
 buildModelFMU(simpleLoop, version="2.0", fmuType="me"); getErrorString();
 
 // Re-build FMU
 system("unzip -o -qq simpleLoop.fmu -d simpleLoop_FMU/");
 remove("simpleLoop.fmu");
-system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi -DFMI2_OVERRIDE_FUNCTION_PREFIX\" && make -s", "build_simpleLoop.log"); getErrorString();
+system("cd simpleLoop_FMU/sources && ./configure CPPFLAGS=\"-I" + getInstallationDirectoryPath() + "/include/omc/c/fmi -DFMI2_OVERRIDE_FUNCTION_PREFIX -DOMC_FMI_RUNTIME\" && make -s", "build_simpleLoop.log"); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu", "simpleLoop_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --mode=me", "simpleLoop_me_systemCall.log");
 readFile("simpleLoop_me_systemCall.log");
 
 // Result:
 // true
 // ""
-// true
-// ""
 // "simpleLoop.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // true
 // 0
 // ""
 // 0
-// "info:    model doesn't contain any continuous state
-// info:    Result file: model_res.mat (bufferSize=10)
+// "info: *** FMU Simulation Info ***
+//      - model     : simpleLoop (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    model doesn't contain any continuous state
+// info:    maximum step size for 'simpleLoop.root': 0.002000
+// info:    Result file: simpleLoop_res.mat (bufferSize=10)
+// info:    Final Statistics for 'simpleLoop.root':
+//          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
+//          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

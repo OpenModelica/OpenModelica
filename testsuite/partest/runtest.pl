@@ -66,6 +66,71 @@ sub make_link {
   }
 }
 
+# Links a helper script (or any file) that a test invokes through a path which
+# may point above the test's own directory, e.g. system("python3 ../../foo.py").
+# The test was written relative to its own directory, but the sandbox runs the
+# test one directory level deeper, so the same path now resolves one level too
+# high. We recreate the file at exactly the path the test uses (relative to the
+# sandbox) and point it at the real file with an absolute target, so it resolves
+# correctly regardless of how many '../' the path contains.
+#
+# The link lands OUTSIDE the sandbox, in a directory shared by every test below
+# it (e.g. ModelExchange/1.0 and ModelExchange/3.0 tests both map ../../foo.py
+# to ModelExchange/foo.py). partest runs those tests concurrently, so the link
+# must NOT be owned/removed by any single test: if test A removed it on exit
+# while test B were still running, B's "python3 ../../foo.py" would fail. We
+# therefore create it idempotently and leave it in place. The target is an
+# absolute path to a committed file, so a leftover link is deterministic and
+# harmless; the stray names are git-ignored (see the .gitignore next to foo.py).
+sub make_external_link {
+  my $rel = shift; # path as written in the test, relative to the test directory
+
+  # The sandbox is one level below the test directory, so the real file is at
+  # "../$rel" as seen from here.
+  my $src = "../" . $rel;
+  return unless -e $src;
+  if (-l $rel && !-e $rel) {
+    unlink($rel); # stale/broken leftover link (dangling target); recreate below
+  }
+  return if -l $rel or -e $rel; # already in place (valid leftover link)
+
+  my $abs = Cwd::abs_path($src);
+  # Creation may race a concurrent sibling test; an EEXIST failure just means
+  # the other test won the race and the link is already there, which is fine.
+  my $ok;
+  if ($isWSL or ($osname eq 'MSWin32')) {
+    $ok = link($abs, $rel);
+  } else {
+    $ok = symlink($abs, $rel);
+  }
+  # Ignore the race outcome (link already present), but surface real failures
+  # (permissions/path) instead of letting them turn into confusing later errors.
+  if (!$ok && !(-l $rel or -e $rel)) {
+    die "make_external_link failed for '$rel' -> '$abs': $!";
+  }
+}
+
+# Windows cannot hard-link a directory, and Perl's symlink() needs a privilege
+# the build nodes do not hold, so a directory dependency is reproduced as an
+# NTFS junction instead - any user may create one, and both MSYS and native
+# tools follow it like a real directory.
+sub windows_junction {
+  my $src = shift;
+  my $dst = shift;
+
+  my $abs = Cwd::abs_path($src);
+  return 0 unless defined $abs;
+  # /mnt/c/... (WSL) and /c/... (MSYS) both name the drive C:.
+  $abs =~ s{^/mnt/([A-Za-z])/}{$1:/};
+  $abs =~ s{^/([A-Za-z])/}{$1:/};
+  return 0 unless $abs =~ m{^[A-Za-z]:/};
+  $abs =~ s{/}{\\}g;
+  my $win_dst = $dst;
+  $win_dst =~ s{/}{\\}g;
+  system("cmd /c mklink /J \"$win_dst\" \"$abs\" > nul 2>&1");
+  return (-d $dst) ? 1 : 0;
+}
+
 # Creates a symbolic link to a file, but only if the file exists.
 sub symlink_if_exists {
   my $src = shift;
@@ -73,7 +138,11 @@ sub symlink_if_exists {
 
   if (-e $src) {
     if ($isWSL or ($osname eq 'MSWin32')) {
-      link($src, $dst);
+      if (-d $src) {
+        windows_junction($src, $dst);
+      } else {
+        link($src, $dst);
+      }
     } else {
       symlink($src, $dst);
     }
@@ -165,6 +234,10 @@ sub enter_sandbox {
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
+    # The interpreter is not always spelled out: a test may take it from the
+    # environment, e.g. system("\"" + getEnvironmentVar("FMPY_TOOL") + "\" ../../x.py").
+    # Link whatever .py the command names, however it is invoked.
+    elsif (/system\(.*?[\s\"]([\w.\/-]+\.py)\b/) { make_external_link($1); }
     elsif (/system\(\"(gcc|g\+\+).*\s(\w*\.\w*)\s(\w*\.\w*)/) {
       my $header = lib_to_header($2);
       make_link($header);
@@ -196,6 +269,11 @@ sub enter_sandbox {
 # Exit the sandbox by going up one directory level and delete the temporary
 # directory.
 sub exit_sandbox {
+  # Note: links created outside the sandbox by make_external_link() are
+  # intentionally left in place. They are shared by sibling tests that may run
+  # concurrently, so removing them here would break a still-running sibling.
+  # They point at committed files and are git-ignored.
+
   chdir("..");
 
   # Hack to get RunScript working.
@@ -238,18 +316,34 @@ if ( $osname eq 'MSWin32' ) {
 # Run the testscript and redirect output to a logfile.
 my $cmd = "$rtest $test > $test.test_log 2>&1";
 # print ("CMD: ", $cmd, "\n");
-system("$cmd");
+if (-e $test_suit_path_rel . "rtest") {
+  system("$cmd");
+} else {
+  open(my $out, ">", "$test.test_log");
+  print $out "No rtest at ${test_suit_path_rel}rtest (cwd " . cwd() . ").\n"
+           . "Give the test as ./path/to/$test relative to the testsuite root,\n"
+           . "and run runtest.pl from there (runtests.pl from partest/).\n";
+  close($out);
+}
 
 # Read the logfile and see if the test succeeded or failed.
 open(my $test_log, "<", "$test.test_log") or die "Couldn't open test log $test.log: $!\n";
 
 my $exit_status = 1;
 my $erroneous = 0;
+my $disabled = 0;
 my $time = 0;
 my $nfailed = 1;
 
 while(<$test_log>) {
-  if(/\.\.\. erroneous/) {
+  if(/^ \. .*\.\.\. disabled\s*$/) {
+    # rtest refuses to run a test tagged '// suite: disabled'; neither a pass nor
+    # a failure. Only reachable via -file=, since the suite filtering in
+    # runtests.pl drops these tests before they get here.
+    $disabled = 1;
+    $nfailed = 0;
+  }
+  elsif(/\.\.\. erroneous/) {
     $erroneous = 1;
   }
   elsif(/== (\d) out of 1 tests failed.*time: (\d*)/) {
@@ -267,7 +361,9 @@ while(<$test_log>) {
 }
 
 if (!$no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print color 'yellow';
+  } elsif($nfailed =~ /0/) {
     if ($test_baseline) {
 	  print color 'blue';
 	} else {
@@ -285,13 +381,17 @@ if (!$no_colour) {
   }
   print " ";
 }
-if ($test_baseline) {
+if ($disabled) {
+  print "[$test:disabled]";
+} elsif ($test_baseline) {
   print "[Baselining $test:$time]";
 } else {
   print "[$test:$time]";
 }
 if ($no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print " Disabled\n";
+  } elsif($nfailed =~ /0/) {
     print " OK\n";
   } else {
     if($erroneous == 0) {
@@ -319,7 +419,10 @@ if ($withxml) {
   $classname =~ s,/,_,g;
 
   print $XMLOUT "<testcase classname=\"$classname\" name=\"$test\" time=\"$time\">";
-  if ($erroneous == 1) {
+  if ($disabled == 1) {
+    print $XMLOUT '<skipped message="disabled test" />';
+  }
+  elsif ($erroneous == 1) {
     print $XMLOUT '<skipped />';
   }
   elsif ($exit_status == 0) {

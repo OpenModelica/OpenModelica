@@ -21,12 +21,12 @@ end IfEquation9;
 
 // Result:
 // class IfEquation9
-//   parameter Boolean barr[1] = false;
-//   parameter Boolean barr[2] = false;
-//   parameter Boolean barr[3] = true;
-//   parameter Boolean barr[4] = false;
-//   parameter Boolean barr[5] = true;
-//   parameter Boolean barr[6] = false;
+//   final parameter Boolean barr[1] = false;
+//   final parameter Boolean barr[2] = false;
+//   final parameter Boolean barr[3] = true;
+//   final parameter Boolean barr[4] = false;
+//   final parameter Boolean barr[5] = true;
+//   final parameter Boolean barr[6] = false;
 //   Real a[1].x;
 //   final parameter Boolean a[1].b = false;
 //   Real a[2].x;

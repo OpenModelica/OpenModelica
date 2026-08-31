@@ -1,38 +1,41 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
-
-#include <limits>
 
 #include "Modeling/ModelicaClassDialog.h"
 #include "MainWindow.h"
@@ -42,6 +45,9 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
 #include "Modeling/ItemDelegate.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QApplication>
 #include <QMessageBox>
@@ -156,15 +162,14 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax);
+  mpLibraryTreeProxyModel->setFilterRegularExpression(regExp);
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
+  QRegExp regExp = TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
- #endif
+#endif
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
@@ -411,6 +416,11 @@ void ModelicaClassDialog::createModelicaClass()
   } else {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
   }
+  // if we add a new class in folder strucutre then we should mark its parent unsaved so new package.order can be saved.
+  if (pParentLibraryTreeItem->isSaveFolderStructure()) {
+    pParentLibraryTreeItem->setIsSaved(false);
+    pLibraryTreeModel->updateLibraryTreeItem(pParentLibraryTreeItem);
+  }
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, true);
@@ -509,19 +519,25 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
 void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
 {
   QFile file(fileName);
-  file.open(QIODevice::ReadOnly);
-  QString fileData(pCodec->toUnicode(file.readAll()));
-  file.close();
-  file.open(QIODevice::WriteOnly | QIODevice::Truncate);
-  QTextStream out(&file);
+
+  if (file.open(QIODevice::ReadOnly))
+  {
+    QString fileData(pCodec->toUnicode(file.readAll()));
+    file.close();
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+      QTextStream out(&file);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  out.setEncoding(QStringConverter::Utf8);
+      out.setEncoding(QStringConverter::Utf8);
 #else
-  out.setCodec(Helper::utf8.toUtf8().constData());
+      out.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-  out.setGenerateByteOrderMark(false);
-  out << fileData;
-  file.close();
+      out.setGenerateByteOrderMark(false);
+      out << fileData;
+      file.close();
+    }
+  }
 }
 
 /*!
@@ -868,7 +884,11 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
+#else
     connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
+#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);
@@ -1259,9 +1279,10 @@ void RenameClassDialog::renameClass()
 
   if (!MainWindow::instance()->getOMCProxy()->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure)).append(".").append(newName)))
   {
-    if (MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName))
+    QList<QString> classes = MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName);
+    if (!classes.isEmpty())
     {
-      newNameStructure = StringHandler::removeFirstLastCurlBrackets(MainWindow::instance()->getOMCProxy()->getResult());
+      newNameStructure = classes.first();
       // Change the name in tree
       //mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
       accept();
@@ -1343,6 +1364,9 @@ void SaveTotalFileDialog::saveTotalModel()
       mpStripCommentsCheckBox->isChecked(),
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
+#if defined(__EMSCRIPTEN__)
+    WasmLocalFiles::download(fileName);
+#endif
     accept();
   }
 }

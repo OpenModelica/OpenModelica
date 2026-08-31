@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -93,23 +97,23 @@ public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
 // Metatypes used to define the builtin types.
 public constant SCode.Element BUILTIN_REALTYPE = SCode.CLASS(
   "$RealType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_REAL(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
+  SCode.R_PREDEFINED_REAL(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGERTYPE = SCode.CLASS(
   "$IntegerType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_INTEGER(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
+  SCode.R_PREDEFINED_INTEGER(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_BOOLEANTYPE = SCode.CLASS(
   "$BooleanType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_BOOLEAN(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
+  SCode.R_PREDEFINED_BOOLEAN(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STRINGTYPE = SCode.CLASS(
   "$StringType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_STRING(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
+  SCode.R_PREDEFINED_STRING(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUMTYPE = SCode.CLASS(
   "$EnumType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_ENUMERATION(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
+  SCode.R_PREDEFINED_ENUMERATION(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
 
 public constant Item BUILTIN_REALTYPE_ITEM =
   NFSCodeEnv.VAR(BUILTIN_REALTYPE, NONE());
@@ -139,96 +143,96 @@ public constant Absyn.TypeSpec BUILTIN_STATESELECT_SPEC =
 // Generic elements:
 public constant SCode.Element BUILTIN_ATTR_QUANTITY = SCode.COMPONENT(
   "quantity", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_UNIT = SCode.COMPONENT(
   "unit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_DISPLAYUNIT = SCode.COMPONENT(
   "displayUnit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_FIXED = SCode.COMPONENT(
   "fixed", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_STATESELECT = SCode.COMPONENT(
   "stateSelect", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STATESELECT_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 // Real-specific elements:
 public constant SCode.Element BUILTIN_REAL_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_NOMINAL = SCode.COMPONENT(
   "nominal", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 // Integer-specific elements:
 public constant SCode.Element BUILTIN_INTEGER_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGER_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGER_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 // Boolean-specific elements:
 public constant SCode.Element BUILTIN_BOOLEAN_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 // String-specific elements:
 public constant SCode.Element BUILTIN_STRING_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 // StateSelect-specific elements:
 public constant SCode.Element BUILTIN_ENUM_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUM_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUM_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_NEVER = SCode.COMPONENT(
   "never", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_AVOID = SCode.COMPONENT(
   "avoid", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_DEFAULT = SCode.COMPONENT(
   "default", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_PREFER = SCode.COMPONENT(
   "prefer", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_ALWAYS = SCode.COMPONENT(
   "always", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
 
 
 // Environments for the builtin types:
@@ -319,25 +323,25 @@ public constant Item BUILTIN_REAL = NFSCodeEnv.CLASS(
   SCode.CLASS("Real", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_REAL_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), BUILTIN_REAL_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_INTEGER = NFSCodeEnv.CLASS(
   SCode.CLASS("Integer", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_INTEGER_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), BUILTIN_INTEGER_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_BOOLEAN = NFSCodeEnv.CLASS(
   SCode.CLASS("Boolean", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_BOOLEAN_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), BUILTIN_BOOLEAN_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STRING = NFSCodeEnv.CLASS(
   SCode.CLASS("String", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_STRING_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), BUILTIN_STRING_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STATESELECT = NFSCodeEnv.CLASS(
   SCode.CLASS("StateSelect",  SCode.defaultPrefixes,
@@ -348,19 +352,19 @@ public constant Item BUILTIN_STATESELECT = NFSCodeEnv.CLASS(
         SCode.ENUM("default", SCode.noComment),
         SCode.ENUM("prefer", SCode.noComment),
         SCode.ENUM("always", SCode.noComment)}),
-      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_STATESELECT_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), BUILTIN_STATESELECT_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_EXTERNALOBJECT = NFSCodeEnv.CLASS(
   SCode.CLASS("ExternalObject", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_CLOCK = NFSCodeEnv.CLASS(
   SCode.CLASS("Clock", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, AbsynUtil.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -385,7 +389,7 @@ protected function lookupSimpleName2
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv, inVisitedScopes)
+  (outItem, outPath, outEnv) := matchcontinue inEnv
     local
       FrameType frame_type;
       Env rest_env;
@@ -395,31 +399,31 @@ algorithm
       String scope_name;
 
     // Check the local scope.
-    case (_, _, _)
-      equation
-        (opt_item, opt_path, opt_env) =
+    case _
+      algorithm
+        (opt_item, opt_path, opt_env) :=
           lookupInLocalScope(inName, inEnv, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // If not found in the local scope, check the next frame unless the current
     // frame is encapsulated.
-    case (_, NFSCodeEnv.FRAME(name = SOME(scope_name), frameType = frame_type) ::
-        rest_env, _)
-      equation
+    case NFSCodeEnv.FRAME(name = SOME(scope_name), frameType = frame_type) ::
+        rest_env
+      algorithm
         frameNotEncapsulated(frame_type);
-        (opt_item, opt_path, opt_env) =
+        (opt_item, opt_path, opt_env) :=
           lookupSimpleName2(inName, rest_env, scope_name :: inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // If the current frame is encapsulated, check for builtin types and
     // functions in the top scope.
-    case (_, NFSCodeEnv.FRAME(frameType = NFSCodeEnv.ENCAPSULATED_SCOPE()) ::
-        rest_env, _)
-      equation
-        rest_env = NFSCodeEnv.getEnvTopScope(rest_env);
-        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env, {});
+    case NFSCodeEnv.FRAME(frameType = NFSCodeEnv.ENCAPSULATED_SCOPE()) ::
+        rest_env
+      algorithm
+        rest_env := NFSCodeEnv.getEnvTopScope(rest_env);
+        (opt_item, opt_path, opt_env) := lookupSimpleName2(inName, rest_env, {});
         checkBuiltinItem(opt_item);
       then
         (opt_item, opt_path, opt_env);
@@ -431,7 +435,7 @@ public function frameNotEncapsulated
   "Fails if the frame type is encapsulated, otherwise succeeds."
   input FrameType frameType;
 algorithm
-  _ := match(frameType)
+  () := match frameType
     case NFSCodeEnv.ENCAPSULATED_SCOPE() then fail();
     else ();
   end match;
@@ -440,11 +444,11 @@ end frameNotEncapsulated;
 protected function checkBuiltinItem
   input Option<Item> inItem;
 algorithm
-  _ := match(inItem)
+  () := match inItem
     local
 
-    case (SOME(NFSCodeEnv.CLASS(classType = NFSCodeEnv.BUILTIN()))) then ();
-    case (NONE()) then ();
+    case SOME(NFSCodeEnv.CLASS(classType = NFSCodeEnv.BUILTIN())) then ();
+    case NONE() then ();
   end match;
 end checkBuiltinItem;
 
@@ -460,7 +464,7 @@ public function lookupInLocalScope
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv, inVisitedScopes)
+  (outItem, outPath, outEnv) := matchcontinue inEnv
     local
       Env rest_env, env;
       Item item;
@@ -471,43 +475,43 @@ algorithm
       Option<Env> opt_env;
 
     // Look among the locally declared components.
-    case (_, _, _)
-      equation
-        (item, env) = lookupInClass(inName, inEnv);
+    case _
+      algorithm
+        (item, env) := lookupInClass(inName, inEnv);
       then
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env));
 
     // Look among the inherited components.
-    case (_, _, _)
-      equation
-        (opt_item, opt_path, opt_env) =
+    case _
+      algorithm
+        (opt_item, opt_path, opt_env) :=
           lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES(), inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // Look among the qualified imports.
-    case (_, NFSCodeEnv.FRAME(importTable =
-        NFSCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
-      equation
-        (opt_item, opt_path, opt_env) =
+    case NFSCodeEnv.FRAME(importTable =
+        NFSCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _
+      algorithm
+        (opt_item, opt_path, opt_env) :=
           lookupInQualifiedImports(inName, imps, inEnv);
       then
         (opt_item, opt_path, opt_env);
 
     // Look among the unqualified imports.
-    case (_, NFSCodeEnv.FRAME(importTable =
-        NFSCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
-      equation
-        (item, path, env) =
+    case NFSCodeEnv.FRAME(importTable =
+        NFSCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _
+      algorithm
+        (item, path, env) :=
           lookupInUnqualifiedImports(inName, imps, inEnv);
       then
         (SOME(item), SOME(path), SOME(env));
 
     // Look in the next scope only if the current scope is an implicit scope
     // (for example a for or match/matchcontinue scope).
-    case (_, NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: rest_env, _)
-      equation
-        (opt_item, opt_path, opt_env) =
+    case NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: rest_env
+      algorithm
+        (opt_item, opt_path, opt_env) :=
           lookupInLocalScope(inName, rest_env, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
@@ -546,19 +550,19 @@ algorithm
 
     case (NFSCodeEnv.ALIAS(name = name, path = NONE()),
           NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
-      equation
-        item = EnvTree.get(tree, name);
-        (item, env) = resolveAlias(item, inEnv);
+      algorithm
+        item := EnvTree.get(tree, name);
+        (item, env) := resolveAlias(item, inEnv);
       then
         (item, env);
 
     case (NFSCodeEnv.ALIAS(name = name, path = SOME(path)), _)
-      equation
-        env = NFSCodeEnv.getEnvTopScope(inEnv);
-        env = NFSCodeEnv.enterScopePath(env, path);
-        NFSCodeEnv.FRAME(clsAndVars = tree) :: _ = env;
-        item = EnvTree.get(tree, name);
-        (item, env) = resolveAlias(item, env);
+      algorithm
+        env := NFSCodeEnv.getEnvTopScope(inEnv);
+        env := NFSCodeEnv.enterScopePath(env, path);
+        NFSCodeEnv.FRAME(clsAndVars = tree) :: _ := env;
+        item := EnvTree.get(tree, name);
+        (item, env) := resolveAlias(item, env);
       then
         (item, env);
 
@@ -604,8 +608,7 @@ protected function lookupInBaseClasses2
   output Option<Env> outEnv;
 algorithm
   (outItem, outPath, outEnv) :=
-  matchcontinue(inName, inBaseClasses, inEnv, inEnvWithExtends,
-      inReplaceRedeclares, inVisitedScopes)
+  matchcontinue inBaseClasses
     local
       Extends ext;
       list<Extends> rest_ext;
@@ -613,16 +616,16 @@ algorithm
       Option<Absyn.Path> path;
       Option<Env> env;
 
-    case (_, ext :: _, _, _, _, _)
-      equation
-        (item, path, env) = lookupInBaseClasses3(inName, ext, inEnv,
+    case ext :: _
+      algorithm
+        (item, path, env) := lookupInBaseClasses3(inName, ext, inEnv,
           inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
       then
         (item, path, env);
 
-    case (_, _ :: rest_ext, _, _, _, _)
-      equation
-        (item, path, env) = lookupInBaseClasses2(inName, rest_ext, inEnv,
+    case _ :: rest_ext
+      algorithm
+        (item, path, env) := lookupInBaseClasses2(inName, rest_ext, inEnv,
           inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
       then
         (item, path, env);
@@ -643,8 +646,7 @@ public function lookupInBaseClasses3
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := match(inName, inBaseClass, inEnv,
-      inEnvWithExtends, inReplaceRedeclares, inVisitedScopes)
+  (outItem, outPath, outEnv) := match inBaseClass
     local
       Absyn.Path bc, path;
       Item item;
@@ -655,27 +657,26 @@ algorithm
       Option<Item> opt_item;
       Option<Env> opt_env;
 
-    case (_, NFSCodeEnv.EXTENDS(baseClass = bc as Absyn.QUALIFIED(name = "$E"),
-        info = info), _, _, _, _)
-      equation
+    case NFSCodeEnv.EXTENDS(baseClass = bc as Absyn.QUALIFIED(name = "$E"),
+        info = info)
+      algorithm
         NFEnvExtends.printExtendsError(bc, inEnvWithExtends, info);
       then
         (NONE(), NONE(), NONE());
 
     // Look in the first base class.
-    case (_, NFSCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, info = info),
-        _, _, _, _)
-      equation
+    case NFSCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, info = info)
+      algorithm
         // Find the base class.
-        (item, path, env) = lookupBaseClassName(bc, inEnv, info);
-        true = checkVisitedScopes(inVisitedScopes, inEnv, path);
+        (item, path, env) := lookupBaseClassName(bc, inEnv, info);
+        true := checkVisitedScopes(inVisitedScopes, inEnv, path);
         // Hide the imports to make sure that we don't find the name via them
         // (imports are not inherited).
-        item = NFSCodeEnv.setImportsInItemHidden(item, true);
+        item := NFSCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
-        (opt_item, opt_env) = NFSCodeFlattenRedeclare.replaceRedeclares(redecls,
+        (opt_item, opt_env) := NFSCodeFlattenRedeclare.replaceRedeclares(redecls,
           item, env, inEnvWithExtends, inReplaceRedeclares);
-        (opt_item, opt_path, opt_env) =
+        (opt_item, opt_path, opt_env) :=
           lookupInBaseClasses4(Absyn.IDENT(inName), opt_item, opt_env);
       then
         (opt_item, opt_path, opt_env);
@@ -691,18 +692,18 @@ protected function checkVisitedScopes
   input Absyn.Path inBaseClass;
   output Boolean outRes;
 algorithm
-  outRes := matchcontinue(inVisitedScopes, inEnv, inBaseClass)
+  outRes := matchcontinue inVisitedScopes
     local
       Absyn.Path env_path, visited_path, bc_path;
 
-    case ({}, _, _) then true;
+    case {} then true;
 
-    case (_, _, _)
-      equation
-        env_path = NFSCodeEnv.getEnvPath(inEnv);
-        bc_path = AbsynUtil.removePrefix(env_path, inBaseClass);
-        visited_path = AbsynUtil.stringListPath(inVisitedScopes);
-        true = AbsynUtil.pathPrefixOf(visited_path, bc_path);
+    case _
+      algorithm
+        env_path := NFSCodeEnv.getEnvPath(inEnv);
+        bc_path := AbsynUtil.removePrefix(env_path, inBaseClass);
+        visited_path := AbsynUtil.stringListPath(inVisitedScopes);
+        true := AbsynUtil.pathPrefixOf(visited_path, bc_path);
       then
         false;
 
@@ -720,7 +721,7 @@ protected function lookupInBaseClasses4
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := match(inName, inItem, inEnv)
+  (outItem, outPath, outEnv) := match(inItem, inEnv)
     local
       Item item;
       Absyn.Path path;
@@ -728,13 +729,13 @@ algorithm
 
     // If the item and env is NONE it means that an error occured (hopefully a
     // user error), and we should stop searching.
-    case (_, NONE(), NONE()) then (NONE(), NONE(), NONE());
+    case (NONE(), NONE()) then (NONE(), NONE(), NONE());
 
     // Otherwise, try to find the name in the given item. If the name can not be
     // found we fail, so that we can continue to look in other base classes.
-    case (_, SOME(item), SOME(env))
-      equation
-        (item, path, env) = lookupNameInItem(inName, item, env);
+    case (SOME(item), SOME(env))
+      algorithm
+        (item, path, env) := lookupNameInItem(inName, item, env);
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -755,7 +756,7 @@ public function lookupInQualifiedImports
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue inImports
     local
       Absyn.Ident name;
       Absyn.Path path;
@@ -767,27 +768,27 @@ algorithm
       Env env;
 
     // No match, search the rest of the list of imports.
-    case (_, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _)
-      equation
-        false = stringEqual(inName, name);
-        (opt_item, opt_path, opt_env) =
+    case Absyn.NAMED_IMPORT(name = name) :: rest_imps
+      algorithm
+        false := stringEqual(inName, name);
+        (opt_item, opt_path, opt_env) :=
           lookupInQualifiedImports(inName, rest_imps, inEnv);
       then
         (opt_item, opt_path, opt_env);
 
     // Match, look up the fully qualified import path.
-    case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _)
-      equation
-        true = stringEqual(inName, name);
-        (item, path, env) = lookupFullyQualified(path, inEnv);
+    case Absyn.NAMED_IMPORT(name = name, path = path) :: _
+      algorithm
+        true := stringEqual(inName, name);
+        (item, path, env) := lookupFullyQualified(path, inEnv);
       then
         (SOME(item), SOME(path), SOME(env));
 
     // Partial match, return NONE(). This is when only part of the import path
     // can be found, in which case we should stop looking further.
-    case (_, Absyn.NAMED_IMPORT(name = name) :: _, _)
-      equation
-        true = stringEqual(inName, name);
+    case Absyn.NAMED_IMPORT(name = name) :: _
+      algorithm
+        true := stringEqual(inName, name);
       then
         (NONE(), NONE(), NONE());
 
@@ -805,7 +806,7 @@ public function lookupInUnqualifiedImports
   output Absyn.Path outPath;
   output Env outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inImports, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue inImports
     local
       Item item;
       Absyn.Path path, path2;
@@ -815,21 +816,21 @@ algorithm
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
     // name we are looking for.
-    case (_, Absyn.UNQUAL_IMPORT(path = path) :: _, _)
-      equation
+    case Absyn.UNQUAL_IMPORT(path = path) :: _
+      algorithm
         // Look up the import path.
-        (item, path, env) = lookupFullyQualified(path, inEnv);
+        (item, path, env) := lookupFullyQualified(path, inEnv);
         // Look up the name among the public member of the found package.
-        (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (item, path2, env) := lookupNameInItem(Absyn.IDENT(inName), item, env);
         // Combine the paths for the name and the package it was found in.
-        path = joinPaths(path, path2);
+        path := joinPaths(path, path2);
       then
         (item, path, env);
 
     // No match, continue with the rest of the imports.
-    case (_, _ :: rest_imps, _)
-      equation
-        (item, path, env) =
+    case _ :: rest_imps
+      algorithm
+        (item, path, env) :=
           lookupInUnqualifiedImports(inName, rest_imps, inEnv);
       then
         (item, path, env);
@@ -865,28 +866,27 @@ algorithm
     local
       Absyn.Ident name;
       Absyn.Path path, new_path;
-      Frame top_scope;
       Env  env;
       Item item;
 
     // Simple name, look in the local scope.
     case (Absyn.IDENT(name = name), _)
-      equation
-        (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv, {});
-        env = NFSCodeEnv.setImportTableHidden(env, false);
+      algorithm
+        (SOME(item), SOME(path), SOME(env)) := lookupInLocalScope(name, inEnv, {});
+        env := NFSCodeEnv.setImportTableHidden(env, false);
       then
         (item, path, env);
 
     // Qualified name.
     case (Absyn.QUALIFIED(name = name, path = path), _ :: _)
-      equation
+      algorithm
         // Look up the name in the local scope.
-        (SOME(item), SOME(new_path), SOME(env)) =
+        (SOME(item), SOME(new_path), SOME(env)) :=
           lookupInLocalScope(name, inEnv, {});
-        env = NFSCodeEnv.setImportTableHidden(env, false);
+        env := NFSCodeEnv.setImportTableHidden(env, false);
         // Look for the rest of the path in the found item.
-        (item, path, env) = lookupNameInItem(path, item, env);
-        path = joinPaths(new_path, path);
+        (item, path, env) := lookupNameInItem(path, item, env);
+        path := joinPaths(new_path, path);
       then
         (item, path, env);
 
@@ -901,7 +901,7 @@ public function lookupCrefInPackage
   output Item outItem;
   output Absyn.ComponentRef outCref;
 algorithm
-  (outItem, outCref) := matchcontinue(inCref, inEnv)
+  (outItem, outCref) := matchcontinue inCref
     local
       Absyn.Ident name;
       Absyn.Path new_path;
@@ -911,39 +911,39 @@ algorithm
       Env env;
 
     // Simple identifier, look in the local scope.
-    case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
-      equation
-        (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv, {});
-        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
+    case Absyn.CREF_IDENT(name = name, subscripts = subs)
+      algorithm
+        (SOME(item), SOME(new_path), _) := lookupInLocalScope(name, inEnv, {});
+        cref := AbsynUtil.pathToCrefWithSubs(new_path, subs);
       then
         (item, cref);
 
     // Qualified identifier, what we get back is not fully qualified
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs,
-        componentRef = cref_rest), _)
-      equation
+    case Absyn.CREF_QUAL(name = name, subscripts = subs,
+        componentRef = cref_rest)
+      algorithm
         // Look in the local scope.
-        (SOME(item), SOME(new_path), SOME(env)) =
+        (SOME(item), SOME(new_path), SOME(env)) :=
           lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item.
-        (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
+        (item, cref_rest) := lookupCrefInItem(cref_rest, item, env);
         // not fully qualified
-        failure(Absyn.CREF_FULLYQUALIFIED(_) = cref_rest);
-        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
-        cref = AbsynUtil.joinCrefs(cref, cref_rest);
+        failure(Absyn.CREF_FULLYQUALIFIED(_) := cref_rest);
+        cref := AbsynUtil.pathToCrefWithSubs(new_path, subs);
+        cref := AbsynUtil.joinCrefs(cref, cref_rest);
       then
         (item, cref);
 
     // Qualified identifier, what we get back is fully qualified, i.e. from import!
-    case (Absyn.CREF_QUAL(name = name,
-        componentRef = cref_rest), _)
-      equation
+    case Absyn.CREF_QUAL(name = name,
+        componentRef = cref_rest)
+      algorithm
         // Look in the local scope.
-        (SOME(item), SOME(_), SOME(env)) =
+        (SOME(item), SOME(_), SOME(env)) :=
           lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item, fully qualified
-        (item, cref_rest as Absyn.CREF_FULLYQUALIFIED(_)) = lookupCrefInItem(cref_rest, item, env);
-        cref = cref_rest;
+        (item, cref_rest as Absyn.CREF_FULLYQUALIFIED(_)) := lookupCrefInItem(cref_rest, item, env);
+        cref := cref_rest;
       then
         (item, cref);
 
@@ -960,7 +960,7 @@ public function lookupNameInItem
   output Absyn.Path outPath;
   output Env outEnv;
 algorithm
-  (outItem, outPath, outEnv) := match(inName, inItem, inEnv)
+  (outItem, outPath, outEnv) := match(inItem, inEnv)
     local
       Item item;
       Absyn.Path path;
@@ -972,32 +972,32 @@ algorithm
       SourceInfo info;
 
     // A variable.
-    case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
+    case (NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
         modifications = mods, info = info)), env)
-      equation
+      algorithm
         //env = NFSCodeEnv.setImportTableHidden(env, false);
         // Look up the variable type.
-        (item, _, type_env) = lookupTypeSpec(type_spec, env, info);
+        (item, _, type_env) := lookupTypeSpec(type_spec, env, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        redeclares := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (item, type_env, _) := NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
-        (item, path, env) = lookupNameInItem(inName, item, type_env);
+        (item, path, env) := lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
 
     // A class.
-    case (_, NFSCodeEnv.CLASS(env = {class_env}), _)
-      equation
+    case (NFSCodeEnv.CLASS(env = {class_env}), _)
+      algorithm
         // Look in the class's environment.
-        env = NFSCodeEnv.enterFrame(class_env, inEnv);
-        (item, path, env) = lookupNameInPackage(inName, env);
+        env := NFSCodeEnv.enterFrame(class_env, inEnv);
+        (item, path, env) := lookupNameInPackage(inName, env);
       then
         (item, path, env);
 
-    case (_, NFSCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _)
-      equation
-        (item, path, env) = lookupNameInItem(inName, item, env);
+    case (NFSCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _)
+      algorithm
+        (item, path, env) := lookupNameInItem(inName, item, env);
       then
         (item, path, env);
 
@@ -1013,7 +1013,7 @@ public function lookupCrefInItem
   output Item outItem;
   output Absyn.ComponentRef outCref;
 algorithm
-  (outItem, outCref) := match(inCref, inItem, inEnv)
+  (outItem, outCref) := match inItem
     local
       Item item;
       Absyn.ComponentRef cref;
@@ -1025,31 +1025,31 @@ algorithm
       SourceInfo info;
 
     // A variable.
-    case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
-        modifications = mods, info = info)), _)
-      equation
+    case NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
+        modifications = mods, info = info))
+      algorithm
         // Look up the variable's type.
-        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        (item, _, type_env) := lookupTypeSpec(type_spec, inEnv, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        redeclares := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (item, type_env, _) := NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
-        (item, cref) = lookupCrefInItem(inCref, item, type_env);
+        (item, cref) := lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);
 
     // A class.
-    case (_, NFSCodeEnv.CLASS(env = {class_env}), _)
-      equation
+    case NFSCodeEnv.CLASS(env = {class_env})
+      algorithm
         // Look in the class's environment.
-        env = NFSCodeEnv.enterFrame(class_env, inEnv);
-        (item, cref) = lookupCrefInPackage(inCref, env);
+        env := NFSCodeEnv.enterFrame(class_env, inEnv);
+        (item, cref) := lookupCrefInPackage(inCref, env);
       then
         (item, cref);
 
-    case (_, NFSCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _)
-      equation
-        (item, cref) = lookupCrefInItem(inCref, item, env);
+    case NFSCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env)
+      algorithm
+        (item, cref) := lookupCrefInItem(inCref, item, env);
       then
         (item, cref);
 
@@ -1083,23 +1083,22 @@ protected function lookupBaseClasses2
   input output list<Item> items;
   input output list<Absyn.Path> bcl;
 algorithm
-  (items, bcl) := matchcontinue(inBaseClass, inName, inEnv)
+  (items, bcl) := matchcontinue inBaseClass
     local
       Absyn.Path bc;
-      list<NFSCodeEnv.Redeclaration> redecls;
       SourceInfo info;
       Env env;
       Item item;
 
-    case (NFSCodeEnv.EXTENDS(baseClass = bc,
-        info = info), _, _)
-      equation
+    case NFSCodeEnv.EXTENDS(baseClass = bc,
+        info = info)
+      algorithm
         // Look up the base class.
-        (item, _, env) = lookupBaseClassName(bc, inEnv, info);
+        (item, _, env) := lookupBaseClassName(bc, inEnv, info);
 
         // Hide the imports to make sure that we don't find the name via them
         // (imports are not inherited).
-        item = NFSCodeEnv.setImportsInItemHidden(item, true);
+        item := NFSCodeEnv.setImportsInItemHidden(item, true);
 
         // Note that we don't need to apply any redeclares here, since no part
         // of the base class path may be replaceable. The element we're looking
@@ -1108,7 +1107,7 @@ algorithm
 
         // Check if we can find the name in the base class. If so, add the base
         // class path to the list.
-        (item, _, _) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (item, _, _) := lookupNameInItem(Absyn.IDENT(inName), item, env);
       then
         (item :: items, bc :: bcl);
 
@@ -1151,7 +1150,7 @@ public function lookupRedeclaredClassByItem
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := matchcontinue(inItem, inEnv, inInfo)
+  (outItem, outEnv) := matchcontinue inItem
     local
       SCode.Ident name;
       Item item;
@@ -1159,13 +1158,13 @@ algorithm
       SCode.Redeclare rdp;
       SCode.Replaceable rpp;
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name)), _, _)
-      equation
-        (SOME(item), _, SOME(env)) = lookupInBaseClasses(name, inEnv,
+    case NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name))
+      algorithm
+        (SOME(item), _, SOME(env)) := lookupInBaseClasses(name, inEnv,
           IGNORE_REDECLARES(), {});
-        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
+        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) :=
           NFSCodeEnv.getItemPrefixes(item);
-        (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
+        (item, env) := lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
       then
         (item, env);
 
@@ -1174,8 +1173,8 @@ algorithm
     // adding the redeclaration to the environment, and lookupRedeclaredClass2
     // outputs its own errors.
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.lookupRedeclaredClassByItem failed on " +
             NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
@@ -1194,7 +1193,7 @@ protected function lookupRedeclaredClass2
   output Env outEnv;
 algorithm
   (outItem, outEnv) :=
-    matchcontinue(inItem, inRedeclarePrefix, inReplaceablePrefix, inEnv, inInfo)
+    matchcontinue(inItem, inRedeclarePrefix, inReplaceablePrefix)
     local
       SCode.Ident name;
       Item item;
@@ -1204,40 +1203,38 @@ algorithm
       SCode.Replaceable rpp;
 
     // Replaceable element which is not a redeclaration => return the element.
-    case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE(), _, _)
+    case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE())
       then (inItem, inEnv);
 
     // Replaceable element which is a redeclaration => continue.
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name)),
-        SCode.REDECLARE(), SCode.REPLACEABLE(), _, _)
-      equation
-        (SOME(item), _, SOME(env)) = lookupInBaseClasses(name, inEnv,
+    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name)), SCode.REDECLARE(), SCode.REPLACEABLE())
+      algorithm
+        (SOME(item), _, SOME(env)) := lookupInBaseClasses(name, inEnv,
           IGNORE_REDECLARES(), {});
-        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
+        SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) :=
           NFSCodeEnv.getItemPrefixes(item);
-        (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
+        (item, env) := lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
       then
         (item, env);
 
-    case (NFSCodeEnv.REDECLARED_ITEM(item, env), _, _, _, _)
-      equation
-        (item, env) = lookupRedeclaredClass2(item, inRedeclarePrefix,
+    case (NFSCodeEnv.REDECLARED_ITEM(item, env), _, _)
+      algorithm
+        (item, env) := lookupRedeclaredClass2(item, inRedeclarePrefix,
             inReplaceablePrefix, env, inInfo);
       then
         (item, env);
 
     // Non-replaceable element => error.
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, info = info)),
-        _, SCode.NOT_REPLACEABLE(), _, _)
-      equation
+    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, info = info)), _, SCode.NOT_REPLACEABLE())
+      algorithm
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {name}, info);
       then
         fail();
 
     // Redeclaration of class to component => error.
-    case (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)), _, _, _, _)
-      equation
+    case (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)), _, _)
+      algorithm
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
           {"component", name, "a class"}, info);
@@ -1245,8 +1242,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.lookupRedeclaredClass2 failed on " +
             NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
@@ -1261,7 +1258,7 @@ public function lookupBuiltinType
   input Absyn.Ident inName;
   output Item outItem;
 algorithm
-  outItem := match(inName)
+  outItem := match inName
     case "Real" then BUILTIN_REAL;
     case "Integer" then BUILTIN_INTEGER;
     case "Boolean" then BUILTIN_BOOLEAN;
@@ -1269,8 +1266,8 @@ algorithm
     case "StateSelect" then BUILTIN_STATESELECT;
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
     case "Clock"
-      equation
-        true = Config.synchronousFeaturesAllowed();
+      algorithm
+        true := Config.synchronousFeaturesAllowed();
       then BUILTIN_CLOCK;
     case "$RealType" then BUILTIN_REALTYPE_ITEM;
     case "$IntegerType" then BUILTIN_INTEGERTYPE_ITEM;
@@ -1285,23 +1282,23 @@ protected function lookupBuiltinName
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := match(inName)
+  (outItem, outEnv) := match inName
     local
       Absyn.Ident id;
       Item item;
 
     // A builtin type.
     case Absyn.IDENT(name = id)
-      equation
-        item = lookupBuiltinType(id);
+      algorithm
+        item := lookupBuiltinType(id);
       then
         (item, NFSCodeEnv.emptyEnv);
 
     // Builtin type StateSelect. The only builtin type that can be qualified,
     // i.e. StateSelect.always.
     case Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(id))
-      equation
-        (item, _) = lookupInClass(id, BUILTIN_STATESELECT_ENV);
+      algorithm
+        (item, _) := lookupInClass(id, BUILTIN_STATESELECT_ENV);
       then
         (item, BUILTIN_STATESELECT_ENV);
 
@@ -1325,7 +1322,7 @@ protected function lookupName
   output Env outEnv;
 algorithm
   (outItem, outName, outEnv) :=
-  matchcontinue(inName, inEnv, inLookupStrategy, inInfo, inErrorType)
+  matchcontinue(inName, inLookupStrategy, inErrorType)
     local
       Absyn.Ident id;
       Item item;
@@ -1335,41 +1332,41 @@ algorithm
       ErrorTypes.Message error_id;
 
     // Builtin types.
-    case (_, _, LOOKUP_ANY(), _, _)
-      equation
-        (item, env) = lookupBuiltinName(inName);
+    case (_, LOOKUP_ANY(), _)
+      algorithm
+        (item, env) := lookupBuiltinName(inName);
       then
         (item, inName, env);
 
     // Simple name.
-    case (Absyn.IDENT(name = id), _, _, _, _)
-      equation
-        (item, new_path, env) = lookupSimpleName(id, inEnv);
+    case (Absyn.IDENT(name = id), _, _)
+      algorithm
+        (item, new_path, env) := lookupSimpleName(id, inEnv);
       then
         (item, new_path, env);
 
     // Qualified name.
-    case (Absyn.QUALIFIED(name = id, path = path), _, _, _, _)
-      equation
+    case (Absyn.QUALIFIED(name = id, path = path), _, _)
+      algorithm
         // Look up the first identifier.
-        (item, new_path, env) = lookupSimpleName(id, inEnv);
+        (item, new_path, env) := lookupSimpleName(id, inEnv);
         // Look up the rest of the name in the environment of the first
         // identifier.
-        (item, path, env) = lookupNameInItem(path, item, env);
-        path = joinPaths(new_path, path);
+        (item, path, env) := lookupNameInItem(path, item, env);
+        path := joinPaths(new_path, path);
       then
         (item, path, env);
 
-    case (Absyn.FULLYQUALIFIED(path = path), _, _, _, _)
-      equation
-        (item, path, env) = lookupFullyQualified(path, inEnv);
+    case (Absyn.FULLYQUALIFIED(path = path), _, _)
+      algorithm
+        (item, path, env) := lookupFullyQualified(path, inEnv);
       then
         (item, path, env);
 
-    case (_, _, _, _, SOME(error_id))
-      equation
-        name_str = AbsynUtil.pathString(inName);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
+    case (_, _, SOME(error_id))
+      algorithm
+        name_str := AbsynUtil.pathString(inName);
+        env_str := NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
         fail();
@@ -1399,16 +1396,16 @@ algorithm
     // Neither of the paths are fully qualified, just join them.
     case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
     case (Absyn.QUALIFIED(name = id, path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
+      algorithm
+        path := joinPaths(path, inPath2);
       then
         Absyn.QUALIFIED(id, path);
 
     // The first path is fully qualified, merge it with the second path and
     // return the result as a fully qualified path.
     case (Absyn.FULLYQUALIFIED(path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
+      algorithm
+        path := joinPaths(path, inPath2);
       then
         AbsynUtil.makeFullyQualified(path);
   end match;
@@ -1461,7 +1458,7 @@ public function lookupBaseClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv) := match(inName, inEnv, inInfo)
+  (outItem, outName, outEnv) := match(inName, inEnv)
     local
       Absyn.Ident id;
       Env env;
@@ -1470,23 +1467,23 @@ algorithm
 
     // Special case for the baseclass of a class extends. Should be looked up
     // among the inherited elements of the enclosing class.
-    case (Absyn.QUALIFIED(name = "$ce", path = path as Absyn.IDENT(name = id)), _ :: env, _)
-      equation
-        (item, env) = lookupInheritedName(id, env);
+    case (Absyn.QUALIFIED(name = "$ce", path = path as Absyn.IDENT(name = id)), _ :: env)
+      algorithm
+        (item, env) := lookupInheritedName(id, env);
       then
         (item, path, env);
 
     // The extends was marked as erroneous in the qualifying phase, print an error.
-    case (Absyn.QUALIFIED(name = "$E"), _, _)
-      equation
+    case (Absyn.QUALIFIED(name = "$E"), _)
+      algorithm
         NFEnvExtends.printExtendsError(inName, inEnv, inInfo);
       then
         fail();
 
     // Normal baseclass.
     else
-      equation
-        (item, path, env) = lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
+      algorithm
+        (item, path, env) := lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
           SOME(Error.LOOKUP_BASECLASS_ERROR));
       then
         (item, path, env);
@@ -1552,27 +1549,27 @@ protected function crefStripEnvPrefix
   input Env inEnv;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inEnv)
+  outCref := matchcontinue inEnv
     local
       Absyn.Path env_path;
       Absyn.ComponentRef cref1, cref2;
 
-    case (_, _)
-      equation
-        false = Flags.isSet(Flags.STRIP_PREFIX);
+    case _
+      algorithm
+        false := Flags.isSet(Flags.STRIP_PREFIX);
       then inCref;
 
-    case (_, _)
-      equation
+    case _
+      algorithm
         // Don't do this if -d=newInst is used, it messed up the new
         // instantiation which handles this correctly.
-        false = Flags.isSet(Flags.SCODE_INST);
-        env_path = NFSCodeEnv.getEnvPath(inEnv);
-        cref1 = AbsynUtil.unqualifyCref(inCref);
+        false := Flags.isSet(Flags.SCODE_INST);
+        env_path := NFSCodeEnv.getEnvPath(inEnv);
+        cref1 := AbsynUtil.unqualifyCref(inCref);
         // try to strip as much as possible
-        cref2 = crefStripEnvPrefix2(cref1, env_path);
+        cref2 := crefStripEnvPrefix2(cref1, env_path);
         // check if we really did anything, fail if we did nothing!
-        false = AbsynUtil.crefEqual(cref1, cref2);
+        false := AbsynUtil.crefEqual(cref1, cref2);
       then
         cref2;
 
@@ -1593,23 +1590,23 @@ algorithm
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.QUALIFIED(name = id2, path = env_path))
-      equation
-        true = stringEqual(id1, id2);
+      algorithm
+        true := stringEqual(id1, id2);
       then
         crefStripEnvPrefix2(cref, env_path);
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.IDENT(name = id2))
-      equation
-        true = stringEqual(id1, id2);
+      algorithm
+        true := stringEqual(id1, id2);
       then
         cref;
 
     // adrpo: leave it as stripped as you can if you can't match it above!
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}),
           Absyn.IDENT(name = id2))
-      equation
-        false = stringEqual(id1, id2);
+      algorithm
+        false := stringEqual(id1, id2);
       then
         inCref;
   end matchcontinue;
@@ -1623,28 +1620,27 @@ public function lookupComponentRef
   input SourceInfo inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inEnv, inInfo)
+  outCref := matchcontinue inCref
     local
       Absyn.ComponentRef cref;
-      Env env;
 
     // Special case for StateSelect, do nothing.
-    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {},
-        componentRef = Absyn.CREF_IDENT()), _, _)
+    case Absyn.CREF_QUAL(name = "StateSelect", subscripts = {},
+        componentRef = Absyn.CREF_IDENT())
       then inCref;
 
     // Wildcard.
-    case (Absyn.WILD(), _, _) then inCref;
+    case Absyn.WILD() then inCref;
 
     // All other component references.
-    case (_, _, _)
-      equation
+    case _
+      algorithm
         // First look up all subscripts, because all subscripts should be found
         // in the enclosing scope of the component reference.
-        cref = NFSCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
+        cref := NFSCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
         // Then look up the component reference itself.
-        (cref,_) = lookupComponentRef2(cref, inEnv);
-        cref = crefStripEnvPrefix(cref, inEnv);
+        (cref,_) := lookupComponentRef2(cref, inEnv);
+        cref := crefStripEnvPrefix(cref, inEnv);
       then
         cref;
 
@@ -1661,7 +1657,7 @@ protected function lookupComponentRef2
   output Absyn.ComponentRef outCref;
   output Env outEnv;
 algorithm
-  (outCref, outEnv) := match(inCref, inEnv)
+  (outCref, outEnv) := match inCref
     local
       Absyn.ComponentRef cref, rest_cref;
       Absyn.Ident name;
@@ -1671,32 +1667,32 @@ algorithm
       Item item;
 
     // A simple name.
-    case (Absyn.CREF_IDENT(name, subs), _)
-      equation
-        (_, path, env) = lookupSimpleName(name, inEnv);
-        cref = AbsynUtil.pathToCrefWithSubs(path, subs);
+    case Absyn.CREF_IDENT(name, subs)
+      algorithm
+        (_, path, env) := lookupSimpleName(name, inEnv);
+        cref := AbsynUtil.pathToCrefWithSubs(path, subs);
       then
         (cref, env);
 
     // A qualified name.
-    case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
-      equation
+    case Absyn.CREF_QUAL(name, subs, rest_cref)
+      algorithm
         // Lookup the first identifier.
-        (item, new_path, env) = lookupSimpleName(name, inEnv);
-        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
+        (item, new_path, env) := lookupSimpleName(name, inEnv);
+        cref := AbsynUtil.pathToCrefWithSubs(new_path, subs);
 
         // Lookup the rest of the cref in the enclosing scope of the first
         // identifier.
-        (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
-        cref = joinCrefs(cref, rest_cref);
+        (item, rest_cref) := lookupCrefInItem(rest_cref, item, env);
+        cref := joinCrefs(cref, rest_cref);
       then
         (cref, env);
 
     // A fully qualified name.
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
-      equation
-        cref = lookupCrefFullyQualified(cref, inEnv);
-        env = NFSCodeEnv.getEnvTopScope(inEnv);
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref)
+      algorithm
+        cref := lookupCrefFullyQualified(cref, inEnv);
+        env := NFSCodeEnv.getEnvTopScope(inEnv);
       then
         (cref, env);
 
@@ -1723,8 +1719,8 @@ public function joinCrefs
   input Absyn.ComponentRef inCref2;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref1, inCref2)
-    case (_, Absyn.CREF_FULLYQUALIFIED()) then inCref2;
+  outCref := match inCref2
+    case Absyn.CREF_FULLYQUALIFIED() then inCref2;
     else AbsynUtil.joinCrefs(inCref1, inCref2);
   end match;
 end joinCrefs;
@@ -1739,7 +1735,7 @@ public function lookupTypeSpec
   output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
 algorithm
-  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
+  (outItem, outTypeSpec, outTypeEnv) := match inTypeSpec
     local
       Absyn.Path path, newpath;
       Absyn.Ident name;
@@ -1749,16 +1745,16 @@ algorithm
       Option<Absyn.ArrayDim> ad;
 
     // A normal type.
-    case (Absyn.TPATH(path, ad), _, _)
-      equation
-        (item, newpath, env) = lookupClassName(path, inEnv, inInfo);
+    case Absyn.TPATH(path, ad)
+      algorithm
+        (item, newpath, env) := lookupClassName(path, inEnv, inInfo);
       then
         (item, Absyn.TPATH(newpath, ad), env);
 
     // A MetaModelica type such as list or tuple.
-    case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
-      equation
-        cls = makeDummyMetaType(name);
+    case Absyn.TCOMPLEX(path = Absyn.IDENT(name = name))
+      algorithm
+        cls := makeDummyMetaType(name);
       then
         (NFSCodeEnv.CLASS(cls, NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE()),
           inTypeSpec,
@@ -1776,7 +1772,7 @@ algorithm
     inTypeName,
     SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
 
 public function qualifyPath
@@ -1788,31 +1784,31 @@ public function qualifyPath
   input Option<ErrorTypes.Message> inErrorType;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)
+  outPath := matchcontinue inPath
     local
       Absyn.Ident id;
       Absyn.Path path;
       Env env;
 
     // Never fully qualify builtin types.
-    case (Absyn.IDENT(name = id), _, _, _)
-      equation
-        _ = lookupBuiltinType(id);
+    case Absyn.IDENT(name = id)
+      algorithm
+        lookupBuiltinType(id);
       then
         inPath;
 
-    case (_, _, _, _)
-      equation
-        (_, path, env) = lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
+    case _
+      algorithm
+        (_, path, env) := lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
           inInfo, inErrorType);
-        path = NFSCodeEnv.mergePathWithEnvPath(path, env);
-        path = AbsynUtil.makeFullyQualified(path);
+        path := NFSCodeEnv.mergePathWithEnvPath(path, env);
+        path := AbsynUtil.makeFullyQualified(path);
       then
         path;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.qualifyPath failed on " +
           AbsynUtil.pathString(inPath) + " in " +
           NFSCodeEnv.getEnvName(inEnv));

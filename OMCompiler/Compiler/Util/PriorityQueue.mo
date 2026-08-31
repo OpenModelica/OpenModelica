@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -124,17 +128,17 @@ function meld2
   input T inTs2;
   output T ts;
 algorithm
-  ts := match (b1,b2,t1,inTs1,t2,inTs2)
+  ts := match (b1, b2, inTs1, inTs2)
     local
       T ts1,ts2;
 
-    case (true,_,_,ts1,_,ts2)
-      equation
-        ts = meld(ts1,t2::ts2);
+    case (true, _, ts1, ts2)
+      algorithm
+        ts := meld(ts1,t2::ts2);
       then t1::ts;
-    case (_,true,_,ts1,_,ts2)
-      equation
-        ts = meld(t1::ts1,ts2);
+    case (_, true, ts1, ts2)
+      algorithm
+        ts := meld(t1::ts1,ts2);
       then t2::ts;
     else ins(link(t1,t2), meld(inTs1,inTs2));
   end match;
@@ -152,9 +156,9 @@ algorithm
 
     case {t} then root(t);
     case t::ts
-      equation
-        x = root(t);
-        y = findMin(ts);
+      algorithm
+        x := root(t);
+        y := findMin(ts);
       then if compareElement(x,y) then x else y;
   end match;
 end findMin;
@@ -192,14 +196,14 @@ function elements2
   input list<Element> acc;
   output list<Element> elts;
 algorithm
-  elts := match (its,acc)
+  elts := match its
     local
       Element elt;
       T ts;
-    case ({},_) then listReverse(acc);
-    case (ts,_)
-      equation
-        (ts,elt) = deleteAndReturnMin(ts);
+    case {} then listReverse(acc);
+    case ts
+      algorithm
+        (ts,elt) := deleteAndReturnMin(ts);
       then elements2(ts,elt::acc);
   end match;
 end elements2;
@@ -243,11 +247,11 @@ algorithm
       Rank r1,r2;
       T ts1,ts2;
     case (NODE(e1,r1,ts1),NODE(e2,r2,ts2))
-      equation
-        r1 = r1+1;
-        r2 = r2+1;
-        ts1 = t2::ts1;
-        ts2 = t1::ts2;
+      algorithm
+        r1 := r1+1;
+        r2 := r2+1;
+        ts1 := t2::ts1;
+        ts2 := t1::ts2;
       then if compareElement(root(t1),root(t2)) then NODE(e1,r1,ts1) else NODE(e2,r2,ts2);
   end match;
 end link;
@@ -278,9 +282,9 @@ algorithm
       Boolean b;
     case {t} then (t,{});
     case t1::ts1
-      equation
-        (t2,ts2) = getMin(ts1);
-        b = compareElement(root(t1),root(t2));
+      algorithm
+        (t2,ts2) := getMin(ts1);
+        b := compareElement(root(t1),root(t2));
       then (if b then t1 else t2, if b then ts1 else t1::ts2);
   end match;
 end getMin;

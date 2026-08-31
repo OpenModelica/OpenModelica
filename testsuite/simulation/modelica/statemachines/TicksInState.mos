@@ -1,8 +1,6 @@
 // name:     TicksInState
 // keywords: state machines
 // status: correct
-// cflags: -d=-newInst
-//
 
 loadFile("TicksInState.mo");
 echo(false);

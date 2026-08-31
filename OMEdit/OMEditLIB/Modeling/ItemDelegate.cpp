@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -36,7 +42,6 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "OMS/BusDialog.h"
 #include "OMPlot.h"
 
 #include <QPainter>
@@ -340,19 +345,6 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       connect(pComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
       return pComboBox;
     }
-  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent())) {
-    if (index.column() == 1) { // TLM type column
-      ConnectorsTreeView *pConnectorsTreeView = qobject_cast<ConnectorsTreeView*>(parent());
-      ConnectorsModel *pConnectorsModel = qobject_cast<ConnectorsModel*>(pConnectorsTreeView->model());
-      // create the TLM types combobox
-      QComboBox *pComboBox = new QComboBox(pParent);
-      pComboBox->addItems(pConnectorsModel->getTLMTypes());
-      QStringList tlmTypesDescriptions = pConnectorsModel->getTLMTypesDescriptions();
-      for (int i = 0 ; i < tlmTypesDescriptions.size() ; i++) {
-        pComboBox->setItemData(i, tlmTypesDescriptions.at(i), Qt::ToolTipRole);
-      }
-      return pComboBox;
-    }
   }
   return QItemDelegate::createEditor(pParent, option, index);
 }
@@ -376,15 +368,6 @@ void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) cons
     if (currentIndex > -1) {
       comboBox->setCurrentIndex(currentIndex);
     }
-  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent()) && index.column() == 1) {
-    ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
-    QString value = index.model()->data(index, Qt::DisplayRole).toString();
-    QComboBox* comboBox = static_cast<QComboBox*>(editor);
-    //set the index of the combo box
-    int currentIndex = comboBox->findText(value, Qt::MatchExactly);
-    // only set the description here. The actual value is set in ConnectorsModel::setData().
-    pConnectorItem->setTLMTypeDescription(comboBox->itemData(currentIndex, Qt::ToolTipRole).toString());
-    comboBox->setCurrentIndex(currentIndex);
   } else {
     QItemDelegate::setEditorData(editor, index);
   }

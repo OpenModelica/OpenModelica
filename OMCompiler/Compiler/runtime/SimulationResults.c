@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include "util/read_matlab4.h"
 #include "util/write_matlab4.h"
 #include <stdint.h>
@@ -10,6 +45,7 @@
 #include <gc.h>
 #include "util/omc_file.h"
 #include "util/omc_msvc.h" /* For INFINITY and NAN */
+#include "util/omc_strdup.h"
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +89,7 @@ static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
   simresglob->curFormat = UNKNOWN_PLOT;
   if (simresglob->curFileName) free(simresglob->curFileName);
   simresglob->curFileName = NULL;
+  simresglob->mtime = 0;
 }
 
 static PlotFormat SimulationResultsImpl__openFile(const char *filename, SimulationResult_Globals* simresglob)
@@ -111,7 +148,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   }
 
   simresglob->curFormat = format;
-  simresglob->curFileName = strdup(filename);
+  simresglob->curFileName = omc_strdup(filename);
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
   omc_stat(filename, &buf);
   simresglob->mtime = buf.st_mtime;
@@ -233,9 +270,7 @@ static void* makeOMCStyle(const char *var, int omcStyle)
   }
   res1 = openmodelicaStyleVariableName(var);
   res2 = _replace(res1 ? res1 : var, " ", "");
-  if (res1 == NULL) {
-    free(res1);
-  }
+  free(res1);
   return mmc_mk_scon(res2);
 }
 
@@ -404,12 +439,10 @@ static inline int intMax(int a, int b)
 
 static int endsWith(const char *s, const char *suffix)
 {
-  s = strrchr(s, *suffix);
-  if (s != NULL) {
-    return 0==strcmp(s, suffix);
-  } else {
-    return 0;
-  }
+  size_t len_s = strlen(s);
+  size_t len_suffix = strlen(suffix);
+  if (len_suffix > len_s) return 0;
+  return (strcmp(s + len_s - len_suffix, suffix) == 0);
 }
 int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription, int readAllVars)
 {
@@ -467,7 +500,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       for (i=1; i<numToFilter; i++) {
         fprintf(fout, ",\"%s\"", mat_var[i]->name);
       }
-      fprintf(fout, ",nrows=%d\n", simresglob.matReader.nrows);
+      fprintf(fout, "\n");
       for (i=0; i<simresglob.matReader.nrows; i++) {
         fprintf(fout, "%.15g", vals[0][i]);
         for (j=1; j<numToFilter; j++) {
@@ -617,6 +650,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       double *timevals = omc_matlab4_read_vals(&simresglob.matReader, 1);
       int last_found=0;
       int nevents=0, neventpoints=0;
+      j=0;
       for (i=1; i<numberOfIntervals; i++) {
         double t = start + (stop-start)*((double)i)/numberOfIntervals;
         while (timevals[j]<=t) {

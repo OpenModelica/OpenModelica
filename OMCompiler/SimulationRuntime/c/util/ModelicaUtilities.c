@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -35,12 +32,26 @@
 #include <stdlib.h>
 #include "omc_error.h"
 
+void OpenModelica_Simulation_ModelicaVFormatMessage(const char*string, va_list args) {
+  va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+}
+
+void OpenModelica_Simulation_ModelicaVFormatWarning(const char*string, va_list args) {
+  va_warningStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+}
+
+/* Like OpenModelica_Modelica{,V}FormatError below: a host that runs the
+   simulation in its own process (the Rust omc's wasm-jit target) rebinds these
+   to route an external function's messages into its simulation log. */
+void (*OpenModelica_ModelicaVFormatMessage)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatMessage;
+void (*OpenModelica_ModelicaVFormatWarning)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatWarning;
+
 void ModelicaMessage(const char* string) {
   ModelicaFormatMessage("%s", string);
 }
 
 extern void ModelicaVFormatMessage(const char*string, va_list args) {
-  va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+  OpenModelica_ModelicaVFormatMessage(string, args);
 }
 
 void ModelicaFormatMessage(const char* string,...) {
@@ -55,7 +66,7 @@ void ModelicaWarning(const char* string) {
 }
 
 extern void ModelicaVFormatWarning(const char*string, va_list args) {
-  va_warningStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+  OpenModelica_ModelicaVFormatWarning(string, args);
 }
 
 void ModelicaFormatWarning(const char* string,...) {

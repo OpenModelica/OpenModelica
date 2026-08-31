@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

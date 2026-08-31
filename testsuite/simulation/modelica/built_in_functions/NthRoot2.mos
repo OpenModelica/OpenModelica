@@ -1,0 +1,30 @@
+// name:     NthRoot2
+// status: correct
+// teardown_command: rm -rf NthRoot2_* NthRoot2.log NthRoot2.libs NthRoot2 NthRoot2.exe NthRoot2.cpp NthRoot2.makefile output.log
+//
+//
+
+loadString("
+  model NthRoot2
+    Real x = -4;
+    Real y = nthRoot(x, 2);
+  end NthRoot2;
+");
+getErrorString();
+simulate(NthRoot2, stopTime=1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NthRoot2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: NthRoot2
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | debug   | Model error: First argument of nthRoot(-4.0, 2) must be >= 0 if the second is even, got -4
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

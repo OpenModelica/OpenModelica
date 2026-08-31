@@ -291,11 +291,11 @@ To check whether new values are updated to model , we can again query the getPar
 The model can be simulated using the `simulate` API in the following ways,
   #.  without any arguments
   #.  resultfile (keyword argument) - (only filename is allowed and not the location)
-  #.  simflags (keyword argument) - runtime simulationflags supported by OpenModelica
+  #.  simargs (keyword argument) - runtime simulationflags supported by OpenModelica
 
 >>> mod.simulate() // method-1 default result file name will be used
 >>> mod.simulate(resultfile="tmpbouncingBall.mat")  // method-2 resultfile name provided by users
->>> mod.simulate(simflags="-noEventEmit -noRestart -override=e=0.3,g=9.71") // method-3 simulationflags provided by users
+>>> mod.simulate(simargs={"noEventEmit": None, "noRestart": None, "override": {"e": 0.3, "g": 10}}) // method-3 simulationflags provided by users
 
 
 Linearization

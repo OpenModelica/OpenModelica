@@ -1,4 +1,13 @@
 
+# Where the *.mo (and the Susan log) generated from the *.tpl are written.
+# Consumers refer to this directory rather than Compiler/Template:
+# meta_modelica_source_list.cmake for the compiler build, and
+# LoadCompilerSources.mos via OMCOMPILERGENERATEDSOURCES for the bootstrapping tests.
+# The source layout is mirrored below it (generated-mo/Template,
+# generated-mo/susan_codegen, ...) so a consumer only has to swap the root.
+set(OMC_GENERATED_MO_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated-mo
+    CACHE INTERNAL "Build-tree root holding the .mo generated from Susan templates.")
+
 # This macro takes a template file and list of dependencies as inputs.
 # You can use it as:
 #           omc_add_template_target(SOURCE CodegenC.tpl
@@ -20,12 +29,14 @@ macro(omc_add_template_target)
     # message(STATUS "${template_file} : ${depends_on}")
 
     get_filename_component(file_name_no_ext ${template_file} NAME_WLE)
+    get_filename_component(file_name ${template_file} NAME)
     get_filename_component(source_dir ${template_file} DIRECTORY)
-    set(output_mo_file ${source_dir}/${file_name_no_ext}.mo)
-    # omc generates the mo file in the current dir. So we might as well put the log
-    # there for now.
-    # set(output_log_file ${output_dir}/${file_name_no_ext}.log)
-    set(output_log_file ${source_dir}/${file_name_no_ext}.log)
+    # Mirror the template's own directory (Template, susan_codegen, ...) under
+    # the generated-mo root, so the tree matches the source layout.
+    get_filename_component(source_subdir ${source_dir} NAME)
+    set(output_dir ${OMC_GENERATED_MO_DIR}/${source_subdir})
+    set(output_mo_file ${output_dir}/${file_name_no_ext}.mo)
+    set(output_log_file ${output_dir}/${file_name_no_ext}.log)
 
     add_custom_command(
         # We need to work in the directory where the tpl files are located because
@@ -33,8 +44,19 @@ macro(omc_add_template_target)
         # in the current directory only.
         WORKING_DIRECTORY ${source_dir}
 
-        DEPENDS ${template_file} ${depends_on}
-        COMMAND ${OMC_EXE} -d=failtrace ${template_file} > ${output_log_file} || (cat ${output_log_file} && false)
+        # ${TPL_EXTRA_DEPENDS} is empty for the C build; in the Rust build
+        # (rust_omc.cmake) it is the rust_susan stamp, so each *.mo is
+        # regenerated after the Susan binary is (re)built.
+        DEPENDS ${template_file} ${depends_on} ${TPL_EXTRA_DEPENDS}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
+        # Susan copies the template path it is given verbatim into the generated
+        # .mo (Tpl.sourceInfo("...", line, column)), and from there it ends up in
+        # the C generated for the compiler. Pass it relative to the working
+        # directory set above so that stays "CodegenC.tpl" instead of the absolute
+        # path of whoever ran the build; the bootstrapping snapshot produced by
+        # .cmake/bootstrap_sources.cmake has to be the same no matter where it was
+        # generated.
+        COMMAND ${OMC_EXE} -d=failtrace --tplOutputDir=${output_dir} ${file_name} > ${output_log_file} || (cat ${output_log_file} && false)
 
         OUTPUT ${output_mo_file}
         COMMENT "Generating ${output_mo_file} from ${template_file}"
@@ -52,13 +74,6 @@ macro(omc_add_template_target)
     # message(STATUS "Added Susan template target ${template_file}")
 
 endmacro(omc_add_template_target)
-
-
-
-
-
-
-
 
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.tpl
@@ -94,8 +109,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/Unparsing.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
 
-
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.tpl
@@ -118,8 +131,9 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCo
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
+                        DEPENDS ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.tpl
@@ -128,7 +142,7 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.t
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
+                        DEPENDS ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
@@ -136,7 +150,15 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
+                        DEPENDS ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
+
+omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
+                        DEPENDS ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
@@ -267,18 +289,8 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.t
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
 
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/TaskSystemDump.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.tpl)
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTplTV.mo)
 
-
-
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegenTV.mo)
-
-

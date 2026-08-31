@@ -29,7 +29,7 @@ end ExpandableConnector1;
 
 // Result:
 // class ExpandableConnector1
-//   Real bus.speed "virtual variable in expandable connector";
+//   Real bus.speed "variable added to expandable connector";
 //   Real sensor.speed;
 //   Real actuator.speed;
 // equation

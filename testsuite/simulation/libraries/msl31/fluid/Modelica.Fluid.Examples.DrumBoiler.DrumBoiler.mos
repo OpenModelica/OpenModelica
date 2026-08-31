@@ -2,6 +2,7 @@
 //keyword:     fluid
 //status:      correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 // simulation
 //

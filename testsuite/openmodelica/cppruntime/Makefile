@@ -11,6 +11,7 @@ arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
+clockedInitTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
@@ -22,6 +23,8 @@ mslElectricalMachinesTest.mos \
 mslElectricalMachinesTestDAE.mos \
 mslElectricalSensorsTest.mos \
 mslMathFFT1Test.mos \
+mslMechanicsTestProtectedVector \
+mslThermalMassesTestNB.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
@@ -143,4 +146,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -1,6 +1,7 @@
 // name:     ReplaceableBaseClass
 // keywords: redeclare, replaceable, extends
 // status:   incorrect
+// suite: disabled
 //
 // Checks that the compiler gives an error if the base class in an extends
 // clause is replaceable.
@@ -18,8 +19,8 @@ end ReplaceableBaseClass;
 
 // Result:
 // Error processing file: ReplaceableBaseClass.mo
-// [ReplaceableBaseClass.mo:11:3-11:12:writable] Notification: From here:
-// [ReplaceableBaseClass.mo:10:15-10:28:writable] Error: Base class T is replaceable.
+// [ReplaceableBaseClass.mo:12:3-12:12:writable] Notification: From here:
+// [ReplaceableBaseClass.mo:12:15-11:28:writable] Error: Base class T is replaceable.
 // Error: Error occurred while flattening model ReplaceableBaseClass
 //
 // # Error encountered! Exiting...

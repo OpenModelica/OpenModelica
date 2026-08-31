@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
@@ -187,7 +214,7 @@ void OMSUSystem::initialize()
     fs::path resource_location = fs::path(_osu_working_dir);
     resource_location /= resources_foler;
     string path = string("file:") + resource_location.string();
-    
+
     jm_status_enu_t instantiateModelStatus = fmi2_import_instantiate(
         _osu_me->instance, _osu_name.c_str(), fmi2_model_exchange,
         path.c_str(), fmi2_false);
@@ -252,7 +279,7 @@ void OMSUSystem::initialize()
     _instantiated = true;
 
    /*
-   
+
    _osu_me->solving_mode = omsi_event_mode;
 
     fmi2_event_info_t* eventInfo = _osu_me->event_info;
@@ -301,12 +328,12 @@ void OMSUSystem::initialize()
 
     if (getGlobalSettings()->getOutputPointType() != OPT_NONE)
     {
-       
+
         _writeOutput = (dynamic_pointer_cast<IExtendedSimObjects>(_simObjects))->LoadWriter(
             _dimReal + _dimInteger + _dimBoolean).lock();
         _writeOutput->init();
         _writeOutput->clear();
-       
+
     }
 }
 
@@ -623,7 +650,7 @@ string OMSUSystem::getModelName()
 
 bool OMSUSystem::handleSystemEvents(bool* events)
 {
-    if ((_osu_me->solving_mode == omsi_continuousTime_mode))
+    if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
         fmi2_event_info_t* eventInfo = _osu_me->event_info;
         fmi2_status_t status = fmi2_import_enter_event_mode(_osu_me->instance);
@@ -711,12 +738,12 @@ void OMSUSystem::evaluateODE(const UPDATETYPE command)
     {
         //write inputs
         //read outputs
-       
+
         getRHS(__zDot);
         getReal(_simVars->getRealVarsVector());
-       
+
     }
-   
+
 }
 
 void OMSUSystem::evaluateDAE(const UPDATETYPE command)
@@ -733,9 +760,9 @@ void OMSUSystem::evaluateZeroFuncs(const UPDATETYPE command)
         //write inputs
         //read outputs
         getReal(_simVars->getRealVarsVector());
-     
-       
-        
+
+
+
     }
 }
 
@@ -775,9 +802,9 @@ double OMSUSystem::getTime()
 // Computes the conditions of time event samplers for the current time
 double OMSUSystem::computeNextTimeEvents(double currTime)
 {
-   
+
         //fmi2_event_info_t* eventInfo = _osu_me->event_info;
-      
+
         //if (eventInfo->nextEventTimeDefined)
         //{
         //    double tnext = eventInfo->nextEventTime;
@@ -786,7 +813,7 @@ double OMSUSystem::computeNextTimeEvents(double currTime)
         //}
         //else
         //    return _global_settings->getEndTime();
-       
+
       return std::numeric_limits<double>::max();;
 }
 
@@ -1172,7 +1199,7 @@ void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
         const all_vars_t params = make_tuple(_real_vars.outputParams,
                                              _int_vars.outputParams, _bool_vars.outputParams,
                                              _der_vars.outputParams, _res_vars.outputParams);
-        
+
         neg_all_vars_t neg_all_params = make_tuple(_real_vars.negateParams,
             _int_vars.negateParams, _bool_vars.negateParams,
             _der_vars.negateParams, _res_vars.negateParams);

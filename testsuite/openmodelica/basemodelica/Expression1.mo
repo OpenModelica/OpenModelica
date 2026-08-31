@@ -22,16 +22,16 @@ end Expression1;
 // //! base 0.1.0
 // package 'Expression1'
 //   function 'f'
-//     input Real[:] 'X';
+//     input Real 'X'[:];
 //     output Real 'Y';
-//     constant Real[2] 'Z' = {2.0, 3.0};
+//     constant Real 'Z'[2] = {2.0, 3.0};
 //   algorithm
 //     'Y' := 1.0 / ('X' * 'Z');
 //   end 'f';
 //
 //   model 'Expression1'
 //     Real 'Q';
-//     Real[2] 'X';
+//     Real 'X'[2];
 //   equation
 //     'Q' = 'f'('X');
 //   end 'Expression1';

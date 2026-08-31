@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -33,13 +37,13 @@ encapsulated package NFBuiltinCall
   import Absyn;
   import AbsynUtil;
   import Call = NFCall;
-  import NFCallAttributes;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.{Variability, Purity};
   import Type = NFType;
   import Subscript = NFSubscript;
   import System;
+  import Global;
 
 protected
   import Config;
@@ -92,7 +96,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call: " +
+          Error.terminate(getInstanceName() + " got unknown call: " +
             Call.toString(call), sourceInfo());
         then
           fail();
@@ -109,10 +113,6 @@ public
     output Purity purity;
   protected
     ComponentRef cref;
-    InstNode fn_node;
-    Expression first;
-    list<Expression> rest;
-    String name;
     InstContext.Type next_context;
   algorithm
     Call.UNTYPED_CALL(ref = cref) := call;
@@ -141,6 +141,7 @@ public
       case "min" then typeMinMaxCall("min", call, next_context, info);
       case "ndims" then typeNdimsCall(call, next_context, info);
       case "noEvent" then typeNoEventCall(call, next_context, info);
+      case "nthRoot" then typeNthRootCall(call, next_context, info);
       case "ones" then typeZerosOnesCall("ones", call, next_context, info);
       case "potentialRoot" then typePotentialRootCall(call, next_context, info);
       case "pre" then typePreCall(call, next_context, info);
@@ -167,7 +168,7 @@ public
       case "zeros" then typeZerosOnesCall("zeros", call, next_context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
+          Error.terminate(getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
         then
           fail();
     end match;
@@ -179,7 +180,6 @@ public
     input SourceInfo info;
     output Expression callExp;
   protected
-    Integer argc = listLength(posArgs);
     Expression arg1, arg2;
   algorithm
     assertNoNamedParams("size", namedArgs, info);
@@ -190,7 +190,7 @@ public
       else
         algorithm
           Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {"size" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+            {"size" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
              "size(Any[:, ...]) => Integer[:]\n  size(Any[:, ...], Integer) => Integer"}, info);
         then
           fail();
@@ -203,17 +203,13 @@ public
     input SourceInfo info;
     output Expression arrayExp;
   protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Type ty;
   algorithm
     assertNoNamedParams("array", namedArgs, info);
 
     // array can take any number of arguments, but needs at least one.
     if listEmpty(posArgs) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {"array" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+        {"array" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
          "array(Any, Any, ...) => Any[:]"}, info);
       fail();
     end if;
@@ -474,9 +470,6 @@ protected
     output Purity purity;
   protected
     Call argtycall;
-    Function fn;
-    list<TypedArg> args;
-    TypedArg start,interval;
   algorithm
     argtycall := Call.typeMatchNormalCall(call, context, info);
     ty := Call.typeOf(argtycall);
@@ -659,11 +652,9 @@ protected
     output Purity purity;
   protected
     Call argtycall;
-    Function fn;
     list<TypedArg> args;
     TypedArg arg;
     InstNode fn_node;
-    NFCallAttributes ca;
   algorithm
     // edge may not be used in a function context.
     if InstContext.inFunction(context) then
@@ -698,7 +689,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
     Expression arg1, arg2;
     Type ty1, ty2;
@@ -801,7 +791,6 @@ protected
     Expression exp_arg, n_arg;
     Type exp_ty, n_ty;
     Variability n_var;
-    Function fn;
     Integer n;
   algorithm
     if not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) then
@@ -946,7 +935,6 @@ protected
     output Variability variability = fillVariability;
     output Purity purity = fillPurity;
   protected
-    Expression fill_arg;
     list<Expression> ty_args;
     Variability arg_var;
     Purity arg_pur;
@@ -966,13 +954,13 @@ protected
         if arg_var > Variability.PARAMETER and not (InstContext.inInstanceAPI(context) or Expression.contains(arg, Expression.isResizableCref)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
-             List.toString(fillArg :: dimensionArgs, Expression.toString,
+             List.toStringCustom(fillArg :: dimensionArgs, Expression.toString,
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 
         if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
           Structural.markExp(arg);
-          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.evalExp(arg);
+          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
       end if;
@@ -1071,7 +1059,7 @@ protected
       args := Expression.arrayScalarElements(arg);
 
       if listLength(args) <> 1 then
-        Error.assertion(false, getInstanceName() + " failed to expand scalar(" +
+        Error.terminate(getInstanceName() + " failed to expand scalar(" +
           Expression.toString(arg) + ") correctly", info);
       end if;
 
@@ -1095,7 +1083,6 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
-    Variability var;
     Function fn;
     Dimension vector_dim = Dimension.fromInteger(1);
     Boolean dim_found = false;
@@ -1148,7 +1135,6 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
-    Variability var;
     Function fn;
     list<Dimension> dims;
     Dimension dim1, dim2;
@@ -1209,7 +1195,6 @@ protected
     Variability var;
     Purity pur;
     TypeCheck.MatchKind mk;
-    Function fn;
     Integer n;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1332,12 +1317,6 @@ protected
     output Variability var = Variability.PARAMETER;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Expression arg;
-    Function fn;
-    InstNode node;
   algorithm
     // cardinality may only be used in a condition of an assert or
     // if-statement/equation (the specification says only if-statement,
@@ -1849,6 +1828,35 @@ protected
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
   end typeNoEventCall;
 
+  function typeNthRootCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity;
+  protected
+    Expression v, n;
+    Call c;
+  algorithm
+    c := Call.typeMatchNormalCall(call, context, info);
+    Call.TYPED_CALL(arguments = {v, n}, ty = ty, var = var, purity = purity) := c;
+    callExp := Expression.CALL(c);
+
+    if Expression.isNonPositive(n) then
+      Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+
+    if Expression.isEven(n) and Expression.isNegative(v) then
+      Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+  end typeNthRootCall;
+
   function typeGetInstanceName
     input Call call;
     input InstContext.Type context;
@@ -1861,7 +1869,7 @@ protected
     InstNode scope;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    _ := Call.typeMatchNormalCall(call, context, info);
+    Call.typeMatchNormalCall(call, context, info);
     // getInstanceName is normally derived from the prefix during the flattening,
     // but sometimes the call is constant evaluated instead (e.g. when it's used
     // in a package). So we create an expression here that contains the scope.
@@ -1877,7 +1885,6 @@ protected
     output Variability var = Variability.PARAMETER;
     output Purity purity = Purity.IMPURE;
   protected
-    Call ty_call;
     list<Expression> args;
     Integer args_count;
     Expression e1, e2;
@@ -1887,7 +1894,7 @@ protected
 
     callExp := match args
       // Clock() - inferred clock.
-      case {} then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+      case {} then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)));
       // Clock(interval) - real clock.
       case {e1} then Expression.CLKCONST(Expression.ClockKind.REAL_CLOCK(e1));
       case {e1, e2}
@@ -1927,12 +1934,11 @@ protected
     output Purity purity = Purity.IMPURE;
   protected
     Call ty_call;
-    Type arg_ty;
     list<TypedArg> args;
     list<TypedArg> namedArgs;
     Expression e1, e2;
-    Type t1, t2;
-    Variability v1, v2;
+    Type t1;
+    Variability v1;
     ComponentRef fn_ref;
     Function normalSample, clockedSample;
     InstNode recopnode;
@@ -1984,7 +1990,7 @@ protected
       case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)}, {})
         algorithm
           ty_call := Call.makeTypedCall(clockedSample,
-            {e1, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v1, purity, t1);
+            {e1, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)))}, v1, purity, t1);
         then
           (Expression.CALL(ty_call), t1, v1);
 
@@ -2022,13 +2028,12 @@ protected
     output Variability variability = Variability.DISCRETE;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref, arg_ref;
+    ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
     Variability var;
     Function fn;
-    InstNode arg_node;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
@@ -2105,13 +2110,12 @@ protected
     output Variability variability = Variability.CONTINUOUS;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref, arg_ref;
+    ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg1, arg2;
     Variability var1, var2;
     Function fn;
-    InstNode arg_node;
     Type ty1, ty2;
     Expression expStatic, expDynamic;
   algorithm
@@ -2132,9 +2136,13 @@ protected
     try
       (arg2, ty2, var2) := Typing.typeExp(expDynamic, context, info);
     else
-      variability := var1;
-      callExp := arg1;
-      return;
+      if InstContext.inInstanceAPI(context) then
+        fail();
+      else
+        variability := var1;
+        callExp := arg1;
+        return;
+      end if;
     end try;
 
     arg2 := ExpandExp.expand(arg2);
@@ -2251,7 +2259,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
-            {"pure", Gettext.translateContent(Error.FUNCTION_CALL_EXPRESSION)}, info);
+            {"pure", Error.FUNCTION_CALL_EXPRESSION}, info);
         then
           fail();
     end match;
@@ -2282,8 +2290,6 @@ protected
     output Type ty;
     output Variability var;
     output Purity pur;
-  protected
-    Call c;
   algorithm
     outCall := Call.typeMatchNormalCall(call, context, info, vectorize);
     ty := Call.typeOf(outCall);
@@ -2291,5 +2297,5 @@ protected
     pur := Call.purity(outCall);
   end typeBuiltinCall;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBuiltinCall;

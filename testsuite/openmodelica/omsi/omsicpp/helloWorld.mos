@@ -1,7 +1,7 @@
 // name: helloWorldOMSI
 // keywords: omsi omsicpp fmu fmi
 // status: correct
-// teardown_command: rm -rf OMCpphelloWorldOMSI* helloWorldOMSI* helloWorldOMSI_res.mat helloWorldOMSI_result_diff.log modelDescription.xml
+// teardown_command: rm -rf OMCpphelloWorldOMSI* helloWorldOMSI.fmu helloWorldOMSI.log helloWorldOMSI.sh helloWorldOMSI_FMU* helloWorldOMSI_init* helloWorldOMSI_info.json helloWorldOMSI_res.mat helloWorldOMSI_result_diff.log modelDescription.xml
 // cflags: -d=-newInst
 //
 // Tests generating and simulating an OMSICPP FMU
@@ -38,10 +38,12 @@ compareSimulationResults("helloWorldOMSI_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "helloWorldOMSI_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'helloWorldOMSI', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'helloWorldOMSI', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // {"Files Equal!"}
 // endResult

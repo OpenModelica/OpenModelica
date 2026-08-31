@@ -1,0 +1,64 @@
+name: nightly-release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      OMVERSION : ''
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          submodules: recursive
+
+      - name: Build Assets
+        run: |
+          export OMVERSION=`git describe --tags --match "v*.*" --always`
+          echo Version: $OMVERSION
+          echo "$OMVERSION" > OMVERSION.txt
+          cd ..
+          ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
+          zip -q ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
+          rm -f ${{ github.event.repository.name }}-$OMVERSION
+          ls -l ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-nightly.zip
+
+      - name: Delete old release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          assets=$(gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null | grep 'nightly\.zip$' || true)
+          if [ -z "$assets" ]; then
+            echo "No old nightly assets to delete."
+            exit 0
+          fi
+          echo "$assets" | while read -r asset; do
+            echo "Deleting $asset"
+            gh release delete-asset nightly "$asset" --yes
+          done
+
+      - name: Upload the new assets
+        uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: nightly
+          files: ${{ github.event.repository.name }}-*nightly.zip
+
+      - name: Check that the release has the new assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          assets=$(gh release view nightly --json assets --jq '.assets[] | "\(.name) \(.size) \(.state)"')
+          echo "$assets"
+          echo "$assets" | grep -q 'nightly\.zip .* uploaded'

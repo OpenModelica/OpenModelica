@@ -1,31 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -94,6 +90,30 @@ char* load_source_file(const char* file_name){
     return source;
 }
 
+/* Device buffers are sized and filled with the *host's* sizeof(modelica_real),
+ * i.e. double, so a device without double precision cannot run any model that
+ * uses Reals.
+ */
+static bool ocl_device_has_fp64(cl_device_id device){
+    size_t ext_size = 0;
+    if (clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, 0, NULL, &ext_size) != CL_SUCCESS || ext_size == 0)
+        return false;
+
+    char* extensions = (char*)malloc(ext_size + 1);
+    if (!extensions)
+        return false;
+
+    bool has_fp64 = false;
+    if (clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, ext_size, extensions, NULL) == CL_SUCCESS) {
+        extensions[ext_size] = '\0';
+        has_fp64 = (strstr(extensions, "cl_khr_fp64") != NULL)
+                || (strstr(extensions, "cl_amd_fp64") != NULL);
+    }
+
+    free(extensions);
+    return has_fp64;
+}
+
 
 void ocl_get_device(){
     cl_uint nr_dev;
@@ -121,21 +141,44 @@ void ocl_get_device(){
         {
             plat_id = default_ocl_device;
         }
-        // Not a valid id. set default_ocl_device=0 so that the next if can take care of it.
+        // Not a valid id. set default_ocl_device=0 so that the next if auto-selects.
         else
         {
             printf("- The device id you provided to OMC is not valid.\n");
-            printf("- Please select a valid OpenCL device number. \n");
+            printf("- Selecting an OpenCL device automatically.\n");
             fflush(stdout);
             default_ocl_device = 0;
         }
     }
 
 
-    // If the default device id is not given in to the Openmodelica compiler OR
-    // If the given id was not valid then
-    // Show the selection options to the user.
+    // No (valid) device id given to the OpenModelica compiler: auto-select the
+    // first platform whose device can actually run the generated kernels
     if (!default_ocl_device)
+    {
+        for (cl_uint i = 1; i <= nr_dev; i++)
+        {
+            cl_device_id candidate = NULL;
+            if (clGetDeviceIDs(cpPlatform[i-1], CL_DEVICE_TYPE_ALL, 1, &candidate, NULL) != CL_SUCCESS)
+                continue;
+
+            if (ocl_device_has_fp64(candidate))
+            {
+                plat_id = i;
+                break;
+            }
+        }
+
+        if (plat_id < 1 || plat_id > nr_dev)
+        {
+            printf("- None of the %d available OpenCL device(s) supports double precision (cl_khr_fp64).\n", nr_dev);
+            printf("- ParModelica requires it.\n");
+            fflush(stdout);
+            exit(1);
+        }
+    }
+
+#ifdef BE_OCL_VERBOSE
     {
         printf("- %d OpenCL devices available.\n\n", nr_dev);
 
@@ -163,10 +206,10 @@ void ocl_get_device(){
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
             printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %llu MB\n", i, static_cast<unsigned long long>(mem2/1024/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %ld MB\n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %zu MB\n", i, arg_nr);
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %ld \n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %zu \n", i, arg_nr);
             MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
@@ -176,24 +219,38 @@ void ocl_get_device(){
             fflush(stdout);
         }
 
-        while(plat_id < 1 || plat_id > nr_dev)
-        {
-            printf("- Select your device:      ");     fflush(stdout);
-            scanf ("%d",&plat_id);
+        printf("- Using OpenCL device %d.\n\n", plat_id);
+        fflush(stdout);
+    }
+#endif
 
-            if(plat_id < 1 || plat_id > nr_dev)
-                printf("- Please select a valid OpenCL device number. \n");
-        };
 
+
+    // A platform can be installed but expose no devices, e.g. the Intel ICD on a
+    // machine with no Intel GPU. Report that instead of the fp64 error below,
+    // which would name an empty device.
+    if (clGetDeviceIDs(cpPlatform[plat_id - 1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL) != CL_SUCCESS)
+    {
+        printf("- OpenCL platform %d has no devices.\n", plat_id);
+        printf("- Use setDefaultOpenCLDevice(0) to select a usable device automatically.\n");
+        fflush(stdout);
+        exit(1);
     }
 
+    if (!ocl_device_has_fp64(ocl_device))
+    {
+        char cBuffer[1024] = "";
+        clGetDeviceInfo(ocl_device, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
+        printf("- OpenCL device %d (%s) does not support double precision (cl_khr_fp64).\n", plat_id, cBuffer);
+        printf("- ParModelica requires it. Select a device that has it with setDefaultOpenCLDevice().\n");
+        fflush(stdout);
+        exit(1);
+    }
 
-
-    clGetDeviceIDs(cpPlatform[plat_id - 1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
     clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
 
-#if BE_OCL_VERBOSE
-    printf("Using CL_DEVICE_MAX_WORK_GROUP_SIZE: %d \n", arg_nr);
+#ifdef BE_OCL_VERBOSE
+    printf("Using CL_DEVICE_MAX_WORK_GROUP_SIZE: %zu \n", arg_nr);
 #endif
 
     //default number of threads is the max number of threads!
@@ -207,7 +264,6 @@ void ocl_get_device(){
 
 void ocl_initialize(){
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (!device_comm_queue){
@@ -220,9 +276,9 @@ void ocl_initialize(){
 
     gettimeofday(&t2, NULL);
 
-#if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+#ifdef BE_OCL_VERBOSE
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tOpenCL initialization :        %lf ms\n", elapsedTime);
 #endif
 
@@ -233,7 +289,7 @@ void ocl_create_context_and_comm_queue(){
     // Create a context to run OpenCL on the OCL-enabled Device
     cl_int err;
 
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("--- Creating OpenCL context");
 #endif
 
@@ -248,7 +304,7 @@ void ocl_create_context_and_comm_queue(){
     clGetContextInfo(device_context, CL_CONTEXT_DEVICES, ParmDataBytes, OCL_Devices, NULL);
 
     // Create a command-queue on the first OCL_ device
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("--- Creating OpenCL command queue");
 #endif
 
@@ -270,14 +326,14 @@ void ocl_build_p_from_src(){
     program_source = load_source_file(omc_ocl_kernels_source);
 
 
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("--- Creating OpenCL program");
 #endif
     // omc_ocl_program declared in omc_ocl_util.h
     omc_ocl_program = clCreateProgramWithSource(device_context, 1,
         (const char**)&program_source, NULL, NULL);
 
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("\t\t\t - OK.\n");
 #endif
 
@@ -295,7 +351,7 @@ void ocl_build_p_from_src(){
 
 
     // Build the program (OpenCL JIT compilation).
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("--- Building OpenCL program \n");
 #endif
 
@@ -308,7 +364,7 @@ void ocl_build_p_from_src(){
     strcat(options, OMHOME);
     strcat(options, OMEXT);
 
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
     printf("\t :Using flags %s\n",options);
 #endif
 
@@ -434,7 +490,6 @@ void ocl_execute_kernel(cl_kernel kernel){
     cl_int err = 0;
 
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (WORK_DIM == 0){
@@ -474,9 +529,9 @@ void ocl_execute_kernel(cl_kernel kernel){
 
 
     gettimeofday(&t2, NULL);
-#if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+#ifdef BE_OCL_VERBOSE
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tKernel Execution      :        %lf ms\n", elapsedTime);
 #endif
 
@@ -565,7 +620,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
                     printf("\t\t\t\t\t\t - OK.\n");
 #endif
                     break;
@@ -667,7 +722,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
                     printf("\t\t\t - OK.\n");
 #endif
                     break;
@@ -699,7 +754,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-#if BE_OCL_VERBOSE
+#ifdef BE_OCL_VERBOSE
                     printf("\t\t - OK.\n");
 #endif
                     break;

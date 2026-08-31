@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -286,8 +291,15 @@ QStringList FilledShape::getTextShapeAnnotation()
 ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
-  mpGraphicsView = 0;
-  mpParentComponent = dynamic_cast<Element*>(pParent);
+  // pParent can be ShapeAnnotation. See #15295.
+  ShapeAnnotation *pParentShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pParent);
+  if (pParentShapeAnnotation) {
+    mpGraphicsView = pParentShapeAnnotation->getGraphicsView();
+    mpParentComponent = nullptr;
+  } else {
+    mpGraphicsView = nullptr;
+    mpParentComponent = dynamic_cast<Element*>(pParent);
+  }
   //mTransformation = 0;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
@@ -558,10 +570,10 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   if (pExtend) {
     if (pGraphicsView->isIconView()) {
       extent = pExtend->getIconDiagramMapExtent(true);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedIconCoordinateSystem.getPreserveAspectRatio();
     } else {
       extent = pExtend->getIconDiagramMapExtent(false);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedDiagramCoordinateSystem.getPreserveAspectRatio();
     }
   }
 
@@ -947,10 +959,11 @@ void ShapeAnnotation::updateCornerItem(int index)
 }
 
 /*!
-  Adds new points, geometries & CornerItems at index. \n
-  This function is called when resizing the connection lines and new points are needed to keep the lines manhattanized.
-  \param index
-  */
+ * \brief ShapeAnnotation::insertPointsGeometriesAndCornerItems
+ * Adds new points, geometries & CornerItems at index.\n
+ * This function is called when resizing the connection lines and new points are needed to keep the lines manhattanized.
+ * \param index
+ */
 void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
 {
   QPointF point = (mPoints[index - 1] + mPoints[index]) / 2;
@@ -964,9 +977,12 @@ void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
     mGeometries.insert(index, ShapeAnnotation::HorizontalLine);
   }
   // if we add new points then we need to add new CornerItems and also need to adjust CornerItems connected indexes.
-  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
-  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
-  adjustCornerItemsConnectedIndexes();
+  // Check that the index is in range for mCornerItemsList to avoid out of range access. See issue #16155.
+  if (index < mCornerItemsList.size()) {
+    mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+    mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+    adjustCornerItemsConnectedIndexes();
+  }
 }
 
 /*!
@@ -1059,8 +1075,7 @@ void ShapeAnnotation::setShapeFlags(bool enable)
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
       && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()
-           && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-               || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
+           && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSModelConnector())) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -1153,7 +1168,7 @@ void ShapeAnnotation::resetDynamicSelect()
   mTextStyles.resetDynamicToStatic();
   mHorizontalAlignment.resetDynamicToStatic();
 
-  update();
+  applyTransformation();
 }
 
 /*!

@@ -29,7 +29,9 @@ readFile("fmi_interpolation_01.xml"); getErrorString();
 // true
 // ""
 // "fmi_interpolation_01.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0
@@ -58,13 +60,20 @@ readFile("fmi_interpolation_01.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
+//     name=\"_D_y_der\"
+//     valueReference=\"4\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"5\"
 //     causality=\"output\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"5\" -->
+//   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"5\"
@@ -78,14 +87,14 @@ readFile("fmi_interpolation_01.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Derivatives>
 //     <InitialUnknowns>
 //       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

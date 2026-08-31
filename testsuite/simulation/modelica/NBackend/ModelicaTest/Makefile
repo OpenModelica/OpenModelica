@@ -16,6 +16,13 @@ ModelicaTest.Media.TestOnly.IdealGasN2Mix.mos \
 ModelicaTest.Media.TestOnly.R134a_setState_phX.mos \
 ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650.mos \
 ModelicaTest.Utilities.TestExamplesCalculator.mos \
+ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT.mos \
+ModelicaTest.Fluid.TestComponents.Sensors.TestSpecificEnthalpy.mos \
+ModelicaTest.Tables.CombiTimeTable.Test1.mos \
+ModelicaTest.Utilities.TestInternal.mos \
+ModelicaTest.Tables.CombiTable1Ds.Test3.mos \
+ModelicaTest.MultiBody.Parts.Bodies.mos \
+ModelicaTest.MultiBody.Joints.JointUPS.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -60,4 +67,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

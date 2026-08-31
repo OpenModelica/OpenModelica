@@ -1,6 +1,7 @@
 // name: InitialState2Test
 // keywords: state machines features
 // status: wrong
+// suite: disabled
 
 model InitialState2Test
   block AState

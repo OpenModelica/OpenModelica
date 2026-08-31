@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -100,8 +104,6 @@ public function treeGet "author: Frenkel TUD 2012-09-18
   input Key key;
   output Value v;
 protected
-  String keystr;
-  Integer keyhash;
 algorithm
   v := treeGet3(bt, key, treeGet2(bt, key));
 end treeGet;
@@ -112,12 +114,12 @@ protected function treeGet2
   input Key ikey;
   output Integer compResult;
 algorithm
-  compResult := match (inBinTree,ikey)
+  compResult := match inBinTree
     local
       Key key;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(key=key))),_)
+    case TREENODE(value = SOME(TREEVALUE(key=key)))
       then keyCmp(key, ikey);
   end match;
 end treeGet2;
@@ -129,23 +131,23 @@ protected function treeGet3
   input Integer inCompResult;
   output Value outValue;
 algorithm
-  outValue := match (inBinTree,ikey,inCompResult)
+  outValue := match (inBinTree, inCompResult)
     local
       Value rval;
       BinTree right, left;
       Integer compResult;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,0) then rval;
+    case (TREENODE(value = SOME(TREEVALUE(value=rval))), 0) then rval;
     // search right
-    case (TREENODE(rightSubTree = SOME(right)),_,1)
-      equation
-        compResult = treeGet2(right, ikey);
+    case (TREENODE(rightSubTree = SOME(right)), 1)
+      algorithm
+        compResult := treeGet2(right, ikey);
       then treeGet3(right, ikey, compResult);
     // search left
-    case (TREENODE(leftSubTree = SOME(left)),_,-1)
-      equation
-        compResult = treeGet2(left, ikey);
+    case (TREENODE(leftSubTree = SOME(left)), -1)
+      algorithm
+        compResult := treeGet2(left, ikey);
       then treeGet3(left, ikey, compResult);
   end match;
 end treeGet3;
@@ -164,9 +166,9 @@ algorithm
     case (bt,{}) then bt;
 
     case (bt,key::res)
-      equation
-        bt_1 = treeAdd(bt,key,0);
-        bt_2 = treeAddList(bt_1,res);
+      algorithm
+        bt_1 := treeAdd(bt,key,0);
+        bt_2 := treeAddList(bt_1,res);
       then
         bt_2;
   end match;
@@ -184,54 +186,53 @@ public function treeAdd "author: PA
   input Value inValue;
   output BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKey,inValue)
+  outBinTree := matchcontinue inBinTree
     local
       Key rkey;
-      Value rval;
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
       Option<TreeValue> optVal;
 
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
+    case TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())
       then
         TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right),_,_)
-      equation
-        0 = keyCmp(rkey,inKey);
+    case TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right)
+      algorithm
+        0 := keyCmp(rkey,inKey);
       then
         TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t))),_,_)
-      equation
-        1 = keyCmp(rkey,inKey);
-        t_1 = treeAdd(t, inKey, inValue);
+    case TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t)))
+      algorithm
+        1 := keyCmp(rkey,inKey);
+        t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,left,SOME(t_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE())),_,_)
-      equation
-        1 = keyCmp(rkey,inKey);
-        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+    case TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE()))
+      algorithm
+        1 := keyCmp(rkey,inKey);
+        right_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,left,SOME(right_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right),_,_)
-      equation
-        -1 = keyCmp(rkey,inKey);
-        t_1 = treeAdd(t, inKey, inValue);
+    case TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right)
+      algorithm
+        -1 := keyCmp(rkey,inKey);
+        t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,SOME(t_1),right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right),_,_)
-      equation
-        -1 = keyCmp(rkey,inKey);
-        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+    case TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right)
+      algorithm
+        -1 := keyCmp(rkey,inKey);
+        left_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,SOME(left_1),right);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTreeInt.treeAdd failed\n"});
       then
         fail();
@@ -409,18 +410,18 @@ public function bintreeToList "author: PA
   output list<Value> outValueLst;
 algorithm
   (outKeyLst,outValueLst):=
-  matchcontinue (inBinTree)
+  matchcontinue inBinTree
     local
       list<Key> klst;
       list<Value> vlst;
       BinTree bt;
-    case (bt)
-      equation
-        (klst,vlst) = bintreeToList2(bt, {}, {});
+    case bt
+      algorithm
+        (klst,vlst) := bintreeToList2(bt, {}, {});
       then
         (klst,vlst);
-    case (_)
-      equation
+    case _
+      algorithm
         print("- BackendDAEUtil.bintreeToList failed\n");
       then
         fail();
@@ -447,16 +448,16 @@ algorithm
       then (klst,vlst);
 
     case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(right, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) := bintreeToListOpt(right, klst, vlst);
       then
         ((key :: klst),(value :: vlst));
 
     case (TREENODE(value = NONE(),leftSubTree = left),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
       then
         (klst,vlst);
   end matchcontinue;
@@ -479,12 +480,12 @@ algorithm
     case (NONE(),klst,vlst) then (klst,vlst);
 
     case (SOME(bt),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToList2(bt, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToList2(bt, klst, vlst);
       then
         (klst,vlst);
   end match;
 end bintreeToListOpt;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end BinaryTreeInt;

@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -113,6 +118,7 @@ public:
   static QFontInfo monospacedFontInfo;
   static QString toolsOptionsPath;
   static QString speedOptions;
+  static QStringList timeDisplayUnits;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
@@ -141,10 +147,12 @@ public:
   static QString arrayIndexRegularExpression;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassTip;
   static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString loadCompiledModel;
   static QString newCRMLModel;
   static QString newCRMLModelTip;
   static QString newMOSScript;
@@ -188,6 +196,7 @@ public:
   static QString general;
   static QString output;
   static QString parameters;
+  static QString parametersTip;
   static QString inputs;
   static QString name;
   static QString startScript;
@@ -238,6 +247,8 @@ public:
   static QString loading;
   static QString question;
   static QString search;
+  static QString findUsage;
+  static QString findUsageTip;
   static QString duplicate;
   static QString duplicateTip;
   static QString unloadClass;
@@ -412,18 +423,8 @@ public:
   static QString addSubModel;
   static QString addExternalTLMModel;
   static QString addSubModelTip;
-  static QString addBus;
-  static QString addBusTip;
-  static QString editBus;
-  static QString addTLMBus;
-  static QString addTLMBusTip;
-  static QString editTLMBus;
   static QString addConnector;
   static QString addConnectorTip;
-  static QString addBusConnection;
-  static QString editBusConnection;
-  static QString addTLMConnection;
-  static QString editTLMConnection;
   static QString running;
   static QString finished;
   static QString newVariable;
@@ -432,6 +433,7 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
+  static QString saveWithErrors;
   static QString translationFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
@@ -464,6 +466,7 @@ public:
   static QString replaceSubModel;
   static QString modelicaPathTip;
   static QString selectParentClassName;
+  static QString switchModel;
 };
 
 class GUIMessages : public QObject

@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -203,7 +207,7 @@ public function add
 algorithm
   outTree := matchcontinue(inTree, inKey, inVal)
     local
-      Key key, rkey;
+      Key key;
       Val val;
       Node<Key,Val> node;
       FuncTypeKeyCompare cf;
@@ -214,14 +218,14 @@ algorithm
 
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
-      equation
-        node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+      algorithm
+        node := addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
         TREE(node, cf, kf, vf, uf, n);
 
     else
-      equation
-        str = "AvlTree.add name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.add name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -249,28 +253,28 @@ algorithm
 
     // empty node
     case (_, NO_NODE(), _, _)
-     equation
-       n = newLeafNode(ITEM(inKey, inVal), 1);
+     algorithm
+       n := newLeafNode(ITEM(inKey, inVal), 1);
      then
        n;
 
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
-      equation
-        n = newLeafNode(ITEM(key, val), 1);
+      algorithm
+        n := newLeafNode(ITEM(key, val), 1);
       then
         n;
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        n = balance(addNode_dispatch(inTree,inNode,order,key, val));
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        n := balance(addNode_dispatch(inTree,inNode,order,key, val));
       then
         n;
 
     else
-      equation
-        str = "AvlTree.addNode name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addNode name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -286,7 +290,7 @@ protected function addNode_dispatch
   input Val inVal;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := matchcontinue(inTree, inNode, inKeyComp, inKey, inVal)
+  outNode := matchcontinue(inNode, inKeyComp, inKey, inVal)
     local
       Key key;
       Val val;
@@ -296,47 +300,47 @@ algorithm
       FuncTypeItemUpdateCheck updateCheckFunc;
 
     // replacements of nodes is allowed! no update check function
-    case (_, NODE(_, h, l, r), 0, key, val)
-      equation
-        false = hasUpdateCheckFunction(inTree);
+    case (NODE(_, h, l, r), 0, key, val)
+      algorithm
+        false := hasUpdateCheckFunction(inTree);
       then
         NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
-    case (_, NODE(i, h, l, r), 0, key, val)
-      equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
+    case (NODE(i, h, l, r), 0, key, val)
+      algorithm
+        true := hasUpdateCheckFunction(inTree);
+        updateCheckFunc := getUpdateCheckFunc(inTree);
         // update is allowed
-        true = updateCheckFunc(i, ITEM(key, val));
+        true := updateCheckFunc(i, ITEM(key, val));
       then
         NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
-    case (_, NODE(i, _, _, _), 0, key, val)
-      equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
+    case (NODE(i, _, _, _), 0, key, val)
+      algorithm
+        true := hasUpdateCheckFunction(inTree);
+        updateCheckFunc := getUpdateCheckFunc(inTree);
         // update is NOT allowed
-        false = updateCheckFunc(i, ITEM(key, val));
+        false := updateCheckFunc(i, ITEM(key, val));
       then
         inNode; // return the same node, no update!
 
     // insert into right subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        n = addNode(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), 1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        n := addNode(inTree, n, key, val);
       then
         NODE(i, h, l, n);
 
     // Insert into left subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        n = addNode(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), -1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        n := addNode(inTree, n, key, val);
       then
         NODE(i, h, n, r);
   end matchcontinue;
@@ -379,22 +383,22 @@ protected function getNode_dispatch
   input Key inKey;
   output Val outVal;
 algorithm
-  outVal := match(inTree, inNode, inKeyComp, inKey)
+  outVal := match(inNode, inKeyComp, inKey)
     local
       Key key;
       Val val;
       Node<Key,Val> l, r;
 
     // found match.
-    case (_, NODE(item = ITEM(val = val)), 0, _)
+    case (NODE(item = ITEM(val = val)), 0, _)
       then val;
 
     // search to the right.
-    case (_, NODE(right = r), 1, key)
+    case (NODE(right = r), 1, key)
       then getNode(inTree, r, key);
 
     // search to the left.
-    case (_, NODE(left = l), -1, key)
+    case (NODE(left = l), -1, key)
       then getNode(inTree, l, key);
 
   end match;
@@ -410,25 +414,24 @@ public function replace
 algorithm
   outTree := match(inTree, inKey, inVal)
     local
-      Key key, rkey;
+      Key key;
       Val val;
       FuncTypeKeyCompare keyCompareFunc;
       Option<FuncTypeKeyToStr> kf;
       Option<FuncTypeValToStr> vf;
       Option<FuncTypeItemUpdateCheck> uf;
       Node<Key,Val> node;
-      Integer order;
       String n, str;
 
     case (TREE(node, keyCompareFunc, kf, vf, uf, n), key, val)
-      equation
-        node = replaceNode(inTree, node, key, val);
+      algorithm
+        node := replaceNode(inTree, node, key, val);
       then
         TREE(node, keyCompareFunc, kf, vf, uf, n);
 
     else
-      equation
-        str = "AvlTree.replace name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.replace name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -454,9 +457,9 @@ algorithm
     case (TREE(keyCompareFunc = keyCompareFunc),
           NODE(item = ITEM(key = rkey)),
           key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        n = replaceNode_dispatch(inTree, inNode, order, key, val);
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        n := replaceNode_dispatch(inTree, inNode, order, key, val);
       then
         n;
 
@@ -472,32 +475,32 @@ protected function replaceNode_dispatch
   input Val inVal;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := match(inTree, inNode, inKeyComp, inKey, inVal)
+  outNode := match(inNode, inKeyComp, inKey, inVal)
     local
-      Key key, rkey;
+      Key key;
       Val val;
       Node<Key,Val> l, r, n;
       Integer h;
       Item<Key,Val> i;
 
     // replace this node.
-    case (_, NODE(item = ITEM(), height = h, left = l, right = r), 0, key, val)
+    case (NODE(item = ITEM(), height = h, left = l, right = r), 0, key, val)
       then
         NODE(ITEM(key, val), h, l, r);
 
     // insert into right subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        n = replaceNode(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), 1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        n := replaceNode(inTree, n, key, val);
       then
         NODE(i, h, l, n);
 
     // insert into left subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        n = replaceNode(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), -1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        n := replaceNode(inTree, n, key, val);
       then
         NODE(i, h, n, r);
   end match;
@@ -508,9 +511,9 @@ protected function emptyNodeIfNoNode
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := match(inNode)
-    case (NO_NODE()) then NODE(NO_ITEM(), 0, NO_NODE(), NO_NODE());
-    case (NODE()) then inNode;
+  outNode := match inNode
+    case NO_NODE() then NODE(NO_ITEM(), 0, NO_NODE(), NO_NODE());
+    case NODE() then inNode;
   end match;
 end emptyNodeIfNoNode;
 
@@ -531,10 +534,10 @@ protected function doBalance
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := match(difference, inNode)
-    case(-1, _) then computeHeight(inNode);
-    case( 0, _) then computeHeight(inNode);
-    case( 1, _) then computeHeight(inNode);
+  outNode := match difference
+    case -1 then computeHeight(inNode);
+    case 0 then computeHeight(inNode);
+    case 1 then computeHeight(inNode);
     // d < -1 or d > 1
     else doBalance2(difference < 0, inNode);
   end match;
@@ -551,15 +554,15 @@ algorithm
       Node<Key,Val> n;
 
     case(true, n)
-      equation
-        n = doBalance3(n);
-        n = rotateLeft(n);
+      algorithm
+        n := doBalance3(n);
+        n := rotateLeft(n);
       then n;
 
     case(false,n)
-      equation
-        n = doBalance4(n);
-        n = rotateRight(n);
+      algorithm
+        n := doBalance4(n);
+        n := rotateRight(n);
       then n;
   end match;
 end doBalance2;
@@ -569,16 +572,16 @@ protected function doBalance3
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := matchcontinue(inNode)
+  outNode := matchcontinue inNode
     local
       Node<Key,Val> n, rr, rN;
 
-    case(n)
-      equation
-        rN = rightNode(n);
-        true = differenceInHeight(rN) > 0;
-        rr = rotateRight(rN);
-        n = setRight(n, rr);
+    case n
+      algorithm
+        rN := rightNode(n);
+        true := differenceInHeight(rN) > 0;
+        rr := rotateRight(rN);
+        n := setRight(n, rr);
       then n;
 
     else inNode;
@@ -590,16 +593,16 @@ protected function doBalance4
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := matchcontinue(inNode)
+  outNode := matchcontinue inNode
     local
       Node<Key,Val> rl, n, lN;
 
-    case (n)
-      equation
-        lN = leftNode(n);
-        true = differenceInHeight(lN) < 0;
-        rl = rotateLeft(lN);
-        n = setLeft(n, rl);
+    case n
+      algorithm
+        lN := leftNode(n);
+        true := differenceInHeight(lN) < 0;
+        rl := rotateLeft(lN);
+        n := setLeft(n, rl);
       then n;
 
     else inNode;
@@ -713,7 +716,6 @@ protected function computeHeight
 protected
   Node<Key,Val> l,r;
   Item<Key,Val> i;
-  Val val;
   Integer hl,hr,height;
 algorithm
   NODE(item = i as ITEM(), left = l, right = r) := inNode;
@@ -728,7 +730,7 @@ protected function getHeight
   input Node<Key,Val> bt;
   output Integer height;
 algorithm
-  height := match(bt)
+  height := match bt
     case NO_NODE() then 0;
     case NODE(height = height) then height;
   end match;
@@ -762,31 +764,29 @@ protected function prettyPrintNodeStr
   input String inIndent;
   output String outString;
 algorithm
-  outString := match(inTree, inNode, inIndent)
+  outString := match inNode
     local
       Item<Key,Val> item;
-      Node<Key,Val> node, l, r;
-      FuncTypeKeyToStr keyStrFunc;
-      FuncTypeValToStr valStrFunc;
+      Node<Key,Val> l, r;
       String indent, s1, s2, res;
 
-    case (_, NO_NODE(), _) then "";
+    case NO_NODE() then "";
 
-    case (_, NODE(item = NO_ITEM(), left = l, right = r), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" + s1 + s2;
+    case NODE(item = NO_ITEM(), left = l, right = r)
+      algorithm
+        indent := inIndent + "  ";
+        s1 := prettyPrintNodeStr(inTree, l, indent);
+        s2 := prettyPrintNodeStr(inTree, r, indent);
+        res := "\n" + s1 + s2;
       then
         res;
 
-    case (_, NODE(item = item as ITEM(), left = l, right = r), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" + inIndent + printItemStr(inTree, item) + s1 + s2;
+    case NODE(item = item as ITEM(), left = l, right = r)
+      algorithm
+        indent := inIndent + "  ";
+        s1 := prettyPrintNodeStr(inTree, l, indent);
+        s2 := prettyPrintNodeStr(inTree, r, indent);
+        res := "\n" + inIndent + printItemStr(inTree, item) + s1 + s2;
       then
         res;
 
@@ -812,20 +812,20 @@ protected function printNodeStr
   input Node<Key,Val> inNode;
   output String outString;
 algorithm
-  outString := match(inTree, inNode)
+  outString := match inNode
     local
       Node<Key,Val> left, right;
       Item<Key,Val> item;
       String left_str, right_str, item_str, str;
 
-    case (_, NO_NODE()) then "";
-    case (_, NODE(item = NO_ITEM())) then "";
-    case (_, NODE(item = item as ITEM(), left = left, right = right))
-      equation
-        left_str = printNodeStr(inTree, left);
-        right_str = printNodeStr(inTree, right);
-        item_str = printItemStr(inTree, item);
-        str = stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
+    case NO_NODE() then "";
+    case NODE(item = NO_ITEM()) then "";
+    case NODE(item = item as ITEM(), left = left, right = right)
+      algorithm
+        left_str := printNodeStr(inTree, left);
+        right_str := printNodeStr(inTree, right);
+        item_str := printItemStr(inTree, item);
+        str := stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
       then
         str;
 
@@ -837,7 +837,7 @@ public function printItemStr
   input Item<Key,Val> inItem;
   output String outString;
 algorithm
-  outString := match(inTree, inItem)
+  outString := match inItem
     local
       String str, keyStr, valStr;
       FuncTypeKeyToStr key2Str;
@@ -845,14 +845,14 @@ algorithm
       Key key;
       Val val;
 
-    case (_, NO_ITEM()) then "[]";
-    case (_, ITEM(key = key, val = val))
-      equation
-        key2Str = getKeyToStrFunc(inTree);
-        val2Str = getValToStrFunc(inTree);
-        keyStr = key2Str(key);
-        valStr = val2Str(val);
-        str = "[" + keyStr + ", " + valStr + "]";
+    case NO_ITEM() then "[]";
+    case ITEM(key = key, val = val)
+      algorithm
+        key2Str := getKeyToStrFunc(inTree);
+        val2Str := getValToStrFunc(inTree);
+        keyStr := key2Str(key);
+        valStr := val2Str(val);
+        str := "[" + keyStr + ", " + valStr + "]";
       then
         str;
   end match;
@@ -867,7 +867,6 @@ public function getKeyOfVal
   output Key outKey;
 protected
   Node<Key,Val> node;
-  Key key;
 algorithm
   TREE(root = node) := inTree;
   outKey := getKeyOfValNode(inTree, node, inVal);
@@ -887,24 +886,24 @@ algorithm
       Key k;
 
     case NODE(item=ITEM(k,v))
-      equation
-        true = valueEq(v, inVal);
+      algorithm
+        true := valueEq(v, inVal);
       then
         k;
 
     // search left
     case NODE(item=ITEM(_,v), left = left)
-      equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, left, inVal);
+      algorithm
+        false := valueEq(v, inVal);
+        k := getKeyOfValNode(inTree, left, inVal);
       then
         k;
 
     // search right
     case NODE(item=ITEM(_,v),  right = right)
-      equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, right, inVal);
+      algorithm
+        false := valueEq(v, inVal);
+        k := getKeyOfValNode(inTree, right, inVal);
       then
         k;
 
@@ -924,7 +923,7 @@ public function addUnique
 algorithm
   (outTree, outItem) := matchcontinue(inTree, inKey, inVal)
     local
-      Key key, rkey;
+      Key key;
       Val val;
       Node<Key,Val> node;
       FuncTypeKeyCompare cf;
@@ -936,14 +935,14 @@ algorithm
 
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
-      equation
-        (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+      algorithm
+        (node, item) := addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
         (TREE(node, cf, kf, vf, uf, n), item);
 
     else
-      equation
-        str = "AvlTree.addUnique name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addUnique name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -973,31 +972,31 @@ algorithm
 
     // empty node
     case (_, NO_NODE(), _, _)
-     equation
-       item = ITEM(inKey, inVal);
-       n = newLeafNode(item, 1);
+     algorithm
+       item := ITEM(inKey, inVal);
+       n := newLeafNode(item, 1);
      then
        (n, item);
 
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
-      equation
-        item = ITEM(key, val);
-        n = newLeafNode(item, 1);
+      algorithm
+        item := ITEM(key, val);
+        n := newLeafNode(item, 1);
       then
         (n, item);
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
-        n = balance(n);
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        (n, item) := addNodeUnique_dispatch(inTree,inNode,order,key,val);
+        n := balance(n);
       then
         (n, item);
 
     else
-      equation
-        str = "AvlTree.addNodeUnique name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addNodeUnique name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -1014,39 +1013,38 @@ protected function addNodeUnique_dispatch
   output Node<Key,Val> outNode;
   output Item<Key,Val> outItem;
 algorithm
-  (outNode, outItem) := match(inTree, inNode, inKeyComp, inKey, inVal)
+  (outNode, outItem) := match(inNode, inKeyComp, inKey, inVal)
     local
       Key key;
       Val val;
       Node<Key,Val> l, r, n;
       Integer h;
       Item<Key,Val> i, it;
-      FuncTypeItemUpdateCheck updateCheckFunc;
 
     // replacements of nodes are not allowed in addUnique
     // we don't care about update check functions here
-    case (_, NODE(i, _, _, _), 0, _, _)
+    case (NODE(i, _, _, _), 0, _, _)
       then
         (inNode, i); // return the same node, no update for addUnique!
 
     // insert into right subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), 1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        (n, it) := addNodeUnique(inTree, n, key, val);
       then
         (NODE(i, h, l, n), it);
 
     // Insert into left subtree.
-    case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+    case (NODE(item = i, height = h, left = l, right = r), -1, key, val)
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        (n, it) := addNodeUnique(inTree, n, key, val);
       then
         (NODE(i, h, n, r), it);
   end match;
 end addNodeUnique_dispatch;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end AvlTree;
 

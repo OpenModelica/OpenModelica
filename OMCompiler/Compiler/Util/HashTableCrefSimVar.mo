@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -51,7 +55,7 @@ type Value = SimCodeVar.SimVar;
 
 protected
 
-import ComponentReference;
+import ComponentReferenceBasics;
 
 public
 
@@ -100,7 +104,7 @@ function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,opaqueStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,opaqueStr));
 end emptyHashTableSized;
 
 protected
@@ -108,7 +112,7 @@ function opaqueStr
   input SimCodeVar.SimVar var;
   output String str;
 algorithm
-  str := "#SimVar(index="+String(var.index)+",name="+ComponentReference.printComponentRefStr(var.name)+")#";
+  str := "#SimVar(index="+String(var.index)+",name="+ComponentReferenceBasics.printComponentRefStr(var.name)+")#";
 end opaqueStr;
 
 
@@ -119,30 +123,30 @@ public function addSimVarToHashTable
   output HashTable outHT;
 algorithm
   outHT :=
-  matchcontinue (simvarIn, inHT)
+  matchcontinue simvarIn
     local
       DAE.ComponentRef cr, acr;
       SimCodeVar.SimVar sv;
 
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
-      equation
-        //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((cr, sv), inHT);
+    case sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE())
+      algorithm
+        //print("addSimVarToHashTable: handling variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
+        outHT := BaseHashTable.add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
-      equation
-        //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((acr, sv), inHT);
-        outHT = BaseHashTable.add((cr, sv), outHT);
+    case sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr))
+      algorithm
+        //print("addSimVarToHashTable: handling array variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
+        outHT := BaseHashTable.add((acr, sv), inHT);
+        outHT := BaseHashTable.add((cr, sv), outHT);
       then outHT;
     else
-      equation
+      algorithm
         Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
       then
         fail();
   end matchcontinue;
 end addSimVarToHashTable;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end HashTableCrefSimVar;

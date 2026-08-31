@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #include "jacobian_analysis.h"
 
 // LAPACK dense SVD routine
@@ -191,18 +218,14 @@ static void svd_dense_calculate_statistics(SVD_DATA* svd_data)
     svd_data->least_one_percent = first_below;
 }
 
-static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, SolverCaller caller, modelica_boolean scaled, modelica_boolean sparse)
+static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data)
 {
-    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: %s SVD analysis (scaled = %s, Caller: %s).",
-                SolverCaller_callerString(caller), sparse ? "sparse" : "dense", scaled ? "true" : "false", SolverCaller_toString(caller));
-
     infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Matrix Info");
-    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = %ld", nls_data->equationIndex);
-    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = %ld", nls_data->size);
-    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Rows         = %ld", nls_data->size);
-    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NNZ          = %u", nls_data->sparsePattern->numberOfNonZeros);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = " OMC_INT_FORMAT, nls_data->equationIndex);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = " OMC_INT_FORMAT, nls_data->size);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Rows         = " OMC_INT_FORMAT, nls_data->size);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NNZ          = %u", nls_data->sparsePattern->nnz);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
-
     messageClose(OMC_LOG_NLS_SVD);
 }
 
@@ -242,17 +265,18 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
     int i, u, v, var_idx, eq_idx, start, end, count;
     modelica_real val;
     modelica_integer size_of_torns;
-    SVD_Component *entries = (SVD_Component*)malloc(svd_data->rows * sizeof(SVD_Component));
+    SVD_Component *entries = NULL;
     NONLINEAR_SYSTEM_DATA *nls_data = svd_data->nls_data;
     NONLINEAR_SOLVER solver = nls_data->nlsMethod;
 
     if (!svd_data || !svd_data->S) {
-        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "No SVD data available.");
-        messageClose(OMC_LOG_NLS_SVD);
+        infoStreamPrint(OMC_LOG_NLS_SVD, 0, "No SVD data available.");
         return;
     }
 
-    svd_general_matrix_print_info(svd_data->data, nls_data, svd_data->caller, svd_data->scaled, /* sparse */ FALSE);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: dense SVD analysis (scaled = %s, Caller: %s).",
+                SolverCaller_callerString(svd_data->caller), svd_data->scaled ? "true" : "false", SolverCaller_toString(svd_data->caller));
+    svd_general_matrix_print_info(svd_data->data, nls_data);
     svd_general_matrix_print_cond(svd_data->cond);
 
     // singular values
@@ -281,6 +305,8 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
     // print right singular vectors for singular values below 1% of sigma_max
     infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Smallest right singular vectors (variable space)");
 
+    entries = (SVD_Component*)malloc(svd_data->rows * sizeof(SVD_Component));
+
     if (svd_data->least_one_percent == svd_data->min_rows_cols)
     {
         infoStreamPrint(OMC_LOG_NLS_SVD, 0, "No singular values below %.8e (1%% of max)", 0.01 * svd_data->sigma_max);
@@ -303,6 +329,19 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
                 // V[i][v] = VT[v][i]
                 entries[i].index = i;
                 entries[i].value = svd_data->VT[v + i * svd_data->rows]; // VT = V^T when reading column-wise
+            }
+
+            /* Same gauge as the sparse dump. */
+            {
+                int lead = 0;
+                for (i = 1; i < svd_data->cols; i++)
+                {
+                    if (fabs(entries[i].value) > fabs(entries[lead].value)) lead = i;
+                }
+                if (entries[lead].value < 0.0)
+                {
+                    for (i = 0; i < svd_data->cols; i++) entries[i].value = -entries[i].value;
+                }
             }
 
             // sort by abs value descending O(n * log(n))
@@ -363,9 +402,9 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
             messageClose(OMC_LOG_NLS_SVD);
         }
     }
-    messageClose(OMC_LOG_NLS_SVD);
-
     free(entries);
+
+    messageClose(OMC_LOG_NLS_SVD);
     messageClose(OMC_LOG_NLS_SVD);
 }
 
@@ -439,7 +478,7 @@ static void svd_sparse_free_ctx(primme_callback_ctx_t *ctx)
 {
     free(ctx->inv_diag_AAt);
     free(ctx->inv_diag_AtA);
-};
+}
 
 /**
  * @brief Computes both Jacobi scaling vectors for preconditioning:
@@ -546,8 +585,12 @@ static primme_result_t* svd_sparse_compute(primme_handle_t* handle, primme_svds_
 {
     primme_callback_ctx_t * ctx = (primme_callback_ctx_t *)(handle->primme_svds.matrix);
 
-    /* some default values for now */
-    double eps = 1e-8; // TODO: add svdTol?
+    double eps = 1e-8;
+
+    if (omc_flag[FLAG_SVD_SPARSE_TOL])
+    {
+        eps = fabs(atof(omc_flagValue[FLAG_SVD_SPARSE_TOL]));
+    }
 
     /* ||r|| <= eps * ||matrix|| */
     handle->primme_svds.eps = eps;
@@ -556,6 +599,10 @@ static primme_result_t* svd_sparse_compute(primme_handle_t* handle, primme_svds_
     // we only need the largest for the condition
     handle->primme_svds.numSvals = (target == primme_svds_largest) ? 1 : handle->primme_svds.numSvals;
 
+    /* Normal equations resolve nothing below sqrt(DBL_EPSILON)*||A||, however tight
+       eps is. Do not "fix" that with primme_svds_hybrid (reports sigma_max as the
+       smallest when its first stage cannot resolve sigma_min) or with
+       primme_svds_augmented targeted at zero (does not terminate). */
     primme_svds_set_method(primme_svds_normalequations, PRIMME_DEFAULT_MIN_TIME,
                            PRIMME_DEFAULT_MIN_MATVECS, &handle->primme_svds);
 
@@ -758,8 +805,24 @@ static void svd_sparse_print_singular_values(primme_callback_ctx_t *ctx, primme_
     messageClose(OMC_LOG_NLS_SVD);
 }
 
+/* A triplet is defined up to a common sign, which the iteration picks by rounding.
+ * Gauge: largest entry of v positive, u follows it. */
+static modelica_real svd_sparse_vector_sign(const modelica_real *v, int size)
+{
+    int i, lead = 0;
+    for (i = 1; i < size; i++)
+    {
+        if (fabs(v[i]) > fabs(v[lead]))
+        {
+            lead = i;
+        }
+    }
+    return v[lead] < 0.0 ? -1.0 : 1.0;
+}
+
 static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t *handle, primme_result_t *res, modelica_boolean smallest)
 {
+    modelica_real sign;
     int i, u, v, var_idx, eq_idx, sing_value_idx;
     modelica_real val;
     modelica_integer size_of_torns;
@@ -778,11 +841,12 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
         sing_value_idx = smallest ? size - v : v + 1;
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "V[:,%d] (singular value %.8e)", sing_value_idx, res->svals[v]);
 
+        sign = svd_sparse_vector_sign(&res->svecs[size * (res->target_size + v)], size);
         for (i = 0; i < size; i++)
         {
             // V[i][v] = VT[v][i]
             entries[i].index = i;
-            entries[i].value = res->svecs[size * (res->target_size + v) + i];
+            entries[i].value = sign * res->svecs[size * (res->target_size + v) + i];
         }
 
         // sort by abs value descending O(n * log(n))
@@ -807,10 +871,12 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
         sing_value_idx = smallest ? size - u : u + 1;
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "U[:,%d] (singular value %.8e)", sing_value_idx, res->svals[u]);
 
+        /* Its right vector's flip, so the pair stays a triplet of A. */
+        sign = svd_sparse_vector_sign(&res->svecs[size * (res->target_size + u)], size);
         for (i = 0; i < size; i++)
         {
             entries[i].index = i;
-            entries[i].value = res->svecs[size * u + i];
+            entries[i].value = sign * res->svecs[size * u + i];
         }
 
         // sort by abs value descending O(n * log(n))
@@ -840,7 +906,9 @@ static void svd_sparse_dump_statistics(primme_callback_ctx_t *ctx, primme_handle
         return;
     }
 
-    svd_general_matrix_print_info(ctx->data, ctx->nls_data, ctx->caller, ctx->scaled, /* sparse */ TRUE);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: sparse SVD analysis (scaled = %s, Caller: %s).",
+                SolverCaller_callerString(ctx->caller), ctx->scaled ? "true" : "false", SolverCaller_toString(ctx->caller));
+    svd_general_matrix_print_info(ctx->data, ctx->nls_data);
 
     modelica_real sigma_max = res_top->svals[0];
     modelica_real sigma_min = res_least->svals[0];
@@ -952,7 +1020,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
 
   sunindextype *colPointers = SM_INDEXPTRS_S(J);
   sunindextype *rowIndices = SM_INDEXVALS_S(J);
-  realtype *values = SM_DATA_S(J);
+  sunrealtype *values = SM_DATA_S(J);
 
   modelica_real *rowSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
   modelica_real *colSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
@@ -987,10 +1055,10 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
                   SolverCaller_callerString(caller), scaled ? "true" : "false", SolverCaller_toString(caller));
 
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Matrix Info");
-  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = %ld", nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = " OMC_INT_FORMAT, nlsData->equationIndex);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Columns      = %d", size);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Rows         = %d", size);
-  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->nnz);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
   messageClose(OMC_LOG_NLS_JAC_SUMS);
 
@@ -1002,7 +1070,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   {
     row = rowSums[i].index;
     modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
-    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
 
@@ -1014,7 +1082,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
     {
       row = rowSums[i].index;
       modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
-      infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+      infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
     }
     messageClose(OMC_LOG_NLS_JAC_SUMS);
   }
@@ -1049,7 +1117,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   {
     row = rowSums[i].index;
     modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
-    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): " OMC_INT_FORMAT, row + 1, rowSums[i].value, eq_debug_idx);
   }
   messageClose(OMC_LOG_NLS_JAC_SUMS);
 

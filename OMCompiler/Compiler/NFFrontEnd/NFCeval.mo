@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -43,7 +47,7 @@ import Typing = NFTyping;
 import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
-import ExpressionSimplify;
+import ExpressionBasics;
 import NFPrefixes.{Variability, Purity};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
@@ -51,6 +55,7 @@ import Subscript = NFSubscript;
 import NFTyping.TypingError;
 import Record = NFRecord;
 import InstContext = NFInstContext;
+import Global;
 
 protected
 import NFFunction.Function;
@@ -65,6 +70,7 @@ import ExpandExp = NFExpandExp;
 import Prefixes = NFPrefixes;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
+import Absyn;
 import ErrorExt;
 import Array;
 import Vector;
@@ -95,7 +101,7 @@ uniontype EvalTarget
   end getInfo;
 end EvalTarget;
 
-constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(AbsynUtil.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
+constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
 
 uniontype EvalTargetData
   record DIMENSION_DATA
@@ -105,13 +111,34 @@ uniontype EvalTargetData
   end DIMENSION_DATA;
 end EvalTargetData;
 
+function tryEvalExpResizable
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    exp := evalExp(exp, target);
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    exp := tryEvalExpPartial(exp, target);
+    if Expression.contains(exp, Expression.isResizableCref) then
+      /* evaluation is allowed to fail for resizables */
+      ErrorExt.rollBack(getInstanceName());
+    else
+      ErrorExt.delCheckpoint(getInstanceName());
+      fail();
+    end if;
+  end try;
+end tryEvalExpResizable;
+
 function tryEvalExp
   input output Expression exp;
+  input EvalTarget target = noTarget;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
-    exp := evalExp(exp);
+    exp := evalExp(exp, target);
   else
   end try;
 
@@ -124,14 +151,9 @@ function evalExp
 algorithm
   exp := match exp
     local
-      InstNode c;
-      Binding binding;
-      Expression exp1, exp2, exp3;
+      Expression exp1, exp2;
       Call call;
-      Component comp;
-      Option<Expression> oexp;
       ComponentRef cref;
-      Dimension dim;
 
     case Expression.CREF()
       then evalCref(exp.cref, exp, target);
@@ -242,6 +264,20 @@ algorithm
   end match;
 end evalExp;
 
+function tryEvalExpPartial
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    exp := evalExpPartial(exp, target);
+  else
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+end tryEvalExpPartial;
+
 function evalExpPartialDefault
   "Simplied version of evalExpPartial to work around MetaModelica issues with
    default arguments and multiple return values when used as a function pointer."
@@ -261,8 +297,7 @@ function evalExpPartial
   output Expression outExp;
   output Boolean outEvaluated "True if the whole expression is evaluated, otherwise false.";
 protected
-  Expression e, e1, e2;
-  Boolean eval1, eval2;
+  Expression e;
 algorithm
   (e, outEvaluated) :=
     Expression.mapFoldShallow(exp, function evalExpPartial(target = target), true);
@@ -305,8 +340,6 @@ function evalCref
   output Expression exp;
 protected
   InstNode c;
-  Boolean evaled;
-  list<Subscript> subs;
 algorithm
   exp := match cref
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
@@ -331,11 +364,10 @@ protected
   Component comp;
   Binding binding;
   Boolean evaluated;
-  list<Subscript> subs;
-  Variability var;
   Option<Expression> start_exp;
   Type cref_ty, exp_ty;
   Integer dim_diff;
+  list<Integer> errors;
 algorithm
   exp_context := InstContext.nodeContext(node, target.context);
   Typing.typeComponentBinding(node, exp_context, typeChildren = false);
@@ -370,13 +402,18 @@ algorithm
               // Mark the binding as currently being evaluated, to detect loops due
               // to mutually dependent constants/parameters.
               Mutable.update(binding.evalState, NFBinding.EvalState.EVALUATING);
+              ErrorExt.setCheckpoint(getInstanceName());
 
               // Evaluate the binding expression.
               try
                 exp := evalExp(binding.bindingExp, target);
+                ErrorExt.delCheckpoint(getInstanceName());
               else
                 // Reset the flag if the evaluation failed.
                 Mutable.update(binding.evalState, NFBinding.EvalState.NOT_EVALUATED);
+                errors := ErrorExt.popCheckPoint(getInstanceName());
+                Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, binding.info);
+                ErrorExt.pushMessages(errors);
                 fail();
               end try;
 
@@ -575,8 +612,6 @@ protected
   Component start_comp;
   Binding binding;
   Expression exp;
-  list<Subscript> subs;
-  Integer pcount;
 algorithm
   // Only use the start value if the component is a fixed parameter.
   var := Component.variability(comp);
@@ -746,7 +781,6 @@ algorithm
       else
         // Ignore components that don't have a binding, it might not be an error
         // and if it is we can give better error messages in other places.
-        arg := Expression.EMPTY(ty);
       end try;
     end if;
 
@@ -776,8 +810,6 @@ protected
   Type ty;
   Expression start_exp, stop_exp;
   Option<Expression> step_exp;
-  Expression max_prop_exp;
-  Integer max_prop_count;
 algorithm
   Expression.RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
   start_exp := evalExp(start_exp, target);
@@ -937,6 +969,9 @@ algorithm
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
     case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.ADD_EW then evalBinaryAdd(exp1, exp2);
+    case Op.SUB_EW then evalBinarySub(exp1, exp2);
+    case Op.MUL_EW then evalBinaryMul(exp1, exp2);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
     case Op.SUB_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinarySub);
@@ -1078,6 +1113,7 @@ function evalMultaryAddSub
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // add up all arguments
   for arg in arguments loop
@@ -1089,8 +1125,8 @@ algorithm
     exp := evalBinarySub(exp, arg);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isZero(exp);
 end evalMultaryAddSub;
 
 function evalBinaryMul
@@ -1149,14 +1185,8 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
-    // while technically not allowed to devide integers, it occurs when solving in the new backend
-    case (_, Expression.INTEGER(1)) then exp1;
-    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.INTEGER()) then
-      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
-
-    case (_, Expression.REAL(0.0))
+    // Division by zero
+    case (_, _) guard Expression.isZero(exp2)
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.DIVISION_BY_ZERO,
@@ -1167,6 +1197,14 @@ algorithm
         end if;
       then
         exp;
+
+    // while technically not allowed to divide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
 
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
@@ -1207,6 +1245,7 @@ function evalMultaryMulDiv
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // multiply all arguments
   for arg in arguments loop
@@ -1218,8 +1257,8 @@ algorithm
     exp := evalBinaryDiv(exp, arg, noTarget);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isOne(exp);
 end evalMultaryMulDiv;
 
 function evalBinaryPow
@@ -1362,8 +1401,6 @@ algorithm
   exp := match (exp1, exp2)
     local
       Type elem_ty;
-      Expression e2;
-      list<Expression> rest_e2;
 
     case (Expression.ARRAY(ty = Type.ARRAY(elem_ty)), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
@@ -1394,7 +1431,6 @@ function evalBinaryMatrixProduct
   output Expression exp;
 protected
   Expression e2;
-  list<Expression> expl1, expl2;
   Type elem_ty, row_ty, mat_ty;
   Dimension n, p;
   array<Expression> arr1, arr2, arr;
@@ -1977,7 +2013,6 @@ protected
 algorithm
   exp := match c
     local
-      list<Expression> args;
 
     case Call.TYPED_CALL()
       algorithm
@@ -2059,6 +2094,7 @@ algorithm
     case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args, target);
     case "noEvent" then listHead(args); // No events during ceval, just return the argument.
+    case "nthRoot" then evalBuiltinNthRoot(args, target);
     case "ones" then evalBuiltinOnes(args);
     case "pre" then listHead(args);
     case "product" then evalBuiltinProduct(listHead(args));
@@ -2247,7 +2283,7 @@ algorithm
   elseif sz == 1 then
     result := listHead(es);
   else
-    (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
+    (es,dims) := ExpressionBasics.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
     result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
   end if;
 end evalBuiltinCat;
@@ -2295,7 +2331,6 @@ function evalBuiltinDiagonal
 protected
   Type elem_ty, row_ty;
   Expression zero, exp;
-  list<Expression> elems, row, rows = {};
   Integer n, i = 1;
   Boolean e_lit, arg_lit = true;
   array<Expression> arr_zero, arr_row, arr_rows;
@@ -2577,6 +2612,7 @@ algorithm
   end match;
 end evalBuiltinMax;
 
+public
 function evalBuiltinMax2
   input Expression exp1;
   input Expression exp2;
@@ -2597,6 +2633,7 @@ algorithm
   end match;
 end evalBuiltinMax2;
 
+protected
 function evalPositiveMax
   input Expression flow_exp;
   input Expression eps;
@@ -2634,6 +2671,7 @@ algorithm
   end match;
 end evalBuiltinMin;
 
+public
 function evalBuiltinMin2
   input Expression exp1;
   input Expression exp2;
@@ -2654,6 +2692,7 @@ algorithm
   end match;
 end evalBuiltinMin2;
 
+protected
 function evalBuiltinMod
   input list<Expression> args;
   input EvalTarget target;
@@ -2693,6 +2732,42 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
 end evalBuiltinMod;
+
+function evalBuiltinNthRoot
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Real v;
+  Integer n;
+algorithm
+  result := match args
+    case {Expression.REAL(v), Expression.INTEGER(n)}
+      algorithm
+        // n must be positive.
+        if n <= 0 and EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT,
+            {String(v), String(n)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+
+        // If n is even, then v must be non-negative.
+        if intMod(n, 2) == 0 and v < 0 and EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT,
+            {String(v), String(n)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        Expression.REAL(if v < 0.0 and intMod(n, 2) <> 0 then -((-v) ^ (1/n)) else v ^ (1/n));
+
+    else
+      algorithm
+        printWrongArgsError(getInstanceName(), args, sourceInfo());
+      then
+        fail();
+
+  end match;
+end evalBuiltinNthRoot;
 
 function evalBuiltinOnes
   input list<Expression> args;
@@ -2881,7 +2956,7 @@ algorithm
   result := match args
     local
       Expression arg;
-      Integer min_len, str_len, significant_digits, idx, c;
+      Integer min_len, str_len, significant_digits;
       Boolean left_justified;
       String str, format;
       Real r;
@@ -3022,12 +3097,7 @@ function evalBuiltinTranspose
   input Expression arg;
   output Expression result;
 protected
-  Dimension dim1, dim2;
-  list<Dimension> rest_dims;
   Type ty;
-  list<Expression> arr;
-  list<list<Expression>> arrl;
-  Boolean literal;
 algorithm
   ty := Expression.typeOf(arg);
 
@@ -3044,7 +3114,6 @@ function evalBuiltinVector
   output Expression result;
 protected
   list<Expression> expl;
-  Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
   result := Expression.makeExpArray(listArray(expl),
@@ -3151,7 +3220,7 @@ function evalInferredClock
 algorithm
   result := match args
     case {}
-      then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+      then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
@@ -3247,7 +3316,7 @@ function evalArrayConstructor2
   input list<Mutable<Expression>> iterators;
   output Expression result;
 protected
-  Expression range, e;
+  Expression range;
   list<Expression> ranges_rest, expl = {};
   array<Expression> arr;
   Mutable<Expression> iter;
@@ -3315,7 +3384,7 @@ algorithm
     case "max" then (evalBuiltinMax2, Expression.makeMinValue(ty));
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown reduction function " +
+        Error.terminate(getInstanceName() + " got unknown reduction function " +
           AbsynUtil.pathString(Function.name(fn)), sourceInfo());
       then
         fail();
@@ -3399,7 +3468,7 @@ algorithm
     result := Expression.mapSplitExpressions(e,
       function Expression.nthRecordElement(index = index));
   else
-    Error.assertion(false, getInstanceName() + " could not evaluate " +
+    Error.terminate(getInstanceName() + " could not evaluate " +
       Expression.toString(exp), sourceInfo());
   end try;
 end evalRecordElement;
@@ -3474,8 +3543,8 @@ function printWrongArgsError
   input SourceInfo info;
 algorithm
   Error.addInternalError(evalFunc + " got invalid arguments " +
-    List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
+    List.toString(args, Expression.toString, List.Style.FLAT_BRACKETS), info);
 end printWrongArgsError;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFCeval;

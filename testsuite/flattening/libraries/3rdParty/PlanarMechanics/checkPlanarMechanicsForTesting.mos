@@ -1,6 +1,5 @@
 // name: PlanarMechanicsForTesting.Examples.* [checkModel]
 // status: correct
-// cflags: -d=-newInst
 // provided by Dirk Zimmer with changes from Francesco Casella
 //
 
@@ -101,6 +100,6 @@ checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); ge
 // ""
 // "Check of PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear completed successfully.
 // Class PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear has 1730 equation(s) and 1730 variable(s).
-// 847 of these are trivial equation(s)."
+// 850 of these are trivial equation(s)."
 // ""
 // endResult

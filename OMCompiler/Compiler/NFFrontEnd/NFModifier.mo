@@ -1,34 +1,37 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 
 encapsulated package NFModifier
 " file:        NFModifier.mo
@@ -79,7 +82,6 @@ encapsulated package ModTable
   algorithm
     outResult := stringCompare(inKey1, inKey2);
   end keyCompare;
-  annotation(__OpenModelica_Interface="util");
 end ModTable;
 
 public
@@ -170,6 +172,7 @@ public
     input String name;
     input ModifierScope modScope;
     input InstNode scope;
+    input Integer confidence;
     output Modifier newMod;
   algorithm
     newMod := match mod
@@ -178,7 +181,6 @@ public
         ModTable.Tree submod_table;
         Binding binding;
         SCode.Element elem;
-        SCode.Mod smod;
         Boolean is_each;
         InstNode node;
         Modifier cc_mod;
@@ -188,8 +190,8 @@ public
       case SCode.MOD()
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
-          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
+          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, confidence, mod.info);
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope, confidence)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -203,7 +205,7 @@ public
             Inst.partialInstClass(node);
           end if;
 
-          cc_mod := createConstrainingMod(elem, scope);
+          cc_mod := createConstrainingMod(elem, scope, confidence);
         then
           REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD(), cc_mod, {});
 
@@ -213,6 +215,7 @@ public
   function createConstrainingMod
     input SCode.Element element;
     input InstNode scope;
+    input Integer confidence;
     output Modifier mod;
   protected
     SCode.Mod smod;
@@ -220,11 +223,11 @@ public
     mod := match element
       case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
           SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-        then create(smod, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(smod, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
           SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-        then create(smod, element.name, ModifierScope.COMPONENT(element.name), scope);
+        then create(smod, element.name, ModifierScope.COMPONENT(element.name), scope, confidence);
 
       else NOMOD();
     end match;
@@ -262,6 +265,7 @@ public
   function fromElement
     input SCode.Element element;
     input InstNode scope;
+    input Integer confidence;
     output Modifier mod;
   algorithm
     mod := match element
@@ -270,19 +274,19 @@ public
         SCode.Mod smod;
 
       case SCode.EXTENDS()
-        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope);
+        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope, confidence);
 
       case SCode.COMPONENT()
         algorithm
           smod := patchElementModFinal(element.prefixes, element.info, element.modifications);
         then
-          create(smod, element.name, ModifierScope.COMPONENT(element.name), scope);
+          create(smod, element.name, ModifierScope.COMPONENT(element.name), scope, confidence);
 
       case SCode.CLASS(classDef = def as SCode.DERIVED())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       case SCode.CLASS(classDef = def as SCode.CLASS_EXTENDS())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       else NOMOD();
     end match;
@@ -346,7 +350,7 @@ public
     info := match modifier
       case MODIFIER() then modifier.info;
       case REDECLARE() then InstNode.info(modifier.element);
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end info;
 
@@ -604,6 +608,7 @@ public
           if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
 
       case REDECLARE() then InstNode.toString(mod.element);
+
       else "";
     end match;
   end toString;
@@ -639,7 +644,7 @@ public
     input Boolean printName = true;
   protected
     list<Modifier> submods;
-    String subs_str, binding_str, binding_sep;
+    String binding_sep;
   algorithm
     () := match mod
       case MODIFIER()
@@ -685,7 +690,8 @@ protected
     input SCode.SubMod subMod;
     input ModifierScope modScope;
     input InstNode scope;
-    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
+    input Integer confidence;
+    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope, confidence);
   end createSubMod;
 
   function checkFinalOverride
@@ -695,7 +701,7 @@ protected
     input Modifier outerMod;
     input SourceInfo innerInfo;
   algorithm
-    _ := match innerFinal
+    () := match innerFinal
       case SCode.FINAL()
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
@@ -752,5 +758,5 @@ protected
   end mergeLocal;
 end Modifier;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFModifier;

@@ -32,12 +32,18 @@ AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC)
+# Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
+PARMODELICAAUTO_LDFLAGS=" -lParModelicaAuto -ltbb "
+AC_SUBST(PARMODELICAAUTO_LDFLAGS)
 AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
+AC_SUBST(SUNDIALS_RPATH_LDFLAGS)
 AC_SUBST(PRIMME_LDFLAGS)
 AC_SUBST(PRIMME_TARGET)
+AC_SUBST(COLPACK_LDFLAGS)
+AC_SUBST(COLPACK_TARGET)
 AC_SUBST(MOO_LDFLAGS)
 AC_SUBST(MOO_CFLAGS)
 AC_SUBST(MOO_TARGET)
@@ -57,6 +63,7 @@ AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(OMC_HAVE_IPOPT)
 AC_SUBST(OMC_HAVE_PRIMME)
+AC_SUBST(OMC_HAVE_COLPACK)
 AC_SUBST(WITH_SUITESPARSE)
 AC_SUBST(SUITESPARSE_TARGET)
 AC_SUBST(SUITESPARSE_LDFLAGS)
@@ -479,29 +486,6 @@ AC_MSG_RESULT([$RUNTIMECFLAGS])
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
-dnl Parallel Jacobian evaluation in C runtime
-dnl OpenMP needs to be available
-dnl If enabled, model needs to be compiled using -DUSE_PARJAC (add to RUNTIMECFLAGS)
-AC_ARG_ENABLE(
-  [parjac],
-  AS_HELP_STRING([--enable-parjac],
-                 [enable parallel symbolical Jacobian evaluation in C runtime]),
-  [want_parjac=$enableval],
-  [want_parjac=no]
-)
-USE_PARJAC="no"
-if test x$want_parjac = xyes; then
-  AC_MSG_CHECKING([for parallel Jacobian evaluation])
-  if test "$CONFIG_WITH_OPENMP=1"; then
-    USE_PARJAC="yes"
-    RUNTIMECFLAGS="$RUNTIMECFLAGS $OMPCFLAGS -DUSE_PARJAC"
-  else
-    AC_MSG_WARN([========= OpenMP is not available, will evaluate jacobians sequentially])
-  fi
-  AC_MSG_RESULT([$USE_PARJAC])
-fi
-AC_SUBST(USE_PARJAC)
-
 
 LIBS=""
 AC_SEARCH_LIBS(dlopen,dl)
@@ -548,10 +532,10 @@ SUNDIALS_SUNMATRIX_LDFLAGS="-lsundials_sunmatrixdense -lsundials_sunmatrixsparse
 SUNDIALS_SUNLINSOL_LDFLAGS="-lsundials_sunlinsoldense -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_sunlinsolspbcgs -lsundials_sunlinsolspfgmr -lsundials_sunlinsolspgmr -lsundials_sunlinsolsptfqmr"
 SUNDIALS_SUNNONLINSOL_LDFLAGS="-lsundials_sunnonlinsolnewton"
 SUNDIALS_CVODE_LDFLAGS="-lsundials_cvode -lsundials_cvodes"
-SUNDIALS_ARKODE_LDFLAGS=""
 SUNDIALS_IDA_LDFLAGS="-lsundials_idas"
 SUNDIALS_KINSOL_LDFLAGS="-lsundials_kinsol"
-SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_ARKODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $LD_LAPACK"
+SUNDIALS_CORE_LDFLAGS="-lsundials_core"
+SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $SUNDIALS_CORE_LDFLAGS $LD_LAPACK"
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
@@ -640,6 +624,7 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 LIBS=""
 
 PRIMME_LDFLAGS="-lprimme"
+COLPACK_LDFLAGS="-lcolpack"
 MOO_LDFLAGS="-lipopt -ldmumps -lmumps_common -lseq"
 
 # check for SuiteSparse
@@ -690,6 +675,20 @@ AS_IF([test "x$with_primme" = xyes],
   OMC_HAVE_PRIMME="/* #define OMC_HAVE_PRIMME */ /* Without Ipopt*/"
 ])
 
+# check for ColPack
+AC_ARG_WITH(colpack, [  --without-colpack              Disable compilation with ColPack (only for bootstrapping; required for simulations)],
+[],[with_colpack=yes])
+
+AS_IF([test "x$with_colpack" = xyes],
+[
+  COLPACK_TARGET="colpack";
+  OMC_HAVE_COLPACK="#define OMC_HAVE_COLPACK"
+],[
+  COLPACK_TARGET=""
+  COLPACK_LDFLAGS=""
+  OMC_HAVE_COLPACK="/* #define OMC_HAVE_COLPACK */ /* Without ColPack*/"
+])
+
 m4_include([common/m4/corba.m4])
 
 AC_MSG_CHECKING([for OpenCL])
@@ -716,18 +715,19 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
   RT_LDFLAGS_SHARED=
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-rpath,@loader_path"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
@@ -750,16 +750,17 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lryu -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm $LD_NOUNDEFINED"
   LINK="cp -frl"
   # No RPATH in Windows :(
   RPATH=""
+  SUNDIALS_RPATH_LDFLAGS=""
   RPATH_QMAKE=""
   AR_SH="$AR -ru"
   LDFLAGS_SOCKET=" -lwsock32"
@@ -785,19 +786,20 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -lryu -rdynamic $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm -lpthread -rdynamic $LD_NOUNDEFINED"
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -lzmq $LIBUUID $COLPACK_LDFLAGS"
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
+  SUNDIALS_RPATH_LDFLAGS="-Wl,-z,origin -Wl,-rpath,\$\$ORIGIN"
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
@@ -935,7 +937,6 @@ SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/opc/ua/Makefile \
 SimulationRuntime/fmi/export/buildproject/Makefile \
-SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 Compiler/boot/Makefile \

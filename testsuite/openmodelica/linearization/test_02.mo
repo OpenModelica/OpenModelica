@@ -12,7 +12,6 @@ model simple_test
 equation
   der(x) = y;
   der(y) = - x + lambda*(1 - x^2)*y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

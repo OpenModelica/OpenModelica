@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -45,8 +42,8 @@ static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
 static void checkReturnFlag_IDA(int flag, const char *functionName);
 static void checkReturnFlag_IDALS(int flag, const char *functionName);
-static void checkReturnFlag_SUNLS(int flag, const char *functionName);
-static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
+static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName);
+static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName);
 #endif
 
 /**
@@ -57,7 +54,7 @@ static void checkReturnFlag_SUNMatrix(int flag, const char *functionName);
  * SUNDIALS_SUNLS_FLAG or SUNDIALS_UNKNOWN_FLAG.
  *
  * @param flag          Return value of Sundials routine.
- * @param type          Type of Sundials flag returned by routine specifyied by
+ * @param type          Type of Sundials flag returned by routine specified by
  *                      functionName.
  * @param functionName  Name of Sundials function that returned the flag.
  */
@@ -66,9 +63,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   switch (type) {
   case SUNDIALS_UNKNOWN_FLAG:
     if (flag < 0) {
-      //assertStreamPrint(NULL, NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
-      throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
+      throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %i occurred in function %s.", flag, functionName);
     }
+    break;
   case SUNDIALS_CV_FLAG:
     checkReturnFlag_CV(flag, functionName);
     break;
@@ -108,7 +105,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
  */
 static void checkReturnFlag_CV(int flag, const char *functionName) {
 
-  const char* flagName = CVodeGetLinReturnFlagName(flag);
+  const char* flagName = CVodeGetReturnFlagName(flag);
 
   switch (flag) {
     case CV_SUCCESS:
@@ -146,7 +143,7 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function failed at the first call.", flagName, functionName);
       break;
     case CV_REPTD_RHSFUNC_ERR:
-      throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had repetead recoverable errors.", flagName, functionName);
+      throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had repeated recoverable errors.", flagName, functionName);
       break;
     case CV_UNREC_RHSFUNC_ERR:
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The right-hand side function had a recoverable error, but no recovery is possible.", flagName, functionName);
@@ -206,6 +203,8 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
     default:
       throwStreamPrint(NULL,"##CVODE## In function %s: Error with flag %i.", functionName, flag);
   }
+
+  free((char*)flagName); // We leak memory if an error is thrown, but doesn't matter in that case.
 }
 
 /**
@@ -254,28 +253,50 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
 }
 
 /**
- * @brief Error handler function for CVODE
+ * @brief Mute SUNDIALS' own output for a context.
  *
- * @param errorCode   Error code from CVODE
- * @param module      Name of the CVODE module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with CVodeSetUserData.
+ * Use the OMC log streams instead.
+ *
+ * @param sunctx  SUNDIALS context whose logger should be muted.
  */
-void cvodeErrorHandlerFunction(int errorCode, const char *module,
-                               const char *function, char *msg, void *userData)
+void sundialsSilenceLogger(SUNContext sunctx) {
+  SUNLogger logger = NULL;
+
+  if (SUNContext_GetLogger(sunctx, &logger) != SUN_SUCCESS || logger == NULL) {
+    return;
+  }
+  /* An empty filename disables the stream */
+  SUNLogger_SetErrorFilename(logger, "");
+  SUNLogger_SetWarningFilename(logger, "");
+  SUNLogger_SetInfoFilename(logger, "");
+  SUNLogger_SetDebugFilename(logger, "");
+}
+
+/**
+ * @brief Error handler function for the integrators, CVODE and IDA.
+ *
+ * Registered on the SUNContext with SUNContext_PushErrHandler.
+ *
+ * @param line           Line in the SUNDIALS source where the error was raised.
+ * @param func           Name of the SUNDIALS function in which the error occurred.
+ * @param file           SUNDIALS source file where the error was raised.
+ * @param msg            Error message.
+ * @param err_code       SUNDIALS error code.
+ * @param err_user_data  Pointer to user data given with SUNContext_PushErrHandler.
+ * @param sunctx         SUNDIALS context, unused.
+ */
+void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
+                                  const char *msg, SUNErrCode err_code,
+                                  void *err_user_data, SUNContext sunctx)
 {
-  /* Variables */
-  CVODE_SOLVER* cvodeData;
-  DATA* data;
+  UNUSED(sunctx);   /* Disables compiler warning */
 
-  if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    cvodeData = (CVODE_SOLVER*) userData;
-    data = (DATA*)cvodeData->simData->data;
-
-    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
+  if (err_user_data != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### SUNDIALS error message #####");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> function %s\n -> at %s:%d", err_code, func, file, line);
+    /* Package level codes (CV_ and IDA_ ones) are not SUNErrCodes, so
+     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg ? msg : SUNGetErrMsg(err_code));
     messageClose(OMC_LOG_SOLVER);
   }
 }
@@ -289,7 +310,7 @@ void cvodeErrorHandlerFunction(int errorCode, const char *module,
  */
 static void checkReturnFlag_KIN(int flag, const char *functionName) {
 
-  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
+  const char* flagName = KINGetReturnFlagName(flag);
 
   switch (flag) {
   case KIN_SUCCESS:
@@ -755,142 +776,28 @@ static void checkReturnFlag_IDALS(int flag, const char *functionName) {
  * @param flag          Return value of SUNLS routine.
  * @param functionName  Name of SUNLS function that returned the flag.
  */
-static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
-  switch (flag) {
-  case SUNLS_SUCCESS:
-    break;
-  case SUNLS_MEM_NULL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Mem argument is NULL.",
-                     functionName);
-    break;
-  case SUNLS_ILL_INPUT:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Illegal function input.",
-                     functionName);
-    break;
-  case SUNLS_MEM_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Failed memory access.",
-                     functionName);
-    break;
-  case SUNLS_ATIMES_FAIL_UNREC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Atimes unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PSET_FAIL_UNREC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Pset unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PSOLVE_FAIL_UNREC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Psolve unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PACKAGE_FAIL_UNREC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: External package unrec. fail.",
-                     functionName);
-    break;
-  case SUNLS_GS_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Gram-Schmidt failure.",
-                     functionName);
-    break;
-  case SUNLS_QRSOL_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: QRsol found singular R.",
-                     functionName);
-    break;
-  case SUNLS_VECTOROP_ERR:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Vector operation error.",
-                     functionName);
-    break;
-  case SUNLS_RES_REDUCED:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Monconv. solve, resid reduced.",
-                     functionName);
-    break;
-  case SUNLS_CONV_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Nonconvergent solve.",
-                     functionName);
-    break;
-  case SUNLS_ATIMES_FAIL_REC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Atimes failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PSET_FAIL_REC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Pset failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PSOLVE_FAIL_REC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Psolve failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PACKAGE_FAIL_REC:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: External package recov. fail.",
-                     functionName);
-    break;
-  case SUNLS_QRFACT_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: QRfact found singular matrix.",
-                     functionName);
-    break;
-  case SUNLS_LUFACT_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: LUfact found singular matrix.",
-                     functionName);
-    break;
-  default:
-    throwStreamPrint(NULL,
-                     "##SUNLS## In function %s: Error with flag %i.",
-                     functionName, flag);
+static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName) {
+  if (flag == SUN_SUCCESS) {
+    return;
   }
+  throwStreamPrint(NULL, "##SUNLS## In function %s: %s (SUNErrCode %i).",
+                   functionName, SUNGetErrMsg(flag), flag);
 }
 
 /**
  * @brief Checks given SUNMatrix flag and reports potential error.
  *
+ * SUNMatrix operations return a generic SUNErrCode, so let SUNDIALS spell the error out for us.
+ *
  * @param flag          Return value of SUNMatrix routine.
  * @param functionName  Name of SUNMatrix function that returned the flag.
  */
-static void checkReturnFlag_SUNMatrix(int flag, const char *functionName) {
-  switch (flag) {
-  case SUNMAT_SUCCESS:
-    break;
-  case SUNMAT_ILL_INPUT:
-    throwStreamPrint(NULL,
-                     "##SUNMatrix## In function %s: Illegal function input.",
-                     functionName);
-    break;
-  case SUNMAT_MEM_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNMatrix## In function %s: Failed memory access/alloc.",
-                     functionName);
-    break;
-  case SUNMAT_OPERATION_FAIL:
-    throwStreamPrint(NULL,
-                     "##SUNMatrix## In function %s: A SUNMatrix operation returned nonzero.",
-                     functionName);
-    break;
-  case SUNMAT_MATVEC_SETUP_REQUIRED:
-    throwStreamPrint(NULL,
-                     "##SUNMatrix## In function %s: The SUNMatMatvecSetup routine needs to be called.",
-                     functionName);
-    break;
-  default:
-    throwStreamPrint(NULL,
-                     "##SUNMatrix## In function %s: Error with flag %i.",
-                     functionName, flag);
+static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName) {
+  if (flag == SUN_SUCCESS) {
+    return;
   }
+  throwStreamPrint(NULL, "##SUNMatrix## In function %s: %s (SUNErrCode %i).",
+                   functionName, SUNGetErrMsg(flag), flag);
 }
 
 /**
@@ -912,7 +819,7 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
 
   assertStreamPrint(NULL, NULL != SM_DATA_S(A), "matrix data is NULL pointer");
 
-  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+  if (SM_SPARSETYPE_S(A) != SUN_CSC_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "In function sundialsPrintSparseMatrix: Wrong sparse format "
                      "of SUNMatrix A%s.", name);
@@ -950,53 +857,26 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     /* Print indexvals array */
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexvals[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexvals[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexvals[lengthData-1]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexvals[lengthData-1]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     /* Print indexptrs array */
     buffer[0] = 0;
     for (i=0; i<SUNSparseMatrix_NP(A); i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexptrs[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexptrs[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexptrs[SUNSparseMatrix_NP(A)]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexptrs[SUNSparseMatrix_NP(A)]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     messageClose(logLevel);
     free(buffer);
     free(tmpBuffer);
-  }
-}
-
-/**
- * @brief Error handler function for IDA
- *
- * @param errorCode   Error code from IDA
- * @param module      Name of the IDA module reporting the error.
- * @param function    Name of the function in which the error occurred.
- * @param msg         Error Message.
- * @param userData    Pointer to user data given with IDASetUserData.
- */
-void idaErrorHandlerFunction(int errorCode, const char *module,
-                             const char *function, char *msg, void *userData)
-{
-  /* Variables */
-  IDA_SOLVER* idaData;
-  DATA* data;
-
-  if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    idaData = (IDA_SOLVER*) userData;
-    data = (DATA*)idaData->userData->data;
-
-    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
-    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
-    messageClose(OMC_LOG_SOLVER);
   }
 }
 
@@ -1009,28 +889,28 @@ void idaErrorHandlerFunction(int errorCode, const char *module,
  * @param msg         Error Message.
  * @param userData    Pointer to user data given with KINSetUserData.
  */
-void kinsolErrorHandlerFunction(int errorCode, const char* module,
-                                const char *function, char* msg,
-                                void* userData) {
+void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
+                                const char *msg, SUNErrCode err_code,
+                                void *err_user_data, SUNContext sunctx) {
   /* Variables */
   NLS_KINSOL_DATA* kinsolData;
   DATA* data;
   NONLINEAR_SYSTEM_DATA* nlsData;
-  long eqSystemNumber;
+  long eqSystemNumber = -1;
 
-  if (userData != NULL) {
-    kinsolData = (NLS_KINSOL_DATA *)userData;
+  UNUSED(sunctx);   /* Disables compiler warning */
+
+  if (err_user_data != NULL) {
+    kinsolData = (NLS_KINSOL_DATA *)err_user_data;
     data = kinsolData->userData->data;
     nlsData = kinsolData->userData->nlsData;
     if (nlsData) {
       eqSystemNumber = nlsData->equationIndex;
-    } else {
-      eqSystemNumber = -1;
     }
   }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_NLS)) {
-    if (userData != NULL && eqSystemNumber > 0) {
+    if (err_user_data != NULL && eqSystemNumber > 0) {
       warningStreamPrint(
           OMC_LOG_NLS, 1, "kinsol failed for system %d",
           modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
@@ -1040,39 +920,16 @@ void kinsolErrorHandlerFunction(int errorCode, const char* module,
     }
 
     warningStreamPrint(OMC_LOG_NLS, 0,
-                       "[module] %s | [function] %s | [error_code] %d", module,
-                       function, errorCode);
-    if (msg) {
-      warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg);
-    }
+                       "[function] %s | [at] %s:%d | [error_code] %d",
+                       func, file, line, err_code);
+    /* Package level codes (KIN_* and friends) are not SUNErrCodes, so
+     * SUNGetErrMsg() only makes sense when SUNDIALS did not supply a message. */
+    warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg ? msg : SUNGetErrMsg(err_code));
 
-    messageClose(OMC_LOG_NLS);
+    messageCloseWarning(OMC_LOG_NLS);
   }
 }
 
-/**
- * @brief Info handler function given to KINSOL.
- *
- * Will only print information when stream OMC_LOG_NLS_V is active.
- *
- * @param module      Name of the KINSOL module reporting the information.
- * @param function    Name of the function reporting the information.
- * @param msg         Message.
- * @param user_data   Pointer to user data given with KINSetInfoHandlerFn.
- */
-void kinsolInfoHandlerFunction(const char *module, const char *function,
-                               char *msg, void *user_data) {
-  UNUSED(user_data);  /* Disables compiler warning */
-
-  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
-    warningStreamPrint(OMC_LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
-    if (msg) {
-      warningStreamPrint(OMC_LOG_NLS_V, 0, "%s", msg);
-    }
-
-    messageClose(OMC_LOG_NLS_V);
-  }
-}
 #endif /* #ifndef OMC_FMI_RUNTIME */
 
 #else
@@ -1088,33 +945,5 @@ void checkReturnFlag_SUNDIALS(int flag, int type, const char *functionName) {
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
 }
 
-
-/**
- * @brief Function not supported without WITH_SUNDIALS
- *
- * @param errorCode
- * @param module
- * @param function
- * @param msg
- * @param userData
- */
-void kinsolErrorHandlerFunction(int errorCode, const char *module,
-                                const char *function, char *msg,
-                                void *userData) {
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-}
-
-/**
- * @brief  Function not supported without WITH_SUNDIALS
- *
- * @param module
- * @param function
- * @param msg
- * @param user_data
- */
-void kinsolInfoHandlerFunction(const char *module, const char *function,
-                               char *msg, void *user_data) {
-  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
-}
 
 #endif /* WITH_SUNDIALS */

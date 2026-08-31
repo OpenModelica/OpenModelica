@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -71,11 +76,13 @@ SimulationDialog::SimulationDialog(QWidget *pParent)
 
 SimulationDialog::~SimulationDialog()
 {
+#if !defined(__EMSCRIPTEN__)
   // kill the clients
   foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
     delete pOpcUaClient;
   }
   mOpcUaClientsMap.clear();
+#endif
 }
 
 /*!
@@ -105,11 +112,11 @@ void SimulationDialog::show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate
  * \param launchAnimation
  * \param enableDataReconciliation
  */
-void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation)
+void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation, bool buildOnly)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
   initializeFields(false, SimulationOptions());
-  mpBuildOnlyCheckBox->setChecked(false);
+  mpBuildOnlyCheckBox->setChecked(buildOnly);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
 #if !defined(WITHOUT_OSG)
@@ -394,20 +401,10 @@ void SimulationDialog::setUpForm()
   mpNonLinearSolverComboBox = new ComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
   Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
-  // time where the linearization of the model should be performed
-  mpLinearizationTimeLabel = new Label(tr("Linearization Time (Optional):"));
-  mpLinearizationTimeTextBox = new QLineEdit;
   // output variables
   mpOutputVariablesLabel = new Label(tr("Output Variables (Optional):"));
   mpOutputVariablesLabel->setToolTip(tr("Comma separated list of variables. Output the variables at the end of the simulation to the standard output."));
   mpOutputVariablesTextBox = new QLineEdit;
-  // measure simulation time checkbox
-  mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
-  mpProfilingComboBox = new ComboBox;
-  OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
-  mpProfilingComboBox->addItems(profiling.validOptions);
-  mpProfilingComboBox->setCurrentIndex(0);
-  Utilities::setToolTip(mpProfilingComboBox, profiling.mainDescription, profiling.descriptions);
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -465,19 +462,15 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpLinearSolverComboBox, 5, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverLabel, 6, 0);
   pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverComboBox, 6, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeLabel, 7, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeTextBox, 7, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 8, 0);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 8, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 9, 0);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 9, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 10, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 11, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 12, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 13, 0);
-  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 13, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 7, 0);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 7, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 8, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 9, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 10, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 11, 0);
+  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 11, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
-  // add Output Tab to Simulation TabWidget
+  // add SimulationFlags Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Output Tab
   mpOutputTab = new QWidget;
@@ -533,6 +526,23 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
+  // Linearize Tab
+  mpLinearizeTab = new QWidget;
+  // Linearization dump language combo box
+  mpLinearizationDumpLanguageComboBox = new ComboBox;
+  OMCInterface::getConfigFlagValidOptions_res linearizationLanguages = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("linearizationDumpLanguage");
+  mpLinearizationDumpLanguageComboBox->addItems(linearizationLanguages.validOptions);
+  mpLinearizationDumpLanguageComboBox->setCurrentIndex(0);
+  Utilities::setToolTip(mpLinearizationDumpLanguageComboBox, linearizationLanguages.mainDescription, linearizationLanguages.descriptions);
+  // set Linearize Tab Layout
+  QGridLayout *pLinearizeTabLayout = new QGridLayout;
+  pLinearizeTabLayout->setAlignment(Qt::AlignTop);
+  pLinearizeTabLayout->addWidget(new Label(tr("Linearize model at time = StopTime")), 0, 0, 1, 2);
+  pLinearizeTabLayout->addWidget(new Label(tr("Target language for linearized model:")), 1, 0);
+  pLinearizeTabLayout->addWidget(mpLinearizationDumpLanguageComboBox, 1, 1);
+  mpLinearizeTab->setLayout(pLinearizeTabLayout);
+  // add Linearize Tab to Simulation TabWidget
+  mpSimulationTabWidget->addTab(mpLinearizeTab, tr("Linearize"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -653,6 +663,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
       mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEnableFMUImportCheckBox()->isChecked());
+      mpTranslationFlagsWidget->getProfilingComboBox()->setCurrentIndex(pGlobalTranslationFlagsWidget->getProfilingComboBox()->currentIndex());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -685,6 +696,11 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(false);
             } else {
               mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
+            }
+          } else if (commandLineOptionKeyFiltered.compare("profiling") == 0) {
+            int currentIndex = mpTranslationFlagsWidget->getProfilingComboBox()->findText(commandLineOptionValues);
+            if (currentIndex > -1) {
+              mpTranslationFlagsWidget->getProfilingComboBox()->setCurrentIndex(currentIndex);
             }
           } else if (commandLineOptionKeyFiltered.compare("allowNonStandardModelica") == 0) { // check allowNonStandardModelica flags i.e., -allowNonStandardModelica=protectedAccess,reinitInAlgorithms etc.
             QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
@@ -765,8 +781,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpInitialStepSizeTextBox->setText(value);
           } else if (simulationFlag.compare("jacobian") == 0) {
             mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
-          } else if (simulationFlag.compare("l") == 0) {
-            mpLinearizationTimeTextBox->setText(value);
           } else if (simulationFlag.compare("ls") == 0) {
             mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
           } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
@@ -862,6 +876,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       }
     }
     mpCflagsTextBox->setEnabled(true);
+    mpTranslationTab->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
     mpSaveExperimentAnnotationCheckBox->setVisible(true);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(true);
@@ -889,8 +904,9 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     applySimulationOptions(simulationOptions);
     mpInteractiveSimulationGroupBox->setChecked(false);
     mpInteractiveSimulationGroupBox->setEnabled(false);
-    mpCflagsTextBox->setDisabled(true);
-    mpFileNameTextBox->setDisabled(true);
+    mpCflagsTextBox->setEnabled(false);
+    mpTranslationTab->setEnabled(false);
+    mpFileNameTextBox->setEnabled(false);
     // save simulation settings
     mpSaveExperimentAnnotationCheckBox->setVisible(false);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(false);
@@ -993,15 +1009,8 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   if (currentIndex > -1) {
     mpNonLinearSolverComboBox->setCurrentIndex(currentIndex);
   }
-  // time where the linearization of the model should be performed
-  mpLinearizationTimeTextBox->setText(simulationOptions.getLinearizationTime());
   // output variables
   mpOutputVariablesTextBox->setText(simulationOptions.getOutputVariables());
-  // measure simulation time checkbox
-  currentIndex = mpProfilingComboBox->findText(simulationOptions.getProfiling(), Qt::MatchExactly);
-  if (currentIndex > -1) {
-    mpProfilingComboBox->setCurrentIndex(currentIndex);
-  }
   // cpu-time checkbox
   mpCPUTimeCheckBox->setChecked(simulationOptions.getCPUTime());
   // enable all warnings
@@ -1054,6 +1063,11 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpStoreVariablesAtEventsCheckBox->setChecked(simulationOptions.getStoreVariablesAtEvents());
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox->setChecked(simulationOptions.getShowGeneratedFiles());
+  // linearization dump language
+  currentIndex = mpLinearizationDumpLanguageComboBox->findText(simulationOptions.getLinearizationDumpLanguage(), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpLinearizationDumpLanguageComboBox->setCurrentIndex(currentIndex);
+  }
 }
 
 /*!
@@ -1073,8 +1087,6 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   mpTranslationFlagsWidget->applyFlags();
   OptionsDialog::instance()->saveGlobalSimulationSettings();
   OptionsDialog::instance()->saveNFAPISettings();
-  // set profiling
-  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   // set the infoXMLOperations flag
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
@@ -1104,14 +1116,27 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
 #endif
   if (mpLibraryTreeItem->mSimulationOptions.getEnableDataReconciliation()) {
+    QString measurementInputFile;
     if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0) {
       MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationBoundaryConditions"));
+      measurementInputFile = mpLibraryTreeItem->mSimulationOptions.getBoundaryConditionMeasurementInputFile();
     } else {
       // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
       MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
+      measurementInputFile = mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile();
     }
+    // pass the -sx flag via simflags to be used in the data reconciliation, boundary conditions and state estimation algorithms (#14864)
+    simulationParameters.append(", simflags=").append("\"").append(QString("-sx=%1").arg(measurementInputFile).append("\""));
   }
-  bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  // set linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
+  }
+  bool result;
+  {
+    OMCLongOperation longOperation;
+    result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
   return result;
@@ -1176,9 +1201,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setClock(mpClockComboBox->currentText());
   simulationOptions.setLinearSolver(mpLinearSolverComboBox->currentText());
   simulationOptions.setNonLinearSolver(mpNonLinearSolverComboBox->currentText());
-  simulationOptions.setLinearizationTime(mpLinearizationTimeTextBox->text());
   simulationOptions.setOutputVariables(mpOutputVariablesTextBox->text());
-  simulationOptions.setProfiling(mpProfilingComboBox->currentText());
   simulationOptions.setCPUTime(mpCPUTimeCheckBox->isChecked());
   simulationOptions.setEnableAllWarnings(mpEnableAllWarningsCheckBox->isChecked());
   QStringList logStreams;
@@ -1225,6 +1248,8 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
+
+  simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
   if (!QDir().exists(modelDirectoryPath)) {
@@ -1239,14 +1264,13 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   // setup simulation flags
   QStringList simulationFlags;
-  simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12,%13=%14")
-                         .arg("startTime").arg(simulationOptions.getStartTime())
-                         .arg("stopTime").arg(simulationOptions.getStopTime())
-                         .arg("stepSize").arg(simulationOptions.getStepSize())
-                         .arg("tolerance").arg(simulationOptions.getTolerance())
-                         .arg("solver").arg(simulationOptions.getMethod())
-                         .arg("outputFormat").arg(simulationOptions.getOutputFormat())
-                         .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+  simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+  simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+  simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+  simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+  simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+  simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
   // jacobian
   if (!mpJacobianComboBox->currentText().isEmpty()) {
@@ -1325,10 +1349,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
   }
-  // time where the linearization of the model should be performed
-  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
-  }
   // output variables
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
@@ -1368,6 +1388,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (logStreams.size() > 0) {
     simulationFlags.append(QString("-lv=").append(logStreams.join(",")));
   }
+  // linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    simulationFlags.append(QString("-l=").append(simulationOptions.getStopTime()));
+  }
   if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
     simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
   }
@@ -1384,6 +1408,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
         simulationOptions.setInteractiveSimulationPortNumber(portNumber);
         simulationFlags.append(QString("-embeddedServerPort=").append(QString::number(portNumber)));
         // if the user enters a used port
+#if !defined(__EMSCRIPTEN__)
         if (mOpcUaClientsMap.contains(portNumber)) {
           OpcUaClient *pOpcUaClient = getOpcUaClient(portNumber);
           if (pOpcUaClient && pOpcUaClient->getSimulationOptions().getClassName().compare(simulationOptions.getClassName()) != 0) {
@@ -1395,6 +1420,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
             return simulationOptions; // return from here without setting valid for SimulationOptions
           }
         }
+#endif
       }
     }
   }
@@ -1422,6 +1448,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
   if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
     showAlgorithmicDebugger(simulationOptions);
   } else {
+#if !defined(__EMSCRIPTEN__)
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
     pSimulationOutputWidget->start();
@@ -1431,6 +1458,7 @@ void SimulationDialog::createAndShowSimulationOutputWidget(const SimulationOptio
       // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
+#endif
   }
 }
 
@@ -1546,9 +1574,6 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.insert("nls", mpNonLinearSolverComboBox->currentText());
-  }
-  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.insert("l", mpLinearizationTimeTextBox->text());
   }
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.insert("output", mpOutputVariablesTextBox->text());
@@ -1753,6 +1778,9 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
     // check if we can compile using the target language
     if ((targetLanguage.compare("C") == 0) || (targetLanguage.compare("Cpp") == 0)) {
       createAndShowSimulationOutputWidget(simulationOptions);
+    } else if (targetLanguage.compare("wasm-jit") == 0) {
+      runWasmJitSimulation(simulationOptions, simulationParameters);
+      return;
     } else {
       QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage).arg(simulationOptions.getWorkingDirectory());
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
@@ -1767,6 +1795,29 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Translation of <b>%1</b> failed.").arg(mClassName),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
+}
+
+/*!
+ * \brief SimulationDialog::runWasmJitSimulation
+ * Runs the already-translated wasm-jit model in-process. translateModel has built
+ * it, so simulate() is given resimulateExecutable to skip translate+build and only
+ * run; the result file is then loaded like a native run. Used wherever the
+ * wasm-jit target is selected (the web build, and native builds without a C
+ * compiler toolchain such as the MSVC cross build).
+ */
+void SimulationDialog::runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters)
+{
+  // Show the run in a simulation output tab (compilation + simulation log), like a
+  // native run, so its output/errors are visible. The widget runs the model
+  // in-process and loads the result; there is no compile/simulate process pipeline.
+  SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
+  if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
+  } else {
+    MainWindow::instance()->getVariablesDockWidget()->show();
+  }
+  pSimulationOutputWidget->runWasmJitSimulation(simulationParameters);
 }
 
 /*!
@@ -1798,6 +1849,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     fileName = fileName.append(".exe");
 #endif
     // start the debugger
+#if !defined(__EMSCRIPTEN__)
     if (GDBAdapter::instance()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), QMessageBox::Ok);
@@ -1806,6 +1858,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
       GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
       MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
+#endif
   }
 }
 
@@ -1822,6 +1875,7 @@ void SimulationDialog::showVariableFilterHelp()
 
 void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simulationOptions)
 {
+#if !defined(__EMSCRIPTEN__)
   if (simulationOptions.isInteractiveSimulation()) {
     OpcUaClient *pOpcUaClient = getOpcUaClient(simulationOptions.getInteractiveSimulationPortNumber());
     if (pOpcUaClient && pOpcUaClient->getSampleThread()) {
@@ -1831,6 +1885,9 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
       pOpcUaClient->getOpcUaWorker()->pauseInteractiveSimulation();
     }
   }
+#else
+  Q_UNUSED(simulationOptions);
+#endif
 }
 
 /*!
@@ -1842,6 +1899,7 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
  */
 void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow)
 {
+#if !defined(__EMSCRIPTEN__)
   if (isInteractiveSimulation) {
     className.remove(QRegularExpression("_res.int"));
     SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
@@ -1864,6 +1922,11 @@ void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation,
       }
     }
   }
+#else
+  Q_UNUSED(isInteractiveSimulation);
+  Q_UNUSED(className);
+  Q_UNUSED(closeInteractivePlotWindow);
+#endif
 }
 
 /*!
@@ -1875,6 +1938,11 @@ void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation,
  */
 bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QString *pErrorString)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(simulationOptions);
+  Q_UNUSED(pErrorString);
+  return false;
+#else
   OpcUaClient *pOpcUaClient = new OpcUaClient(simulationOptions);
   if (!pOpcUaClient->connectToServer(pErrorString)) {
     return false;
@@ -1921,6 +1989,7 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
   }
   MainWindow::instance()->switchToPlottingPerspectiveSlot();
   return true;
+#endif
 }
 
 OpcUaClient* SimulationDialog::getOpcUaClient(int port)
@@ -1960,6 +2029,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       // stay in current perspective and show variable browser
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
+    // Populate (and sort) the variables BEFORE opening the animation window. On wasm the
+    // Quick 3D viewer starts an async render loop the moment it is created, and running the
+    // variables' QSortFilterProxyModel sort while it is live traps; doing it first keeps the
+    // sort synchronous and intact (and is harmless ordering on every platform).
+    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
 #if !defined(WITHOUT_OSG)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
@@ -1975,7 +2049,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       }
     }
 #endif
-    pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
     /* issue #11811
      * Make sure we always update the diagramWindow after simulation.
      */
@@ -1991,9 +2064,9 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     QString htmlPath;
     // read the data Reconciliation report file
     if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName());
+      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getFileNamePrefix());
     } else { // read the data Reconciliation Boundary Conditions report file
-      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getClassName());
+      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getFileNamePrefix());
     }
     QFileInfo reportFileInfo(htmlPath);
     QUrl url = QString("file:///%1").arg(htmlPath);
@@ -2004,6 +2077,19 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     bool reportFileNewer = resultFileLastModifiedDateTime.secsTo(reportFileModificationTime) >= 0;
     if (reportFileExists && reportFileNewer) {
       QDesktopServices::openUrl(url);
+    }
+    // Generate FMU for reconciled model if options set
+    if (simulationOptions.getGenerateFMUSaveSetting()) {
+      QString reconciledModelFilePath = QString("%1/Reconciled_%2.mo").arg(workingDirectory, simulationOptions.getFileNamePrefix());
+      QFileInfo reconciledModelFileInfo(reconciledModelFilePath);
+      if (reconciledModelFileInfo.exists()) {
+        LibraryWidget * plibraryWidget = MainWindow::instance()->getLibraryWidget();
+        plibraryWidget->openModelicaFile(reconciledModelFilePath);
+        LibraryTreeItem * plibraryItem =  plibraryWidget->getLibraryTreeModel()->findLibraryTreeItemOneLevel(reconciledModelFileInfo.completeBaseName());
+        if (plibraryItem) {
+          MainWindow::instance()->exportModelFMU(plibraryItem);
+        }
+      }
     }
   }
 }
@@ -2281,6 +2367,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
 
   // save settings
   mpSaveSettingsCheckBox = new QCheckBox(tr("Save Settings"));
+  mpGenerateFMUCheckBox = new QCheckBox(tr("Generate FMU"));
   // Create the buttons
   mpCalculateButton = new QPushButton(tr("Calculate"));
   mpCalculateButton->setAutoDefault(true);
@@ -2310,6 +2397,8 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
 
   mpDataReconciliationEpsilonTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
   mpSaveSettingsCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting());
+  mpGenerateFMUCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getGenerateFMUSaveSetting());
+
   if (!mpLibraryTreeItem->mSimulationOptions.isDataReconciliationInitialized()) {
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
     if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
@@ -2381,10 +2470,15 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpDataReconciliationStackedWidget->setCurrentIndex(mpDataReconciliationAlgorithmComboBox->currentIndex());
 
   QWidget *pBottomPageWidget = new QWidget;
-  QGridLayout *pBottomPageGridLayout = new QGridLayout;
-  pBottomPageGridLayout->addWidget(mpSaveSettingsCheckBox, 0, 0);
-  pBottomPageGridLayout->addWidget(mpButtonBox, 0, 1, 1, 2, Qt::AlignRight);
-  pBottomPageWidget->setLayout(pBottomPageGridLayout);
+  QHBoxLayout *pBottomPageHBoxLayout = new QHBoxLayout;
+  pBottomPageHBoxLayout->setContentsMargins(0, 0, 0, 0);
+  // Left side checkboxes
+  pBottomPageHBoxLayout->addWidget(mpSaveSettingsCheckBox);
+  pBottomPageHBoxLayout->addWidget(mpGenerateFMUCheckBox);
+  // Push buttons to the right
+  pBottomPageHBoxLayout->addStretch();
+  pBottomPageHBoxLayout->addWidget(mpButtonBox);
+  pBottomPageWidget->setLayout(pBottomPageHBoxLayout);
 
   QVBoxLayout *pMainVBoxLayout = new QVBoxLayout;
   pMainVBoxLayout->addWidget(pTopPageWidget);
@@ -2492,6 +2586,7 @@ void DataReconciliationDialog::calculateDataReconciliation()
     }
   }
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationSaveSetting(mpSaveSettingsCheckBox->isChecked());
+  mpLibraryTreeItem->mSimulationOptions.setGenerateFMUSaveSetting(mpGenerateFMUCheckBox->isChecked());
   accept();
 }
 

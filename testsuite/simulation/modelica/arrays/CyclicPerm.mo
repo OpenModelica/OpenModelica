@@ -30,6 +30,5 @@ algorithm
 
   X[{1},:] := [XO[{1}, 2:3], XO[{1}, {1}]];  // OK, X becomes [2,3,1; 5,6,4]
   X[1, :] := [XO[1, 2:3], XO[1, 1]];      // ERROR, incompatible dimensions
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CyclicPerm;
 

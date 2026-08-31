@@ -2,7 +2,6 @@
 // keywords: function pointer
 // status: correct
 // teardown_command: rm -f *FunctionPointer.Test*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

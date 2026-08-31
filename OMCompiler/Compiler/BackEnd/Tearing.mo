@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -50,13 +54,15 @@ import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
 import BackendVariable;
+import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
 import DoubleEnded;
 import DumpGraphML;
 import Error;
 import ExecStat.execStat;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
@@ -66,8 +72,10 @@ import List;
 import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
+import UnorderedSet;
 import Util;
 import Sorting;
+import System;
 import ElementSource;
 
 // =============================================================================
@@ -78,6 +86,8 @@ import ElementSource;
 
 protected constant String BORDER    = "****************************************";
 protected constant String UNDERLINE = "========================================";
+protected constant list<String> withLSS = {"C", "wasm-jit", "wasm"} "targets that provide a linear sparse solver";
+protected constant list<String> withNSS = {"C", "wasm-jit", "wasm"} "targets that provide a nonlinear sparse solver";
 
 uniontype TearingMethod
   record MINIMAL_TEARING "Only tear discrete variables from loops"
@@ -139,12 +149,12 @@ protected function getTearingMethod
   input String inTearingMethod;
   output TearingMethod outTearingMethod;
 algorithm
-  outTearingMethod := match(inTearingMethod)
-    case ("minimalTearing") then MINIMAL_TEARING();
-    case ("omcTearing") then OMC_TEARING();
-    case ("cellier") then CELLIER_TEARING();
+  outTearingMethod := match inTearingMethod
+    case "minimalTearing" then MINIMAL_TEARING();
+    case "omcTearing" then OMC_TEARING();
+    case "cellier" then CELLIER_TEARING();
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " got invalid name \"" + inTearingMethod + "\".", sourceInfo());
     then fail();
   end match;
@@ -164,7 +174,7 @@ protected function callTearingMethod
   output Boolean outRunMatching;
 protected
   constant Boolean debug = false;
-  list<Integer> userTVars, userResiduals;
+  list<Integer> userTVars = {}, userResiduals = {};
   TearingMethod tearingMethod = inTearingMethod;
 algorithm
 
@@ -276,9 +286,9 @@ algorithm
       BackendDAE.StrongComponent comp;
       Boolean b;
     case comp
-      equation
-        (comp, b, strongComponentIndexOut) = traverseComponent(comp, isyst, ishared, inMethod, strongComponentIndexOut);
-        outRunMatching = outRunMatching or b;
+      algorithm
+        (comp, b, strongComponentIndexOut) := traverseComponent(comp, isyst, ishared, inMethod, strongComponentIndexOut);
+        outRunMatching := outRunMatching or b;
       then comp;
     end match for co in inComps);
 end traverseComponents;
@@ -296,8 +306,8 @@ protected
   constant Boolean debug = false;
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
 algorithm
-  strongComponentIndexOut := match(inComp)
-    case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
+  strongComponentIndexOut := match inComp
+    case BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN()) algorithm
       if debugFlag then
         print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\n");
         if not listMember(strongComponentIndexOut+1, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
@@ -324,7 +334,7 @@ algorithm
         // do some printing
         if debugFlag then
           print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n");
-          _ := match (Flags.isSet(Flags.TEARING_DUMPVERBOSE), Flags.isSet(Flags.ITERATION_VARS))
+          () := match (Flags.isSet(Flags.TEARING_DUMPVERBOSE), Flags.isSet(Flags.ITERATION_VARS))
             case (false, false) algorithm
               print("Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
             then ();
@@ -350,6 +360,10 @@ algorithm
         try
           oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
           outRunMatching := true;
+          if not tearingPaysOff(oComp, ishared, eindex, vindx, ojac, jacType, strongComponentIndexOut, isLinear) then
+            oComp := inComp;
+            outRunMatching := false;
+          end if;
         else
           oComp := inComp;
           outRunMatching := false;
@@ -374,8 +388,6 @@ protected function checkTearingSettings
   input Integer numVars;
   output Boolean activateTearing = false;
 protected
-  constant list<String> withLSS = {"C"} "targets that provide a linear sparse solver";
-  constant list<String> withNSS = {"C"} "targets that provide a nonlinear sparse solver";
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
   Integer maxSize;
   Boolean isDense;
@@ -390,7 +402,7 @@ algorithm
 
   // Check if (component is too big) or (matrix is dense and target has no sparse solver)
   isDense := Flags.getConfigString(Flags.MATRIX_FORMAT) == "dense";
-  hasSparseSolver := listMember(Config.simCodeTarget(), (if isLinear then withLSS else withNSS));
+  hasSparseSolver := targetHasSparseSolver(isLinear);
   forcedTearing := isDense and not hasSparseSolver;
   if numVars > maxSize and not forcedTearing then
     Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars),
@@ -410,6 +422,242 @@ algorithm
 
   activateTearing := true;
 end checkTearingSettings;
+
+protected function targetHasSparseSolver
+  input Boolean isLinear;
+  output Boolean hasSparseSolver = listMember(Config.simCodeTarget(), if isLinear then withLSS else withNSS);
+end targetHasSparseSolver;
+
+protected function tearingPaysOff
+"Keeps the torn system unless solving it untorn is clearly cheaper, or unless
+ substituting through the inner equations amplifies an error past what a double
+ carries. The torn matrix does not exist yet, so both its structure and that
+ amplification come from walking the substitution. Costs are in flops."
+  input BackendDAE.StrongComponent tornComp;
+  input BackendDAE.Shared shared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  input Integer strongComponentIndex;
+  input Boolean isLinear;
+  output Boolean keep = true;
+protected
+  constant Real entryCost = 4.0 "flops one Jacobian entry evaluation is worth";
+  constant Real fillFactor = 14.0 "fill-in a sparse factorization sees, measured";
+  constant Real precisionDigits = 16.0 "digits a double carries";
+  constant Real trustedCoeffs = 0.9 "known coefficients the growth estimate needs";
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  list<Integer> tvars, residuals, innerVars;
+  list<tuple<Integer, Real>> stack;
+  tuple<Integer, Real> dep;
+  BackendDAE.Equation dEqn;
+  BackendDAE.InnerEquations innerEquations;
+  BackendDAE.Variables globalKnownVars;
+  array<list<tuple<Integer, Real>>> eqDeps "local equation index -> the local variables it depends on and their coefficients";
+  array<Integer> tvarId, solvedBy, stamp, depth;
+  array<Real> growth "error amplification of the forward substitution, iteration variables being 1";
+  Integer n, nnz, t, m, row, col, v, w, eq, cnt, nnzA, maxRowA, maxDepth, d, valued = 0;
+  Real density, densityA, buildTorn, costDense, costSparse, costTornDense, costTornSparse;
+  Real costTorn, costUntorn, rn, rt, g, coeff, pivot, maxGrowth, digitsLost;
+  Boolean known, isValued;
+algorithm
+  (jac, tvars, residuals, innerEquations, known) := match (ojac, tornComp)
+    case (SOME(jac), BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(
+            tearingvars = tvars, residualequations = residuals, innerEquations = innerEquations)))
+      then (jac, tvars, residuals, innerEquations, true);
+    else ({}, {}, {}, {}, false);
+  end match;
+  if not known then
+    return;
+  end if;
+
+  n := listLength(vindx);
+  nnz := listLength(jac);
+  t := listLength(tvars);
+  m := listLength(innerEquations);
+
+  globalKnownVars := BackendDAEUtil.getGlobalKnownVarsFromShared(shared);
+  eqDeps := arrayCreate(n, {});
+  for entry in jac loop
+    (row, col, dEqn) := entry;
+    (coeff, isValued) := jacEntryMagnitude(dEqn, globalKnownVars);
+    valued := valued + (if isValued then 1 else 0);
+    arrayUpdate(eqDeps, row, (col, coeff) :: eqDeps[row]);
+  end for;
+
+  // inner equations come in solve order, so one pass gives every depth and growth
+  tvarId := arrayCreate(n, 0);
+  growth := arrayCreate(n, 0.0);
+  cnt := 0;
+  for gv in tvars loop
+    cnt := cnt + 1;
+    v := List.position(gv, vindx);
+    arrayUpdate(tvarId, v, cnt);
+    arrayUpdate(growth, v, 1.0);
+  end for;
+
+  solvedBy := arrayCreate(n, 0);
+  depth := arrayCreate(n, 0);
+  maxDepth := 0;
+  for ie in innerEquations loop
+    (eq, innerVars) := match ie
+      case BackendDAE.INNEREQUATION()
+        then (List.position(ie.eqn, eindex), list(List.position(gv, vindx) for gv in ie.vars));
+      case BackendDAE.INNEREQUATIONCONSTRAINTS()
+        then (List.position(ie.eqn, eindex), list(List.position(gv, vindx) for gv in ie.vars));
+    end match;
+    d := 0;
+    g := 0.0;
+    pivot := 0.0;
+    for dep in eqDeps[eq] loop
+      w := Util.tuple21(dep);
+      coeff := Util.tuple22(dep);
+      if listMember(w, innerVars) then
+        pivot := realMax(pivot, coeff);
+      else
+        d := intMax(d, depth[w]);
+        g := g + coeff * growth[w];
+      end if;
+    end for;
+    g := if pivot > 0.0 then g / pivot else g;
+    for v in innerVars loop
+      arrayUpdate(solvedBy, v, eq);
+      arrayUpdate(depth, v, d + 1);
+      arrayUpdate(growth, v, if g > 1e300 then 1e300 else g);
+    end for;
+    maxDepth := intMax(maxDepth, d + 1);
+  end for;
+
+  stamp := arrayCreate(n, 0);
+  nnzA := 0;
+  maxRowA := 0;
+  maxGrowth := 0.0;
+  row := 0;
+  for ge in residuals loop
+    row := row + 1;
+    cnt := 0;
+    eq := List.position(ge, eindex);
+    g := 0.0;
+    pivot := 0.0;
+    for dep in eqDeps[eq] loop
+      w := Util.tuple21(dep);
+      coeff := Util.tuple22(dep);
+      g := g + coeff * growth[w];
+      pivot := realMax(pivot, coeff);
+    end for;
+    maxGrowth := realMax(maxGrowth, if pivot > 0.0 then g / pivot else g);
+    stack := eqDeps[eq];
+    while not listEmpty(stack) loop
+      v := Util.tuple21(listHead(stack));
+      stack := listRest(stack);
+      if stamp[v] <> row then
+        arrayUpdate(stamp, v, row);
+        if tvarId[v] > 0 then
+          cnt := cnt + 1;
+        elseif solvedBy[v] > 0 then
+          stack := listAppend(eqDeps[solvedBy[v]], stack);
+        end if;
+      end if;
+    end while;
+    nnzA := nnzA + cnt;
+    maxRowA := intMax(maxRowA, cnt);
+  end for;
+
+  rn := intReal(n);
+  rt := intReal(t);
+  density := intReal(nnz) / (rn * rn);
+  densityA := if t > 0 then intReal(nnzA) / (rt * rt) else 1.0;
+  digitsLost := if maxGrowth > 1.0 then log10(maxGrowth) else 0.0;
+
+  buildTorn := entryCost * intReal(maxRowA * nnz);
+  costDense := entryCost * intReal(nnz) + solveCost(rn, intReal(nnz), false);
+  costSparse := entryCost * intReal(nnz) + solveCost(rn, intReal(nnz), true, fillFactor);
+  costTornDense := buildTorn + solveCost(rt, intReal(nnzA), false);
+  costTornSparse := buildTorn + solveCost(rt, intReal(nnzA), true);
+
+  // costed at the format the backend will emit for each
+  costUntorn := if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then costSparse else costDense;
+  costTorn := if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then costTornSparse else costTornDense;
+
+  if Flags.isSet(Flags.TEARING_COST) then
+    print("[tearingCost] component " + intString(strongComponentIndex) + " " + (if isLinear then "LS" else "NLS")
+          + " [" + BackendDump.jacobianTypeStr(jacType) + "]"
+          + " n=" + intString(n) + " nnz=" + intString(nnz) + " density=" + realString(density)
+          + " t=" + intString(t) + " inner=" + intString(m) + " nnzA=" + intString(nnzA)
+          + " densityA=" + realString(densityA) + " colors=" + intString(maxRowA) + " chain=" + intString(maxDepth)
+          + " digitsLost=" + realString(digitsLost) + " valuedCoeffs=" + intString(valued) + "/" + intString(nnz)
+          + " cost dense=" + realString(costDense) + " sparse=" + realString(costSparse)
+          + " tornDense=" + realString(costTornDense) + " tornSparse=" + realString(costTornSparse)
+          + " format=" + (if BackendDAEUtil.useSparseSolver(n, nnz, isLinear) then "sparse" else "dense")
+          + " tornFormat=" + (if BackendDAEUtil.useSparseSolver(t, nnzA, isLinear) then "sparse" else "dense") + "\n");
+  end if;
+
+  // a nonlinear system's cost is its Newton iterations, which this does not model
+  if not isLinear then
+    return;
+  end if;
+
+  if digitsLost >= precisionDigits and intReal(valued) >= trustedCoeffs * intReal(nnz) then
+    Error.addMessage(Error.TEARING_AMPLIFIES_ERROR, {intString(strongComponentIndex), intString(m),
+                                                     intString(realInt(digitsLost))});
+    keep := false;
+  elseif costUntorn * Flags.getConfigReal(Flags.TEARING_COST_MARGIN) < costTorn then
+    Error.addMessage(Error.TEARING_NOT_WORTH_IT, {intString(strongComponentIndex), intString(t),
+                                                  intString(realInt(costTorn)), intString(realInt(costUntorn)),
+                                                  intString(n)});
+    keep := false;
+  end if;
+end tearingPaysOff;
+
+protected function jacEntryMagnitude
+"Magnitude of one Jacobian entry, parameters taken at their bound value. Entries
+ that are not a number at compile time count as 1."
+  input BackendDAE.Equation dEqn;
+  input BackendDAE.Variables globalKnownVars;
+  output Real magnitude;
+  output Boolean known;
+protected
+  DAE.Exp exp;
+algorithm
+  (magnitude, known) := matchcontinue dEqn
+    case BackendDAE.RESIDUAL_EQUATION() algorithm
+      exp := dEqn.exp;
+      for i in 1:3 loop
+        (exp, _) := Expression.traverseExpBottomUp(exp, substituteKnownVar, globalKnownVars);
+        (exp, _) := ExpressionSimplify.simplify(exp);
+      end for;
+    then (abs(Expression.toReal(exp)), true);
+    else (1.0, false);
+  end matchcontinue;
+end jacEntryMagnitude;
+
+protected function substituteKnownVar
+  input output DAE.Exp exp;
+  input output BackendDAE.Variables globalKnownVars;
+algorithm
+  exp := matchcontinue exp
+    local
+      BackendDAE.Var var;
+    case DAE.CREF() algorithm
+      (var, _) := BackendVariable.getVarSingle(exp.componentRef, globalKnownVars);
+    then BackendVariable.varBindExp(var);
+    else exp;
+  end matchcontinue;
+end substituteKnownVar;
+
+protected function solveCost
+"One factorization and back-solve, sparse LU modelled as nnz/size per column."
+  input Real size;
+  input Real nnz;
+  input Boolean sparse;
+  input Real fill = 1.0 "fill-in the factorization sees, 1 for an already dense matrix";
+  output Real cost;
+algorithm
+  cost := if size <= 0.0 then 0.0
+          elseif sparse then fill * nnz * nnz / size + 2.0 * nnz
+          else 2.0 / 3.0 * size * size * size + 2.0 * size * size;
+end solveCost;
 
 protected function getUserTearingSet
   input list<Integer> userTVars;
@@ -484,22 +732,20 @@ protected function omcTearing "  author: Frenkel TUD 2012-05"
 protected
   list<Integer> tvars,residual,unsolvables;
   list<list<Integer>> othercomps;
-  BackendDAE.EqSystem syst,subsyst;
-  BackendDAE.Shared shared;
-  array<Integer> ass1,ass2,ass22,columark;
+  BackendDAE.EqSystem subsyst;
+  array<Integer> ass1,ass2,columark;
   Integer size,tornsize,mark;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.AdjacencyMatrix m,m1;
-  BackendDAE.AdjacencyMatrix mt,mt1,mt11;
+  BackendDAE.AdjacencyMatrix mt,mt1;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
-  DAE.FunctionTree funcs;
-  list<Integer> asslst1, asslst2;
+  AvlTreePathFunction.Tree funcs;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
   String DAEtypeStr;
 algorithm
@@ -671,32 +917,32 @@ protected function getDependenciesOfVars " function to determine which variables
   input Integer iMark;
   output Integer oMark;
 algorithm
-  oMark := match(iComps, ass1, ass2, m, mT, visited, iMark)
+  oMark := match iComps
     local
       Integer c, v;
       list<Integer> comp, tvars, vars;
       list<list<Integer>> comps;
 
-    case ({}, _, _, _, _, _, _)
+    case {}
     then iMark;
 
-    case ({c}::comps, _, _, _, _, _, _) equation
+    case {c}::comps algorithm
       // get var of eqn
-      v = ass2[c];
+      v := ass2[c];
       // get TVars of Eqn
-      vars = List.select(m[c], Util.intPositive);
-      tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, {});
+      vars := List.select(m[c], Util.intPositive);
+      tvars := tVarsofEqn(vars, ass1, mT, visited, iMark, {});
       // update map
       arrayUpdate(mT, v, tvars);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
 
-    case (comp::comps, _, _, _, _, _, _) equation
+    case comp::comps algorithm
       // get var of eqns
-      vars = List.map1r(comp,arrayGet,ass2);
+      vars := List.map1r(comp,arrayGet,ass2);
       // get TVars of Eqns
-      tvars = tVarsofEqns(comp, m, ass1, mT, visited, iMark);
+      tvars := tVarsofEqns(comp, m, ass1, mT, visited, iMark);
       // update map
-      _ = List.fold1r(vars, arrayUpdate, tvars, mT);
+      List.fold1r(vars, arrayUpdate, tvars, mT);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
   end match;
 end getDependenciesOfVars;
@@ -825,14 +1071,14 @@ algorithm
     match eq
         local
           Integer e;
-          list<Integer> eqns,vars,tvars;
+          list<Integer> vars,tvars;
         case e
-          equation
-            vars = List.select(m[e], Util.intPositive);
-            tvars = tVarsofEqn(vars,ass1,mT,visited,oMark,{});
+          algorithm
+            vars := List.select(m[e], Util.intPositive);
+            tvars := tVarsofEqn(vars,ass1,mT,visited,oMark,{});
             // change indices to local
-            tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
-            oMark = oMark + 1;
+            tvars := List.map1r(tvars,arrayGet,varGlobalLocal);
+            oMark := oMark + 1;
           then tvars;
     end match for eq in iEqns);
 end tVarsofResidualEqns;
@@ -845,14 +1091,14 @@ protected function getTVarResiduals
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := match(index,v1,eqnLocalGlobal,iAcc)
+  oAcc := match index
     local
       Integer e;
-    case (0,_,_,_) then iAcc;
-    case (_,_,_,_)
-      equation
-        e = v1[index];
-        e = eqnLocalGlobal[e];
+    case 0 then iAcc;
+    case _
+      algorithm
+        e := v1[index];
+        e := eqnLocalGlobal[e];
       then
         getTVarResiduals(index-1,v1,eqnLocalGlobal,e::iAcc);
   end match;
@@ -884,23 +1130,23 @@ algorithm
   (outTVars,oMark) := matchcontinue(unsolvables,tSel_always)
     local
       Integer tvar;
-      list<Integer> unassigned,rest,ass1List, unsolv;
+      list<Integer> unassigned,rest,unsolv;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     // if there are no unsolvables choose tvar by heuristic
     case ({},{})
-      equation
+      algorithm
         // select tearing var
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\n" + BORDER + "\nBEGINNING of omcTearingSelectTearingVar\n\n\n");
         end if;
-        tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never);
+        tvar := omcTearingSelectTearingVar(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nEND of omcTearingSelectTearingVar\n" + BORDER + "\n\n");
         end if;
         // mark tearing var
         arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvar:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -909,13 +1155,13 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
     // if there are unsolvables choose unsolvables as tvars
     case (tvar::rest,{})
-      equation
+      algorithm
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
@@ -926,7 +1172,7 @@ algorithm
         // mark tearing var
         arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvar:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -935,21 +1181,21 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
     case (_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\n");
           print("Variables with annotation attribute 'always' as tVars: " + stringDelimitList(List.map(tSel_always,intString),",")+"\n");
         end if;
         // mark tearing var
         markTVarsOrResiduals(tSel_always, ass1);
-        (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
+        (_,unsolv,_) := List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
-        vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
+        vareqns := findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvars:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -958,12 +1204,12 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
       then
         (outTVars,oMark);
     else
-      equation
+      algorithm
         print("Tearing.omcTearing2 failed!");
       then
         fail();
@@ -1003,7 +1249,7 @@ protected function omcTearingSelectTearingVar "  author: Frenkel TUD 2012-05"
   input list<Integer> tSel_never;
   output Integer tearingVar;
 algorithm
-  tearingVar := matchcontinue(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never)
+  tearingVar := matchcontinue tSel_never
     local
       list<Integer> freeVars,eqns,unsolvables,pointsLst;
       Integer tvar;
@@ -1011,11 +1257,11 @@ algorithm
       array<Integer> points;
 
     // if there is a variable unsolvable select it
-    case(_,_,_,_,_,_,_,_)
-      equation
-        unsolvables = getUnsolvableVarsConsiderMatching(BackendVariable.varsSize(vars),mt,ass1,ass2);
-        false = listEmpty(unsolvables);
-        tvar = listHead(unsolvables);
+    case _
+      algorithm
+        unsolvables := getUnsolvableVarsConsiderMatching(BackendVariable.varsSize(vars),mt,ass1,ass2);
+        false := listEmpty(unsolvables);
+        tvar := listHead(unsolvables);
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
@@ -1028,51 +1274,51 @@ algorithm
       then
         tvar;
 
-    case(_,_,_,_,_,_,_,_)
-      equation
-        varsize = BackendVariable.varsSize(vars);
+    case _
+      algorithm
+        varsize := BackendVariable.varsSize(vars);
         // variables not assigned yet:
-        freeVars = Matching.getUnassigned(varsize,ass1,{});
+        freeVars := Matching.getUnassigned(varsize,ass1,{});
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("omcTearingSelectTearingVar Candidates(unassigned vars):\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        (_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
+        (_,freeVars,_) := List.intersection1OnTrue(freeVars,tSel_never,intEq);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Candidates without variables with annotation attribute 'never':\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        false = listEmpty(freeVars);
+        false := listEmpty(freeVars);
 
         // CALCULATE TEARING-VARIABLE WEIGHTS
-        points = arrayCreate(varsize,0);
+        points := arrayCreate(varsize,0);
         // 1st: Points for solvability (see function solvabilityWeights)
-        points = List.fold2(freeVars, calcVarWeights,mt,ass2,points);
+        points := List.fold2(freeVars, calcVarWeights,mt,ass2,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nPoints after 'calcVarWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
-        eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
+        eqns := Matching.getUnassigned(arrayLength(m),ass2,{});
         // 2nd: 5 points for each equation this variable would causalize
-        points = List.fold2(eqns,addEqnWeights,m,ass1,points);
+        points := List.fold2(eqns,addEqnWeights,m,ass1,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'addEqnWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 3rd: only one-tenth of points for each discrete variable
-        points = List.fold1(freeVars,discriminateDiscrete,vars,points);
+        points := List.fold1(freeVars,discriminateDiscrete,vars,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
-        pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
+        pointsLst := preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after preferring variables with attribute 'prefer':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
         // 5th: Avoid variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'
-        pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
+        pointsLst := preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
-        tvar = selectVarWithMostPoints(freeVars,pointsLst);
+        tvar := selectVarWithMostPoints(freeVars,pointsLst);
           // fcall(Flags.TEARING_DUMPVERBOSE,print,"VarsWithMostEqns:\n");
           // fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.debuglst,(freeVars,intString,", ","\n"));
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1083,7 +1329,7 @@ algorithm
       then
         tvar;
       else
-    equation
+    algorithm
         print("omcTearingSelectTearingVar failed because no unmatched var!\n");
       then
         fail();
@@ -1169,16 +1415,16 @@ protected function solvabilityWeightsnoStates
   input Integer iW;
   output Integer oW;
 algorithm
-  oW := match(inTpl,ass,iW)
+  oW := match inTpl
     local
       BackendDAE.Solvability s;
       Integer eq,w;
-    case((eq,s,_),_,_)
+    case (eq,s,_)
       guard
         intGt(eq,0) and
         not intGt(ass[eq], 0)
-      equation
-        w = solvabilityWeights(s);
+      algorithm
+        w := solvabilityWeights(s);
       then
         intAdd(w,iW);
     else iW;
@@ -1194,7 +1440,7 @@ protected function solvabilityWeights
   input BackendDAE.Solvability solva;
   output Integer i;
 algorithm
-  i := match(solva)
+  i := match solva
     case BackendDAE.SOLVABILITY_SOLVED() then 0;
     case BackendDAE.SOLVABILITY_CONSTONE() then 2;
     case BackendDAE.SOLVABILITY_CONST() then 5;
@@ -1217,16 +1463,16 @@ protected function addEqnWeights
  input array<Integer> iPoints;
  output array<Integer> oPoints;
 algorithm
- oPoints := matchcontinue(e,m,ass1,iPoints)
+ oPoints := matchcontinue iPoints
    local
        Integer v1,v2;
        array<Integer> points;
-     case (_,_,_,_)
-       equation
+     case _
+       algorithm
          // finds equations with exact two variables (v1,v2)
-         ((v1,_,_)::(v2,_,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
-         points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
-         points = arrayUpdate(iPoints,v2,points[v2]+5);
+         (v1,_,_)::(v2,_,_)::{} := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
+         points := arrayUpdate(iPoints,v1,iPoints[v1]+5);
+         points := arrayUpdate(iPoints,v2,points[v2]+5);
        then
          points;
      else
@@ -1241,10 +1487,10 @@ protected function isAssignedSaveEnhanced " returns true if var/eqn is already a
   input tuple<Integer,BackendDAE.Solvability,BackendDAE.Constraints> inTpl;
   output Boolean outB;
 algorithm
-  outB := match(ass,inTpl)
+  outB := match inTpl
     local
       Integer i;
-    case (_,(i,_,_)) guard intGt(i,0)
+    case (i,_,_) guard intGt(i,0)
       then
         intGt(ass[i],0);
     else
@@ -1305,39 +1551,39 @@ protected function tearingBFS " function to find maximum matching
   //input Integer mark;
   input BackendDAE.AdjacencyMatrixElementEnhanced nextQueue;
 algorithm
-  _ := match(queue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,nextQueue)
+  () := match(queue, nextQueue)
     local
       Integer c,eqnsize,cnonscalar;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,newqueue,rows;
     // if there are no more equations in queue maximum matching is found
-    case ({},_,_,_,_,_,_,_,{}) then ();
+    case ({}, {}) then ();
 
     // if queue is empty, use next queue
-    case ({},_,_,_,_,_,_,_,_)
-      equation
+    case ({}, _)
+      algorithm
         // use only equations from next queue which are not assigned yet
-        newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQueue);
+        newqueue := List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQueue);
         // use linear equations first
-        newqueue = sortEqnsSolvable(newqueue,m);
+        newqueue := sortEqnsSolvable(newqueue,m);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Use next Queue!\n");
         end if;
         tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
       then
         ();
-    case((c,_,_)::rest,_,_,_,_,_,_,_,_)
-      equation
+    case((c,_,_)::rest, _)
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Queue:\n");
           BackendDump.dumpAdjacencyRowEnhanced(queue);
           print("Process Eqn: " + intString(c) + "\n");
         end if;
         // not assigned variables in equation c:
-        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
+        rows := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
           //arrayUpdate(columark,c,mark);
         // For Equationarrays
-        cnonscalar = mapIncRowEqn[c];
-        eqnsize = listLength(mapEqnIncRow[cnonscalar]);
+        cnonscalar := mapIncRowEqn[c];
+        eqnsize := listLength(mapEqnIncRow[cnonscalar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Eqn Size: " + intString(eqnsize) + "\n");
           // fcall(Flags.TEARING_DUMPVERBOSE, print,"Rows(not assigned variables in eqn " + intString(c) + ":\n" + stringDelimitList(List.mapMap(rows,Util.tuple21,intString),", ") + "\n");
@@ -1346,7 +1592,7 @@ algorithm
           print("\n");
         end if;
         // make assignment and find next equations to get causalized
-        newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,nextQueue);
+        newqueue := tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,nextQueue);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Next Queue:\n");
           BackendDump.dumpAdjacencyRowEnhanced(newqueue);
@@ -1391,14 +1637,14 @@ protected function hasnonlinearVars1
   input BackendDAE.AdjacencyMatrixElementEnhanced row;
   output Boolean hasnonlinear;
 algorithm
-  hasnonlinear := match(row)
+  hasnonlinear := match row
     local
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
-    case ( {}) then false;
-    case ((_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::_)
+    case {} then false;
+    case (_,BackendDAE.SOLVABILITY_NONLINEAR(),_)::_
       then
         true;
-    case (_::rest)
+    case _::rest
       then
         hasnonlinearVars1(rest);
   end match;
@@ -1418,14 +1664,14 @@ protected function tearingBFS1 " function checks for possible assignments and ca
   input BackendDAE.AdjacencyMatrixElementEnhanced inNextQueue;
   output BackendDAE.AdjacencyMatrixElementEnhanced outNextQueue;
 algorithm
-  outNextQueue := match(rows,size,c,mt,ass1,ass2,inNextQueue)
+  outNextQueue := match inNextQueue
     local
     // there is only one variable assignable from this equation and the equation is solvable for this variable
-    case (_,_,_,_,_,_,_)
+    case _
       guard
         intEq(listLength(rows),size) and
         solvableLst(rows)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assign Eqns: " + stringDelimitList(List.map(c,intString),", ") + "\n");
         end if;
@@ -1436,7 +1682,7 @@ algorithm
       guard
         intEq(listLength(rows),size) and
         not solvableLst(rows);
-      equation
+      algorithm
           //fcall(Flags.TEARING_DUMPVERBOSE, print,"cannot Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
       then
         inNextQueue;
@@ -1467,7 +1713,7 @@ protected function solvable
   input BackendDAE.Solvability s;
   output Boolean b;
 algorithm
-  b := match(s)
+  b := match s
     case BackendDAE.SOLVABILITY_SOLVED() then true;
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
     case BackendDAE.SOLVABILITY_CONST(b=b) then b;
@@ -1513,15 +1759,14 @@ protected function tearingBFS2 " function to make an assignment and determine th
   input BackendDAE.AdjacencyMatrixElementEnhanced inNextQueue;
   output BackendDAE.AdjacencyMatrixElementEnhanced outNextQueue;
 algorithm
-  outNextQueue := match(rows,clst,mt,ass1,ass2,inNextQueue)
+  outNextQueue := match(rows, clst)
     local
       Integer r,c;
       list<Integer> ilst;
-      BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
-    case ({},_,_,_,_,_) then inNextQueue;
-    case ((r,_,_)::rest,c::ilst,_,_,_,_)
-      equation
+    case ({}, _) then inNextQueue;
+    case ((r,_,_)::rest, c::ilst)
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
            print("Assignment: Eq " + intString(c) + " - Var " + intString(r) + "\n");
         end if;
@@ -1533,8 +1778,8 @@ algorithm
           print("ass2: " + stringDelimitList(List.mapArray(ass2, intString),",")+"\n");
         end if;
         // not yet assigned equations containing var r
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
-        newqueue = listAppend(inNextQueue,vareqns);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
+        newqueue := listAppend(inNextQueue,vareqns);
       then
         tearingBFS2(rest,ilst,mt,ass1,ass2,newqueue);
   end match;
@@ -1564,12 +1809,12 @@ protected function omcTearing3 " function to rerun omcTearing2 if there are stil
   output list<Integer> outTVars;
   output Integer oMark;
 algorithm
-  (outTVars,oMark) := match(unassigned,unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := match unassigned
     local
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
+    case {} then (inTVars,mark);
     else
-      equation
-        (outTVars,oMark) = omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+      algorithm
+        (outTVars,oMark) := omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
       then
         (outTVars,oMark);
   end match;
@@ -1599,29 +1844,29 @@ protected function omcTearing4
   output Boolean outRunMatching;
 algorithm
   (ocomp,outRunMatching):=
-    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem)
+    matchcontinue mixedSystem
     local
       list<Integer> ores,residual1,ovars;
       BackendDAE.InnerEquations innerEquations;
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+    case _
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("handle torn System\n");
         end if;
-        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
-        residual1 = List.fold2(residual1,uniqueIntLst,mark,columark,{});
+        residual1 := List.map1r(residual,arrayGet,mapIncRowEqn);
+        residual1 := List.fold2(residual1,uniqueIntLst,mark,columark,{});
         // map indexes back
-        eindxarr = listArray(eindex);
-        ores = List.map1r(residual1,arrayGet,eindxarr);
-        varindxarr = listArray(vindx);
-        ovars = List.map1r(tvars,arrayGet,varindxarr);
-        innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
-        linear = BackendDAEUtil.getLinearfromJacType(jacType);
+        eindxarr := listArray(eindex);
+        ores := List.map1r(residual1,arrayGet,eindxarr);
+        varindxarr := listArray(vindx);
+        ovars := List.map1r(tvars,arrayGet,varindxarr);
+        innerEquations := omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
+        linear := BackendDAEUtil.getLinearfromJacType(jacType);
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), NONE(), false,mixedSystem),false);
   end matchcontinue;
@@ -1647,22 +1892,22 @@ algorithm
         Integer e,v,c;
 
       case {c}
-        equation
-          e = mapIncRowEqn[c];
-          e = eindxarr[e];
-          v = ass2[c];
-          v = varindxarr[v];
+        algorithm
+          e := mapIncRowEqn[c];
+          e := eindxarr[e];
+          v := ass2[c];
+          v := varindxarr[v];
        then
         BackendDAE.INNEREQUATION(eqn=e,vars={v});
 
       case clst
-        equation
-          elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-          elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
-          {e} = elst;
-          e = eindxarr[e];
-          vlst = List.map1r(clst,arrayGet,ass2);
-          vlst = List.map1r(vlst,arrayGet,varindxarr);
+        algorithm
+          elst := List.map1r(clst,arrayGet,mapIncRowEqn);
+          elst := List.fold2(elst,uniqueIntLst,mark,columark,{});
+          {e} := elst;
+          e := eindxarr[e];
+          vlst := List.map1r(clst,arrayGet,ass2);
+          vlst := List.map1r(vlst,arrayGet,varindxarr);
        then
         BackendDAE.INNEREQUATION(eqn=e,vars=vlst);
     end match
@@ -1999,7 +2244,10 @@ protected
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,b,noDynamicStateSelection,dynamicTearing;
+  Boolean linear,b,noDynamicStateSelection,dynamicTearing,dtTarget,forceDegree1,hasStartCycle;
+  DAE.ComponentRef cref;
+  list<DAE.ComponentRef> startBaseCrefs, valueCrefs, cyclicBaseCrefs;
+  BackendDAE.AdjacencyMatrixTEnhanced meTFull;
   String s,modelName;
   constant Boolean debug = false;
 algorithm
@@ -2009,14 +2257,26 @@ algorithm
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
   DAEtypeStr := BackendDump.printBackendDAEType2String(DAEtype);
 
-  // check if dynamic tearing is enabled for linear/nonlinear system
-  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),Config.simCodeTarget())
-    case ("true",_,true,"simulation",_,"C") then true;
-    case ("true",_,true,"initialization",true,"C") then true;
-    case ("linear",true,true,"simulation",_,"C") then true;
-    case ("linear",true,true,"initialization",true,"C") then true;
-    case ("nonlinear",false,true,"simulation",_,"C") then true;
-    case ("nonlinear",false,true,"initialization",true,"C") then true;
+  // ticket #15433: the variable-driven degree-1 forced assignment (getNextDegree1Var) is only
+  // needed - and only safe - for the initialization system, where a $START.x variable is
+  // structurally linked to the state's equations but solvable in exactly one of them. Enabling it
+  // for the simulation system reorders the Tarjan causalization for components that already
+  // causalize correctly, changing tearing results. Restrict it to the initialization DAE; the
+  // forcing is then further restricted, below, to the components that actually exhibit the defect
+  // (a $START.x->x cycle).
+  forceDegree1 := BackendDAEUtil.isInitializationDAE(ishared);
+
+  // check if dynamic tearing is enabled for linear/nonlinear system.
+  // Only the targets whose runtime can switch tearing sets ("wasm" is the same
+  // code generator as "wasm-jit", emitting a standalone module).
+  dtTarget := listMember(Config.simCodeTarget(), {"C", "wasm-jit", "wasm"});
+  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),dtTarget)
+    case ("true",_,true,"simulation",_,true) then true;
+    case ("true",_,true,"initialization",true,true) then true;
+    case ("linear",true,true,"simulation",_,true) then true;
+    case ("linear",true,true,"initialization",true,true) then true;
+    case ("nonlinear",false,true,"simulation",_,true) then true;
+    case ("nonlinear",false,true,"initialization",true,true) then true;
     else false;
   end match;
 
@@ -2058,6 +2318,63 @@ algorithm
 
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(size,meT);
+
+  // ticket #15433: detect the degenerate "$START.x depends on x" cycle inside this strong
+  // component and only then keep the degree-1 forced assignment enabled. The component is cyclic
+  // when it contains BOTH a $START.x variable and its base value variable x: since a strong
+  // component is an algebraic loop, the two are mutually reachable, i.e. x's start attribute
+  // transitively depends on x itself (e.g. a fixed=false state whose start binds to a parameter
+  // computed from the state - the cable models in #15433). Exactly this cycle produces the matching
+  // defect that orphans $START.x and yields a structurally singular torn init system; the degree-1
+  // forcing repairs it. For every OTHER component (no such cycle) the forcing is switched OFF so the
+  // plain Cellier result - which is already correct there - is preserved (this is what keeps models
+  // like Tearing16/Algorithm2 unchanged). A modeler warning is emitted, naming the self-dependent
+  // variable (with subscripts), because a start value that depends on its own variable is an
+  // ill-posed initialization; the transformational debugger can be used to inspect the full chain.
+  hasStartCycle := false;
+  cyclicBaseCrefs := {};
+  if forceDegree1 then
+    startBaseCrefs := {};
+    valueCrefs := {};
+    for i in 1:size loop
+      cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, i));
+      if ComponentReference.isStartCref(cref) then
+        startBaseCrefs := ComponentReference.popCref(cref) :: startBaseCrefs;
+      else
+        valueCrefs := cref :: valueCrefs;
+      end if;
+    end for;
+    // a $START.x whose base value variable x is also in this component closes the cycle
+    for baseCref in startBaseCrefs loop
+      if List.isMemberOnTrue(baseCref, valueCrefs, ComponentReferenceBasics.crefEqual) then
+        hasStartCycle := true;
+        cyclicBaseCrefs := baseCref :: cyclicBaseCrefs;
+      end if;
+    end for;
+  end if;
+  // ticket #15433: a $START.x->x cycle is always an ill-posed start value (MLS 4.9.6 - the start
+  // attribute of x cannot be computed from x). Always warn, regardless of whether the degree-1
+  // forcing below is needed to keep initialization solvable, and let the modeler decide whether the
+  // dependency is intended: even when initialization still succeeds, the start value (a guess) is
+  // never actually used to initialize the variable.
+  for baseCref in cyclicBaseCrefs loop
+    Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" +
+      ComponentReferenceBasics.printComponentRefStr(baseCref) +
+      "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
+      "initial value of '" + ComponentReferenceBasics.printComponentRefStr(baseCref) + "' and therefore " +
+      "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
+      "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
+      ComponentReferenceBasics.printComponentRefStr(baseCref) + "' a start value that does not depend on " +
+      "itself. Use the transformational debugger to inspect the dependency chain.");
+  end for;
+  // ticket #15433: a $START.x->x cycle is NECESSARY but NOT SUFFICIENT to need the degree-1
+  // forcing. Such a cycle is always an ill-posed start value (the start attribute of x cannot be
+  // computed from x), but many initialization components with one (e.g. the lag/limiter blocks in
+  // the OpenIPSL PSSE controllers) still tear and initialize correctly, because $START.x keeps its
+  // own defining equation; forcing them only reorders a healthy system and breaks it. So we do NOT
+  // decide here. We first run the plain Cellier pass below and only re-run it with forcing if that
+  // plain pass actually orphans a $START.x variable, leaving a structurally singular torn set - the
+  // cable defect. 'forceDegree1' stays the init-DAE eligibility flag, passed as 'false' to pass one.
 
   // Determine a weight for the nonlinearity of each equation
   eqnNonlinPoints := arrayCreate(size, -1);
@@ -2101,9 +2418,41 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
   end if;
-  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+  // ticket #15433: keep an unmutated copy of the enhanced transposed adjacency (variable ->
+  // (equation, solvability)); CellierTearing2 consumes the adjacency matrices while matching, but
+  // the structural-singularity test below needs the original incidence/solvability of every
+  // variable. Only the initialization DAE can take the forcing path, so for the simulation DAE skip
+  // the copy entirely (meTFull is then never read).
+  meTFull := if forceDegree1 then arrayCopy(meT) else meT;
+  // First pass: plain Cellier tearing, never forced.
+  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
+  end if;
+
+  // ticket #15433: only the cable's defect needs the degree-1 forcing. The equation-driven Cellier
+  // pass matches on plain structural incidence, so a variable that is structurally incident to
+  // several equations but solvable in only one (the cable's $START.x, solvable only in its defining
+  // equation $START.x = sp) can be matched to an equation where it cannot be solved - a structurally
+  // singular assignment that makes initialization fail. If this initialization component has a
+  // $START.x->x cycle AND the plain matching contains such an unsolvable assignment, redo the
+  // tearing with the variable-driven degree-1 forcing, which matches $START.x to its defining
+  // equation and removes the singularity. A component whose plain matching is fully solvable - i.e.
+  // one that already initializes correctly, like the OpenIPSL PSSE controllers - is left untouched.
+  if forceDegree1 and hasStartCycle and tornMatchingIsStructurallySingular(ass2, meTFull, size, vars) then
+    // CellierTearing2 consumed the adjacency matrices, so rebuild them before the forced re-run.
+    subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+    (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+    m := Array.map(m,deleteNegativeEntries);
+    mt := Array.map(mt,deleteNegativeEntries);
+    (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+    unsolvables := getUnsolvableVars(size,meT);
+    eqnNonlinPoints := arrayCreate(size, -1);
+    getEquationNonlinearityPoints(eqnNonlinPoints, me, size);
+    ass1 := arrayCreate(size,-1);
+    ass2 := arrayCreate(size,-1);
+    order := {};
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,true);
   end if;
 
   // check if tearing makes sense
@@ -2188,7 +2537,9 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
     end if;
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+    // ticket #15433: the degree-1 forcing is only applied to the strict set (above) when its plain
+    // pass is singular; never force the casual/dynamic set.
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
     end if;
@@ -2293,7 +2644,7 @@ algorithm
     BackendDAE.VAR(tearingSelectOption = ts) := var;
 
     // Add the variable's index to the appropriate list.
-    decided := match(ts)
+    decided := match ts
       case NONE() then false;
       case SOME(BackendDAE.ALWAYS()) algorithm
         if not listMember(index, always) then
@@ -2372,7 +2723,7 @@ algorithm
     if BackendVariable.isVarDiscrete(var) then
       discreteVarsOut := index::discreteVarsOut;
 
-      _ := match(var.tearingSelectOption)
+      () := match var.tearingSelectOption
         case SOME(BackendDAE.ALWAYS()) algorithm
           Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring '__OpenModelica_tearingSelect = TearingSelect.always' annotation for discrete variable: "
             + BackendDump.varString(var)},ElementSource.getInfo(var.source));
@@ -2431,7 +2782,7 @@ protected function nonlinearityWeight
   input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
   output Integer weight;
 algorithm
-  weight := match(entry)
+  weight := match entry
     case(_, BackendDAE.SOLVABILITY_SOLVED(), _) then 0;
     case(_, BackendDAE.SOLVABILITY_CONSTONE(), _) then 2;
     case(_, BackendDAE.SOLVABILITY_CONST(), _) then 5;
@@ -2458,6 +2809,7 @@ protected function CellierTearing2 " function to call tearing heuristic and matc
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> OutTVars;
   output list<Integer> orderOut;
 protected
@@ -2477,12 +2829,12 @@ algorithm
 
   // case: There are no unsolvables and no variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   case ({},{})
-    equation
+    algorithm
       // select tearing Var
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of selectTearingVar\n\n");
       end if;
-      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
+      tvar := selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
       if debug then execStat("Tearing.CellierTearing2 - 1.0"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of selectTearingVar\n" + BORDER + "\n\n");
@@ -2497,20 +2849,20 @@ algorithm
         print("\n\n###BEGIN print Adjacency Matrix w/o tvar############\n(Function: CellierTearing2)\n");
         BackendDump.dumpAdjacencyMatrix(mIn);
       end if;
-      _ = Array.replaceAtWithFill(tvar,{},{},mtIn);
+      Array.replaceAtWithFill(tvar,{},{},mtIn);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         BackendDump.dumpAdjacencyMatrixT(mtIn);
         print("\n###END print Adjacency Matrix w/o tvar##############\n(Function: CellierTearing2)\n\n\n");
       end if;
 
       if debug then execStat("Tearing.CellierTearing2 - 1.1"); end if;
-      tvars = tvar::tvarsIn;
+      tvars := tvar::tvarsIn;
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
       if debug then execStat("Tearing.CellierTearing2 - 1.2"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
@@ -2525,25 +2877,25 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
+      unsolvables := getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
       if debug then execStat("Tearing.CellierTearing2 - 1.3"); end if;
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      (_,unsolvables,_) := List.intersection1OnTrue(unsolvables,tvars,intEq);
 
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
 
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars,order);
 
   // case: There are unsolvables and/or variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   else
-    equation
+    algorithm
       // First choose unsolvables and 'always'-vars as tVars
-      tvars = List.unique(listAppend(Unsolvables,tSel_always));
-      tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
-      tVar_discrete = List.intersectionOnTrue(discreteVars,tvars,intEq);
+      tvars := List.unique(listAppend(Unsolvables,tSel_always));
+      tVar_never := List.intersectionOnTrue(tSel_never,tvars,intEq);
+      tVar_discrete := List.intersectionOnTrue(discreteVars,tvars,intEq);
       if not listEmpty(tVar_never) then
         Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
       end if;
@@ -2569,10 +2921,10 @@ algorithm
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
 
-      tvars = listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
+      tvars := listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.mapArray(ass1In, intString),",")+"\n");
@@ -2586,12 +2938,12 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      unsolvables := getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
+      (_,unsolvables,_) := List.intersection1OnTrue(unsolvables,tvars,intEq);
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
 
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars, order);
@@ -2631,7 +2983,7 @@ algorithm
     case "MC3" then ModifiedCellierHeuristic_3;
     case "MC4" then ModifiedCellierHeuristic_4;
     else
-      equation
+      algorithm
         Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
      then fail();
   end match;
@@ -3128,7 +3480,6 @@ author: ptaeuber FHB 2013-2015"
 protected
   Integer edges,maxPoints;
   list<Integer> potentialTVars,potentialTVars2,bestPotentialTVars,causEq,points,counts1,counts2;
-  list<list<Integer>> varsWithPoints;
   constant Boolean debug = false;
 algorithm
   // Cellier heuristic [MC3]
@@ -3411,7 +3762,7 @@ protected function selectCausalizingVars
   output list<Integer> counts = {};
 protected
   list<Integer> row;
-  Integer size,num = 0;
+  Integer size;
 algorithm
   for var in selVars loop
     row := arrayGet(inMt, var);
@@ -3502,31 +3853,31 @@ protected function getAllVarsWithMostPoints
   input output list<Integer> outVarList={};
   input output Integer outMax=-1;
 algorithm
-  _ := match(inVarList, inPointsLst)
+  () := match(inVarList, inPointsLst)
     local
       Integer p,v;
       list<Integer> prest,vrest;
     case(v::{}, p::{})
-      equation
+      algorithm
         if intGt(p, outMax) then
-          outMax = p;
-          outVarList = {v};
+          outMax := p;
+          outVarList := {v};
         elseif intEq(p, outMax) then
-          outVarList = v::outVarList;
+          outVarList := v::outVarList;
         end if;
       then ();
     case(v::vrest, p::prest)
-      equation
+      algorithm
         if intGt(p, outMax) then
-          outMax = p;
-          outVarList = {v};
+          outMax := p;
+          outVarList := {v};
         elseif intEq(p, outMax) then
-          outVarList = v::outVarList;
+          outVarList := v::outVarList;
         end if;
-        (outVarList, outMax) = getAllVarsWithMostPoints(vrest, prest, outVarList, outMax);
+        (outVarList, outMax) := getAllVarsWithMostPoints(vrest, prest, outVarList, outMax);
       then ();
     else
-      equation
+      algorithm
         Error.addCompilerError("Tearing.getAllVarsWithMostPoints: Finding variables with most points failed.");
         fail();
       then ();
@@ -3639,15 +3990,17 @@ protected function TarjanMatching "Modified matching algorithm according to Tarj
   input BackendDAE.AdjacencyMatrix mIn;
   input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> orderOut;
   output Boolean causal;
 protected
-  list<Integer> subOrder,unassigned;
+  list<Integer> unassigned;
   list<Integer> order=orderIn;
   Boolean assignable = true;
   constant Boolean debug = false;
@@ -3656,7 +4009,7 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nTarjanAssignment:\n");
     end if;
-    (order,assignable) := TarjanAssignment(mIn,mtIn,meIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+    (order,assignable) := TarjanAssignment(mIn,mtIn,meIn,meTIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
   end while;
   if debug then execStat("Tearing.TarjanMatching iters done"); end if;
 
@@ -3683,35 +4036,56 @@ author: ptaeuber FHB 2013-2015"
   input BackendDAE.AdjacencyMatrix mIn;
   input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> orderOut = orderIn;
   output Boolean assignable = false;
 protected
   Integer eq_coll;
   list<Integer> assEq_coll, eqns = {}, vars = {};
 algorithm
-  // find equations with one variable
-  assEq_coll := traverseCollectiveEqnsforAssignable(ass2In,mIn,mapEqnIncRow);
-
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-     print("New assEq_coll: "+stringDelimitList(List.map(assEq_coll,intString),",")+"\n");
+  // ticket #15433: variable-driven forced assignment of degree-1 variables. The defect this repairs
+  // is a $START.x variable solvable in exactly one still-unassigned equation (its defining initial
+  // equation) but structurally incident to more than one (it is linked to the state's equations); it
+  // must be matched to its defining equation, otherwise the equation-driven pass below (which matches
+  // on structural incidence) lets a higher-degree variable steal that equation, orphaning the
+  // $START.x variable and producing a structurally singular torn system. forceDegree1 already gates
+  // this to exactly the initialization components that exhibit the $START.x->x cycle (see
+  // CellierTearing), so it runs only where the defect can occur.
+  if forceDegree1 then
+    try
+      (eq_coll,eqns,vars) := getNextDegree1Var(mtIn,meTIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn);
+      orderOut := eq_coll::orderOut;
+      assignable := true;
+    else
+    end try;
   end if;
 
-  // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
-  //       residual equation it is not possible to match starting from the variables, so this case is not considered.
-  //       For other tearing structures this case has to be added.
+  if not assignable then
+    // find equations with one variable
+    assEq_coll := traverseCollectiveEqnsforAssignable(ass2In,mIn,mapEqnIncRow);
 
-  // Get the next solvable equation from the equation queue
-  try
-    (eq_coll,eqns,vars) := getNextSolvableEqn(assEq_coll,mIn,meIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
-    orderOut := eq_coll::orderOut;
-    assignable := true;
-  else
-  end try;
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+       print("New assEq_coll: "+stringDelimitList(List.map(assEq_coll,intString),",")+"\n");
+    end if;
+
+    // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
+    //       residual equation it is not possible to match starting from the variables, so this case is not considered.
+    //       For other tearing structures this case has to be added.
+
+    // Get the next solvable equation from the equation queue
+    try
+      (eq_coll,eqns,vars) := getNextSolvableEqn(assEq_coll,mIn,meIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      orderOut := eq_coll::orderOut;
+      assignable := true;
+    else
+    end try;
+  end if;
 
   // Make the assignment if possible
   if assignable then
@@ -3722,6 +4096,147 @@ algorithm
     print("order: "+stringDelimitList(List.map(listReverse(orderOut),intString),",")+"\n\n");
   end if;
 end TarjanAssignment;
+
+
+protected function getNextDegree1Var
+ "ticket #15433: finds an unassigned variable that is SOLVABLE in exactly one still-unassigned
+  scalar equation while being STRUCTURALLY incident to more than one, and returns the assignment
+  for it. This is exactly the case the equation-driven pass mishandles: it matches on the plain
+  structural adjacency mtIn, where such a variable looks high-degree (during initialization a
+  $START.x variable is structurally linked to the state's equations), so a higher-degree variable
+  can steal its only solvable equation and orphan it, producing a structurally singular torn
+  system. The solvability is read from the enhanced transposed adjacency meTIn (entries
+  (eqn, solvability, _); unsolvable entries are ignored via BackendDAEUtil.isSolvable). The caller
+  (TarjanAssignment) only invokes this when forceDegree1 is set, which CellierTearing restricts to
+  initialization components that have a $START.x->x cycle (a variable whose start attribute
+  transitively depends on the variable itself) - the only place this matching defect occurs. The
+  search is restricted to variables whose structural degree exceeds their solvable degree, so an
+  ordinary degree-1 variable handled correctly by the equation-driven pass is never reordered here.
+  Only scalar equations are forced, to stay on the safe side of array/collective equations. Fails if
+  there is no such variable."
+  input BackendDAE.AdjacencyMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  output Integer eqCollOut;
+  output list<Integer> eqnsOut;
+  output list<Integer> varsOut;
+protected
+  Integer e, eqColl, cnt, theEqn;
+  BackendDAE.Solvability s;
+algorithm
+  for v in 1:arrayLength(meTIn) loop
+    // only consider unassigned variables that the structural pass sees as high-degree (degree > 1);
+    // a variable structurally incident to a single remaining equation is matched there correctly by
+    // the equation-driven pass and must not be reordered here. ticket #15433: only a structurally-
+    // divergent var (struct degree > 1 but solvable degree == 1 below) - the matching defect the
+    // equation-driven pass mishandles - is forced.
+    if arrayGet(ass1, v) == -1 and listLength(arrayGet(mtIn, v)) > 1 then
+      // count the still-unassigned equations this variable can actually be solved in
+      cnt := 0;
+      theEqn := -1;
+      for entry in meTIn[v] loop
+        (e, s, _) := entry;
+        if arrayGet(ass2, e) == -1 and BackendDAEUtil.isSolvable(s) then
+          cnt := cnt + 1;
+          theEqn := e;
+          if cnt > 1 then break; end if;
+        end if;
+      end for;
+      if cnt == 1 then
+        eqColl := mapIncRowEqn[theEqn];
+        // only force scalar equations; the degree-1 variable v must claim theEqn before a
+        // higher-degree variable does.
+        if listLength(mapEqnIncRow[eqColl]) == 1 then
+          eqCollOut := eqColl;
+          eqnsOut := {theEqn};
+          varsOut := {v};
+          return;
+        end if;
+      end if;
+    end if;
+  end for;
+  fail();
+end getNextDegree1Var;
+
+protected function tornMatchingIsStructurallySingular
+ "ticket #15433: returns true when the plain Cellier matching left a variable that is solvable in
+  EXACTLY ONE equation (per the enhanced solvability adjacency) matched to some OTHER variable, so
+  that degree-1 variable is orphaned and can be solved nowhere - a structural singularity. This is
+  the cable's $START.x defect: its single defining equation $START.x = sp is stolen by the high-
+  degree r_start, leaving $START.x to be paired with a pin equation it does not occur in. The
+  degree-1 forcing repairs exactly this (it gives every degree-1-solvable variable its unique
+  equation), so this test is symmetric with the forcing: it fires precisely when forcing would
+  change the matching. A healthy matching - e.g. the OpenIPSL PSSE controllers, which initialize
+  correctly without forcing - gives every degree-1-solvable variable its unique solvable equation
+  and returns false, so those components are left on the plain (master) result.
+  ass2[e] is the variable matched to scalar equation e - the SAME index space as the enhanced
+  matrix equation indices and as getNextDegree1Var's ass2 use. The value of ass2[e] discriminates
+  the two start-cycle classes: a POSITIVE variable index means equation e is solved for THAT other
+  variable, so a degree-1 variable whose only solvable equation is taken this way is genuinely
+  orphaned (the cable's $START.x defect -> singular); a value of -2 means e became a RESIDUAL
+  (getNextSolvableEqn marks unsolvable/residual rows with -2), in which case the degree-1 variable is
+  simply the iteration variable of a residual it actually occurs in - the normal, non-singular
+  nonlinear tearing of the OpenIPSL PSSE controllers, which initialize correctly without forcing.
+  meTFull is the UNMUTATED enhanced transposed adjacency (variable -> list of (equation, solvability,
+  _))."
+  input array<Integer> ass2;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTFull;
+  input Integer size;
+  input BackendDAE.Variables vars;
+  output Boolean singular = false;
+protected
+  Integer ev, cnt, theEqn, owner;
+  BackendDAE.Solvability s;
+  DAE.ComponentRef cref;
+algorithm
+  for v in 1:size loop
+    cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, v));
+    // restrict to the start-value-cycle singularity: only a $START.x variable orphaned this way is
+    // the cable defect. A non-$START value variable whose unique solvable equation is taken by
+    // another variable (e.g. AC8B's rotatingExciterWithDemagnetizationVarLim.feedback.y) instead
+    // becomes the iteration variable of a residual it DOES occur in - non-singular, and forcing it
+    // only reorders a healthy system and breaks initialization.
+    if ComponentReference.isStartCref(cref) then
+      // count the equations $START.x can actually be solved in (enhanced solvability), recording the
+      // unique one when there is exactly one
+      cnt := 0;
+      theEqn := -1;
+      for entry in arrayGet(meTFull, v) loop
+        (ev, s, _) := entry;
+        if BackendDAEUtil.isSolvable(s) then
+          cnt := cnt + 1;
+          theEqn := ev;
+          if cnt > 1 then break; end if;
+        end if;
+      end for;
+      // $START.x is solvable in exactly ONE equation (its defining equation $START.x = sp). The
+      // variable that equation got matched to (ass2[theEqn]) decides whether the matching is sound:
+      //   owner == v   -> $START.x kept its own defining equation: correctly matched, healthy
+      //                   (the OpenIPSL PSSE controllers - they initialize without forcing).
+      //   owner == -2  -> that equation became a residual and $START.x iterates it (it occurs there
+      //                   solvably): non-singular, healthy.
+      //   owner > 0, <> v -> a DIFFERENT real variable (e.g. the cable's high-degree r_start) stole
+      //                   the only equation $START.x could be solved in: $START.x is orphaned.
+      //   owner == -1  -> the equation is left unmatched and $START.x is orphaned (the inlined-
+      //                   parameter case of the minimal reproducer InitStartTearingDegree1).
+      // In the two orphaned cases $START.x can be solved nowhere and ends up paired with a residual it
+      // does not occur in -> zero Jacobian column -> structurally singular. The degree-1 forcing
+      // repairs exactly this by giving $START.x its defining equation back.
+      if cnt == 1 then
+        owner := arrayGet(ass2, theEqn);
+        if owner <> v and owner <> -2 then
+          // $START.x is orphaned -> the matching is structurally singular; one such variable is
+          // enough to require the degree-1 forcing for this component
+          singular := true;
+          return;
+        end if;
+      end if;
+    end if;
+  end for;
+end tornMatchingIsStructurallySingular;
 
 
 protected function traverseSingleEqnsforAssignable
@@ -3804,9 +4319,9 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("assignment: Eq " + intString(eq) + " - Var " + intString(var) + "\n");
     end if;
-    _ := Array.replaceAtWithFill(eq,{},{},mIn);
+    Array.replaceAtWithFill(eq,{},{},mIn);
     deleteEntriesFromAdjacencyMatrix(mIn,mtIn,{var});
-    _ := Array.replaceAtWithFill(var,{},{},mtIn);
+    Array.replaceAtWithFill(var,{},{},mtIn);
     deleteEntriesFromAdjacencyMatrix(mtIn,mIn,{eq});
   end for;
 end makeAssignment;
@@ -3822,9 +4337,9 @@ protected function getNextSolvableEqn " finds equation that can be matched with 
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
-  output Integer eqOut;
-  output list<Integer> eqnsOut;
-  output list<Integer> varsOut;
+  output Integer eqOut = 0;
+  output list<Integer> eqnsOut = {};
+  output list<Integer> varsOut = {};
 protected
   Boolean solvable = false;
   list<Integer> eqns = assEq_coll;
@@ -3886,27 +4401,27 @@ algorithm
     match (eqn,meOpt)
       local
         Integer eq,otherEqn;
-        list<Integer> eqns,vars,otherVars,rest;
+        list<Integer> eqns,vars,otherVars;
         BackendDAE.InnerEquation innerEquation;
         BackendDAE.Constraints constraints;
         BackendDAE.AdjacencyMatrixEnhanced me;
       case (eq,NONE())
-        equation
-          vars = List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
-          otherEqn = listGet(eindex,eq);
-          otherVars = selectFromList_rev(vindex,vars);
+        algorithm
+          vars := List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
+          otherEqn := listGet(eindex,eq);
+          otherVars := selectFromList_rev(vindex,vars);
        then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
       case (eq,SOME(me))
-        equation
-          eqns = mapEqnIncRow[eq];
-          vars = List.map1r(eqns,arrayGet,ass2);
-          otherEqn = listGet(eindex,eq);
-          otherVars = selectFromList_rev(vindex,vars);
-          constraints = findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
+        algorithm
+          eqns := mapEqnIncRow[eq];
+          vars := List.map1r(eqns,arrayGet,ass2);
+          otherEqn := listGet(eindex,eq);
+          otherVars := selectFromList_rev(vindex,vars);
+          constraints := findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
           if listEmpty(constraints) then
-            innerEquation = BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+            innerEquation := BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
           else
-            innerEquation = BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
+            innerEquation := BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
           end if;
        then (innerEquation);
     end match for eqn in inEqns);
@@ -3954,7 +4469,7 @@ author: Waurich TUD 2013-01"
   input array<list<Integer>> inArr;
   output list<Integer> counter,numbers,values;
 algorithm
-  ((counter,numbers,values,_)) := Array.fold(inArr,countMultiples2,({},{},{},1));
+  (counter,numbers,values,_) := Array.fold(inArr,countMultiples2,({},{},{},1));
 end countMultiples;
 
 
@@ -3997,14 +4512,14 @@ author:Waurich TUD 2013-01"
   output list<Integer> valOut;
   output list<Integer> numOut;
 algorithm
-  (valOut,numOut) := match(lstIn,set,valIn,numIn)
+  (valOut,numOut) := match set
     local
       Integer value,number;
       list<Integer> val,num,rest;
-    case(_,value::rest,_,_)
-      equation
-        number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
-        (val,num) = countMultiples3(lstIn,rest,value::valIn,number::numIn);
+    case value::rest
+      algorithm
+        number := listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
+        (val,num) := countMultiples3(lstIn,rest,value::valIn,number::numIn);
       then
         (val,num);
     else (valIn,numIn);
@@ -4058,9 +4573,7 @@ author: Waurich TUD 2012-11"
   input List<Integer> inList,selList;
   output List<Integer> outList;
 protected
-  Integer actual;
   Integer len;
-  List<Integer> lst = selList;
 algorithm
   len := listLength(inList);
   outList := list(listGet(inList,num) for num guard num > 0 and num <= len in selList);
@@ -4073,7 +4586,6 @@ auhtor: Waurich TUD 2012-11"
   output List<Integer> outList = {};
 protected
   Integer num,actual,len;
-  List<Integer> lst = selList;
 algorithm
   len := listLength(inList);
   for num in selList loop
@@ -4111,7 +4623,7 @@ protected function deleteRowsFromAdjacencyMatrix "Deletes given rows from matrix
   input list<Integer> rows;
 algorithm
   for row in rows loop
-    _ := Array.replaceAtWithFill(row,{},{},mUpdate);
+    Array.replaceAtWithFill(row,{},{},mUpdate);
   end for;
 end deleteRowsFromAdjacencyMatrix;
 
@@ -4248,7 +4760,7 @@ protected function recursiveTearingMain
 protected
   list<BackendDAE.EqSystem> systlst_new = {};
   BackendDAE.Shared shared;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.StrongComponents comps;
   BackendDAE.EquationArray eqns;
@@ -4259,16 +4771,16 @@ protected
   BackendDAE.InnerEquation innerEquation;
   Integer eqindex, vindex;
   list<Integer> residualequations;
-  list<Integer> tearingvars, othervars;
+  list<Integer> tearingvars;
   list<BackendDAE.Var> var_lst;
   BackendDAE.Var var;
   array<DAE.ComponentRef> tear_cr;
   list<DAE.ComponentRef> tear_cr_lst, all_vars = {};
   array<DAE.Exp> tear_exp;
-  DAE.ComponentRef cr, cr1;
+  DAE.ComponentRef cr;
   BackendDAE.Equation eqn, eqn1;
-  DAE.Exp rhs, lhs, rhs1, lhs1, rhs_, lhs_, sumRhs, sumLhs, lhs_f, e, res;
-  Integer n, i, j, m, k, index = 1;
+  DAE.Exp rhs, lhs, rhs1, sumRhs, sumLhs, e, res;
+  Integer n, i, j, m, index = 1;
   array<Option<BackendDAE.Equation>> optarr, optarr_res;
   array<Integer> indx_res, indx_eq, indx_var;
   Boolean tmp_update, isDer;
@@ -4302,7 +4814,7 @@ algorithm
         // -----
         for innerEquation in innerEquations loop
           (eqindex, {vindex}, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(innerEquation);
-          (var as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindex);
+          var as BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, vindex);
           all_vars := cr :: all_vars;
           arrayUpdate(indx_var,i,vindex);
           eqn := BackendEquation.get(eqns, eqindex);
@@ -4350,7 +4862,7 @@ algorithm
           lhs := BackendEquation.getEquationLHS(eqn);
           (cr,isDer) := Expression.expOrDerCref(lhs);
 
-          //print("*****" + ExpressionDump.printExpStr(lhs) + "= " +  ExpressionDump.printExpStr(rhs) + "*******\n");
+          //print("*****" + ExpressionBasics.printExpStr(lhs) + "= " +  ExpressionBasics.printExpStr(rhs) + "*******\n");
           for j in (i+1):n loop
             if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_eq,j))) then
               SOME(eqn1) := arrayGet(optarr, j);
@@ -4418,7 +4930,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_RTEARING) then
           print("****************\n");
           for i in 1:m loop
-            print("TearVar: " + ExpressionDump.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
+            print("TearVar: " + ExpressionBasics.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
           end for;
           print("****************\n");
         end if;
@@ -4581,9 +5093,6 @@ end dumpTearingSetGlobalIndexes;
 protected function dumpTearingSetsGlobalIndexes
   input list<BackendDAE.TearingSet> tearingSets;
   input Integer size;
-protected
-  list<Integer> tVars,residuals;
-  BackendDAE.InnerEquations innerEquations;
 algorithm
   for tearingSet in tearingSets loop
     dumpTearingSetGlobalIndexes(tearingSet,size,"");
@@ -4625,10 +5134,11 @@ protected
   list<BackendDAE.TearingSet> tearingSets;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,simulation;
+  Boolean linear;
   String modelName;
   list<list<Integer>> powerSet={};
   list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+  UnorderedSet<array<Integer>> visited;
 algorithm
   linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
@@ -4738,8 +5248,11 @@ algorithm
       // end if;
 
 
-      // Find all possible matchings for this set of tearing variables
-      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,me,mapEqnIncRow,mapIncRowEqn,{});
+      // Find all possible matchings for this set of tearing variables.
+      // The visited set memoizes already explored assignment states so that
+      // states reachable via several causalization orders are only expanded once.
+      visited := UnorderedSet.new(Array.hashIntArray, Array.isEqual);
+      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,me,mapEqnIncRow,mapIncRowEqn,visited,{});
       if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         dumpMatchingList(matchingList);
       end if;
@@ -4796,6 +5309,7 @@ author: ptaeuber FHB 2016"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  input UnorderedSet<array<Integer>> visited "already explored assignment states (ass1)";
   input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListIn;
   output list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListOut=matchingListIn;
 protected
@@ -4806,24 +5320,34 @@ protected
   Boolean solvable;
 algorithm
   for e in causEqIn loop
-    // 1. Deep copies to avoid side effects
-    ass1Copy := arrayCopy(ass1);
-    ass2Copy := arrayCopy(ass2);
-    mCopy := arrayCopy(m);
-    mtCopy := arrayCopy(mt);
-
-    (solvable, e_exp, vars) := eqnSolvableCheck(e, mapEqnIncRow, ass1Copy, mCopy, me);
+    // 1. Check solvability (read-only, no copies needed yet)
+    (solvable, e_exp, vars) := eqnSolvableCheck(e, mapEqnIncRow, ass1, m, me);
     if not solvable then
       continue;
     else
-      // 2. Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
+      // 2. Deep copies to avoid side effects: makeAssignment mutates the arrays
+      //    in place, but each sibling branch of the DFS needs the unmodified state
+      ass1Copy := arrayCopy(ass1);
+      ass2Copy := arrayCopy(ass2);
+      mCopy := arrayCopy(m);
+      mtCopy := arrayCopy(mt);
+
+      // 3. Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
       makeAssignment(e_exp,vars,ass1Copy,ass2Copy,mCopy,mtCopy);
       order := e::orderIn;
 
-      // 3. Determine new possible causEq
+      // The new state (and thereby its whole subtree) is fully determined by the
+      // assignments in ass1: skip it if it was already reached via a different
+      // causalization order
+      if UnorderedSet.contains(ass1Copy, visited) then
+        continue;
+      end if;
+      UnorderedSet.addNew(ass1Copy, visited);
+
+      // 4. Determine new possible causEq
       causEq := traverseCollectiveEqnsforAssignable(ass2Copy,mCopy,mapEqnIncRow);
 
-      // 4. Dump
+      // 5. Dump
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         // print("\nNew ass1: " + stringDelimitList(List.mapArray(ass1Copy, intString),",")+"\n");
           // print("New ass2: " + stringDelimitList(List.mapArray(ass2Copy, intString),",") + "\n");
@@ -4833,40 +5357,21 @@ algorithm
           // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
       // end if;
 
-      // 5. Decide what to do
+      // 6. Decide what to do
       if listEmpty(causEq) then
         // full matching found?
         unassigned := getUnassigned(ass1Copy);
         if listEmpty(unassigned) then
-          // save current full matching
-          if isNewMatching(matchingListOut,ass1Copy) then
-            matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
-          end if;
+          // save current full matching (it is new since the state was not visited before)
+          matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
         end if;
       else
         // Continue with matching
-        matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,me,mapEqnIncRow,mapIncRowEqn,matchingListOut);
+        matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,me,mapEqnIncRow,mapIncRowEqn,visited,matchingListOut);
       end if;
     end if;
   end for;
 end totalMatching;
-
-
-protected function isNewMatching
-  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
-  input array<Integer> ass1In;
-  output Boolean b=true;
-protected
-  array<Integer> ass1;
-algorithm
-  for matching in matchingList loop
-    (ass1,_,_) := matching;
-    if Array.isEqual(ass1In,ass1) then
-      b:=false;
-      break;
-    end if;
-  end for;
-end isNewMatching;
 
 
 protected function createTearingSets

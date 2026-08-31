@@ -1,19 +1,23 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-MDD_test.mos \
+CevalModelicaStrings.mos \
+ExternalCFuncInputOnly.mos \
+ExternalLibraries.mos \
+ExternalNlsRecovery.mos \
+ExternalRHSFlag.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
-ExternalCFuncInputOnly.mos \
-ExternalLibraries.mos \
-ExternalRHSFlag.mos \
 ImplicitArray.mos \
 LapackInverse.mos \
-Matrix.mos  \
+Matrix.mos \
+MDD_test.mos \
+ModelicaIOMatrix.mos \
 ModelicaUtilities.mos \
-TestRoots.mos \
 QualifiedCrefArg.mos \
+RecordMemberArguments.mos \
+TestRoots.mos \
 ts.mos
 
 # test that currently fail. Move up when fixed.
@@ -35,6 +39,7 @@ ExternalFunc1_ext.h \
 ExternalFunc1.c \
 ExternalFunc2.c \
 ExternalFunc2.h \
+ExternalNlsRecovery-f.c \
 ExternalRHSFlag.c \
 ExtObj.c \
 ExtObj.h \
@@ -82,4 +87,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

@@ -128,6 +128,12 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STRE
 	GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 	#LIST(APPEND _compiler_FLAGS ${_directory_flags})
 	SET(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
+	# Explicitly add OMC_BUILD to precompiled header
+	IF(OMC_BUILD)
+		SET(_compiler_FLAGS "${_compiler_FLAGS} -DOMC_BUILD ")
+	ENDIF(OMC_BUILD)
+	# Explicitly add USE_THREAD
+	SET(_compiler_FLAGS "${_compiler_FLAGS} -DUSE_THREAD ")
 	SET(SYSTEM_CFLAGS ${_compiler_FLAGS})
 	GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
@@ -191,6 +197,12 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 	#LIST(APPEND _compiler_FLAGS ${_directory_flags})
 	SET(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
+	# Explicitly add OMC_BUILD to precompiled header
+	IF(OMC_BUILD)
+		SET(_compiler_FLAGS "${_compiler_FLAGS} -DOMC_BUILD ")
+	ENDIF(OMC_BUILD)
+	# Explicitly add USE_THREAD
+	SET(_compiler_FLAGS "${_compiler_FLAGS} -DUSE_THREAD ")
 	SET(SYSTEM_CFLAGS ${_compiler_FLAGS})
 	GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
@@ -260,5 +272,3 @@ IF(MSVC)
 ENDIF(MSVC)
 
 ENDMACRO()
-
-

@@ -25,6 +25,7 @@ reset_omc.mos \
 reset.mos \
 setStartTime.mos \
 sinus.mos \
+terminateTest.mos \
 testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
 testSynchronousFMU_01.mos \
@@ -79,4 +80,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

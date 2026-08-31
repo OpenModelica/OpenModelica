@@ -2,7 +2,6 @@
 // keywords: array subscript const complex
 // status: correct
 // teardown_command: rm -f *TestSensors*
-// cflags: -d=newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

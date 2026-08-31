@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -304,54 +308,54 @@ protected function dumpTag "appends a tag to the buffer string.
   input String iBuffer;
   output String oBuffer;
 algorithm
-  oBuffer := match(tag, iBuffer)
+  oBuffer := match tag
     local
       Integer i;
       String t, t1, t2, str;
       list<String> attr;
       list<Style> style;
       list<Tag> tags;
-    case (HEADING(stage=i, text=t), _)
-      equation
-        str = iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
+    case HEADING(stage=i, text=t)
+      algorithm
+        str := iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
       then
         str;
-    case (HYPERLINK(href=t, title=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
+    case HYPERLINK(href=t, title=t1, text=t2)
+      algorithm
+        str := iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
       then
         str;
-    case (ANKER(name=t), _)
-      equation
-        str = iBuffer + "\n<a name=\"" + t + "\"/>";
+    case ANKER(name=t)
+      algorithm
+        str := iBuffer + "\n<a name=\"" + t + "\"/>";
       then
         str;
-    case (LINE(text=t), _)
-      equation
-        str = iBuffer + "\n" + t + "<br>";
+    case LINE(text=t)
+      algorithm
+        str := iBuffer + "\n" + t + "<br>";
       then
         str;
-    case (DIVISION(id=t, style=style, tags=tags), _)
-      equation
-        t1 = stringDelimitList(List.map(style, dumpStyle), "; ");
-        t2 = List.fold(tags, dumpTag, "");
-        str = iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
+    case DIVISION(id=t, style=style, tags=tags)
+      algorithm
+        t1 := stringDelimitList(List.map(style, dumpStyle), "; ");
+        t2 := List.fold(tags, dumpTag, "");
+        str := iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
       then
         str;
-    case (SCRIPT(type_=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
+    case SCRIPT(type_=t1, text=t2)
+      algorithm
+        str := iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
       then
         str;
-    case (SCRIPT_BODY(type_=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<SCRIPT \"" + t1 + "\">\n" + t2 + "\n</SCRIPT>";
+    case SCRIPT_BODY(type_=t1, text=t2)
+      algorithm
+        str := iBuffer + "\n<SCRIPT \"" + t1 + "\">\n" + t2 + "\n</SCRIPT>";
       then
         str;
-    case (CANVAS(attr=attr), _)
-      equation
-        t1 = stringDelimitList(attr, " ");
-        str = iBuffer + "\n<canvas " + t1 + "\">\n";
+    case CANVAS(attr=attr)
+      algorithm
+        t1 := stringDelimitList(attr, " ");
+        str := iBuffer + "\n<canvas " + t1 + "\">\n";
       then
         str;
   end match;
@@ -381,7 +385,7 @@ algorithm
   doc := emptyDocumentWithToggleFunktion();
   doc := addHeading(1, inHeader, doc);
   str := intString(realInt(System.time()));
-  ((doc, _)) := List.fold1(eqs, dumpEqSystem, str, (doc, 1));
+  (doc, _) := List.fold1(eqs, dumpEqSystem, str, (doc, 1));
   dumpDocument(doc, str + inFilename);
 end dumpDAE;
 
@@ -392,8 +396,8 @@ protected function dumpEqSystem "dumps the BackendDAE.EqSystem"
   output tuple<Document, Integer> outTpl;
 protected
   list<BackendDAE.Var> vars;
-  Integer eqnlen, eqnssize, i;
-  String varlen_str, eqnlen_str, prefixIdstr, prefixId;
+  Integer i;
+  String varlen_str, eqnlen_str, prefixId;
   list<BackendDAE.Equation> eqnsl;
   BackendDAE.Variables vars1;
   BackendDAE.EquationArray eqns;
@@ -432,7 +436,7 @@ protected function printVarList
 protected
   list<Tag> tags;
 algorithm
-  ((tags, _)) := List.fold1(vars, dumpVar, prefixId, ({}, 1));
+  (tags, _) := List.fold1(vars, dumpVar, prefixId, ({}, 1));
   outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "variables')", "show variables", "show/hide variables", inTags);
   outTags := addDivisionTag(prefixId + "variables", {STYLE("background", "#FFFFCC"), STYLE("display", "none")}, tags, outTags);
 end printVarList;
@@ -464,7 +468,7 @@ protected function dumpEqns
 protected
   list<Tag> tags;
 algorithm
-  ((tags, _)) := List.fold1(eqns, dumpEqn, prefixId, ({}, 1));
+  (tags, _) := List.fold1(eqns, dumpEqn, prefixId, ({}, 1));
   outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "equations')", "show equations", "show/hide equations", inTags);
   outTags := addDivisionTag(prefixId + "equations", {STYLE("background", "#C0C0C0"), STYLE("display", "none")}, tags, outTags);
 end dumpEqns;
@@ -494,15 +498,15 @@ protected function dumpFullMatching
   input list<Tag> inTags;
   output list<Tag> outTags;
 algorithm
-  outTags := match(inMatch)
+  outTags := match inMatch
     local
       array<Integer> ass1;
       list<Tag> tags;
       //BackendDAE.StrongComponents comps;
 
-    case (BackendDAE.NO_MATCHING()) then inTags;
-    case (BackendDAE.MATCHING(ass1, _, _)) equation
-      tags = dumpMatching(ass1, prefixId, inTags);
+    case BackendDAE.NO_MATCHING() then inTags;
+    case BackendDAE.MATCHING(ass1, _, _) algorithm
+      tags := dumpMatching(ass1, prefixId, inTags);
       //dumpComponents(comps);
     then tags;
   end match;
@@ -562,7 +566,7 @@ protected
   Integer size, rowIdx, colIdx;
   Integer matrixMargin, blockSize;
   list<Integer> row;
-  String color, rowLabel, colLabel, blockDraw, rowLabelDraw, colLabelDraw;
+  String blockDraw, rowLabelDraw, colLabelDraw;
   list<String> scripts, rowLabelScripts, colLabelScripts;
 
   Document doc;

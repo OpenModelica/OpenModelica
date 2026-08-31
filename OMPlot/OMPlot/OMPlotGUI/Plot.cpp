@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -89,6 +93,12 @@ Plot::Plot(PlotWindow *pParent)
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
   pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
+#if defined(__EMSCRIPTEN__)
+  // wasm: the offscreen BackingStore pixmap shows up black, so paint directly;
+  // ImmediatePaint makes replot() repaint synchronously.
+  pPlotCanvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
+  pPlotCanvas->setPaintAttribute(QwtPlotCanvas::ImmediatePaint, true);
+#endif
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
 #if QWT_VERSION >= 0x060000
@@ -266,41 +276,42 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  static QStringList prefixableUnits;
-  prefixableUnits << "s"
-                  << "m"
-                  << "m/s"
-                  << "m/s2"
-                  << "rad"
-                  << "rad/s"
-                  << "rad/s2"
-                  << "rpm"
-                  << "Hz"
-                  << "N"
-                  << "N.m"
-                  << "Pa"
-                  << "Pa.s"
-                  << "J"
-                  << "J/kg"
-                  << "J/(kg.K)"
-                  << "K"
-                  << "V"
-                  << "V/m"
-                  << "A"
-                  << "C"
-                  << "F"
-                  << "T"
-                  << "Wb"
-                  << "Wb/m"
-                  << "H"
-                  << "Ohm"
-                  << "S"
-                  << "W"
-                  << "W/m"
-                  << "W/m2"
-                  << "Wh"
-                  << "var";
-
+  static const QSet<QString> prefixableUnits = {
+    "s",
+    "m",
+    "m/s",
+    "m/s2",
+    "rad",
+    "rad/s",
+    "rad/s2",
+    "rpm",
+    "Hz",
+    "N",
+    "N.m",
+    "Pa",
+    "Pa.s",
+    "J",
+    "J/kg",
+    "J/(kg.K)",
+    "K",
+    "V",
+    "V/m",
+    "A",
+    "C",
+    "F",
+    "T",
+    "Wb",
+    "Wb/m",
+    "H",
+    "Ohm",
+    "S",
+    "W",
+    "V.A",
+    "W/m",
+    "W/m2",
+    "Wh",
+    "var"
+  };
   return prefixableUnits.contains(unit);
 }
 
@@ -429,7 +440,9 @@ void Plot::replot()
 
   // Now we need to again loop through curves to set the color and title.
   // Also display y-axis (left or right) only if axis is assigned to at least one curve
-  bool leftAxisVisible = false, rightAxisVisible = false;
+  // if no curves are present then display left y-axis by default. See #14894. The window size is too small without any y-axes.
+  bool leftAxisVisible = mPlotCurvesList.isEmpty() ? true : false;
+  bool rightAxisVisible = false;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -471,7 +484,6 @@ void Plot::replot()
   } else {
     setAxisTitle(QwtPlot::yRight, mpParentPlotWindow->getYRightCustomLabel());
   }
-
 }
 
 } // namespace OMPlot

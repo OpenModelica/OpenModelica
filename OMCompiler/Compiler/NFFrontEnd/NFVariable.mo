@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -46,14 +50,17 @@ encapsulated uniontype NFVariable
   import NFPrefixes.AccessLevel;
   import Type = NFType;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
+  import BaseModelica;
 
 protected
+  import Absyn;
   import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Inst = NFInst;
   import IOStream;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import SCode;
   import StringUtil;
   import Typing = NFTyping;
   import Util;
@@ -79,7 +86,6 @@ public
     input ComponentRef cref;
     output Variable variable;
   protected
-    list<ComponentRef> crefs;
     InstNode node, class_node;
     Component comp;
     Type ty;
@@ -122,6 +128,11 @@ public
 
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
   end fromCref;
+
+  function name
+    input Variable var;
+    output ComponentRef name = var.name;
+  end name;
 
   function size
     input Variable var;
@@ -179,7 +190,7 @@ public
         // list of binding expression until they match.
         if expl_len < crefs_len then
           if intMod(crefs_len, expl_len) <> 0 then
-            Error.assertion(false, getInstanceName() + " failed to expand " +
+            Error.terminate(getInstanceName() + " failed to expand " +
               ComponentRef.toString(var.name), sourceInfo());
           end if;
 
@@ -312,6 +323,11 @@ public
     input Variable variable;
     output Boolean b = variable.attributes.direction == Direction.INPUT;
   end isInput;
+
+  function isOutput
+    input Variable variable;
+    output Boolean b = variable.attributes.direction == Direction.OUTPUT;
+  end isOutput;
 
   function isTopLevelInput
     input Variable variable;
@@ -483,6 +499,40 @@ public
     end while;
   end removeNonTopLevelDirection;
 
+  partial function ApplyFn
+    input Expression exp;
+  end ApplyFn;
+
+  function applyExp
+    input Variable var;
+    input ApplyFn fn;
+  algorithm
+    Binding.applyExp(var.binding, fn);
+
+    for ty_attr in var.typeAttributes loop
+      Binding.applyExp(Util.tuple22(ty_attr), fn);
+    end for;
+
+    for c in var.children loop
+      applyExp(c, fn);
+    end for;
+  end applyExp;
+
+  function applyExpShallow
+    input Variable var;
+    input ApplyFn fn;
+  algorithm
+    Binding.applyExpShallow(var.binding, fn);
+
+    for ty_attr in var.typeAttributes loop
+      Binding.applyExpShallow(Util.tuple22(ty_attr), fn);
+    end for;
+
+    for c in var.children loop
+      applyExpShallow(c, fn);
+    end for;
+  end applyExpShallow;
+
   partial function MapFn
     input output Expression exp;
   end MapFn;
@@ -589,16 +639,19 @@ public
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
   protected
-    Boolean first;
-    Binding b;
-    Integer var_dims, binding_dims;
+    list<Dimension> dims;
   algorithm
     s := IOStream.append(s, indent);
 
     s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
-    s := IOStream.append(s, Type.toFlatString(var.ty, format));
+    s := IOStream.append(s, Type.toFlatString(Type.arrayElementType(var.ty), format));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name, format));
+
+    dims := Type.arrayDims(var.ty);
+    if not listEmpty(dims) then
+      s := IOStream.append(s, Dimension.toFlatStringList(dims, format));
+    end if;
 
     if not listEmpty(var.typeAttributes) then
       s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);
@@ -684,7 +737,7 @@ public
   algorithm
     if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
       equations := Equation.makeEquality(Expression.fromCref(var.name),
-        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        Binding.getExp(var.binding), var.ty,
         ElementSource.createElementSource(var.info)) :: equations;
       var.binding := NFBinding.EMPTY_BINDING;
     end if;
@@ -700,6 +753,13 @@ public
     output Option<Expression> nominal = VariableAttributes.getNominal(getVariableAttributes(var));
   end getNominal;
 
+  function asBinding
+    input Variable var;
+    input Binding.Source source = NFBinding.Source.GENERATED;
+    output Binding binding;
+  algorithm
+    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
+  end asBinding;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFVariable;

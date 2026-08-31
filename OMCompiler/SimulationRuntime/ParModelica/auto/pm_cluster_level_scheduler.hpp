@@ -1,43 +1,41 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #pragma once
 #ifndef idC49A2D93_44C9_41C1_BFCE81120109B873
 #define idC49A2D93_44C9_41C1_BFCE81120109B873
-
-/*
- * This file is part of OpenModelica.
- *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
- *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
- *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
- *
- */
 
 /*
  Mahder.Gebremedhin@liu.se  2014-03-13
 */
 
 #include "gc.h"
+
+#include <cmath>
 
 #include <tbb/parallel_for.h>
 #include <tbb/tick_count.h>
@@ -46,6 +44,9 @@
 // #include <sys/syscall.h>
 
 #include "pm_clustering.hpp"
+#include "pm_clustering_json.hpp"
+#include "pm_runtime_config.hpp"
+#include "pm_scheduler_base.hpp"
 
 namespace openmodelica { namespace parmodelica {
 
@@ -105,7 +106,7 @@ template <typename TaskType,
           typename clustetring3 = cluster_none,
           typename clustetring4 = cluster_none,
           typename clustetring5 = cluster_none>
-class StepLevels : boost::noncopyable {
+class StepLevels : public TaskGraphScheduler, boost::noncopyable {
   public:
     typedef TaskSystem_v2<TaskType>                TaskSystemType;
     typedef typename TaskSystemType::GraphType     GraphType;
@@ -207,20 +208,36 @@ class StepLevels : boost::noncopyable {
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
 
+        /*! Optionally export a before/after snapshot of the clustering for each
+            optimization (parmodDumpStages), so the user can see how the clustering
+            was applied. cluster_none passes are no-ops and are not snapshotted. */
+        ClusteringStageDumper<TaskSystemType> stages(task_system, parmod_config().dump_stages);
+        stages.snapshot("initial");
+
         clustetring1::apply(task_system);
         clustetring1::dump_graph(task_system);
+        if (clustetring1::name() != cluster_none::name())
+            stages.snapshot(clustetring1::name());
 
         clustetring2::apply(task_system);
         clustetring2::dump_graph(task_system);
+        if (clustetring2::name() != cluster_none::name())
+            stages.snapshot(clustetring2::name());
 
         clustetring3::apply(task_system);
         clustetring3::dump_graph(task_system);
+        if (clustetring3::name() != cluster_none::name())
+            stages.snapshot(clustetring3::name());
 
         clustetring4::apply(task_system);
         clustetring4::dump_graph(task_system);
+        if (clustetring4::name() != cluster_none::name())
+            stages.snapshot(clustetring4::name());
 
         clustetring5::apply(task_system);
         clustetring5::dump_graph(task_system);
+        if (clustetring5::name() != cluster_none::name())
+            stages.snapshot(clustetring5::name());
 
         schedule_available = true;
         task_system.levels_valid = false;
@@ -231,7 +248,13 @@ class StepLevels : boost::noncopyable {
 
     }
 
-    void execute() {
+    int    get_total_evaluations() const override { return total_evaluations; }
+    int    get_sequential_evaluations() const override { return sequential_evaluations; }
+    int    get_parallel_evaluations() const override { return parallel_evaluations; }
+    double get_execution_time() override { return execution_timer.get_elapsed_time(); }
+    double get_clustering_time() override { return clustering_timer.get_elapsed_time(); }
+
+    void execute() override {
 
         if (this->reschedule_needed())
             return execute_and_schedule();

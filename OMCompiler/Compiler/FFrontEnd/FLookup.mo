@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -67,7 +71,7 @@ type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Msg = Option<SourceInfo>;
 
-constant Option<SourceInfo> dummyLookupOption = NONE(); // SOME(AbsynUtil.dummyInfo);
+constant Option<SourceInfo> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
 
 public uniontype Options
   record OPTIONS
@@ -93,23 +97,23 @@ public function id
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inOptions, inMsg)
     local
       Ref r;
       Parents p;
       Graph g;
 
     // implicit scope which has for iterators
-    case (g, _, _, _, _)
-      equation
-        r = FNode.child(inRef, FNode.forNodeName);
-        r = FNode.child(r, inName);
+    case (g, _, _)
+      algorithm
+        r := FNode.child(inRef, FNode.forNodeName);
+        r := FNode.child(r, inName);
       then
         (g, r);
 
     /*/ self?
     case (g, _, _, _, _)
-      equation
+      algorithm
         true = FNode.isRefImplicitScope(inRef);
         true = stringEq(FNode.name(FNode.fromRef(inRef)), inName);
         r = FNode.child(inRef, inName);
@@ -118,73 +122,73 @@ algorithm
         (g, r);*/
 
     // implicit scope? move upwards if allowed
-    case (g, _, _, OPTIONS(_, _, false), _)
-      equation
-        true = FNode.isRefImplicitScope(inRef);
-        p = FNode.parents(FNode.fromRef(inRef));
+    case (g, OPTIONS(_, _, false), _)
+      algorithm
+        true := FNode.isRefImplicitScope(inRef);
+        p := FNode.parents(FNode.fromRef(inRef));
         // get the original parent
-        r = FNode.original(p);
-        (g, r) = id(g, r, inName, inOptions, inMsg);
+        r := FNode.original(p);
+        (g, r) := id(g, r, inName, inOptions, inMsg);
       then
         (g, r);
 
     // local?
-    case (g, _, _, _, _)
-      equation
-        false = FNode.isRefImplicitScope(inRef);
-        r = FNode.child(inRef, inName);
+    case (g, _, _)
+      algorithm
+        false := FNode.isRefImplicitScope(inRef);
+        r := FNode.child(inRef, inName);
       then
         (g, r);
 
     // lookup in imports
-    case (g, _, _, OPTIONS(false, _, _), _)
-      equation
-        false = FNode.isRefImplicitScope(inRef);
-        (g, r) = imp(g, inRef, inName, inOptions, inMsg);
+    case (g, OPTIONS(false, _, _), _)
+      algorithm
+        false := FNode.isRefImplicitScope(inRef);
+        (g, r) := imp(g, inRef, inName, inOptions, inMsg);
       then
         (g, r);
 
     // lookup in extends
-    case (g, _, _, OPTIONS(_, false, _), _)
-      equation
-        false = FNode.isRefImplicitScope(inRef);
-        (g, r) = ext(g, inRef, inName, inOptions, inMsg);
+    case (g, OPTIONS(_, false, _), _)
+      algorithm
+        false := FNode.isRefImplicitScope(inRef);
+        (g, r) := ext(g, inRef, inName, inOptions, inMsg);
       then
         (g, r);
 
     // encapsulated
-    case (g, _, _, OPTIONS(_, _, false), _)
-      equation
-        false = FNode.isRefImplicitScope(inRef);
-        true = FNode.isEncapsulated(FNode.fromRef(inRef));
-        r = FNode.top(inRef);
-        (g, r) = id(g, r, inName, inOptions, inMsg);
+    case (g, OPTIONS(_, _, false), _)
+      algorithm
+        false := FNode.isRefImplicitScope(inRef);
+        true := FNode.isEncapsulated(FNode.fromRef(inRef));
+        r := FNode.top(inRef);
+        (g, r) := id(g, r, inName, inOptions, inMsg);
       then
         (g, r);
 
     // search parent
-    case (g, _, _, OPTIONS(_, _, false), _)
-      equation
-        false = FNode.isRefImplicitScope(inRef);
-        false = FNode.isEncapsulated(FNode.fromRef(inRef));
-        true = FNode.hasParents(FNode.fromRef(inRef));
-        p = FNode.parents(FNode.fromRef(inRef));
+    case (g, OPTIONS(_, _, false), _)
+      algorithm
+        false := FNode.isRefImplicitScope(inRef);
+        false := FNode.isEncapsulated(FNode.fromRef(inRef));
+        true := FNode.hasParents(FNode.fromRef(inRef));
+        p := FNode.parents(FNode.fromRef(inRef));
         // get the original parent
-        r = FNode.original(p);
-        (g, r) = search(g, {r}, inName, inOptions, inMsg);
+        r := FNode.original(p);
+        (g, r) := search(g, {r}, inName, inOptions, inMsg);
       then
         (g, r);
 
     // top node reached
-    case (_, _, _, OPTIONS(_, _, false), _)
-      equation
-        false = FNode.hasParents(FNode.fromRef(inRef));
+    case (_, OPTIONS(_, _, false), _)
+      algorithm
+        false := FNode.hasParents(FNode.fromRef(inRef));
       then
         fail();
 
     // failure
-    case (_, _, _, _, SOME(_))
-      equation
+    case (_, _, SOME(_))
+      algorithm
         print("FLookup.id failed for: " + inName + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
@@ -203,32 +207,32 @@ public function search
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRefs, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRefs, inMsg)
     local
       Ref r;
       Refs rest;
       Graph g;
 
     // not found
-    case (_, {}, _, _, _) then fail();
+    case (_, {}, _) then fail();
 
     // found
-    case (g, r::_, _, _, _)
-      equation
-        (g, r) = id(g, r, inName, inOptions, inMsg);
+    case (g, r::_, _)
+      algorithm
+        (g, r) := id(g, r, inName, inOptions, inMsg);
       then
         (g, r);
 
     // search rest
-    case (g, _::rest, _, _, _)
-      equation
-        (g, r) = search(g, rest, inName, inOptions, inMsg);
+    case (g, _::rest, _)
+      algorithm
+        (g, r) := search(g, rest, inName, inOptions, inMsg);
       then
         (g, r);
 
     // failure
-    case (_, _, _, _, SOME(_))
-      equation
+    case (_, _, SOME(_))
+      algorithm
         print("FLookup.search failed for: " + inName + " in: " +
            FNode.toPathStr(FNode.fromRef(listHead(inRefs))) + "\n");
       then
@@ -248,7 +252,7 @@ public function name
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inPath, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inPath, inMsg)
     local
       Ref r;
       Name i;
@@ -257,43 +261,43 @@ algorithm
       Graph g;
 
     // simple name
-    case (g, _, Absyn.IDENT(i), _, _)
-      equation
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
+    case (g, Absyn.IDENT(i), _)
+      algorithm
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
       then
         (g, r);
 
     // qualified name, could find the rest
-    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
-      equation
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
-        (g, r) = name(g, r, rest, inOptions, inMsg);
+    case (g, Absyn.QUALIFIED(i, rest), _)
+      algorithm
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
+        (g, r) := name(g, r, rest, inOptions, inMsg);
       then
         (g, r);
 
     // qualified name, could not find the rest, stop!
-    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
-      equation
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
-        failure((_, _) = name(g, r, rest, inOptions, inMsg));
+    case (g, Absyn.QUALIFIED(i, rest), _)
+      algorithm
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
+        failure(name(g, r, rest, inOptions, inMsg));
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " + AbsynUtil.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
+        s := "missing: " + AbsynUtil.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing path part
-        (g, r) = FGraphBuild.mkAssertNode(AbsynUtil.pathFirstIdent(rest), s, r, g);
+        (g, r) := FGraphBuild.mkAssertNode(AbsynUtil.pathFirstIdent(rest), s, r, g);
       then
         (g, r);
 
     // fully qual name
-    case (g, _, Absyn.FULLYQUALIFIED(rest), _, _)
-      equation
-        r = FNode.top(inRef);
-        (g, r) = name(g, r, rest, inOptions, inMsg);
+    case (g, Absyn.FULLYQUALIFIED(rest), _)
+      algorithm
+        r := FNode.top(inRef);
+        (g, r) := name(g, r, rest, inOptions, inMsg);
       then
         (g, r);
 
-    case (_, _, _, _, SOME(_))
-      equation
+    case (_, _, SOME(_))
+      algorithm
         print("FLookup.name failed for: " + AbsynUtil.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
@@ -312,47 +316,46 @@ public function ext
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue inGraph
     local
       Ref r;
       Refs refs;
-      Parents p;
       Graph g;
 
     // for class extends search inside the base class first
-    case (g, _, _, _, _)
-      equation
-        true = FNode.isClassExtends(FNode.fromRef(inRef));
+    case g
+      algorithm
+        true := FNode.isClassExtends(FNode.fromRef(inRef));
         // get its ref node
-        r = FNode.child(inRef, FNode.refNodeName);
+        r := FNode.child(inRef, FNode.refNodeName);
         // get the target from ref
-        r = FNode.target(FNode.fromRef(r));
+        r := FNode.target(FNode.fromRef(r));
         // print("Searching for: " + inName + " in class extends target:\n\t" + FNode.toPathStr(FNode.fromRef(r)) + "\n");
         // search in type target
-        (g, r) = id(g, r, inName, ignoreParents, inMsg);
+        (g, r) := id(g, r, inName, ignoreParents, inMsg);
         // print("Found it in: " + FNode.toPathStr(FNode.fromRef(r)) + "\n");
       then
         (g, r);
 
     // for class extends: if not found in base class search in the parents of this node
-    case (g, _, _, _, _)
-      equation
-        true = FNode.isClassExtends(FNode.fromRef(inRef));
+    case g
+      algorithm
+        true := FNode.isClassExtends(FNode.fromRef(inRef));
         // get the original parent
-        r = FNode.original(FNode.parents(FNode.fromRef(inRef)));
-        (g, r) = id(g, r, inName, ignoreNothing, inMsg);
+        r := FNode.original(FNode.parents(FNode.fromRef(inRef)));
+        (g, r) := id(g, r, inName, ignoreNothing, inMsg);
         // print("Found it in: " + FNode.toPathStr(FNode.fromRef(r)) + "\n");
       then
         (g, r);
 
     // get all extends of the node and search in them
-    case (g, _, _, _, _)
-      equation
-        refs = FNode.extendsRefs(inRef);
-        false = listEmpty(refs);
-        refs = List.mapMap(refs, FNode.fromRef, FNode.target);
+    case g
+      algorithm
+        refs := FNode.extendsRefs(inRef);
+        false := listEmpty(refs);
+        refs := List.mapMap(refs, FNode.fromRef, FNode.target);
         // print("Searching for: " + inName + " in extends targets:\n\t" + stringDelimitList(List.mapMap(refs, FNode.fromRef, FNode.toPathStr), "\n\t") + "\n");
-        (g, r) = search(g, refs, inName, ignoreParentsAndImports, inMsg);
+        (g, r) := search(g, refs, inName, ignoreParentsAndImports, inMsg);
       then
         (g, r);
 
@@ -370,28 +373,27 @@ public function imp
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue inGraph
     local
       Ref r;
-      Parents p;
       list<Import> qi, uqi;
       Graph g;
 
     // lookup in qual
-    case (g, _, _, _, _)
-      equation
-        true = FNode.hasImports(FNode.fromRef(inRef));
-        (qi,_) = FNode.imports(FNode.fromRef(inRef));
-        (g, r) = imp_qual(g, inRef, inName, qi, inOptions, inMsg);
+    case g
+      algorithm
+        true := FNode.hasImports(FNode.fromRef(inRef));
+        (qi,_) := FNode.imports(FNode.fromRef(inRef));
+        (g, r) := imp_qual(g, inRef, inName, qi, inOptions, inMsg);
       then
         (g, r);
 
     // lookup in un-qual
-    case (g, _, _, _, _)
-      equation
-        true = FNode.hasImports(FNode.fromRef(inRef));
-        (_, uqi) = FNode.imports(FNode.fromRef(inRef));
-        (g, r) = imp_unqual(g, inRef, inName, uqi, inOptions, inMsg);
+    case g
+      algorithm
+        true := FNode.hasImports(FNode.fromRef(inRef));
+        (_, uqi) := FNode.imports(FNode.fromRef(inRef));
+        (g, r) := imp_unqual(g, inRef, inName, uqi, inOptions, inMsg);
       then
         (g, r);
 
@@ -409,7 +411,7 @@ protected function imp_qual
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inImports)
     local
       Name name;
       Absyn.Path path;
@@ -418,25 +420,25 @@ algorithm
       Graph g;
 
     // No match, search the rest of the list of imports.
-    case (g, _, _, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
-      equation
-        false = stringEqual(inName, name);
-        (g, r) = imp_qual(g, inRef, inName, rest_imps, inOptions, inMsg);
+    case (g, Absyn.NAMED_IMPORT(name = name) :: rest_imps)
+      algorithm
+        false := stringEqual(inName, name);
+        (g, r) := imp_qual(g, inRef, inName, rest_imps, inOptions, inMsg);
       then
         (g, r);
 
     // Match, look up the fully qualified import path.
-    case (g, _, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
-      equation
-        true = stringEqual(inName, name);
-        (g, r) = fq(g, path, inOptions, inMsg);
+    case (g, Absyn.NAMED_IMPORT(name = name, path = path) :: _)
+      algorithm
+        true := stringEqual(inName, name);
+        (g, r) := fq(g, path, inOptions, inMsg);
       then
         (g, r);
 
     // Partial match, return failure
-    case (_, _, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
-      equation
-        true = stringEqual(inName, name);
+    case (_, Absyn.NAMED_IMPORT(name = name) :: _)
+      algorithm
+        true := stringEqual(inName, name);
       then
         fail(); // TODO! maybe add an assertion node!
 
@@ -456,9 +458,9 @@ public function imp_unqual
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inImports)
     local
-      Absyn.Path path, path2;
+      Absyn.Path path;
       list<Import> rest_imps;
       Ref r;
       Graph g;
@@ -466,19 +468,19 @@ algorithm
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
     // name we are looking for.
-    case (g, _, _, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
-      equation
+    case (g, Absyn.UNQUAL_IMPORT(path = path) :: _)
+      algorithm
         // Look up the import path.
-        (g, r) = fq(g, path, inOptions, inMsg);
+        (g, r) := fq(g, path, inOptions, inMsg);
         // Look up the name among the public member of the found package.
-        (g, r) = id(g, r, inName, ignoreParents, inMsg);
+        (g, r) := id(g, r, inName, ignoreParents, inMsg);
       then
         (g, r);
 
     // No match, continue with the rest of the imports.
-    case (g, _, _, _ :: rest_imps, _, _)
-      equation
-        (g, r) = imp_unqual(g, inRef, inName, rest_imps, inOptions, inMsg);
+    case (g, _ :: rest_imps)
+      algorithm
+        (g, r) := imp_unqual(g, inRef, inName, rest_imps, inOptions, inMsg);
       then
         (g, r);
   end matchcontinue;
@@ -507,72 +509,71 @@ public function cr
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inCref, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inCref, inMsg)
     local
       Ref r;
       Name i;
       Absyn.ComponentRef rest;
-      list<Absyn.Subscript> ss;
       Graph g;
       String s;
 
     // simple name
-    case (g, _, Absyn.CREF_IDENT(i, _), _, _)
-      equation
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
+    case (g, Absyn.CREF_IDENT(i, _), _)
+      algorithm
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
       then
         (g, r);
 
     // qualified name, first is component
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
-      equation
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
+      algorithm
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
         // inRef is a component, lookup in type
-        true = FNode.isRefComponent(r);
+        true := FNode.isRefComponent(r);
         // get the ref
-        r = FNode.child(r, FNode.refNodeName);
+        r := FNode.child(r, FNode.refNodeName);
         // get the target from ref
-        r = FNode.target(FNode.fromRef(r));
+        r := FNode.target(FNode.fromRef(r));
         // search in type target
-        (g, r) = cr(g, r, rest, ignoreParents, inMsg);
+        (g, r) := cr(g, r, rest, ignoreParents, inMsg);
       then
         (g, r);
 
     // qualified name
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
-      equation
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
+      algorithm
         // inRef is a class
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
-        true = FNode.isRefClass(r);
-        (g, r) = cr(g, r, rest, ignoreParents, inMsg);
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
+        true := FNode.isRefClass(r);
+        (g, r) := cr(g, r, rest, ignoreParents, inMsg);
       then
         (g, r);
 
     // qualified name
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
-      equation
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
+      algorithm
         // inRef is a class
-        (g, r) = id(g, inRef, i, inOptions, inMsg);
-        true = FNode.isRefClass(r) or FNode.isRefComponent(r);
+        (g, r) := id(g, inRef, i, inOptions, inMsg);
+        true := FNode.isRefClass(r) or FNode.isRefComponent(r);
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " + AbsynUtil.crefString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
+        s := "missing: " + AbsynUtil.crefString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing cref part
-        (g, r) = FGraphBuild.mkAssertNode(AbsynUtil.crefFirstIdent(rest), s, r, g);
+        (g, r) := FGraphBuild.mkAssertNode(AbsynUtil.crefFirstIdent(rest), s, r, g);
       then
         (g, r);
 
 
     // fully qual name
-    case (g, _, Absyn.CREF_FULLYQUALIFIED(rest), _, _)
-      equation
-        r = FGraph.top(g);
-        (g, r) = cr(g, r, rest, inOptions, inMsg);
+    case (g, Absyn.CREF_FULLYQUALIFIED(rest), _)
+      algorithm
+        r := FGraph.top(g);
+        (g, r) := cr(g, r, rest, inOptions, inMsg);
       then
         (g, r);
 
-    case (_, _, _, _, SOME(_))
-      equation
+    case (_, _, SOME(_))
+      algorithm
         print("FLookup.cr failed for: " + AbsynUtil.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();

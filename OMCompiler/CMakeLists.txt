@@ -10,7 +10,10 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrt)
 ## OPTIONS #################################################################################################
 
 omc_option(OM_OMC_ENABLE_FORTRAN "Enable Fortran support. Fortran is required if you enable IPOPT support." ON)
-if(OM_OMC_ENABLE_FORTRAN)
+# Fortran is only needed by the C simulation runtime (MOO / old optimization),
+# which the wasm/web bundle does not build — so don't require a Fortran compiler
+# in wasm mode even though the option stays nominally ON.
+if(OM_OMC_ENABLE_FORTRAN AND NOT OM_OMC_WASM)
   enable_language(Fortran)
 endif()
 
@@ -30,11 +33,19 @@ endif()
 
 omc_option(OM_OMC_ENABLE_PRIMME "Should we enable sparse singular value support with PRIMME." ON)
 
+omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
+
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
+
+# Build the Rust (mmtorust) omc port instead of the bootstrapped C omc. When ON,
+# the compiler is produced by transpiling the MetaModelica sources to Rust and
+# `cargo build`ing them (see Compiler/.cmake/rust_omc.cmake); bomc/omc are never
+# compiled from C. The simulation/function runtime C libraries are still built.
+omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." OFF)
 
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
@@ -61,23 +72,59 @@ if(WIN32)
     endif()
   endif()
 endif()
-target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+# Build dir first: it holds the CMake-generated omc_config.unix.h (the source dir
+# may hold the autotools build's copy); source dir provides omc_config.h itself.
+target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 ## Subdirectories ##########################################################################################
-omc_add_subdirectory(3rdParty)
-
-
-# We want to make sure include directories are handled properly by disabling implicit function
-# declaration so that we can be consistent and correct with our inclusions.
-# We do this after 3rdParty is added!! because some libs in FMILib use implicit function declaration
-# because of missing #defines due to bad configuration for now.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
-  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
+# The C/C++ 3rd-party libraries (fmilib, libzmq, lapack, …) are linked only by the
+# native omc artifacts and the simulation runtime. The wasm/web bundle uses none
+# of them (the cdylib is built --no-default-features), so skip them in wasm mode.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(3rdParty)
 endif()
 
-omc_add_subdirectory(SimulationRuntime)
-omc_add_subdirectory(Parser)
+
+# These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  # Disallow implicit function declarations: ensures include directories are handled properly.
+  # Excluded from 3rdParty because FMILib uses implicit function declarations due to missing
+  # #defines from bad configuration.
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
+  # VLAs are a C99/GCC extension not supported by MSVC; catching them prevents portability issues.
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
+endif()
+
+# The C simulation/function runtime libraries are dlopened by the native omc and
+# installed alongside it; the wasm/web bundle does not use them, so skip them in
+# wasm mode (leaving `make all` to build only the wasm target).
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(SimulationRuntime)
+endif()
+# The ANTLR Modelica parser (omparse) is part of the C omc toolchain only — the
+# Rust omc port has its own parser and does not link it. It also pulls in the C
+# compiler runtime (omc::compiler::runtime), which the Rust build deliberately
+# does not build. Skip it in Rust mode.
+if(NOT OM_OMC_ENABLE_RUST)
+  omc_add_subdirectory(Parser)
+endif()
+# Before Compiler: rust_omc.cmake puts these archives in the omc cdylib's cargo
+# environment, and SimulationRuntime/rust in libSimulationRuntimeRust's.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/SimulationRuntime/rust/native_solver_archives.cmake)
+endif()
 omc_add_subdirectory(Compiler)
-omc_add_subdirectory(Examples)
+# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
+# libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
+# cargo target directory are set up (rust_omc.cmake) when omc is the Rust port.
+# Skipped where the rest of the simulation runtime is: the wasm bundle does not
+# use it, and the GUI-only stage builds against a prebuilt cdylib.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  omc_add_subdirectory(SimulationRuntime/rust)
+endif()
+# share/doc/omc/testmodels: files only, installed by every native omc.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(Examples)
+endif()

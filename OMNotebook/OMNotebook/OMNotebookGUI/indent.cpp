@@ -1,54 +1,42 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 #include "indent.h"
-#include <QRegExp>
 #include <QRegularExpression>
 #include <QMessageBox>
 #include <QDebug>
-
-IndentationState::~IndentationState() {
-}
-
-Indent::ISM::ISM() {
-  level = 0;
-  state = 0;
-  skipNext = false;
-  lMod = false;
-  nextMod = 0;
-}
-
-Indent::ISM::~ISM() {
-}
 
 void Indent::ISM::newToken(QString s, QString s2) {
   if(skipNext) {
@@ -206,12 +194,23 @@ Indent::Indent(QString s, bool aggressive_) {
   lineModifiers = 0;
 }
 
-Indent::~Indent() {
-}
-
 void Indent::setText(QString s) {
   ts.reset();
   ts << s;
+}
+
+void Indent::setState(const IndentationState &state)
+{
+  ism.level = state.level;
+  ism.state = state.state;
+  ism.nextMod = state.nextMod;
+  ism.equation = state.equation;
+  ism.equationSection = state.equationSection;
+  ism.loopBlock = state.loopBlock;
+  ism.skipNext = state.skipNext;
+  ism.lMod = state.lMod;
+  current = state.current;
+  next = state.next;
 }
 
 int Indent::level() {
@@ -222,7 +221,7 @@ bool Indent::lMod() {
   return lmod;
 }
 
-QString Indent::indentedText(QMap<int, IndentationState*>* states) {
+QString Indent::indentedText(QMap<int, IndentationState>* states) {
   buffer1 = buffer1.replace(QRegularExpression("(==|:=|<=|>=|<>|=|<|>)"), " \\1 ");
   buffer1 = buffer1.replace('\n', " <newLine> ") + " <newLine> " + " <newLine> ";
   buffer1 = buffer1.replace("//", " //");
@@ -307,7 +306,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states) {
         if(states->find(N) != states->end()) {
           states->remove(N);
         }
-        (*states)[N] = new IndentationState(ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock);
+        states->insert(N, IndentationState{ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock});
       }
     } else {
       tmp +=  current.trimmed() +  QString(current.size()?1:0, ' ') ;

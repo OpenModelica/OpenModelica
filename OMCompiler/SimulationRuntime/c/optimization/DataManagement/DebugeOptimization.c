@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -60,6 +57,10 @@ void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda){
 
   sprintf(buffer, "%s_%d.csv", optData->ipop.csvOstep,optData->dim.iter);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    return;
+  }
 
   fprintf(pFile, "%s", "\"time\"");
   for(i = 0; i < nx; ++i){
@@ -112,23 +113,34 @@ void debugeJac(OptData * optData, ipnumber* vopt){
   const int NRes = optData->dim.NRes;
   const int nReal = optData->dim.nReal;
   const int NV = optData->dim.NV;
-  ipnumber vopt_shift[NV];
-  long double h[nv][nsi][np];
+  ipnumber *vopt_shift = (ipnumber*)malloc(NV * sizeof(ipnumber));
+  long double *h = (long double*)malloc(nv * nsi * np * sizeof(long double));
+  #define H(k,i,j) h[(k)*nsi*np + (i)*np + (j)]
   long double hh;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vmin = optData->bounds.vmin;
   const modelica_real * vnom = optData->bounds.vnom;
-  modelica_real vv[nsi][np][nReal];
+  modelica_real *vv = (modelica_real*)malloc(nsi * np * nReal * sizeof(modelica_real));
+  #define VV(i,j,r) vv[(i)*np*nReal + (j)*nReal + (r)]
   FILE *pFile;
   char buffer[4096];
   long double *sdt;
-  modelica_real JJ[nsi][np][nv][nx];
+  modelica_real *JJ = (modelica_real*)malloc(nsi * np * nv * nx * sizeof(modelica_real));
+  #define JJM(a,b,c,d) JJ[(a)*np*nv*nx + (b)*nv*nx + (c)*nx + (d)]
   modelica_boolean **sJ;
   modelica_real tmpJ;
 
   sJ = optData->s.JderCon;
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    free(vopt_shift);
+    free(h);
+    free(vv);
+    free(JJ);
+    return;
+  }
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -170,8 +182,8 @@ void debugeJac(OptData * optData, ipnumber* vopt){
          }
         }
         vopt_shift[jj] += hh;
-        h[k][i][j] = hh;
-        memcpy(vv[i][j] , optData->v[i][j], nReal*sizeof(modelica_real));
+        H(k,i,j) = hh;
+        memcpy(&VV(i,j,0), optData->v[i][j], nReal*sizeof(modelica_real));
       }
      }
 
@@ -182,10 +194,10 @@ void debugeJac(OptData * optData, ipnumber* vopt){
       sdt = optData->bounds.scaldt[i];
       for(j = 0; j < np; ++j){
         for(kk = 0, ii = nx; kk<nx;++kk, ++ii){
-           hh = h[k][i][j];
-           JJ[i][j][kk][k] = (optData->v[i][j][ii] - vv[i][j][ii])*sdt[kk]/hh;
+           hh = H(k,i,j);
+           JJM(i,j,kk,k) = (optData->v[i][j][ii] - VV(i,j,ii))*sdt[kk]/hh;
         }
-        memcpy(optData->v[i][j] , vv[i][j], nReal*sizeof(modelica_real));
+        memcpy(optData->v[i][j], &VV(i,j,0), nReal*sizeof(modelica_real));
       }
      }
    }
@@ -194,6 +206,14 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 #undef DF_STEP
   sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
   pFile = omc_fopen(buffer, "wt");
+  if (!pFile) {
+    fprintf(stderr, "Warning: cannot open %s for writing debug output.\n", buffer);
+    free(vopt_shift);
+    free(h);
+    free(vv);
+    free(JJ);
+    return;
+  }
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -207,7 +227,7 @@ void debugeJac(OptData * optData, ipnumber* vopt){
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData->realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
-          tmpJ = (sJ[k][jj]) ? (JJ[i][j][k][jj]) : 0.0;
+          tmpJ = (sJ[k][jj]) ? (JJM(i,j,k,jj)) : 0.0;
           fprintf(pFile,"%lf;",tmpJ);
         }
         fprintf(pFile,"\n");
@@ -220,6 +240,14 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 
   if(optData->iter_ < 2){
     pFile = omc_fopen("omc_check_jac.py", "wt");
+    if (!pFile) {
+      fprintf(stderr, "Warning: cannot open omc_check_jac.py for writing debug output.\n");
+      free(vopt_shift);
+      free(h);
+      free(vv);
+      free(JJ);
+      return;
+    }
     fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\n\n");
     fprintf(pFile,"  Input i:\n");
     for(j = 0; j < nx; ++j)
@@ -343,6 +371,9 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 
     fclose(pFile);
   }
+
+  free(vopt_shift);
+  free(h);
+  free(vv);
+  free(JJ);
 }
-
-

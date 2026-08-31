@@ -1,33 +1,37 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 
 extern "C" {
 
@@ -121,6 +125,10 @@ static int value_to_type_desc(void *value, type_description *desc)
       }
       data = MMC_CDR(data);
       names = MMC_CDR(names);
+    }
+    if (!listEmpty(names) || !listEmpty(data)) {
+      c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, "Record: field‑/value‑count mismatch", NULL, 0);
+      return -1;
     }
   }; break;
 
@@ -323,7 +331,6 @@ static void *name_to_path(const char *name)
     if (need_replace) {
       tmp = _replace(name, "__", "_");
       ident = mmc_mk_scon(tmp);
-      GC_free(tmp);
     } else {
       /* memcpy(&tmp, &name, sizeof(char *)); */ /* don't try this at home */
       ident = mmc_mk_scon((char*)name);
@@ -337,11 +344,10 @@ static void *name_to_path(const char *name)
     if (need_replace) {
       char *tmp2 = _replace(tmp, "__", "_");
       ident = mmc_mk_scon(tmp2);
-      GC_free(tmp2);
+      GC_free(tmp);
     } else {
       ident = mmc_mk_scon(tmp);
     }
-    GC_free(tmp);
     return Absyn__QUALIFIED(ident, name_to_path(pos + 1));
   }
 }
@@ -469,7 +475,7 @@ static void *value_to_mmc(void* value)
     int i=0;
     void *tmp = names;
     void **data_mmc;
-    struct record_description* desc = (struct record_description*) malloc(sizeof(struct record_description));
+    struct record_description* desc = (struct record_description*) GC_malloc(sizeof(struct record_description));
     if (desc == NULL) {
       fprintf(stderr, "[dynload]: value_to_mmc: malloc failed\n");
       return 0;
@@ -480,8 +486,8 @@ static void *value_to_mmc(void* value)
     /* duplicate string? will this give problems with GC? */
     desc->path = path_to_name(path, '_');
     desc->name = path_to_name(path, '.');
-    desc->fieldNames = (const char**) malloc(i*sizeof(char*));
-    data_mmc = (void**) malloc((i+1)*sizeof(void*));
+    desc->fieldNames = (const char**) GC_malloc(i*sizeof(char*));
+    data_mmc = (void**) GC_malloc((i+1)*sizeof(void*));
     i=0;
     data_mmc[0] = desc;
     while (MMC_GETHDR(names) != MMC_NILHDR) {
@@ -507,7 +513,7 @@ static void *value_to_mmc(void* value)
       data = MMC_CDR(data);
     }
     /* Transform list by first reversing it to preserve the order */
-    return listReverse(tmp);
+    return listReverseInPlace(tmp);
   };
   case Values__META_5fARRAY_3dBOX1: {
     void* data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -516,7 +522,7 @@ static void *value_to_mmc(void* value)
       tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
       data = MMC_CDR(data);
     }
-    return listArray(listReverse(tmp));
+    return listArray(listReverseInPlace(tmp));
   };
   case Values__META_5fTUPLE_3dBOX1: {
     void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -764,7 +770,12 @@ static int parse_array(type_description *desc, void *arrdata, void *dimLst)
     printf("dims: %d\n", (int) dims);
     return -1;
   }
-  dim_size = (_index_t*) malloc(sizeof(_index_t) * dims);
+  dim_size = (_index_t*) GC_malloc_atomic(sizeof(_index_t) * dims);
+  if (!dim_size) {
+      c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error,
+                  "parse_array: out of memory", NULL, 0);
+      return -1;
+  }
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
     desc->data.r_array.ndims = dims;

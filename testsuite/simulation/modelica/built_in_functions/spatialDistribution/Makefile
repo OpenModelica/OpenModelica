@@ -3,13 +3,21 @@ TEST = ../../../rtest -v
 TESTFILES = \
 	initSpatialDistribution.mos \
 	helloSpatialDistribution.mos \
+	singleOutputSpatialDistribution.mos \
 	negativeVelocity.mos \
 	pulseInput.mos \
 	mixedVelocity.mos \
 	bigSteps.mos \
+	nonZeroStartPosition.mos \
+	SpatialDistributionEvent.mos \
 	test1.mos \
 	test2.mos \
 	test3.mos \
+	bigStepEventFallback.mos \
+	doubleReversal.mos \
+	largePositionReversal.mos \
+	rampInput.mos \
+	frozenBranchInitialEvent.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -54,4 +62,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

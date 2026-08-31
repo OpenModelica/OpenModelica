@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -113,6 +110,21 @@ void freeNode(LIST *list, LIST_NODE *node)
 {
   list->freeListNodeData(node->data);
   free(node);
+}
+
+/**
+ * @brief Checks if a list is empty
+ *
+ * @param list    Pointer to list
+ */
+int listEmptyTest(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->first){
+    return 0;
+  }else{
+    return 1;
+  }
 }
 
 /**
@@ -235,7 +247,11 @@ void *listFirstData(LIST *list)
 {
   assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
   assertStreamPrint(NULL, 0 != list->first, "empty list");
-  return list->first->data;
+  if(list->first){
+    return list->first->data;
+  }else{
+    return NULL;
+  }
 }
 
 /**
@@ -272,6 +288,25 @@ LIST_NODE *listPopFrontNode(LIST *list)
 }
 
 /**
+ * @brief Returns node and pops node from list
+ *
+ * @param list      Pointer to list
+ * @param prevNode  Node to remove after. prevNode won't be removed.
+ * @return node     Pointer to node (must be freed by caller)
+ */
+LIST_NODE *listPopNode(LIST *list, LIST_NODE *prevNode)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  assertStreamPrint(NULL, 0 != list->first, "empty list");
+
+  LIST_NODE *node = prevNode->next;
+  LIST_NODE *afterNode = node->next;
+  prevNode->next = afterNode;
+  --(list->length);
+  return node;
+}
+
+/**
  * @brief Removes and frees first node from list
  *
  * @param list    Pointer to list
@@ -288,6 +323,41 @@ void listRemoveFront(LIST *list)
     --(list->length);
     if(!list->first)
       list->last = list->first;
+  }
+}
+
+/**
+ * @brief Removes and frees last node from list
+ *
+ * @param list    Pointer to list
+ */
+void listRemoveBack(LIST *list)
+{
+  assertStreamPrint(NULL, 0 != list, "invalid list-pointer");
+  if(list->last)
+  {
+    // case: one element
+    if (list->first == list->last)
+    {
+      listRemoveFront(list);
+    }
+    // general case: at least two elements -> find second last element
+    else
+    {
+      LIST_NODE *prev = list->first;
+      while (prev->next != list->last)
+      {
+        prev = prev->next;
+      }
+      LIST_NODE *delNode = list->last;
+
+      prev->next = NULL;
+      list->last = prev;
+      --(list->length);
+
+      freeNode(list, delNode);
+    }
+
   }
 }
 

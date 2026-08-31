@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${CVodeName})
 
@@ -14,7 +14,9 @@ message(STATUS "${SUNDIALS_LIBRARIES}")
 target_link_libraries(${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${CVodeName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${CVodeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${CVodeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

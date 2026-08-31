@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -157,7 +161,7 @@ algorithm
   else
     if not Type.isResizable(ty) then
       ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), AbsynUtil.dummyInfo);
+        Type.arrayElementType(ty), Absyn.dummyInfo);
     else
       ty := ty2;
     end if;
@@ -249,12 +253,13 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
-    case "cat"
-      algorithm
-        // ToDo: prevent this for NB
+    case "cat" algorithm
+      if(not Flags.getConfigBool(Flags.NEW_BACKEND) or List.all(args, Expression.isLiteral)) then
         exp := ExpandExp.expandBuiltinCat(args, call, false);
-      then
-        exp;
+      else
+        exp := simplifyCat(args, call);
+      end if;
+    then exp;
 
     case "pre" then match args
       case {exp as Expression.BOOLEAN()} then exp;
@@ -281,6 +286,26 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifyCat
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+protected
+  list<Expression> nonempty_args = list(arg for arg guard(not Expression.sizeZero(arg)) in args);
+algorithm
+  // first argument is always the dimension to concatenate over
+  if listLength(nonempty_args) == 2 then
+    // if there are two nonempty arguments, take the second as the other does not matter
+    {_, exp} := nonempty_args;
+  elseif listLength(nonempty_args) == 1 then
+    // if there is only one nonempty argument, its the dimension, so return any of the empty arguments (first one here)
+    _ :: exp :: _ := args;
+  else
+    // do nothing, just return original call without the empty arguments
+    exp := Expression.CALL(Call.setArguments(call, nonempty_args));
+  end if;
+end simplifyCat;
 
 function simplifySemiLinear
   input list<Expression> args;
@@ -359,7 +384,14 @@ function simplifyInStreamDiv
 protected
   Expression stream_exp, fallback;
 algorithm
-  {stream_exp, fallback} := args;
+  if listLength(args) == 2 then
+    {stream_exp, fallback} := args;
+  else
+    Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because inStreamDiv needs to have exactly two arguments:\n  "
+      + List.toString(args, Expression.toString)});
+    fail();
+  end if;
+
   if Expression.isNaN(stream_exp) then
     // inStreamDiv(0/0, fallback) = fallback
     exp := fallback;
@@ -385,12 +417,14 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
-      guard "$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
+      Expression arg;
+      list<Expression> rest;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::rest))
+      guard("$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn)))
       algorithm
-        res := simplify(Expression.map(listHead(call.arguments), removePositiveMax), true);
-      then simplifyInStreamDiv(res :: listRest(call.arguments), call, true);
+        arg := simplify(Expression.map(arg, removePositiveMax), true);
+      then simplifyInStreamDiv(arg :: rest, call, true);
     else exp;
   end match;
 end removeInStreamDiv;
@@ -401,15 +435,16 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
+      Expression res, arg;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
       guard "$OMC$PositiveMax" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
       algorithm
         // positiveMax(flow_exp, eps) = max(flow_exp, eps) in the general case
         res := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.MAX_REAL,
           args        = call.arguments,
-          variability = Expression.variability(listHead(call.arguments)),
+          variability = Expression.variability(arg),
           purity      = NFPrefixes.Purity.PURE
         ));
       then res;
@@ -473,7 +508,7 @@ algorithm
       algorithm
         Call.TYPED_CALL(fn = fn, ty = ty, var = var, purity = purity) := call;
       then
-        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, AbsynUtil.dummyInfo));
+        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, Absyn.dummyInfo));
 
     else Expression.CALL(call);
   end match;
@@ -599,7 +634,7 @@ algorithm
   Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
-  outExp := matchcontinue (iters)
+  outExp := matchcontinue iters
     case {(iter, e)}
       algorithm
         Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
@@ -714,7 +749,6 @@ function simplifyReduction2
 protected
   InstNode iter;
   Expression range, default_exp;
-  Boolean expanded = true;
   list<tuple<InstNode, Expression>> iters = {};
   Type ty;
   Operator op;
@@ -791,7 +825,7 @@ algorithm
       list<Expression> arguments, inv_arguments, const_args, inv_const_args;
       Expression new_const, tmp, result;
       Operator.MathClassification mcl;
-      Boolean useConst, isNegative;
+      Boolean neutralConst, isNegative;
 
     // empty multary with addition -> 0
     case Expression.MULTARY(arguments = {}, inv_arguments = {}, operator = operator)
@@ -822,46 +856,42 @@ algorithm
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
-        new_const := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
+        (new_const, neutralConst) := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
       elseif mcl == NFOperator.MathClassification.MULTIPLICATION then
-        new_const := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
+        (new_const, neutralConst) := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
       else
-        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+        Error.terminate(getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
           "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
           "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const_args), ", "),
           sourceInfo());
+        fail();
       end if;
 
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
 
-      // return combined multary expression and check for trivial replacements
-
-      // check if the constant is used
-      useConst := match mcl
-        case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const)) then false;
-        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isOne(new_const)) then false;
-        else true;
-      end match;
-
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
+        case (NFOperator.MathClassification.ADDITION, {}, {})
+        then if Expression.isEmpty(new_const) then Expression.makeZero(Expression.typeOf(new_const)) else new_const;
+
         // const * {} / {} = const
-        case (_, {}, {}) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, {}, {})
+        then if Expression.isEmpty(new_const) then Expression.makeOne(Expression.typeOf(new_const)) else new_const;
 
         // 0 + {cr} - {} = cr
         // 1 * {cr} / {} = cr
-        case (_, {tmp}, {}) guard(not useConst) then tmp;
+        case (_, {tmp}, {}) guard(neutralConst) then tmp;
 
         // 0 + {} - {cr} = - cr
-        case (NFOperator.MathClassification.ADDITION, {}, {tmp}) guard(not useConst)
+        case (NFOperator.MathClassification.ADDITION, {}, {tmp}) guard(neutralConst)
         then Expression.negate(tmp);
 
         // 0 * {...} / {...} = 0
         case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
 
         else Expression.MULTARY(
-            arguments     = if useConst then new_const :: arguments else arguments,
+            arguments     = if neutralConst then arguments else new_const :: arguments,
             inv_arguments = inv_arguments,
             operator      = operator
           );
@@ -884,7 +914,7 @@ function simplifyMultarySigns
   output list<Expression> new_inv_arguments = {};
   output Boolean isNegative = false; // only relevant for multiplication
 algorithm
-  _ := match mcl
+  () := match mcl
     case NFOperator.MathClassification.ADDITION algorithm
       // check if arguments are negative
       // negate them and swap them to the other list
@@ -1115,7 +1145,7 @@ function simplifyBinaryEW
 algorithm
   outExp := Expression.makeArray(Operator.typeOf(op),
     Array.threadMap(Expression.arrayElements(exp1), Expression.arrayElements(exp2),
-                    function simplifyBinaryOp(op = Operator.unlift(op))));
+                    function simplifyBinaryOp(op = Operator.stripEW(Operator.unlift(op)))));
 end simplifyBinaryEW;
 
 function simplifyUnary
@@ -1188,7 +1218,6 @@ function simplifyLogicBinaryAnd
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1221,7 +1250,6 @@ function simplifyLogicBinaryOr
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1316,6 +1344,9 @@ algorithm
           Expression.BOOLEAN(value = tb_val) := tb;
           ifExp := if tb_val then cond else Expression.logicNegate(cond);
         else
+          ty := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, Expression.typeOf(tb), Expression.typeOf(fb)) else
+            Expression.typeOf(tb);
           ifExp := Expression.IF(ty, cond, tb, fb);
         end if;
       then
@@ -1360,7 +1391,7 @@ algorithm
   subscriptedExp := simplify(e);
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
-  if not split and not List.all(subs, Subscript.isLiteral) then
+  if not split and not List.all(subs, Subscript.isLiteral) and Type.isScalar(ty) then
     // Select the first element as long as the subscripted expression is an
     // array where all elements are equal, unless all the subscripts are literal
     // in which case it's cheaper to just apply them.
@@ -1463,7 +1494,7 @@ algorithm
     then res;
 
     else algorithm
-      Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+      Error.terminate(getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
        "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const), ", ") +
        "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const), ", "),
        sourceInfo());
@@ -1480,6 +1511,7 @@ algorithm
     value := Expression.realValue(Ceval.evalExp(exp));
   else
     Error.addInternalError(getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
+    fail();
   end try;
 end getConstantValue;
 
@@ -1617,9 +1649,6 @@ algorithm
   result := match (optOperator, exp)
     local
       Operator op;
-      list<Expression> tmp, tmp_inv;
-      list<Expression> final_stack = {};
-      list<Expression> final_inverse_stack = {};
       Expression new_exp;
       ComponentRef cref;
       Call call;
@@ -1716,7 +1745,7 @@ algorithm
     case (_, Expression.RANGE()) algorithm
       exp.start := combineBinariesExp(exp.start);
       exp.stop := combineBinariesExp(exp.stop);
-      if Util.isSome(exp.step) then
+      if isSome(exp.step) then
         exp.step := SOME(combineBinariesExp(Util.getOption(exp.step)));
       end if;
     then addArgument(result, exp, inverse);
@@ -1736,7 +1765,7 @@ algorithm
 
     case (_, Expression.SIZE()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-      if Util.isSome(exp.dimIndex) then
+      if isSome(exp.dimIndex) then
         exp.dimIndex := SOME(combineBinariesExp(Util.getOption(exp.dimIndex)));
       end if;
     then addArgument(result, exp, inverse);
@@ -1890,5 +1919,5 @@ algorithm
   end if;
 end simplifyURIToFilename;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSimplifyExp;

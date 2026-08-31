@@ -70,7 +70,9 @@ unloadOMSimulator();
 // true
 // ""
 // "reset.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.0

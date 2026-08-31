@@ -1,15 +1,22 @@
 // name:     Modelica.Electrical.Analog.Examples.ChuaCircuit
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
 //
+// Chua's circuit is chaotic, so its trajectory over the model's 5e4 s is not
+// reproducible and cannot be verified against a reference. The Modelica
+// Association result for this model leaves the reference file here at t = 6307
+// (C2.v), 6882 (L.i) and 7386 (C1.v), far outside the 1% tube, and by the stop
+// time the two are unrelated. Testing a chaotic system wants an invariant of
+// the attractor rather than a trajectory, which the model testing script has no
+// way to express.
+//
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 diffAlgorithm := OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.ChuaCircuit);
 compareVars :=
@@ -25,7 +32,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults
 // Modelica.Electrical.Analog.Examples.ChuaCircuit
 // {"L.i", "C1.v", "C2.v"}
@@ -34,7 +41,6 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Files Equal!
 // "true
 // "
 // ""

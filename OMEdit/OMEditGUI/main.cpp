@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -38,24 +43,56 @@
  */
 
 #include "OMEditApplication.h"
-#include "CrashReport/CrashReportDialog.h"
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 
+#ifdef OMC_RUST_ABI
+// Drive the Rust omc port (libOpenModelicaCompiler.so) in-process: a
+// self-contained replacement for the MMC value/runtime ABI (no Boehm GC). See
+// omc_rust_embedding.h; provides MMC_INIT/MMC_TRY_TOP/threadData.
+#include "omc_rust_embedding.h"
+#else
 extern "C" {
-#include "meta/meta_modelica.h"
+#include "meta/meta_modelica_data.h"
 }
+#endif
 
-#include <QMessageBox>
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 #ifdef QT_NO_DEBUG
+#include <QMutex>
 
-#if defined(_WIN32)
+static QMutex mutex;
+void messageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
+{
+  Q_UNUSED(ctx);
+  QMutexLocker lock(&mutex);
 
+  QString line;
+  switch (type) {
+    case QtDebugMsg:    line = QStringLiteral("[QtDebug]  ") + msg; break;
+    case QtInfoMsg:     line = QStringLiteral("[QtInfo] ") + msg; break;
+    case QtWarningMsg:  line = QStringLiteral("[QtWarning] ") + msg; break;
+    case QtCriticalMsg: line = QStringLiteral("[QtCritical] ") + msg; break;
+    case QtFatalMsg:    line = QStringLiteral("[QtFatal]") + msg; break;
+  }
+
+  FILE *out = (type == QtDebugMsg || type == QtInfoMsg) ? stdout : stderr;
+  fprintf(out, "%s\n", qPrintable(line));
+}
+
+#include "CrashReport/CrashReportDialog.h"
+
+#ifdef Q_OS_WIN
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
 LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
 {
+#if defined(__MINGW32__) // symbolised backtrace via bfd; MinGW only (no bfd under MSVC)
   if (g_output == NULL) {
     g_output = (char*) malloc(BUFFER_MAX);
   }
@@ -70,6 +107,9 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
     release_set(set);
     SymCleanup(GetCurrentProcess());
   }
+#else // MSVC/clang-cl: no bfd, report without a symbolised stack trace
+  (void)info;
+#endif
   // show the CrashReportDialog
   CrashReportDialog *pCrashReportDialog = new CrashReportDialog(QString(g_output));
   pCrashReportDialog->exec();
@@ -77,7 +117,15 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-#else // Unix
+#elif defined(__EMSCRIPTEN__) || (defined(__linux__) && !defined(__GLIBC__)) // wasm, and musl libc (e.g. Alpine): no execinfo/backtrace, no addr2line subprocess
+
+#include <signal.h>
+void signalHandler(int signalNumber)
+{
+  exit(signalNumber);
+}
+
+#else // Unix with execinfo.h (glibc, macOS, FreeBSD, ...)
 
 #include <signal.h>
 #include <execinfo.h>
@@ -132,16 +180,29 @@ void signalHandler(int signalNumber)
   pCrashReportDialog->exec();
   exit(signalNumber);
 }
-#endif // #if defined(_WIN32)
+#endif // #ifdef Q_OS_WIN
 
 #endif // #ifdef QT_NO_DEBUG
 
 void printOMEditUsage()
 {
-  printf("Usage: OMEdit --Debug=true|false] [files]\n");
-  printf("    --Debug=[true|false]            Enables the debugging features like QUndoView, diffModelicaFileListings view. Default is false.\n");
-  printf("    --NAPIProfiling=[true|false]    Enables the profiling of new json based api.\n");
-  printf("    files                       List of Modelica files(*.mo) to open.\n");
+  fprintf(stderr, "Usage:\n");
+  fprintf(stderr, "  OMEdit [options] [files]\n\n");
+
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "  --Debug=[true|false]          Enable debugging features such as\n");
+  fprintf(stderr, "                                QUndoView and diffModelicaFileListings.\n");
+  fprintf(stderr, "                                Default: false.\n\n");
+
+  fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
+  fprintf(stderr, "                                Default: false.\n\n");
+
+  fprintf(stderr, "  --StyleSheet=<file>           Load an additional Qt stylesheet after\n");
+  fprintf(stderr, "                                OMEdit's default stylesheet.\n\n");
+
+  fprintf(stderr, "  --paths                       Prints the Qt paths.\n\n");
+
+  fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
 }
 
 static int execution_failed()
@@ -154,21 +215,43 @@ static int execution_failed()
 
 int main(int argc, char *argv[])
 {
-  MMC_INIT();
-  MMC_TRY_TOP()
+#ifdef Q_OS_WIN
+  /// Re-attach to the parent console (the cmd.exe that launched us)
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+#endif // #ifdef Q_OS_WIN
+#ifdef QT_NO_DEBUG
+  // install the message handler before creating the application object so that we can catch all messages
+  qInstallMessageHandler(messageHandler);
+#endif // #ifdef QT_NO_DEBUG
   // if user asks for --help
-  for(int i = 1; i < argc; i++) {
+  for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--help") == 0) {
       printOMEditUsage();
       return 0;
     }
   }
+  MMC_INIT();
+  MMC_TRY_TOP()
   Q_INIT_RESOURCE(resource_omedit);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
+#ifdef Q_OS_WIN
+  // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
+  qputenv("QSG_RHI_BACKEND", "opengl");
+#endif // #ifdef Q_OS_WIN
+#ifdef Q_OS_LINUX
+  qputenv("EGL_LOG_LEVEL", "fatal");
+#endif // #ifdef Q_OS_LINUX
+  // Qt WebEngine (DocumentationWidget) needs shared OpenGL contexts; must be set
+  // before the QApplication. Without it WebEngine logs "Using Shared GL: no" and
+  // crashes during GL init on Windows.
+  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   OMEditApplication a(argc, argv, threadData);
-
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
 // moved the setting of the handler *after* OMEditApplication application definition
@@ -188,6 +271,12 @@ int main(int argc, char *argv[])
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG
 
+#if defined(__EMSCRIPTEN__)
+  // From here on omc bridge calls must wait via a nested QEventLoop, not a raw
+  // Asyncify suspend (which corrupts Qt's wasm event pump mid-event). See OMCProxy.
+  extern bool g_omcMainLoopRunning;
+  g_omcMainLoopRunning = true;
+#endif
   return a.exec();
 
   MMC_CATCH_TOP(return execution_failed());

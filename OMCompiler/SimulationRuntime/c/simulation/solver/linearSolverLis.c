@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -38,7 +35,6 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
-#include "util/parallel_helper.h"
 #include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
@@ -123,11 +119,11 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
   for(i=0; i<n; i++)
   {
     char *buffer = (char*)malloc(sizeof(char)*A->ptr[i+1]*50);
-    buffer[0] = 0;
-    sprintf(buffer, "column %d: ", i);
+    char *p = buffer;
+    p += sprintf(p, "column %d: ", i);
     for(j = A->ptr[i]; j < A->ptr[i+1]; j++)
     {
-       sprintf(buffer, "%s(%d,%g) ", buffer, A->index[j], A->value[j]);
+       p += sprintf(p, "(%d,%g) ", A->index[j], A->value[j]);
     }
     infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     free(buffer);
@@ -149,8 +145,8 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
 void getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
   int i,j,l,nth;
-  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* evaluate constant equations of Jacobian */
@@ -203,7 +199,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LIS* solverData = (DATA_LIS*)systemData->parDynamicData[omc_get_thread_num()].solverData[0];
+  DATA_LIS* solverData = (DATA_LIS*)systemData->solverData[0];
 
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
@@ -244,11 +240,11 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_lis(solverData->work, systemData->parDynamicData[omc_get_thread_num()].b, &resUserData, sysNumber);
+    wrapper_fvec_lis(solverData->work, systemData->b, &resUserData, sysNumber);
 
 	/* set b vector */
     for(i=0; i<n; i++) {
-      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->parDynamicData[omc_get_thread_num()].b[i], solverData->b);
+      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
     }
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
@@ -277,8 +273,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     infoStreamPrint(OMC_LOG_LS_V, 1, "b vector [%d]", n);
     for(i=0; i<n; i++)
     {
-      buffer[0] = 0;
-      sprintf(buffer, "%s%20.12g ", buffer, solverData->b->value[i]);
+      sprintf(buffer, "%20.12g ", solverData->b->value[i]);
       infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     }
     messageClose(OMC_LOG_LS_V);

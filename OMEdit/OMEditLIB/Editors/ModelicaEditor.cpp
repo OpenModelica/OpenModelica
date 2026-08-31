@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -40,6 +45,7 @@
 #include "Options/OptionsDialog.h"
 #include "Debugger/Breakpoints/BreakpointMarker.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Options/NotificationsDialog.h"
 
 #include <QCompleter>
@@ -60,12 +66,14 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
+#if !defined(__EMSCRIPTEN__)
   /* set the document marker */
   if (isModelicaModelInPackageOneFile()) {
     mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document(), mpModelWidget->getLibraryTreeItem()->mClassInformation.lineNumberStart);
   } else {
     mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   }
+#endif
 }
 
 /*!
@@ -460,26 +468,52 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
                                                                             MainWindow::instance());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
                                                          .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER))
-                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY))
+                                                         .append("<br /><br />")
+                                                         .append(tr("You can save to file with errors, it will reopen class in text mode.")));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
-        pNotificationsDialog->getOkButton()->setAutoDefault(false);
         pNotificationsDialog->getCancelButton()->setText(Helper::fixErrorsManually);
         pNotificationsDialog->getCancelButton()->setAutoDefault(true);
+        pNotificationsDialog->getSaveWithErrorsButton()->setText(Helper::saveWithErrors);
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getOkButton());
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getCancelButton());
+        pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getSaveWithErrorsButton());
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getCancelButton(), QDialogButtonBox::ActionRole);
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getOkButton(), QDialogButtonBox::ActionRole);
+        pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getSaveWithErrorsButton(), QDialogButtonBox::ActionRole);
         // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
         mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
         answer = pNotificationsDialog->exec();
       }
       switch (answer) {
-        case QMessageBox::RejectRole:
+        case 2: { // save with errors
+            // for package saved in one file update the containing package text
+            LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+            LibraryTreeItem *pContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(*pLibraryTreeItem);
+            if (pContainingLibraryTreeItem && pContainingLibraryTreeItem != *pLibraryTreeItem) {
+              const QString stringToLoad = (*pLibraryTreeItem)->getClassTextBefore() + StringHandler::trimmedEnd(getPlainText()) + "\n" + (*pLibraryTreeItem)->getClassTextAfter();
+              pContainingLibraryTreeItem->setClassText(stringToLoad);
+              pContainingLibraryTreeItem->setIsSaved(false);
+            }
+            // save and reload
+            LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
+            if (pTopLevelLibraryTreeItem) {
+              if (MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true)) {
+                pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+                setTextChanged(false);
+                return false;
+              }
+            }
+            setTextChanged(true);
+            return false;
+          }
+        case QMessageBox::RejectRole: // revert to last correct version
           setTextChanged(false);
           // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
-        case QMessageBox::AcceptRole:
+        case QMessageBox::AcceptRole: // fix errors manually
+          return false;
         default:
           setTextChanged(true);
           return false;
@@ -615,6 +649,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
      */
     OptionsDialog::instance()->emitModelicaEditorSettingsChanged();
     mpPlainTextEdit->foldAll();
+    NavigationManager::instance()->clearNavigationHistory(mpPlainTextEdit);
   }
 }
 
@@ -641,6 +676,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
         contentsChanged();
         setTextChanged(true);
       }
+#if !defined(__EMSCRIPTEN__)
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {
         mpDocumentMarker->updateBreakpointsLineNumber();
@@ -656,6 +692,7 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
           mpDocumentMarker->updateBreakpointsBlock(posBlock);
         }
       }
+#endif
     }
   }
 }
@@ -683,10 +720,7 @@ ModelicaHighlighter::ModelicaHighlighter(ModelicaEditorPage *pModelicaEditorPage
 //! Initialized the syntax highlighter with default values.
 void ModelicaHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK

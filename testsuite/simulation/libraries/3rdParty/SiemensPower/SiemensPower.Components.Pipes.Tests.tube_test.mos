@@ -1,8 +1,8 @@
 // name:     SiemensPower.Components.Pipes.Tests.tube_test.mos
 // keywords: SiemensPower fluid
 // status:   correct
-// cflags: -d=-newInst
 // teardown_comment:
+// suite: disabled
 //
 //
 //

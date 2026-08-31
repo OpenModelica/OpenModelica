@@ -1,4 +1,4 @@
-// name: NonScalarizedWithRecords1
+// name: NonScalarizedWithoutRecords1
 // status: correct
 
 model M
@@ -61,36 +61,36 @@ end NonScalarizedWithoutRecords1;
 //   record 'R1'
 //     Real 'x';
 //     Real 'y';
-//     Real[3] 'z';
+//     Real 'z'[3];
 //   end 'R1';
 //
 //   record 'R2'
 //     'R1' 'r';
-//     'R1'[3] 'ra';
+//     'R1' 'ra'[3];
 //     Real 'w';
 //   end 'R2';
 //
 //   record 'm.R1'
 //     Real 'x';
 //     Real 'y';
-//     Real[3] 'z';
+//     Real 'z'[3];
 //   end 'm.R1';
 //
 //   record 'm.R2'
 //     'm.R1' 'r';
-//     'm.R1'[3] 'ra';
+//     'm.R1' 'ra'[3];
 //     Real 'w';
 //   end 'm.R2';
 //
 //   record 'ma.R1'
 //     Real 'x';
 //     Real 'y';
-//     Real[3] 'z';
+//     Real 'z'[3];
 //   end 'ma.R1';
 //
 //   record 'ma.R2'
 //     'ma.R1' 'r';
-//     'ma.R1'[3] 'ra';
+//     'ma.R1' 'ra'[3];
 //     Real 'w';
 //   end 'ma.R2';
 //
@@ -98,21 +98,21 @@ end NonScalarizedWithoutRecords1;
 //     constant 'R1' 'cr1' = 'R1'(0.0, 0.0, {0.0, 0.0, 0.0});
 //     constant 'R2' 'cr2' = 'R2'('R1'(0.0, 0.0, {0.0, 0.0, 0.0}), {'R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 'R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 'R1'(0.0, 0.0, {0.0, 0.0, 0.0})}, 0.0);
 //     'R1' 'r1';
-//     'R1'[3] 'ra1';
+//     'R1' 'ra1'[3];
 //     'R2' 'r2';
-//     'R2'[3] 'ra2';
+//     'R2' 'ra2'[3];
 //     constant 'm.R1' 'm.cr1' = 'm.R1'(0.0, 0.0, {0.0, 0.0, 0.0});
 //     constant 'm.R2' 'm.cr2' = 'm.R2'('m.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), {'m.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 'm.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 'm.R1'(0.0, 0.0, {0.0, 0.0, 0.0})}, 0.0);
 //     'm.R1' 'm.r1';
-//     'm.R1'[3] 'm.ra1';
+//     'm.R1' 'm.ra1'[3];
 //     'm.R2' 'm.r2';
-//     'm.R2'[3] 'm.ra2';
-//     constant 'ma.R1'[3] 'ma.cr1' = fill('ma.R1'(0.0, 0.0, fill(0.0, 3)), 3);
-//     constant 'ma.R2'[3] 'ma.cr2' = {'ma.R2'('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), fill('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 3), 0.0) for '$ma1' in 1:3};
-//     'ma.R1'[3] 'ma.r1';
-//     'ma.R1'[3, 3] 'ma.ra1';
-//     'ma.R2'[3] 'ma.r2';
-//     'ma.R2'[3, 3] 'ma.ra2';
+//     'm.R2' 'm.ra2'[3];
+//     constant 'ma.R1' 'ma.cr1'[3] = fill('ma.R1'(0.0, 0.0, fill(0.0, 3)), 3);
+//     constant 'ma.R2' 'ma.cr2'[3] = {'ma.R2'('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), fill('ma.R1'(0.0, 0.0, {0.0, 0.0, 0.0}), 3), 0.0) for '$ma1' in 1:3};
+//     'ma.R1' 'ma.r1'[3];
+//     'ma.R1' 'ma.ra1'[3, 3];
+//     'ma.R2' 'ma.r2'[3];
+//     'ma.R2' 'ma.ra2'[3, 3];
 //   equation
 //     'm.r1' = 'm.R1'(0.0, 0.0, {0.0, 0.0, 0.0});
 //     'm.r1.x' = 0.0;

@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 interface package ExpressionDumpTV
 
 package Tpl
@@ -36,12 +71,14 @@ package Absyn
 
 end Absyn;
 
-package ClassInf
+package ClassInfUtil
   function getStateName
-    input State inState;
+    input ClassInf.State inState;
     output Absyn.Path outPath;
   end getStateName;
+end ClassInfUtil;
 
+package ClassInf
   uniontype State
     record UNKNOWN
       Absyn.Path path;
@@ -333,7 +370,7 @@ package DAE
 
     record ASUB
       Exp exp;
-      list<Exp> sub;
+      list<Subscript> sub;
     end ASUB;
 
     record TSUB
@@ -819,14 +856,14 @@ package Dump
   end printCodeStr;
 end Dump;
 
-package Expression
+package ExpressionBasics
   function shouldParenthesize
     input DAE.Exp inOperand;
     input DAE.Exp inOperator;
     input Boolean inLhs;
     output Boolean outShouldParenthesize;
   end shouldParenthesize;
-end Expression;
+end ExpressionBasics;
 
 package System
   function escapedString
@@ -842,12 +879,12 @@ package Config
   end typeinfo;
 end Config;
 
-package Types
+package TypesDump
   function unparseType
     input DAE.Type ty;
     output String str;
   end unparseType;
-end Types;
+end TypesDump;
 
 package Flags
   uniontype ConfigFlag end ConfigFlag;

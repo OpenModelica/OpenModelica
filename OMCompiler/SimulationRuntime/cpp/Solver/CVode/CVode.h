@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 /** @defgroup solverCvode Solver.CVode
  *  CVode class wrapper from sundials package
  *  @{
@@ -8,6 +35,8 @@
 
 #include <Core/Solver/SolverDefaultImplementation.h>
 
+#include <sundials/sundials_context.h>
+#include <sundials/sundials_logger.h>
 #include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -27,9 +56,7 @@
 // BDF-Verfahren für steife und nicht-steife ODEs
 // Dokumentation siehe offizielle Cvode Doku
 
-/*****************************************************************************
-Copyright (c) 2004, Bosch Rexroth AG, All rights reserved
-*****************************************************************************/
+
 class Cvode
   : public ISolver,  public SolverDefaultImplementation
 {
@@ -104,8 +131,8 @@ private:
   static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
 
   // Functions for Coloured Jacobian
-  static int CV_JCallback(long int N, realtype t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
-  int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, DlsMat Jac);
+  static int CV_JCallback(long int N, sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
+  int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, SUNMatrix Jac);
   void initializeColoredJac();
 
   ISolverSettings
@@ -168,6 +195,9 @@ double
 
   SUNMatrix
     _CV_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
+
+  /* SUNDIALS simulation context. Owned by this solver instance. */
+  SUNContext _sunctx;
 
 
   // Variables for Coloured Jacobians

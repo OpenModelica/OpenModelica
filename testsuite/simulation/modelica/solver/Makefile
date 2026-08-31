@@ -4,6 +4,7 @@ TESTFILES = \
 bug2231-radau1.mos \
 LotkaVolterraWithInput.mos \
 problem1-dasslsteps.mos \
+problem1-gbodeInternal.mos \
 problem1-impeuler.mos \
 problem1-trapezoid.mos \
 problem1-imprk.mos \
@@ -40,6 +41,7 @@ problem6-cvode.mos \
 problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
+Ticket15649.mos
 
 # run only symSolver tests
 SYMSOLVER = \
@@ -71,6 +73,7 @@ DEPENDENCIES = \
 *.mos \
 Makefile \
 gbode \
+result_Ticket15649.LotkaVolterra.mat \
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
@@ -106,7 +109,7 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 symSolver:
 	@echo

@@ -25,12 +25,15 @@ FuncDer.mos  \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
+FunctionPointer.mos \
 FunctionTupleRecord.mos \
 Interpolation.mos \
 InverseAlgorithm1.mos \
 InverseAlgorithm2.mos \
 InverseAlgorithm3.mos \
 InverseAlgorithm4.mos \
+Issue16192.mos \
+Issue16198.mos \
 LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
 SimplePeriodicSampler.mos \
@@ -92,4 +95,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

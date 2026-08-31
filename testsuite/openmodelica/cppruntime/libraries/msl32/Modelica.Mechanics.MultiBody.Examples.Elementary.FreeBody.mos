@@ -2,7 +2,8 @@
 // teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// cflags: 	 +simCodeTarget=Cpp
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library

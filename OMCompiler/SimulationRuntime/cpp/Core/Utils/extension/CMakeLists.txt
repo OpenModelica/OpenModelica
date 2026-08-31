@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ExtensionUtilitiesName})
 
@@ -12,7 +12,9 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${ExtensionUtilitiesName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${ExtensionUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
@@ -23,27 +25,6 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/Core/Utils/extension/barriers.hpp
   ${CMAKE_SOURCE_DIR}/Core/Utils/extension/logger.hpp
   DESTINATION include/omc/cpp/Core/Utils/extension)
-
-#install (FILES  ${CMAKE_SOURCE_DIR}/Core/Utils/numeric/utils.h
-#         DESTINATION include/omc/cpp/Core/Utils/numeric)
-#install (FILES  ${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas.hpp
-#         DESTINATION include/omc/cpp/Core/Utils/numeric/bindings)
-#install (FILES  ${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas.hpp
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/banded.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/hermitian.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/matrix.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/matrix_expression.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/matrix_proxy.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/matrix_sparse.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/scalar_vector.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/storage.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/symmetric.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/triangular.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/vector.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/vector_expression.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/vector_proxy.hpp>
-#				${CMAKE_SOURCE_DIR}/Core/Utils/numeric/bindings/ublas/vector_sparse.hpp>
- #        DESTINATION include/omc/cpp/Core/Utils/numeric/bindings/ublas)
 
 if(PAPI_FOUND)
   add_library("${ExtensionUtilitiesName}_papi" SHARED measure_time_papi.cpp)

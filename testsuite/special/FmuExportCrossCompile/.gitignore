@@ -23,3 +23,7 @@ WaterTank_Control
 WaterTank_TestSingleWaterTank
 WaterTank.Control
 WaterTank.TestSingleWaterTank
+ExtLib/Resources/Library/
+# The *.c / *.h rules above are for generated FMU sources, keep the external library
+!ExtLib/Resources/C-Sources/*.c
+!ExtLib/Resources/Include/*.h

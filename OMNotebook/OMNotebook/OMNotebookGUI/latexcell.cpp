@@ -1,35 +1,40 @@
-#define QT_NO_DEBUG_OUTPUT
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
+
+#define QT_NO_DEBUG_OUTPUT
+
 
 /*!
 * \file LatexCell.cpp
@@ -146,6 +151,8 @@ namespace IAEX {
     {
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -167,6 +174,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       QTextCursor tc(textCursor());
@@ -214,10 +222,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -255,21 +262,6 @@ namespace IAEX {
 
     createLatexCell();
     createOutputCell();
-
-    imageFile=0;
-  }
-
-  /*!
-  *
-  * \brief The class destructor
-  */
-  LatexCell::~LatexCell()
-  {
-    delete input_;
-    delete output_;
-    if(imageFile) {
-      delete imageFile;
-    }
   }
 
   void LatexCell::addToHighlighter()
@@ -421,6 +413,11 @@ namespace IAEX {
     return input_->toHtml();
   }
 
+  QTextDocument* LatexCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
   * \brief Return the text inside the output part of the cell
   * as plain text
@@ -463,6 +460,25 @@ namespace IAEX {
     return input_;
   }
 
+  bool LatexCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    return input_->find(exp, options);
+  }
+
+  void LatexCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+  }
+
+  void LatexCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
+  }
+
   /*!
   * \brief Return the output texteditor
   * \return Texteditor for the output part of the LatexCell
@@ -470,6 +486,33 @@ namespace IAEX {
   QTextEdit* LatexCell::textEditOutput()
   {
     return output_;
+  }
+
+  void LatexCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->cut();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void LatexCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void LatexCell::pasteText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->paste();
+    } else {
+      input_->paste();
+    }
   }
 
   /*!
@@ -659,7 +702,7 @@ namespace IAEX {
   * \param readonly The boolean value of readonly property
      clear text selection in chapter counter
   */
-  void LatexCell::setReadOnly(const bool readonly)
+  void LatexCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -691,7 +734,7 @@ namespace IAEX {
   * \brief Set evaluated value on the texteditor
   * \param evaluated The boolean value of evaluated property
   */
-  void LatexCell::setEvaluated(const bool evaluated)
+  void LatexCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -701,18 +744,15 @@ namespace IAEX {
   * \brief Set if the output part of the cell shoud be
   * closed(hidden) or not.
   */
-  void LatexCell::setClosed(const bool closed, bool update)
+  void LatexCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -720,14 +760,14 @@ namespace IAEX {
   }
 
 
-  void LatexCell::setFocus(const bool focus)
+  void LatexCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
   }
 
 
-  void LatexCell::setFocusOutput(const bool focus)
+  void LatexCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -783,7 +823,7 @@ namespace IAEX {
   *
   * \return State of LatexCell (closed or not)
   */
-  bool LatexCell::isClosed()
+  bool LatexCell::isClosed() const
   {
     return closed_;
   }
@@ -796,7 +836,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool LatexCell::isEditable()
+  bool LatexCell::isEditable() const
   {
     return false;
   }
@@ -873,14 +913,15 @@ void LatexCell::eval(bool silent)
     setState(Eval_l);
     input_->setReadOnly(true);
     bool setdvi=false;
-    bool setpng=false;
     bool setpage=false;
     evaluated_ = true;
     QString tempdir=OmcInteractiveEnvironment::TmpPath();
     QTemporaryFile tfile;
-    tfile.open();
-    QString uniquefilename= tfile.fileName().section("/",-1,-1);
-    tfile.close();
+    QString uniquefilename;
+    if (tfile.open()) {
+      uniquefilename= tfile.fileName().section("/",-1,-1);
+      tfile.close();
+    }
     //qDebug()<<"checktempdir"<<tempdir1;
     QString tempfname = tempdir + "/latexfile" + uniquefilename;
 
@@ -898,11 +939,20 @@ void LatexCell::eval(bool silent)
             expr.append("\\end{document}");
         }
         QFile file(Tex);
-        file.open(QIODevice::WriteOnly);
-        QTextStream stream(&file);
-        stream <<expr;
-        file.close();
+        if (file.open(QIODevice::WriteOnly)) {
+          QTextStream stream(&file);
+          stream <<expr;
+          file.close();
+        } else {
+          if (!silent) {
+            input_->clear();
+            input_->textCursor().insertText(tr("Error: unable to write to %1").arg(Tex));
+            setClosed(false);
+            setState(Error_l);
+          }
+        }
 
+#ifndef __EMSCRIPTEN__
         QProcess *process = new QProcess(this);
         process->setWorkingDirectory(tempdir);
         process->setProcessChannelMode(QProcess::MergedChannels);
@@ -925,17 +975,18 @@ void LatexCell::eval(bool silent)
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();
             QFile logfile(log);
-            logfile.open(QIODevice::ReadOnly);
-            QStringList lines;
-            while(!logfile.atEnd())
-            {
-                QString line=logfile.readLine();
-                lines.append(line);
-            }
+            if (logfile.open(QIODevice::ReadOnly)) {
+              QStringList lines;
+              while(!logfile.atEnd())
+              {
+                  QString line=logfile.readLine();
+                  lines.append(line);
+              }
 
-            if(lines.last().contains("1 page"))
-            {
-                setpage=true;
+              if(lines.last().contains("1 page"))
+              {
+                  setpage=true;
+              }
             }
 
             QString texoutput=process->readAllStandardOutput();
@@ -988,6 +1039,13 @@ void LatexCell::eval(bool silent)
                 QMessageBox::warning(nullptr, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."));
             }
         }
+#else
+        // The web build has no QProcess; latex/dvipng cannot be invoked.
+        input_->clear();
+        input_->textCursor().insertText(tr("LaTeX rendering is not available in the web build."));
+        setClosed(false);
+        setState(Error_l);
+#endif
     }
     else
     {
@@ -1107,6 +1165,9 @@ void LatexCell::setState(int state_)
 
     if(hasNext())
       next()->accept(v);
+  }
+
+  void LatexCell::viewExpression(bool) {
   }
 
 }

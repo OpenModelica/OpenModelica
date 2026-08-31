@@ -16,7 +16,6 @@ algorithm
   a := {1, 2, 3};
   b := {1.1, 2.1, 3.1};
   c := b[a[1:n]];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VariableRangeSubscript;
 
 // Result:

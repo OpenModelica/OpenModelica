@@ -40,7 +40,9 @@ Crash1.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile
+FFITest \
+Makefile \
+matrix.mat
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
@@ -74,7 +76,7 @@ failingtest :
 	@echo
 	@echo Running failing tests:
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 keywords :
 	$(TEST) -l $(TESTFILES)

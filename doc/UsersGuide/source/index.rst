@@ -23,6 +23,7 @@ Generated on |date| at |time|
   plotting
   compiler
   solving
+  parmodauto
   debugger
   basemodelica
   porting

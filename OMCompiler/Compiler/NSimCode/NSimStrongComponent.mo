@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NSimStrongComponent
 "file:        NSimStrongComponent.mo
  package:     NSimStrongComponent
@@ -37,17 +42,19 @@ encapsulated package NSimStrongComponent
 
 protected
   // OF imports
+  import AbsynUtil;
   import DAE;
 
   // NF imports
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -62,6 +69,7 @@ protected
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
+  import Partitioning = NBPartitioning;
   import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
@@ -76,7 +84,6 @@ protected
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
-  import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -116,7 +123,7 @@ public
       end for;"
       Integer index;
       Integer res_index;
-      list<tuple<ComponentRef, Expression>> iterators;
+      list<SimIterator> iterators;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -127,7 +134,7 @@ public
       Integer index;
       Integer res_index;
       list<Integer> scal_indices;
-      list<tuple<ComponentRef, Expression>> iterators;
+      list<SimIterator> iterators;
       Expression exp;
       DAE.ElementSource source;
       EquationAttributes attr;
@@ -241,7 +248,7 @@ public
     end NONLINEAR;
 
     record HYBRID
-      "Hyprid system containing both continuous and discrete equations."
+      "Hybrid system containing both continuous and discrete equations."
       Integer index;
       Block continuous;
       list<SimVar> discreteVars;
@@ -258,16 +265,16 @@ public
         case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") For-Loop-Residual:\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
-        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toString(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
+        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toStringCustom(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case RESIZABLE_ASSIGN()   then str + "(" + intString(blck.index) + ") " + "resizable call [index  " + intString(blck.call_index) + "]\n";
-        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
-        case ENTWINED_ASSIGN()    then str + List.toString(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
+        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toStringCustom(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
+        case ENTWINED_ASSIGN()    then str + List.toStringCustom(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
         case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str);
         case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
-        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toString(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
+        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toStringCustom(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
         case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when, str);
         case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
         case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
@@ -277,14 +284,8 @@ public
     end toString;
 
     function forTplStr
-      input tuple<ComponentRef, Expression> tpl;
-      output String str;
-    protected
-      ComponentRef name;
-      Expression range;
-    algorithm
-      (name, range) := tpl;
-      str := ComponentRef.toString(name) + " in " + Expression.toString(range);
+      input SimIterator iter;
+      output String str = SimIterator.toString(iter);
     end forTplStr;
 
     function ifTplStr
@@ -296,7 +297,7 @@ public
     algorithm
       (condition, blcks) := tpl;
       str := "if " + Expression.toString(condition) + " then\n  "
-         + List.toString(blcks, function toString(str = str + "  "), "", "", "\n", "");
+         + List.toString(blcks, function toString(str = str + "  "), List.Style.NEWLINE);
     end ifTplStr;
 
     function getIndex
@@ -364,10 +365,10 @@ public
         case WHEN() :: rest then filterWhen(rest, out_blcks, new_blcks, indices);
         case (blck as ALGORITHM()) :: rest algorithm
           stmts := Statement.filterDiscrete(blck.stmts);
-          if listLength(stmts) == 0 then
+          if listEmpty(stmts) then
             // filtered everything out, skip entire block
             (out_blcks, new_blcks, indices) := filterWhen(rest, out_blcks, new_blcks, indices);
-          elseif listLength(stmts) <> listLength(blck.stmts) then
+          elseif List.compareLength(stmts, blck.stmts) <> 0 then
             // filtered part of it out, create new block
             new_blck := ALGORITHM(indices.equationIndex, stmts, blck.attr);
             indices.equationIndex := indices.equationIndex + 1;
@@ -502,32 +503,36 @@ public
 
     function createClockedBlocks
       input list<Partition.Partition> partitions;
-      output SimPartitions baseParts;
+      output list<SimPartition> baseParts;
       output list<Block> eventClocks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
       input ClockedInfo info;
     protected
+      // type for for double map. base clock -> {sub_clock -> partition}
+      type SimPartitions = list<SimPartition>;
       UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
+      // set to collect the dependencies of a block
       list<Block> blcks;
       list<SimVar> vars;
       BClock clock, subClock, baseClock;
       Boolean holdEvents;
       Option<BClock> baseClock_opt;
-      SimPartition basePart, subPart;
+      SimPartition subPart;
     algorithm
-      // collect all base clocks
+      // initialize all base clocks
       for c in UnorderedMap.valueList(info.baseClocks) loop
         UnorderedMap.add(c, {}, clock_collector);
       end for;
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
+        // create the partition and get all clock dependencies
         (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         vars                                := SimVars.getPartitionVars(partition, simcode_map);
         (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
-        if Util.isSome(baseClock_opt) then
+        if isSome(baseClock_opt) then
           // it is a sub clock
           SOME(baseClock) := baseClock_opt;
           subClock        := clock;
@@ -536,6 +541,8 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
+
+        // create and add sub partition
         subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
         UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
@@ -565,6 +572,12 @@ public
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
             then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
+            case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+
+            case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = cref))
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
@@ -574,7 +587,7 @@ public
             case Equation.FOR_EQUATION()
             then createAlgorithm(eqn, simCodeIndices, equation_map);
 
-            /* ToDo: ARRAY_EQUATION ... */
+            /* ToDo: other equations ... */
 
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
@@ -600,16 +613,20 @@ public
           Partition.Kind kind;
           Block tmp;
           list<Block> result = {};
-          Integer index;
+          Integer index, alias_index;
 
         case SOME(comps) algorithm
           kind := Partition.Partition.getKind(partition);
           for i in arrayLength(comps):-1:1 loop
             (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
-            // add it to the alias map
-            if not StrongComponent.isAlias(comps[i]) then
-              UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
-            end if;
+            // add it to the alias map. correctly map the alias index if itself is an alias
+            alias_index := match comps[i]
+              local
+                StrongComponent.AliasInfo aliasInfo;
+              case StrongComponent.ALIAS(aliasInfo = aliasInfo) then UnorderedMap.getOrDefault(aliasInfo, simCodeIndices.alias_map, -1);
+              else index;
+            end match;
+            UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), alias_index, simCodeIndices.alias_map);
             result := tmp :: result;
           end for;
         then result;
@@ -619,6 +636,49 @@ public
         then fail();
       end match;
     end fromPartition;
+
+    function blockSource
+      "The DAE.ElementSource of a block, for block kinds that track one."
+      input Block blck;
+      output DAE.ElementSource source;
+    algorithm
+      source := match blck
+        case RESIDUAL()         then blck.source;
+        case ARRAY_RESIDUAL()   then blck.source;
+        case FOR_RESIDUAL()     then blck.source;
+        case GENERIC_RESIDUAL() then blck.source;
+        case SIMPLE_ASSIGN()    then blck.source;
+        case ARRAY_ASSIGN()     then blck.source;
+        case RESIZABLE_ASSIGN() then blck.source;
+        case GENERIC_ASSIGN()   then blck.source;
+        case ENTWINED_ASSIGN()  then blck.source;
+        case IF()               then blck.source;
+        case WHEN()             then blck.source;
+        else DAE.emptyElementSource;
+      end match;
+    end blockSource;
+
+    function jacobianHasGenericLoopCalls
+      "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
+      input SimJacobian jac;
+      output Boolean b;
+    algorithm
+      b := match jac
+        case SimJacobian.SIM_JAC() then not listEmpty(jac.generic_loop_calls);
+      end match;
+    end jacobianHasGenericLoopCalls;
+
+    function isForOrGenericResidual
+      "True for for-loop/generic-index residual block kinds (unsupported by the linear-system codegen)."
+      input Block blck;
+      output Boolean b;
+    algorithm
+      b := match blck
+        case FOR_RESIDUAL()     then true;
+        case GENERIC_RESIDUAL() then true;
+        else false;
+      end match;
+    end isForOrGenericResidual;
 
     function fromStrongComponent
       input StrongComponent comp;
@@ -633,21 +693,21 @@ public
         local
           Tearing strict;
           NonlinearSystem system;
-          list<Block> result = {}, eqns = {};
+          LinearSystem linSystem;
+          list<Block> eqns = {};
           list<ComponentRef> crefs = {};
+          list<SimVar> linVars = {};
+          Integer sysIndex;
+          Boolean allLinVarsFound;
+          Option<SimVar> osimvar;
           Block tmp;
-          Pointer<Variable> varPtr;
           Variable var;
-          SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
           SlicingStatus status;
           ComponentRef var_cref;
           Integer aliasOf, generic_call_index, residual_index = 0;
-          list<Integer> eqn_indices, sizes;
-          list<Equation> entwined_eqns = {};
-          UnorderedMap<ComponentRef, Expression> replacements;
           Block single_call;
           list<Block> single_calls = {};
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
@@ -698,13 +758,15 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.ENTWINED_COMPONENT() algorithm
-          // create generic index list calls for entwined for-loop equations
+          // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
             (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
-            UnorderedMap.add(getGenericEquationName(slice), getGenericAssignIndex(single_call), entwined_index_map);
+            // position = current list length before prepend (0-based, stable after reversal below)
+            UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
           end for;
+          single_calls := listReverse(single_calls);
           for tpl in listReverse(comp.entwined_tpl_lst) loop
             (eqn_ptr, _) := tpl;
             call_order := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), entwined_index_map, sourceInfo()) :: call_order;
@@ -724,41 +786,88 @@ public
             (tmp, simCodeIndices, residual_index) := createResidual(slice, simCodeIndices, residual_index, equation_map);
             eqns := tmp :: eqns;
           end for;
+          allLinVarsFound := true;
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
             if Variable.size(var) > 1 then
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
                 crefs := scal_var.name :: crefs;
+                osimvar := UnorderedMap.get(scal_var.name, simcode_map);
+                if isSome(osimvar) then
+                  linVars := Util.getOption(osimvar) :: linVars;
+                else
+                  allLinVarsFound := false;
+                end if;
               end for;
             else
               crefs := var.name :: crefs;
+              osimvar := UnorderedMap.get(var.name, simcode_map);
+              if isSome(osimvar) then
+                linVars := Util.getOption(osimvar) :: linVars;
+              else
+                allLinVarsFound := false;
+              end if;
             end if;
           end for;
 
-          // reactivate this once nonlinear loops actually work
-          if false and Util.isSome(strict.jac) then
+          if isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
           end if;
-          system := NONLINEAR_SYSTEM(
-            index         = simCodeIndices.equationIndex,
-            blcks         = listReverse(eqns),
-            crefs         = listReverse(crefs),
-            indexSystem   = simCodeIndices.nonlinearSystemIndex,
-            size          = listLength(crefs),
-            jacobian      = Pointer.create(jacobian),
-            homotopy      = comp.homotopy,
-            mixed         = comp.mixed,
-            torn          = true
-          );
-          simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
-          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then (NONLINEAR(system, NONE()), system.index);
+
+          if comp.linear and isSome(jacobian) and not comp.homotopy and not comp.mixed
+             and not List.any(eqns, isForOrGenericResidual)
+             and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
+             and allLinVarsFound then
+            // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
+            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
+            // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
+            // switching networks) systems fall back below -- a one-shot direct solve has
+            // no damping across the discrete state, and coarser NBackend tearing than OB's
+            // for these networks makes that chatter across event iterations instead of
+            // settling (see newInst-newBackend library-testing regressions after #16463).
+            linSystem := LINEAR_SYSTEM(
+              index         = simCodeIndices.equationIndex,
+              mixed         = comp.mixed,
+              torn          = true,
+              vars          = listReverse(linVars),
+              beqs          = {},
+              simJac        = {},
+              residual      = listReverse(eqns),
+              jacobian      = jacobian,
+              sources       = list(blockSource(b) for b in listReverse(eqns)),
+              indexSystem   = simCodeIndices.linearSystemIndex,
+              size          = listLength(crefs),
+              partOfJac     = false
+            );
+            simCodeIndices.linearSystemIndex := simCodeIndices.linearSystemIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            tmp := LINEAR(linSystem, NONE());
+            sysIndex := linSystem.index;
+          else
+            system := NONLINEAR_SYSTEM(
+              index         = simCodeIndices.equationIndex,
+              blcks         = listReverse(eqns),
+              crefs         = listReverse(crefs),
+              indexSystem   = simCodeIndices.nonlinearSystemIndex,
+              size          = listLength(crefs),
+              jacobian      = Pointer.create(jacobian),
+              homotopy      = comp.homotopy,
+              mixed         = comp.mixed,
+              torn          = true
+            );
+            simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            tmp := NONLINEAR(system, NONE());
+            sysIndex := system.index;
+          end if;
+        then (tmp, sysIndex);
 
         case StrongComponent.ALIAS() algorithm
           aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
-          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf, StrongComponent.isDiscrete(comp));
+          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf,
+            StrongComponent.isDiscrete(comp) and not StrongComponent.isAlgebraicLoop(comp.original));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
@@ -785,8 +894,8 @@ public
       blck := match (eqn, slice.indices)
         local
           Block tmp;
-          list<ComponentRef> names;
-          list<Expression> ranges;
+          Integer i;
+          list<Subscript> subs;
 
         case (BEquation.SCALAR_EQUATION(), {}) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
@@ -794,37 +903,60 @@ public
           res_idx := res_idx + 1;
         then tmp;
 
+        case (BEquation.IF_EQUATION(), _) algorithm
+          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        then tmp;
+
+        // unsliced array equation
         case (BEquation.ARRAY_EQUATION(), {}) algorithm
           tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
-        case (BEquation.IF_EQUATION(), _) algorithm
-          (tmp, simCodeIndices, res_idx) := createResidual(Slice.SLICE(Pointer.create(IfEquationBody.inline(eqn.body, eqn)), slice.indices), simCodeIndices, res_idx, equation_map);
+        // single slice array equation
+        case (BEquation.ARRAY_EQUATION(), {i}) algorithm
+          // get subscripts and apply them to rhs
+          subs := list(Subscript.fromExp(Expression.INTEGER(s)) for s in Slice.indexToLocation(i, Equation.sizes(Slice.getT(slice))));
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, Expression.applySubscripts(subs, eqn.rhs), eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + listLength(slice.indices);
+        then tmp;
+
+        // handle large slice array equation as full slice
+        // Note: could be improved -> scalarize? find good pattern?
+        case (BEquation.ARRAY_EQUATION(), _) algorithm
+          tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+          res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
-          (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, SimIterator.fromIterator(eqn.iter), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
-          (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, SimIterator.fromIterator(eqn.iter), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
+        then tmp;
+
+        // WHEN equations can appear as residuals in event-iteration algebraic loops.
+        // They are evaluated (not minimized) during the iteration — create a WHEN block.
+        // res_idx is NOT incremented since this is not a numerical residual.
+        case (BEquation.WHEN_EQUATION(), _) algorithm
+          (tmp, simCodeIndices) := createWhenBody(eqn.body, eqn.source, eqn.attr, simCodeIndices);
         then tmp;
 
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Slice.toString(slice, function Equation.pointerToString(str = ""))});
         then fail();
 
       end match;
@@ -844,7 +976,6 @@ public
     algorithm
       blck := match (eqn, status)
         local
-          Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
@@ -856,7 +987,9 @@ public
         then tmp;
 
         case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
-          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, eqn.rhs, eqn.source, eqn.attr);
+          // expand scalar rhs to array when lhs is array (implicit broadcast in Modelica)
+          rhs := if Type.isArray(Expression.typeOf(eqn.rhs)) then eqn.rhs else Expression.fillType(eqn.ty, eqn.rhs);
+          tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, eqn.lhs, rhs, eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -907,11 +1040,11 @@ public
       StrongComponent comp;
       Integer index;
     algorithm
-      (comp, _, index)  := Tearing.implicit(
-        comp        = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
-        funcTree    = FunctionTreeImpl.EMPTY(),
-        index       = simCodeIndices.implicitIndex,
-        kind  = kind
+      (comp, index) := Tearing.implicit(
+        comp    = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
+        funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual),
+        index   = simCodeIndices.implicitIndex,
+        kind    = kind
       );
       simCodeIndices.implicitIndex := index;
       (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
@@ -933,7 +1066,7 @@ public
     algorithm
       simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
       (conditions, when_stmts, else_when) := WhenEquationBody.getBodyAttributes(body);
-      if Util.isSome(else_when) then
+      if isSome(else_when) then
         (tmp, simCodeIndices) := createWhenBody(Util.getOption(else_when), source, attr, simCodeIndices);
         else_when_block := SOME(tmp);
       else
@@ -955,12 +1088,14 @@ public
       list<Block> blcks = {};
     algorithm
       comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in body.then_eqns);
+
       for comp in listReverse(comps) loop
         (blck, simCodeIndices, _) := Block.fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
         blcks := blck :: blcks;
       end for;
+
       branches := (body.condition, blcks) :: branches;
-      if Util.isSome(body.else_if) then
+      if isSome(body.else_if) then
         (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, kind, simcode_map, equation_map);
       end if;
     end createIfBody;
@@ -992,9 +1127,7 @@ public
       blck := match eqn
         local
           Equation qual;
-          Type ty;
           Operator operator;
-          SimVar residualVar;
           ComponentRef cref;
           Expression lhs, rhs;
           Block tmp;
@@ -1029,23 +1162,41 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       for blck_lst in blcks loop
-        for blck in blck_lst loop
-          (linearLoops, nonlinearLoops) := match blck
-            local
-              Option<SimJacobian> jacobian;
-            case LINEAR() then (blck :: linearLoops, nonlinearLoops);
-            case NONLINEAR() algorithm
-              jacobian := NonlinearSystem.getJacobian(blck.system);
-              if Util.isSome(jacobian) then
-                jacobians := Util.getOption(jacobian) :: jacobians;
-              end if;
-              blck.system := NonlinearSystem.setJacobian(blck.system, jacobian);
-            then (linearLoops, blck :: nonlinearLoops);
-            else (linearLoops, nonlinearLoops);
-          end match;
-        end for;
+        (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoopsSingle(blck_lst, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       end for;
     end collectAlgebraicLoops;
+
+    function collectAlgebraicLoopsSingle
+      input list<Block> blck_lst;
+      input output list<Block> linearLoops;
+      input output list<Block> nonlinearLoops;
+      input output list<SimJacobian> jacobians;
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    algorithm
+      for blck in blck_lst loop
+        (linearLoops, nonlinearLoops) := match blck
+          local
+            Option<SimJacobian> opt_jacobian;
+            SimJacobian jacobian;
+
+          case LINEAR() algorithm
+            if isSome(blck.system.jacobian) then
+              jacobians := Util.getOption(blck.system.jacobian) :: jacobians;
+            end if;
+          then (blck :: linearLoops, nonlinearLoops);
+          case NONLINEAR() algorithm
+            opt_jacobian := NonlinearSystem.getJacobian(blck.system);
+            if isSome(opt_jacobian) then
+              jacobian := Util.getOption(opt_jacobian);
+              jacobians := jacobian :: jacobians;
+            end if;
+            blck.system := NonlinearSystem.setJacobian(blck.system, opt_jacobian);
+          then (linearLoops, blck :: nonlinearLoops);
+          else (linearLoops, nonlinearLoops);
+        end match;
+      end for;
+    end collectAlgebraicLoopsSingle;
 
     function convert
       input Block blck;
@@ -1053,30 +1204,15 @@ public
     algorithm
       oldBlck := match blck
         local
-          ComponentRef iter;
-          Expression range, exp;
-          list<tuple<DAE.ComponentRef, DAE.Exp>> old_iterators = {};
+          Expression exp;
           list<Block> blcks;
-          DAE.ComponentRef oldIter;
-          DAE.Type oldType;
-          DAE.Statement for_stmt;
           list<tuple<DAE.Exp, list<OldSimCode.SimEqSystem>>> oldBranches = {};
           list<OldSimCode.SimEqSystem> else_branch = {};
 
         case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, blck.res_index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case FOR_RESIDUAL() algorithm
-          for iterator in listReverse(blck.iterators) loop
-            (iter, range) := iterator;
-            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
-          end for;
-        then OldSimCode.SES_FOR_RESIDUAL(blck.index, blck.res_index, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
-        case GENERIC_RESIDUAL() algorithm
-          for iterator in listReverse(blck.iterators) loop
-            (iter, range) := iterator;
-            old_iterators := (ComponentRef.toDAE(iter), Expression.toDAE(range)) :: old_iterators;
-          end for;
-        then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case FOR_RESIDUAL() then OldSimCode.SES_FOR_RESIDUAL(blck.index, blck.res_index, list(SimIterator.convert(it) for it in blck.iterators), Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case GENERIC_RESIDUAL() then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, list(SimIterator.convert(it) for it in blck.iterators), Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case RESIZABLE_ASSIGN() then OldSimCode.SES_RESIZABLE_ASSIGN(blck.index, blck.call_index, list(SimIterator.convert(it) for it in blck.iters), blck.source, EquationAttributes.convert(blck.attr));
@@ -1123,6 +1259,8 @@ public
           source      = blck.source,
           eqAttr      = EquationAttributes.convert(blck.attr)
         );
+
+        case LINEAR()            then OldSimCode.SES_LINEAR(LinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
@@ -1231,7 +1369,7 @@ public
         case WHEN() algorithm
           blck.index := indices.equationIndex;
           indices.equationIndex := indices.equationIndex + 1;
-          if Util.isSome(blck.else_when) then
+          if isSome(blck.else_when) then
             (tmp, indices) := fixIndex(Util.getOption(blck.else_when), indices);
             blck.else_when := SOME(tmp);
           end if;
@@ -1278,8 +1416,8 @@ public
       String indent = str;
     algorithm
       str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
-             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), "", "", "\n", "") + "\n";
-      if Util.isSome(else_when) then
+             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), List.Style.NEWLINE) + "\n";
+      if isSome(else_when) then
         str := str + indent + "else" + toString(Util.getOption(else_when));
       else
         str := str + indent + "end when;\n";
@@ -1310,6 +1448,23 @@ public
         then fail();
       end match;
     end getGenericEquationName;
+
+    function getEntwinedEquationName
+      "Returns the equation name for any slice type that can appear in an ENTWINED_COMPONENT."
+      input StrongComponent comp;
+      output ComponentRef name;
+    algorithm
+      name := match comp
+        case StrongComponent.SINGLE_COMPONENT()    then Equation.getEqnName(comp.eqn);
+        case StrongComponent.MULTI_COMPONENT()     then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.SLICED_COMPONENT()    then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.GENERIC_COMPONENT()   then Equation.getEqnName(Slice.getT(comp.eqn));
+        case StrongComponent.RESIZABLE_COMPONENT() then Equation.getEqnName(Slice.getT(comp.eqn));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end getEntwinedEquationName;
   end Block;
 
   uniontype LinearSystem
@@ -1336,37 +1491,32 @@ public
       str := "Linear System (size = " + intString(system.size) + ", jacobian = " + boolString(system.partOfJac) + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n" + Block.listToString(system.residual, str + "--");
     end toString;
 
-/* ToDo: fix this
     function convert
       input LinearSystem system;
       output OldSimCode.LinearSystem oldSystem;
-    protected
-      list<DAE.Exp> beqs = {};
     algorithm
-      for beq in system.beqs loop
-        beqs := Expression.toDAE(beq) :: beqs;
-      end for;
       oldSystem := OldSimCode.LINEARSYSTEM(
         index                 = system.index,
         partOfMixed           = system.mixed,
         tornSystem            = system.torn,
         vars                  = SimVar.convertList(system.vars),
-        beqs                  = listReverse(beqs),
-        indexNonLinearSystem  = system.indexSystem,
+        beqs                  = {},
+        simJac                = {},
+        residual              = Block.convertList(system.residual),
+        jacobianMatrix        = Util.applyOption(system.jacobian, SimJacobian.convert),
+        sources               = system.sources,
+        indexLinearSystem     = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = NONE(), // ToDo update this!
-        homotopySupport       = system.homotopy,
-        clockIndex            = NONE() // ToDo update this
+        partOfJac             = system.partOfJac
         );
     end convert;
-*/
   end LinearSystem;
 
   uniontype NonlinearSystem
     record NONLINEAR_SYSTEM
       Integer index;
-      list<Block> blcks;
-      list<ComponentRef> crefs;
+      list<Block> blcks         "equations";
+      list<ComponentRef> crefs  "iteration variables";
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
       Pointer<Option<SimJacobian>> jacobian;
@@ -1393,7 +1543,7 @@ public
     algorithm
       str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy)
               + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n"
-              + str + "--" + List.toString(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
+              + str + "--" + List.toStringCustom(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
               + Block.listToString(system.blcks, str + "--");
     end toString;
 
@@ -1421,5 +1571,5 @@ public
     end convert;
   end NonlinearSystem;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimStrongComponent;

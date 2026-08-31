@@ -1,8 +1,44 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 
 /* Miscellaneous C++ file for systemimpl. */
 
 
 #include <string>
+#include <string_view>
 #include <stack>
 
 #if !defined(__has_include)
@@ -48,9 +84,9 @@ extern "C" {
   {
     string str(source_str);
     size_t len;
-    FindAndReplace(str,string(search_str),string(replace_str));
+    FindAndReplace(str,std::string(search_str),std::string(replace_str));
 
-    len = strlen(str.c_str());
+    len = str.size();
     char* res = (char *)omc_alloc_interface.malloc_atomic(len + 1);
     strcpy(res, str.c_str());
     res[len] = '\0';
@@ -64,16 +100,17 @@ static inline size_t actualByteSize(size_t sz)
   /* GC uses 2 words as the minimum allocation unit: a granule
    * GC also uses up 1 byte of the allocation for its internal use.
    */
-  size_t res = GC_GRANULE_BYTES*((sz+GC_GRANULE_BYTES-1+1) / GC_GRANULE_BYTES);
-  return res;
+  size_t granules = (sz + GC_GRANULE_BYTES - 1) / GC_GRANULE_BYTES;
+  return granules * GC_GRANULE_BYTES;;
 }
+
 #include <stdio.h>
 double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonshared_str_res)
 {
   size_t sz=0, raw_sz=0, nonshared_str_sz=0;
-  std::unordered_map<void*,void*> handled;
+  std::unordered_set<void*> handled;
   std::stack<void*> work;
-  std::unordered_set<std::string> strings;
+  std::unordered_set<std::string_view> strings;
   work.push(data);
   while (!work.empty()) {
     void *item = work.top();
@@ -81,7 +118,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
     if (handled.find(item) != handled.end()) {
       continue;
     }
-    handled[item] = 0;
+    handled.insert(item);
     if (MMC_IS_IMMEDIATE(item)) {
       /* Uses up zero space */
       continue;
@@ -99,11 +136,11 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
     if (MMC_HDRISSTRING(hdr)) {
       size_t t = sizeof(void*)+MMC_STRLEN(item)+1;
       size_t actual = actualByteSize(t);
-      std::string s(MMC_STRINGDATA(item));
-      if (strings.find(s) != strings.end()) {
+      const char* cstr = MMC_STRINGDATA(item);
+      if (strings.find(cstr) != strings.end()) {
         nonshared_str_sz += actual;
       } else {
-        strings.insert(s);
+        strings.insert(cstr);
       }
       raw_sz += t;
       sz += actual;
@@ -121,7 +158,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
       }
       continue;
     }
-    fprintf(stderr, "abort... bytes=%ld num items=%ld\n", sz, handled.size());
+    fprintf(stderr, "abort... bytes=%zu num items=%zu\n", sz, handled.size());
     printAny(item);
     abort();
   }

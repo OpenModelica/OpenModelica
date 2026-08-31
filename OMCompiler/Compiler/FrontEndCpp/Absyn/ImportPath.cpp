@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include <utility>
 #include <stdexcept>
 #include <ostream>
@@ -15,12 +50,12 @@ constexpr int GROUP_IMPORT = 3;
 
 constexpr int GROUP_IMPORT_NAME = 0;
 
-extern record_description Absyn_Import_NAMED__IMPORT__desc;
-extern record_description Absyn_Import_QUAL__IMPORT__desc;
-extern record_description Absyn_Import_UNQUAL__IMPORT__desc;
-extern record_description Absyn_Import_GROUP__IMPORT__desc;
+extern "C" record_description Absyn_Import_NAMED__IMPORT__desc;
+extern "C" record_description Absyn_Import_QUAL__IMPORT__desc;
+extern "C" record_description Absyn_Import_UNQUAL__IMPORT__desc;
+extern "C" record_description Absyn_Import_GROUP__IMPORT__desc;
 
-extern record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
+extern "C" record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
 
 std::pair<std::optional<Path>, std::vector<std::string>> splitPath(MetaModelica::Value value)
 {
@@ -29,7 +64,7 @@ std::pair<std::optional<Path>, std::vector<std::string>> splitPath(MetaModelica:
 
   std::optional<Path> op;
   if (p.isQualified()) {
-    p.pop_back();
+    p.popBack();
     op = std::make_optional<Path>(std::move(p));
   }
 
@@ -75,32 +110,32 @@ ImportPath::ImportPath(MetaModelica::Record value)
 MetaModelica::Value ImportPath::toAbsyn() const noexcept
 {
   if (!_shortName.empty()) {
-    return MetaModelica::Record(NAMED_IMPORT, Absyn_Import_NAMED__IMPORT__desc, {
-      MetaModelica::Value(_shortName),
+    return MetaModelica::Record{NAMED_IMPORT, Absyn_Import_NAMED__IMPORT__desc, {
+      MetaModelica::Value{_shortName},
       fullPath().toAbsyn()
-    });
+    }};
   }
 
   switch (_defNames.size()) {
     case 0:
-      return MetaModelica::Record(UNQUAL_IMPORT, Absyn_Import_UNQUAL__IMPORT__desc, {
+      return MetaModelica::Record{UNQUAL_IMPORT, Absyn_Import_UNQUAL__IMPORT__desc, {
         _pkgName->toAbsyn()
-      });
+      }};
 
     case 1:
-      return MetaModelica::Record(QUAL_IMPORT, Absyn_Import_QUAL__IMPORT__desc, {
+      return MetaModelica::Record{QUAL_IMPORT, Absyn_Import_QUAL__IMPORT__desc, {
         fullPath().toAbsyn()
-      });
+      }};
 
     default:
-      return MetaModelica::Record(GROUP_IMPORT, Absyn_Import_GROUP__IMPORT__desc, {
+      return MetaModelica::Record{GROUP_IMPORT, Absyn_Import_GROUP__IMPORT__desc, {
         _pkgName->toAbsyn(),
-        MetaModelica::List(_defNames, [](const auto &n) {
-          return MetaModelica::Record(GROUP_IMPORT_NAME, Absyn_GroupImport_GROUP__IMPORT__NAME__desc, {
-            MetaModelica::Value(n)
-          });
-        })
-      });
+        MetaModelica::List{_defNames, [](const auto &n) {
+          return MetaModelica::Record{GROUP_IMPORT_NAME, Absyn_GroupImport_GROUP__IMPORT__NAME__desc, {
+            MetaModelica::Value{n}
+          }};
+        }}
+      }};
   }
 }
 
@@ -109,7 +144,7 @@ Path ImportPath::fullPath() const noexcept
   auto p = _pkgName ? *_pkgName : Path(_defNames.front());
 
   if (_defNames.size() == 1 && _pkgName) {
-    p.push_back(_defNames.front());
+    p.pushBack(_defNames.front());
   }
 
   return p;

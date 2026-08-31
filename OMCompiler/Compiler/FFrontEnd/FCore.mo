@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -43,12 +47,12 @@ public
 import Absyn;
 import AbsynUtil;
 import AvlSetCR;
+import AvlTreePathFunction;
 import DAE;
 import Mutable;
 import SCode;
 
 protected
-import DAEUtil;
 import Config;
 
 // ************************ FNode structures ***************************
@@ -409,7 +413,7 @@ public type StructuralParameters = tuple<AvlSetCR.Tree,list<list<DAE.ComponentRe
 public uniontype Cache
   record CACHE
     Option<Graph> initialGraph "and the initial environment";
-    Mutable<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
+    Mutable<AvlTreePathFunction.Tree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
@@ -437,10 +441,10 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
 protected
-  Mutable<DAE.FunctionTree> instFuncs;
+  Mutable<AvlTreePathFunction.Tree> instFuncs;
   StructuralParameters ht;
 algorithm
-  instFuncs := Mutable.create(DAE.AvlTreePathFunction.Tree.EMPTY());
+  instFuncs := Mutable.create(AvlTreePathFunction.Tree.EMPTY());
   ht := (AvlSetCR.EMPTY(),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
@@ -458,19 +462,19 @@ public function addEvaluatedCref
   input DAE.ComponentRef cr;
   output Cache ocache;
 algorithm
-  ocache := match (cache,var,cr)
+  ocache := match (cache, var)
     local
       Option<Graph> initialGraph;
-      Mutable<DAE.FunctionTree> functions;
+      Mutable<AvlTreePathFunction.Tree> functions;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
 
-    case (CACHE(initialGraph,functions,(ht,crs::st),p),SCode.PARAM(),_)
+    case (CACHE(initialGraph,functions,(ht,crs::st),p), SCode.PARAM())
       then CACHE(initialGraph,functions,(ht,(cr::crs)::st),p);
 
-    case (CACHE(initialGraph,functions,(ht,{}),p),SCode.PARAM(),_)
+    case (CACHE(initialGraph,functions,(ht,{}),p), SCode.PARAM())
       then CACHE(initialGraph,functions,(ht,{cr}::{}),p);
 
     else cache;
@@ -499,13 +503,13 @@ public function setCacheClassName
   input Absyn.Path p;
   output Cache outCache;
 algorithm
-  outCache := match(inCache,p)
+  outCache := match inCache
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       StructuralParameters ht;
       Option<Graph> igraph;
 
-    case (CACHE(igraph,ef,ht,_),_)
+    case CACHE(igraph,ef,ht,_)
       then CACHE(igraph,ef,ht,p);
     else inCache;
   end match;
@@ -515,12 +519,12 @@ public function isImplicitScope
   input Name inName;
   output Boolean isImplicit;
 algorithm
-  isImplicit := matchcontinue(inName)
+  isImplicit := matchcontinue inName
 
     local
       Name id;
 
-    case (id) then stringGet(id,1) == 36; // "$"
+    case id then stringGet(id,1) == 36; // "$"
 
     else false;
 
@@ -533,12 +537,12 @@ public function getCachedInstFunc
   input Absyn.Path path;
   output DAE.Function func;
 algorithm
-  func := match(inCache,path)
+  func := match inCache
     local
-      Mutable<DAE.FunctionTree> ef;
-    case(CACHE(functions=ef),_)
-      equation
-        SOME(func) = DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
+      Mutable<AvlTreePathFunction.Tree> ef;
+    case CACHE(functions=ef)
+      algorithm
+        SOME(func) := AvlTreePathFunction.get(Mutable.access(ef),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -548,11 +552,11 @@ public function checkCachedInstFuncGuard
   input Cache inCache;
   input Absyn.Path path;
 algorithm
-  _ := match(inCache,path)
+  () := match inCache
     local
-      Mutable<DAE.FunctionTree> ef;
-    case(CACHE(functions=ef),_) equation
-      DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
+      Mutable<AvlTreePathFunction.Tree> ef;
+    case CACHE(functions=ef) algorithm
+      AvlTreePathFunction.get(Mutable.access(ef),path);
     then ();
   end match;
 end checkCachedInstFuncGuard;
@@ -560,13 +564,13 @@ end checkCachedInstFuncGuard;
 public function getFunctionTree
 "Selector function"
   input Cache cache;
-  output DAE.FunctionTree ft;
+  output AvlTreePathFunction.Tree ft;
 algorithm
   ft := match cache
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case CACHE(functions = ef) then Mutable.access(ef);
-    else DAE.AvlTreePathFunction.Tree.EMPTY();
+    else AvlTreePathFunction.Tree.EMPTY();
   end match;
 end getFunctionTree;
 
@@ -579,27 +583,24 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-      Mutable<DAE.FunctionTree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
     // Don't overwrite SOME() with NONE()
     case (_, _)
-      equation
+      algorithm
         checkCachedInstFuncGuard(cache, func);
         // print("Func quard [there]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
-      equation
-        Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
+      algorithm
+        Mutable.update(ef,AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_)
-      equation
+      algorithm
         // print("Func quard [unqual]: " + AbsynUtil.pathString(func) + "\n");
       then (cache);
 
@@ -612,16 +613,13 @@ public function addDaeFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := match(inCache,funcs)
+  outCache := match inCache
     local
-      Mutable<DAE.FunctionTree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
-    case (CACHE(_,ef,_,_),_)
-      equation
-        Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
+    case CACHE(_,ef,_,_)
+      algorithm
+        Mutable.update(ef,AvlTreePathFunction.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -634,16 +632,13 @@ public function addDaeExtFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := match(inCache,funcs)
+  outCache := match inCache
     local
-      Mutable<DAE.FunctionTree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
+      Mutable<AvlTreePathFunction.Tree> ef;
 
-    case (CACHE(_,ef,_,_),_)
-      equation
-        Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
+    case CACHE(_,ef,_,_)
+      algorithm
+        Mutable.update(ef,AvlTreePathFunction.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -652,11 +647,11 @@ end addDaeExtFunction;
 
 public function setCachedFunctionTree
   input Cache inCache;
-  input DAE.FunctionTree inFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
 algorithm
-  _ := match inCache
+  () := match inCache
     case CACHE()
-      equation
+      algorithm
         Mutable.update(inCache.functions, inFunctions);
       then ();
     else ();
@@ -670,8 +665,8 @@ public function isTyped
   input Status is;
   output Boolean b;
 algorithm
-  b := match(is)
-    case(VAR_UNTYPED()) then false;
+  b := match is
+    case VAR_UNTYPED() then false;
     else true;
   end match;
 end isTyped;
@@ -692,8 +687,8 @@ public function getCachedInitialGraph "get the initial environment from the cach
   input Cache cache;
   output Graph g;
 algorithm
-  g := match(cache)
-    case (CACHE(initialGraph = SOME(g))) then g;
+  g := match cache
+    case CACHE(initialGraph = SOME(g)) then g;
   end match;
 end getCachedInitialGraph;
 
@@ -737,5 +732,5 @@ algorithm
   end if;
 end getRecordConstructorPath;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end FCore;

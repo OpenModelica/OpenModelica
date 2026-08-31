@@ -114,7 +114,7 @@ work the same way.
 $ cd trunk/build/bin
 $ ./OMShell-terminal
 OMShell Copyright 1997-2015, Open Source Modelica Consortium (OSMC)
-Distributed under OMSC-PL and GPL, see www.openmodelica.org
+Distributed under OSMC-PL and AGPL3, see www.openmodelica.org
 
 To get help on using OMShell and OpenModelica, type "help()" and press enter
 Started server using:omc -d=interactive > /tmp/omshell.log 2>&1 &

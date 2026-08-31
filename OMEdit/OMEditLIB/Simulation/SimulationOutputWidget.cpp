@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -34,6 +40,7 @@
 #include "SimulationOutputWidget.h"
 #include "ArchivedSimulationsWidget.h"
 #include "MainWindow.h"
+#include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
@@ -43,6 +50,7 @@
 #include "Editors/TextEditor.h"
 #include "SimulationDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
+#include "Plotting/VariablesWidget.h"
 
 #include <QApplication>
 #include <QObject>
@@ -57,6 +65,12 @@
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
+#if defined(__EMSCRIPTEN__)
+// Cooperative wasm-jit simulation cancel; defined as EM_JS in OMCProxy.cpp.
+int omedit_cancel_available();
+void omedit_cancel_sim();
+void omedit_clear_cancel();
+#endif
 }
 
 /*!
@@ -162,21 +176,6 @@ void SimulationOutputTree::selectAllMessages()
 }
 
 /*!
- * \brief compareSimulationMessageDeweyId
- * Compares the QModelIndexes based on their deweyid
- * \param index1
- * \param index2
- * \return
- */
-bool compareSimulationMessageDeweyId(const QModelIndex &index1, const QModelIndex &index2)
-{
-  SimulationMessage *pSimulationMessage1 = static_cast<SimulationMessage*>(index1.internalPointer());
-  SimulationMessage *pSimulationMessage2 = static_cast<SimulationMessage*>(index2.internalPointer());
-
-  return pSimulationMessage1 && pSimulationMessage2 && pSimulationMessage1->mDeweyId < pSimulationMessage2->mDeweyId;
-}
-
-/*!
  * \brief SimulationOutputTree::copyMessages
  * Copy the selected Messages to the clipboard.
  * Slot activated when mpCopyAction triggered signal is raised.
@@ -187,16 +186,24 @@ void SimulationOutputTree::copyMessages()
   if (pSimulationMessageModel) {
     QStringList textToCopy;
     QModelIndexList modelIndexes = selectionModel()->selectedRows();
-    // sort the selected indexes based on deweyid so that we get the correct order since selectionModel()->selectedRows() changes the order.
-    std::sort(modelIndexes.begin(), modelIndexes.end(), compareSimulationMessageDeweyId);
-    foreach (QModelIndex modelIndex, modelIndexes) {
+
+    // Use persistent indexes to avoid invalidation
+    QList<QPersistentModelIndex> persistent;
+    for (const QModelIndex &idx : modelIndexes) {
+      persistent.append(idx);
+    }
+
+    // Sort in tree/model order so that we get the correct order since selectionModel()->selectedRows() changes the order.
+    std::sort(persistent.begin(), persistent.end());
+
+    for (const QPersistentModelIndex &modelIndex : persistent) {
       SimulationMessage *pSimulationMessage = static_cast<SimulationMessage*>(modelIndex.internalPointer());
       if (pSimulationMessage) {
         /* Ticket:4778 Remove HTML formatting. */
-//        textToCopy.append(QString("%1 | %2 | %3")
-//                          .arg(pSimulationMessage->mStream)
-//                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
-//                          .arg(pSimulationMessage->mText));
+        // textToCopy.append(QString("%1 | %2 | %3")
+        //                   .arg(pSimulationMessage->mStream)
+        //                   .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
+        //                   .arg(pSimulationMessage->mText));
         textToCopy.append(QTextDocumentFragment::fromHtml(QString(pSimulationMessage->mText).remove("<p>").remove("</p>")).toPlainText());
       }
     }
@@ -257,6 +264,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCompilationOutputTextBox = new OutputPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
+  mCompilationStandardError.clear();
   mSimulationStandardOutput.clear();
   mSimulationStandardError.clear();
   // Simulation output handler
@@ -308,54 +316,53 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "OMCpp%1StateSelection.h"
                         << "OMCpp%1Types.h"
                         << "OMCpp%1WriteOutput.cpp"
-                        << "OMCpp%1WriteOutput.h";
-
-    mGeneratedAlgLoopFilesList << QString("OMCpp%1Algloop*.h").arg(simulationOptions.getOutputFileName())
-                               << QString("OMCpp%1Algloop*.cpp").arg(simulationOptions.getOutputFileName());
+                        << "OMCpp%1WriteOutput.h"
+                        << "OMCpp%1Algloop*.h"
+                        << "OMCpp%1Algloop*.cpp";
   } else {
     // c-runtime generated files
     mGeneratedFilesList << "%1.c"
                         << "%1.o"
-                        << "%1_01exo.c"
-                        << "%1_01exo.o"
-                        << "%1_02nls.c"
-                        << "%1_02nls.o"
-                        << "%1_03lsy.c"
-                        << "%1_03lsy.o"
-                        << "%1_04set.c"
-                        << "%1_04set.o"
-                        << "%1_05evt.c"
-                        << "%1_05evt.o"
-                        << "%1_06inz.c"
-                        << "%1_06inz.o"
-                        << "%1_07dly.c"
-                        << "%1_07dly.o"
-                        << "%1_08bnd.c"
-                        << "%1_08bnd.o"
-                        << "%1_09alg.c"
-                        << "%1_09alg.o"
-                        << "%1_10asr.c"
-                        << "%1_10asr.o"
-                        << "%1_11mix.c"
-                        << "%1_11mix.o"
-                        << "%1_11mix.h"
-                        << "%1_12jac.c"
-                        << "%1_12jac.o"
-                        << "%1_12jac.h"
-                        << "%1_13opt.c"
-                        << "%1_13opt.o"
-                        << "%1_13opt.h"
-                        << "%1_14lnz.c"
-                        << "%1_14lnz.o"
-                        << "%1_15syn.c"
-                        << "%1_15syn.o"
-                        << "%1_16dae.c"
-                        << "%1_16dae.o"
-                        << "%1_16dae.h"
-                        << "%1_17inl.c"
-                        << "%1_17inl.o"
-                        << "%1_18spd.c"
-                        << "%1_18spd.o"
+                        << "%1_01exo*.c"
+                        << "%1_01exo*.o"
+                        << "%1_02nls*.c"
+                        << "%1_02nls*.o"
+                        << "%1_03lsy*.c"
+                        << "%1_03lsy*.o"
+                        << "%1_04set*.c"
+                        << "%1_04set*.o"
+                        << "%1_05evt*.c"
+                        << "%1_05evt*.o"
+                        << "%1_06inz*.c"
+                        << "%1_06inz*.o"
+                        << "%1_07dly*.c"
+                        << "%1_07dly*.o"
+                        << "%1_08bnd*.c"
+                        << "%1_08bnd*.o"
+                        << "%1_09alg*.c"
+                        << "%1_09alg*.o"
+                        << "%1_10asr*.c"
+                        << "%1_10asr*.o"
+                        << "%1_11mix*.c"
+                        << "%1_11mix*.o"
+                        << "%1_11mix*.h"
+                        << "%1_12jac*.c"
+                        << "%1_12jac*.o"
+                        << "%1_12jac*.h"
+                        << "%1_13opt*.c"
+                        << "%1_13opt*.o"
+                        << "%1_13opt*.h"
+                        << "%1_14lnz*.c"
+                        << "%1_14lnz*.o"
+                        << "%1_15syn*.c"
+                        << "%1_15syn*.o"
+                        << "%1_16dae*.c"
+                        << "%1_16dae*.o"
+                        << "%1_16dae*.h"
+                        << "%1_17inl*.c"
+                        << "%1_17inl*.o"
+                        << "%1_18spd*.c"
+                        << "%1_18spd*.o"
                         << "%1_functions.c"
                         << "%1_functions.o"
                         << "%1_functions.h"
@@ -364,32 +371,18 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_includes.h"
                         << "%1_literals.h"
                         << "%1_model.h";
-
-    mGeneratedAlgLoopFilesList.clear();
   }
-  if (mSimulationOptions.getShowGeneratedFiles()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      // filter *.o files and .makefile
-      if (!fileName.endsWith(".o") && fileName.compare(".makefile") != 0) {
-        addGeneratedFileTab(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
-      }
+  // replace %1 with the output file name in the generated files list.
+  for (QString &file : mGeneratedFilesList) {
+    file = file.arg(simulationOptions.getOutputFileName());
+  }
+  // if show generated files is enabled then open the generated files directory in file explorer.
+  if (simulationOptions.getShowGeneratedFiles()) {
+    QUrl dir (QString("file:///%1").arg(simulationOptions.getWorkingDirectory()));
+    if (!QDesktopServices::openUrl(dir)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(dir.toString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
     }
-    // Delete the Algloop*.cpp/h files generated by cpp runtime
-    if (mSimulationOptions.getTargetLanguage().compare("Cpp") == 0) {
-      QStringList filesList = QDir(workingDirectory).entryList(mGeneratedAlgLoopFilesList, QDir::Files | QDir::NoSymLinks |
-                                                               QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      foreach (QString fileName, filesList) {
-        addGeneratedFileTab(QString("%1/%2").arg(workingDirectory, fileName));
-      }
-    }
-    if (simulationOptions.getTargetLanguage().compare("C") == 0) {
-      /* className_info.json tab */
-      addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_info.json"));
-    }
-    /* className_init.xml tab */
-    addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_init.xml"));
   }
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -404,11 +397,17 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions.getOutputFileName(), mSimulationOptions.getStartTime().toDouble(), mSimulationOptions.getStopTime().toDouble(), this);
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
-  // start the tcp server
+  // start the tcp server (the wasm-jit in-process run has no socket-based progress
+  // stream, and Qt for WebAssembly has no working sockets)
+#if defined(__EMSCRIPTEN__)
+  mpTcpServer = 0;
+  mSocketState = SocketState::NotConnected;
+#else
   mpTcpServer = new QTcpServer;
   mSocketState = SocketState::NotConnected;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
+#endif
   mpCompilationProcess = 0;
   setCompilationProcessKilled(false);
   mIsCompilationProcessRunning = false;
@@ -425,6 +424,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
  */
 SimulationOutputWidget::~SimulationOutputWidget()
 {
+#if QT_CONFIG(process)
   // compilation process
   if (mpCompilationProcess && isCompilationProcessRunning()) {
     mpCompilationProcess->kill();
@@ -440,6 +440,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
     mpSimulationProcess->kill();
     mpSimulationProcess->deleteLater();
   }
+#endif
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
     Utilities::removeDirectoryRecursively(mSimulationOptions.getWorkingDirectory());
@@ -447,9 +448,16 @@ SimulationOutputWidget::~SimulationOutputWidget()
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
   }
+#if !defined(__EMSCRIPTEN__)
   if (mpTcpServer) {
     mpTcpServer->deleteLater();
   }
+#endif
+}
+
+QString SimulationOutputWidget::getCompilationStandardError()
+{
+  return mCompilationStandardError;
 }
 
 /*!
@@ -458,31 +466,108 @@ SimulationOutputWidget::~SimulationOutputWidget()
  */
 void SimulationOutputWidget::start()
 {
+#if QT_CONFIG(process)
   if (!mSimulationOptions.isReSimulate()) {
     compileModel();
   } else {
     runSimulationExecutable();
   }
+#endif
 }
 
-void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
+/*!
+ * \brief SimulationOutputWidget::runWasmJitSimulation
+ * Runs an already-translated wasm-jit model in-process and shows omc's simulate()
+ * output in this widget's log. The wasm-jit target has no simulation executable or
+ * process pipeline (used by the web build and native builds without a C compiler),
+ * so omc runs the JIT-compiled model itself and reports through the SimulationResult
+ * record instead of a process' stdout. Surfacing that here means a failed run (e.g.
+ * a non-converging nonlinear system) is visible instead of silently doing nothing.
+ */
+void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParameters)
 {
-  QFile file(fileName);
-  QFileInfo fileInfo(fileName);
-  if (file.exists()) {
-    file.open(QIODevice::ReadOnly);
-    BaseEditor *pEditor;
-    if (Utilities::isCFile(fileInfo.suffix())) {
-      pEditor = new CEditor(MainWindow::instance());
-      CHighlighter *pCHighlighter = new CHighlighter(OptionsDialog::instance()->getCEditorPage(), pEditor->getPlainTextEdit());
-      Q_UNUSED(pCHighlighter);
-    } else {
-      pEditor = new TextEditor(MainWindow::instance());
-    }
-    pEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
-    mpGeneratedFilesTabWidget->addTab(pEditor, fileInfo.fileName());
-    file.close();
+  mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
+  mpProgressBar->setRange(0, 0);
+  mpProgressLabel->setText(tr("Running simulation of %1.").arg(mSimulationOptions.getClassName()));
+  writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), Qt::black);
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  // the in-process run writes its result into omc's cwd; read it back from there.
+  pOMCProxy->changeDirectory(mSimulationOptions.getWorkingDirectory());
+  // The runtime flags (-lv logging streams, solver options, …) are not part of
+  // simulationParameters; pass them via simflags so the wasm-jit run honours them
+  // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
+  const QString simflags = mSimulationOptions.getSimulationFlags().join(" ");
+  const QString command = QString("simulate(%1, %2, resimulateExecutable=\"%3\", simflags=\"%4\")")
+                              .arg(mSimulationOptions.getClassName(), simulationParameters,
+                                   mSimulationOptions.getOutputFileName(), simflags);
+  // Echo the flags in the compilation output (always visible) so the run is
+  // debuggable even if the simulation-messages path has a problem.
+  writeCompilationOutput(tr("Simulation flags: %1").arg(simflags.isEmpty() ? tr("(none)") : simflags), Qt::black);
+#if defined(__EMSCRIPTEN__)
+  // Cooperative cancel: enable the button (sendCommand spins a nested QEventLoop, so
+  // a click reaches cancelCompilationOrSimulation and sets the shared flag the omc
+  // driver polls). Only when the shared buffer exists (cross-origin isolated).
+  mWasmJitCancelled = false;
+  if (omedit_cancel_available()) {
+    omedit_clear_cancel();
+    mIsWasmJitSimulationRunning = true;
+    mpCancelButton->setText(tr("Cancel Simulation"));
+    mpCancelButton->setEnabled(true);
   }
+#endif
+  {
+    OMCLongOperation longOperation;
+    pOMCProxy->sendCommand(command);
+  }
+#if defined(__EMSCRIPTEN__)
+  mIsWasmJitSimulationRunning = false;
+  mpCancelButton->setEnabled(false);
+#endif
+  const QString simulationResult = pOMCProxy->getResult();
+  pOMCProxy->printMessagesStringInternal();
+  // The SimulationResult record carries the run's messages; an empty resultFile
+  // means the run failed and the messages say why.
+  const QString resultFile = QRegularExpression("resultFile = \"([^\"]*)\"").match(simulationResult).captured(1);
+  QString messages = QRegularExpression("messages = \"(.*)\",\\s*\\n\\s*timeFrontend", QRegularExpression::DotMatchesEverythingOption)
+                         .match(simulationResult).captured(1);
+  messages.replace("\\\"", "\"");
+  const bool ok = !resultFile.isEmpty();
+  // Enable + switch to the Output tab; on the native path this is done when the
+  // simulation process starts, but that code is compiled out on wasm (no QProcess),
+  // so the wasm-jit path must do it here or the messages land in a disabled tab.
+  mpGeneratedFilesTabWidget->setTabEnabled(1, true);
+  mpGeneratedFilesTabWidget->setCurrentIndex(1);
+  if (!messages.trimmed().isEmpty()) {
+    // Write each log line as its own message: writeSimulationOutput wraps the text
+    // in a <message text="…"/> element, and XML attribute-value normalization would
+    // otherwise collapse the embedded newlines of a multi-line blob into spaces.
+    const QStringList lines = messages.split('\n');
+    for (const QString &line : lines) {
+      if (!line.trimmed().isEmpty()) {
+        writeSimulationOutput(line, ok ? StringHandler::Unknown : StringHandler::Error, true);
+      }
+    }
+  } else if (!ok) {
+    writeSimulationOutput(tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName()), StringHandler::Error, true);
+  }
+#if defined(__EMSCRIPTEN__)
+  // omc cd'd into the working directory, so the result lands there in the worker
+  // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
+  extern bool omcWorkerStageFile(const char *path);
+  omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
+#endif
+  mpProgressBar->setRange(0, 100);
+  mpProgressBar->setValue(100);
+  const QString progressStr = mWasmJitCancelled ? tr("Simulation of %1 cancelled.").arg(mSimulationOptions.getClassName())
+                            : ok ? tr("Simulation of %1 finished.").arg(mSimulationOptions.getClassName())
+                                 : tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName());
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
+  mpCancelButton->setEnabled(false);
+  mpOpenOutputFileButton->setEnabled(true);
+  MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
+  emit simulationFinished();
 }
 
 /*!
@@ -530,6 +615,7 @@ void SimulationOutputWidget::embeddedServerInitialized()
   }
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::compileModel
  * Compiles the simulation model.
@@ -649,7 +735,9 @@ void SimulationOutputWidget::readPostCompilationStandardOutput()
  */
 void SimulationOutputWidget::readPostCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), Qt::red);
+  QString output = QString(mpPostCompilationProcess->readAllStandardError());
+  mCompilationStandardError += output;
+  writeCompilationOutput(output, Qt::red);
 }
 
 /*!
@@ -665,7 +753,9 @@ void SimulationOutputWidget::postCompilationProcessError(QProcess::ProcessError 
   if (isPostCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpPostCompilationProcess->errorString(), Qt::red);
+  QString errorString = mpPostCompilationProcess->errorString();
+  mCompilationStandardError += errorString;
+  writeCompilationOutput(errorString, Qt::red);
 }
 
 /*!
@@ -710,6 +800,7 @@ void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, 
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::updateMessageTab
@@ -728,6 +819,35 @@ void SimulationOutputWidget::updateMessageTab(const QString &text)
 void SimulationOutputWidget::updateMessageTabProgress()
 {
   emit updateProgressBar(mpProgressBar);
+}
+
+/*!
+ * \brief SimulationOutputWidget::reSimulate
+ * Calls VariablesWidget::reSimulate which shows the re-simulation setup dialog.
+ * \param showSetup indicates whether to show the re-simulation setup dialog or not.
+ */
+void SimulationOutputWidget::reSimulate(bool showSetup)
+{
+  VariablesTreeItem *pVariablesTreeItem = MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->findVariablesTreeItemOneLevel(mSimulationOptions.getFullResultFileName());
+  MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, showSetup);
+}
+
+#if QT_CONFIG(process)
+/*!
+ * \brief SimulationOutputWidget::startSimulationAfterBuild
+ * Resumes execution by launching the simulation executable after a successful
+ * build-only compilation phase.  Clears the build-only flag so the simulation
+ * process is allowed to run and intermediate files are cleaned up correctly
+ * when it finishes.
+ *
+ * This is used by the MCP server to implement a two-phase workflow: compile
+ * first (build-only), inspect the generated artefacts, then run — all without
+ * a second compilation pass.
+ */
+void SimulationOutputWidget::startSimulationAfterBuild()
+{
+  mSimulationOptions.setBuildOnly(false);
+  runSimulationExecutable();
 }
 
 /*!
@@ -774,6 +894,7 @@ void SimulationOutputWidget::runSimulationExecutable()
   writeSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
   mpSimulationProcess->start(fileName, args);
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::writeCompilationOutput
@@ -788,6 +909,7 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
   mpCompilationOutputTextBox->appendOutput(output, format);
 }
 
+#if QT_CONFIG(process)
 void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
 {
   QString progressStr;
@@ -815,6 +937,7 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
     deleteIntermediateCompilationFiles();
   }
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
@@ -823,21 +946,13 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
 void SimulationOutputWidget::deleteIntermediateCompilationFiles()
 {
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      if (QFile::exists(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)))) {
-        QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
-      }
-    }
-    // Delete the Algloop*.cpp/h files generated by cpp runtime
-    if (mSimulationOptions.getTargetLanguage().compare("Cpp") == 0) {
-      QStringList filesList = QDir(workingDirectory).entryList(mGeneratedAlgLoopFilesList, QDir::Files | QDir::NoSymLinks |
-                                                               QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      foreach (QString fileName, filesList) {
-        if (QFile::exists(QString("%1/%2").arg(workingDirectory, fileName))) {
-          QFile::remove(QString("%1/%2").arg(workingDirectory, fileName));
-        }
+    const QString workingDirectory = mSimulationOptions.getWorkingDirectory();
+
+    QStringList filesList = QDir(workingDirectory).entryList(mGeneratedFilesList, QDir::Files | QDir::NoSymLinks |
+                                                             QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    foreach (QString fileName, filesList) {
+      if (QFile::exists(QString("%1/%2").arg(workingDirectory, fileName))) {
+        QFile::remove(QString("%1/%2").arg(workingDirectory, fileName));
       }
     }
   }
@@ -869,6 +984,7 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
   }
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::simulationProcessFinishedHelper
  * Helper function for socketDisconnected and simulationProcessFinished
@@ -934,44 +1050,7 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
   // this signal is used by testsuite to know that the simulation is finished.
   emit simulationFinished();
 }
-
-/*!
- * \brief SimulationOutputWidget::cancelCompilationOrSimulation
- * Slot activated when mpCancelButton clicked signal is raised.\n
- * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
- */
-void SimulationOutputWidget::cancelCompilationOrSimulation()
-{
-  QString progressStr;
-  if (isCompilationProcessRunning()) {
-    setCompilationProcessKilled(true);
-    mpCompilationProcess->kill();
-    mIsCompilationProcessRunning = false;
-    progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
-    mpCancelButton->setEnabled(false);
-    mpArchivedSimulationItem->setStatus(Helper::finished);
-  } else if (isPostCompilationProcessRunning()) {
-    setPostCompilationProcessKilled(true);
-    mpPostCompilationProcess->kill();
-    mIsPostCompilationProcessRunning = false;
-    progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
-    mpCancelButton->setEnabled(false);
-    mpArchivedSimulationItem->setStatus(Helper::finished);
-  } else if (isSimulationProcessRunning()) {
-    setSimulationProcessKilled(true);
-    mpSimulationProcess->kill();
-    mIsSimulationProcessRunning = false;
-    progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-    mpCancelButton->setEnabled(false);
-    mpArchivedSimulationItem->setStatus(Helper::finished);
-  }
-  mpProgressLabel->setText(progressStr);
-  updateMessageTab(progressStr);
-}
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief SimulationOutputWidget::openTransformationalDebugger
@@ -1010,6 +1089,7 @@ void SimulationOutputWidget::openSimulationLogFile()
  */
 void SimulationOutputWidget::createSimulationProgressSocket()
 {
+#if !defined(__EMSCRIPTEN__)
   if (sender()) {
     QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
@@ -1021,6 +1101,7 @@ void SimulationOutputWidget::createSimulationProgressSocket()
       disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
     }
   }
+#endif
 }
 
 /*!
@@ -1030,6 +1111,7 @@ void SimulationOutputWidget::createSimulationProgressSocket()
  */
 void SimulationOutputWidget::readSimulationProgress()
 {
+#if !defined(__EMSCRIPTEN__)
   if (sender()) {
     QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
     if (pTcpSocket) {
@@ -1039,6 +1121,7 @@ void SimulationOutputWidget::readSimulationProgress()
       }
     }
   }
+#endif
 }
 
 /*!
@@ -1047,12 +1130,15 @@ void SimulationOutputWidget::readSimulationProgress()
  */
 void SimulationOutputWidget::socketDisconnected()
 {
+#if QT_CONFIG(process)
   mSocketState = SocketState::Disconnected;
   if (!mIsSimulationProcessRunning) {
     simulationProcessFinishedHelper();
   }
+#endif
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::compilationProcessStarted
 * Slot activated when mpCompilationProcess started signal is raised.\n
@@ -1085,7 +1171,9 @@ void SimulationOutputWidget::readCompilationStandardOutput()
  */
 void SimulationOutputWidget::readCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+  QString output = QString(mpCompilationProcess->readAllStandardError());
+  mCompilationStandardError += output;
+  writeCompilationOutput(output, Qt::red);
 }
 
 /*!
@@ -1101,7 +1189,9 @@ void SimulationOutputWidget::compilationProcessError(QProcess::ProcessError erro
   if (isCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  QString errorString = mpCompilationProcess->errorString();
+  mCompilationStandardError += errorString;
+  writeCompilationOutput(errorString, Qt::red);
 }
 
 /*!
@@ -1136,7 +1226,9 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     compilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
+#endif // QT_CONFIG(process)
 
+#if QT_CONFIG(process)
 /*!
  * \brief SimulationOutputWidget::simulationProcessStarted
  * Slot activated when mpSimulationProcess started signal is raised.\n
@@ -1224,6 +1316,53 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   }
   MainWindow::instance()->getSimulationDialog()->stopInteractiveSimulationSampling(mSimulationOptions);
 }
+#endif // QT_CONFIG(process)
+
+/*!
+ * \brief SimulationOutputWidget::cancelCompilationOrSimulation
+ * Slot activated when mpCancelButton clicked signal is raised.\n
+ * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
+ */
+void SimulationOutputWidget::cancelCompilationOrSimulation()
+{
+#if QT_CONFIG(process)
+  QString progressStr;
+  if (isCompilationProcessRunning()) {
+    setCompilationProcessKilled(true);
+    mpCompilationProcess->kill();
+    mIsCompilationProcessRunning = false;
+    progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(0);
+  } else if (isPostCompilationProcessRunning()) {
+    setPostCompilationProcessKilled(true);
+    mpPostCompilationProcess->kill();
+    mIsPostCompilationProcessRunning = false;
+    progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(0);
+  } else if (isSimulationProcessRunning()) {
+    setSimulationProcessKilled(true);
+    mpSimulationProcess->kill();
+    mIsSimulationProcessRunning = false;
+    progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+  }
+  mpCancelButton->setEnabled(false);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
+#endif // QT_CONFIG(process)
+#if defined(__EMSCRIPTEN__)
+  // wasm-jit run: no QProcess to kill — set the shared flag; the blocking simulate()
+  // aborts and runWasmJitSimulation reports it.
+  if (mIsWasmJitSimulationRunning) {
+    omedit_cancel_sim();
+    mWasmJitCancelled = true;
+    mpCancelButton->setEnabled(false);
+    mpProgressLabel->setText(tr("Cancelling simulation of %1…").arg(mSimulationOptions.getClassName()));
+  }
+#endif
+}
 
 /*!
  * \brief SimulationOutputWidget::openTransformationBrowser
@@ -1248,11 +1387,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, false);
       QUrlQuery query(url);
       int equationIndex = query.queryItemValue("index").toInt();
-      QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
-      if (pTreeWidgetItem) {
-        pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
-        pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
-      }
+      pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")

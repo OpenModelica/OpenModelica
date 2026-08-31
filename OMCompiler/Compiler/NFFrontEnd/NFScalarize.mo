@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -58,6 +62,38 @@ import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
+import SCode;
+
+uniontype AttributeIterator
+  record ATTRIBUTE_ITERATOR
+    String name;
+    Integer confidence;
+    Mutable<ExpressionIterator> iterator;
+  end ATTRIBUTE_ITERATOR;
+
+  function create
+    input tuple<String, Binding> attribute;
+    output AttributeIterator iter;
+  protected
+    String name;
+    Binding binding;
+  algorithm
+    (name, binding) := attribute;
+    iter := ATTRIBUTE_ITERATOR(name, Binding.confidence(binding), Mutable.create(ExpressionIterator.fromBinding(binding)));
+  end create;
+
+  function nextBinding
+    input AttributeIterator iter;
+    output tuple<String, Binding> binding;
+  protected
+    ExpressionIterator it;
+    Expression exp;
+  algorithm
+    (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
+    Mutable.update(iter.iterator, it);
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING, iter.confidence));
+  end nextBinding;
+end AttributeIterator;
 
 public
 function scalarize
@@ -99,16 +135,16 @@ protected
   list<tuple<String, Binding>> ty_attr;
   SCode.Comment cmt;
   SourceInfo info;
-  ExpressionIterator binding_iter;
+  ExpressionIterator binding_iter = ExpressionIterator.NONE_ITERATOR();
   list<ComponentRef> crefs;
   Expression exp;
-  list<String> ty_attr_names;
-  array<ExpressionIterator> ty_attr_iters;
+  list<AttributeIterator> ty_attr_iters;
   list<BackendInfo> backend_attributes;
   Variability bind_var;
   BackendInfo binfo;
   Binding.Source bind_src;
   Boolean has_binding;
+  Integer confidence;
 algorithm
   var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
 
@@ -123,6 +159,7 @@ algorithm
 
       has_binding := Binding.isBound(binding);
       bind_src := Binding.source(binding);
+      confidence := Binding.confidence(binding);
 
       if has_binding then
         binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
@@ -143,21 +180,21 @@ algorithm
       end if;
 
       elem_ty := Type.arrayElementType(ty);
-      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+      ty_attr_iters := list(AttributeIterator.create(a) for a in ty_attr);
       backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
 
       for cr in crefs loop
         if has_binding then
           (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-          binding := Binding.makeFlat(exp, bind_var, bind_src);
+          binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
         end if;
 
-        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+        ty_attr := list(AttributeIterator.nextBinding(i) for i in ty_attr_iters);
         binfo :: backend_attributes := backend_attributes;
         vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
       end for;
     else
-      Error.assertion(false, getInstanceName() + " failed on " +
+      Error.terminate(getInstanceName() + " failed on " +
         Variable.toString(var, printBindingType = true), var.info);
     end try;
   else
@@ -168,7 +205,7 @@ end scalarizeVariable;
 function scalarizeBackendVariable
   input Variable var;
   input List<Integer> indices = {};
-  input output list<Variable> vars = {};
+  output list<Variable> vars = {};
 protected
   list<ComponentRef> crefs;
   ExpressionIterator binding_iter;
@@ -179,37 +216,43 @@ protected
   Type elem_ty;
   BackendInfo binfo;
   list<BackendInfo> backend_attributes;
+  Integer confidence;
 algorithm
   try
-    vars := listReverse(vars);
-    crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false);
+    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false));
     elem_ty             := Type.arrayElementType(var.ty);
     backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then
-      binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true);
+      binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true, false);
       bind_var          := Binding.variability(var.binding);
       bind_src          := Binding.source(var.binding);
-      for cr in listReverse(crefs) loop
-        (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-        binding := Binding.makeFlat(exp, bind_var, bind_src);
-        binfo :: backend_attributes := backend_attributes;
-        vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-      end for;
+      confidence        := Binding.confidence(var.binding);
+      vars := list(
+        match cr
+          case _ algorithm
+            (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+            binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
+            binfo :: backend_attributes := backend_attributes;
+          then Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
+        end match for cr in crefs
+      );
     else
-      for cr in listReverse(crefs) loop
-        binfo :: backend_attributes := backend_attributes;
-        vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-      end for;
+      vars := list(
+        match cr
+          case _ algorithm
+            binfo :: backend_attributes := backend_attributes;
+          then Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
+        end match for cr in crefs
+      );
     end if;
     // filter sliced variables
     // ToDo: do this more efficiently and not create them in the first place
     if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
-      vars := List.keepPositions(vars, indices);
+      vars := List.keepPositions(vars, indices, zeroBased = true);
     end if;
   else
-    Error.assertion(false, getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
+    Error.terminate(getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());
   end try;
-  vars := listReverse(vars);
 end scalarizeBackendVariable;
 
 function scalarizeComplexVariable
@@ -241,44 +284,6 @@ algorithm
     else {var};
   end match;
 end scalarizeComplexVariable;
-
-function scalarizeTypeAttributes
-  input list<tuple<String, Binding>> attrs;
-  output list<String> names = {};
-  output array<ExpressionIterator> iters;
-protected
-  Integer len, i;
-  String name;
-  Binding binding;
-algorithm
-  len := listLength(attrs);
-  iters := arrayCreateNoInit(len, ExpressionIterator.NONE_ITERATOR());
-  i := len;
-
-  for attr in attrs loop
-    (name, binding) := attr;
-    names := name :: names;
-    arrayUpdate(iters, i, ExpressionIterator.fromBinding(binding));
-    i := i - 1;
-  end for;
-end scalarizeTypeAttributes;
-
-function nextTypeAttributes
-  input list<String> names;
-  input array<ExpressionIterator> iters;
-  output list<tuple<String, Binding>> attrs = {};
-protected
-  Integer i = 1;
-  ExpressionIterator iter;
-  Expression exp;
-algorithm
-  for name in names loop
-    (iter, exp) := ExpressionIterator.next(iters[i]);
-    arrayUpdate(iters, i, iter);
-    i := i + 1;
-    attrs := (name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
-  end for;
-end nextTypeAttributes;
 
 function expandComplexCref
   input output Expression exp;
@@ -329,14 +334,22 @@ algorithm
       Expression lhs, rhs;
       Type ty;
       DAE.ElementSource src;
-      SourceInfo info;
-      list<Equation> eql;
+      Boolean scalarize;
 
-    case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) guard Type.isArray(ty)
+    case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src)
+        guard Type.isArray(ty)
       algorithm
-        if not forceScalarize and (Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs)) then
-          equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
+        if forceScalarize or eq.scalarizeMode == NFEquation.ScalarizeMode.SCALARIZE then
+          scalarize := true;
+        elseif eq.scalarizeMode == NFEquation.ScalarizeMode.DONT_SCALARIZE then
+          scalarize := false;
+        elseif Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs) then
+          scalarize := false;
         else
+          scalarize := true;
+        end if;
+
+        if scalarize then
           lhs_iter := ExpressionIterator.fromExp(lhs);
           rhs_iter := ExpressionIterator.fromExp(rhs);
           ty := Type.arrayElementType(ty);
@@ -349,14 +362,13 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
+            equations := Equation.makeEquality(lhs, rhs, ty, src, eq.scope) :: equations;
           end while;
+        else
+          equations := eq :: equations;
         end if;
       then
         equations;
-
-    case Equation.ARRAY_EQUALITY() guard forceScalarize
-      then scalarizeEquation(Equation.EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations, true);
 
     case Equation.CONNECT() then equations;
 
@@ -446,7 +458,7 @@ function scalarizeStatement
 algorithm
   statements := match stmt
     case Statement.FOR()
-      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.forType, stmt.source) :: statements;
+      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.forType, stmt.source, stmt.sub_iters) :: statements;
 
     case Statement.IF()
       then scalarizeIfStatement(stmt.branches, stmt.source, statements);
@@ -524,5 +536,5 @@ algorithm
   res := false;
 end variableHasForcedScalarAttribute;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFScalarize;

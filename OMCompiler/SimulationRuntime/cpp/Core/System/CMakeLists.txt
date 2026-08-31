@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${SystemName})
 set(BASE_LIB "" CACHE INTERNAL "" )
@@ -19,7 +19,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
 add_precompiled_header(${SystemName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${SystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
 

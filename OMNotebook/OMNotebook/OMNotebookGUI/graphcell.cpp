@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -199,13 +202,6 @@ namespace IAEX {
     }
   }
 
-  MyTextEdit2a::~MyTextEdit2a()
-  {
-    for(QMap<int, IndentationState*>::iterator i = indentationStates.begin(); i != indentationStates.end(); ++i) {
-      delete i.value();
-    }
-  }
-
   void MyTextEdit2a::mousePressEvent(QMouseEvent *event)
   {
     inCommand = false;
@@ -361,6 +357,8 @@ namespace IAEX {
 
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -388,6 +386,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     // CTRL+E: autoindent cell
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
     {
@@ -434,19 +433,10 @@ namespace IAEX {
           k = b.userState();
         }
         Indent i(tmp);
-        if(indentationStates.contains(k))
+        auto s = indentationStates.find(k);
+        if (s != indentationStates.end())
         {
-          IndentationState* s = indentationStates[k];
-          i.ism.level = s->level;
-          i.ism.equation = s->equation;
-          i.ism.equationSection = s->equationSection;
-          i.ism.lMod = s->lMod;
-          i.ism.loopBlock = s->loopBlock;
-          i.ism.nextMod = s->nextMod;
-          i.ism.skipNext = s->skipNext;
-          i.ism.state = s->state;
-          i.current = s->current;
-          i.next = s->next;
+          i.setState(*s);
         }
 
         i.indentedText();
@@ -516,10 +506,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QPlainTextEdit::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QPlainTextEdit::insertFromMimeData( &newSource );
     }
     else
       QPlainTextEdit::insertFromMimeData( source );
@@ -600,6 +589,8 @@ namespace IAEX {
       event->accept();
       emit eval();
     }
+// wasm: base class handles Ctrl+C so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -609,6 +600,7 @@ namespace IAEX {
       event->ignore();
       emit forwardAction( 1 );
     }
+#endif
     else
     {
       inCommand = false;
@@ -618,7 +610,7 @@ namespace IAEX {
     updatePosition();
   }
 
-  void MyTextEdit2::setAutoIndent(bool b)
+  void MyTextEdit2::setAutoIndent(bool)
   {
   }
 
@@ -639,18 +631,17 @@ namespace IAEX {
   * \author Anders Fernström
   * \date 2006-01-23
   *
-  * \brief If the mimedata that should be insertet contain text,
+  * \brief If the mimedata that should be inserted contains text,
   * create a new mimedata object that only contains text, otherwise
-  * text format is insertet also - don't want that for GraphCells.
+  * text format is inserted also - don't want that for GraphCells.
   */
   void MyTextEdit2::insertFromMimeData(const QMimeData *source)
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -698,9 +689,8 @@ namespace IAEX {
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent) :
-   Cell(parent), evaluated_(false), closed_(true), delegate_(0),
-    oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
+  GraphCell::GraphCell(Document *doc, QWidget *parent)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -720,22 +710,6 @@ namespace IAEX {
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
     connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
-
-    imageFile=0;
-  }
-
-  /*!
-  * \author Ingemar Axelsson and Anders Fernström
-  *
-  * \brief The class destructor
-  */
-  GraphCell::~GraphCell()
-  {
-    delete mpPlotWindow;
-    delete input_;
-    delete output_;
-    if(imageFile)
-      delete imageFile;
   }
 
   /*!
@@ -796,7 +770,7 @@ namespace IAEX {
     connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
     contentChanged();
 
-    connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
+    connect(input_, &MyTextEdit2a::setState, this, &IAEX::GraphCell::setState);
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
   }
 
@@ -936,6 +910,11 @@ namespace IAEX {
     return te.toHtml();
   }
 
+  QTextDocument* GraphCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
   * \author Anders Fernström
   * \date 2005-11-23
@@ -980,19 +959,6 @@ namespace IAEX {
 
   /*!
   * \author Anders Fernström
-  * \date 2006-01-05
-  *
-  * \brief Return the input texteditor
-  *
-  * \return Texteditor for the inputpart of the GraphCell
-  */
-  QTextEdit *GraphCell::textEdit()
-  {
-    return (QTextEdit*)input_;
-  }
-
-  /*!
-  * \author Anders Fernström
   * \date 2006-02-03
   *
   * \brief Return the output texteditor
@@ -1002,6 +968,48 @@ namespace IAEX {
   QTextEdit* GraphCell::textEditOutput()
   {
     return output_;
+  }
+
+  void GraphCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void GraphCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void GraphCell::pasteText()
+  {
+    input_->paste();
+  }
+
+  bool GraphCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    return input_->find(exp, options);
+  }
+
+  void GraphCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+  }
+
+  void GraphCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
   }
 
   /*!
@@ -1248,7 +1256,7 @@ namespace IAEX {
   *
   * 2006-03-02 AF, clear text selection in chapter counter
   */
-  void GraphCell::setReadOnly(const bool readonly)
+  void GraphCell::setReadOnly(bool readonly)
   {
     try
     {
@@ -1284,7 +1292,7 @@ namespace IAEX {
   *
   * \param evaluated The boolean value of evaluated property
   */
-  void GraphCell::setEvaluated(const bool evaluated)
+  void GraphCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -1300,18 +1308,15 @@ namespace IAEX {
   * calculate the new height, to reflect the changes made when
   * porting from Q3TextEdit to QTextEdit.
   */
-  void GraphCell::setClosed(const bool closed, bool update)
+  void GraphCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
     {
       output_->hide();
     }
-    else
+    else if( evaluated_ )
     {
-      if( evaluated_ )
-      {
-        output_->show();
-      }
+      output_->show();
     }
 
     closed_ = closed;
@@ -1321,7 +1326,7 @@ namespace IAEX {
   /*!
   * \author Ingemar Axelsson and Anders Fernström
   */
-  void GraphCell::setFocus(const bool focus)
+  void GraphCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -1330,7 +1335,7 @@ namespace IAEX {
   /*!
   * \author Anders Fernström
   */
-  void GraphCell::setFocusOutput(const bool focus)
+  void GraphCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -1404,7 +1409,7 @@ namespace IAEX {
   *
   * \return State of GraphCell (closed or not)
   */
-  bool GraphCell::isClosed()
+  bool GraphCell::isClosed() const
   {
     return closed_;
   }
@@ -1420,7 +1425,7 @@ namespace IAEX {
   *
   * \return False
   */
-  bool GraphCell::isEditable()
+  bool GraphCell::isEditable() const
   {
     return false;
   }
@@ -1444,7 +1449,7 @@ namespace IAEX {
     input_->setPlainText(expr);
   }
 
-  void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+  void GraphCell::PlotCallbackFunction(void *p, int /*externalWindow*/, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                        const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
@@ -1484,6 +1489,30 @@ namespace IAEX {
     }
   }
 
+#if defined(__EMSCRIPTEN__)
+  void GraphCell::renderPlotArgs(const QStringList &a)
+  {
+    // Build the list PlotCallbackFunction passes to plotVariablesSlot from the 18
+    // ABI-order args; the result file (a[0]) is already staged into the FS.
+    if (a.size() < 18) {
+      return;
+    }
+    // Plotting before a result exists (or against a result the worker could not
+    // read) leaves no file staged; skip rather than let OMPlot raise an error.
+    if (!QFile::exists(a.at(0))) {
+      return;
+    }
+    QStringList lst;
+    lst << "";                   // the first element must be empty
+    for (int i = 0; i < 17; ++i) {
+      lst << a.at(i);            // filename .. autoScale
+    }
+    lst << "" << "" << "" << ""; // skip yaxis / ylabel-right / yrange-right pair
+    lst << a.at(17).split(" ", Qt::SkipEmptyParts);  // variables
+    plotVariablesSlot(lst);
+  }
+#endif
+
   void GraphCell::plotVariablesSlot(QStringList lst)
   {
     try
@@ -1504,7 +1533,12 @@ namespace IAEX {
     }
     catch (PlotException &e)
     {
+#if defined(__EMSCRIPTEN__)
+      // A modal dialog freezes the single-threaded wasm event loop; just log.
+      qWarning("OMNotebook plot error: %s", e.what());
+#else
       QMessageBox::warning(nullptr, tr("Error"), e.what());
+#endif
     }
   }
 
@@ -1529,9 +1563,9 @@ namespace IAEX {
   *
   */
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  QRecursiveMutex* guard = new QRecursiveMutex();
+  QRecursiveMutex guard;
 #else // QT_VERSION_CHECK
-  QMutex* guard = new QMutex(QMutex::Recursive);
+  QMutex guard(QMutex::Recursive);
 #endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
@@ -1547,9 +1581,11 @@ namespace IAEX {
       // Only the text, no html tags. /AF
       QString expr = input_->toPlainText();
       // Before evaluating any expression set the plot callback pointer and function.
+#ifndef __EMSCRIPTEN__
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
       env->threadData_->plotClassPointer = this;
       env->threadData_->plotCB = GraphCell::PlotCallbackFunction;
+#endif
       // Before evaluating any expression also hide the PlotWindow. If callback function is called it will show it.
       mpPlotWindow->hide();
 
@@ -1575,7 +1611,7 @@ namespace IAEX {
       }
 
       {
-        guard->lock();
+        guard.lock();
         // adrpo:FIXME! WRONG! TODO! this is wrong!
         //       the commands should be sent to OMC in the same sequence
         //       they appear in the notebook, otherwise a simulate command
@@ -1589,6 +1625,23 @@ namespace IAEX {
 //        et->start();
         getDelegate()->evalExpression(expr);
         delegateFinished(getDelegate());
+#if defined(__EMSCRIPTEN__)
+        // Draw any plot() the command produced (omc ran in the worker, so its
+        // callback can't reach us). Deferred to the main loop because the code
+        // above runs in evalExpression's nested QEventLoop; on Qt for WebAssembly
+        // a qwt canvas built there only composites after a later relayout.
+        const QList<QStringList> plots = OmcInteractiveEnvironment::getInstance()->takePlotCommands();
+        if (!plots.isEmpty()) {
+          QTimer::singleShot(0, this, [this, plots]() {
+            for (const QStringList &args : plots) {
+              renderPlotArgs(args);
+            }
+            // Recompute the cell height; the resize composites the qwt canvas
+            // (the relayout that editing the input cell triggered by hand).
+            contentChanged();
+          });
+        }
+#endif
       }
     }
     input_->blockSignals(false);
@@ -1602,7 +1655,7 @@ namespace IAEX {
     int errorLevel= delegate->getErrorLevel();
 
     //delete sender();
-    guard->unlock();
+    guard.unlock();
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) ) {
       res = "[done]";
@@ -1629,36 +1682,50 @@ namespace IAEX {
       pal.setColor(QPalette::Base, Qt::white);
     }
     output_->setPalette(pal);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
- // TODO
-#else
-    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
-    int cap = 1;
-    int p=0;
+    // The old implementation used QRegExp; replace it with QRegularExpression.
+    // The expression finds either “line:col‑line:col” or “line:col” patterns.
+    QRegularExpression e(R"(([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+))");
+    int p = 0;                                   // start position for the search
     QList<QAction*> actions;
-    while((p=res.indexOf(e, p)) > 0) {
-      QTextCharFormat f;
-      f.setAnchor(true);
 
-      if(e.cap(2).size() > e.cap(1).size()) {
-        cap = 2;
-      }
-      f.setAnchorHref("http://fake.url/"+e.cap(cap));
-      QTextCursor c(output_->textCursor());
-      c.setPosition(p);
-      c.setPosition(p+=e.cap(cap).size(), QTextCursor::KeepAnchor);
+    while (true) {
+        QRegularExpressionMatch match = e.match(res, p);
+        if (!match.hasMatch())
+            break;                               // no more matches
 
-      f.setFontUnderline(true);
-      f.setUnderlineColor(QColor(0,0,255));
-      c.mergeCharFormat(f);
+        // Determine which capture group (1 or 2) contains the longer text.
+        QString capStr = match.captured(1);
+        if (match.captured(2).size() > capStr.size())
+            capStr = match.captured(2);
 
-      MyAction* a = new MyAction("_"+e.cap(cap), 0);
-      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-      actions.push_back(a);
+        // positions of the match in the original string
+        int start = match.capturedStart();        // start of the whole match
+        int length = match.capturedLength();      // length of the whole match
+
+        // Create the anchor format.
+        QTextCharFormat f;
+        f.setAnchor(true);
+        f.setAnchorHref(QStringLiteral("http://fake.url/") + capStr);
+        f.setFontUnderline(true);
+        f.setUnderlineColor(QColor(0, 0, 255));
+
+        // Apply the format to the matching text.
+        QTextCursor c(output_->textCursor());
+        c.setPosition(start);
+        c.setPosition(start + length, QTextCursor::KeepAnchor);
+        c.mergeCharFormat(f);
+
+        // Create an action that will emit the fake URL when triggered.
+        MyAction* a = new MyAction(QStringLiteral("_") + capStr, nullptr);
+        connect(a, &MyAction::triggered, a, &MyAction::triggered2);
+        connect(a, &MyAction::urlClicked, output_, &QTextBrowser::anchorClicked);
+        actions.push_back(a);
+
+        // Continue searching after the current match.
+        p = start + length;
     }
+
     emit setStatusMenu(actions);
-#endif
     ++numEvals_;
     contentChanged();
 
@@ -1853,6 +1920,9 @@ namespace IAEX {
 
     if(hasNext())
       next()->accept(v);
+  }
+
+  void GraphCell::viewExpression(bool) {
   }
 
 }

@@ -1,43 +1,44 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
 #include "../simulation_data.h"
+#include "../simulation/arrayIndex.h"
+#include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
 #include "../simulation/solver/nonlinearSystem.h"
 #include "../simulation/solver/linearSystem.h"
 #include "../simulation/solver/mixedSystem.h"
 #include "../simulation/solver/delay.h"
-#include "../simulation/solver/fmi_events.h"
+#include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
+#include "../util/omc_error.h"
+#include "../util/omc_init.h"
 
 /*
 DLLExport pthread_key_t fmu1_thread_data_key;
@@ -142,6 +143,14 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
         "fmiInstantiateModel: Wrong GUID %s. Expected %s.", GUID, MODEL_GUID);
     return NULL;
   }
+  /* Use OpenModelica's memory pool allocator instead of the Boehm garbage collector.
+     The Boehm GC is not linked into the exported FMU, so leaving the default GC-based
+     allocator uninitialized crashes at the first runtime allocation (e.g. in
+     computeVarIndices/initializeDataStruc). This mirrors what fmu2_model_interface.c does.
+     See https://github.com/OpenModelica/OpenModelica/issues/15838 */
+  omc_alloc_interface = omc_alloc_interface_pooled;
+  mmc_init_nogc();
+  omc_alloc_interface.init();
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
     DATA* fmudata = NULL;
@@ -152,6 +161,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     comp->functions = functions;
     comp->loggingOn = loggingOn;
     comp->state = modelInstantiated;
+    comp->_need_update = 1;
     comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     /* Cannot use functions.allocateMemory since the pointer might not be stored on the stack of the parent */
@@ -183,15 +193,22 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     return NULL;
   }
   /* intialize modelData */
-  fmu1_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
-  initializeDataStruc(comp->fmuData, comp->threadData);
+  fmu1_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  /* The runtime no longer allocates the model variable data inside setupDataStruc; it has to
+     be done explicitly here, before initializeDataStruc/computeVarIndices dereferences it.
+     This mirrors fmu2_model_interface.c. See #15838. */
+  comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
+  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
+  scalarAllocArrayAttributes(comp->fmuData->modelData);
+  calculateAllScalarLength(comp->fmuData->modelData);
   /* setup model data with default start data */
   setDefaultStartValues(comp);
-  setAllVarsToStart(comp->fmuData);
-  setAllParamsToStart(comp->fmuData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+  initializeDataStruc(comp->fmuData, comp->threadData);
+  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
+  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 
   strcpy((char*)comp->instanceName, (const char*)instanceName);
@@ -269,6 +286,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
     if (setReal(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -293,6 +311,7 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setInteger(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -317,6 +336,7 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setBoolean(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -341,6 +361,7 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     if (setString(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
   return fmiOK;
 }
 
@@ -352,6 +373,7 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal t)
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetTime: time=%.16g", t);
   comp->fmuData->localData[0]->timeValue = t;
+  comp->_need_update = 1;
   return fmiOK;
 }
 
@@ -375,12 +397,45 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx)
     }
   }
 #endif
+  comp->_need_update = 1;
   return fmiOK;
 }
 
 // ---------------------------------------------------------------------------
 // FMI functions: get variable values from the FMU
 // ---------------------------------------------------------------------------
+
+/* Re-evaluate the model if an input (or time/state) changed since the last evaluation, so that
+   fmiGet* returns up-to-date direct-feedthrough outputs. Mirrors updateIfNeeded() in
+   fmu2_model_interface.c. Before initialization the start values stand, so we only evaluate once
+   the model is initialized. See #15838. */
+static fmiStatus updateIfNeeded(ModelInstance* comp, const char* func)
+{
+  threadData_t *threadData = comp->threadData;
+  if (!comp->_need_update)
+    return fmiOK;
+  if (comp->state != modelInitialized) {
+    /* nothing has been computed yet; fmiInitialize will do the first evaluation */
+    return fmiOK;
+  }
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+
+    comp->fmuData->callback->functionODE(comp->fmuData, threadData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+    return fmiOK;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+    comp->functions.logger(comp, comp->instanceName, fmiError, "error", "%s: terminated by an assertion.", func);
+    return fmiError;
+}
 
 fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal value[])
 {
@@ -391,6 +446,8 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "vr[]", vr))
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "value[]", value))
+    return fmiError;
+  if (updateIfNeeded(comp, "fmiGetReal") != fmiOK)
     return fmiError;
 #if NUMBER_OF_REALS>0
   for (i=0; i<nvr; i++) {
@@ -416,6 +473,8 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetInteger", "value[]", value))
     return fmiError;
+  if (updateIfNeeded(comp, "fmiGetInteger") != fmiOK)
+    return fmiError;
 #if NUMBER_OF_INTEGERS>0
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
@@ -440,6 +499,8 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetBoolean", "value[]", value))
     return fmiError;
+  if (updateIfNeeded(comp, "fmiGetBoolean") != fmiOK)
+    return fmiError;
 #if NUMBER_OF_BOOLEANS>0
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
@@ -463,6 +524,8 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   if (nvr>0 && nullPointer(comp, "fmiGetString", "vr[]", vr))
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetString", "value[]", value))
+    return fmiError;
+  if (updateIfNeeded(comp, "fmiGetString") != fmiOK)
     return fmiError;
 #if NUMBER_OF_STRINGS>0
   for (i=0; i<nvr; i++) {
@@ -553,6 +616,8 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
     comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    /* the continuous system has just been evaluated; a following fmiGetReal need not redo it */
+    comp->_need_update = 0;
   #if (NUMBER_OF_STATES>0)
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
@@ -656,19 +721,24 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
+    /* the model has just been evaluated by initialization() above */
+    comp->_need_update = 0;
+
     eventInfo->iterationConverged = fmiTrue;
     eventInfo->stateValueReferencesChanged = fmiFalse;
     eventInfo->stateValuesChanged = fmiTrue;
     eventInfo->terminateSimulation = fmiFalse;
 
-    /* Get next event time (sample calls)*/
+    /* Get next event time (sample calls).
+       getNextSampleTimeFMU returns TRUE when there is an upcoming time event. The previous
+       logic was inverted, which made models without sample events report a time event at
+       t=0 (nextEventTime left at 0), breaking importers. See #15838. */
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
     if (nextSampleEventDefined){
-      eventInfo->upcomingTimeEvent = fmiFalse;
-    }else{
       eventInfo->upcomingTimeEvent = fmiTrue;
       eventInfo->nextEventTime = nextSampleEvent;
-      fmiEventUpdate(comp, fmiFalse, eventInfo);
+    }else{
+      eventInfo->upcomingTimeEvent = fmiFalse;
     }
 
     return fmiOK;
@@ -707,7 +777,9 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     }
 #endif
 
-    storePreValues(comp->fmuData);
+    /* Do not store pre-values here: it would override pre values and prevent event
+       triggering for conditions like u <> pre(u). Mirrors fmu2_model_interface.c
+       (https://github.com/OpenModelica/OpenModelica/issues/13811). See #15838. */
 
     /* activate sample event */
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
@@ -715,11 +787,15 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       if(comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
       {
         comp->fmuData->simulationInfo->samples[i] = 1;
-        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
+        infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
       }
     }
 
-    comp->fmuData->callback->functionDAE(comp->fmuData, threadData);
+    /* update the discrete system during the event update; this resolves the discrete
+       fixpoint (firing when-clauses, updating pre-values) while the sample is active.
+       Mirrors fmu2_model_interface.c
+       (https://github.com/OpenModelica/OpenModelica/issues/12350). See #15838. */
+    updateDiscreteSystem(comp->fmuData, threadData);
 
     /* deactivate sample events */
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
@@ -731,6 +807,13 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       }
     }
 
+    /* Re-evaluate the model with the samples now deactivated so that sample()-based when
+       conditions are recomputed to false before their pre-values are stored below. In FMI 2.0
+       this happens in fmiCompletedIntegratorStep, but FMI 1.0 importers (e.g. FMPy) do not
+       always call fmiCompletedIntegratorStep, so without this a 'when sample(...)' clause that
+       uses pre() would only fire on every other sample. See #15838. */
+    comp->fmuData->callback->functionDAE(comp->fmuData, threadData);
+
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
       if((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent))
         comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
@@ -740,7 +823,11 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       intermediateResults = fmiTrue;
       if (comp->loggingOn)
         comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Need to iterate(discrete changes)!");
-      eventInfo->iterationConverged  = fmiTrue;
+      /* Discrete values are not at a fixed point yet: report iterationConverged=false so the
+         importer calls fmiEventUpdate again. The previous code reported true here, so the
+         discrete event iteration never ran and when-clauses depending on pre() only fired
+         every other event. See #15838. */
+      eventInfo->iterationConverged  = fmiFalse;
       eventInfo->stateValueReferencesChanged = fmiFalse;
       eventInfo->stateValuesChanged  = fmiTrue;
       eventInfo->terminateSimulation = fmiFalse;
@@ -753,15 +840,17 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       eventInfo->terminateSimulation = fmiFalse;
     }
 
+    /* Store the pre-values and update the relations before overwriting the old
+       simulation data, otherwise pre(v) lags one event behind and when-clauses such as
+       'when sample(...) then n := pre(n) + 1' only fire every other sample. This matches
+       the order used in fmu2_model_interface.c. See #15838. */
+    storePreValues(comp->fmuData);
+    updateRelationsPre(comp->fmuData);
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
-    /* TODO: check the event iteration for relation
-     * in fmi import and export. This is an workaround,
-     * since the iteration seem not starting.
-     */
-    storePreValues(comp->fmuData);
-    updateRelationsPre(comp->fmuData);
+    /* the model has just been re-evaluated during the event update */
+    comp->_need_update = 0;
 
     if (comp->loggingOn)
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: intermediateResults = %d", intermediateResults);
@@ -772,12 +861,12 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
     if (nextSampleEventDefined)
     {
-      eventInfo->upcomingTimeEvent = fmiFalse;
+      eventInfo->upcomingTimeEvent = fmiTrue;
+      eventInfo->nextEventTime = nextSampleEvent;
     }
     else
     {
-      eventInfo->upcomingTimeEvent = fmiTrue;
-      eventInfo->nextEventTime = nextSampleEvent;
+      eventInfo->upcomingTimeEvent = fmiFalse;
     }
     if (comp->loggingOn)
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
@@ -825,6 +914,8 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
      *       in the whole ringbuffer
      */
     overwriteOldSimulationData(comp->fmuData);
+    /* the model has just been re-evaluated for the completed step */
+    comp->_need_update = 0;
     return fmiOK;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)

@@ -2,6 +2,7 @@
 // keywords: Recursive
 // status:   correct
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
+// suite: metamodelica
 //
 // Recursive function testing
 //

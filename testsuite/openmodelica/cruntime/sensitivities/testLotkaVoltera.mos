@@ -1,6 +1,5 @@
 // name: testSens3
 // status: correct
-// cflags: -d=-newInst
 
 
 loadString("

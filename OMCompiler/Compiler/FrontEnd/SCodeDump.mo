@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -134,9 +138,9 @@ public function printCommentStr
   input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
-  outString := match(inComment)
+  outString := match inComment
     local Option<String> comment;
-    case (SCode.COMMENT(comment = comment))
+    case SCode.COMMENT(comment = comment)
       then Tpl.tplString2(SCodeDumpTpl.dumpCommentStr, comment, options);
     else "";
   end match;
@@ -148,9 +152,9 @@ public function printAnnotationStr
   input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
-  outString := match(inComment, options)
+  outString := match inComment
     local Option<SCode.Annotation> annotation_;
-    case (SCode.COMMENT(annotation_ = annotation_), _)
+    case SCode.COMMENT(annotation_ = annotation_)
       then Tpl.tplString2(SCodeDumpTpl.dumpAnnotationOpt, annotation_, options);
     else "";
   end match;
@@ -161,7 +165,7 @@ public function restrString
   input SCode.Restriction inRestriction;
   output String outString;
 algorithm
-  outString := match (inRestriction)
+  outString := match inRestriction
     case SCode.R_CLASS() then "class";
     case SCode.R_OPTIMIZATION() then "optimization";
     case SCode.R_MODEL() then "model";
@@ -223,7 +227,7 @@ public function shortElementStr
   input SCode.Element inElement;
   output String outString;
 algorithm
-  outString := match (inElement)
+  outString := match inElement
     local
       String str,res,n,ioStr;
       SCode.Mod mod;
@@ -235,52 +239,52 @@ algorithm
       SCode.Partial pp;
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = AbsynUtil.pathString(path);
-        str = str + printModStr(mod,defaultOptions);
-        res = stringAppendList({"extends ",str,";"});
+      algorithm
+        str := AbsynUtil.pathString(path);
+        str := str + printModStr(mod,defaultOptions);
+        res := stringAppendList({"extends ",str,";"});
       then
         res;
 
     case SCode.COMPONENT()
-      equation
-        res = unparseElementStr(inElement,defaultOptions);
+      algorithm
+        res := unparseElementStr(inElement,defaultOptions);
       then
         res;
 
     case SCode.CLASS(prefixes = SCode.PREFIXES(),
                      classDef = SCode.DERIVED())
-      equation
-        res = unparseElementStr(inElement,defaultOptions);
+      algorithm
+        res := unparseElementStr(inElement,defaultOptions);
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.CLASS_EXTENDS())
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class extends ",n,";"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class extends ",n,";"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.ENUMERATION())
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n," enumeration;"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class ",n," enumeration;"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n,";"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class ",n,";"});
       then
         res;
 
-    case (SCode.IMPORT(imp = imp))
-      equation
-         str = "import "+ AbsynUtil.printImportString(imp) + ";";
+    case SCode.IMPORT(imp = imp)
+      algorithm
+         str := "import "+ AbsynUtil.printImportString(imp) + ";";
       then str;
   end match;
 end shortElementStr;
@@ -289,7 +293,7 @@ public function printEnumStr
   input SCode.Enum en;
   output String str;
 algorithm
-  str := match (en)
+  str := match en
     local
       String s;
     case SCode.ENUM(s, _) then s;
@@ -301,11 +305,11 @@ public function variabilityString
   input SCode.Variability inVariability;
   output String outString;
 algorithm
-  outString := match (inVariability)
-    case (SCode.VAR()) then "VAR";
-    case (SCode.DISCRETE()) then "DISCRETE";
-    case (SCode.PARAM()) then "PARAM";
-    case (SCode.CONST()) then "CONST";
+  outString := match inVariability
+    case SCode.VAR() then "VAR";
+    case SCode.DISCRETE() then "DISCRETE";
+    case SCode.PARAM() then "PARAM";
+    case SCode.CONST() then "CONST";
   end match;
 end variabilityString;
 
@@ -314,10 +318,10 @@ public function parallelismString
   input SCode.Parallelism inParallelism;
   output String outString;
 algorithm
-  outString := match (inParallelism)
-    case (SCode.PARGLOBAL()) then "PARGLOBAL";
-    case (SCode.PARLOCAL()) then "PARLOCAL";
-    case (SCode.NON_PARALLEL()) then "NON_PARALLEL";
+  outString := match inParallelism
+    case SCode.PARGLOBAL() then "PARGLOBAL";
+    case SCode.PARLOCAL() then "PARLOCAL";
+    case SCode.NON_PARALLEL() then "NON_PARALLEL";
   end match;
 end parallelismString;
 
@@ -326,11 +330,11 @@ public function innerouterString
   input Absyn.InnerOuter innerOuter;
   output String outString;
 algorithm
-  outString := match (innerOuter)
-    case (Absyn.INNER_OUTER()) then "INNER/OUTER";
-    case (Absyn.INNER()) then "INNER";
-    case (Absyn.OUTER()) then "OUTER";
-    case (Absyn.NOT_INNER_OUTER()) then "";
+  outString := match innerOuter
+    case Absyn.INNER_OUTER() then "INNER/OUTER";
+    case Absyn.INNER() then "INNER";
+    case Absyn.OUTER() then "OUTER";
+    case Absyn.NOT_INNER_OUTER() then "";
   end match;
 end innerouterString;
 
@@ -339,11 +343,11 @@ public function unparseVariability
   input SCode.Variability inVariability;
   output String outString;
 algorithm
-  outString := match (inVariability)
-    case (SCode.VAR()) then "";
-    case (SCode.DISCRETE()) then "discrete";
-    case (SCode.PARAM()) then "parameter";
-    case (SCode.CONST()) then "constant";
+  outString := match inVariability
+    case SCode.VAR() then "";
+    case SCode.DISCRETE() then "discrete";
+    case SCode.PARAM() then "parameter";
+    case SCode.CONST() then "constant";
   end match;
 end unparseVariability;
 
@@ -352,9 +356,9 @@ public function printInitialStr
   input SCode.Initial initial_;
   output String str;
 algorithm
-  str := match(initial_)
-    case (SCode.INITIAL()) then "initial";
-    case (SCode.NON_INITIAL()) then "non initial";
+  str := match initial_
+    case SCode.INITIAL() then "initial";
+    case SCode.NON_INITIAL() then "non initial";
   end match;
 end printInitialStr;
 
@@ -362,7 +366,7 @@ public function connectorTypeStr
   input SCode.ConnectorType inConnectorType;
   output String str;
 algorithm
-  str := match(inConnectorType)
+  str := match inConnectorType
     case SCode.POTENTIAL() then "";
     case SCode.FLOW() then "flow";
     case SCode.STREAM() then "stream";
@@ -373,9 +377,9 @@ public function encapsulatedStr
   input SCode.Encapsulated inEncapsulated;
   output String str;
 algorithm
-  str := match(inEncapsulated)
-    case (SCode.ENCAPSULATED()) then "encapsulated ";
-    case (SCode.NOT_ENCAPSULATED()) then "";
+  str := match inEncapsulated
+    case SCode.ENCAPSULATED() then "encapsulated ";
+    case SCode.NOT_ENCAPSULATED() then "";
   end match;
 end encapsulatedStr;
 
@@ -383,9 +387,9 @@ public function partialStr
   input SCode.Partial inPartial;
   output String str;
 algorithm
-  str := match(inPartial)
-    case (SCode.PARTIAL())     then "partial ";
-    case (SCode.NOT_PARTIAL()) then "";
+  str := match inPartial
+    case SCode.PARTIAL()     then "partial ";
+    case SCode.NOT_PARTIAL() then "";
   end match;
 end partialStr;
 
@@ -393,9 +397,9 @@ public function visibilityStr
   input SCode.Visibility inVisibility;
   output String str;
 algorithm
-  str := match(inVisibility)
-    case (SCode.PUBLIC()) then "public ";
-    case (SCode.PROTECTED()) then "protected ";
+  str := match inVisibility
+    case SCode.PUBLIC() then "public ";
+    case SCode.PROTECTED() then "protected ";
   end match;
 end visibilityStr;
 
@@ -403,9 +407,9 @@ public function finalStr
   input SCode.Final inFinal;
   output String str;
 algorithm
-  str := match(inFinal)
-    case (SCode.FINAL()) then "final ";
-    case (SCode.NOT_FINAL()) then "";
+  str := match inFinal
+    case SCode.FINAL() then "final ";
+    case SCode.NOT_FINAL() then "";
   end match;
 end finalStr;
 
@@ -413,9 +417,9 @@ public function eachStr
   input SCode.Each inEach;
   output String str;
 algorithm
-  str := match(inEach)
-    case (SCode.EACH()) then "each ";
-    case (SCode.NOT_EACH()) then "";
+  str := match inEach
+    case SCode.EACH() then "each ";
+    case SCode.NOT_EACH() then "";
   end match;
 end eachStr;
 
@@ -423,9 +427,9 @@ public function redeclareStr
   input SCode.Redeclare inRedeclare;
   output String str;
 algorithm
-  str := match(inRedeclare)
-    case (SCode.REDECLARE()) then "redeclare ";
-    case (SCode.NOT_REDECLARE()) then "";
+  str := match inRedeclare
+    case SCode.REDECLARE() then "redeclare ";
+    case SCode.NOT_REDECLARE() then "";
   end match;
 end redeclareStr;
 
@@ -434,20 +438,20 @@ public function replaceableStr
   output String strReplaceable;
   output String strConstraint;
 algorithm
-  (strReplaceable, strConstraint) := match(inReplaceable)
+  (strReplaceable, strConstraint) := match inReplaceable
     local
       Absyn.Path path;
       SCode.Mod mod;
       String path_str, mod_str;
 
-    case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
-        constrainingClass = path, modifier = mod))))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        mod_str = printModStr(mod,defaultOptions);
+    case SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
+        constrainingClass = path, modifier = mod)))
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        mod_str := printModStr(mod,defaultOptions);
       then ("replaceable ", path_str + "(" + mod_str + ")");
-    case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
-    case (SCode.NOT_REPLACEABLE()) then ("", "");
+    case SCode.REPLACEABLE(NONE()) then ("replaceable ", "");
+    case SCode.NOT_REPLACEABLE() then ("", "");
   end match;
 end replaceableStr;
 
@@ -455,9 +459,9 @@ public function replaceablePrefixStr
   input SCode.Replaceable inReplaceable;
   output String strReplaceable;
 algorithm
-  (strReplaceable) := match(inReplaceable)
-    case (SCode.REPLACEABLE(_)) then "replaceable ";
-    case (SCode.NOT_REPLACEABLE()) then "";
+  strReplaceable := match inReplaceable
+    case SCode.REPLACEABLE(_) then "replaceable ";
+    case SCode.NOT_REPLACEABLE() then "";
   end match;
 end replaceablePrefixStr;
 
@@ -472,7 +476,7 @@ public function prefixesStr "Returns prefixes as string"
   input SCode.Prefixes prefixes;
   output String str;
 algorithm
-  str := match(prefixes)
+  str := match prefixes
     local
       SCode.Visibility v;
       SCode.Redeclare rd;
@@ -481,9 +485,9 @@ algorithm
       SCode.Replaceable rpl;
       String s;
 
-    case(SCode.PREFIXES(v,rd,f,io,rpl))
-      equation
-        s = visibilityStr(v) +
+    case SCode.PREFIXES(v,rd,f,io,rpl)
+      algorithm
+        s := visibilityStr(v) +
             redeclareStr(rd) +
             finalStr(f) +
             Dump.unparseInnerOuterStr(io) +
@@ -516,5 +520,5 @@ algorithm
   end match;
 end filterElement;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end SCodeDump;

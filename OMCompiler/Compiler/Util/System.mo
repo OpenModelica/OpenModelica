@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -283,6 +287,25 @@ public function loadLibrary
   external "C" outLibHandle=System_loadLibrary(inLib, relativePath, printDebug) annotation(Library = "omcruntime");
 end loadLibrary;
 
+public function loadLibraryLazy
+  "As loadLibrary, but binds symbols when they are used instead of when the
+   library is loaded, so a library that has an unresolvable symbol somewhere
+   else in it can still be asked for a function."
+  input String inLib;
+  input Boolean relativePath "If the path is relative or absolute";
+  input Boolean printDebug;
+  output Integer outLibHandle;
+
+  external "C" outLibHandle=System_loadLibraryLazy(inLib, relativePath, printDebug) annotation(Library = "omcruntime");
+end loadLibraryLazy;
+
+public function getLoadLibraryError
+  "Why the last loadLibrary/loadLibraryLazy failed. Empty if it succeeded."
+  output String outError;
+
+  external "C" outError=System_getLoadLibraryError() annotation(Library = "omcruntime");
+end getLoadLibraryError;
+
 public function lookupFunction
   input Integer inLibHandle;
   input String inFunc;
@@ -539,6 +562,18 @@ public function regularFileExists
   output Boolean outBool;
   external "C" outBool = SystemImpl__regularFileExists(inString) annotation(Library = "omcruntime");
 end regularFileExists;
+
+public function regularFileReadable
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool = SystemImpl__regularFileReadable(inString) annotation(Library = "omcruntime");
+end regularFileReadable;
+
+public function regularFileWritable
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool = SystemImpl__regularFileWritable(inString) annotation(Library = "omcruntime");
+end regularFileWritable;
 
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
   input String fileName;
@@ -997,7 +1032,7 @@ public function realMaxLit "Returns the maximum real that can be represent using
 end realMaxLit;
 
 public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
-  The result depends on the current MODELICAPATH. Sets the error buffer on failure."
+  The result depends on the current OPENMODELICALIBRARY (MODELICAPATH in the language specification). Sets the error buffer on failure."
   input String uri;
   output String scheme "file:// or modelica://, in lower-case";
   output String classname "empty if file:// is used";
@@ -1151,19 +1186,6 @@ protected function intRandom0
   external "C"  ret = rand() annotation(Include = "#include <stdlib.h>");
 end intRandom0;
 
-public function gettextInit
-  "Choose a locale for subsequent gettext calls. Prints warnings on failures."
-  input String locale = "" "Empty string choses automatically from the environment";
-  external "C" SystemImpl__gettextInit(locale) annotation(Library = {"omcruntime"});
-end gettextInit;
-
-public function gettext
-  "Translate a string from msgid to msgstr using the language of the chosen locale"
-  input String msgid;
-  output String msgstr;
-  external "C" msgstr = SystemImpl__gettext(msgid) annotation(Library = {"omcruntime"});
-end gettext;
-
 public function anyStringCode
   "Takes any boxed input"
   input Any any;
@@ -1248,6 +1270,20 @@ public function launchParallelTasks "Takes a list of inputs and produces a list 
 external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
 end launchParallelTasks;
 
+public function launchParallelTasksThreaded "Like launchParallelTasks, but only for call sites whose task input/output are safe to move across OS threads. In the classic runtime this is an alias for launchParallelTasks; the Rust port uses it to opt a call site into real (rayon) threading."
+  input Integer numThreads;
+  input list<AnyInput> inData;
+  input ForkFunction func;
+  output list<AnyOutput> result;
+  partial function ForkFunction
+    input AnyInput inData;
+    output AnyOutput outData;
+  end ForkFunction;
+  replaceable type AnyInput subtypeof Any;
+  replaceable type AnyOutput subtypeof Any;
+external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
+end launchParallelTasksThreaded;
+
 public function exit "Exits the compiler at this point with the given exit status."
   input Integer status;
 external "C" exit(status) annotation(Include = "#include <stdlib.h>");
@@ -1256,6 +1292,27 @@ end exit;
 public function threadWorkFailed "Exits the current thread with a failure."
   external "C" System_threadFail(OpenModelica.threadData());
 end threadWorkFailed;
+
+public function isCancelled "True if the user has requested cancellation of the running operation."
+  output Boolean cancelled;
+  external "C" cancelled = System_isCancelled() annotation(Library = "omcruntime");
+end isCancelled;
+
+public function alarmExpired "True if the cancellation being reported came from the alarm running out rather than from a user."
+  output Boolean expired;
+  external "C" expired = System_alarmExpired() annotation(Library = "omcruntime");
+end alarmExpired;
+
+public function reportProgress "Report progress of the running operation to the host UI. permille is 0..1000 or -1 (indeterminate); phase is one of the metamodelica::cancel PHASE_* constants (2 parse, 3 instantiate, 4 backend, 5 simulate)."
+  input Integer permille;
+  input Integer phase;
+  external "C" System_reportProgress(permille, phase) annotation(Library = "omcruntime");
+end reportProgress;
+
+public function reportProgressMessage "Label the step in progress for the host UI, which shows it instead of the generic phase label. Cleared by the next reportProgress call, so report it after that one."
+  input String message;
+  external "C" System_reportProgressMessage(message) annotation(Library = "omcruntime");
+end reportProgressMessage;
 
 public function getMemorySize
   output Real memory(unit="MB");
@@ -1336,10 +1393,16 @@ class StringAllocator
   external "C" str=StringAllocator_constructor(sz) annotation(Include="
 void* StringAllocator_constructor(int sz)
 {
+  void *res;
   if (sz < 0) {
     MMC_THROW();
   }
-  return mmc_alloc_scon(sz);
+  res = mmc_alloc_scon(sz);
+  if (sz > 0) {
+    /* mmc_alloc_scon does not terminate the string and the copies below do not either */
+    ((char*)MMC_STRINGDATA(res))[sz] = '\\0';
+  }
+  return res;
 }
 ");
   end constructor;
@@ -1356,12 +1419,14 @@ function stringAllocatorStringCopy
   input Integer destOffset=0;
 external "C" om_stringAllocatorStringCopy(dest,source,destOffset) annotation(Include="
 void om_stringAllocatorStringCopy(void *dest, char *source, int destOffset) {
-  if (*source) {
-    strcpy(MMC_STRINGDATA(dest)+destOffset, source);
+  /* memcpy without the terminator so copies at later offsets are not clobbered when filling the string in reverse order */
+  size_t n = strlen(source);
+  if (n > 0) {
+    memcpy(MMC_STRINGDATA(dest)+destOffset, source, n);
   }
 }
 ", Documentation(info="<html>
-<p>Does a strcpy into the (input) destination. This is dangerous and not valid Modelica.</p>
+<p>Copies the source string (without its terminator) into the (input) destination at the given offset. This is dangerous and not valid Modelica.</p>
 <p>Make sure the String has been allocated properly and is not shared. The input lengths are not validated, so this function can write out of bounds if called incorrectly.</p>
 </html>"));
 end stringAllocatorStringCopy;

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -70,6 +74,35 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type SparsityPattern = list< tuple<Integer, list<Integer>> >;
 type NonlinearPattern = SparsityPattern; // same structure but different name for the sake of maintenance
 
+
+uniontype Dependency
+  "the dependency kind to show how a component reference occurs in an equation.
+  for each dimension there has to be one dependency kind."
+  record DEPENDENCY
+    array<list<Integer>> skips;
+    list<Boolean> kinds "true = reduced, false = regular"; // Fixme: enumerations don't seem to work for codegen
+  end DEPENDENCY;
+end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name "only for debugging";
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+uniontype Sparsity
+  "the new resizable sparsity pattern for the NB"
+  record SPARSITY
+    list<SparsityRow> rows;
+  end SPARSITY;
+
+  record EMPTY
+  end EMPTY;
+end Sparsity;
+
 uniontype JacobianColumn
   record JAC_COLUMN
     list<SimEqSystem> columnEqns;       // column equations equals in size to column vars
@@ -84,20 +117,27 @@ uniontype JacobianMatrix
     list<JacobianColumn> columns;       // columns equations and variables
     list<SimCodeVar.SimVar> seedVars;   // corresponds to the number of columns
     String matrixName;                  // unique matrix name
+    Sparsity sparsityMatrix;            // new backend sparsity
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
     NonlinearPattern nonlinear;
     NonlinearPattern nonlinearT;
     list<list<Integer>> coloredCols;
+    list<list<Integer>> coloredRows;
     Integer maxColorCols;
     Integer jacobianIndex;
     Integer partitionIndex;
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
+    Boolean isAdjoint; // true if this jacobian is for adjoint calculation
+    Boolean isBidirectional; // true if part of a bidirectional pair
+    Integer adjointJacobianIndex; // index of adjoint jacobian for bidirectional (-1 if none)
+    String adjointMatrixName; // matrix name of adjoint jacobian for bidirectional
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE());
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", Sparsity.EMPTY(),
+  {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -232,6 +272,7 @@ uniontype SpatialDistribution
     DAE.Exp initPnts      "initial grid points";
     DAE.Exp initVals      "initial grid values";
     Integer initSize      "number of initial points";
+    Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
   end SPATIAL_DISTRIBUTION;
 end SpatialDistribution;
 
@@ -245,13 +286,13 @@ end UnitDefinition;
 
 uniontype BaseUnit
   record BASEUNIT
-    Integer mol "exponent";
-    Integer cd  "exponent";
-    Integer m   "exponent";
     Integer s   "exponent";
+    Integer m   "exponent";
+    Integer kg  "exponent";
     Integer A   "exponent";
     Integer K   "exponent";
-    Integer kg  "exponent";
+    Integer mol "exponent";
+    Integer cd  "exponent";
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;
@@ -402,7 +443,7 @@ uniontype SimEqSystem
   record SES_FOR_RESIDUAL
     Integer index;
     Integer res_index;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -413,7 +454,7 @@ uniontype SimEqSystem
     Integer index;
     Integer res_index;
     list<Integer> scal_indices;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -698,6 +739,7 @@ uniontype SimulationSettings
     String outputFormat;
     String variableFilter;
     String cflags;
+    String simflags;
   end SIMULATION_SETTINGS;
 end SimulationSettings;
 
@@ -753,6 +795,78 @@ public uniontype FmiModelStructure
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
+/* FMI 3.0 Terminals (terminalsAndIcons.xml) */
+public uniontype FmiTerminal
+  record FMI_TERMINAL
+    String name             "connector instance name, e.g. bus";
+    String terminalKind     "the connector type path (e.g. Modelica....Flange_a), \"\" if unknown";
+    Boolean isExpandable    "true for expandable connectors (matchingRule=bus, else plug)";
+    list<FmiTerminalMember> members;
+  end FMI_TERMINAL;
+end FmiTerminal;
+
+public uniontype FmiTerminalMember
+  record FMI_TERMINAL_MEMBER
+    DAE.ComponentRef variable "exported variable cref; template formats it exactly as in modelDescription.xml (e.g. bus.a)";
+    String memberName       "name within the terminal, e.g. a";
+    String variableKind     "role of the member, derived from causality (input/output/...)";
+  end FMI_TERMINAL_MEMBER;
+end FmiTerminalMember;
+
+/* The Documentation(figures=...) annotation resolved against the exported
+   variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor
+   annotation. See SimCodeUtil.getFMI3Figures. */
+public uniontype FmiFigure
+  record FMI_FIGURE
+    String title;
+    String group            "plot-group name, \"\" if none";
+    Boolean preferred       "display automatically after simulation";
+    String caption          "\"\" if none";
+    list<FmiPlot> plots;
+  end FMI_FIGURE;
+end FmiFigure;
+
+public uniontype FmiPlot
+  record FMI_PLOT
+    String title;
+    list<FmiCurve> curves;
+    FmiFigureAxis xAxis;
+    FmiFigureAxis yAxis;
+    Option<String> terminal "set when every curve's y variable is a member of this one terminal";
+  end FMI_PLOT;
+end FmiPlot;
+
+public uniontype FmiCurve
+  record FMI_CURVE
+    Option<DAE.ComponentRef> xVariable "NONE() means simulation time; a cref is formatted like a modelDescription variable";
+    DAE.ComponentRef yVariable         "resolved exported variable; formatted like a modelDescription variable";
+    String legend                      "\"\" if none";
+  end FMI_CURVE;
+end FmiCurve;
+
+public uniontype FmiFigureAxis
+  record FMI_FIGURE_AXIS
+    String label            "\"\" if none";
+    String unit             "\"\" if none";
+    Option<Real> min        "only when explicitly set";
+    Option<Real> max        "only when explicitly set";
+    Boolean logScale        "true for a logarithmic axis";
+  end FMI_FIGURE_AXIS;
+end FmiFigureAxis;
+
+/* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
+public uniontype FmiClock
+  record FMI_CLOCK
+    Integer valueReference     "globally unique value reference (clock base-type block)";
+    String name                "clock name as in modelDescription.xml";
+    String intervalVariability "constant | fixed | tunable | changing | countdown | triggered";
+    Boolean supportsFraction   "true for rational (counter/resolution) clocks";
+    String intervalDecimal     "the period for a periodic clock, or \"\" if not constant";
+    String intervalCounter     "rational-clock counter, or \"\"";
+    String resolution          "rational-clock resolution, or \"\"";
+  end FMI_CLOCK;
+end FmiClock;
+
 public uniontype FmiSimulationFlags
   record FMI_SIMULATION_FLAGS
     list<tuple<String,String>> nameValueTuples;
@@ -765,5 +879,5 @@ end FmiSimulationFlags;
 
 constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","euler")});
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCode;

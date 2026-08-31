@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -34,9 +31,11 @@
 #include "../../meta/meta_modelica.h"
 #include "../../openmodelica_types.h"
 #include "../../openmodelica.h"
+#include "../../simulation/arrayIndex.h"
 #include "../../simulation/options.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/solver/model_help.h"
+#include "../../util/real_array.h"
 #include "../../util/context.h"
 #include "../../util/omc_file.h"
 #include "../OptimizerData.h"
@@ -79,7 +78,7 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
   calculatedScalingHelper(&optData->bounds,&optData->time, &optData->dim, &optData->rk);
-  messageClose(OMC_LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER); // FIXME what does this belong to?
 
   dim = &optData->dim;
 
@@ -155,7 +154,19 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
   dim->nsi = -1; /* Initialize the data just in case */
-  data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
+  {
+    /* The model names its time grid by parameter index; the values are read here. */
+    modelica_integer *tgrid = NULL;
+    modelica_integer i;
+    data->callback->getTimeGrid(data, &dim->nsi, &tgrid); /* TODO: dim->nsi is long*, expected is int* */
+    if (dim->nsi > 0) {
+      time->tt = (modelica_real*) malloc((dim->nsi+1)*sizeof(modelica_real));
+      for (i = 0; i < dim->nsi+1; ++i) {
+        time->tt[i] = data->simulationInfo->realParameter[tgrid[i]];
+      }
+    }
+    free(tgrid);
+  }
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
   if (!time->model_grid) {
@@ -182,8 +193,8 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
   const int nsi = dim->nsi;
   const int np = dim->np;
   const int np1 = np - 1;
-  long double c[np];
-  long double dc[np];
+  long double *c = (long double*)malloc(np * sizeof(long double));
+  long double *dc = (long double*)malloc(np * sizeof(long double));
   int i, k;
   double t;
   char * cflags = NULL;
@@ -239,6 +250,9 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
     overwriteTimeGridFile(time, cflags, c, np, nsi);
   if(time->model_grid)
     overwriteTimeGridModel(time, c, np, nsi);
+
+  free(c);
+  free(dc);
 }
 
 static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
@@ -249,7 +263,6 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
     warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
-    fclose(pFile);
     return nsi;
   }
    while(1){
@@ -269,7 +282,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
 
 static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi){
   int i,k;
-  long double dc[np];
+  long double *dc = (long double*)malloc(np * sizeof(long double));
   const int np1 = np - 1;
   double t;
   FILE * pFile = NULL;
@@ -313,6 +326,7 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   }
   time->tf = time->t[nsi-1][np1];
   fclose(pFile);
+  free(dc);
 }
 
 int cmp_modelica_real(const void *v1, const void *v2) {
@@ -336,7 +350,6 @@ static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], c
   }
 
   free(time->tt);
-
 }
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
@@ -377,14 +390,15 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   data->callback->pickUpBoundsForInputsInOptimization(data,umin, umax, unom, nominalWasSetInput, inputName, bounds->u0, &bounds->preSim);
 
   for(i = 0; i < nx; ++i){
-    min = data->modelData->realVarsData[i].attribute.min;
-    max = data->modelData->realVarsData[i].attribute.max;
-    nominal = data->modelData->realVarsData[i].attribute.nominal;
+    min = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
+    max = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
+    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
     nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
 
     check_nominal(bounds, min, max, nominal, nominalWasSet, i, x0);
-    data->modelData->realVarsData[i].attribute.nominal = bounds->vnom[i];
+    array_index_t* revIndex = &data->simulationInfo->realVarsReverseIndex[i];
+    put_real_element(bounds->vnom[i], revIndex->dim_idx, &data->modelData->realVarsData[revIndex->array_idx].attribute.nominal);
     bounds->scalF[i] = 1.0/bounds->vnom[i];
     bounds->vmin[i] = min * bounds->scalF[i];
     bounds->vmax[i] = max * bounds->scalF[i];
@@ -515,6 +529,7 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
   double *xmin, *xmax, *xnom;
 
   char buffer[200];
+
   char ** inputName;
   int i,j,k;
 
@@ -534,20 +549,26 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   for(i = 0; i < nx; ++i){
 
-    if (xmin[i] > -1e20)
-      sprintf(buffer, ", min = %g", data->modelData->realVarsData[i].attribute.min);
-    else
-      sprintf(buffer, ", min = -Inf");
+    if(data->modelData->realVarsData[i].dimension.numberOfDimensions > 0){
+      throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+    }
 
-    printf("\nState[%i]:%s(start = %s, nominal = %g%s",
+    if (xmin[i] > -1e20) {
+      sprintf(buffer, ", min = %g", real_get(data->modelData->realVarsData[i].attribute.min, 0));
+    }
+    else {
+      sprintf(buffer, ", min = -Inf");
+    }
+
+    printf("\nState[%i]:%s(start = %g, nominal = %g%s",
            i,
            data->modelData->realVarsData[i].info.name,
-           real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0),
+           real_get(data->modelData->realVarsData[i].attribute.start, 0),
            xnom[i],
            buffer);
 
     if(xmax[i] < 1e20)
-      sprintf(buffer, ", max = %g", data->modelData->realVarsData[i].attribute.max);
+      sprintf(buffer, ", max = %g", real_get(data->modelData->realVarsData[i].attribute.max, 0));
     else
       sprintf(buffer, ", max = +Inf");
 
@@ -593,7 +614,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   const int nInteger = optData->data->modelData->nVariablesInteger;
   const int nRelations =  optData->data->modelData->nRelations;
   const int nvnp = nv*np;
-  long double a[np];
+  long double *a = (long double*)malloc(np * sizeof(long double));
   modelica_real *** v = optData->v;
   float tmp_u;
 
@@ -666,6 +687,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
     }
   }
   fclose(pFile);
+  free(a);
 }
 
 
@@ -800,7 +822,7 @@ void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
     data->simulationInfo->inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
   }
 
-};
+}
 
 
 /*
@@ -949,7 +971,7 @@ static inline void pickUpStates(OptData* optData){
         char buffer[200];
         rewind(pFile);
         for(i =0; i< n; ++i){
-          fscanf(pFile, "%s", buffer);
+          fscanf(pFile, "%199s", buffer);
           if (fscanf(pFile, "%lf", &start_value) <= 0) continue;
 
           for(j = 0, b = 0; j < optData->dim.nReal; ++j){

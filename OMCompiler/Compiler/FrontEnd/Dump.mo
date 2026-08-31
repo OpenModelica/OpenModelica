@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -156,19 +160,19 @@ public function unparseClassAttributesStr
   input Absyn.Class inClass;
   output String outString;
 algorithm
-  outString := match (inClass)
+  outString := match inClass
     local
-      String s1,s2,s2_1,s3,str,n;
+      String s1,s2,s2_1,s3,str;
       Boolean p,f,e;
       Absyn.Restriction r;
 
     case Absyn.CLASS(partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r)
-      equation
-        s1 = if p then "partial " else "";
-        s2 = if f then "final " else "";
-        s2_1 = if e then "encapsulated " else "";
-        s3 = unparseRestrictionStr(r);
-        str = stringAppendList({s2_1,s1,s2,s3});
+      algorithm
+        s1 := if p then "partial " else "";
+        s2 := if f then "final " else "";
+        s2_1 := if e then "encapsulated " else "";
+        s3 := unparseRestrictionStr(r);
+        str := stringAppendList({s2_1,s1,s2,s3});
       then
         str;
   end match;
@@ -195,9 +199,9 @@ public function unparseEachStr
   input Absyn.Each inEach;
   output String outString;
 algorithm
-  outString := match (inEach)
-    case (Absyn.EACH()) then "each ";
-    case (Absyn.NON_EACH()) then "";
+  outString := match inEach
+    case Absyn.EACH() then "each ";
+    case Absyn.NON_EACH() then "";
   end match;
 end unparseEachStr;
 
@@ -277,7 +281,7 @@ public function unparseAnnotationOption
   input Option<Absyn.Annotation> inAbsynAnnotation;
   output String outString;
 algorithm
-  outString := match (inAbsynAnnotation)
+  outString := match inAbsynAnnotation
     local
       Absyn.Annotation ann;
     case SOME(ann) then unparseAnnotation(ann);
@@ -333,11 +337,11 @@ protected function unparseVariabilitySymbolStr "
   output String outString;
 algorithm
   outString:=
-  match (inVariability)
-    case (Absyn.VAR()) then "";
-    case (Absyn.DISCRETE()) then "discrete ";
-    case (Absyn.PARAM()) then "parameter ";
-    case (Absyn.CONST()) then "constant ";
+  match inVariability
+    case Absyn.VAR() then "";
+    case Absyn.DISCRETE() then "discrete ";
+    case Absyn.PARAM() then "parameter ";
+    case Absyn.CONST() then "constant ";
   end match;
 end unparseVariabilitySymbolStr;
 
@@ -346,10 +350,10 @@ public function unparseDirectionSymbolStr "Returns a prettyprinted string of dir
   output String outString;
 algorithm
   outString:=
-  match (inDirection)
-    case (Absyn.BIDIR()) then "";
-    case (Absyn.INPUT()) then "input ";
-    case (Absyn.OUTPUT()) then "output ";
+  match inDirection
+    case Absyn.BIDIR() then "";
+    case Absyn.INPUT() then "input ";
+    case Absyn.OUTPUT() then "output ";
   end match;
 end unparseDirectionSymbolStr;
 
@@ -359,7 +363,7 @@ public function directionSymbol "
   input Absyn.Direction inDirection;
   output String outString;
 algorithm
-  outString:= match (inDirection)
+  outString:= match inDirection
     case Absyn.BIDIR() then "";
     case Absyn.INPUT() then "input";
     case Absyn.OUTPUT() then "output";
@@ -371,10 +375,10 @@ public function unparseParallelismSymbolStr
   output String outString;
 algorithm
   outString:=
-  match (inParallelism)
-    case (Absyn.NON_PARALLEL()) then "";
-    case (Absyn.PARGLOBAL()) then "parglobal ";
-    case (Absyn.PARLOCAL()) then "parlocal ";
+  match inParallelism
+    case Absyn.NON_PARALLEL() then "";
+    case Absyn.PARGLOBAL() then "parglobal ";
+    case Absyn.PARLOCAL() then "parlocal ";
   end match;
 end unparseParallelismSymbolStr;
 
@@ -408,14 +412,14 @@ public function printSubscriptStr "
   output String outString;
 algorithm
   outString:=
-  match (inSubscript)
+  match inSubscript
     local
       String s;
       Absyn.Exp e1;
-    case (Absyn.NOSUB()) then ":";
-    case (Absyn.SUBSCRIPT(subscript = e1))
-      equation
-        s = printExpStr(e1);
+    case Absyn.NOSUB() then ":";
+    case Absyn.SUBSCRIPT(subscript = e1)
+      algorithm
+        s := printExpStr(e1);
       then
         s;
   end match;
@@ -535,33 +539,33 @@ public function printComponentRefStr "Print a ComponentRef and return as a strin
   input Absyn.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString := match (inComponentRef)
+  outString := match inComponentRef
     local
       String subsstr,s_1,s,crs,s_2,s_3;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
 
     case Absyn.CREF_IDENT(name = s,subscripts = subs)
-      equation
-        subsstr = printSubscriptsStr(subs);
-        s_1 = stringAppend(s, subsstr);
+      algorithm
+        subsstr := printSubscriptsStr(subs);
+        s_1 := stringAppend(s, subsstr);
       then
         s_1;
 
     case Absyn.CREF_QUAL(name = s,subscripts = subs,componentRef = cr)
-      equation
-        crs = printComponentRefStr(cr);
-        subsstr = printSubscriptsStr(subs);
-        s_1 = stringAppend(s, subsstr);
-        s_2 = stringAppend(s_1, ".");
-        s_3 = stringAppend(s_2, crs);
+      algorithm
+        crs := printComponentRefStr(cr);
+        subsstr := printSubscriptsStr(subs);
+        s_1 := stringAppend(s, subsstr);
+        s_2 := stringAppend(s_1, ".");
+        s_3 := stringAppend(s_2, crs);
       then
         s_3;
 
     case Absyn.CREF_FULLYQUALIFIED(componentRef = cr)
-      equation
-        crs = printComponentRefStr(cr);
-        s_3 = stringAppend(".", crs);
+      algorithm
+        crs := printComponentRefStr(cr);
+        s_3 := stringAppend(".", crs);
       then
         s_3;
 
@@ -576,7 +580,7 @@ public function printSubscriptsStr "Prettyprint a Subscript list to a string."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inAbsynSubscriptLst)
+  outString := match inAbsynSubscriptLst
     local
       String s,s_1,s_2;
       list<Absyn.Subscript> l;
@@ -584,13 +588,13 @@ algorithm
     case {} then "";
 
     case l
-      equation
-        s = printListStr(l, printSubscriptStr, ",");
-        s_1 = stringAppend("[", s);
-        s_2 = stringAppend(s_1, "]");
+      algorithm
+        s := printListStr(l, printSubscriptStr, ",");
+        s_1 := stringAppend("[", s);
+        s_2 := stringAppend(s_1, "]");
       then
         s_2;
-  end matchcontinue;
+  end match;
 end printSubscriptsStr;
 
 public function printFunctionArgsStr "
@@ -600,7 +604,7 @@ public function printFunctionArgsStr "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inFunctionArgs)
+  matchcontinue inFunctionArgs
     local
       String s1,s2,s3,str,estr,istr;
       list<Absyn.Exp> expargs;
@@ -608,28 +612,28 @@ algorithm
       Absyn.Exp exp;
       Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args = (expargs as (_ :: _)),argNames = (nargs as (_ :: _)))
-      equation
-        s1 = printListStr(expargs, printExpStr, ", ") "Both positional and named arguments" ;
-        s2 = stringAppend(s1, ", ");
-        s3 = printListStr(nargs, printNamedArgStr, ", ");
-        str = stringAppend(s2, s3);
+      algorithm
+        s1 := printListStr(expargs, printExpStr, ", ") "Both positional and named arguments" ;
+        s2 := stringAppend(s1, ", ");
+        s3 := printListStr(nargs, printNamedArgStr, ", ");
+        str := stringAppend(s2, s3);
       then
         str;
     case Absyn.FUNCTIONARGS(args = {},argNames = nargs)
-      equation
-        str = printListStr(nargs, printNamedArgStr, ", ") "Only named arguments" ;
+      algorithm
+        str := printListStr(nargs, printNamedArgStr, ", ") "Only named arguments" ;
       then
         str;
     case Absyn.FUNCTIONARGS(args = expargs,argNames = {})
-      equation
-        str = printListStr(expargs, printExpStr, ", ") "Only positional arguments" ;
+      algorithm
+        str := printListStr(expargs, printExpStr, ", ") "Only positional arguments" ;
       then
         str;
     case Absyn.FOR_ITER_FARG(exp = exp,iterators = iterators)
-      equation
-        estr = printExpStr(exp);
-        istr = printIteratorsStr(iterators);
-        str = stringAppendList({estr," for ", istr});
+      algorithm
+        estr := printExpStr(exp);
+        istr := printIteratorsStr(iterators);
+        str := stringAppendList({estr," for ", istr});
       then
         str;
   end matchcontinue;
@@ -641,31 +645,31 @@ function printIteratorsStr
   input Absyn.ForIterators iterators;
   output String iteratorsStr;
 algorithm
-  iteratorsStr := matchcontinue(iterators)
+  iteratorsStr := matchcontinue iterators
     local
       String s, s1, s2;
       Absyn.Exp guardExp,exp;
       Absyn.Ident id;
       Absyn.ForIterators rest;
       Absyn.ForIterator x;
-    case ({}) then "";
-    case ({Absyn.ITERATOR(id, SOME(guardExp), SOME(exp))})
-      equation
-        s1 = printExpStr(exp);
-        s2 = printExpStr(guardExp);
-        s = stringAppendList({id, " guard ", s2, " in ", s1});
+    case {} then "";
+    case {Absyn.ITERATOR(id, SOME(guardExp), SOME(exp))}
+      algorithm
+        s1 := printExpStr(exp);
+        s2 := printExpStr(guardExp);
+        s := stringAppendList({id, " guard ", s2, " in ", s1});
       then s;
-    case ({Absyn.ITERATOR(id, NONE(), SOME(exp))})
-      equation
-        s1 = printExpStr(exp);
-        s = stringAppendList({id, " in ", s1});
+    case {Absyn.ITERATOR(id, NONE(), SOME(exp))}
+      algorithm
+        s1 := printExpStr(exp);
+        s := stringAppendList({id, " in ", s1});
       then s;
-    case ({Absyn.ITERATOR(id, NONE(), NONE())}) then id;
-    case (x::rest)
-      equation
-        s1 = printIteratorsStr({x});
-        s2 = printIteratorsStr(rest);
-        s = stringAppendList({s1, ", ", s2});
+    case {Absyn.ITERATOR(id, NONE(), NONE())} then id;
+    case x::rest
+      algorithm
+        s1 := printIteratorsStr({x});
+        s2 := printIteratorsStr(rest);
+        s := stringAppendList({s1, ", ", s2});
       then s;
   end matchcontinue;
 end printIteratorsStr;
@@ -676,15 +680,15 @@ public function printNamedArgStr
   output String outString;
 algorithm
   outString:=
-  match (inNamedArg)
+  match inNamedArg
     local
       String s1,s2,str,ident;
       Absyn.Exp e;
     case Absyn.NAMEDARG(argName = ident,argValue = e)
-      equation
-        s1 = stringAppend(ident, " = ");
-        s2 = printExpStr(e);
-        str = stringAppend(s1, s2);
+      algorithm
+        s1 := stringAppend(ident, " = ");
+        s2 := printExpStr(e);
+        str := stringAppend(s1, s2);
       then
         str;
   end match;
@@ -696,13 +700,13 @@ public function printNamedArgValueStr
   output String outString;
 algorithm
   outString:=
-  match (inNamedArg)
+  match inNamedArg
     local
       String str;
       Absyn.Exp e;
     case Absyn.NAMEDARG(argValue = e)
-      equation
-        str = printExpStr(e);
+      algorithm
+        str := printExpStr(e);
       then
         str;
   end match;
@@ -722,8 +726,8 @@ algorithm
     case Absyn.UNARY() then true;
 
     else
-      equation
-        diff = Util.intCompare(expPriority(inOperand, inLhs),
+      algorithm
+        diff := Util.intCompare(expPriority(inOperand, inLhs),
                                expPriority(inOperator, inLhs));
       then
         shouldParenthesize2(diff, inOperand, inLhs);
@@ -750,7 +754,7 @@ protected function isAssociativeExp
   input Absyn.Exp inExp;
   output Boolean outIsAssociative;
 algorithm
-  outIsAssociative := match(inExp)
+  outIsAssociative := match inExp
     local
       Absyn.Operator op;
 
@@ -765,7 +769,7 @@ protected function isAssociativeOp
   input Absyn.Operator inOperator;
   output Boolean outIsAssociative;
 algorithm
-  outIsAssociative := match(inOperator)
+  outIsAssociative := match inOperator
     case Absyn.ADD() then true;
     case Absyn.ADD_EW() then true;
     case Absyn.MUL_EW() then true;
@@ -829,7 +833,7 @@ protected function priorityBinopLhs
   input Absyn.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case Absyn.ADD() then 5;
     case Absyn.SUB() then 5;
     case Absyn.MUL() then 2;
@@ -850,7 +854,7 @@ protected function priorityBinopRhs
   input Absyn.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case Absyn.ADD() then 6;
     case Absyn.SUB() then 5;
     case Absyn.MUL() then 2;
@@ -868,7 +872,7 @@ protected function priorityLBinop
   input Absyn.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case Absyn.AND() then 8;
     case Absyn.OR() then 9;
   end match;
@@ -881,17 +885,17 @@ protected function printOperandStr
   input Boolean inLhs "True if the operand is the left hand operand, otherwise false.";
   output String outString;
 algorithm
-  outString := matchcontinue(inOperand, inOperation, inLhs)
+  outString := matchcontinue inLhs
     local
       String op_str;
 
     // Print parentheses around an operand if the priority of the operation is
     // less than the priority of the operand.
-    case (_, _, _)
-      equation
-        true = shouldParenthesize(inOperand, inOperation, inLhs);
-        op_str = printExpStr(inOperand);
-        op_str = stringAppendList({"(", op_str, ")"});
+    case _
+      algorithm
+        true := shouldParenthesize(inOperand, inOperation, inLhs);
+        op_str := printExpStr(inOperand);
+        op_str := stringAppendList({"(", op_str, ")"});
       then
         op_str;
 
@@ -961,16 +965,16 @@ algorithm
       list<Type_a> t;
     case ({},_,_) then "";
     case ({h},r,_)
-      equation
-        s = r(h);
+      algorithm
+        s := r(h);
       then
         s;
     case ((h :: t),r,sep)
-      equation
-        s = r(h);
-        srest = printListStr(t, r, sep);
-        s_1 = stringAppend(s, sep);
-        s_2 = stringAppend(s_1, srest);
+      algorithm
+        s := r(h);
+        srest := printListStr(t, r, sep);
+        s_1 := stringAppend(s, sep);
+        s_2 := stringAppend(s_1, srest);
       then
         s_2;
   end matchcontinue;
@@ -981,34 +985,34 @@ public function opSymbol
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
+  outString := match inOperator
     /* arithmetic operators */
-    case (Absyn.ADD()) then " + ";
-    case (Absyn.SUB()) then " - ";
-    case (Absyn.MUL()) then " * ";
-    case (Absyn.DIV()) then " / ";
-    case (Absyn.POW()) then " ^ ";
-    case (Absyn.UMINUS()) then "-";
-    case (Absyn.UPLUS()) then "+";
+    case Absyn.ADD() then " + ";
+    case Absyn.SUB() then " - ";
+    case Absyn.MUL() then " * ";
+    case Absyn.DIV() then " / ";
+    case Absyn.POW() then " ^ ";
+    case Absyn.UMINUS() then "-";
+    case Absyn.UPLUS() then "+";
     /* element-wise arithmetic operators */
-    case (Absyn.ADD_EW()) then " .+ ";
-    case (Absyn.SUB_EW()) then " .- ";
-    case (Absyn.MUL_EW()) then " .* ";
-    case (Absyn.DIV_EW()) then " ./ ";
-    case (Absyn.POW_EW()) then " .^ ";
-    case (Absyn.UMINUS_EW()) then " .-";
-    case (Absyn.UPLUS_EW()) then " .+";
+    case Absyn.ADD_EW() then " .+ ";
+    case Absyn.SUB_EW() then " .- ";
+    case Absyn.MUL_EW() then " .* ";
+    case Absyn.DIV_EW() then " ./ ";
+    case Absyn.POW_EW() then " .^ ";
+    case Absyn.UMINUS_EW() then " .-";
+    case Absyn.UPLUS_EW() then " .+";
     /* logical operators */
-    case (Absyn.AND()) then " and ";
-    case (Absyn.OR()) then " or ";
-    case (Absyn.NOT()) then "not ";
+    case Absyn.AND() then " and ";
+    case Absyn.OR() then " or ";
+    case Absyn.NOT() then "not ";
     /* relational operators */
-    case (Absyn.LESS()) then " < ";
-    case (Absyn.LESSEQ()) then " <= ";
-    case (Absyn.GREATER()) then " > ";
-    case (Absyn.GREATEREQ()) then " >= ";
-    case (Absyn.EQUAL()) then " == ";
-    case (Absyn.NEQUAL()) then " <> ";
+    case Absyn.LESS() then " < ";
+    case Absyn.LESSEQ() then " <= ";
+    case Absyn.GREATER() then " > ";
+    case Absyn.GREATEREQ() then " >= ";
+    case Absyn.EQUAL() then " == ";
+    case Absyn.NEQUAL() then " <> ";
   end match;
 end opSymbol;
 
@@ -1020,34 +1024,34 @@ public function opSymbolCompact
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
+  outString := match inOperator
     /* arithmetic operators */
-    case (Absyn.ADD()) then "+";
-    case (Absyn.SUB()) then "-";
-    case (Absyn.MUL()) then "*";
-    case (Absyn.DIV()) then "/";
-    case (Absyn.POW()) then "^";
-    case (Absyn.UMINUS()) then "-";
-    case (Absyn.UPLUS()) then "+";
+    case Absyn.ADD() then "+";
+    case Absyn.SUB() then "-";
+    case Absyn.MUL() then "*";
+    case Absyn.DIV() then "/";
+    case Absyn.POW() then "^";
+    case Absyn.UMINUS() then "-";
+    case Absyn.UPLUS() then "+";
     /* element-wise arithmetic operators */
-    case (Absyn.ADD_EW()) then "+";
-    case (Absyn.SUB_EW()) then "-";
-    case (Absyn.MUL_EW()) then "*";
-    case (Absyn.DIV_EW()) then "/";
-    case (Absyn.POW_EW()) then "^";
-    case (Absyn.UMINUS_EW()) then "-";
+    case Absyn.ADD_EW() then "+";
+    case Absyn.SUB_EW() then "-";
+    case Absyn.MUL_EW() then "*";
+    case Absyn.DIV_EW() then "/";
+    case Absyn.POW_EW() then "^";
+    case Absyn.UMINUS_EW() then "-";
     // case (Absyn.UPLUS_EW()) then "+";
     /* logical operators */
-    case (Absyn.AND()) then "and";
-    case (Absyn.OR()) then "or";
-    case (Absyn.NOT()) then "not";
+    case Absyn.AND() then "and";
+    case Absyn.OR() then "or";
+    case Absyn.NOT() then "not";
     /* relational operators */
-    case (Absyn.LESS()) then "<";
-    case (Absyn.LESSEQ()) then "<=";
-    case (Absyn.GREATER()) then ">";
-    case (Absyn.GREATEREQ()) then ">=";
-    case (Absyn.EQUAL()) then "==";
-    case (Absyn.NEQUAL()) then "<>";
+    case Absyn.LESS() then "<";
+    case Absyn.LESSEQ() then "<=";
+    case Absyn.GREATER() then ">";
+    case Absyn.GREATEREQ() then ">=";
+    case Absyn.EQUAL() then "==";
+    case Absyn.NEQUAL() then "<>";
   else fail();
   end match;
 end opSymbolCompact;
@@ -1069,16 +1073,16 @@ public function printOption "
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:= match inTypeAOption
+  ():= match inTypeAOption
     local
       Type_a x;
     case NONE()
-      equation
+      algorithm
         Print.printBuf("NONE()");
       then
         ();
     case SOME(x)
-      equation
+      algorithm
         Print.printBuf("SOME(");
         inFuncTypeTypeATo(x);
         Print.printBuf(")");
@@ -1098,7 +1102,7 @@ public function printList "
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:=
+  ():=
   matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
       Type_a h;
@@ -1107,12 +1111,12 @@ algorithm
       String sep;
     case ({},_,_) then ();
     case ({h},r,_)
-      equation
+      algorithm
         r(h);
       then
         ();
     case ((h :: t),r,sep)
-      equation
+      algorithm
         r(h);
         Print.printBuf(sep);
         printList(t, r, sep);
@@ -1126,16 +1130,16 @@ protected function printStringCommentOption "
 "
   input Option<String> inStringOption;
 algorithm
-  () := match (inStringOption)
+  () := match inStringOption
     local String str,s;
     case NONE()
-      equation
+      algorithm
         Print.printBuf("NONE()");
       then
         ();
     case SOME(s)
-      equation
-        str = stringAppendList({"SOME(\"",s,"\")"});
+      algorithm
+        str := stringAppendList({"SOME(\"",s,"\")"});
         Print.printBuf(str);
       then
         ();
@@ -1180,12 +1184,12 @@ end stdout;
 public function getAstAsCorbaString
   input Absyn.Program program;
 algorithm
-  _ := match program
+  () := match program
     local
       list<Absyn.Class> classes;
       Absyn.Within within_;
     case Absyn.PROGRAM(classes = classes, within_ = within_)
-      equation
+      algorithm
         Print.printBuf("record Absyn.PROGRAM\nclasses = ");
         printListAsCorbaString(classes,printClassAsCorbaString,",\n");
         Print.printBuf(",\nwithin_ = ");
@@ -1198,12 +1202,12 @@ end getAstAsCorbaString;
 protected function printPathAsCorbaString
   input Absyn.Path inPath;
 algorithm
-  _ := match inPath
+  () := match inPath
     local
       String s;
       Absyn.Path p;
     case Absyn.QUALIFIED(name = s, path = p)
-      equation
+      algorithm
         Print.printBuf("record Absyn.QUALIFIED name = \"");
         Print.printBuf(s);
         Print.printBuf("\", path = ");
@@ -1211,13 +1215,13 @@ algorithm
         Print.printBuf(" end Absyn.QUALIFIED;");
       then ();
     case Absyn.IDENT(name = s)
-      equation
+      algorithm
         Print.printBuf("record Absyn.IDENT name = \"");
         Print.printBuf(s);
         Print.printBuf("\" end Absyn.IDENT;");
       then ();
     case Absyn.FULLYQUALIFIED(path = p)
-      equation
+      algorithm
         Print.printBuf("record Absyn.FULLYQUALIFIED path = \"");
         printPathAsCorbaString(p);
         Print.printBuf("\" end Absyn.FULLYQUALIFIED;");
@@ -1229,13 +1233,13 @@ end printPathAsCorbaString;
 protected function printComponentRefAsCorbaString
   input Absyn.ComponentRef cref;
 algorithm
-  _ := match cref
+  () := match cref
     local
       String s;
       Absyn.ComponentRef p;
       list<Absyn.Subscript> subscripts;
     case Absyn.CREF_QUAL(name = s, subscripts = subscripts, componentRef = p)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CREF_QUAL name = \"");
         Print.printBuf(s);
         Print.printBuf("\", subscripts = ");
@@ -1245,7 +1249,7 @@ algorithm
         Print.printBuf(" end Absyn.CREF_QUAL;");
       then ();
     case Absyn.CREF_IDENT(name = s, subscripts = subscripts)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CREF_IDENT name = \"");
         Print.printBuf(s);
         Print.printBuf("\", subscripts = ");
@@ -1253,11 +1257,11 @@ algorithm
         Print.printBuf(" end Absyn.CREF_IDENT;");
       then ();
     case Absyn.ALLWILD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALLWILD end Absyn.ALLWILD;");
       then ();
     case Absyn.WILD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.WILD end Absyn.WILD;");
       then ();
   end match;
@@ -1266,17 +1270,17 @@ end printComponentRefAsCorbaString;
 protected function printWithinAsCorbaString
   input Absyn.Within within_;
 algorithm
-  _ := match within_
+  () := match within_
     local
       Absyn.Path path;
     case Absyn.WITHIN(path = path)
-      equation
+      algorithm
         Print.printBuf("record Absyn.WITHIN path = ");
         printPathAsCorbaString(path);
         Print.printBuf(" end Absyn.WITHIN;");
       then ();
     case Absyn.TOP()
-      equation
+      algorithm
         Print.printBuf("record Absyn.TOP end Absyn.TOP;");
       then ();
   end match;
@@ -1285,7 +1289,7 @@ end printWithinAsCorbaString;
 protected function printClassAsCorbaString
   input Absyn.Class cl;
 algorithm
-  _ := match cl
+  () := match cl
     local
       String name;
       Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
@@ -1293,7 +1297,7 @@ algorithm
       Absyn.ClassDef    body;
       SourceInfo info;
     case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,_,_,_,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CLASS name = \"");
         Print.printBuf(name);
         Print.printBuf("\", partialPrefix = ");
@@ -1310,21 +1314,21 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CLASS;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassAsCorbaString failed"}); then fail();
   end match;
 end printClassAsCorbaString;
 
 protected function printInfoAsCorbaString
   input SourceInfo info;
 algorithm
-  _ := match info
+  () := match info
     local
       String fileName;
       Boolean isReadOnly;
       Integer lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd;
       Real lastModified;
     case SOURCEINFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModified)
-      equation
+      algorithm
         Print.printBuf("record SOURCEINFO fileName = \"");
         Print.printBuf(fileName);
         Print.printBuf("\", isReadOnly = ");
@@ -1341,14 +1345,14 @@ algorithm
         Print.printBuf(realString(lastModified));
         Print.printBuf(" end SOURCEINFO;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
   end match;
 end printInfoAsCorbaString;
 
 protected function printClassDefAsCorbaString
   input Absyn.ClassDef classDef;
 algorithm
-  _ := match classDef
+  () := match classDef
     local
       list<Absyn.ClassPart> classParts;
       Option<String>  optString;
@@ -1361,10 +1365,9 @@ algorithm
       String baseClassName;
       Absyn.Path functionName;
       list<String> typeVars,vars;
-      list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     case Absyn.PARTS(typeVars,_,classParts,ann,optString)
-      equation
+      algorithm
         Print.printBuf("record Absyn.PARTS typeVars = {");
         Print.printBuf(stringDelimitList(typeVars, ","));
         Print.printBuf("}, classParts = ");
@@ -1376,7 +1379,7 @@ algorithm
         Print.printBuf(" end Absyn.PARTS;");
       then ();
     case Absyn.DERIVED(typeSpec,attributes,arguments,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.DERIVED typeSpec = ");
         printTypeSpecAsCorbaString(typeSpec);
         Print.printBuf(", attributes = ");
@@ -1388,7 +1391,7 @@ algorithm
         Print.printBuf("end Absyn.DERIVED;");
       then ();
     case Absyn.ENUMERATION(enumLiterals,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ENUMERATION enumLiterals = ");
         printEnumDefAsCorbaString(enumLiterals);
         Print.printBuf(", comment = ");
@@ -1396,7 +1399,7 @@ algorithm
         Print.printBuf("end Absyn.ENUMERATION;");
       then ();
     case Absyn.OVERLOAD(functionNames,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.OVERLOAD functionNames = ");
         printListAsCorbaString(functionNames, printPathAsCorbaString, ",");
         Print.printBuf(", comment = ");
@@ -1404,7 +1407,7 @@ algorithm
         Print.printBuf("end Absyn.OVERLOAD;");
       then ();
     case Absyn.CLASS_EXTENDS(baseClassName,modifications,optString,classParts,ann)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CLASS_EXTENDS baseClassName = \"");
         Print.printBuf(baseClassName);
         Print.printBuf("\", modifications = ");
@@ -1418,7 +1421,7 @@ algorithm
         Print.printBuf("end Absyn.CLASS_EXTENDS;");
       then ();
     case Absyn.PDER(functionName,vars,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.PDER functionName = ");
         printPathAsCorbaString(functionName);
         Print.printBuf(", vars = ");
@@ -1427,158 +1430,158 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.PDER;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassDefAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassDefAsCorbaString failed"}); then fail();
   end match;
 end printClassDefAsCorbaString;
 
 protected function printEnumDefAsCorbaString
   input Absyn.EnumDef enumDef;
 algorithm
-  _ := match enumDef
+  () := match enumDef
     local
       list<Absyn.EnumLiteral> enumLiterals;
     case Absyn.ENUMLITERALS(enumLiterals)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ENUMLITERALS enumLiterals = ");
         printListAsCorbaString(enumLiterals, printEnumLiteralAsCorbaString, ",");
         Print.printBuf("end Absyn.ENUMLITERALS;");
       then ();
     case Absyn.ENUM_COLON()
-      equation
+      algorithm
         Print.printBuf("record Absyn.ENUM_COLON end Absyn.ENUM_COLON;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumDefAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printEnumDefAsCorbaString failed"}); then fail();
   end match;
 end printEnumDefAsCorbaString;
 
 protected function printEnumLiteralAsCorbaString
   input Absyn.EnumLiteral enumLit;
 algorithm
-  _ := match enumLit
+  () := match enumLit
     local
       String literal;
       Option<Absyn.Comment> comment;
     case Absyn.ENUMLITERAL(literal,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ENUMLITERAL literal = \"");
         Print.printBuf(literal);
         Print.printBuf("\", comment = ");
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.ENUMLITERAL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumLiteralAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printEnumLiteralAsCorbaString failed"}); then fail();
   end match;
 end printEnumLiteralAsCorbaString;
 
 protected function printRestrictionAsCorbaString
   input Absyn.Restriction r;
 algorithm
-  _ := match (r)
+  () := match r
     local
       Absyn.Path path;
       Integer i;
       Absyn.FunctionRestriction functionRestriction;
 
     case Absyn.R_CLASS()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_CLASS end Absyn.R_CLASS;");
       then ();
 
     case Absyn.R_OPTIMIZATION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_OPTIMIZATION end Absyn.R_OPTIMIZATION;");
       then ();
 
     case Absyn.R_MODEL()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_MODEL end Absyn.R_MODEL;");
       then ();
 
     case Absyn.R_RECORD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_RECORD end Absyn.R_RECORD;");
       then ();
 
     case Absyn.R_BLOCK()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_BLOCK end Absyn.R_BLOCK;");
       then ();
 
     case Absyn.R_CONNECTOR()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_CONNECTOR end Absyn.R_CONNECTOR;");
       then ();
 
     case Absyn.R_EXP_CONNECTOR()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_EXP_CONNECTOR end Absyn.R_EXP_CONNECTOR;");
       then ();
 
     case Absyn.R_TYPE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_TYPE end Absyn.R_TYPE;");
       then ();
 
     case Absyn.R_PACKAGE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PACKAGE end Absyn.R_PACKAGE;");
       then ();
 
     case Absyn.R_FUNCTION(functionRestriction=functionRestriction)
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_FUNCTION functionRestriction = ");
         printFunctionRestrictionAsCorbaString(functionRestriction);
         Print.printBuf("end Absyn.R_FUNCTION;");
       then ();
 
     case Absyn.R_OPERATOR()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_OPERATOR end Absyn.R_OPERATOR;");
       then ();
 
     case Absyn.R_ENUMERATION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_ENUMERATION end Absyn.R_ENUMERATION;");
       then ();
 
     case Absyn.R_PREDEFINED_INTEGER()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_INTEGER end Absyn.R_PREDEFINED_INTEGER;");
       then ();
 
     case Absyn.R_PREDEFINED_REAL()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_REAL end Absyn.R_PREDEFINED_REAL;");
       then ();
 
     case Absyn.R_PREDEFINED_STRING()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_STRING end Absyn.R_PREDEFINED_STRING;");
       then ();
 
     case Absyn.R_PREDEFINED_BOOLEAN()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_BOOLEAN end Absyn.R_PREDEFINED_BOOLEAN;");
       then ();
 
     // BTH
     case Absyn.R_PREDEFINED_CLOCK()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_CLOCK end Absyn.R_PREDEFINED_CLOCK;");
       then ();
 
     case Absyn.R_PREDEFINED_ENUMERATION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_PREDEFINED_ENUMERATION end Absyn.R_PREDEFINED_ENUMERATION;");
       then ();
 
     case Absyn.R_UNIONTYPE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_UNIONTYPE end Absyn.R_UNIONTYPE;");
       then ();
 
     case Absyn.R_METARECORD(name=path,index=i)
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_METARECORD name = ");
         printPathAsCorbaString(path);
         Print.printBuf(", index = ");
@@ -1587,35 +1590,35 @@ algorithm
       then ();
 
     case Absyn.R_UNKNOWN()
-      equation
+      algorithm
         Print.printBuf("record Absyn.R_UNKNOWN end Absyn.R_UNKNOWN;");
       then ();
 
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
   end match;
 end printRestrictionAsCorbaString;
 
 protected function printFunctionRestrictionAsCorbaString
   input Absyn.FunctionRestriction functionRestriction;
 algorithm
-  _ := match functionRestriction
+  () := match functionRestriction
     local Absyn.FunctionPurity purity;
     case Absyn.FR_NORMAL_FUNCTION(purity)
-      equation
+      algorithm
         Print.printBuf("record Absyn.FR_NORMAL_FUNCTION purity = ");
         printFunctionPurityAsCorbaString(purity);
         Print.printBuf(" end Absyn.FR_NORMAL_FUNCTION;");
       then ();
     case Absyn.FR_OPERATOR_FUNCTION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;");
       then ();
     case Absyn.FR_PARALLEL_FUNCTION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;");
       then ();
     case Absyn.FR_KERNEL_FUNCTION()
-      equation
+      algorithm
         Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;");
       then ();
   end match;
@@ -1624,17 +1627,17 @@ end printFunctionRestrictionAsCorbaString;
 protected function printFunctionPurityAsCorbaString
   input Absyn.FunctionPurity functionPurity;
 algorithm
-  _ := match functionPurity
+  () := match functionPurity
     case Absyn.PURE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.PURE end Absyn.PURE;");
       then ();
     case Absyn.IMPURE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.IMPURE end Absyn.IMPURE;");
       then ();
     case Absyn.NO_PURITY()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NO_PURITY end Absyn.NO_PURITY;");
       then ();
   end match;
@@ -1643,7 +1646,7 @@ end printFunctionPurityAsCorbaString;
 protected function printClassPartAsCorbaString
   input Absyn.ClassPart classPart;
 algorithm
-  _ := match classPart
+  () := match classPart
     local
       list<Absyn.ElementItem> contents;
       list<Absyn.EquationItem> eqContents;
@@ -1651,64 +1654,64 @@ algorithm
       Absyn.ExternalDecl externalDecl;
       Option<Absyn.Annotation> annotation_;
     case Absyn.PUBLIC(contents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.PUBLIC contents = ");
         printListAsCorbaString(contents, printElementItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.PUBLIC;");
       then ();
     case Absyn.PROTECTED(contents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.PROTECTED contents = ");
         printListAsCorbaString(contents, printElementItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.PROTECTED;");
       then ();
     case Absyn.EQUATIONS(eqContents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.EQUATIONS contents = ");
         printListAsCorbaString(eqContents, printEquationItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.EQUATIONS;");
       then ();
     case Absyn.INITIALEQUATIONS(eqContents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.INITIALEQUATIONS contents = ");
         printListAsCorbaString(eqContents, printEquationItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.INITIALEQUATIONS;");
       then ();
     case Absyn.ALGORITHMS(algContents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.ALGORITHMS contents = ");
         printListAsCorbaString(algContents, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALGORITHMS;");
       then ();
     case Absyn.INITIALALGORITHMS(algContents)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.INITIALALGORITHMS contents = ");
         printListAsCorbaString(algContents, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.INITIALALGORITHMS;");
       then ();
     case Absyn.EXTERNAL(externalDecl,annotation_)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.EXTERNAL externalDecl = ");
         printExternalDeclAsCorbaString(externalDecl);
         Print.printBuf(", annotation_ = ");
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNAL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassPartAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassPartAsCorbaString failed"}); then fail();
   end match;
 end printClassPartAsCorbaString;
 
 protected function printExternalDeclAsCorbaString
   input Absyn.ExternalDecl decl;
 algorithm
-  _ := match decl
+  () := match decl
     local
       Option<String> funcName, lang;
       Option<Absyn.ComponentRef> output_;
       list<Absyn.Exp> args;
       Option<Absyn.Annotation> annotation_;
     case Absyn.EXTERNALDECL(funcName,lang,output_,args,annotation_)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EXTERNALDECL funcName = ");
         printStringCommentOption(funcName);
         Print.printBuf(", lang = ");
@@ -1721,38 +1724,37 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNALDECL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printExternalDeclAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printExternalDeclAsCorbaString failed"}); then fail();
   end match;
 end printExternalDeclAsCorbaString;
 
 protected function printElementItemAsCorbaString
   input Absyn.ElementItem el;
 algorithm
-  _ := match el
+  () := match el
     local
       Absyn.Element element;
-      Absyn.Annotation annotation_;
       String cmt;
     case Absyn.ELEMENTITEM(element)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ELEMENTITEM element = ");
         printElementAsCorbaString(element);
         Print.printBuf(" end Absyn.ELEMENTITEM;");
       then ();
     case Absyn.LEXER_COMMENT(cmt)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ELEMENTITEM element = \"");
         Print.printBuf(cmt);
         Print.printBuf("\" end Absyn.ELEMENTITEM;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementItemAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printElementItemAsCorbaString failed"}); then fail();
   end match;
 end printElementItemAsCorbaString;
 
 protected function printElementAsCorbaString
   input Absyn.Element el;
 algorithm
-  _ := match el
+  () := match el
     local
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
@@ -1764,7 +1766,7 @@ algorithm
       list<Absyn.NamedArg> args;
       Option<String> optName;
     case Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,specification,info,constrainClass)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.ELEMENT finalPrefix = ");
         Print.printBuf(boolString(finalPrefix));
         Print.printBuf(",redeclareKeywords = ");
@@ -1780,7 +1782,7 @@ algorithm
         Print.printBuf(" end Absyn.ELEMENT;");
       then ();
     case Absyn.DEFINEUNIT(name,args)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.DEFINEUNIT name = \"");
         Print.printBuf(name);
         Print.printBuf("\", args = ");
@@ -1788,7 +1790,7 @@ algorithm
         Print.printBuf(" end Absyn.DEFINEUNIT;");
       then ();
     case Absyn.TEXT(optName,string,info)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.TEXT optName = ");
         printStringCommentOption(optName);
         Print.printBuf(", string = \"");
@@ -1797,28 +1799,28 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.TEXT;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printElementAsCorbaString failed"}); then fail();
   end match;
 end printElementAsCorbaString;
 
 protected function printInnerOuterAsCorbaString
   input Absyn.InnerOuter innerOuter;
 algorithm
-  _ := match innerOuter
+  () := match innerOuter
     case Absyn.INNER()
-      equation
+      algorithm
         Print.printBuf("record Absyn.INNER end Absyn.INNER;");
       then ();
     case Absyn.OUTER()
-      equation
+      algorithm
         Print.printBuf("record Absyn.OUTER end Absyn.OUTER;");
       then ();
     case Absyn.INNER_OUTER()
-      equation
+      algorithm
         Print.printBuf("record Absyn.INNER_OUTER end Absyn.INNER_OUTER;");
       then ();
     case Absyn.NOT_INNER_OUTER()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NOT_INNER_OUTER end Absyn.NOT_INNER_OUTER;");
       then ();
   end match;
@@ -1827,17 +1829,17 @@ end printInnerOuterAsCorbaString;
 protected function printRedeclareKeywordsAsCorbaString
   input Absyn.RedeclareKeywords redeclareKeywords;
 algorithm
-  _ := match redeclareKeywords
+  () := match redeclareKeywords
     case Absyn.REDECLARE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.REDECLARE end Absyn.REDECLARE;");
       then ();
     case Absyn.REPLACEABLE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.REPLACEABLE end Absyn.REPLACEABLE;");
       then ();
     case Absyn.REDECLARE_REPLACEABLE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.REDECLARE_REPLACEABLE end Absyn.REDECLARE_REPLACEABLE;");
       then ();
   end match;
@@ -1846,12 +1848,12 @@ end printRedeclareKeywordsAsCorbaString;
 protected function printConstrainClassAsCorbaString
   input Absyn.ConstrainClass constrainClass;
 algorithm
-  _ := match constrainClass
+  () := match constrainClass
     local
       Absyn.ElementSpec elementSpec;
       Option<Absyn.Comment> comment;
     case Absyn.CONSTRAINCLASS(elementSpec,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CONSTRAINCLASS elementSpec = ");
         printElementSpecAsCorbaString(elementSpec);
         Print.printBuf(", comment = ");
@@ -1864,7 +1866,7 @@ end printConstrainClassAsCorbaString;
 protected function printElementSpecAsCorbaString
   input Absyn.ElementSpec spec;
 algorithm
-  _ := match spec
+  () := match spec
     local
       Boolean replaceable_;
       Absyn.Class class_;
@@ -1878,7 +1880,7 @@ algorithm
       Absyn.Path path;
       SourceInfo info;
     case Absyn.CLASSDEF(replaceable_,class_)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CLASSDEF replaceable_ = ");
         Print.printBuf(boolString(replaceable_));
         Print.printBuf(", class_ = ");
@@ -1886,7 +1888,7 @@ algorithm
         Print.printBuf(" end Absyn.CLASSDEF;");
       then ();
     case Absyn.EXTENDS(path,elementArg,annotationOpt)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EXTENDS path = ");
         printPathAsCorbaString(path);
         Print.printBuf(", elementArg = ");
@@ -1896,7 +1898,7 @@ algorithm
         Print.printBuf(" end Absyn.EXTENDS;");
       then ();
     case Absyn.IMPORT(import_, comment, info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.IMPORT import_ = ");
         printImportAsCorbaString(import_);
         Print.printBuf(", comment = ");
@@ -1906,7 +1908,7 @@ algorithm
         Print.printBuf(" end Absyn.IMPORT;");
       then ();
     case Absyn.COMPONENTS(attributes,typeSpec,components)
-      equation
+      algorithm
         Print.printBuf("record Absyn.COMPONENTS attributes = ");
         printElementAttributesAsCorbaString(attributes);
         Print.printBuf(", typeSpec = ");
@@ -1921,13 +1923,13 @@ end printElementSpecAsCorbaString;
 protected function printComponentItemAsCorbaString
   input Absyn.ComponentItem componentItem;
 algorithm
-  _ := match componentItem
+  () := match componentItem
     local
       Absyn.Component component;
       Option<Absyn.ComponentCondition> condition;
       Option<Absyn.Comment> comment;
     case Absyn.COMPONENTITEM(component,condition,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.COMPONENTITEM component = ");
         printComponentAsCorbaString(component);
         Print.printBuf(", condition = ");
@@ -1942,13 +1944,13 @@ end printComponentItemAsCorbaString;
 protected function printComponentAsCorbaString
   input Absyn.Component component;
 algorithm
-  _ := match component
+  () := match component
     local
       String name;
       Absyn.ArrayDim arrayDim;
       Option<Absyn.Modification> modification;
     case Absyn.COMPONENT(name,arrayDim,modification)
-      equation
+      algorithm
         Print.printBuf("record Absyn.COMPONENT name = \"");
         Print.printBuf(name);
         Print.printBuf("\", arrayDim = ");
@@ -1963,12 +1965,12 @@ end printComponentAsCorbaString;
 protected function printModificationAsCorbaString
   input Absyn.Modification mod;
 algorithm
-  _ := match mod
+  () := match mod
     local
       list<Absyn.ElementArg> elementArgLst;
       Absyn.EqMod eqMod;
     case Absyn.CLASSMOD(elementArgLst, eqMod)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CLASSMOD elementArgLst = ");
         printListAsCorbaString(elementArgLst, printElementArgAsCorbaString, ",");
         Print.printBuf(", eqMod = ");
@@ -1981,16 +1983,16 @@ end printModificationAsCorbaString;
 protected function printEqModAsCorbaString
   input Absyn.EqMod eqMod;
 algorithm
-  _ := match eqMod
+  () := match eqMod
     local
       Absyn.Exp exp;
       SourceInfo info;
     case Absyn.NOMOD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NOMOD end Absyn.NOMOD;");
       then ();
     case Absyn.EQMOD(exp,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQMOD exp = ");
         printExpAsCorbaString(exp);
         Print.printBuf(", info = ");
@@ -2003,14 +2005,13 @@ end printEqModAsCorbaString;
 protected function printEquationItemAsCorbaString
   input Absyn.EquationItem el;
 algorithm
-  _ := match el
+  () := match el
     local
       Absyn.Equation equation_;
       Option<Absyn.Comment> comment;
-      Absyn.Annotation annotation_;
       SourceInfo info;
     case Absyn.EQUATIONITEM(equation_,comment,info)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.EQUATIONITEM equation_ = ");
         printEquationAsCorbaString(equation_);
         Print.printBuf(", comment = ");
@@ -2025,7 +2026,7 @@ end printEquationItemAsCorbaString;
 protected function printEquationAsCorbaString
   input Absyn.Equation eq;
 algorithm
-  _ := match eq
+  () := match eq
     local
       Absyn.Exp ifExp,leftSide,rightSide,whenExp;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> elseIfBranches, elseWhenEquations;
@@ -2035,7 +2036,7 @@ algorithm
       Absyn.FunctionArgs functionArgs;
       Absyn.EquationItem equ;
     case Absyn.EQ_IF(ifExp,equationTrueItems,elseIfBranches,equationElseItems)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_IF ifExp = ");
         printExpAsCorbaString(ifExp);
         Print.printBuf(", equationTrueItems = ");
@@ -2047,7 +2048,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_IF;");
       then ();
     case Absyn.EQ_EQUALS(leftSide,rightSide)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_EQUALS leftSide = ");
         printExpAsCorbaString(leftSide);
         Print.printBuf(", rightSide = ");
@@ -2055,7 +2056,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_EQUALS;");
       then ();
     case Absyn.EQ_PDE(leftSide,rightSide,cr)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_PDE leftSide = ");
         printExpAsCorbaString(leftSide);
         Print.printBuf(", rightSide = ");
@@ -2065,7 +2066,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_PDE;");
       then ();
     case Absyn.EQ_CONNECT(connector1,connector2)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_CONNECT connector1 = ");
         printComponentRefAsCorbaString(connector1);
         Print.printBuf(", connector2 = ");
@@ -2073,7 +2074,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_CONNECT;");
       then ();
     case Absyn.EQ_FOR(iterators,forEquations)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_FOR iterators = ");
         printListAsCorbaString(iterators,printForIteratorAsCorbaString,",");
         Print.printBuf(", forEquations = ");
@@ -2081,7 +2082,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_FOR;");
       then ();
     case Absyn.EQ_WHEN_E(whenExp,whenEquations,elseWhenEquations)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_WHEN_E whenExp = ");
         printExpAsCorbaString(whenExp);
         Print.printBuf(", whenEquations = ");
@@ -2091,7 +2092,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_WHEN_E;");
       then ();
     case Absyn.EQ_NORETCALL(functionName,functionArgs)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_NORETCALL functionName = ");
         printComponentRefAsCorbaString(functionName);
         Print.printBuf(", functionArgs = ");
@@ -2099,7 +2100,7 @@ algorithm
         Print.printBuf(" end Absyn.EQ_NORETCALL;");
       then ();
     case Absyn.EQ_FAILURE(equ)
-      equation
+      algorithm
         Print.printBuf("record Absyn.EQ_FAILURE equ = ");
         printEquationItemAsCorbaString(equ);
         Print.printBuf(" end Absyn.EQ_FAILURE;");
@@ -2109,14 +2110,13 @@ end printEquationAsCorbaString;
 protected function printAlgorithmItemAsCorbaString
   input Absyn.AlgorithmItem el;
 algorithm
-  _ := match el
+  () := match el
     local
       Absyn.Algorithm algorithm_;
       Option<Absyn.Comment> comment;
-      Absyn.Annotation annotation_;
       SourceInfo info;
     case Absyn.ALGORITHMITEM(algorithm_,comment,info)
-      equation
+      algorithm
         Print.printBuf("\nrecord Absyn.ALGORITHMITEM algorithm_ = ");
         printAlgorithmAsCorbaString(algorithm_);
         Print.printBuf(", comment = ");
@@ -2131,16 +2131,16 @@ end printAlgorithmItemAsCorbaString;
 protected function printAlgorithmAsCorbaString
   input Absyn.Algorithm alg;
 algorithm
-  _ := match alg
+  () := match alg
     local
       Absyn.Exp assignComponent, value, ifExp, boolExpr;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfAlgorithmBranch,elseWhenAlgorithmBranch;
-      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,tryBody,catchBody,body;
+      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,body;
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
     case Absyn.ALG_ASSIGN(assignComponent,value)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_ASSIGN assignComponent = ");
         printExpAsCorbaString(assignComponent);
         Print.printBuf(", value = ");
@@ -2148,7 +2148,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_ASSIGN;");
       then ();
     case Absyn.ALG_IF(ifExp,trueBranch,elseIfAlgorithmBranch,elseBranch)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_IF ifExp = ");
         printExpAsCorbaString(ifExp);
         Print.printBuf(", trueBranch = ");
@@ -2160,7 +2160,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_IF;");
       then ();
     case Absyn.ALG_FOR(iterators,forBody)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_FOR iterators = ");
         printListAsCorbaString(iterators,printForIteratorAsCorbaString,",");
         Print.printBuf(", forBody = ");
@@ -2168,7 +2168,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_FOR;");
       then ();
     case Absyn.ALG_PARFOR(iterators,forBody)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_PARFOR iterators = ");
         printListAsCorbaString(iterators,printForIteratorAsCorbaString,",");
         Print.printBuf(", parforBody = ");
@@ -2176,7 +2176,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_PARFOR;");
       then ();
     case Absyn.ALG_WHILE(boolExpr,whileBody)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_WHILE boolExpr = ");
         printExpAsCorbaString(boolExpr);
         Print.printBuf(", whileBody = ");
@@ -2184,7 +2184,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_WHILE;");
       then ();
     case Absyn.ALG_WHEN_A(boolExpr,whenBody,elseWhenAlgorithmBranch)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_WHEN_A boolExpr = ");
         printExpAsCorbaString(boolExpr);
         Print.printBuf(", whenBody = ");
@@ -2194,7 +2194,7 @@ algorithm
         Print.printBuf(" end Absyn.ALG_WHEN_A;");
       then ();
     case Absyn.ALG_NORETCALL(functionCall,functionArgs)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_NORETCALL functionCall = ");
         printComponentRefAsCorbaString(functionCall);
         Print.printBuf(", functionArgs = ");
@@ -2202,15 +2202,15 @@ algorithm
         Print.printBuf(" end Absyn.ALG_NORETCALL;");
       then ();
     case Absyn.ALG_RETURN()
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_RETURN end Absyn.ALG_RETURN;");
       then ();
     case Absyn.ALG_BREAK()
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_BREAK end Absyn.ALG_BREAK;");
       then ();
     case Absyn.ALG_FAILURE(body)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ALG_FAILURE body = ");
         printListAsCorbaString(body, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_FAILURE;");
@@ -2245,11 +2245,11 @@ end printEquationItemListAsCorbaString;
 protected function printAnnotationAsCorbaString
   input Absyn.Annotation annotation_;
 algorithm
-  _ := match annotation_
+  () := match annotation_
     local
       list<Absyn.ElementArg> elementArgs;
     case Absyn.ANNOTATION(elementArgs)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ANNOTATION elementArgs = ");
         printListAsCorbaString(elementArgs, printElementArgAsCorbaString, ",");
         Print.printBuf(" end Absyn.ANNOTATION;");
@@ -2260,12 +2260,12 @@ end printAnnotationAsCorbaString;
 protected function printCommentAsCorbaString
   input Absyn.Comment inComment;
 algorithm
-  _ := match inComment
+  () := match inComment
     local
       Option<Absyn.Annotation> annotation_;
       Option<String> comment;
     case Absyn.COMMENT(annotation_, comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.COMMENT annotation_ = ");
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(", comment = ");
@@ -2278,13 +2278,13 @@ end printCommentAsCorbaString;
 protected function printTypeSpecAsCorbaString
   input Absyn.TypeSpec typeSpec;
 algorithm
-  _ := match typeSpec
+  () := match typeSpec
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> arrayDim;
       list<Absyn.TypeSpec> typeSpecs;
     case Absyn.TPATH(path, arrayDim)
-      equation
+      algorithm
         Print.printBuf("record Absyn.TPATH path = ");
         printPathAsCorbaString(path);
         Print.printBuf(", arrayDim = ");
@@ -2292,7 +2292,7 @@ algorithm
         Print.printBuf(" end Absyn.TPATH;");
       then ();
     case Absyn.TCOMPLEX(path, typeSpecs, arrayDim)
-      equation
+      algorithm
         Print.printBuf("record Absyn.TPATH path = ");
         printPathAsCorbaString(path);
         Print.printBuf(", typeSpecs = ");
@@ -2313,15 +2313,15 @@ end printArrayDimAsCorbaString;
 protected function printSubscriptAsCorbaString
   input Absyn.Subscript subscript;
 algorithm
-  _ := match subscript
+  () := match subscript
     local
       Absyn.Exp sub;
     case Absyn.NOSUB()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NOSUB end Absyn.NOSUB;");
       then ();
     case Absyn.SUBSCRIPT(sub)
-      equation
+      algorithm
         Print.printBuf("record Absyn.SUBSCRIPT subscript = ");
         printExpAsCorbaString(sub);
         Print.printBuf(" end Absyn.SUBSCRIPT;");
@@ -2332,12 +2332,12 @@ end printSubscriptAsCorbaString;
 protected function printImportAsCorbaString
   input Absyn.Import import_;
 algorithm
-  _ := match import_
+  () := match import_
     local
       String name;
       Absyn.Path path;
     case Absyn.NAMED_IMPORT(name,path)
-      equation
+      algorithm
         Print.printBuf("record Absyn.NAMED_IMPORT name = \"");
         Print.printBuf(name);
         Print.printBuf("\", path = ");
@@ -2345,13 +2345,13 @@ algorithm
         Print.printBuf(" end Absyn.NAMED_IMPORT;");
       then ();
     case Absyn.QUAL_IMPORT(path)
-      equation
+      algorithm
         Print.printBuf("record Absyn.QUAL_IMPORT path = ");
         printPathAsCorbaString(path);
         Print.printBuf(" end Absyn.QUAL_IMPORT;");
       then ();
     case Absyn.UNQUAL_IMPORT(path)
-      equation
+      algorithm
         Print.printBuf("record Absyn.UNQUAL_IMPORT path = ");
         printPathAsCorbaString(path);
         Print.printBuf(" end Absyn.UNQUAL_IMPORT;");
@@ -2362,7 +2362,7 @@ end printImportAsCorbaString;
 protected function printElementAttributesAsCorbaString
   input Absyn.ElementAttributes attr;
 algorithm
-  _ := match attr
+  () := match attr
     local
       Boolean flowPrefix;
       Boolean streamPrefix;
@@ -2372,7 +2372,7 @@ algorithm
       Absyn.ArrayDim arrayDim;
       Absyn.IsField isField;
     case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,isField,arrayDim)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
         Print.printBuf(boolString(flowPrefix));
         Print.printBuf(", streamPrefix = ");
@@ -2397,17 +2397,17 @@ end printElementAttributesAsCorbaString;
 protected function printParallelismAsCorbaString
   input Absyn.Parallelism parallelism;
 algorithm
-  _ := match parallelism
+  () := match parallelism
     case Absyn.PARGLOBAL()
-      equation
+      algorithm
         Print.printBuf("record Absyn.PARGLOBAL end Absyn.PARGLOBAL;");
       then ();
     case Absyn.PARLOCAL()
-      equation
+      algorithm
         Print.printBuf("record Absyn.PARLOCAL end Absyn.PARLOCAL;");
       then ();
     case Absyn.NON_PARALLEL()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NON_PARALLEL end Absyn.NON_PARALLEL;");
       then ();
   end match;
@@ -2416,21 +2416,21 @@ end printParallelismAsCorbaString;
 protected function printVariabilityAsCorbaString
   input Absyn.Variability var;
 algorithm
-  _ := match var
+  () := match var
     case Absyn.VAR()
-      equation
+      algorithm
         Print.printBuf("record Absyn.VAR end Absyn.VAR;");
       then ();
     case Absyn.DISCRETE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.DISCRETE end Absyn.DISCRETE;");
       then ();
     case Absyn.PARAM()
-      equation
+      algorithm
         Print.printBuf("record Absyn.PARAM end Absyn.PARAM;");
       then ();
     case Absyn.CONST()
-      equation
+      algorithm
         Print.printBuf("record Absyn.CONST end Absyn.CONST;");
       then ();
   end match;
@@ -2439,17 +2439,17 @@ end printVariabilityAsCorbaString;
 protected function printDirectionAsCorbaString
   input Absyn.Direction dir;
 algorithm
-  _ := match dir
+  () := match dir
     case Absyn.INPUT()
-      equation
+      algorithm
         Print.printBuf("record Absyn.INPUT end Absyn.INPUT;");
       then ();
     case Absyn.OUTPUT()
-      equation
+      algorithm
         Print.printBuf("record Absyn.OUTPUT end Absyn.OUTPUT;");
       then ();
     case Absyn.BIDIR()
-      equation
+      algorithm
         Print.printBuf("record Absyn.BIDIR end Absyn.BIDIR;");
       then ();
   end match;
@@ -2458,13 +2458,13 @@ end printDirectionAsCorbaString;
 protected function printIsFieldAsCorbaString
   input Absyn.IsField isf;
 algorithm
-  _ := match isf
+  () := match isf
     case Absyn.NONFIELD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.NONFIELD end Absyn.NONFIELD;");
       then ();
     case Absyn.FIELD()
-      equation
+      algorithm
         Print.printBuf("record Absyn.FIELD end Absyn.FIELD;");
       then ();
   end match;
@@ -2474,7 +2474,7 @@ end printIsFieldAsCorbaString;
 protected function printElementArgAsCorbaString
   input Absyn.ElementArg arg;
 algorithm
-  _ := match arg
+  () := match arg
     local
       Boolean finalPrefix;
       Absyn.Each eachPrefix;
@@ -2486,7 +2486,7 @@ algorithm
       SourceInfo info;
       Absyn.Path p;
     case Absyn.MODIFICATION(finalPrefix,eachPrefix,p,modification,comment,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
         Print.printBuf(boolString(finalPrefix));
         Print.printBuf(", eachPrefix = ");
@@ -2502,7 +2502,7 @@ algorithm
         Print.printBuf(" end Absyn.MODIFICATION;");
       then ();
     case Absyn.REDECLARATION(finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.REDECLARATION finalPrefix = ");
         Print.printBuf(boolString(finalPrefix));
         Print.printBuf(", redeclareKeywords = ");
@@ -2523,14 +2523,14 @@ end printElementArgAsCorbaString;
 protected function printFunctionArgsAsCorbaString
   input Absyn.FunctionArgs fargs;
 algorithm
-  _ := match fargs
+  () := match fargs
     local
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> argNames;
       Absyn.Exp exp;
       Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args,argNames)
-      equation
+      algorithm
         Print.printBuf("record Absyn.FUNCTIONARGS args = ");
         printListAsCorbaString(args, printExpAsCorbaString, ",");
         Print.printBuf(", argNames = ");
@@ -2538,7 +2538,7 @@ algorithm
         Print.printBuf(" end Absyn.FUNCTIONARGS;");
       then ();
     case Absyn.FOR_ITER_FARG(exp,_,iterators)
-      equation
+      algorithm
         Print.printBuf("record Absyn.FOR_ITER_FARG exp = ");
         printExpAsCorbaString(exp);
         Print.printBuf(", iterators = ");
@@ -2551,12 +2551,12 @@ end printFunctionArgsAsCorbaString;
 protected function printForIteratorAsCorbaString
   input Absyn.ForIterator iter;
 algorithm
-  _ := match iter
+  () := match iter
     local
       String id;
       Option<Absyn.Exp> guardExp,range;
-    case (Absyn.ITERATOR(id,guardExp,range))
-      equation
+    case Absyn.ITERATOR(id,guardExp,range)
+      algorithm
         Print.printBuf("record Absyn.ITERATOR name = \"");
         Print.printBuf(id);
         Print.printBuf("\", guardExp = ");
@@ -2571,12 +2571,12 @@ end printForIteratorAsCorbaString;
 protected function printNamedArgAsCorbaString
   input Absyn.NamedArg arg;
 algorithm
-  _ := match arg
+  () := match arg
     local
       String argName;
       Absyn.Exp argValue;
     case Absyn.NAMEDARG(argName,argValue)
-      equation
+      algorithm
         Print.printBuf("record Absyn.NAMEDARG argName = \"");
         Print.printBuf(argName);
         Print.printBuf("\", argValue = ");
@@ -2589,10 +2589,9 @@ end printNamedArgAsCorbaString;
 protected function printExpAsCorbaString
   input Absyn.Exp inExp;
 algorithm
-  _ := match inExp
+  () := match inExp
     local
       Integer i;
-      Real r;
       String s,id;
       Boolean b;
       Absyn.ComponentRef componentRef,function_;
@@ -2609,37 +2608,37 @@ algorithm
       list<Absyn.Case> cases;
       Option<String> comment;
     case Absyn.INTEGER(value = i)
-      equation
+      algorithm
         Print.printBuf("record Absyn.INTEGER value = ");
         Print.printBuf(intString(i));
         Print.printBuf(" end Absyn.INTEGER;");
       then ();
     case Absyn.REAL(value = s)
-      equation
+      algorithm
         Print.printBuf("record Absyn.REAL value = ");
         Print.printBuf(s);
         Print.printBuf(" end Absyn.REAL;");
       then ();
     case Absyn.CREF(componentRef)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CREF componentRef = ");
         printComponentRefAsCorbaString(componentRef);
         Print.printBuf(" end Absyn.CREF;");
       then ();
     case Absyn.STRING(value = s)
-      equation
+      algorithm
         Print.printBuf("record Absyn.STRING value = \"");
         Print.printBuf(s);
         Print.printBuf("\" end Absyn.STRING;");
       then ();
     case Absyn.BOOL(value = b)
-      equation
+      algorithm
         Print.printBuf("record Absyn.BOOL value = ");
         Print.printBuf(boolString(b));
         Print.printBuf(" end Absyn.BOOL;");
       then ();
     case Absyn.BINARY(exp1,op,exp2)
-      equation
+      algorithm
         Print.printBuf("record Absyn.BINARY exp1 = ");
         printExpAsCorbaString(exp1);
         Print.printBuf(", op = ");
@@ -2649,7 +2648,7 @@ algorithm
         Print.printBuf(" end Absyn.BINARY;");
       then ();
     case Absyn.UNARY(op,exp)
-      equation
+      algorithm
         Print.printBuf("record Absyn.UNARY op = ");
         printOperatorAsCorbaString(op);
         Print.printBuf(", exp = ");
@@ -2657,7 +2656,7 @@ algorithm
         Print.printBuf(" end Absyn.UNARY;");
       then ();
     case Absyn.LBINARY(exp1,op,exp2)
-      equation
+      algorithm
         Print.printBuf("record Absyn.LBINARY exp1 = ");
         printExpAsCorbaString(exp1);
         Print.printBuf(", op = ");
@@ -2667,7 +2666,7 @@ algorithm
         Print.printBuf(" end Absyn.LBINARY;");
       then ();
     case Absyn.LUNARY(op,exp)
-      equation
+      algorithm
         Print.printBuf("record Absyn.LUNARY op = ");
         printOperatorAsCorbaString(op);
         Print.printBuf(", exp = ");
@@ -2675,7 +2674,7 @@ algorithm
         Print.printBuf(" end Absyn.LUNARY;");
       then ();
     case Absyn.RELATION(exp1,op,exp2)
-      equation
+      algorithm
         Print.printBuf("record Absyn.RELATION exp1 = ");
         printExpAsCorbaString(exp1);
         Print.printBuf(", op = ");
@@ -2685,7 +2684,7 @@ algorithm
         Print.printBuf(" end Absyn.RELATION;");
       then ();
     case Absyn.IFEXP(ifExp,trueBranch,elseBranch,elseIfBranch)
-      equation
+      algorithm
         Print.printBuf("record Absyn.IFEXP ifExp = ");
         printExpAsCorbaString(ifExp);
         Print.printBuf(", trueBranch = ");
@@ -2697,7 +2696,7 @@ algorithm
         Print.printBuf(" end Absyn.IFEXP;");
       then ();
     case Absyn.CALL(function_,functionArgs)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CALL function_ = ");
         printComponentRefAsCorbaString(function_);
         Print.printBuf(", functionArgs = ");
@@ -2705,7 +2704,7 @@ algorithm
         Print.printBuf(" end Absyn.CALL;");
       then ();
     case Absyn.PARTEVALFUNCTION(function_,functionArgs)
-      equation
+      algorithm
         Print.printBuf("record Absyn.PARTEVALFUNCTION function_ = ");
         printComponentRefAsCorbaString(function_);
         Print.printBuf(", functionArgs = ");
@@ -2713,19 +2712,19 @@ algorithm
         Print.printBuf(" end Absyn.PARTEVALFUNCTION;");
       then ();
     case Absyn.ARRAY(arrayExp)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ARRAY arrayExp = ");
         printListAsCorbaString(arrayExp, printExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.ARRAY;");
       then ();
     case Absyn.MATRIX(matrix)
-      equation
+      algorithm
         Print.printBuf("record Absyn.MATRIX matrix = ");
         printListAsCorbaString(matrix, printListExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.MATRIX;");
       then ();
     case Absyn.RANGE(start,step,stop)
-      equation
+      algorithm
         Print.printBuf("record Absyn.RANGE start = ");
         printExpAsCorbaString(start);
         Print.printBuf(", step = ");
@@ -2735,23 +2734,23 @@ algorithm
         Print.printBuf(" end Absyn.RANGE;");
       then ();
     case Absyn.TUPLE(expressions)
-      equation
+      algorithm
         Print.printBuf("record Absyn.TUPLE expressions = ");
         printListAsCorbaString(expressions, printExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.TUPLE;");
       then ();
     case Absyn.END()
-      equation
+      algorithm
         Print.printBuf("record Absyn.END end Absyn.END;");
       then ();
     case Absyn.CODE(code)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CODE code = ");
         printCodeAsCorbaString(code);
         Print.printBuf(" end Absyn.CODE;");
       then ();
     case Absyn.AS(id,exp)
-      equation
+      algorithm
         Print.printBuf("record Absyn.AS id = \"");
         Print.printBuf(id);
         Print.printBuf("\", exp = ");
@@ -2759,7 +2758,7 @@ algorithm
         Print.printBuf(" end Absyn.AS;");
       then ();
     case Absyn.CONS(head,rest)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CONS head = ");
         printExpAsCorbaString(head);
         Print.printBuf(", rest = ");
@@ -2767,7 +2766,7 @@ algorithm
         Print.printBuf(" end Absyn.CONS;");
       then ();
     case Absyn.MATCHEXP(matchTy,inputExp,localDecls,cases,comment)
-      equation
+      algorithm
         Print.printBuf("record Absyn.MATCHEXP matchTy = ");
         printMatchTypeAsCorbaString(matchTy);
         Print.printBuf(", inputExp = ");
@@ -2787,13 +2786,13 @@ end printExpAsCorbaString;
 protected function printMatchTypeAsCorbaString
   input Absyn.MatchType matchTy;
 algorithm
-  _ := match matchTy
+  () := match matchTy
     case Absyn.MATCH()
-      equation
+      algorithm
         Print.printBuf("record Absyn.MATCH end Absyn.MATCH;");
       then ();
     case Absyn.MATCHCONTINUE()
-      equation
+      algorithm
         Print.printBuf("record Absyn.MATCHCONTINUE end Absyn.MATCHCONTINUE;");
       then ();
   end match;
@@ -2802,7 +2801,7 @@ end printMatchTypeAsCorbaString;
 protected function printCaseAsCorbaString
   input Absyn.Case case_;
 algorithm
-  _ := match case_
+  () := match case_
     local
       Absyn.Exp pattern;
       Option<Absyn.Exp> patternGuard;
@@ -2812,7 +2811,7 @@ algorithm
       Absyn.Exp result;
       Option<String> comment;
     case Absyn.CASE(pattern,patternGuard,patternInfo,localDecls,classPart,result,resultInfo,comment,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
         Print.printBuf(", patternGuard = ");
@@ -2834,7 +2833,7 @@ algorithm
         Print.printBuf(" end Absyn.CASE;");
       then ();
     case Absyn.ELSE(localDecls,classPart,result,resultInfo,comment,info)
-      equation
+      algorithm
         Print.printBuf("record Absyn.ELSE localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
         Print.printBuf(", classPart = ");
@@ -2855,7 +2854,7 @@ end printCaseAsCorbaString;
 protected function printCodeAsCorbaString
   input Absyn.CodeNode code;
 algorithm
-  _ := match code
+  () := match code
     local
       Absyn.Path path;
       Absyn.ComponentRef componentRef;
@@ -2866,19 +2865,19 @@ algorithm
       Absyn.Exp exp;
       Absyn.Modification modification;
     case Absyn.C_TYPENAME(path)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_TYPENAME path = ");
         printPathAsCorbaString(path);
         Print.printBuf(" end Absyn.C_TYPENAME;");
       then ();
     case Absyn.C_VARIABLENAME(componentRef)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_VARIABLENAME componentRef = ");
         printComponentRefAsCorbaString(componentRef);
         Print.printBuf(" end Absyn.C_VARIABLENAME;");
       then ();
     case Absyn.C_EQUATIONSECTION(boolean, equationItemLst)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_EQUATIONSECTION boolean = ");
         Print.printBuf(boolString(boolean));
         Print.printBuf(", equationItemLst = ");
@@ -2886,7 +2885,7 @@ algorithm
         Print.printBuf(" end Absyn.C_EQUATIONSECTION;");
       then ();
     case Absyn.C_ALGORITHMSECTION(boolean, algorithmItemLst)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_ALGORITHMSECTION boolean = ");
         Print.printBuf(boolString(boolean));
         Print.printBuf(", algorithmItemLst = ");
@@ -2894,19 +2893,19 @@ algorithm
         Print.printBuf(" end Absyn.C_ALGORITHMSECTION;");
       then ();
     case Absyn.C_ELEMENT(element)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_ELEMENT element = ");
         printElementAsCorbaString(element);
         Print.printBuf(" end Absyn.C_ELEMENT;");
       then ();
     case Absyn.C_EXPRESSION(exp)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_EXPRESSION exp = ");
         printExpAsCorbaString(exp);
         Print.printBuf(" end Absyn.C_EXPRESSION;");
       then ();
     case Absyn.C_MODIFICATION(modification)
-      equation
+      algorithm
         Print.printBuf("record Absyn.C_MODIFICATION modification = ");
         printModificationAsCorbaString(modification);
         Print.printBuf(" end Absyn.C_MODIFICATION;");
@@ -2947,12 +2946,12 @@ protected function printTupleAsCorbaString
     input Type_b inTypeB;
   end FuncTypeType_b;
 algorithm
-  _ := match (inTpl,fnA,fnB)
+  () := match inTpl
     local
       Type_a a;
       Type_b b;
-    case ((a,b),_,_)
-      equation
+    case (a,b)
+      algorithm
         Print.printBuf("(");
         fnA(a);
         Print.printBuf(",");
@@ -2965,38 +2964,38 @@ end printTupleAsCorbaString;
 protected function printOperatorAsCorbaString
   input Absyn.Operator op;
 algorithm
-  _ := match op
-    case Absyn.ADD() equation Print.printBuf("record Absyn.ADD end Absyn.ADD;"); then ();
-    case Absyn.SUB() equation Print.printBuf("record Absyn.SUB end Absyn.SUB;"); then ();
-    case Absyn.MUL() equation Print.printBuf("record Absyn.MUL end Absyn.MUL;"); then ();
-    case Absyn.DIV() equation Print.printBuf("record Absyn.DIV end Absyn.DIV;"); then ();
-    case Absyn.POW() equation Print.printBuf("record Absyn.POW end Absyn.POW;"); then ();
-    case Absyn.UPLUS() equation Print.printBuf("record Absyn.UPLUS end Absyn.UPLUS;"); then ();
-    case Absyn.UMINUS() equation Print.printBuf("record Absyn.UMINUS end Absyn.UMINUS;"); then ();
-    case Absyn.ADD_EW() equation Print.printBuf("record Absyn.ADD_EW end Absyn.ADD_EW;"); then ();
-    case Absyn.SUB_EW() equation Print.printBuf("record Absyn.SUB_EW end Absyn.SUB_EW;"); then ();
-    case Absyn.MUL_EW() equation Print.printBuf("record Absyn.MUL_EW end Absyn.MUL_EW;"); then ();
-    case Absyn.DIV_EW() equation Print.printBuf("record Absyn.DIV_EW end Absyn.DIV_EW;"); then ();
-    case Absyn.UPLUS_EW() equation Print.printBuf("record Absyn.UPLUS_EW end Absyn.UPLUS_EW;"); then ();
-    case Absyn.UMINUS_EW() equation Print.printBuf("record Absyn.UMINUS_EW end Absyn.UMINUS_EW;"); then ();
-    case Absyn.AND() equation Print.printBuf("record Absyn.AND end Absyn.AND;"); then ();
-    case Absyn.OR() equation Print.printBuf("record Absyn.OR end Absyn.OR;"); then ();
-    case Absyn.NOT() equation Print.printBuf("record Absyn.NOT end Absyn.NOT;"); then ();
-    case Absyn.LESS() equation Print.printBuf("record Absyn.LESS end Absyn.LESS;"); then ();
-    case Absyn.LESSEQ() equation Print.printBuf("record Absyn.LESSEQ end Absyn.LESSEQ;"); then ();
-    case Absyn.GREATER() equation Print.printBuf("record Absyn.GREATER end Absyn.GREATER;"); then ();
-    case Absyn.GREATEREQ() equation Print.printBuf("record Absyn.GREATEREQ end Absyn.GREATEREQ;"); then ();
-    case Absyn.EQUAL() equation Print.printBuf("record Absyn.EQUAL end Absyn.EQUAL;"); then ();
-    case Absyn.NEQUAL() equation Print.printBuf("record Absyn.NEQUAL end Absyn.NEQUAL;"); then ();
+  () := match op
+    case Absyn.ADD() algorithm Print.printBuf("record Absyn.ADD end Absyn.ADD;"); then ();
+    case Absyn.SUB() algorithm Print.printBuf("record Absyn.SUB end Absyn.SUB;"); then ();
+    case Absyn.MUL() algorithm Print.printBuf("record Absyn.MUL end Absyn.MUL;"); then ();
+    case Absyn.DIV() algorithm Print.printBuf("record Absyn.DIV end Absyn.DIV;"); then ();
+    case Absyn.POW() algorithm Print.printBuf("record Absyn.POW end Absyn.POW;"); then ();
+    case Absyn.UPLUS() algorithm Print.printBuf("record Absyn.UPLUS end Absyn.UPLUS;"); then ();
+    case Absyn.UMINUS() algorithm Print.printBuf("record Absyn.UMINUS end Absyn.UMINUS;"); then ();
+    case Absyn.ADD_EW() algorithm Print.printBuf("record Absyn.ADD_EW end Absyn.ADD_EW;"); then ();
+    case Absyn.SUB_EW() algorithm Print.printBuf("record Absyn.SUB_EW end Absyn.SUB_EW;"); then ();
+    case Absyn.MUL_EW() algorithm Print.printBuf("record Absyn.MUL_EW end Absyn.MUL_EW;"); then ();
+    case Absyn.DIV_EW() algorithm Print.printBuf("record Absyn.DIV_EW end Absyn.DIV_EW;"); then ();
+    case Absyn.UPLUS_EW() algorithm Print.printBuf("record Absyn.UPLUS_EW end Absyn.UPLUS_EW;"); then ();
+    case Absyn.UMINUS_EW() algorithm Print.printBuf("record Absyn.UMINUS_EW end Absyn.UMINUS_EW;"); then ();
+    case Absyn.AND() algorithm Print.printBuf("record Absyn.AND end Absyn.AND;"); then ();
+    case Absyn.OR() algorithm Print.printBuf("record Absyn.OR end Absyn.OR;"); then ();
+    case Absyn.NOT() algorithm Print.printBuf("record Absyn.NOT end Absyn.NOT;"); then ();
+    case Absyn.LESS() algorithm Print.printBuf("record Absyn.LESS end Absyn.LESS;"); then ();
+    case Absyn.LESSEQ() algorithm Print.printBuf("record Absyn.LESSEQ end Absyn.LESSEQ;"); then ();
+    case Absyn.GREATER() algorithm Print.printBuf("record Absyn.GREATER end Absyn.GREATER;"); then ();
+    case Absyn.GREATEREQ() algorithm Print.printBuf("record Absyn.GREATEREQ end Absyn.GREATEREQ;"); then ();
+    case Absyn.EQUAL() algorithm Print.printBuf("record Absyn.EQUAL end Absyn.EQUAL;"); then ();
+    case Absyn.NEQUAL() algorithm Print.printBuf("record Absyn.NEQUAL end Absyn.NEQUAL;"); then ();
   end match;
 end printOperatorAsCorbaString;
 
 protected function printEachAsCorbaString
   input Absyn.Each each_;
 algorithm
-  _ := match each_
-    case Absyn.EACH() equation Print.printBuf("record Absyn.EACH end Absyn.EACH;"); then ();
-    case Absyn.NON_EACH() equation Print.printBuf("record Absyn.NON_EACH end Absyn.NON_EACH;"); then ();
+  () := match each_
+    case Absyn.EACH() algorithm Print.printBuf("record Absyn.EACH end Absyn.EACH;"); then ();
+    case Absyn.NON_EACH() algorithm Print.printBuf("record Absyn.NON_EACH end Absyn.NON_EACH;"); then ();
   end match;
 end printEachAsCorbaString;
 
@@ -3045,5 +3044,5 @@ algorithm
   end while;
 end writePath;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end Dump;

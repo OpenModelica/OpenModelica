@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -49,8 +54,9 @@ public:
   ~ElementTreeItem();
   bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
-  ElementTreeItem* child(int row) const {return row >= 0 && row < childrenSize() ? mChildren.at(row) : 0;}
-  void insertChild(int position, ElementTreeItem *pElementTreeItem) {mChildren.insert(position, pElementTreeItem);}
+  ElementTreeItem* child(int row) const;
+  ElementTreeItem* findChild(const QString &name, Qt::CaseSensitivity caseSensitivity) const;
+  void insertChild(int position, ElementTreeItem *pElementTreeItem);
   void removeChildren();
   void removeChild(ElementTreeItem *pElementTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
@@ -59,10 +65,13 @@ public:
   bool isTopLevel() const;
   QString getName() const {return mName;}
   QString getNameStructure() const {return mNameStructure;}
+  ModelInstance::Element* getModelInstanceElement() const {return mpModelInstanceElement;}
 private:
+  ModelInstance::Element *mpModelInstanceElement = nullptr;
   ElementTreeItem *mpParentElementTreeItem = 0;
   bool mIsRootItem = false;
   QList<ElementTreeItem*> mChildren;
+  QHash<QString, ElementTreeItem*> mChildrenHash;
   QString mName;
   QString mNameStructure;
   QString mDisplayName;
@@ -101,7 +110,7 @@ public:
   QModelIndex elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
   void removeElements();
   void addElements(ModelInstance::Model *pModel);
-  ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pElementTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 private:
   ElementWidget *mpElementWidget;
   ElementTreeItem* mpRootElementTreeItem;
@@ -115,6 +124,8 @@ public:
   ElementTreeView(ElementWidget *pElementWidget);
 private:
   ElementWidget *mpElementWidget;
+private slots:
+  void showContextMenu(const QPoint &pos);
 };
 
 class ElementWidget : public QWidget

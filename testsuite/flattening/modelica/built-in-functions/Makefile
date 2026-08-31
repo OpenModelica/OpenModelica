@@ -51,6 +51,9 @@ MinMax.mo \
 MinMaxEnum.mo \
 Mod.mo \
 MultiFunctionReturnValueUseOnlyFirst.mo \
+NthRoot1.mo \
+NthRoot2.mo \
+NthRoot3.mo \
 NumericFunctions.mo \
 OuterProduct.mo \
 Product.mo \
@@ -136,7 +139,7 @@ failingtest :
 	@echo
 	@echo Running failing tests:
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 keywords :
 	$(TEST) -l $(TESTFILES)

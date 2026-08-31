@@ -68,7 +68,7 @@ readFile("BouncingBallFMI20_flags.json"); getErrorString();
 
 
 // Simulate FMU
-system(getInstallationDirectoryPath() + "/bin/OMSimulator BouncingBallFMI20.fmu --mode=cs --tolerance=1e-6 --resultFile=\"BouncingBallFMI20_res.mat\" --stopTime=1.0 --suppressPath=true --tempDir=\"BouncingBallFMI20-tmp\" --timeout=180", "BouncingBallFMI20_cs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator BouncingBallFMI20.fmu --mode=cs --tolerance=1e-6 --resultFile=\"BouncingBallFMI20_res.mat\" --stopTime=1.0 --stripRoot --suppressPath --tempDir=\"BouncingBallFMI20-tmp\" --timeout=180", "BouncingBallFMI20_cs_systemCall.log"); getErrorString();
 readFile("BouncingBallFMI20_cs_systemCall.log");
 
 // Read results
@@ -85,6 +85,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // "BouncingBallFMI20.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // caution: filename not matched:  resources/BouncingBallFMI20_flags.json
 // 11
@@ -93,6 +95,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // "BouncingBallFMI20.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""
@@ -106,6 +110,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: Adding unknown FMU simulation flag \"nls\" .
 // Warning: Adding unknown FMU simulation flag \"yourFlagName\" .
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""
@@ -121,6 +127,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // "BouncingBallFMI20.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""
@@ -133,6 +141,8 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // ""
 // "BouncingBallFMI20.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""
@@ -155,7 +165,14 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
-// info:    Result file: BouncingBallFMI20_res.mat (bufferSize=1)
+// info: *** FMU Simulation Info ***
+//      - model     : BouncingBallFMI20 (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    Result file: BouncingBallFMI20_res.mat (bufferSize=10)
 // "
 // 1.0
 // ""

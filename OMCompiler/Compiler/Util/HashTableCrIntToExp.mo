@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -44,7 +48,8 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
-protected import ExpressionDump;
+protected import ComponentReferenceBasics;
+protected import ExpressionBasics;
 protected import Util;
 
 public type Key = tuple<DAE.ComponentRef,Integer>;
@@ -84,7 +89,7 @@ protected function hashFunc
   input Key tpl;
   output Integer res;
 algorithm
-  res := ComponentReference.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl);
+  res := ComponentReferenceBasics.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl);
 end hashFunc;
 
 protected function keyEqual
@@ -97,9 +102,9 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       Integer i1,i2;
     case ((cr1,i1),(cr2,i2))
-      equation
-        true = intEq(i1,i2) "int compare is less expensive";
-      then ComponentReference.crefEqual(cr1,cr2);
+      algorithm
+        true := intEq(i1,i2) "int compare is less expensive";
+      then ComponentReferenceBasics.crefEqual(cr1,cr2);
     else false;
   end matchcontinue;
 end keyEqual;
@@ -108,7 +113,7 @@ protected function printKey
   input Key tpl;
   output String res;
 algorithm
-  res := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + "," + intString(Util.tuple22(tpl));
+  res := ComponentReferenceBasics.printComponentRefStr(Util.tuple21(tpl)) + "," + intString(Util.tuple22(tpl));
 end printKey;
 
 public function emptyHashTable
@@ -129,7 +134,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,keyEqual,printKey,ExpressionDump.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,keyEqual,printKey,ExpressionBasics.printExpStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

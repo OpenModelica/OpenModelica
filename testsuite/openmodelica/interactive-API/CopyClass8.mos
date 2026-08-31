@@ -1,0 +1,36 @@
+// name:     CopyClass8
+// keywords:
+// status:   correct
+//
+
+loadString("
+  package Modelica
+    package Constants
+      constant Real pi = 3.14;
+    end Constants;
+  end Modelica;
+
+  package ImportDup
+    import C = Modelica.Constants;
+    import M = Modelica;
+
+    model Orig
+      parameter Real foo = C.pi*2;
+      package Consts = C;
+      package PM = M;
+    end Orig;
+  end ImportDup;
+");
+
+copyClass(ImportDup.Orig, "Duplicate");
+list(Duplicate);
+
+// Result:
+// true
+// true
+// "model Duplicate
+//   parameter Real foo = Modelica.Constants.pi*2;
+//   package Consts = Modelica.Constants;
+//   package PM = Modelica;
+// end Duplicate;"
+// endResult

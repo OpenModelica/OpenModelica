@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${MathName})
 
@@ -11,7 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES} ${ModelicaName})
 add_precompiled_header(${MathName} Core/Modelica.h )
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${MathName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${MathName} DESTINATION ${LIBINSTALLEXT})
 install(FILES ${CMAKE_SOURCE_DIR}/Core/Math/Functions.h

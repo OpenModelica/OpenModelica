@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -42,8 +39,8 @@
 #include <stdarg.h>
 #include "java_interface.h"
 
-typedef __declspec(dllimport) jint (__stdcall * GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
-typedef __declspec(dllimport) jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void**,void*);
+typedef jint (__stdcall * GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
+typedef jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void**,void*);
 
 #else /* UNIX */
 
@@ -147,7 +144,7 @@ tryToLoadJavaHome(const char* java_home) {
   return libVM;
 }
 
-void loadJNI()
+void loadJNI(void)
 {
   HINSTANCE libVM = NULL;
   char java_home_registry[MAXPATHLEN];
@@ -211,7 +208,7 @@ tryToLoadJavaHome(const char* java_home) {
   return libVM;
 }
 
-void loadJNI()
+void loadJNI(void)
 {
   void *libVM = NULL;
   static int java_init = 0;
@@ -254,7 +251,7 @@ void loadJNI()
 
 
 /* Should work for multi-threaded applications */
-JNIEnv* getJavaEnv()
+JNIEnv* getJavaEnv(void)
 {
   jint res;
   JavaVM *jvm = NULL;
@@ -739,7 +736,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   }
 
   fprintf(stderr, "%s:%s: %d slots; ctor %d - FAILED to detect the type\n",
-          __FILE__, __FUNCTION__, numslots, ctor);
+          __FILE__, __func__, numslots, ctor);
   EXIT(EXIT_CODE_JAVA_ERROR);
 }
 
@@ -762,14 +759,14 @@ const char* copyJstring(JNIEnv* env, jobject jstr)
   const char* str_tmp;
   const char* str;
   if(jstr == NULL) {
-    fprintf(stderr, "%s: Java String was NULL\n", __FUNCTION__);
+    fprintf(stderr, "%s: Java String was NULL\n", __func__);
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
   CHECK_FOR_JAVA_EXCEPTION(env);
   str_tmp = (*env)->GetStringUTFChars(env, jstr, NULL);
   CHECK_FOR_JAVA_EXCEPTION(env);
   if(str_tmp == NULL) {
-    fprintf(stderr, "%s: GetStringUTFChars failed\n", __FUNCTION__);
+    fprintf(stderr, "%s: GetStringUTFChars failed\n", __func__);
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
 
@@ -841,7 +838,7 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
   if(ctor_index == -2 && 0 == jobject_to_mmc_record_warning_shown) {
     const char* recStr = jobjectToString(env, record);
     jobject_to_mmc_record_warning_shown = 1;
-    printf("Warning: %s:%s:%d\n*** %s\n", __FILE__, __FUNCTION__, __LINE__, recStr);
+    printf("Warning: %s:%s:%d\n*** %s\n", __FILE__, __func__, __LINE__, recStr);
     printf("*** The record sent from Java does not carry a valid ctor_index value\n");
     printf("*** The field names may not be valid in OMC, but you can still view the structure in the Interactive interface.\n");
     printf("*** The returned record was probably created using new ModelicaRecord(...)\n");
@@ -965,7 +962,7 @@ void* jobject_to_mmc(JNIEnv* env, jobject o)
   CALL_IF_INSTANCEOF(env,jobject_to_mmc_list, o, JAVA_MODELICA_ARRAY); /* LIST */
 
   fprintf(stderr, "%s:%s: Failed to parse object: %s\n",
-          __FILE__, __FUNCTION__, jobjectToString(env, o));
+          __FILE__, __func__, jobjectToString(env, o));
   EXIT(EXIT_CODE_JAVA_ERROR);
 }
 

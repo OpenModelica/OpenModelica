@@ -1,34 +1,37 @@
+# This file is part of OpenModelica.
 #
- # This file is part of OpenModelica.
- #
- # Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- # c/o Linköpings universitet, Department of Computer and Information Science,
- # SE-58183 Linköping, Sweden.
- #
- # All rights reserved.
- #
- # THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- # THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- # ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- # OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
- #
- # The OpenModelica software and the Open Source Modelica
- # Consortium (OSMC) Public License (OSMC-PL) are obtained
- # from OSMC, either from the above address,
- # from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- # http://www.openmodelica.org, and in the OpenModelica distribution.
- # GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- #
- # This program is distributed WITHOUT ANY WARRANTY; without
- # even the implied warranty of  MERCHANTABILITY or FITNESS
- # FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- # IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
- #
- # See the full OSMC Public License conditions for more details.
- #
- #/
+# Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+# c/o Linköpings universitet, Department of Computer and Information Science,
+# SE-58183 Linköping, Sweden.
+#
+# All rights reserved.
+#
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+#
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+# Public License (OSMC-PL) are obtained from OSMC, either from the above
+# address, from the URLs:
+# http://www.openmodelica.org or
+# https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica,
+# and in the OpenModelica distribution.
+#
+# GNU AGPL version 3 is obtained from:
+# https://www.gnu.org/licenses/licenses.html#GPL
+#
+# This program is distributed WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+#
+# See the full OSMC Public License conditions for more details.
 
 include(../OMEdit.config.pre.pri)
+TARGET = OMEdit
 
 DESTDIR = ../bin
 ICON = Resources/icons/omedit.icns
@@ -89,7 +92,10 @@ SOURCES += Util/Helper.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
+  Util/NavigationManager.cpp \
+  Util/NavigationManagerView.cpp \
   MainWindow.cpp \
+  LoadCompiledModelDialog.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/Model.cpp \
@@ -185,7 +191,7 @@ SOURCES += Util/Helper.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
   OMS/ModelDialog.cpp \
-  OMS/BusDialog.cpp \
+  OMS/OMSModel.cpp \
   OMS/ElementPropertiesDialog.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
@@ -196,14 +202,21 @@ SOURCES += Util/Helper.cpp \
   Util/GitHubArtifactDownloader.cpp \
   FlatModelica/Expression.cpp \
   FlatModelica/ExpressionFuncs.cpp \
-  FlatModelica/Parser.cpp
+  FlatModelica/Parser.cpp \
+  MCP/MCPServer.cpp \
+  MCP/MCPToolsDiagram.cpp \
+  MCP/MCPToolsSimulation.cpp \
+  Search/FindUsageWidget.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
+  Util/NavigationManager.h \
+  Util/NavigationManagerView.h \
   MainWindow.h \
+  LoadCompiledModelDialog.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Modeling/Model.h \
@@ -302,7 +315,7 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
   OMS/ModelDialog.h \
-  OMS/BusDialog.h \
+  OMS/OMSModel.h \
   OMS/ElementPropertiesDialog.h \
   OMS/SystemSimulationInformationDialog.h \
   OMS/OMSSimulationDialog.h \
@@ -315,16 +328,15 @@ HEADERS  += Util/Helper.h \
   Util/GitHubArtifactDownloader.h \
   FlatModelica/Expression.h \
   FlatModelica/ExpressionFuncs.h \
-  FlatModelica/Parser.h
+  FlatModelica/Parser.h \
+  MCP/MCPServer.h \
+  MCP/MCPServerPrivate.h \
+  Search/FindUsageWidget.h
 
 CONFIG(osg) {
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    SOURCES += Animation/OpenGLWidget.cpp
-  } else {
-    SOURCES += Animation/GLWidget.cpp
-  }
-  SOURCES += Animation/AbstractAnimationWindow.cpp \
+  SOURCES += Animation/OpenGLWidget.cpp \
+    Animation/AbstractAnimationWindow.cpp \
     Animation/ViewerWidget.cpp \
     Animation/AnimationWindow.cpp \
     Animation/ExtraShapes.cpp \
@@ -338,12 +350,8 @@ CONFIG(osg) {
     Animation/Shape.cpp \
     Animation/Vector.cpp
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    HEADERS += Animation/OpenGLWidget.h
-  } else {
-    HEADERS += Animation/GLWidget.h
-  }
-  HEADERS += Animation/AbstractAnimationWindow.h \
+  HEADERS += Animation/OpenGLWidget.h \
+    Animation/AbstractAnimationWindow.h \
     Animation/ViewerWidget.h \
     Animation/AnimationWindow.h \
     Animation/AnimationUtil.h \

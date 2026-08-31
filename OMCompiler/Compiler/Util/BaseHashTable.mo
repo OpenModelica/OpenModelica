@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -53,7 +57,6 @@ encapsulated package BaseHashTable
 
 protected
 import Array;
-import Error;
 import List;
 
 // Generic hashtable code below
@@ -110,7 +113,6 @@ public function emptyHashTableWork
   output HashTable hashTable;
 protected
   array<list<tuple<Key,Integer>>> arr;
-  list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 protected
   Integer szArr, szBucketFixed = intMax(szBucket, 1);
@@ -135,7 +137,6 @@ protected
   FuncHash hashFunc;
   FuncEq keyEqual;
   Key key, key2;
-  Value val;
   HashNode indices;
 algorithm
   (key, _) := entry;
@@ -165,9 +166,9 @@ author: PA.
 dump statistics on how many entries per hash value. Useful to see how hash function behaves"
   input HashTable hashTable;
 algorithm
- _ := match(hashTable)
+ () := match hashTable
  local HashVector hvec;
-   case((hvec,_,_,_)) equation
+   case (hvec,_,_,_) algorithm
       print("index list lengths:\n");
       print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
       print("\n");
@@ -186,36 +187,29 @@ public function addNoUpdCheck
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable := matchcontinue(entry, hashTable)
+  outHashTable := match (entry, hashTable)
     local
-      Integer indx, newpos, n, bsize;
+      Integer indx, newpos, bsize;
       ValueArray varr;
       HashNode indexes;
       HashVector hashvec;
       tuple<Key,Value> v;
       Key key;
-      Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
 
     // Adding when not existing previously
     case ((v as (key, _)),
        (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)))
-      equation
-        indx = intMod(hashFunc(key), bsize)+1;
-        (varr,newpos) = valueArrayAdd(varr, v);
-        indexes = hashvec[indx];
-        hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
+      algorithm
+        indx := intMod(hashFunc(key), bsize)+1;
+        (varr,newpos) := valueArrayAdd(varr, v);
+        indexes := hashvec[indx];
+        hashvec := arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
       then
         ((hashvec, varr, bsize, fntpl));
 
-    else
-      equation
-        print("- BaseHashTable.addNoUpdCheck failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end addNoUpdCheck;
 
 public function addUnique
@@ -235,7 +229,7 @@ algorithm
   // Adding when not existing previously
   (key, _) := entry;
   (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)) := hashTable;
-  failure((_) := get(key, hashTable));
+  failure(get(key, hashTable));
   indx := intMod(hashFunc(key), bsize)+1;
   (varr, newpos) := valueArrayAdd(varr, entry);
   indexes := hashvec[indx];
@@ -395,7 +389,6 @@ protected
   FuncKeyString printKey;
   FuncValString printValue;
   Key k;
-  Value v;
 
   Integer n, size, i, j, szBucket;
   array<Option<HashEntry>> arr;
@@ -540,42 +533,23 @@ function valueArrayAdd
   input HashEntry entry;
   output ValueArray outValueArray;
   output Integer newpos;
+protected
+  Integer n,size,expandsize,expandsize_1;
+  array<Option<HashEntry>> arr;
+  Real rsize,rexpandsize;
 algorithm
-  (outValueArray, newpos) := matchcontinue(valueArray, entry)
-    local
-      Integer n, size, expandsize, newsize;
-      array<Option<HashEntry>> arr;
-      Real rsize, rexpandsize;
-
-    case ((n, size, arr), _)
-      equation
-        (n < size) = true "Have space to add array elt.";
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
-      then
-        ((n, size, arr), n);
-
-    case ((n, size, arr), _)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize = intMax(expandsize, 1);
-        newsize = expandsize + size;
-        arr = Array.expand(expandsize, arr, NONE());
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
-      then
-        ((n, newsize, arr), n);
-
-    else
-      equation
-        print("-HashTable.valueArrayAdd failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  if n >= size then
+    rsize := intReal(size);
+    rexpandsize := rsize * 0.4;
+    expandsize := realInt(rexpandsize);
+    expandsize_1 := intMax(expandsize, 1);
+    size := expandsize_1 + size;
+    arr := Array.expand(expandsize_1, arr, NONE());
+  end if;
+  arr := arrayUpdate(arr, n + 1, SOME(entry));
+  outValueArray := (n+1,size,arr);
+  newpos := n + 1;
 end valueArrayAdd;
 
 function valueArraySet
@@ -585,25 +559,18 @@ function valueArraySet
   input HashEntry entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue(valueArray, pos, entry)
+  outValueArray := match valueArray
     local
       array<Option<HashEntry>> arr;
       Integer n, size;
 
-    case ((n, size, arr), _, _)
-      equation
-        true = pos <= size;
-        arr = arrayUpdate(arr, pos, SOME(entry));
+    case (n, size, arr)
+      algorithm
+        true := pos <= size;
+        arr := arrayUpdate(arr, pos, SOME(entry));
       then
         ((n, size, arr));
-
-    case ((_, size, arr), _, _)
-      equation
-        Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" arrSize="+String(arrayLength(arr))+" failed\n", sourceInfo());
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end valueArraySet;
 
 function valueArrayClear
@@ -643,8 +610,6 @@ function valueArrayKeyIndexExists
 algorithm
   b := match (valueArray, pos)
     local
-      Key k;
-      Value v;
       Integer n;
       array<Option<HashEntry>> arr;
 
@@ -661,7 +626,7 @@ public function copy
   output HashTable outCopy;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve;
+  Integer bs, vs, ve;
   FuncsTuple ft;
   array<Option<HashEntry>> vae;
 algorithm
@@ -676,7 +641,7 @@ public function clear
   input output HashTable ht;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve, hash_idx;
+  Integer bs, vs, ve, hash_idx;
   FuncsTuple ft;
   FuncHash hashFunc;
   Key key;
@@ -684,7 +649,7 @@ protected
 algorithm
   (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
   for i in 1:vs loop
-    _ := match arrayGet(vae, i)
+    () := match arrayGet(vae, i)
       case SOME((key,_))
         algorithm
           hash_idx := intMod(hashFunc(key), bs) + 1;
@@ -702,7 +667,7 @@ public function clearAssumeNoDelete
   input HashTable ht;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve, hash_idx;
+  Integer bs, vs, ve, hash_idx;
   FuncsTuple ft;
   FuncHash hashFunc;
   Key key;
@@ -712,7 +677,7 @@ protected
 algorithm
   (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
   for i in 1:ve loop
-    _ := match arrayGet(vae, i)
+    () := match arrayGet(vae, i)
       case SOME((key,_))
         algorithm
           if not workaroundForBug then

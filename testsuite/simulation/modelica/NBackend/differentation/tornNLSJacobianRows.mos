@@ -1,0 +1,28 @@
+// name: tornNLSJacobianRows
+// keywords: NewBackend, differentiation, jacobian, tearing
+// status: correct
+
+loadString("
+model tornNLSJacobianRows
+  Real x(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real y(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real z annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+equation
+  z = x + y;
+  0 = z + x*x - 3;
+  0 = z + y*y - 3;
+end tornNLSJacobianRows;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic --tearingMethod=guruTearing -d=dumpSparsePattern"); getErrorString();
+
+buildModel(tornNLSJacobianRows); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
+// ""
+// endResult

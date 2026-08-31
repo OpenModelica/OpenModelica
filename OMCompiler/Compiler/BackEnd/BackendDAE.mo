@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -36,6 +40,7 @@ encapsulated package BackendDAE
 "
 import Absyn;
 import AvlSetPath;
+import AvlTreePathFunction;
 import DAE;
 import DoubleEnded;
 import ExpandableArray;
@@ -125,7 +130,7 @@ uniontype Shared "Data shared for all equation-systems"
     list< .DAE.ClassAttributes> classAttrs  "class attributes (Optimica extension)";
     FCore.Cache cache;
     FCore.Graph graph;
-    .DAE.FunctionTree functionTree          "functions for Backend";
+    .AvlTreePathFunction.Tree functionTree          "functions for Backend";
     EventInfo eventInfo                     "eventInfo";
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
@@ -171,6 +176,7 @@ uniontype ExtraInfo "extra information that we should send around with the DAE"
   record EXTRA_INFO
     String description    "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
+    Option<String> simflags "the simulation flag string (-sx=...) needed for data reconciliation to read measurement start values from a csv file. Kept as a plain String rather than a SimCode.SimulationSettings reference so this datatype package does not depend on SimCode.";
   end EXTRA_INFO;
 end ExtraInfo;
 
@@ -642,7 +648,7 @@ uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents    "stores all information related to time events";
     ZeroCrossingSet zeroCrossings "list of zero crossing conditions";
-    DoubleEnded.MutableList<ZeroCrossing> relations "list of zero crossing function as before";
+    ZeroCrossingSet relations "list of zero crossing function as before";
     ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
@@ -683,6 +689,19 @@ public uniontype SimIterator
   end SIM_ITERATOR_LIST;
 end SimIterator;
 
+public function getSimIteratorSize
+  "Total number of scalar elements iterated over by a (possibly nested) sim iterator."
+  input list<SimIterator> iters;
+  output Integer size = 1;
+protected
+  Integer local_size;
+algorithm
+  for iter in iters loop
+    local_size := match iter case SIM_ITERATOR_RANGE() then iter.non_resizable_size; case SIM_ITERATOR_LIST() then iter.size; end match;
+    size := size * local_size;
+  end for;
+end getSimIteratorSize;
+
 public
 uniontype TimeEvent
   record SIMPLE_TIME_EVENT "e.g. time > 0.5"
@@ -692,6 +711,7 @@ uniontype TimeEvent
     Integer index "unique sample index";
     .DAE.Exp startExp;
     .DAE.Exp intervalExp;
+    Option<list<SimIterator>> iter          "optional iterator for for-loops";
   end SAMPLE_TIME_EVENT;
 end TimeEvent;
 
@@ -856,7 +876,7 @@ end DifferentiateInputData;
 public constant DifferentiateInputData emptyInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE(),AvlSetPath.EMPTY());
 
 public
-type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;
+type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .AvlTreePathFunction.Tree>;
 
 public
 uniontype DifferentiationType "Define the behaviour of differentiation method for (e.g. index reduction, ...)"
@@ -931,5 +951,5 @@ uniontype BackendDAEModeData
 end BackendDAEModeData;
 constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA({},{},0,NONE());
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_types");
 end BackendDAE;

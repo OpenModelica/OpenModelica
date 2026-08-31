@@ -2,7 +2,6 @@
 // keywords: array string variable GC
 // status: correct
 // teardown_command: rm -rf gctest*
-// cflags: -d=-newInst
 //
 //  test issues with GC
 //

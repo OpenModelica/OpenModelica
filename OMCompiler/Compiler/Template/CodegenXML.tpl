@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines templates for transforming flattened Modelica code to Xml code.
 // + Optimica code to XML code
 // @author Alachew Shitahun <alash325@student.liu.se> - Some of the template taken from CodegenC.tpl
@@ -1180,7 +1215,7 @@ template funArgDefinitionXml(Variable var)
       <fun:Name>
         <exp:QualifiedNamePart name="<%contextCrefXml(name,contextFunction)%>"/>
       </fun:Name>
-    <%/*underscorePathXml(ClassInf.getStateName(complexClassType))*/%>
+    <%/*underscorePathXml(ClassInfUtil.getStateName(complexClassType))*/%>
     </fun:InputVariable>
     >>
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
@@ -1195,7 +1230,7 @@ template funVarDeclarationsXml(Variable var)
     <fun:Name>
       <exp:QualifiedNamePart name="<%contextCrefXml(name,contextFunction)%>"/>
     </fun:Name>
-    <%/*underscorePathXml(ClassInf.getStateName(complexClassType))*/%>
+    <%/*underscorePathXml(ClassInfUtil.getStateName(complexClassType))*/%>
   </fun:ProtectedVariable>
   >>
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
@@ -1576,7 +1611,7 @@ template algStmtAssignXml(DAE.Statement stmt, Context context, Text &varDecls /*
         (match exp case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExpXml(arr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        let idx1 = daeExpXml(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        let idx1 = daeSubscriptXML(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let val1 = daeExpXml(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
         <%preExp%>
@@ -2475,7 +2510,7 @@ match ty
 case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExpXml(makeCrefRecordExp(cr,v), context, &afterExp, &varDecls)
              ;separator=", "
-  let record_type_name = underscorePathXml(ClassInf.getStateName(record_state))
+  let record_type_name = underscorePathXml(ClassInfUtil.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDeclXml(ret_type, &varDecls)
   let &afterExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
@@ -3538,6 +3573,13 @@ case CAST(__) then
     '<%expVar%> /* could not cast, using the variable as it is */'
 end daeExpCastXml;
 
+template daeSubscriptXML(Subscript sub, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+::=
+  match sub
+  case sub as INDEX() then daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
+  end match
+end daeSubscriptXML;
 
 template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
@@ -3548,7 +3590,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let idx1 = daeExpXml(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let idx1 = daeSubscriptXML(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -3560,7 +3602,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDeclXml(expTypeFromExpModelicaXml(exp),&varDecls) +' asub tmp test'
-    let idx1 = daeExpXml(idx, context, &preExp, &varDecls)
+    let idx1 = daeSubscriptXML(idx, context, &preExp, &varDecls)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -3587,7 +3629,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(),'ASUB_EASY_CASE <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    let arrName = daeExpCrefRhsXml(buildCrefExpFromAsub(ecr, subs), context,
+    let arrName = daeExpCrefRhsXml(buildCrefExpFromSubs(ecr, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)
     match context case FUNCTION_CONTEXT(__)  then
       arrName
@@ -3677,14 +3719,14 @@ end daeExpSharedLiteralXml;
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
-template arrayScalarRhsXml(Type ty, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhsXml(Type ty, list<Subscript> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpAsub."
 ::=
   let arrayType = expTypeArrayXml(ty)
   let dimsLenStr = listLength(subs)
-  let dimsValuesStr = (subs |> exp =>
-      daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let dimsValuesStr = (subs |> sub =>
+      daeSubscriptXML(sub, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 
     ;separator=", ")
   match arrayType
@@ -3785,7 +3827,7 @@ template expTypeShortXml(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortXml(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "Complex"
-  case T_COMPLEX(__)     then '<%underscorePathXml(ClassInf.getStateName(complexClassType))%>'
+  case T_COMPLEX(__)     then '<%underscorePathXml(ClassInfUtil.getStateName(complexClassType))%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "MetaType"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then "Complex" /* TODO: Don't do this to me! */
@@ -3854,7 +3896,7 @@ template expTypeFlagXml(DAE.Type ty, Integer flag)
     // we want the "modelica type"
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       '<%expTypeShortXml(ty)%>'
-    else match ty case T_COMPLEX(__) then '<%underscorePathXml(ClassInf.getStateName(complexClassType))%>'
+    else match ty case T_COMPLEX(__) then '<%underscorePathXml(ClassInfUtil.getStateName(complexClassType))%>'
     else
       '<%expTypeShortXml(ty)%>'
   case 3 then
@@ -3988,6 +4030,6 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 >>
 end error;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_xml");
 end CodegenXML;
 // vim: filetype=susan sw=2 sts=2

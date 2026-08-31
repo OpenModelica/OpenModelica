@@ -1,0 +1,51 @@
+// name: fmi3_wasm_solver_libraries.mos
+// keywords: FMI 3.0 export wasm Co-Simulation kinsol solver
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf M_kinsol.fmu M_kinsol.fmu.log M_kinsol_artifact M_kinsol_res.mat ref_res.mat ref.log ref.wasm diff_kinsol* om-wasm-include-*
+//
+// A Co-Simulation wasm FMU links one PIC side module per solver library, chosen
+// from the `--fmiFlags` it is exported with. `nls:kinsol` gives it KINSOL and the
+// shared SUNDIALS/KLU base it calls into, so the FMU integrates with KINSOL and has
+// to agree with the same model simulated directly.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("fmi3_wasm_solver_libraries.mo"); getErrorString();
+
+simulate(MixedSystems, stopTime=1.0, numberOfIntervals=20, fileNamePrefix="ref"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=nls:kinsol"); getErrorString();
+buildModelFMU(MixedSystems, fileNamePrefix="M_kinsol", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+simulate(MixedSystems, stopTime=1.0, numberOfIntervals=20, resimulateExecutable="M_kinsol.fmu", simflags="-nls=kinsol"); getErrorString();
+diffSimulationResults("M_kinsol_res.mat", "ref_res.mat", "diff_kinsol", 1e-6, 1e-6);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ref_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ref', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// "M_kinsol.fmu"
+// "Warning: Adding unknown FMU simulation flag \"nls\" .
+// Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "M_kinsol.fmu_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MixedSystems', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
+// LOG_STDOUT        | info    | in-wasm simulation (dassl) wrote 502 rows
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

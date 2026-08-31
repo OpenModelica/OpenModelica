@@ -15,6 +15,7 @@ args = parser.parse_args()
 data = requests.get('https://libraries.openmodelica.org/index/v1/index.json').json()
 desired = {
   "BioChem": {"1.0.1+msl.3.2.1"},
+  "Buildings": {"12.1.2-maint.12.x"},
   "Complex": {
     "3.2.1+maint.om",
     "3.2.2+maint.om",

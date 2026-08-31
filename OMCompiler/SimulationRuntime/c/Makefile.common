@@ -1,5 +1,5 @@
 # Adrian Pop, adrpo@ida.liu.se, Martin Sjölund, marsj@ida.liu.se
-# - Use make -f Makefile.omdev.mingw if you want to compile on Windows/MinGW
+# - On Windows, build with CMake instead (see OMCompiler/README.Windows.md)
 # - Please leave the UNIX Makefile as it is if you are not using UNIX/Linux
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
@@ -15,7 +15,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include $(COLPACK_INCLUDES) -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DSUNDIALS_STATIC_DEFINE -DWIN32_LEAN_AND_MEAN
 
 # If we are using the Makefiles then assume we have PThreads available.
 CPPFLAGS += -DOM_HAVE_PTHREADS
@@ -28,6 +28,7 @@ endif
 
 ifeq (MINGW,$(findstring MINGW,$(shell uname)))
 	CPPFLAGS += -DOMC_HAVE_PRIMME
+	CPPFLAGS += -DOMC_HAVE_COLPACK
 endif
 
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
@@ -60,124 +61,124 @@ CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
-IPOPTDIR := $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
-IPOPT_HEADERS := Interfaces Common Linalg Apps Algorithm
-IPOPT_INCLUDES := $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
+IPOPTDIR = $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
+IPOPT_HEADERS = Interfaces Common Linalg Apps Algorithm
+IPOPT_INCLUDES = $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
+COLPACKDIR = $(top_builddir)/3rdParty/ColPack
+COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
+COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
 
 RUNTIME_HEADERS = \
-./omc_inline.h \
-./openmodelica_func.h \
-./openmodelica.h \
-./omc_simulation_settings.h \
-./openmodelica_types.h \
-./simulation_data.h \
-./ModelicaUtilities.h
+omc_inline.h \
+openmodelica_func.h \
+openmodelica.h \
+omc_simulation_settings.h \
+openmodelica_types.h \
+simulation_data.h \
+ModelicaUtilities.h
 
-RUNTIMELINEAR_HEADERS = ./linearization/linearize.h
+RUNTIMELINEAR_HEADERS = linearization/linearize.h
 
-RUNTIMEDATARECONCILE_HEADERS = ./dataReconciliation/dataReconciliation.h
+RUNTIMEDATARECONCILE_HEADERS = dataReconciliation/dataReconciliation.h
 
-RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
+RUNTIMEOPTIMZ_HEADERS = optimization/OptimizerData.h optimization/OptimizerLocalFunction.h optimization/OptimizerInterface.h
 
-RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
-./simulation/arrayIndex.h \
-./simulation/jacobian_util.h \
-./simulation/options.h \
-./simulation/simulation_info_json.h \
-./simulation/simulation_input_xml.h \
-./simulation/simulation_omc_assert.h \
-./simulation/simulation_runtime.h \
-./simulation/omc_simulation_util.h \
-./simulation/socket.h
+RUNTIMESIMULATION_HEADERS = simulation/modelinfo.h \
+simulation/arrayIndex.h \
+simulation/eval_dep.h \
+simulation/jacobian_colpack.h \
+simulation/jacobian_util.h \
+simulation/options.h \
+simulation/simulation_info_json.h \
+simulation/simulation_input_xml.h \
+simulation/simulation_omc_assert.h \
+simulation/simulation_runtime.h \
+simulation/omc_simulation_util.h \
+simulation/socket.h
 
-RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
+RUNTIMESIMRESULTS_HEADERS = simulation/results/simulation_result.h
 
-RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
-./simulation/solver/dae_mode.h \
-./simulation/solver/dassl.h \
-./simulation/solver/delay.h \
-./simulation/solver/embedded_server.h \
-./simulation/solver/epsilon.h \
-./simulation/solver/events.h \
-./simulation/solver/external_input.h \
-./simulation/solver/fmi_events.h \
-./simulation/solver/ida_solver.h \
-./simulation/solver/linearSolverLapack.h \
-./simulation/solver/linearSolverTotalPivot.h \
-./simulation/solver/linearSystem.h \
-./simulation/solver/mixedSearchSolver.h \
-./simulation/solver/mixedSystem.h \
-./simulation/solver/model_help.h \
-./simulation/solver/nonlinearSolverHomotopy.h \
-./simulation/solver/nonlinearSolverHybrd.h \
-./simulation/solver/nonlinearSystem.h \
-./simulation/solver/nonlinearValuesList.h \
-./simulation/solver/omc_math.h \
-./simulation/solver/perform_qss_simulation.c.inc \
-./simulation/solver/perform_simulation.c.inc \
-./simulation/solver/real_time_sync.h \
-./simulation/solver/solver_main.h \
-./simulation/solver/spatialDistribution.h \
-./simulation/solver/stateset.h \
-./simulation/solver/sundials_error.h \
-./simulation/solver/sundials_util.h \
-./simulation/solver/sym_solver_ssc.h \
-./simulation/solver/synchronous.h
+RUNTIMESIMSOLVER_HEADERS = simulation/solver/cvode_solver.h \
+simulation/solver/dae_mode.h \
+simulation/solver/dassl.h \
+simulation/solver/delay.h \
+simulation/solver/embedded_server.h \
+simulation/solver/epsilon.h \
+simulation/solver/events.h \
+simulation/solver/external_input.h \
+simulation/solver/discrete_changes.h \
+simulation/solver/ida_solver.h \
+simulation/solver/linearSolverLapack.h \
+simulation/solver/linearSolverTotalPivot.h \
+simulation/solver/linearSystem.h \
+simulation/solver/mixedSearchSolver.h \
+simulation/solver/mixedSystem.h \
+simulation/solver/model_help.h \
+simulation/solver/nonlinearSolverHomotopy.h \
+simulation/solver/nonlinearSolverHybrd.h \
+simulation/solver/nonlinearSystem.h \
+simulation/solver/nonlinearValuesList.h \
+simulation/solver/omc_math.h \
+simulation/solver/perform_qss_simulation.c.inc \
+simulation/solver/perform_simulation.c.inc \
+simulation/solver/real_time_sync.h \
+simulation/solver/solver_main.h \
+simulation/solver/spatialDistribution.h \
+simulation/solver/stateset.h \
+simulation/solver/sundials_error.h \
+simulation/solver/sundials_util.h \
+simulation/solver/sym_solver_ssc.h \
+simulation/solver/synchronous.h
 
-RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
-./meta/meta_modelica_builtin_boxvar.h \
-./meta/meta_modelica_builtin.h \
-./meta/meta_modelica.h \
-./meta/meta_modelica_data.h \
-./meta/meta_modelica_mk_box.h \
-./meta/meta_modelica_segv.h
+RUNTIMEMETA_HEADERS = meta/meta_modelica_builtin_boxptr.h \
+meta/meta_modelica_builtin_boxvar.h \
+meta/meta_modelica_builtin.h \
+meta/meta_modelica.h \
+meta/meta_modelica_data.h \
+meta/meta_modelica_mk_box.h \
+meta/meta_modelica_segv.h
 
-RUNTIMEMETAGC_HEADERS = ./gc/omc_gc.h ./gc/memory_pool.h
+RUNTIMEMETAGC_HEADERS = gc/omc_gc.h gc/memory_pool.h
 
 RUNTIMEUTIL_HEADERS = \
-./util/base_array.h \
-./util/boolean_array.h \
-./util/context.h \
-./util/division.h \
-./util/generic_array.h \
-./util/index_spec.h \
-./util/integer_array.h \
-./util/java_interface.h \
-./util/modelica.h \
-./util/modelica_string.h \
-./util/omc_error.h \
-./util/omc_file.h \
-./util/omc_mmap.h \
-./util/omc_msvc.h \
-./util/omc_numbers.h \
-./util/omc_spinlock.h \
-./util/parallel_helper.h \
-./util/read_matlab4.h \
-./util/read_csv.h \
-./util/libcsv.h \
-./util/read_write.h \
-./util/real_array.h \
-./util/ringbuffer.h \
-./util/rtclock.h \
-./util/simulation_options.h \
-./util/string_array.h \
-./util/uthash.h \
-./util/utility.h \
-./util/varinfo.h \
-./util/list.h \
-./util/doubleEndedList.h \
-./util/rational.h \
-./util/modelica_string_lit.h \
-./util/omc_init.h
+util/base_array.h \
+util/boolean_array.h \
+util/context.h \
+util/division.h \
+util/generic_array.h \
+util/index_spec.h \
+util/integer_array.h \
+util/java_interface.h \
+util/modelica.h \
+util/modelica_string.h \
+util/omc_error.h \
+util/omc_file.h \
+util/omc_mmap.h \
+util/omc_msvc.h \
+util/omc_numbers.h \
+util/omc_spinlock.h \
+util/omc_strdup.h \
+util/read_matlab4.h \
+util/read_csv.h \
+util/libcsv.h \
+util/read_write.h \
+util/real_array.h \
+util/ringbuffer.h \
+util/rtclock.h \
+util/simulation_options.h \
+util/string_array.h \
+util/uthash.h \
+util/utility.h \
+util/varinfo.h \
+util/list.h \
+util/doubleEndedList.h \
+util/rational.h \
+util/modelica_string_lit.h \
+util/omc_init.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
-./simulation/solver/initialization/initialization.h
+simulation/solver/initialization/initialization.h
 
-# RUNTIME_HEADERS_FMU = \
-# ./simulation/solver/initialization/initialization.h \
-# ./simulation/solver/events.h \
-# ./simulation/solver/solver_main.h \
-# ./util/list.h \
 
 ALL_RUNTIME_HEADERS = $(RUNTIME_HEADERS) $(RUNTIMELINEAR_HEADERS) $(RUNTIMEOPTIMZ_HEADERS) $(RUNTIMESIMULATION_HEADERS) $(RUNTIMESIMRESULTS_HEADERS) $(RUNTIMESIMSOLVER_HEADERS) $(RUNTIMEINITIALIZATION_HEADERS) $(RUNTIMEMETA_HEADERS) $(RUNTIMEMETAGC_HEADERS) $(RUNTIMEUTIL_HEADERS) $(RUNTIMEDATARECONCILE_HEADERS)
 
@@ -195,9 +196,9 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 	$(CXX) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -L$(OMBUILDDIR)/lib/omc \
 		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
-		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
+		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_core \
 		-lipopt -ldmumps -lmumps_common -lseq -lgfortran \
-		-lprimme \
+		-lprimme -lcolpack\
 		-llis -lcminpack -lomcgc \
 		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
 		-Wl,--export-all-symbols,--out-implib,$@.a
@@ -254,7 +255,7 @@ $(METAOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(BUILDPATH)/./meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
+$(BUILDPATH)/meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $< -g
 
@@ -293,7 +294,7 @@ $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) 
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) $(FMILIB_STATIC_LIB_ONLY) -o $@ $<
 
 $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
@@ -342,19 +343,14 @@ endif
 	cp -p $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	# C runtime libs
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	# Every SUNDIALS package carries its own SOVERSION and they no longer agree
+	# (ida is 7, idas 6, the sunmatrix/sunlinsol ones 5, ...), so read the
+	# dependencies off the library instead of spelling the versions out.
+	test ! `uname` = Darwin || for target in $(builddir_lib)/$(LIBFMIRUNTIME) $(builddir_lib)/$(LIBSIMULATION); do \
+		for dep in `otool -L "$$target" | awk 'NR > 1 { print $$1 }' | grep '^libsundials_'`; do \
+			install_name_tool -change "$$dep" "@rpath/$$dep" "$$target"; \
+		done; \
+	done
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
 	mkdir -p $(builddir_inc)/c/fmi-export
@@ -363,6 +359,8 @@ endif
 	      ../fmi/export/openmodelica/fmu1_model_interface.h  $(builddir_inc)/c/fmi-export
 	cp -p ../fmi/export/openmodelica/fmu2_model_interface.c \
 	      ../fmi/export/openmodelica/fmu2_model_interface.h \
+	      ../fmi/export/openmodelica/fmu3_model_interface.c \
+	      ../fmi/export/openmodelica/fmu3_model_interface.h \
 	      ../fmi/export/openmodelica/fmu_read_flags.c \
 	      ../fmi/export/openmodelica/fmu_read_flags.h  $(builddir_inc)/c/fmi-export
 
@@ -408,11 +406,11 @@ RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
 	sed \
 	    -e "s#COMMON_HEADERS#`cat headers.tmp`#" \
 	    -e "s#COMMON_FILES#`cat sources.tmp`#" \
-	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
-	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
-	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
-	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
-	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
+	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
+	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
 	    RuntimeSources.mo.tpl > $@.tmp
 	mv $@.tmp $@
 sources.tmp: Makefile.common Makefile.objs

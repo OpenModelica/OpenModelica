@@ -1,0 +1,119 @@
+
+package fmi:fmi3@3.0.0;
+
+// Copyright (C) 2026 Modelica Association Project "FMI"
+//               All rights reserved.
+//
+// Copied from the FMI Layered Standard WebAssembly (fmi-ls-wasm) repository
+// (https://github.com/modelica/fmi-ls-wasm), released under the BSD 2-Clause
+// license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// SPDX-License-Identifier: BSD-2-Clause
+
+interface callbacks {
+  use types.{status};
+
+  // ── Logging ──────────────────────────────────────────────────────────────────
+
+  /// Deliver a log message from the FMU to the master algorithm.
+  ///
+  /// FMI C signature:
+  ///   void fmi3LogMessageCallback(
+  ///       fmi3InstanceEnvironment instanceEnvironment,
+  ///       fmi3Status              status,
+  ///       fmi3String              category,
+  ///       fmi3String              message);
+  ///
+  /// Mapping notes:
+  ///   • instanceEnvironment is implicit (handled by the component runtime).
+  ///   • instance-name is added for diagnostics; it corresponds to the
+  ///     instanceName passed to fmi3Instantiate*.
+  log-message: func(
+    instance-name: string,
+    status:        status,
+    category:      string,
+    message:       string,
+  );
+
+  // ── Clock update (Scheduled Execution & Co-Simulation with event mode) ───────
+
+  /// Notify the master that one or more output clocks have ticked and that the
+  /// master should call fmi3GetClock to determine which ones.
+  ///
+  /// FMI C signature:
+  ///   void fmi3ClockUpdateCallback(
+  ///       fmi3InstanceEnvironment instanceEnvironment);
+  clock-update: func();
+
+  // ── Scheduled Execution preemption lock / unlock ─────────────────────────────
+
+  /// Prevent preemption of the currently executing model partition.
+  ///
+  /// FMI C signature:
+  ///   void fmi3LockPreemptionCallback(void);
+  lock-preemption: func();
+
+  /// Re-enable preemption after a critical section.
+  ///
+  /// FMI C signature:
+  ///   void fmi3UnlockPreemptionCallback(void);
+  unlock-preemption: func();
+}
+
+// Callbacks required only by Co-Simulation FMUs that support
+// intermediate-update mode (canReturnEarlyAfterIntermediateUpdate = true).
+//
+// Separated from the base `callbacks` interface so that simpler CS FMUs
+// do not need to depend on it.
+interface intermediate-update-callbacks {
+  use types.{status};
+
+  /// Notify the master of an intermediate internal state that can optionally
+  /// be observed or rolled back to.
+  ///
+  /// FMI C signature:
+  ///   void fmi3IntermediateUpdateCallback(
+  ///       fmi3InstanceEnvironment instanceEnvironment,
+  ///       fmi3Float64             intermediateUpdateTime,
+  ///       fmi3Boolean             intermediateVariableSetRequested,
+  ///       fmi3Boolean             intermediateVariableGetAllowed,
+  ///       fmi3Boolean             intermediateStepFinished,
+  ///       fmi3Boolean             canReturnEarly,
+  ///       fmi3Boolean*            earlyReturnRequested,
+  ///       fmi3Float64*            earlyReturnTime);
+  ///
+  /// Mapping notes:
+  ///   • Output parameters earlyReturnRequested and earlyReturnTime are
+  ///     modelled as fields in the returned record rather than out-pointers.
+  intermediate-update: func(
+    intermediate-update-time:              f64,
+    intermediate-variable-set-requested:   bool,
+    intermediate-variable-get-allowed:     bool,
+    intermediate-step-finished:            bool,
+    can-return-early:                      bool,
+  ) -> tuple<bool, f64>;
+  //          ^           ^
+  //  early-return-requested  early-return-time
+}

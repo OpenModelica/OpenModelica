@@ -15,10 +15,11 @@
 /OMPlot/OMPlotGUI/Makefile.lib.Release
 /OMPlot/OMPlotGUI/Makefile.Release
 /OMPlot/OMPlotGUI/Makefile.unix
-/OMPlot/OMPlotGUI/object_script.*
+/OMPlot/OMPlotGUI/debug/object_script.*
+/OMPlot/OMPlotGUI/release/object_script.*
 /OMPlot/OMPlotGUI/OMPlotGUI.config
-/OMPlot/OMPlotGUI/OMPlotGUI.pro.*
-/OMPlot/OMPlotGUI/OMPlotLib.pro.*
+OMPlotGUI.pro.*
+OMPlotLib.pro.*
 /qmake.sh
 /qwt/.qmake.stash
 /qwt/build
@@ -33,6 +34,7 @@
 /qwt/src/moc
 /qwt/src/obj
 /qwt/src/object_script.*
-/qwt/qwt.pro.user
+qwt.pro.user
 qwt/src/release/
 qwt/src/debug/
+.qtc_clangd/

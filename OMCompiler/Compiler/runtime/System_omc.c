@@ -1,28 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -125,6 +130,9 @@ extern void System_realtimeTick(int ix)
 extern double System_realtimeTock(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  /* Never started, or cleared and not restarted: the tick is an earlier
+   * command's. -1 is the "did not run" answer the callers test for. */
+  if (rt_ncall(ix) == 0) return -1.0;
   return rt_tock(ix);
 }
 
@@ -307,6 +315,70 @@ extern void System_setUsesCardinality(int b)
   usesCardinality = b;
 }
 
+/* Cooperative cancellation. System_isCancelled is polled by the compiler
+ * (Error.checkCancel); System_requestCancel/System_clearCancel are the host
+ * (OMEdit) side. Progress is one-way, compiler → host. */
+extern int System_isCancelled()
+{
+  if (pumpCallback) {
+    pumpCallback();
+  }
+  return cancelRequested;
+}
+
+extern int System_alarmExpired()
+{
+  return cancelledByAlarm;
+}
+
+extern void System_setPumpCallback(void (*cb)(void))
+{
+  pumpCallback = cb;
+}
+
+extern void System_requestCancel()
+{
+  cancelRequested = 1;
+}
+
+extern void System_clearCancel()
+{
+  cancelRequested = 0;
+  progressPermille = -1;
+  progressPhase = 0;
+  progressMessage = NULL;
+}
+
+/* Clears the message: it belongs to the step that reported it, and letting it
+ * outlive that step would mislabel whatever comes next. Report it again after
+ * this call to keep it. */
+extern void System_reportProgress(int permille, int phase)
+{
+  progressPermille = permille;
+  progressPhase = phase;
+  progressMessage = NULL;
+}
+
+extern void System_reportProgressMessage(const char *message)
+{
+  progressMessage = (message && *message) ? omc_alloc_interface.malloc_strdup(message) : NULL;
+}
+
+extern const char* System_progressMessage()
+{
+  return progressMessage ? progressMessage : "";
+}
+
+extern int System_progressPermille()
+{
+  return progressPermille;
+}
+
+extern int System_progressPhase()
+{
+  return progressPhase;
+}
+
 extern void* System_strtok(const char *str0, const char *delimit)
 {
   char *s;
@@ -321,7 +393,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
   while ((s=strtok_r(NULL,delimit,&saveptr))) {
     res = mmc_mk_cons(mmc_mk_scon(s),res);
   }
-  return listReverse(res);
+  return listReverseInPlace(res);
 }
 
 extern char* System_substring(const char *str, int start, int stop)
@@ -359,8 +431,9 @@ extern char* System_substring(const char *str, int start, int stop)
 extern char* System_toupper(const char *str)
 {
   int i;
-  char* strToUpper = strcpy(ModelicaAllocateString(strlen(str)),str);
-  for (i = 0; i < strlen(strToUpper); i++)
+  size_t len = strlen(str);
+  char* strToUpper = strcpy(ModelicaAllocateString(len),str);
+  for (i = 0; i < len; i++)
   {
     strToUpper[i] = toupper(strToUpper[i]);
   }
@@ -370,8 +443,9 @@ extern char* System_toupper(const char *str)
 extern char* System_tolower(const char *str)
 {
   int i;
-  char* strToLower = strcpy(ModelicaAllocateString(strlen(str)),str);
-  for (i = 0; i < strlen(strToLower); i++)
+  size_t len = strlen(str);
+  char* strToLower = strcpy(ModelicaAllocateString(len),str);
+  for (i = 0; i < len; i++)
   {
     strToLower[i] = tolower(strToLower[i]);
   }
@@ -577,6 +651,19 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
   int res = SystemImpl__loadLibrary(name, relativePath, printDebug);
   if (res == -1) MMC_THROW();
   return res;
+}
+
+extern int System_loadLibraryLazy(const char *name, int relativePath, int printDebug)
+{
+  int res = SystemImpl__loadLibraryLazy(name, relativePath, printDebug);
+  if (res == -1) MMC_THROW();
+  return res;
+}
+
+extern const char* System_getLoadLibraryError(void)
+{
+  const char *res = SystemImpl__getLoadLibraryError();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -1141,7 +1228,7 @@ extern void* System_splitOnNewline(const char *str, int includeDelimiter)
     lst = mmc_mk_cons(mmc_mk_scon_n(start, current - start), lst);
   }
 
-  return listReverse(lst);
+  return listReverseInPlace(lst);
 }
 
 extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)

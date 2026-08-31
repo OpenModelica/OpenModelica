@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBAlias
 "file:        NBAlias.mo
  package:     NBAlias
@@ -71,6 +76,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{StateSelect, TearingSelect};
   import NFBackendExtension.VariableKind;
+  import NFBinding.Binding;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -79,7 +85,6 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFFlatten.FunctionTreeImpl;
   import NFPrefixes.Variability;
 
   // Backend imports
@@ -90,6 +95,7 @@ protected
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
   import SimplifyExp = NFSimplifyExp;
   import Solve = NBSolve;
@@ -97,9 +103,11 @@ protected
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
+  import ASSC = NBASSC;
 
   // Util imports
   import MetaModelica.Dangerous;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
@@ -115,10 +123,11 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
-    (func) := getModule();
+    func := getModule();
 
     bdae := match bdae
       local
@@ -127,16 +136,16 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           // allways apply clock alias
-          (varData, eqData) := aliasClocks(varData, eqData);
+          (varData, eqData) := aliasClocks(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -229,7 +238,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -238,6 +247,12 @@ protected
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
+
+          // update record variability and flatten to record children
+          for var in alias_vars loop
+            BVariable.setRecordVariability(var, NFPrefixes.Variability.PARAMETER);
+          end for;
+          alias_vars := List.flatten(list(BVariable.getRecordChildrenOrSelf(var) for var in alias_vars));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
@@ -270,7 +285,7 @@ protected
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
 
-          // add only the actual 1/-1 alias vars to alias vars
+          // add only the actual 1/-1 alias vars to alias vars.
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
@@ -293,16 +308,16 @@ protected
     output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     output list<Pointer<Equation>> auxEquations = {};
   protected
-    UnorderedSet<ComponentRef> exceptionSet = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef cref;
     Expression exp;
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.mapExp(eqData, function filterPre(acc = exceptionSet));
+    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
-      if isValidReplacement(cref, exp, exceptionSet) then
+      if isValidReplacement(cref, exp, exceptionMap) then
         // replacement is valid - add to newReplacements
         UnorderedMap.add(cref, exp, newReplacements);
       else
@@ -322,33 +337,74 @@ protected
     "Checks if a replacement (cref, exp) is valid"
     input ComponentRef cref;
     input Expression exp;
-    input UnorderedSet<ComponentRef> exceptionSet;
+    input UnorderedMap<ComponentRef, ExceptionKind> exceptionMap;
     output Boolean b = true;
   algorithm
-    // TODO: possibly match cref, exp here: add if needed
-    if UnorderedSet.contains(cref, exceptionSet) then
-      b := false;
-    end if;
+    b := match (UnorderedMap.get(cref, exceptionMap), exp)
+      // no exception for this cref
+      case (NONE(), _) then true;
+      // cref exception. only allow replacement by a cref
+      case (SOME(ExceptionKind.CREF_ALIAS), Expression.CREF()) then true;
+      // disallow other exceptions
+      else false;
+    end match;
   end isValidReplacement;
 
-  function filterPre
-    "Filter expression for pre call"
+  // different kinds of exceptions
+  type ExceptionKind = enumeration(NO_ALIAS, CREF_ALIAS);
+
+  function filterExceptionsEquation
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef, ExceptionKind> acc;
+  algorithm
+    () := match eqn
+      // algorithm outputs shall not be replaced
+      case Equation.ALGORITHM() algorithm
+        for cref in eqn.alg.outputs loop
+          UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
+        end for;
+      then ();
+      else ();
+    end match;
+    Equation.map(eqn, function filterExceptions(acc = acc));
+  end filterExceptionsEquation;
+
+  function filterExceptions
+    "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
     input output Expression exp;
-    input UnorderedSet<ComponentRef> acc;
+    input UnorderedMap<ComponentRef, ExceptionKind> acc;
   algorithm
     () := match exp
       local
         Call call;
         ComponentRef cref;
 
+      // all variables in pre() call shall not be replaced
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
-        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
-        UnorderedSet.add(cref, acc);
+      guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
+        UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
+      then ();
+
+      case Expression.CREF() algorithm
+        // TODO: add guard here (dont do alias for optimization annotations)
+        // UnorderedSet.add(cref, acc);
+      then ();
+
+      // tuple elements shall not be replaced by something that is not a cref
+      case Expression.TUPLE() algorithm
+        for elem in exp.elements loop
+          () := match elem
+            case Expression.CREF() algorithm
+              UnorderedMap.add(elem.cref, ExceptionKind.CREF_ALIAS, acc);
+            then ();
+            else ();
+          end match;
+        end for;
       then ();
 
       else ();
     end match;
-  end filterPre;
+  end filterExceptions;
 
   function dumpReplacements
     input UnorderedMap<ComponentRef, Expression> replacements;
@@ -386,7 +442,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -418,6 +474,8 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input Partition.Kind kind;
+    input Pointer<Integer> index;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -453,7 +511,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements);
+      replacements := createReplacementRules(set, index, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -473,11 +531,17 @@ protected
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
-      // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
+
       case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
+
+      case BEquation.RECORD_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
+
       else crefTpl;
     end match;
 
@@ -486,6 +550,7 @@ protected
         SetPtr set_ptr, set1_ptr, set2_ptr;
         AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
+        Pointer<Equation> new_eq_ptr;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
@@ -518,48 +583,58 @@ protected
           set1_ptr := UnorderedMap.getOrFail(cr1, map);
           set2_ptr := UnorderedMap.getOrFail(cr2, map);
           set1 := Pointer.access(set1_ptr);
-          set2 := Pointer.access(set2_ptr);
-          set := EMPTY_ALIAS_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because they would create a loop. This would create an underdetermined Set!:\n\n" +
+            // check if there is a constant binding
+            if isSome(set1.const_opt) then
+              set2 := Pointer.access(set2_ptr);
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because they would create a loop and both have a constant binding. This would create an underdetermined Set!:\n\n" +
                 "Trying to merge: " + Equation.toString(eq) + "\n\n" +
                 AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif isSome(set1.const_opt) then
-            set.const_opt := set1.const_opt;
-          elseif isSome(set2.const_opt) then
-            set.const_opt := set2.const_opt;
-          end if;
+            end if;
+            // add eq to set1
+            new_eq_ptr := Pointer.create(eq);
+            set1.simple_equations := new_eq_ptr :: set1.simple_equations;
+            // update pointer of set1 -> set1
+            Pointer.update(set1_ptr, set1);
 
-          // try to append the shorter to the longer lists
-          if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
-          end if;
+            set2 := Pointer.access(set2_ptr);
+            set := EMPTY_ALIAS_SET;
+            if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                  "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
+                  AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
+              fail();
+            elseif isSome(set1.const_opt) then
+              set.const_opt := set1.const_opt;
+            elseif isSome(set2.const_opt) then
+              set.const_opt := set2.const_opt;
+            end if;
 
-          // try to change as few pointer entries as possible
-          if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set1_ptr, set);
-            for cr in set2.simple_variables loop
-              UnorderedMap.add(cr, set1_ptr, map);
-            end for;
-          else
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set2_ptr, set);
-            for cr in set1.simple_variables loop
-              UnorderedMap.add(cr, set2_ptr, map);
-            end for;
-          end if;
+            // try to append the shorter to the longer lists
+            if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
+            else
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
+            end if;
 
+            // try to change as few pointer entries as possible
+            if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set1_ptr, set);
+              for cr in set2.simple_variables loop
+                UnorderedMap.add(cr, set1_ptr, map);
+              end for;
+            else
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set2_ptr, set);
+              for cr in set1.simple_variables loop
+                UnorderedMap.add(cr, set2_ptr, map);
+              end for;
+            end if;
+          end if;
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
           set_ptr := UnorderedMap.getOrFail(cr1, map);
@@ -616,7 +691,12 @@ protected
 
       // fail for record elements for now
       case Expression.CREF()
-        guard(Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+        guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+      then FAILED_CREF_TPL;
+
+      // fail for top level inputs
+      case Expression.CREF()
+        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -730,7 +810,7 @@ protected
     input Integer cref_num;
     output Boolean b;
   algorithm
-    b := match(op)
+    b := match op
       case Operator.OPERATOR(op = NFOperator.Op.ADD)        then true;
       case Operator.OPERATOR(op = NFOperator.Op.SUB)        then true;
       case Operator.OPERATOR(op = NFOperator.Op.UMINUS)     then true;
@@ -773,10 +853,10 @@ protected
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
+    input Pointer<Integer> index;
     input output UnorderedMap<ComponentRef, Expression> replacements;
+    input Partition.Kind kind;
   algorithm
-    // ToDo: fix variable attributes to keep
-    // report errors/warnings
     replacements := match set.const_opt
       local
         Expression rhs;
@@ -786,17 +866,35 @@ protected
         VariablePointers vars;
         list<Pointer<Variable>> var_lst;
         EquationPointers eqs;
+        list<Pointer<Equation>> eqns;
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
         Status status;
+        Expression res, expr;
+        DifferentiationArguments args;
+        array<Real> lhs;
+        Integer idx_i = 1;
+        list<Integer>  lst_enum;
+        UnorderedMap<ComponentRef, Integer>  int_to_cref;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
+        // create replacements from strong components
+        Replacements.simple(comps, replacements);
+      then replacements;
+
+      case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
+        // solve the equation system by performing analytical-to-structural singularity conversion
+        eqns := ASSC.main(set.simple_equations, set.simple_variables, index);
+        eqs := EquationPointers.fromList(eqns);
+        // causalize the system
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -806,23 +904,28 @@ protected
         (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), var_to_keep);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
+
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;
+
         // create replacements from strong components
         Replacements.simple(comps, replacements);
         var_lst := VariablePointers.toList(vars);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
         end if;
+
+        // solve equations for vars to have attribute conversion rules
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_,status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
+
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
         end if;
@@ -843,7 +946,6 @@ protected
     input AttributeCollector attrcollector;
     input AliasSet set;
   protected
-    list<Expression> lst;
     Option<ComponentRef> new_cref;
     Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
@@ -853,12 +955,12 @@ protected
   algorithm
   // function calls of different set functions in NBVariable.mo
     new_min := getMaximum(attrcollector.min_val_map);
-    if Util.isSome(new_min) then
+    if isSome(new_min) then
       Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_min), attrcollector.min_val_map); // update attribute collector
     end if;
     new_max := getMinimum(attrcollector.max_val_map);
-    if Util.isSome(new_max) then
+    if isSome(new_max) then
       Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_max), attrcollector.max_val_map); // update attribute collector
     end if;
@@ -874,7 +976,7 @@ protected
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
     end if;
     (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
-    if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
+    if isSome(new_stateSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
       Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_stateSelect), attrcollector.stateSelect_map); // update attribute collector
       if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
@@ -884,7 +986,7 @@ protected
       end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
-    if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
+    if isSome(new_tearingSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
       Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_tearingSelect), attrcollector.tearingSelect_map); // update attribute collector
     end if;
@@ -906,7 +1008,6 @@ protected
       UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual));
   protected
     Pointer<Variable> var;
-    Variable cur_var;
     list<Pointer<Variable>> rest;
     Integer cur_rating, max_rating;
 
@@ -1205,6 +1306,7 @@ protected
       chosen_val := SOME(sval);
       chosen_cref := SOME(compref);
     else
+      (compref, state_select) := listHead(lst_values);
       for tpl in lst_values loop
         (cref,sval) := tpl;
         if sval > state_select then
@@ -1255,36 +1357,36 @@ protected
   function optionMinMax
     "Collects min and max attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_min, attr_max;
+    input Option<Binding> attr_min, attr_max;
     input output AttributeCollector attrcollector;
   protected
-    Expression min_val, max_val;
+    Binding min_b, max_b;
   algorithm
-    if Util.isSome(attr_min) then
-      min_val := Util.getOption(attr_min);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
+    if isSome(attr_min) then
+      SOME(min_b) := attr_min;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(min_b), attrcollector.min_val_map);
     end if;
-    if Util.isSome(attr_max) then
-      max_val := Util.getOption(attr_max);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
+    if isSome(attr_max) then
+      SOME(max_b) := attr_max;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(max_b), attrcollector.max_val_map);
     end if;
   end optionMinMax;
 
   function optionStartFixed
     "Collects start and fixed attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_start, attr_fixed;
+    input Option<Binding> attr_start, attr_fixed;
     input output AttributeCollector attrcollector;
   protected
-    Expression start_val, fixed_val;
+    Binding start_b, fixed_b;
   algorithm
-    if Util.isSome(attr_start) then
-      start_val := Util.getOption(attr_start);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
+    if isSome(attr_start) then
+      SOME(start_b) := attr_start;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
     end if;
-    if Util.isSome(attr_fixed) then
-      fixed_val := Util.getOption(attr_fixed);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
+    if isSome(attr_fixed) then
+      SOME(fixed_b) := attr_fixed;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(fixed_b), attrcollector.fixed_map);
     end if;
   end optionStartFixed;
 
@@ -1306,26 +1408,25 @@ protected
       rating := -ComponentRef.depth(name);
     end if;
 
-     _ := match Pointer.access(var_ptr)
+     () := match Pointer.access(var_ptr)
         local
-          Variable var = Pointer.access(var_ptr);
           BackendExtension.VariableAttributes attr;
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
         attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
-        if Util.isSome(attr.nominal) then
-          nominal_val := Util.getOption(attr.nominal);
+        if isSome(attr.nominal) then
+          nominal_val := Binding.getTypedExp(Util.getOption(attr.nominal));
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
         end if;
-        if Util.isSome(attr.stateSelect) then
+        if isSome(attr.stateSelect) then
           stateSelect_val := Util.getOption(attr.stateSelect);
           if stateSelect_val == StateSelect.ALWAYS then
             rating := rating + 100;
           end if;
           UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
         end if;
-        if Util.isSome(attr.tearingSelect) then
+        if isSome(attr.tearingSelect) then
           tearingSelect_val := Util.getOption(attr.tearingSelect);
           UnorderedMap.add(BVariable.getVarName(var_ptr), tearingSelect_val, attrcollector.tearingSelect_map);
         end if;
@@ -1394,9 +1495,9 @@ protected
       Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
     algorithm
-      rhs := Equation.getRHS(solved_eq);
+      SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
-      if Util.isSome(min_val_opt) then
+      if isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1405,7 +1506,7 @@ protected
       end if;
 
       // max:
-      if Util.isSome(max_val_opt) then
+      if isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1413,24 +1514,24 @@ protected
         max_val_opt := UnorderedMap.get(var_cref, attrcollector.max_val_map);
       end if;
 
-      // if linear factor is negative => swap min and max
+      // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty)) then
+      if not Type.isContinuous(ty) or not Type.isInteger(Type.elementType(ty)) or Type.isRecord(ty) then
+        swap_min_max := false;
+      else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
         args.diffCref := var_cref;
         diff_rhs := Differentiate.differentiateExpression(rhs, args);
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
-      else
-        swap_min_max := false;
       end if;
-      if swap_min_max and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
+      if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
       end if;
 
       // start:
-      if Util.isSome(start_opt) then
+      if isSome(start_opt) then
         UnorderedMap.add(var_cref, Util.getOption(start_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1438,7 +1539,7 @@ protected
       end if;
 
       // nominal:
-      if Util.isSome(nominal_opt) then
+      if isSome(nominal_opt) then
         UnorderedMap.add(var_cref, Util.getOption(nominal_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         // normalize the nominal values (remove negations)
@@ -1449,5 +1550,5 @@ protected
 
   end AttributeCollector;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBAlias;

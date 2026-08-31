@@ -1,0 +1,38 @@
+// name: Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves
+// keywords: NewBackend Buildings array equation scalar broadcast real_array_copy_data
+// status: correct
+// teardown_command: rm -rf Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves.libs Buildings*.libs
+
+loadModel(Buildings, {"12.0.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:800:5-800:70:writable] Warning: Variable t of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:801:5-801:57:writable] Warning: Variable h00 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:802:5-802:57:writable] Warning: Variable h10 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:803:5-803:57:writable] Warning: Variable h01 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:804:5-804:57:writable] Warning: Variable h11 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:805:5-805:23:writable] Warning: Variable aux3 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:806:5-806:25:writable] Warning: Variable aux2 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:800:5-800:70:writable] Warning: Variable $fDER_t of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:801:5-801:57:writable] Warning: Variable $fDER_h00 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:802:5-802:57:writable] Warning: Variable $fDER_h10 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:803:5-803:57:writable] Warning: Variable $fDER_h01 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:804:5-804:57:writable] Warning: Variable $fDER_h11 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:805:5-805:23:writable] Warning: Variable $fDER_aux3 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.1.0+maint.om/Fluid/Utilities.mo:806:5-806:25:writable] Warning: Variable $fDER_aux2 of the generated function $fDER0.Modelica.Fluid.Utilities.cubicHermite will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// "
+// endResult

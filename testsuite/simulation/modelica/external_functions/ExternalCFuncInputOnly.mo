@@ -12,7 +12,7 @@ encapsulated package ExternalCFuncInputOnly
 
   function WriteData
     input Data data;
-   external"C" WriteDataC(data);
+   external"C" WriteDataC(data)
    annotation(Library = "ExternalCFuncInputOnly.o", Include="#include \"ExternalCFuncInputOnly.h\"");
   end WriteData;
 

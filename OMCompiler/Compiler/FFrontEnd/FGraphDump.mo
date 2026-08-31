@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,6 +46,7 @@ public
 import SCode;
 import DAE;
 import FCore;
+import FCore.RefTree;
 import FNode;
 import FGraph;
 import GraphML;
@@ -56,7 +61,6 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
-type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type ImportTable = FCore.ImportTable;
@@ -79,24 +83,24 @@ public function dumpGraph
   input Graph inGraph;
   input String fileName;
 algorithm
-  _ := matchcontinue(inGraph, fileName)
+  () := matchcontinue fileName
     local
       Integer g;
       GraphML.GraphInfo gi;
       Ref nr;
 
-    case (_, _)
-      equation
-        false = Flags.isSet(Flags.GRAPH_INST_GEN_GRAPH);
+    case _
+      algorithm
+        false := Flags.isSet(Flags.GRAPH_INST_GEN_GRAPH);
       then
         ();
 
-    case (_, _)
-      equation
-        gi = GraphML.createGraphInfo();
-        (gi,(_,g)) = GraphML.addGraph("G",false,gi);
-        nr = FGraph.top(inGraph);
-        ((gi,g)) = addNodes((gi,g), {nr});
+    case _
+      algorithm
+        gi := GraphML.createGraphInfo();
+        (gi,(_,g)) := GraphML.addGraph("G",false,gi);
+        nr := FGraph.top(inGraph);
+        (gi,g) := addNodes((gi,g), {nr});
         print("Dumping graph file: " + fileName + " ....\n");
         GraphML.dumpGraph(gi, fileName);
         print("Dumped\n");
@@ -127,8 +131,8 @@ algorithm
 
 
     case (g, n::rest)
-      equation
-        g = addNode(g, FNode.fromRef(n));
+      algorithm
+        g := addNode(g, FNode.fromRef(n));
         then addNodes(g, rest);
 
   end match;
@@ -144,45 +148,42 @@ algorithm
       GraphML.GraphInfo gi;
       Integer i, id;
       Children kids;
-      Name name;
-      Data nd;
-      String n, nds, color, labelText;
+      String nds, color, labelText;
       GraphML.ShapeType shape;
-      Ref nr, target;
+      Ref nr;
       list<Ref> nrefs;
       GraphML.NodeLabel label;
-      GraphML.EdgeLabel elabel;
 
     // top node
     case ((gi,i), FCore.N(parents = {}, children = kids))
-      equation
-        (color, shape, nds) = graphml(node, true);
-        labelText = nds;
-        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+      algorithm
+        (color, shape, nds) := graphml(node, true);
+        labelText := nds;
+        label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
-        (gi, _) = GraphML.addNode(
+        (gi, _) := GraphML.addNode(
               "n" + intString(FNode.id(node)),
               color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
-        nrefs = RefTree.listValues(kids);
-        ((gi,i)) = addNodes((gi,i), nrefs);
+        nrefs := RefTree.listValues(kids);
+        (gi,i) := addNodes((gi,i), nrefs);
       then
         ((gi,i));
 
     // empty REF node, add it with red as is unresolveds
     case ((gi,i), FCore.N(parents = nr::_, children = kids, data = FCore.REF({})))
-      equation
+      algorithm
 
-        (color, shape, nds) = graphml(node, true);
+        (color, shape, nds) := graphml(node, true);
 
-        labelText = nds;
-        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        labelText := nds;
+        label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
-        (gi, _) = GraphML.addNode(
+        (gi, _) := GraphML.addNode(
               "n" + intString(FNode.id(node)),
               color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
-        (gi, _) = GraphML.addEdge(
+        (gi, _) := GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(FNode.fromRef(nr))),
@@ -209,25 +210,25 @@ algorithm
                    {},
                    gi);*/
 
-        nrefs = RefTree.listValues(kids);
-        ((gi,i)) = addNodes((gi,i), nrefs);
+        nrefs := RefTree.listValues(kids);
+        (gi,i) := addNodes((gi,i), nrefs);
       then
         ((gi,i));
 
     // something REF node, either add it as a new node or an edge (commented out)
     case ((gi,i), FCore.N(parents = nr::_, children = kids, data = FCore.REF(_::_)))
-      equation
+      algorithm
 
-        (color, shape, nds) = graphml(node, true);
+        (color, shape, nds) := graphml(node, true);
 
-        labelText = nds;
-        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        labelText := nds;
+        label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
-        (gi, _) = GraphML.addNode(
+        (gi, _) := GraphML.addNode(
               "n" + intString(FNode.id(node)),
               color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
-        (gi, _) = GraphML.addEdge(
+        (gi, _) := GraphML.addEdge(
                    "r" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(FNode.fromRef(nr))),
@@ -254,8 +255,8 @@ algorithm
                    {},
                    gi);*/
 
-        nrefs = RefTree.listValues(kids);
-        ((gi,i)) = addNodes((gi,i), nrefs);
+        nrefs := RefTree.listValues(kids);
+        (gi,i) := addNodes((gi,i), nrefs);
       then
         ((gi,i));
 
@@ -266,17 +267,17 @@ algorithm
 
     // other nodes
     case ((gi,i), FCore.N(parents = nr::_, children = kids))
-      equation
-        (color, shape, nds) = graphml(node, true);
+      algorithm
+        (color, shape, nds) := graphml(node, true);
 
-        labelText = nds;
-        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        labelText := nds;
+        label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
-        (gi, _) = GraphML.addNode(
+        (gi, _) := GraphML.addNode(
               "n" + intString(FNode.id(node)),
               color,GraphML.BORDERWIDTH_STANDARD, {label}, shape, NONE(), {}, i, gi);
 
-        (gi, _) = GraphML.addEdge(
+        (gi, _) := GraphML.addEdge(
                    "e" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(node)),
                    "n" + intString(FNode.id(FNode.fromRef(nr))),
@@ -289,8 +290,8 @@ algorithm
                    {},
                    gi);
 
-        nrefs = RefTree.listValues(kids);
-        ((gi,i)) = addNodes((gi,i), nrefs);
+        nrefs := RefTree.listValues(kids);
+        (gi,i) := addNodes((gi,i), nrefs);
       then
         ((gi,i));
 
@@ -304,13 +305,9 @@ public function graphml
   output GraphML.ShapeType shape;
   output String nname;
 algorithm
-  (color, shape, nname) := matchcontinue(node, escape)
+  (color, shape, nname) := matchcontinue node
     local
-      Children kids;
-      Parents p;
       Name name;
-      Integer id;
-      Name n;
       Data nd;
       SCode.Element e;
       Absyn.Exp exp;
@@ -318,131 +315,131 @@ algorithm
       String s;
       Absyn.ArrayDim dims;
       Ref target;
-      Boolean b, b1, b2;
+      Boolean b;
 
     // redeclare replaceable class
-    case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
-      equation
-        true = SCodeUtil.isElementRedeclare(e);
-        true = SCodeUtil.isElementReplaceable(e);
-        b = FNode.isClassExtends(node);
-        s = if b then "rdrpCE:" else "rdrpC:";
-        s = s + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CL(e = e))
+      algorithm
+        true := SCodeUtil.isElementRedeclare(e);
+        true := SCodeUtil.isElementReplaceable(e);
+        b := FNode.isClassExtends(node);
+        s := if b then "rdrpCE:" else "rdrpC:";
+        s := s + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
 
     // redeclare class
-    case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
-      equation
-        true = SCodeUtil.isElementRedeclare(e);
-        b = FNode.isClassExtends(node);
-        s = if b then "rdCE:" else "rdC:";
-        s = s + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CL(e = e))
+      algorithm
+        true := SCodeUtil.isElementRedeclare(e);
+        b := FNode.isClassExtends(node);
+        s := if b then "rdCE:" else "rdC:";
+        s := s + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
 
     // replaceable class
-    case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
-      equation
-        true = SCodeUtil.isElementReplaceable(e);
-        s = "rpC:" + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CL(e = e))
+      algorithm
+        true := SCodeUtil.isElementReplaceable(e);
+        s := "rpC:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.RECTANGLE(), s);
 
     // redeclare replaceable component
-    case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
-      equation
-        true = SCodeUtil.isElementRedeclare(e);
-        true = SCodeUtil.isElementReplaceable(e);
-        s = "rdrpc:" + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CO(e = e))
+      algorithm
+        true := SCodeUtil.isElementRedeclare(e);
+        true := SCodeUtil.isElementReplaceable(e);
+        s := "rdrpc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
 
     // redeclare component
-    case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
-      equation
-        true = SCodeUtil.isElementRedeclare(e);
-        s = "rdc:" + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CO(e = e))
+      algorithm
+        true := SCodeUtil.isElementRedeclare(e);
+        s := "rdc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
 
     // replaceable component
-    case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
-      equation
-        true = SCodeUtil.isElementReplaceable(e);
-        s = "rpc:" + FNode.name(node);
+    case FCore.N(_, _, _, _, FCore.CO(e = e))
+      algorithm
+        true := SCodeUtil.isElementReplaceable(e);
+        s := "rpc:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.ELLIPSE(), s);
 
     // class
-    case (FCore.N(_, _, _, _, nd as FCore.CL()), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.name(node);
+    case FCore.N(_, _, _, _, nd as FCore.CL())
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_GRAY, GraphML.RECTANGLE(), s);
 
     // component
-    case (FCore.N(_, _, _, _, nd as FCore.CO()), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.name(node);
+    case FCore.N(_, _, _, _, nd as FCore.CO())
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_WHITE, GraphML.ELLIPSE(), s);
 
     // extends
-    case (FCore.N(_, _, _, _, nd as FCore.EX()), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.name(node);
+    case FCore.N(_, _, _, _, nd as FCore.EX())
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_GREEN, GraphML.ROUNDRECTANGLE(), s);
 
     // expressions: bindings, condition in conditional components, array dim, etc
-    case (FCore.N(_, _, _, _, nd as FCore.EXP(e = exp)), _)
-      equation
-        s = Dump.printExpStr(exp);
-        s = FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
+    case FCore.N(_, _, _, _, nd as FCore.EXP(e = exp))
+      algorithm
+        s := Dump.printExpStr(exp);
+        s := FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PURPLE, GraphML.HEXAGON(), s);
 
     // dimensions
-    case (FCore.N(_, _, _, _, nd as FCore.DIMS(dims = dims)), _)
-      equation
-        s = Dump.printArraydimStr(dims);
-        s = FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
+    case FCore.N(_, _, _, _, nd as FCore.DIMS(dims = dims))
+      algorithm
+        s := Dump.printArraydimStr(dims);
+        s := FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PINK, GraphML.TRIANGLE(), s);
 
     // component references
-    case (FCore.N(_, _, _, _, nd as FCore.CR(r = r)), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + Dump.printComponentRefStr(r);
+    case FCore.N(_, _, _, _, nd as FCore.CR(r = r))
+      algorithm
+        s := FNode.dataStr(nd) + ":" + Dump.printComponentRefStr(r);
       then
         (GraphML.COLOR_PURPLE, GraphML.OCTAGON(), s);
 
     // ASSERT nodes
-    case (FCore.N(_, _, _, _, nd as FCore.ASSERT(s)), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.name(node);
+    case FCore.N(_, _, _, _, nd as FCore.ASSERT(s))
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
 
     // empty REF nodes
-    case (FCore.N(_, _, _, _, nd as FCore.REF({})), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + "UNRESOLVED";
+    case FCore.N(_, _, _, _, nd as FCore.REF({}))
+      algorithm
+        s := FNode.dataStr(nd) + ":" + "UNRESOLVED";
       then
         (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
 
     // non empty REF nodes
-    case (FCore.N(_, _, _, _, nd as FCore.REF(target::_)), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.toPathStr(FNode.fromRef(target));
+    case FCore.N(_, _, _, _, nd as FCore.REF(target::_))
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.toPathStr(FNode.fromRef(target));
       then
         (GraphML.COLOR_GREEN, GraphML.TRAPEZOID(), s);
 
     // all others
-    case (FCore.N(_, _, _, _, nd), _)
-      equation
-        s = FNode.dataStr(nd) + ":" + FNode.name(node);
+    case FCore.N(_, _, _, _, nd)
+      algorithm
+        s := FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_BLUE, GraphML.ELLIPSE(), s);
   end matchcontinue;

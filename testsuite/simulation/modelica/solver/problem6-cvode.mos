@@ -18,8 +18,7 @@ setCommandLineOptions("-d=newInst"); getErrorString();
 buildModel(testSolver.problem6); getErrorString();
 
 // Test default settings
-system(realpath(".") + "/testSolver.problem6 -s=cvode -override=stopTime=3.0,stepSize=0.006", "testSolver_problem6_default.log"); getErrorString();
-readFile("testSolver_problem6_default.log"); remove("testSolver_problem6_default.log");
+simulate(testSolver.problem6, simflags="-s=cvode -stopTime=3.0 -stepSize=0.006", resimulateExecutable="testSolver.problem6"); getErrorString();
 
 echo(false);  /* Silence readSimulationResult */
 s:=readSimulationResultSize(resfile);
@@ -31,8 +30,7 @@ res[1,s];
 if res2[1,s] > -1e-2 then 1 else 0;
 
 // Test CVODE with BDF method and Newton integrator
-system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_NEWTON -override stopTime=3.0,stepSize=0.006 ", "testSolver_problem6_BDF.log"); getErrorString();
-readFile("testSolver_problem6_BDF.log"); remove("testSolver_problem6_BDF.log");
+simulate(testSolver.problem6, simflags="-s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_ITER_NEWTON -stopTime=3.0 -stepSize=0.006 ", resimulateExecutable="testSolver.problem6"); getErrorString();
 
 echo(false);  /* Silence readSimulationResult */
 s:=readSimulationResultSize(resfile);
@@ -43,9 +41,8 @@ res[1,1];
 res[1,s];
 if res2[1,s] > -1e-2 then 1 else 0;
 
-// Test CVODE with Adams method and Newton integrator
-system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_FUNCTIONAL -override stopTime=3.0,stepSize=0.006 ", "testSolver_problem6_ADAMS.log"); getErrorString();
-readFile("testSolver_problem6_ADAMS.log"); remove("testSolver_problem6_ADAMS.log");
+// Test CVODE with Adams method and fixed-point integrator
+simulate(testSolver.problem6, simflags="-s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT -stopTime=3.0 -stepSize=0.006 ", resimulateExecutable="testSolver.problem6"); getErrorString();
 
 echo(false);  /* Silence readSimulationResult */
 s:=readSimulationResultSize(resfile);
@@ -66,32 +63,38 @@ if res2[1,s] > -1e-2 then 1 else 0;
 // {"testSolver.problem6", "testSolver.problem6_init.xml"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "testSolver.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -stopTime=3.0 -stepSize=0.006'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // true
 // 1.0
 // 0.0
 // 1
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "testSolver.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_ITER_NEWTON -stopTime=3.0 -stepSize=0.006 '",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // true
 // 1.0
 // 0.0
 // 1
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "testSolver.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT -stopTime=3.0 -stepSize=0.006 '",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // true
 // 1.0
 // 0.0

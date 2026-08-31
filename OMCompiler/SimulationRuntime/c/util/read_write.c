@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -62,7 +59,7 @@ void puttype(const type_description *desc)
     fprintf(stderr, "REAL: %g\n", desc->data.real);
     break;
   case TYPE_DESC_INT:
-    fprintf(stderr, "INT: %ld\n", desc->data.integer);
+    fprintf(stderr, "INT: " OMC_INT_FORMAT "\n", desc->data.integer);
     break;
   case TYPE_DESC_BOOL:
     fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
@@ -108,7 +105,7 @@ void puttype(const type_description *desc)
         int e;
         fprintf(stderr, "\t[");
         for(e = 0; e < desc->data.int_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%ld, ", ((modelica_integer *) desc->data.int_array.data)[e]);
+          fprintf(stderr, OMC_INT_FORMAT ", ", ((modelica_integer *) desc->data.int_array.data)[e]);
         }
         fprintf(stderr, "]\n");
       }
@@ -745,10 +742,6 @@ type_description *add_modelica_record_member(type_description *desc,
   elem = desc->data.record.element + desc->data.record.elements;
   desc->data.record.name[desc->data.record.elements] = (char*)malloc(nlen + 1);
   memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1);
-  /*
-   * strdup is not ansi!
-   * desc->data.record.name[desc->data.record.elements] = strdup(name);
-   */
   ++desc->data.record.elements;
   init_type_description(elem);
   return elem;
@@ -882,4 +875,3 @@ static type_description *add_tuple_item(type_description *desc)
 #if defined(__cplusplus)
 }
 #endif
-

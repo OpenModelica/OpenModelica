@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -39,7 +36,6 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "../../util/omc_error.h"
-#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
@@ -58,19 +54,19 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %12.4g", buffer, matrix[i + j*(m-1)]);
+          p += sprintf(p, " %12.4g", matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -88,21 +84,23 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*22);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s -INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s +INF", buffer);
-    else
-      sprintf(buffer, "%s %16.8g", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, " -INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, " +INF");
       else
-        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
+        p += sprintf(p, " %16.8g", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %16.8g", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     free(buffer);
@@ -112,21 +110,14 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 
 void debugStringLS(int logName, char* message)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s", message);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 0, "%s", message);
 }
 
 void debugIntLS(int logName, char* message, int value)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %d", message, value);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 1, "%s %d", message, value);
 }
+
 void vecMultScalingLS(int n, double *a, double *b, double *c)
 {
   int i;
@@ -338,8 +329,8 @@ int freeTotalPivotData(void** voiddata)
  */
 void getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, modelica_real* jac)
 {
-  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
@@ -375,7 +366,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->parDynamicData[omc_get_thread_num()].solverData[1];
+  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->solverData[1];
 
   int n = systemData->size, status;
   double fdeps = 1e-8;
@@ -402,15 +393,15 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   if (0 == systemData->method) {
 
     /* reset matrix A */
-    vecConstLS(n*n, 0.0, systemData->parDynamicData[omc_get_thread_num()].A);
+    vecConstLS(n*n, 0.0, systemData->A);
     /* update matrix A -> first n columns of matrix Ab*/
     systemData->setA(data, threadData, systemData);
-    vecCopyLS(n*n, systemData->parDynamicData[omc_get_thread_num()].A, solverData->Ab);
+    vecCopyLS(n*n, systemData->A, solverData->Ab);
 
     /* update vector b (rhs) -> -b is last column of matrix Ab*/
     rt_ext_tp_tick(&(solverData->timeClock));
     systemData->setb(data, threadData, systemData);
-    vecScalarMultLS(n, systemData->parDynamicData[omc_get_thread_num()].b, -1.0, solverData->Ab + n*n);
+    vecScalarMultLS(n, systemData->b, -1.0, solverData->Ab + n*n);
   } else {
 
     /* calculate jacobian -> first n columns of matrix Ab*/
@@ -432,14 +423,8 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (status != 0) {
-    // ToDo Rework stream prints like this one to work in parallel regions
-#ifdef USE_PARJAC
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Thread %u: Error solving linear system of equations (no. %d) at time %f.", omc_get_thread_num(), (int)systemData->equationIndex, data->localData[0]->timeValue);
-    success = 0;
-#else
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
-#endif
   } else {
     debugVectorDoubleLS(OMC_LOG_LS_V, "SOLUTION:", solverData->x, n+1);
     if (1 == systemData->method) {

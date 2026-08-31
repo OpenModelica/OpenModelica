@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -215,7 +219,7 @@ public function wordWrap
   output list<String> outStrings = {};
 protected
   Integer start_pos = 1, end_pos = inWrapLength;
-  Integer line_len, pos, next_char, char, gap_size, next_gap_size;
+  Integer line_len, pos, next_char, char, gap_size;
   String str, delim = "";
   list<String> lines;
 algorithm
@@ -330,6 +334,10 @@ algorithm
       b := false;
       for j2 in j:stringLength(s2) loop
         if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <> stringCharInt(" ") then
+          if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <>
+             MetaModelica.Dangerous.stringGetNoBoundsChecking(s1, i) then
+            return;
+          end if;
           j := j2+1;
           b := true;
           break;
@@ -369,16 +377,6 @@ algorithm
   end if;
 end bytesToReadableUnit;
 
-function stringHashDjb2Work
-  input String str;
-  input Integer hash=5381;
-  output Integer ohash=hash;
-algorithm
-  for i in 1:stringLength(str) loop
-    ohash := ohash*31 + MetaModelica.Dangerous.stringGetNoBoundsChecking(str, i);
-  end for;
-end stringHashDjb2Work;
-
 function startsWith
   input String str;
   input String prefix;
@@ -409,13 +407,13 @@ function convertCharNonAsciiToHex "Converts a single character string to a hex r
   input output String s;
 protected
   Integer i;
-  constant String hex[:] = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
+  constant array<String> hex = MetaModelica.Dangerous.listArrayLiteral({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"});
 algorithm
   i := stringCharInt(s);
   if i < 128 then
     return;
   end if;
-  s := "0x" + hex[intDiv(i, 16)+1] + hex[intMod(i, 16)+1];
+  s := "0x" + arrayGet(hex, intDiv(i, 16)+1) + arrayGet(hex, intMod(i, 16)+1);
 end convertCharNonAsciiToHex;
 
 function stripBOM
@@ -426,10 +424,10 @@ algorithm
     return;
   end if;
   if stringGet(s,1) == 239 and
-     stringGet(s,2) == 187 and
-     stringGet(s,3) == 191 then
-    s := substring(s, 4, stringLength(s));
+    stringGet(s,2) == 187 and
+    stringGet(s,3) == 191 then
     bom := substring(s, 1, 3);
+    s := substring(s, 4, stringLength(s));
   end if;
 end stripBOM;
 
@@ -448,7 +446,10 @@ end stripFileExtension;
 public function rest
   "Returns all but the first character of a string."
   input String str;
-  output String rest = substring(str, 2, stringLength(str));
+  output String rest;
+algorithm
+  // TODO: Change substring to allow returning the last 0 characters at the end of a string?
+  rest := if stringLength(str) == 1 then "" else substring(str, 2, stringLength(str));
 end rest;
 
 annotation(__OpenModelica_Interface="util");

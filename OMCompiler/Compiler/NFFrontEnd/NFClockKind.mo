@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,6 +46,7 @@ protected
 
 public
   record INFERRED_CLOCK         "Clock()"
+    Integer idx                 "unique index to correctly associate equal inferred clocks";
   end INFERRED_CLOCK;
 
   record RATIONAL_CLOCK
@@ -94,8 +99,8 @@ public
   algorithm
     comp := match (ck1, ck2)
       local
-        Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
-      case (INFERRED_CLOCK(), INFERRED_CLOCK()) then 0;
+        Expression i1, r1, c1, si1, sm1, i2, r2, c2, si2, sm2;
+      case (INFERRED_CLOCK(), INFERRED_CLOCK()) then Util.intCompare(ck1.idx, ck2.idx);
       case (RATIONAL_CLOCK(i1, r1),RATIONAL_CLOCK(i2, r2))
         algorithm
           comp := Expression.compare(i1, i2);
@@ -483,7 +488,7 @@ public
   algorithm
     ock := match ick
       local
-        Expression i, ic, r, c, si, sm;
+        Expression i, r, c, si, sm;
       case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
       case RATIONAL_CLOCK(i, r) then DAE.RATIONAL_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
       case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
@@ -498,8 +503,8 @@ public
   algorithm
     ock := match ick
       local
-        Expression i, ic, r, c, si, sm;
-      case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
+        Expression i, r, c, si, sm;
+      case INFERRED_CLOCK()     then "INFERRED_CLOCK(" + intString(ick.idx) + ")";
       case RATIONAL_CLOCK(i, r) then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
       case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
       case EVENT_CLOCK(c, si)   then "EVENT_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
@@ -589,6 +594,40 @@ public
     end match;
   end toJSON;
 
-annotation(__OpenModelica_Interface="frontend");
+  function hashContinue
+    input ClockKind clk;
+    input output Integer hash;
+  algorithm
+    hash := stringHashDjb2Continue("Clock(", hash);
+    hash := match clk
+      case INFERRED_CLOCK() then hash + clk.idx;
+
+      case RATIONAL_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.intervalCounter, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.resolution, hash);
+        then hash;
+
+      case REAL_CLOCK() then Expression.hashContinue(clk.interval, hash);
+
+      case EVENT_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.condition, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.startInterval, hash);
+        then hash;
+
+      case SOLVER_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.c, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.solverMethod, hash);
+        then hash;
+    end match;
+    hash := stringHashDjb2Continue(")", hash);
+  end hashContinue;
+
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFClockKind;
 

@@ -1,44 +1,51 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
 #include "ElementTreeWidget.h"
+#include "Element/ElementProperties.h"
 #include "ItemDelegate.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
 
 #include <QGridLayout>
+#include <QMenu>
 #include <QStringBuilder>
 
 /*!
@@ -88,6 +95,7 @@ QString makeTooltip(const QString &restriction, const QString &name, const QStri
 ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem)
 {
   mpParentElementTreeItem = pParentElementTreeItem;
+  mpModelInstanceElement = pElement;
   if (pElement->isExtend()) {
     mName = pElement->getType();
     mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
@@ -117,6 +125,57 @@ ElementTreeItem::~ElementTreeItem()
 }
 
 /*!
+ * \brief ElementTreeItem::child
+ * Returns the child at the given row.
+ * \param row
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::child(int row) const
+{
+  if (row >= 0 && row < mChildren.size()) {
+    return mChildren.at(row);
+  } else {
+    return 0;
+  }
+}
+
+/*!
+ * \brief ElementTreeItem::findChild
+ * Finds the child with the given name and case sensitivity.
+ * \param name
+ * \param caseSensitivity
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::findChild(const QString &name, Qt::CaseSensitivity caseSensitivity) const
+{
+  if (caseSensitivity == Qt::CaseSensitive) {
+    auto it = mChildrenHash.find(name);
+    return it != mChildrenHash.end() ? it.value() : nullptr;
+  } else {
+    // QHash doesn’t support case-insensitive keys directly,
+    // so fallback to linear search for insensitive mode:
+    for (ElementTreeItem *child : mChildren) {
+      if (child->getNameStructure().compare(name, Qt::CaseInsensitive) == 0) {
+        return child;
+      }
+    }
+    return nullptr;
+  }
+}
+
+/*!
+ * \brief ElementTreeItem::insertChild
+ * Inserts the given child at the given position.
+ * \param position
+ * \param pElementTreeItem
+ */
+void ElementTreeItem::insertChild(int position, ElementTreeItem *pElementTreeItem)
+{
+  mChildren.insert(position, pElementTreeItem);
+  mChildrenHash.insert(pElementTreeItem->getNameStructure(), pElementTreeItem);
+}
+
+/*!
  * \brief ElementTreeItem::removeChildren
  * Removes all the children.
  */
@@ -124,6 +183,7 @@ void ElementTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+  mChildrenHash.clear();
 }
 
 /*!
@@ -134,6 +194,7 @@ void ElementTreeItem::removeChildren()
 void ElementTreeItem::removeChild(ElementTreeItem *pElementTreeItem)
 {
   mChildren.removeOne(pElementTreeItem);
+  mChildrenHash.remove(pElementTreeItem->getNameStructure());
   delete pElementTreeItem;
 }
 
@@ -430,7 +491,7 @@ void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 
 /*!
  * \brief ElementTreeModel::findElementTreeItem
- * Finds the ElementTreeItem based on the name and case sensitivity.
+ * Finds the ElementTreeItem with the given name and case sensitivity under the given ElementTreeItem.
  * \param name
  * \param pElementTreeItem
  * \param caseSensitivity
@@ -440,15 +501,9 @@ ElementTreeItem* ElementTreeModel::findElementTreeItem(const QString &name, Elem
 {
   if (!pElementTreeItem) {
     pElementTreeItem = mpRootElementTreeItem;
-  } else if (pElementTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
-    return pElementTreeItem;
   }
-  for (int i = pElementTreeItem->childrenSize(); --i >= 0; ) {
-    if (ElementTreeItem *item = findElementTreeItem(name, pElementTreeItem->child(i), caseSensitivity)) {
-      return item;
-    }
-  }
-  return 0;
+
+  return pElementTreeItem->findChild(name, caseSensitivity);
 }
 
 /*!
@@ -466,8 +521,8 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
     const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
     LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      QList<ModelInstance::Element*> elements = pModel->getElements();
-      QList<ModelInstance::Element*> visibleElements;
+      QVector<ModelInstance::Element*> elements = pModel->getElements();
+      QVector<ModelInstance::Element*> visibleElements;
       for (ModelInstance::Element* element : elements) {
         // show only public or all elements if access is diagram
         if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
@@ -504,6 +559,134 @@ ElementTreeView::ElementTreeView(ElementWidget *pElementWidget)
   setIndentation(Helper::treeIndentation);
   setUniformRowHeights(true);
   setHeaderHidden(true);
+  setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(this, &ElementTreeView::customContextMenuRequested, this, &ElementTreeView::showContextMenu);
+}
+
+/*!
+ * \brief ElementTreeView::showContextMenu
+ * Shows the context menu for the ElementTreeItem.
+ * \param pos
+ */
+void ElementTreeView::showContextMenu(const QPoint &pos)
+{
+  QModelIndex index = indexAt(pos);
+  if (!index.isValid()) {
+    return;
+  }
+  QModelIndex sourceIndex = mpElementWidget->getElementTreeProxyModel()->mapToSource(index);
+  auto *pElementTreeItem = static_cast<ElementTreeItem*>(sourceIndex.internalPointer());
+  if (!pElementTreeItem) {
+    return;
+  }
+
+  auto *pModelInstanceElement = pElementTreeItem->getModelInstanceElement();
+  if (!pModelInstanceElement || !pModelInstanceElement->isComponent() || !pModelInstanceElement->getModel()) {
+    return;
+  }
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (!(pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible())))) {
+    return;
+  }
+  QMenu menu(this);
+  QAction *pParametersAction = menu.addAction(Helper::parameters);
+  pParametersAction->setStatusTip(Helper::parametersTip);
+  connect(pParametersAction, &QAction::triggered, this, [pElementTreeItem, pModelInstanceElement, pModelWidget]() {
+    // the element is inherited if its top level parent element is an extends clause.
+    bool inherited = false;
+    ModelInstance::Element *pTopLevelParentElement = pModelInstanceElement->getTopLevelParentElement();
+    if (pTopLevelParentElement && pTopLevelParentElement->isExtend()) {
+      inherited = true;
+    }
+    MainWindow *pMainWindow = MainWindow::instance();
+
+    if (pElementTreeItem->isTopLevel()) {
+      // Top-level node: same as Element::showParameters() — all modifier arguments null, nested=false.
+      pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(pModelInstanceElement->getModel()->getName()).arg(pModelInstanceElement->getName()));
+      pMainWindow->getProgressBar()->setRange(0, 0);
+      pMainWindow->showProgressBar();
+      ElementParameters *pElementParameters = new ElementParameters(pModelInstanceElement, pModelWidget->getDiagramGraphicsView(),
+                                                                    inherited, false, false, 0, 0, 0, pMainWindow);
+      pMainWindow->hideProgressBar();
+      pMainWindow->getStatusBar()->clearMessage();
+      pElementParameters->exec();
+      pElementParameters->deleteLater();
+    } else {
+      // Sub-level node: replicate Parameter::editClassButtonClicked() pattern.
+      QString type = pModelInstanceElement->getType();
+      ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
+      if (pModelInstanceElement->getReplaceable()) {
+        pReplaceableConstrainedByModifier = pModelInstanceElement->getReplaceable()->getModifier();
+      }
+
+      // Create pElementModifier via modifierToJSON round-trip (matching editClassButtonClicked pattern)
+      ModelInstance::Modifier *pElementModifier = nullptr;
+      if (pTopLevelParentElement && pTopLevelParentElement->isComponent() && pTopLevelParentElement->getModifier()) {
+        pElementModifier = pTopLevelParentElement->getModifier()->getModifier(pModelInstanceElement->getName(), true);
+      }
+      if (!pTopLevelParentElement ||
+          !pTopLevelParentElement->getParentModel() ||
+          pTopLevelParentElement->getParentModel()->getName().isEmpty()) {
+        return;
+      }
+      QString classPath = pTopLevelParentElement->getParentModel()->getName();
+      const QString qualifiedType = pMainWindow->getOMCProxy()->qualifyPath(classPath, type);
+      // Merge with constrainedby modifier if applicable.
+      QString modifier;
+      if (pReplaceableConstrainedByModifier && pElementModifier) {
+        QVector<const ModelInstance::Modifier*> modifiers;
+        modifiers.append(pReplaceableConstrainedByModifier);
+        modifiers.append(pElementModifier);
+        ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, pModelInstanceElement->getParentModel());
+        modifier = pMergedModifier->toString();
+        delete pMergedModifier;
+      }
+      // Get the model instance from OMC with the modifier applied.
+      ModelInstance::Model *pCurrentModel = pModelInstanceElement->getModel();
+      const QJsonObject newModelJSON = pMainWindow->getOMCProxy()->getModelInstance(qualifiedType, pModelInstanceElement->getQualifiedName(), modifier);
+      if (!newModelJSON.isEmpty()) {
+        // Create pDefaultElementModifier from the element's own modifier.
+        QString defaultModifier;
+        if (pModelInstanceElement->getModifier()) {
+          defaultModifier = pModelInstanceElement->getModifier()->toString();
+        }
+        ModelInstance::Modifier *pDefaultElementModifier = nullptr;
+        if (!defaultModifier.isEmpty()) {
+          const QJsonObject defaultModifierJSON = pMainWindow->getOMCProxy()->modifierToJSON(defaultModifier);
+          pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(defaultModifierJSON), pModelInstanceElement->getParentModel());
+        }
+        // Create new Model and set on element.
+        ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, pModelInstanceElement);
+        pModelInstanceElement->setModel(pNewModel);
+        pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(pModelInstanceElement->getModel()->getName()).arg(pModelInstanceElement->getName()));
+        pMainWindow->getProgressBar()->setRange(0, 0);
+        pMainWindow->showProgressBar();
+        ElementParameters *pElementParameters = new ElementParameters(pModelInstanceElement, pModelWidget->getDiagramGraphicsView(), inherited, true, false,
+                                                                      pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, pMainWindow);
+        pMainWindow->hideProgressBar();
+        pMainWindow->getStatusBar()->clearMessage();
+        int answer = pElementParameters->exec();
+        pElementParameters->deleteLater();
+        /* Cleanup: if the user accepted the dialog, delete the old model; if rejected, restore the old model and delete the new one.
+         * In accepted case the new model will be deleted as part of updating the model instance so we only delete the current model.
+         * In rejected case we set to the current model and delete the new model.
+         */
+        if (answer == QDialog::Accepted) {
+          delete pCurrentModel;
+        } else {
+          pModelInstanceElement->setModel(pCurrentModel);
+          delete pNewModel;
+        }
+
+        if (pDefaultElementModifier) {
+          delete pDefaultElementModifier;
+        }
+      }
+    }
+  });
+  menu.exec(viewport()->mapToGlobal(pos));
 }
 
 /*!
@@ -574,7 +757,7 @@ void ElementWidget::selectDeselectElementItem(const QString &name, bool selected
   }
   // Makesure the last selected Element is visible.
   if (selected) {
-    ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(name, mpElementTreeModel->getRootElementTreeItem());
+    ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(name);
     if (pElementTreeItem) {
       QModelIndex modelIndex = mpElementTreeModel->elementTreeItemIndex(pElementTreeItem);
       QModelIndex proxyIndex = mpElementTreeProxyModel->mapFromSource(modelIndex);
@@ -591,13 +774,11 @@ void ElementWidget::filterElements()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  mpElementTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  mpElementTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
-  mpElementTreeProxyModel->setFilterRegExp(regExp);
+  mpElementTreeProxyModel->setFilterRegExp(TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax));
 #endif
 }
 

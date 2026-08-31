@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 //STD Headers
@@ -35,10 +38,10 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
-#include <QRegExp>
 
 #include <exception>
 #include <stdexcept>
+#include <algorithm>
 
 //IAEX Headers
 #include "cell.h"
@@ -82,16 +85,7 @@ namespace IAEX
    */
   Cell::Cell(QWidget *parent)
     : QWidget(parent),
-    selected_(false),
-    treeviewVisible_(true),
-    viewexpression_(false),
-    backgroundColor_(QColor(255,255,255)),
-    parent_(0),
-    next_(0),
-    last_(0),
-    previous_(0),
-    child_(0),
-    references_(0)
+      backgroundColor_(QColor(255,255,255))
   {
     setMouseTracking(true);
     setEnabled(true);
@@ -113,28 +107,6 @@ namespace IAEX
     setPalette(palette);
   }
 
-  Cell::Cell(Cell &c) : QWidget()
-  {
-    setMouseTracking(true);
-
-    mainlayout_ = new QGridLayout(this);
-    mainlayout_->setContentsMargins(0, 0, 0, 0);
-    mainlayout_->setSpacing(0);
-
-    setLabel(new QLabel(this));
-
-    setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
-    // PORT >> setBackgroundMode(Qt::PaletteBase);
-    setBackgroundRole( QPalette::Base );
-    setTreeWidget(new TreeView(this));
-    setStyle( *c.style() ); // Added 2005-10-27 AF
-
-
-    QPalette palette;
-    palette.setColor(c.backgroundRole(), c.backgroundColor());
-    setPalette(palette);
-  }
-
   /*!
    * \author Ingemar Axelsson
    *
@@ -142,15 +114,7 @@ namespace IAEX
    */
   Cell::~Cell()
   {
-    //Delete if there are no references to this cell.
-    if(references_ <= 0)
-    {
-      setMouseTracking(false);
-
-      delete treeView_;
-      delete mainWidget_;
-      delete label_;
-    }
+    setMouseTracking(false);
   }
 
   /*!
@@ -236,7 +200,7 @@ namespace IAEX
    *
    * \return boolean, that tells if the cell is set to view expression
    */
-  const bool Cell::isViewExpression() const
+  bool Cell::isViewExpression() const
   {
     return viewexpression_;
   }
@@ -259,40 +223,40 @@ namespace IAEX
    * inputcells should be evaled from the start if the value is true.
    * (Anders Fernström)
    */
-  void Cell::addRule(Rule *r)
+  void Cell::addRule(Rule r)
   {
     // TODO: DEBUG code: Remove when doing release,
     // just a check to find new rules
     QRegularExpression expression("InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border");
-    if( 0 > r->attribute().indexOf( expression ))
+    if( 0 > r.attribute().indexOf( expression ))
     {
-      std::cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << std::endl;
+      std::cout << "[NEW] Rule <" << r.attribute().toStdString() << "> <" << r.value().toStdString() << ">" << std::endl;
     }
     else
     {
-      if( r->attribute() == "FontSlant" )
+      if( r.attribute() == "FontSlant" )
       {
         QRegularExpression fontslant( "Italic" );
-        if( 0 > r->value().indexOf( fontslant ))
-          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( fontslant ))
+          std::cout << "[NEW] Rule Value <FontSlant>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "TextAlignment" )
+      else if( r.attribute() == "TextAlignment" )
       {
         QRegularExpression textalignment( "Right|Left|Center|Justify" );
-        if( 0 > r->value().indexOf( textalignment ))
-          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( textalignment ))
+          std::cout << "[NEW] Rule Value <TextAlignment>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "TextJustification" )
+      else if( r.attribute() == "TextJustification" )
       {
         QRegularExpression textjustification( "1|0" );
-        if( 0 > r->value().indexOf( textjustification ))
-          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( textjustification ))
+          std::cout << "[NEW] Rule Value <TextJustification>, VALUE: " << r.value().toStdString() << std::endl;
       }
-      else if( r->attribute() == "FontWeight" )
+      else if( r.attribute() == "FontWeight" )
       {
         QRegularExpression fontweight( "Bold|Plain" );
-        if( 0 > r->value().indexOf( fontweight ))
-          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << std::endl;
+        if( 0 > r.value().indexOf( fontweight ))
+          std::cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r.value().toStdString() << std::endl;
       }
     }
 
@@ -307,27 +271,20 @@ namespace IAEX
     // to the cell
     QRegularExpression ignoreRules("PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion");
 
-    if( 0 > r->attribute().indexOf( ignoreRules ) )
+    if( 0 > r.attribute().indexOf( ignoreRules ) )
     {
-      // check if rule already existes
-      bool found = false;
-      rules_t::iterator iter = rules_.begin();
-      while( iter != rules_.end() )
-      {
-        if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
-        {
-          found = true;
-          (*iter)->setValue( r->value() );
-          break;
-        }
-        ++iter;
-      }
+      // check if rule already exists
+      auto it = std::find_if(rules_.begin(), rules_.end(), [&r] (const auto &rule) {
+          return rule.attribute().indexOf(r.attribute(), 0, Qt::CaseInsensitive) == 0;
+        });
 
-      if( !found )
-        rules_.push_back(r);
+      if (it != rules_.end()) {
+        it->setValue(r.value());
+      } else {
+        rules_.push_back(std::move(r));
+      }
     }
   }
-
 
   /*!
    * \author Anders Fernström
@@ -339,33 +296,32 @@ namespace IAEX
    */
   void Cell::applyRulesToStyle()
   {
-    rules_t::iterator current = rules_.begin();
-    while( current != rules_.end() )
+    for (const auto &rule: rules_)
     {
-      if( (*current)->attribute() == "FontSlant" )
+      if( rule.attribute() == "FontSlant" )
       {
-        if( (*current)->value() == "Italic" )
+        if( rule.value() == "Italic" )
           style_.textCharFormat()->setFontItalic( true );
       }
-      else if( (*current)->attribute() == "TextAlignment" )
+      else if( rule.attribute() == "TextAlignment" )
       {
-        if( (*current)->value() == "Left" )
+        if( rule.value() == "Left" )
           style_.setAlignment( Qt::AlignLeft );
-        else if( (*current)->value() == "Right" )
+        else if( rule.value() == "Right" )
           style_.setAlignment( Qt::AlignRight );
-        else if( (*current)->value() == "Center" )
+        else if( rule.value() == "Center" )
           style_.setAlignment( Qt::AlignHCenter );
-        else if( (*current)->value() == "Justify" )
+        else if( rule.value() == "Justify" )
           style_.setAlignment( Qt::AlignJustify );
       }
-      else if( (*current)->attribute() == "TextJustification" )
+      else if( rule.attribute() == "TextJustification" )
       {
         //values: 1,0
       }
-      else if( (*current)->attribute() == "FontSize" )
+      else if( rule.attribute() == "FontSize" )
       {
         bool ok;
-        int size = (*current)->value().toInt(&ok);
+        int size = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -373,32 +329,32 @@ namespace IAEX
             style_.textCharFormat()->setFontPointSize( size );
         }
       }
-      else if( (*current)->attribute() == "FontWeight" )
+      else if( rule.attribute() == "FontWeight" )
       {
 
-        if( (*current)->value() == "Bold" )
+        if( rule.value() == "Bold" )
           style_.textCharFormat()->setFontWeight( QFont::Bold );
-        if( (*current)->value() == "Plain" )
+        if( rule.value() == "Plain" )
           style_.textCharFormat()->setFontWeight( QFont::Normal );
       }
-      else if( (*current)->attribute() == "FontFamily" )
+      else if( rule.attribute() == "FontFamily" )
       {
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-        style_.textCharFormat()->setFontFamilies({(*current)->value()});
+        style_.textCharFormat()->setFontFamilies({rule.value()});
 #else
-        style_.textCharFormat()->setFontFamily( (*current)->value() );
+        style_.textCharFormat()->setFontFamily( rule.value() );
 #endif
       }
-      else if( (*current)->attribute() == "InitializationCell" )
+      else if( rule.attribute() == "InitializationCell" )
       {}
-      else if( (*current)->attribute() == "CellTags" )
+      else if( rule.attribute() == "CellTags" )
       {
-        celltag_ = (*current)->value();
+        celltag_ = rule.value();
       }
-      else if( (*current)->attribute() == "OMNotebook_Margin" )
+      else if( rule.attribute() == "OMNotebook_Margin" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -406,10 +362,10 @@ namespace IAEX
             style_.textFrameFormat()->setMargin( value );
         }
       }
-      else if( (*current)->attribute() == "OMNotebook_Padding" )
+      else if( rule.attribute() == "OMNotebook_Padding" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -417,10 +373,10 @@ namespace IAEX
             style_.textFrameFormat()->setPadding( value );
         }
       }
-      else if( (*current)->attribute() == "OMNotebook_Border" )
+      else if( rule.attribute() == "OMNotebook_Border" )
       {
         bool ok;
-        int value = (*current)->value().toInt(&ok);
+        int value = rule.value().toInt(&ok);
 
         if(ok)
         {
@@ -428,8 +384,6 @@ namespace IAEX
             style_.textFrameFormat()->setBorder( value );
         }
       }
-
-      ++current;
     }
   }
 
@@ -480,30 +434,19 @@ namespace IAEX
     mainlayout_->addWidget( treeView_, 1, 3, Qt::AlignTop );
   }
 
-
-
-
-
-
-
-
-
-
   // ***************************************************************
 
 
-
-
-
-
   /*! \brief Set the cells mainwidget.
-  *
-  * \todo Delete old widget. (Ingemar Axelsson)
   *
   * \param newWidget A pointer to the cells new mainwidget.
   */
   void Cell::setMainWidget(QWidget *newWidget)
   {
+    // Forbid swapping the mainWidget, since that would be messy and isn't needed for now.
+    if (mainWidget_)
+      throw std::logic_error("Cell::setMainWidget(): mainWidget already set.");
+
     if(newWidget != 0)
     {
       mainWidget_ = newWidget;
@@ -515,8 +458,6 @@ namespace IAEX
       palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
       mainWidget_->setPalette(palette);
     }
-    else
-      mainWidget_= 0;
   }
 
   /*!
@@ -560,8 +501,8 @@ namespace IAEX
     treeView_->setBackgroundColor(backgroundColor());
     treeView_->show();
 
-    connect(this, SIGNAL(selected(const bool)),
-      treeView_, SLOT(setSelected(const bool)));
+    connect(this, SIGNAL(selected(bool)),
+      treeView_, SLOT(setSelected(bool)));
   }
 
   TreeView *Cell::treeView()
@@ -578,7 +519,7 @@ namespace IAEX
   *
   *\todo test if repaint is needed here. (Ingemar Axelsson)
   */
-  void Cell::hideTreeView(const bool hidden)
+  void Cell::hideTreeView(bool hidden)
   {
     if(hidden)
     {
@@ -595,7 +536,7 @@ namespace IAEX
 
   /*! \return TRUE if treeview is hidden. Otherwise FALSE.
   */
-  const bool Cell::isTreeViewVisible() const
+  bool Cell::isTreeViewVisible() const
   {
     return treeviewVisible_;
   }
@@ -605,7 +546,7 @@ namespace IAEX
   *
   * \param height New height for cell.
   */
-  void Cell::setHeight(const int height)
+  void Cell::setHeight(int height)
   {
     int h = height;
 
@@ -617,7 +558,7 @@ namespace IAEX
     }*/
 
     if(!treeView_)
-      throw std::logic_error("SetHeight(const int height): TreeView is not set.");
+      throw std::logic_error("SetHeight(int height): TreeView is not set.");
 
         setFixedHeight(h);
 
@@ -704,7 +645,7 @@ namespace IAEX
   /*!
   * \return true if cell is selected, false otherwise.
   */
-  const bool Cell::isSelected() const
+  bool Cell::isSelected() const
   {
     return selected_;
   }
@@ -721,7 +662,7 @@ namespace IAEX
   *
   * \param selected true if cell should be selected, false otherwise
   */
-  void Cell::setSelected(const bool sel)
+  void Cell::setSelected(bool sel)
   {
     selected_ = sel;
     emit selected(selected_);
@@ -755,7 +696,7 @@ namespace IAEX
   }
 
 
-  Cell::rules_t Cell::rules() const
+  const Cell::rules_t& Cell::rules() const
   {
     return rules_;
   }
@@ -898,14 +839,4 @@ namespace IAEX
       printCell(current->child());
     }
   }
-
-  //    void Cell::retain(s)
-  //    {
-  //       references_ += 1;
-  //    }
-
-  //    void Cell::release()
-  //    {
-  //       references_ -= 1;
-  //    }
 }

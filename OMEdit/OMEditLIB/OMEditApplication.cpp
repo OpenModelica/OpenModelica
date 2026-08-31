@@ -1,36 +1,43 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MCP/MCPServer.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -41,10 +48,105 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QTextCodec>
+#include <QTimer>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#include <QStyleHints>
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::path
+#define QT_LIBRRY_INFO_QMLIP QLibraryInfo::QmlImportsPath
+#else
+#define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::location
+#define QT_LIBRRY_INFO_QMLIP QLibraryInfo::ImportsPath
+#endif
+
+void dumpQtPaths()
+{
+  fprintf(stdout, "Qt location/paths:\n");
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PrefixPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DocumentationPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::HeadersPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibrariesPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibraryExecutablesPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::BinariesPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QT_LIBRRY_INFO_QMLIP)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ArchDataPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DataPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ExamplesPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TestsPath)));
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
+    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::SettingsPath)));
+  fflush(NULL);
+}
+
+namespace {
+  QString absolutePath(const QString &fileName)
+  {
+    QFileInfo fileInfo(fileName);
+    QString absoluteFileName = fileName;
+    if (fileInfo.isRelative()) {
+      absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
+    }
+    return absoluteFileName.replace("\\", "/");
+  }
+
+  bool styleSheetArgumentValue(const QString &argument, QString *pFileName)
+  {
+    const QString optionPrefix = "--StyleSheet=";
+    if (argument.startsWith(optionPrefix)) {
+      *pFileName = argument.mid(optionPrefix.length());
+      return true;
+    }
+    return false;
+  }
+
+  bool readStyleSheetFile(const QString &fileName, QString *pStyleSheet, QString *pErrorString)
+  {
+    QFile styleSheetFile(fileName);
+    if (!styleSheetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      *pErrorString = QString("Failed to load stylesheet file %1: %2").arg(fileName, styleSheetFile.errorString());
+      return false;
+    }
+    *pStyleSheet = QString::fromUtf8(styleSheetFile.readAll());
+    pErrorString->clear();
+    return true;
+  }
+
+  void appendStyleSheet(QString *pStyleSheet, const QString &styleSheet)
+  {
+    if (!pStyleSheet->isEmpty()) {
+      pStyleSheet->append("\n");
+    }
+    pStyleSheet->append(styleSheet);
+  }
+}
 
 /*!
  * \class OMEditApplication
@@ -59,23 +161,75 @@
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
-  // set the stylesheet
-  setStyleSheet("file:///:/Resources/css/stylesheet.qss");
-#ifndef WIN32
-  QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
+#if defined(__EMSCRIPTEN__)
+  // Build stamp in the console (stale-artifact diagnosis).
+  EM_ASM({ console.log("[OMEdit-wasm] build " + UTF8ToString($0) + " " + UTF8ToString($1)); }, __DATE__, __TIME__);
 #endif
-  setAttribute(Qt::AA_DontShowIconsInMenus, false);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-  setAttribute(Qt::AA_UseHighDpiPixmaps);
-#endif
-  // Localization
-  //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
     QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
     quit();
     exit(1);
   }
+#ifdef Q_OS_WIN
+  // currently the sandbox does not work with qt6-webengine
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
+  // make QtWebEngineProcess find the Qt dlls!
+  // Qt6Core.dll lives in <install>/bin, so Qt computes its prefix as <install>/ and
+  // looks for QtWebEngine resources/locales under <install>/...
+  // We install those under <install>/bin/... instead, so override the
+  // search paths here before any QtWebEngine subprocess is launched.
+  // Chromium rejects a ".." segment in the resource path.
+  qputenv("QTWEBENGINE_RESOURCES_PATH", QDir::cleanPath(QString::fromLocal8Bit(installationDirectoryPath) + "/bin/resources").toLocal8Bit());
+  QString localesPath = QDir::cleanPath(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales");
+  qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
+#endif // #ifdef Q_OS_WIN
+
+/* We need a better handling of ligth and dark themes.
+ * For now just force light theme for Qt 6.8
+ * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
+ */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  // set the stylesheet
+  QString applicationStyleSheet;
+  QStringList styleSheetLoadErrors;
+  QString defaultStyleSheetLoadError;
+  const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
+  if (!defaultStyleSheetLoaded) {
+    styleSheetLoadErrors.append(defaultStyleSheetLoadError);
+  }
+  if (defaultStyleSheetLoaded && arguments().size() > 1 && !testsuiteRunning) {
+    for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
+      if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
+        const QString absoluteStyleSheetFileName = absolutePath(styleSheetFileName);
+        QString customStyleSheet;
+        QString customStyleSheetLoadError;
+        if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &customStyleSheetLoadError)) {
+          appendStyleSheet(&applicationStyleSheet, customStyleSheet);
+        } else {
+          styleSheetLoadErrors.append(customStyleSheetLoadError);
+        }
+      }
+    }
+  }
+  if (defaultStyleSheetLoaded) {
+#if defined(__EMSCRIPTEN__)
+    // Applying it here pumps the wasm event dispatcher during early startup (like
+    // SplashScreen below), stalling the async library install. Defer to the loop.
+    QTimer::singleShot(0, this, [this, applicationStyleSheet]() { setStyleSheet(applicationStyleSheet); });
+#else
+    setStyleSheet(applicationStyleSheet);
+#endif
+  }
+#ifndef WIN32
+  QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
+#endif // #ifndef WIN32
+  setAttribute(Qt::AA_DontShowIconsInMenus, false);
+  // Localization
+  //*a.severin/ add localization
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
@@ -85,12 +239,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QString qtTranslatorLoadError, translatorLoadError;
   QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
   for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
-    if (i.value() == settingsLocale) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-      QString qtTranslationsLocation = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
-#else
-      QString qtTranslationsLocation = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
-#endif
+    if (i.value().name() == locale) {
+      QString qtTranslationsLocation = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath);
       // install Qt's default translations
       if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
         installTranslator(&mQtTranslator);
@@ -110,23 +260,33 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       break;
     }
   }
-  // Splash Screen
+  // Splash Screen. On wasm QSplashScreen is compiled out (its repaint pumps the
+  // Qt-for-WebAssembly event dispatcher during early startup, which traps); an HTML
+  // overlay drawn straight into the DOM stands in for it instead.
+#if !defined(__EMSCRIPTEN__)
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
   pSplashScreen->setPixmap(pixmap);
   if (!testsuiteRunning) {
     pSplashScreen->show();
   }
+#else
+  if (!testsuiteRunning) {
+    WasmSplash::show();
+  }
+#endif
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
   bool debug = false;
   bool newApiProfiling = false;
+  bool newApiNoJson = false;
   QString fileName = "";
   QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
@@ -139,16 +299,21 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         if (0 == strcmp("true", napiProfilingArg.toUtf8().constData())) {
           newApiProfiling = true;
         }
+      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--NAPINoJson=",13) == 0) {
+        QString napiNoJsonArg = arguments().at(i);
+        napiNoJsonArg.remove("--NAPINoJson=");
+        if (0 == strcmp("true", napiNoJsonArg.toUtf8().constData())) {
+          newApiNoJson = true;
+        }
+      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
+        dumpQtPaths();
+      } else if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
+        // The stylesheet option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {
           // if path is relative make it absolute
-          QFileInfo file (fileName);
-          QString absoluteFileName = fileName;
-          if (file.isRelative()) {
-            absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
-          }
-          absoluteFileName = absoluteFileName.replace("\\", "/");
+          const QString absoluteFileName = absolutePath(fileName);
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
@@ -162,7 +327,20 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   MainWindow *pMainwindow = MainWindow::instance();
   pMainwindow->setDebug(debug);
   pMainwindow->setNewApiProfiling(newApiProfiling);
+  pMainwindow->setNewApiNoJson(newApiNoJson);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
+
+  // The rest of startup makes blocking omc calls (setUpMainWindow loads libraries,
+  // queries the version, builds the library tree). On wasm omc lives in a Web
+  // Worker reached over Asyncify, and those blocking calls are only safe once Qt's
+  // event loop is running: a raw suspend during construction corrupts Qt's wasm
+  // event pump (QWasmSuspendResumeControl). So defer this whole block to the first
+  // event-loop tick on wasm; run it inline everywhere else.
+  auto initMainWindow = [=]() {
+#if defined(__EMSCRIPTEN__)
+  extern void omcInstallWorkerVfsFileEngine();
+  omcInstallWorkerVfsFileEngine();
+#endif
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
@@ -172,6 +350,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (!invalidFlags.isEmpty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
                                                           Helper::scriptingKind, Helper::errorLevel));
+  }
+  // show stylesheet load error
+  if (!styleSheetLoadErrors.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, styleSheetLoadErrors.join("\n"), Helper::scriptingKind, Helper::errorLevel));
   }
   // show qt translator load error
   if (!qtTranslatorLoadError.isEmpty()) {
@@ -192,11 +374,29 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
   }
 
+#if !defined(__EMSCRIPTEN__)
+  if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
+    int port = 3000;
+    bool enableAdminTools = false;
+    if (pSettings->contains("modelContextProtocol/port")) {
+      port = pSettings->value("modelContextProtocol/port").toInt();
+    }
+    if (pSettings->contains("modelContextProtocol/enableAdminTools")) {
+      enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
+    }
+    new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
+  }
+#endif
+
   if (!testsuiteRunning) {
     // finally show the main window
     pMainwindow->show();
     // hide the splash screen
+#if !defined(__EMSCRIPTEN__)
     SplashScreen::instance()->finish(pMainwindow);
+#else
+    WasmSplash::finish();
+#endif
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
     //! Fixes issue #7456
     if (OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked()) {
@@ -219,6 +419,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       }
     }
   }
+  }; // initMainWindow
+#if defined(__EMSCRIPTEN__)
+  QTimer::singleShot(0, this, initMainWindow);
+#else
+  initMainWindow();
+#endif
 }
 
 /*!

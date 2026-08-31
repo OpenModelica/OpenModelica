@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBBackendUtil
 " file:         NBBackendUtil.mo
   package:      NBBackendUtil
@@ -54,68 +59,12 @@ public
 
   // old imports
   import MMath;
+  import Rational;
 
-  uniontype Rational
-    record RATIONAL
-      Integer n;
-      Integer d;
-    end RATIONAL;
-
-    function toString
-      input Rational r;
-      output String str = intString(r.n) + "/" + intString(r.d);
-    end toString;
-
-    function normalize
-      input output Rational r;
-    algorithm
-      if r.n == 0 then
-        r.d := 1;
-      end if;
-    end normalize;
-
-    function add
-      input Rational r1;
-      input Rational r2;
-      output Rational r = finalize(r1.n*r2.d + r2.n*r1.d, r1.d*r2.d);
-    end add;
-
-    function multiply
-      input Rational r1;
-      input Rational r2;
-      output Rational r = finalize(r1.n*r2.n, r1.d*r2.d);
-    end multiply;
-
-    function isEqual
-      input Rational r1;
-      input Rational r2;
-      output Boolean b = r1.n == r2.n and r1.d == r2.d;
-    end isEqual;
-
-    function convert
-      input Rational r;
-      output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
-    end convert;
-
-  protected
-    function finalize
-      input Integer i1;
-      input Integer i2;
-      output Rational r;
-    protected
-      Integer d = intGcd(i1,i2);
-    algorithm
-      r := normalize(RATIONAL(intDiv(i1,d), intDiv(i2,d)));
-    end finalize;
-
-    function intGcd "returns the greatest common divisor for two Integers"
-      input Integer i1;
-      input Integer i2;
-      output Integer i;
-    algorithm
-      i := if i2 == 0 then i1 else intGcd(i2, intMod(i1,i2));
-    end intGcd;
-  end Rational;
+  function convertRational
+    input Rational r;
+    output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
+  end convertRational;
 
   function findTrueIndices
     "returns all indices of elements that are true"
@@ -285,24 +234,46 @@ public
 
   function isContinuous
     input Expression exp;
-    input Boolean init;
+    input Boolean staticAsContinuous;
     output Boolean b;
   algorithm
-    b := Expression.fold(exp, function isContinuousFold(init = init), true);
+    b := Expression.fold(exp, function isContinuousFold(staticAsContinuous = staticAsContinuous), true);
   end isContinuous;
 
   function isContinuousFold
     input Expression exp;
-    input Boolean init;
+    input Boolean staticAsContinuous;
     input output Boolean b;
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init), sourceInfo());
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous), sourceInfo());
         else true;
       end match;
     end if;
   end isContinuousFold;
+
+  function containsContinuousVar
+    "Returns true if the expression contains at least one continuous variable.
+    Unlike isContinuous (ALL-fold), this is an OR-fold: any single continuous
+    variable makes the whole expression 'continuous' for event purposes."
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := Expression.fold(exp, containsContinuousVarFold, false);
+  end containsContinuousVar;
+
+  function containsContinuousVarFold
+    input Expression exp;
+    input output Boolean b;
+  algorithm
+    if not b then
+      b := match exp
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(staticAsContinuous = false), sourceInfo());
+        else false;
+      end match;
+    end if;
+  end containsContinuousVarFold;
 
   function getLocalSystem
     input array<list<Integer>> m          "global adjacency matrix";
@@ -346,9 +317,9 @@ public
     input output String str;
     input Option<Integer> i_opt = NONE();
   protected
-    String i = if Util.isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
+    String i = if isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
   algorithm
     str := NBVariable.FUNCTION_DERIVATIVE_STR + i + "_" + str;
   end makeFDerString;
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBBackendUtil;

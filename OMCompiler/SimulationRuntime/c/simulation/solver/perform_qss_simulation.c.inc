@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -36,8 +33,22 @@
 #include "openmodelica_func.h"
 
 #include "util/omc_error.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 
+
+/* See the note in perform_simulation.c.inc: the Rust simulation runtime has its
+ * own loop, so this one is compiled away under `--simCodeTarget=C+Rust`.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performQSSSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
 
 /*! enum error_msg
  * \brief  Returnvalues of the functions in this file
@@ -70,8 +81,6 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  */
 int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
-
   SIMULATION_INFO *simInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;
   uinteger currStepNo = 0;
@@ -156,7 +165,8 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   diffQ = 0.0; dTnextQ = 0.0; nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
-    dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dQ[i] = 0.0001 * nominal;
     tx[i] = tq[i] = simInfo->startTime;
     qik[i] = state[i];
     xik[i] = state[i];
@@ -225,11 +235,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     /* try */
     MMC_TRY_INTERNAL(simulationJumpBuffer)
     {
-#endif
-
-#ifdef USE_DEBUG_TRACE
-    if (omc_useStream[OMC_LOG_TRACE])
-      printf("TRACE: push loop step=%u, time=%.12g\n", currStepNo, solverInfo->currentTime);
 #endif
 
 #ifdef D
@@ -419,8 +424,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
       infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
       break;
     }
-
-    TRACE_POP /* pop loop */
   }
   /* End of main loop */
 
@@ -449,7 +452,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
    free(dQ);
    /* end - free memory */
 
-  TRACE_POP
   return retValue;
 }
 
@@ -588,3 +590,5 @@ static uinteger minStep(const modelica_real* tqp, const uinteger size )
   }
   return ind;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

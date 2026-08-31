@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -46,6 +43,7 @@
 #include "../../util/omc_file.h"
 #include "external_input.h"
 #include "../options.h"
+#include "../arrayIndex.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
@@ -57,6 +55,26 @@
 #include "real_time_sync.h"
 #endif
 
+/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
+ * its own loop, so nothing below is ever entered -- and every runtime function
+ * it names would otherwise have to exist twice. Compile it away instead; the
+ * two callbacks stay valid function pointers that report if anything calls them.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "updateContinuousSystem: the Rust simulation runtime drives the model itself");
+}
+
+int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
+
 /*! \fn updateContinuousSystem
  *
  *  Function to update the whole system with EventIteration.
@@ -66,8 +84,6 @@
  */
 static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
-
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
 
@@ -86,8 +102,6 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);
-
-  TRACE_POP
 }
 
 static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
@@ -312,8 +326,6 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
       data->real_time_sync.maxLate = res;
     }
   }
-
-  printAllVarsDebug(data, 0, OMC_LOG_DEBUG);  /* ??? */
 #endif
 }
 
@@ -378,6 +390,9 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
   {
     addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
+    /* euler, rungekutta and the sym solvers accumulate into solverStatsTmp
+     * instead of overwriting it, so keeping it would count it twice. */
+    resetSolverStats(&(solverInfo->solverStatsTmp));
   }
 }
 
@@ -390,8 +405,6 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
  */
 int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
-
   int retValIntegrator=0;
   int retValue=0;
   int i, retry=0, steadStateReached=0;
@@ -404,7 +417,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   MEASURE_TIME fmt;
   fmtInit(data, &fmt);
 
-  printAllVarsDebug(data, 0, OMC_LOG_DEBUG); /* ??? */
   if (!compiledInDAEMode)
   {
     printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
@@ -448,12 +460,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         deactivateLogging();
       }
 
-#ifdef USE_DEBUG_TRACE
-      if(omc_useStream[OMC_LOG_TRACE]) {
-        printf("TRACE: push loop step=%u, time=%.12g\n", __currStepNo, solverInfo->currentTime);
-      }
-#endif
-
       /* check for steady state */
       if (omc_flag[FLAG_STEADY_STATE])
       {
@@ -464,7 +470,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           double currDer;
           for(i=data->modelData->nStates; i<2*data->modelData->nStates; ++i)
           {
-            currDer = fabs(data->localData[0]->realVars[i] / data->modelData->realVarsData[i].attribute.nominal);
+            modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+            currDer = fabs(data->localData[0]->realVars[i] / nominal);
             if(maxDer < currDer)
               maxDer = currDer;
           }
@@ -491,6 +498,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
         }
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
@@ -547,6 +555,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
           continue;
         }
 
@@ -610,8 +619,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           break;
         }
       }
-
-      TRACE_POP /* pop loop */
     } /* end while solver */
   } /* end else */
 
@@ -621,6 +628,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Steady state has not been reached.\nThis may be due to too restrictive relative tolerance (%g) or short stopTime (%g).", steadyStateTol, simInfo->stopTime);
   }
 
-  TRACE_POP
   return retValue;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

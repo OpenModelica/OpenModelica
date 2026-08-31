@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -449,7 +453,6 @@ protected
   Graph iGraph;
   String gid;
   Boolean directed;
-  Integer newGraphIdx;
   list<Integer> nodeIdc;
   list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPHINFO definition). <attributeIndex,attributeValue>
 algorithm
@@ -477,12 +480,12 @@ protected
   list<Graph> graphs;
   Graph firstGraph;
 algorithm
-  oGraph := match(iGraphInfo)
-    case(GRAPHINFO(graphCount=0))
+  oGraph := match iGraphInfo
+    case GRAPHINFO(graphCount=0)
       then NONE();
-    case(GRAPHINFO(graphs=graphs))
-      equation
-        firstGraph = listHead(graphs);
+    case GRAPHINFO(graphs=graphs)
+      algorithm
+        firstGraph := listHead(graphs);
       then SOME((1,firstGraph));
   end match;
 end getMainGraph;
@@ -496,14 +499,14 @@ protected
   list<Attribute> attributes;
   Option<tuple<Attribute,Integer>> tmpRes;
 algorithm
-  oAttribute := match(iAttributeName,iAttributeTarget,iGraphInfo)
-    case(_,_,GRAPHINFO(attributes=attributes))
-      equation
-        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+  oAttribute := match iGraphInfo
+    case GRAPHINFO(attributes=attributes)
+      algorithm
+        tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
-    case(_,_,GRAPHINFO(attributes=attributes))
-      equation
-        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+    case GRAPHINFO(attributes=attributes)
+      algorithm
+        tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
    end match;
 end getAttributeByNameAndTarget;
@@ -521,15 +524,15 @@ protected
   AttributeTarget attTarget;
    Option<tuple<Attribute,Integer>> tmpAttribute;
 algorithm
-  oAttribute := matchcontinue(iList,iAttributeName,iAttributeTarget)
-    case((head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest,_,_)
-      equation
-        true = stringEq(name, iAttributeName);
-        true = compareAttributeTargets(iAttributeTarget,attTarget);
+  oAttribute := matchcontinue iList
+    case (head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest
+      algorithm
+        true := stringEq(name, iAttributeName);
+        true := compareAttributeTargets(iAttributeTarget,attTarget);
       then SOME((head,attIdx));
-    case(head::rest,_,_)
-      equation
-        tmpAttribute = getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
+    case head::rest
+      algorithm
+        tmpAttribute := getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
       then tmpAttribute;
     else
       then NONE();
@@ -552,10 +555,10 @@ protected function compareAttributeTarget0
   input AttributeTarget iTarget;
   output Integer oCodec;
 algorithm
-  oCodec := match(iTarget)
-    case(TARGET_NODE()) then 0;
-    case(TARGET_EDGE()) then 1;
-    case(TARGET_GRAPH()) then 1;
+  oCodec := match iTarget
+    case TARGET_NODE() then 0;
+    case TARGET_EDGE() then 1;
+    case TARGET_GRAPH() then 1;
   end match;
 end compareAttributeTarget0;
 
@@ -611,8 +614,7 @@ protected
     Integer graphCount; //number of graphs in the graphs list
     list<Node> nodes;
     Integer nodeCount; //number of nodes in the nodes list
-    list<Edge> edges;
-    Integer edgeCount; //number of edges in the edge list
+    //number of edges in the edge list
     list<Attribute> attributes;
     String graphNodeKey;
     String graphEdgeKey;
@@ -627,9 +629,6 @@ protected function printNode
   input Node node;
 protected
     String id,atts;
-    String color;
-    list<NodeLabel> nodeLabels;
-    ShapeType shapeType;
     Option<String> optDesc;
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
 algorithm
@@ -638,5 +637,5 @@ algorithm
   print("node: "+id+" desc: "+Util.getOption(optDesc)+"\n\tatts: "+atts+"\n");
 end printNode;
 
-annotation(__OpenModelica_Interface="susan");
+annotation(__OpenModelica_Interface="codegen_graphml");
 end GraphML;

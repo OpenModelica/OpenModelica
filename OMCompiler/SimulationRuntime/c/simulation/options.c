@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -90,15 +87,6 @@ int checkCommandLineArguments(int argc, char **argv)
     omc_flagValue[i] = NULL;
   }
 
-#ifdef USE_DEBUG_OUTPUT
-  debugStreamPrint(OMC_LOG_STDOUT, 1, "used command line options");
-  for(i=1; i<argc; ++i)
-    debugStreamPrint(OMC_LOG_STDOUT, 0, "%s", argv[i]);
-  messageClose(OMC_LOG_STDOUT);
-
-  debugStreamPrint(OMC_LOG_STDOUT, 1, "interpreted command line options");
-#endif
-
   for(i=1; i<argc; ++i)
   {
     int found=0;
@@ -120,10 +108,6 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found=1;
 
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s", FLAG_NAME[j]);
-#endif
-
         break;
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
@@ -142,10 +126,6 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found = 1;
         i++;
-
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
-#endif
 
         break;
       }
@@ -166,26 +146,16 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found = 1;
 
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
-#endif
         break;
       }
     }
 
     if(!found)
     {
-#ifdef USE_DEBUG_OUTPUT
-      messageClose(OMC_LOG_STDOUT);
-#endif
       warningStreamPrint(OMC_LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
       return 1;
     }
   }
-
-#ifdef USE_DEBUG_OUTPUT
-  messageClose(OMC_LOG_STDOUT);
-#endif
 
   return 0;
 }

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -46,13 +50,17 @@ public import FCore;
 
 protected import List;
 protected import ComponentReference;
-protected import ExpressionDump;
+protected import ComponentReferenceBasics;
+protected import Expression;
 protected import DAEUtil;
 protected import Util;
 protected import DAEDump;
 protected import Error;
 protected import HashTableCrToExpOption;
 protected import Flags;
+protected import SCode;
+protected import Types;
+protected import ExpressionBasics;
 
 protected
 uniontype Transition "
@@ -100,9 +108,7 @@ Author: BTH
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 protected
-  list<DAE.Element> elementLst, elementLst1, flatSmLst, otherLst, elementLst2, elementLst3;
-  list<Transition> t;
-  DAE.Element compElem;
+  list<DAE.Element> elementLst, flatSmLst, otherLst, elementLst2, elementLst3;
   Integer nOfSubstitutions;
 
   // COMP
@@ -179,7 +185,6 @@ protected
   DAE.ComponentRef crefInitialState;
 
   FlatSmSemantics flatSmSemanticsBasics, flatSmSemanticsWithPropagation, flatSmSemantics;
-  list<Transition> transitions;
   list<DAE.Element> vars "SMS veriables";
   list<DAE.Element> knowns "SMS constants/parameters";
   list<DAE.Element> eqs "SMS equations";
@@ -231,10 +236,10 @@ protected
   Integer nOfHits = 0;
   DAE.ComponentRef componentRef;
   list<DAE.Element> dAElist1, dAElist2;
-  DAE.FunctionTree emptyTree;
+  AvlTreePathFunction.Tree emptyTree;
 algorithm
   DAE.SM_COMP(componentRef, dAElist1) := inSmComp;
-  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  emptyTree := AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist2), _, (_,(_, nOfHits))) := DAEUtil.traverseDAE(DAE.DAE(dAElist1), emptyTree, Expression.traverseSubexpressionsHelper, (traversingSubsTicksInState, (componentRef, 0)));
   outSmComp := DAE.SM_COMP(componentRef, dAElist2);
 end elabXInStateOps_CT;
@@ -275,7 +280,7 @@ Author: BTH
 protected
   Integer i;
   Boolean found;
-  DAE.Exp c2, c3, c4, conditionNew, substTickExp, substTimeExp;
+  DAE.Exp c2, c3, c4, substTickExp, substTimeExp;
   DAE.ComponentRef stateRef;
   Transition t2;
   list<Transition> tElab = {} "Elaborated transitions";
@@ -371,12 +376,12 @@ algorithm
   cref := qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
   DAE.EQUATION(lhsExp, rhsExp, elemSource) := inSmeqs;
   DAE.CREF(lhsRef, ty) := lhsExp;
-  // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReference.printComponentRefStr(cref) + "\n");
-  // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReference.printComponentRefStr(lhsRef) + "\n");
-  if ComponentReference.crefEqual(cref, lhsRef) then
-    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionDump.printExpStr(rhsExp) + "\n");
+  // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
+  // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReferenceBasics.printComponentRefStr(lhsRef) + "\n");
+  if ComponentReferenceBasics.crefEqual(cref, lhsRef) then
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionBasics.printExpStr(rhsExp) + "\n");
     (rhsExp2, _) :=  Expression.traverseExpTopDown(rhsExp, traversingSubsXInState, (xInState, substExp, false));
-    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionDump.printExpStr(rhsExp2) + "\n");
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionBasics.printExpStr(rhsExp2) + "\n");
   else
     rhsExp2 := rhsExp;
   end if;
@@ -397,7 +402,6 @@ algorithm
   (outExp, outXSubstHit) := match (inExp, inXSubstHit)
     local
       DAE.Exp subsExp;
-      Boolean hit;
       String xInState, name;
     case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, _)) guard name == xInState
       then (subsExp, (xInState, subsExp, true));
@@ -478,7 +482,7 @@ protected
   list<DAE.Element> equations;
   DAE.ElementSource source;
 algorithm
-  outEqnsVars := match (inEqn)
+  outEqnsVars := match inEqn
     case DAE.EQUATION() then addStateActivationAndReset1(inEqn, inEnclosingSMComp, inEnclosingFlatSmSemantics, crToExpOpt, accEqnsVars);
     case DAE.WHEN_EQUATION(condition,equations,NONE(),source)
       algorithm
@@ -525,8 +529,8 @@ which is then handled specially in the back-end.
 protected
   list<DAE.ComponentRef> stateVarCrefs;
 
-  DAE.ComponentRef crefLHS, enclosingStateRef, substituteRef, activeResetRef, activeResetStatesRef, cref2;
-  Boolean found, is;
+  DAE.ComponentRef crefLHS, enclosingStateRef, cref2;
+  Boolean found;
   DAE.Type tyLHS;
   DAE.Element eqn, eqn1, eqn2, var2, varDecl;
   DAE.CallAttributes attr;
@@ -549,7 +553,7 @@ algorithm
     eqn := DAE.EQUATION(exp, scalarNew, source);
 
     // If it is an assigning state equation, transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
-    if List.any(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
+    if List.any(stateVarCrefs, function ComponentReferenceBasics.crefEqual(inComponentRef1=crefLHS)) then
       // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
       eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
 
@@ -627,20 +631,18 @@ protected
   DAE.Type tyLHS;
   // EQUATION
   DAE.Exp exp;
-  DAE.Exp scalar, scalarNew;
-  DAE.ElementSource source;
   // WHEN_EQUATION
   list<DAE.Element> equations;
   Option<DAE.Element> elsewhen_;
 algorithm
-  res := match (eqn)
-    case DAE.EQUATION(exp, scalar, source)
+  res := match eqn
+    case DAE.EQUATION(exp, _, _)
       algorithm
         cref := DAEUtil.varCref(var);
         try
           // Handle case with LHS component reference
           DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
-          res := ComponentReference.crefEqual(crefLHS, cref);
+          res := ComponentReferenceBasics.crefEqual(crefLHS, cref);
         else
           res := false;
         end try;
@@ -668,15 +670,13 @@ Return true if variable x appears as previous(x) in the RHS of a scalar equation
 protected
   DAE.ComponentRef cref;
   // EQUATION
-  DAE.Exp exp;
-  DAE.Exp scalar, scalarNew;
-  DAE.ElementSource source;
+  DAE.Exp scalar;
   // WHEN_EQUATION
   list<DAE.Element> equations;
   Option<DAE.Element> elsewhen_;
 algorithm
-  found := match (eqn)
-    case DAE.EQUATION(exp, scalar, source)
+  found := match eqn
+    case DAE.EQUATION(_, scalar, _)
       algorithm
         cref := DAEUtil.varCref(var);
         (_, (_, found)) := Expression.traverseExpTopDown(scalar, traversingFindPreviousCref, (cref, false));
@@ -708,7 +708,7 @@ algorithm
   (outExp, outCrefHit) := match (inExp, inCrefHit)
     local
       DAE.ComponentRef cr, cref;
-    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, _)}, _), (cref, _)) guard ComponentReference.crefEqual(cr, cref)
+    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, _)}, _), (cref, _)) guard ComponentReferenceBasics.crefEqual(cr, cref)
       then (inExp, (cref, true));
     else (inExp, inCrefHit);
   end match;
@@ -728,14 +728,13 @@ Given LHS 'a.x' and its start value 'x_start', as well as its enclosing state co
   input HashTableCrToExpOption.HashTable crToExpOpt "Table mapping variable declaration in the enclosing state to start values";
   output DAE.Element outEqn;
 protected
-  DAE.Exp activeExp, activeResetExp, activeResetStatesExp, orExp, andExp, startValueExp, preExp;
+  DAE.Exp activeExp, activeResetExp, activeResetStatesExp, orExp, andExp, startValueExp;
   DAE.Element reinitElem;
   Option<DAE.Exp> startValueOpt;
   DAE.ComponentRef initStateRef, preRef;
   Integer i, nStates;
   array<DAE.Element> enclosingFlatSMComps;
   DAE.Type tArrayBool;
-  DAE.CallAttributes callAttributes;
 algorithm
   FLAT_SM_SEMANTICS(smComps=enclosingFlatSMComps) := inEnclosingFlatSmSemantics;
   DAE.SM_COMP(componentRef=initStateRef) := arrayGet(enclosingFlatSMComps, 1); // initial state
@@ -762,7 +761,7 @@ algorithm
 
   // a.active and (smOf.fsm_of_a.activeReset or smOf.fsm_of_a.activeResetStates[i])
   andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT), orExp);
-  //callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  //callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   // pre(activeExp)
   //preExp := DAE.CALL(Absyn.IDENT("pre"), {activeExp}, callAttributes);
   //andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT),  DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), preExp));
@@ -815,10 +814,10 @@ Return true if element is a VAR containing the cref, otherwise false"
   input DAE.ComponentRef inCref;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.ComponentRef cref;
-    case DAE.VAR(componentRef=cref) guard ComponentReference.crefEqual(cref, inCref) then true;
+    case DAE.VAR(componentRef=cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
     else then false;
   end match;
 end isCrefInVar;
@@ -869,7 +868,7 @@ algorithm
   // a.active and (smOf.fsm_of_a.activeReset or smOf.fsm_of_a.activeResetStates[i])
   andExp := DAE.LBINARY(activeExp, DAE.AND(DAE.T_BOOL_DEFAULT), orExp);
 
-  callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(inLHSty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   // previous(a.x)
   previousExp := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(inLHSCref, inLHSty)}, callAttributes);
 
@@ -942,7 +941,7 @@ algorithm
   end try;
   // reference the active indicator for this state
   activeRef := DAE.CREF(qCref("active", DAE.T_BOOL_DEFAULT, {}, inStateCref), DAE.T_BOOL_DEFAULT);
-  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   if isResetEquation then // x_previous
     expElse := DAE.CREF(ComponentReference.appendStringLastIdent("_previous", cref), ty);
   else                    // previous(x)
@@ -978,7 +977,7 @@ algorithm
   end try;
   // reference the active indicator for this state
   activeRef := DAE.CREF(qCref("active", DAE.T_BOOL_DEFAULT, {}, inStateCref), DAE.T_BOOL_DEFAULT);
-  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
   expElse := DAE.RCONST(0);
   scalar1 := DAE.IFEXP(activeRef, scalar, expElse);
   // state.x = if state.active then .. else expElse
@@ -999,11 +998,9 @@ algorithm
   (outExp, outCrefHit) := match (inExp, inCrefHit)
     local
       DAE.ComponentRef cr, cref, substituteRef;
-      Boolean hit;
-      DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _),
-      (cref, _)) guard ComponentReference.crefEqual(cr, cref)
+      (cref, _)) guard ComponentReferenceBasics.crefEqual(cr, cref)
       algorithm
         print("StateMachineFlatten.traversingSubsPreviousCref: cr: "+ComponentReference.crefStr(cr)+", cref: "+ComponentReference.crefStr(cref)+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
@@ -1028,11 +1025,9 @@ algorithm
     local
       DAE.ComponentRef cr, substituteRef;
       list<DAE.ComponentRef> crefs;
-      Boolean hit;
-      DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _), (crefs, _))
-      guard List.any(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
+      guard List.any(crefs, function ComponentReferenceBasics.crefEqual(inComponentRef1=cr))
       algorithm
         // print("StateMachineFlatten.traversingSubsPreviousCrefs: cr: "+ComponentReference.crefStr(cr)+", crefs: " + stringDelimitList(List.map(crefs, ComponentReference.crefStr), ",")+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cr);
@@ -1073,7 +1068,7 @@ protected
   DAE.ComponentRef preRef, initStateRef, initRef, resetRef, activeRef, stateRef, activePlotIndicatorRef;
   DAE.Element initVar, activePlotIndicatorVar, ticksInStateVar, timeEnteredStateVar, timeInStateVar;
   DAE.Element activePlotIndicatorEqn, ticksInStateEqn, timeEnteredStateEqn, timeInStateEqn;
-  DAE.Exp rhs, andExp, eqExp, activeResetStateRefExp, activeStateRefExp, activeResetRefExp;
+  DAE.Exp rhs, andExp, eqExp;
   DAE.Type tArrayBool, tArrayInteger;
 
   // FLAT_SM_SEMANTICS
@@ -1084,7 +1079,7 @@ protected
   list<DAE.Element> smvars "SMS veriables";
   list<DAE.Element> smknowns "SMS constants/parameters";
   list<DAE.Element> smeqs "SMS equations";
-  Option<DAE.ComponentRef> enclosingStateOption "Cref to enclosing state if any"; // FIXME needed?
+  // FIXME needed?
   list<DAE.Element> pvars = {} "Propagation related variables";
   list<DAE.Element> peqs = {} "Propagation equations";
 
@@ -1352,8 +1347,8 @@ protected
   list<DAE.Element> vars "SMS veriables", knowns "SMS constants/parameters";
   Integer i;
 
-  DAE.ComponentRef preRef, cref, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
-  DAE.Element var, nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
+  DAE.ComponentRef preRef, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
+  DAE.Element nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
 
   // Modeling arrays with size nStates
   Integer nStates;
@@ -1372,7 +1367,6 @@ protected
   // TRANSITION
   Integer from;
   Integer to;
-  DAE.Exp condition;
   Boolean immediate;
   Boolean reset;
   Boolean synchronize;
@@ -1398,7 +1392,7 @@ algorithm
 
   (t, cExps) := createTandC(q, inTransitions);
   // print("StateMachineFlatten.basicFlatSmSemantics: transitions:\n\t" + stringDelimitList(List.map(t, dumpTransitionStr), "\n\t") + "\n");
-  // print("StateMachineFlatten.basicFlatSmSemantics: conditions\n\t" + stringDelimitList(List.map(cExps, ExpressionDump.printExpStr), "\n\t") + "\n");
+  // print("StateMachineFlatten.basicFlatSmSemantics: conditions\n\t" + stringDelimitList(List.map(cExps, ExpressionBasics.printExpStr), "\n\t") + "\n");
 
   defaultIntVar := createVarWithDefaults(ComponentReference.makeDummyCref(), DAE.DISCRETE(), DAE.T_INTEGER_DEFAULT, {});
   defaultBoolVar := createVarWithDefaults(ComponentReference.makeDummyCref(), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, {});
@@ -1570,7 +1564,7 @@ algorithm
     exp1 := DAE.CREF(arrayGet(cRefs,i), DAE.T_BOOL_DEFAULT);
     DAE.VAR(binding=bindExp) := arrayGet(tImmediateVars,i);
     // Check whether it is an immediate or an delayed transition
-    rhs := if Util.applyOptionOrDefault(bindExp, function Expression.expEqual(inExp1=DAE.BCONST(true)), false) then
+    rhs := if Util.applyOptionOrDefault(bindExp, function ExpressionBasics.expEqual(inExp1=DAE.BCONST(true)), false) then
       // immediate transition
       exp else
       // delayed transition
@@ -1851,7 +1845,7 @@ Check if element is a FLAT_SM.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.FLAT_SM() then true;
     else false;
   end match;
@@ -1864,7 +1858,7 @@ Check if element is a SM_COMP.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.SM_COMP() then true;
     else false;
   end match;
@@ -1877,7 +1871,7 @@ Return true if element is a transition, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition"))) then true;
     else false;
   end match;
@@ -1889,7 +1883,7 @@ Return true if element is an initialState, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"))) then true;
     else false;
   end match;
@@ -1901,7 +1895,7 @@ Return true if element is an EQUATION, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.EQUATION() then true;
     else false;
   end match;
@@ -1913,7 +1907,7 @@ Return true if element is an EQUATION or WHEN_EQUATION, otherwise false"
     input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.EQUATION() then true;
     case DAE.WHEN_EQUATION() then true;
     else false;
@@ -1926,7 +1920,7 @@ Return true if element is an EQUATION with at least one pre(..) or previous(..) 
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.Exp exp;
       DAE.Exp scalar;
@@ -1943,7 +1937,7 @@ Return true if element is an VAR, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.VAR() then true;
     else false;
   end match;
@@ -1957,10 +1951,10 @@ Return true if the componentRef of the second argument equals the componentRef o
   input DAE.ComponentRef inCref;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.ComponentRef cref;
-    case DAE.SM_COMP(cref) guard ComponentReference.crefEqual(cref, inCref) then true;
+    case DAE.SM_COMP(cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
     else false;
   end match;
 end sMCompEqualsRef;
@@ -1981,7 +1975,7 @@ protected
 algorithm
   TRANSITION(from, to, condition, immediate, reset, synchronize, priority) := transition;
   transitionStr := "TRANSITION(from="+intString(from)+", to="+intString(to)+
-    ", condition="+ExpressionDump.printExpStr(condition)+
+    ", condition="+ExpressionBasics.printExpStr(condition)+
     ", immediate="+boolString(immediate)+", reset="+boolString(reset)+
     ", synchronize="+boolString(synchronize)+", priority="+intString(priority)+")";
 end dumpTransitionStr;
@@ -1993,7 +1987,6 @@ Wrap equations in when-clauses as long as Synchronous Features are not supported
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 protected
-  Integer nOfSubstitutions;
   list<DAE.Element> eqnLst, otherLst;
   DAE.Element whenEq;
   DAE.Exp cond1, cond2, condition;
@@ -2036,17 +2029,16 @@ algorithm
   outExp := match inElem
     local
       DAE.Exp exp;
-      DAE.Exp scalar;
       DAE.ComponentRef cref;
       DAE.Ident firstIdent;
       DAE.Ident lastIdent;
     case DAE.EQUATION(exp=exp)
-      equation
-        DAE.CREF(componentRef=cref) = exp;
-        firstIdent = ComponentReference.crefFirstIdent(cref);
-        true = firstIdent == "smOf";
-        lastIdent = ComponentReference.crefLastIdent(cref);
-        true = lastIdent == inLastIdent;
+      algorithm
+        DAE.CREF(componentRef=cref) := exp;
+        firstIdent := ComponentReferenceBasics.crefFirstIdent(cref);
+        true := firstIdent == "smOf";
+        lastIdent := ComponentReferenceBasics.crefLastIdent(cref);
+        true := lastIdent == inLastIdent;
       then exp;
   end match;
 end extractSmOfExps;
@@ -2083,7 +2075,6 @@ algorithm
   (outExp,outHitCount) := match inExp
     local
       DAE.Exp expX;
-      DAE.CallAttributes attr;
     case DAE.CALL(Absyn.IDENT("sample"),
     { expX,
       DAE.CLKCONST(DAE.INFERRED_CLOCK())},

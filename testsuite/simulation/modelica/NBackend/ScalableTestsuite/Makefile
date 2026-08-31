@@ -5,6 +5,7 @@ ManyEvents.mos \
 ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
 DistributionSystemModelicaIndividual.mos \
+DistributionSystemModelicaIndividualSparse.mos \
 Table.mos \
 TimeTable.mos \
 Verification_Table.mos \
@@ -24,6 +25,7 @@ CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 SimpleAdvection.mos \
 PowerSystemStepLoad.mos \
+BreakerNetwork.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -70,4 +72,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

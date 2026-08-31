@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -43,8 +40,9 @@
 
 #ifdef WITH_SUNDIALS
 
-#include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
-#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
+#include <sundials/sundials_context.h>              /* SUNContext */
+#include <cvode/cvode.h>                            /* prototypes for CVODE fcts., consts. */
+#include <nvector/nvector_serial.h>                 /* serial N_Vector types, fcts., macros */
 #include <sunlinsol/sunlinsol_dense.h>              /* Default dense linear solver */
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>   /* Default dense linear solver */
 
@@ -61,7 +59,7 @@ typedef enum CVODE_ITER
   CV_ITER_NEWTON       =2,   /* Newton iteration (default) */
 
   CV_ITER_MAX
-}CVODE_ITER;
+} CVODE_ITER;
 
 typedef struct CVODE_USERDATA
 {
@@ -79,7 +77,7 @@ typedef struct CVODE_CONFIG
                                 * CV_ITER_FIXED_POINT = 1 for fixed-point-iteration
                                 * CV_ITER_NEWTON = 2 for Newton iterations */
 
-  booleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
+  sunbooleantype internalSteps;   /* if TRUE internal step of the integrator are used, default FALSE */
   JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
 
   /* Optional configurations */
@@ -95,17 +93,21 @@ typedef struct CVODE_CONFIG
                                 * For CV_BDF defaults to BDF_Q_MAX=5. */
   int maxConvFailPerStep;      /* Maximum number of nonlinear solver convergence failures permitted during one step.
                                 * Default value is 10. */
-  booleantype BDFStabDetect;   /* BDF stability limit detection.
-                                * Only usable for lmm=CV_BDF. */
-  booleantype solverRootFinding;  /* True if internal root finding should be used, false otherwiese.
-                                   * Disable for FMI */
+  sunbooleantype BDFStabDetect;     /* BDF stability limit detection.
+                                     * Only usable for lmm=CV_BDF. */
+  sunbooleantype solverRootFinding; /* True if internal root finding should be used, false otherwiese.
+                                     * Disable for FMI */
 } CVODE_CONFIG;
 
 typedef struct CVODE_SOLVER
 {
-  CVODE_CONFIG config;        /* CVODE configuration */
-  booleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
-  long int N;                 /* NUmber of unknowns / states */
+  CVODE_CONFIG config;          /* CVODE configuration */
+  sunbooleantype isInitialized; /* Boolean flag if problem is initilaized with start value for y */
+  long int N;                   /* Number of unknowns / states */
+
+  SUNContext sunctx;          /* SUNDIALS simulation context. Owned by this
+                                 struct, one per solver instance so that solvers
+                                 running in different threads stay independent. */
 
   /* work arrays */
   N_Vector y;                 /* dependent variable vector of ODE */
@@ -115,7 +117,7 @@ typedef struct CVODE_SOLVER
   SUNLinearSolver linSol;     /* Linear solver object */
   N_Vector y_linSol;          /* Template for cloning vectors needed inside linear solver */
   SUNMatrix J;                /* Sparse matrix template for cloning matrices needed within
-                               linear solver */
+                                 linear solver */
 
   /* Non-linear solver data */
   SUNNonlinearSolver nonLinSol; /* Non-linear solver object */
@@ -124,6 +126,10 @@ typedef struct CVODE_SOLVER
   /* CVODE internal data */
   void *cvode_mem;            /* Internal CVODE memory block */
   CVODE_USERDATA *simData;
+
+#ifdef OMC_FMI_RUNTIME
+  void (*freeSolverMemory)(void*); /* How to free this struct: FMI callback (FMI2) or plain free (FMI3/no callback) */
+#endif
 } CVODE_SOLVER;
 
 #else /* WITH_SUNDIALS */
@@ -136,6 +142,9 @@ typedef void CVODE_SOLVER;
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI);
 int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
+
+/* read the nominal values into the absolute tolerances */
+int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
 
 #ifdef OMC_FMI_RUNTIME

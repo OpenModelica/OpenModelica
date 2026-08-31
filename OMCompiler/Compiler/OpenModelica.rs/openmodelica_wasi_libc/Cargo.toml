@@ -1,0 +1,8 @@
+[package]
+name = "openmodelica_wasi_libc"
+version = "0.1.0"
+edition = "2024"
+
+# Builds (in build.rs) the external-"C" wasm artifacts a host-free FMI wasm FMU
+# links in, exposing them as byte slices. The work is all in build.rs.
+[dependencies]

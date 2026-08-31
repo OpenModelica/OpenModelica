@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -44,6 +41,7 @@
 #include "options.h"
 #include "../util/omc_error.h"
 #include "../util/omc_file.h"
+#include "../util/omc_strdup.h"
 #include "../meta/meta_modelica.h"
 #include "../util/modelica_string.h"
 #include "solver/model_help.h"
@@ -103,7 +101,7 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %s->%s\n", c->id, c->val);
     }
-    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, (void*)ht);
   }
   return res;
 }
@@ -111,8 +109,8 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
 static inline void addHashStringString(hash_string_string **ht, const char *key, const char *val)
 {
   hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string)); /* FIXME this isn't always freed correctly */
-  v->id=strdup(key);
-  v->val=strdup(val);
+  v->id=omc_strdup(key);
+  v->val=omc_strdup(val);
   HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
 }
 
@@ -138,7 +136,7 @@ static inline void addHashStringLong(hash_string_long **ht, const char *key, lon
     v2->val = val;
   } else {
     hash_string_long *v = (hash_string_long*) calloc(1, sizeof(hash_string_long));
-    v->id=strdup(key);
+    v->id=omc_strdup(key);
     v->val=val;
     HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
   }
@@ -153,7 +151,7 @@ static inline omc_ModelVariable** findHashLongVar(hash_long_var *ht, long key)
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %ld->*map*\n", c->id);
     }
-    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, (void*)ht);
   }
   return &res->val;
 }
@@ -209,7 +207,13 @@ typedef hash_string_string omc_CommandLineOverrides;
 typedef hash_string_long omc_CommandLineOverridesUses;
 
 // function to handle command line settings override
-modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
+void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
+
+/* Persistent map of all quantities given via -override/-overrideFile.
+ * Kept alive after doOverride() so that other parts of the runtime (e.g.
+ * importStartValues() for -iif) can tell which quantities the user explicitly
+ * overrode and must therefore not be clobbered by imported values. See #15807. */
+static omc_CommandLineOverrides *gCommandLineOverrides = NULL;
 
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
@@ -397,29 +401,19 @@ static void XMLCALL endElement(void *userData, const char *name)
  */
 static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 {
-  info->name = strdup(findHashStringString(var,"name"));
+  info->name = omc_strdup(findHashStringString(var,"name"));
   info->inputIndex = read_value_long(findHashStringStringNull(var,"inputIndex"), -1);
   info->id = read_value_int(findHashStringString(var,"valueReference"), -1);
   assertStreamPrint(NULL, info->id != -1, "read_var_info: Missing valueReference!");
-  info->comment = strdup(findHashStringStringEmpty(var,"description"));
-  info->info.filename = strdup(findHashStringString(var,"fileName"));
+  info->comment = omc_strdup(findHashStringStringEmpty(var,"description"));
+  info->info.filename = omc_strdup(findHashStringString(var,"fileName"));
   info->info.lineStart = read_value_long(findHashStringString(var,"startLine"), 0);
   info->info.colStart = read_value_long(findHashStringString(var,"startColumn"), 0);
   info->info.lineEnd = read_value_long(findHashStringString(var,"endLine"), 0);
   info->info.colEnd = read_value_long(findHashStringString(var,"endColumn"), 0);
   info->info.readonly = read_value_long(findHashStringString(var,"fileWritable"), 0);
 
-  debugStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s filename %s from setup file", info->name, info->info.filename);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info->name, info->info.lineStart);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colStart %d from setup file", info->name, info->info.colStart);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineEnd %d from setup file", info->name, info->info.lineEnd);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colEnd %d from setup file", info->name, info->info.colEnd);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s readonly %d from setup file", info->name, info->info.readonly);
-  messageClose(OMC_LOG_DEBUG);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "read var %s from setup file", info->name);
 }
 
 
@@ -501,7 +495,7 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
   const char* delimeter = " ";
   size_t count = 0;
 
-  char* copy = strdup(str);
+  char* copy = omc_strdup(str);
   assertStreamPrint(NULL, copy != NULL, "Out of memory!");
   char* rest = copy;
 
@@ -528,7 +522,6 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
  * @param default_value
  */
 void read_array_var_real(real_array* array, const char* str, modelica_real default_value) {
-
   size_t length;
 
   length = read_str(str, NULL, 0);
@@ -547,26 +540,56 @@ void read_array_var_real(real_array* array, const char* str, modelica_real defau
  *
  * @param var_map   Hash map for variable with attributes as keys.
  * @param attribute Attributes to write values into.
+ * @param isScalar  If true real variable represents a scalar, otherwise an array.
  */
-static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isArrayVar)
+static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
+  char *min_buffer;
+  char *max_buffer;
+
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  attribute->nominal = read_value_real_default(findHashStringStringEmpty(var_map, "nominal"), 1.0);
-  attribute->min = read_value_real_default(findHashStringStringEmpty(var_map, "min"), REAL_MIN);
-  attribute->max = read_value_real_default(findHashStringStringEmpty(var_map, "max"), REAL_MAX);
+  read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  read_array_var_real(&attribute->min, findHashStringStringEmpty(var_map, "min"), REAL_MIN);
+  read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0,
-                  "Real %s(start=%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)",
-                  findHashStringString(var_map, "name"),
-                  real_vector_to_string(&attribute->start, isArrayVar),
-                  (attribute->fixed) ? "true" : "false",
-                  (attribute->useNominal) ? "" : "{", attribute->nominal, attribute->useNominal ? "" : "}",
-                  attribute->min,
-                  attribute->max);
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+    min_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, min_buffer != NULL, "Out of memory.");
+    max_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, max_buffer != NULL, "Out of memory.");
+
+    real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+    real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
+    real_vector_to_string(&attribute->min, isScalar, min_buffer, buff_size);
+    real_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%s, max=%s)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer,
+                    (attribute->fixed) ? "true" : "false",
+                    (attribute->useNominal) ? "true" : "false",
+                    nominal_buffer,
+                    min_buffer,
+                    max_buffer);
+
+    free(start_buffer);
+    free(nominal_buffer);
+    free(min_buffer);
+    free(max_buffer);
+  }
 }
 
 static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
@@ -576,7 +599,8 @@ static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attr
   attribute->min = read_value_long(findHashStringStringEmpty(v,"min"), INTEGER_MIN);
   attribute->max = read_value_long(findHashStringStringEmpty(v,"max"), INTEGER_MAX);
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=" OMC_INT_FORMAT ", fixed=%s, min=" OMC_INT_FORMAT ", max=" OMC_INT_FORMAT ")",
+    findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
@@ -645,7 +669,7 @@ int shouldFilterOutput(omc_ModelVariable *variable, const char *name)
  * @brief Read all static data from File for every variable
  *
  * @param simulationInfo
- * @param type                T_REAL, T_INTEGER, T_BOOLEAN, T_STRING
+ * @param type                VAR_TYPE_REAL, VAR_TYPE_INTEGER, VAR_TYPE_BOOLEAN, VAR_TYPE_STRING
  * @param out                 Write variable infos into.
  *                            Must be of type STATIC_<type>_DATA
  * @param in                  Model variable map
@@ -668,14 +692,13 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
                            hash_string_long **mapAliasParam,
                            int *sensitivityParIndex)
 {
-  char type_name[8];
   VAR_INFO *info;
   DIMENSION_INFO* dimension;
   modelica_boolean *filterOutput;
   mmc_sint_t i, j;
   omc_ModelVariable *v;
 
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "read xml file for %s", debugName);
   for (i = 0; i < numVariables; i++) {
     j = start + i;
     v = *findHashLongVar(in, i);
@@ -683,9 +706,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
     // Access real/int/bool/string attribute data
     // Set info, dimension and filterOutput pointers
     switch (type) {
-      case T_REAL:
+      case VAR_TYPE_REAL:
         {
-          strncpy(type_name, "real", 8);
           STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
           REAL_ATTRIBUTE* attribute = &realVarsData[j].attribute;
           dimension = &realVarsData[j].dimension;
@@ -697,9 +719,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_INTEGER:
+      case VAR_TYPE_INTEGER:
         {
-          strncpy(type_name, "integer", 8);
           STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
           INTEGER_ATTRIBUTE* attribute = &intVarsData[j].attribute;
           dimension = &intVarsData[j].dimension;
@@ -711,9 +732,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_BOOLEAN:
+      case VAR_TYPE_BOOLEAN:
         {
-          strncpy(type_name, "boolean", 8);
           STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
           BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j].attribute;
           dimension = &boolVarsData[j].dimension;
@@ -725,9 +745,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_STRING:
+      case VAR_TYPE_STRING:
         {
-          strncpy(type_name, "string", 8);
           STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
           STRING_ATTRIBUTE* attribute = &stringVarsData[j].attribute;
           dimension = &stringVarsData[j].dimension;
@@ -746,7 +765,6 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
 
     /* create a mapping for Alias variable to get the correct index */
     addHashStringLong(mapAlias, info->name, j);
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j));
     if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
       if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
         long *it = findHashStringLongPtr(*mapAliasParam, info->name);
@@ -757,7 +775,6 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
       }
     }
   }
-  messageClose(OMC_LOG_DEBUG);
 }
 
 /**
@@ -769,7 +786,7 @@ char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
   char *filename;
 
   if (omc_flag[FLAG_F]) { // Read the filename from the command line
-    filename = strdup(omc_flagValue[FLAG_F]);
+    filename = omc_strdup(omc_flagValue[FLAG_F]);
     if(filename == NULL) {
       throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
     }
@@ -808,7 +825,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    fclose(file);
+    free(mi);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
@@ -821,6 +838,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
+      free(mi);
+      XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
 
@@ -860,33 +879,63 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
 }
 
 /**
- * @brief Read default experiment information.
+ * @brief Read experiment information from hash map and flags.
  *
  * Allocates memory for `solverMethod`, `outputFormat` and `variableFilter`
  * which needs to be freed by caller.
  *
  * @param simulationInfo    Contains read values after return.
  * @param de                Default experiment hash map.
- * @param reCalcStepSize    If true step size is recalculated instead of read from hash map.
  */
-void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de, modelica_boolean reCalcStepSize) {
-  simulationInfo->startTime = read_value_real_default(findHashStringString(de,"startTime"), 0);
-  simulationInfo->stopTime = read_value_real_default(findHashStringString(de,"stopTime"), 1.0);
-  if (reCalcStepSize) {
+void read_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de)
+{
+  modelica_boolean reCalcStepSize = FALSE;  // If true step size is recalculated instead of read from hash map.
+
+  if (omc_flag[FLAG_START_TIME]) {
+    simulationInfo->startTime = atof(omc_flagValue[FLAG_START_TIME]);
+    reCalcStepSize = TRUE;
+  } else {
+    simulationInfo->startTime = read_value_real_default(findHashStringString(de,"startTime"), 0);
+  }
+  if (omc_flag[FLAG_STOP_TIME]) {
+    simulationInfo->stopTime = atof(omc_flagValue[FLAG_STOP_TIME]);
+    reCalcStepSize = TRUE;
+  } else {
+    simulationInfo->stopTime = read_value_real_default(findHashStringString(de,"stopTime"), 1.0);
+  }
+  if (omc_flag[FLAG_STEP_SIZE]) {
+    simulationInfo->stepSize = atof(omc_flagValue[FLAG_STEP_SIZE]);
+  } else if (reCalcStepSize) {
     simulationInfo->stepSize = (simulationInfo->stopTime - simulationInfo->startTime) / 500;
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Re-calculating step size for 500 intervals.");
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
-    messageClose(OMC_LOG_STDOUT);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Use `-stepSize=<value>` to silence this warning.");
+    messageCloseWarning(OMC_LOG_STDOUT);
   } else {
     simulationInfo->stepSize = read_value_real_default(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
-  simulationInfo->tolerance = read_value_real_default(findHashStringString(de, "tolerance"), 1e-5);
-  simulationInfo->solverMethod = GC_strdup(findHashStringString(de, "solver"));
-  simulationInfo->outputFormat = GC_strdup(findHashStringString(de, "outputFormat"));
-  simulationInfo->variableFilter = GC_strdup(findHashStringString(de, "variableFilter"));
+  if (omc_flag[FLAG_TOLERANCE]) {
+    simulationInfo->tolerance = atof(omc_flagValue[FLAG_TOLERANCE]);
+  } else {
+    simulationInfo->tolerance = read_value_real_default(findHashStringString(de, "tolerance"), 1e-5);
+  }
+  if (omc_flag[FLAG_S]) {
+    simulationInfo->solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
+  } else {
+    simulationInfo->solverMethod = GC_strdup(findHashStringString(de, "solver"));
+  }
+  if (omc_flag[FLAG_OUTPUT_FORMAT]) {
+    simulationInfo->outputFormat = GC_strdup(omc_flagValue[FLAG_OUTPUT_FORMAT]);
+  } else {
+    simulationInfo->outputFormat = GC_strdup(findHashStringString(de, "outputFormat"));
+  }
+  if (omc_flag[FLAG_VARIABLE_FILTER]) {
+    simulationInfo->variableFilter = GC_strdup(omc_flagValue[FLAG_VARIABLE_FILTER]);
+  } else {
+    simulationInfo->variableFilter = GC_strdup(findHashStringString(de, "variableFilter"));
+  }
 
-  infoStreamPrint(OMC_LOG_SIMULATION, 1, "Read all the DefaultExperiment values:");
+  infoStreamPrint(OMC_LOG_SIMULATION, 1, "Read all Experiment values:");
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
@@ -915,7 +964,6 @@ void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelDat
   numRealAlgVars = read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), 0);
   modelData->nVariablesRealArray = 2*modelData->nStatesArray + numRealAlgVars;
   modelData->nAliasRealArray = read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), 0);
-  // TODO: How to get data->modelData->nDiscreteReal or its array version?
   modelData->nParametersRealArray = read_value_long(findHashStringString(md, "numberOfRealParameters"), 0);
 
   modelData->nParametersIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerParameters"), 0);
@@ -950,7 +998,7 @@ void read_alias_var(DATA_ALIAS* alias,
 {
   // Assert nAliasVariables has correct size
   size_t num_alias_vars_xml = HASH_COUNT(aliasHashMap);
-  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %zu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
+  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %lu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
 
   long *it, *itParam;
   const char *aliasTmp = NULL;
@@ -959,7 +1007,7 @@ void read_alias_var(DATA_ALIAS* alias,
   {
     read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
 
-    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
+    aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {
       alias[i].negate = 1;
     } else {
@@ -972,7 +1020,7 @@ void read_alias_var(DATA_ALIAS* alias,
     free((char*)aliasTmp);
     aliasTmp = NULL;
 
-    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"));
+    aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"));
 
     it = findHashStringLongPtr(mapAlias, aliasTmp);
     itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
@@ -1043,28 +1091,28 @@ void read_input_xml(MODEL_DATA* modelData,
   /* Update inital values from override flag */
   override = omc_flagValue[FLAG_OVERRIDE];
   overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
-  modelica_boolean reCalcStepSize = doOverride(mi, modelData, override, overrideFile);
+  doOverride(mi, modelData, override, overrideFile);
 
   /* Read initial values from hash map */
-  read_default_experiment(simulationInfo, mi->de, reCalcStepSize);
+  read_experiment(simulationInfo, mi->de);
 
   simulationInfo->OPENMODELICAHOME = GC_strdup(findHashStringString(mi->md,"OPENMODELICAHOME")); // Can be set by generated code
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
 
   allocModelDataVars(modelData, TRUE, threadData);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStatesArray, modelData->nVariablesRealArray - 2*modelData->nStatesArray, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStatesArray, modelData->nVariablesRealArray - 2*modelData->nStatesArray, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesIntegerArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBooleanArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesStringArray,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesIntegerArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBooleanArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesStringArray,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersRealArray,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersIntegerArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBooleanArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersRealArray,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersIntegerArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBooleanArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
 
   if (omc_flag[FLAG_IDAS]) {
     /* allocate memory for sensitivity analysis */
@@ -1072,7 +1120,7 @@ void read_input_xml(MODEL_DATA* modelData,
     simulationInfo->sensitivityMatrix = (modelica_real*) calloc(modelData->nSensitivityVars - modelData->nSensitivityParamVars, sizeof(modelica_real));
 
     // TODO: We also need nSensitivityVarsArray
-    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
+    read_variables(simulationInfo, VAR_TYPE_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
   }
 
   /* Read all alias variables */
@@ -1201,7 +1249,7 @@ static inline modelica_string read_value_string(const char *s)
 {
   char* buffer;
   modelica_string* str;
-  buffer = strdup(s); /* memory is allocated here, must be freed by the caller */
+  buffer = omc_strdup(s); /* memory is allocated here, must be freed by the caller */
   str = mmc_mk_scon_persist(buffer);
   free(buffer);
   return str;
@@ -1283,23 +1331,19 @@ static void singleOverride(omc_CommandLineOverrides *mOverrides,
  * @param mi                    Model input from info XML file.
  * @param modelData             Pointer to model data containing variable values to override.
  * @param overrideFile          Path to override file given by `-overrideFile`.
- * @return modelica_boolean     True if integrator step size should be re-caclualted.
  */
-modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
+void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
 {
   omc_CommandLineOverrides *mOverrides = NULL;
   omc_CommandLineOverridesUses *mOverridesUses = NULL, *it = NULL, *ittmp = NULL;
   mmc_sint_t i;
-  modelica_boolean changedStartStop = 0 /* false */;
-  modelica_boolean changedStepSize = 0 /* false */;
-  modelica_boolean reCalcStepSize = 0 /* false */;
   char* overrideStr1 = NULL, *overrideStr2 = NULL, *overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "using -override=%s and -overrideFile=%s", override, overrideFile);
   }
 
   if(override != NULL) {
-    overrideStr1 = strdup(override);
+    overrideStr1 = omc_strdup(override);
   }
 
   if(overrideFile != NULL) {
@@ -1353,7 +1397,6 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
 
   if (overrideStr1 != NULL || overrideStr2 != NULL) {
     char *value, *p, *ov;
-    const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     /* read override values */
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-override=%s", overrideStr1 ? overrideStr1 : "[not given]");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-overrideFile=%s", overrideStr2 ? overrideStr2 : "[not given]");
@@ -1427,20 +1470,9 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
       free(overrideStr2);
     }
 
-    // Now we have all overrides in mOverrides, override mi now
-    // Also check if we need to re-calculate stepSize (start / stop time changed, but stepSize not)
-    for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
-      if (findHashStringStringNull(mOverrides, strs[i])) {
-        addHashStringString(&mi->de, strs[i], getOverrideValue(mOverrides, &mOverridesUses, strs[i]));
-        if (i==1 /* startTime */ || i ==2 /* stopTime */ ) {
-          changedStartStop = 1 /* true */;
-        }
-        if (i==3 /* stepSize */) {
-          changedStepSize = 1 /* true */;
-        }
-      }
-    }
-    reCalcStepSize = changedStartStop && !changedStepSize;
+    /* remember the overridden quantities so importStartValues() (-iif) does not
+     * clobber values the user explicitly set via -override/-overrideFile (#15807) */
+    gCommandLineOverrides = mOverrides;
 
     // override all found!
     for(i=0; i<modelData->nStatesArray; i++) {
@@ -1499,8 +1531,20 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
   } else {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "NO override given on the command line.");
   }
+}
 
-  return reCalcStepSize;
+/**
+ * @brief Check whether a quantity was overridden on the command line.
+ *
+ * Used to make sure that values explicitly set via -override/-overrideFile are
+ * not clobbered when importing start values from a file given with -iif (#15807).
+ *
+ * @param name   Fully qualified name of the variable or parameter.
+ * @return int   1 if the quantity was given via -override/-overrideFile, 0 otherwise.
+ */
+int isQuantityOverridden(const char *name)
+{
+  return (gCommandLineOverrides != NULL) && (findHashStringStringNull(gCommandLineOverrides, name) != NULL);
 }
 
 void parseVariableStr(char* variableStr)

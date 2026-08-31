@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -36,11 +41,11 @@
 #include "Element.h"
 #include "ElementProperties.h"
 #include "OMS/ElementPropertiesDialog.h"
+#include "OMS/OMSModel.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Modeling/ElementTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
-#include "OMS/BusDialog.h"
 #include "Util/ResourceCache.h"
 #include "Options/OptionsDialog.h"
 
@@ -334,7 +339,6 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
   mTransformationString = mpReferenceElement->getTransformationString();
-  mpBusComponent = mpReferenceElement->getBusComponent();
   drawInheritedElementsAndShapes();
   mTransformation = Transformation(mpReferenceElement->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -344,7 +348,7 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   updateToolTip();
-  setVisible(!mpReferenceElement->isInBus());
+  setVisible(true);
 }
 
 /*!
@@ -558,9 +562,9 @@ ModelInstance::CoordinateSystem Element::getCoordinateSystem() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
     if (mpModelComponent->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
-      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedDiagramCoordinateSystem;
     } else {
-      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedIconCoordinateSystem;
     }
   }
   return coordinateSystem;
@@ -826,16 +830,14 @@ int Element::getArrayIndexAsNumber(bool *ok) const
  */
 bool Element::isConnectorSizing()
 {
-  if (isArray()) {
-    if (mpModelComponent) {
-      // connectorSizing is only done on the single dimensional array.
-      QString parameter = mpModelComponent->getDimensions().getAbsynDimensions().at(0);
-      bool ok;
-      parameter.toInt(&ok);
-      // if the array index is not a number then look for parameter
-      if (!ok) {
-        return isParameterConnectorSizing(parameter);
-      }
+  if (mpModelComponent) {
+    // connectorSizing is only done on the single dimensional array.
+    QString parameter = mpModelComponent->getDimensions().getAbsynDimensions().isEmpty() ? "" : mpModelComponent->getDimensions().getAbsynDimensions().at(0);
+    bool ok;
+    parameter.toInt(&ok);
+    // if the array index is not a number then look for parameter
+    if (!ok) {
+      return isParameterConnectorSizing(parameter);
     }
   }
   return false;
@@ -872,7 +874,7 @@ bool Element::isParameterConnectorSizing(ModelInstance::Model *pModel, QString p
       return true;
     }
     // Look in class inheritance
-    QList<ModelInstance::Element*> elements = pModel->getElements();
+    QVector<ModelInstance::Element*> elements = pModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isExtend() && pElement->getModel()) {
         auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -897,7 +899,7 @@ void Element::createClassElements()
   }
 
   if (mpModel) {
-    QList<ModelInstance::Element*> elements = mpModel->getElements();
+    QVector<ModelInstance::Element*> elements = mpModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
@@ -1106,7 +1108,7 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
        * Check for enumeration type and shorten display string.
        */
       if (displayString.second) {
-        Element::checkEnumerationDisplayString(displayString.first, typeName);
+        StringHandler::removeTypePrefix(displayString.first, typeName);
       }
     }
   }
@@ -1167,24 +1169,11 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
  */
 void Element::handleOMSElementDoubleClick()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector()) {
-    AddBusDialog *pAddBusDialog = new AddBusDialog(QList<Element*>(), mpLibraryTreeItem, mpGraphicsView);
-    pAddBusDialog->exec();
-  } else if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+  if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->getOMSModelConnector())) {
     showElementPropertiesDialog();
   }
 }
 
-/*!
- * \brief Element::setBusComponent
- * Sets the bus component.
- * \param pBusElement
- */
-void Element::setBusComponent(Element *pBusElement)
-{
-  mpBusComponent = pBusElement;
-  setVisible(!isInBus());
-}
 
 /*!
  * \brief Element::reDrawConnector
@@ -1335,7 +1324,7 @@ void Element::drawModelicaElement()
  */
 void Element::drawOMSElement()
 {
-  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
@@ -1346,59 +1335,53 @@ void Element::drawOMSElement()
       Element *pNewElement = new Element(pElement, this, getRootParentElement());
       mElementsList.append(pNewElement);
     }
-  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+  } else if (mpLibraryTreeItem->getOMSModelConnector()) { // if component is a signal i.e., input/output
+    if (mpLibraryTreeItem->getOMSModelConnector()->isInput()) {
       PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
       QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pInputPolygonAnnotation->setPoints(points);
       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
+      switch (mpLibraryTreeItem->getOMSModelConnector()->getSignalType()) {
+        case OMSModel::SignalType::oms_signal_type_integer:
+        case OMSModel::SignalType::oms_signal_type_enum:
           pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
           pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
           break;
-        case oms_signal_type_boolean:
+        case OMSModel::SignalType::oms_signal_type_boolean:
           pInputPolygonAnnotation->setLineColor(QColor(255,0,255));
           pInputPolygonAnnotation->setFillColor(QColor(255,0,255));
           break;
-        case oms_signal_type_string:
+        case OMSModel::SignalType::oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
           break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
+        case OMSModel::SignalType::oms_signal_type_real:
         default:
           pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
           pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
           break;
       }
       mShapesList.append(pInputPolygonAnnotation);
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+    } else if (mpLibraryTreeItem->getOMSModelConnector()->isOutput()) {
       PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
       QVector<QPointF> points;
       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
       pOutputPolygonAnnotation->setPoints(points);
       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
+      switch (mpLibraryTreeItem->getOMSModelConnector()->getSignalType()) {
+        case OMSModel::SignalType::oms_signal_type_integer:
+        case OMSModel::SignalType::oms_signal_type_enum:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
-        case oms_signal_type_boolean:
+        case OMSModel::SignalType::oms_signal_type_boolean:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
-        case oms_signal_type_string:
+        case OMSModel::SignalType::oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
           break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
+        case OMSModel::SignalType::oms_signal_type_real:
         default:
           pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
@@ -1406,15 +1389,6 @@ void Element::drawOMSElement()
       }
       mShapesList.append(pOutputPolygonAnnotation);
     }
-  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
-    RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
-    QVector<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
-    pBusRectangleAnnotation->setExtents(extents);
-    pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
-    mShapesList.append(pBusRectangleAnnotation);
   }
 }
 
@@ -1464,7 +1438,7 @@ void Element::showNonExistingOrDefaultElementIfNeeded()
  */
 void Element::createClassInheritedElements()
 {
-  QList<ModelInstance::Element*> elements = mpModel->getElements();
+  QVector<ModelInstance::Element*> elements = mpModel->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -1501,7 +1475,7 @@ void Element::createClassShapes()
      *
      * Always use the icon annotation when element type is port.
      */
-    QList<ModelInstance::Shape*> shapes;
+    QVector<ModelInstance::Shape*> shapes;
     // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       /* issue #12074
@@ -1542,7 +1516,7 @@ void Element::createActions()
   connect(mpShowElementAction, SIGNAL(triggered()), SLOT(showElement()));
   // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
-  mpParametersAction->setStatusTip(tr("Shows the component parameters"));
+  mpParametersAction->setStatusTip(Helper::parametersTip);
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Todo: Connect /robbr
   // Attributes Action
@@ -1578,10 +1552,8 @@ void Element::createResizerItems()
   bool isElementMode = mpGraphicsView->getModelWidget()->isElementMode();
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->isSSP()
-                         && mpLibraryTreeItem->getOMSConnector());
-  bool isOMSBusConnecor = (mpLibraryTreeItem
-                           && mpLibraryTreeItem->isSSP()
-                           && mpLibraryTreeItem->getOMSBusConnector());
+                         && mpLibraryTreeItem->getOMSModelConnector());
+  bool isOMSBusConnecor = false;
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1723,21 +1695,6 @@ void Element::updateConnections()
 }
 
 /*!
- * \brief Element::checkEnumerationDisplayString
- * Checks for enumeration type and shortens enumeration value.
- * Returns true if displayString was modified.
- * See ModelicaSpec 3.3, section 18.6.5.5, ticket:4084
- */
-bool Element::checkEnumerationDisplayString(QString &displayString, const QString &typeName)
-{
-  if (displayString.startsWith(typeName + ".")) {
-    displayString = displayString.right(displayString.length() - typeName.length() - 1);
-    return true;
-  }
-  return false;
-}
-
-/*!
  * \brief Element::updateToolTip
  * Updates the Element's tooltip.
  */
@@ -1800,8 +1757,8 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
-      ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
+    if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent())) {
+      OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
       QPointF extent2 = extent.at(1);
@@ -1809,22 +1766,19 @@ void Element::updatePlacementAnnotation()
       extent1.setY(extent1.y() + mTransformation.getOrigin().y());
       extent2.setX(extent2.x() + mTransformation.getOrigin().x());
       extent2.setY(extent2.y() + mTransformation.getOrigin().y());
-      elementGeometry.x1 = extent1.x();
-      elementGeometry.y1 = extent1.y();
-      elementGeometry.x2 = extent2.x();
-      elementGeometry.y2 = extent2.y();
-      elementGeometry.rotation = mTransformation.getRotateAngle();
-      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
-    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector()
-                                     || mpLibraryTreeItem->getOMSBusConnector())) {
-      ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
-      if (mpLibraryTreeItem->getOMSConnector()) {
-        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
-      } else if (mpLibraryTreeItem->getOMSBusConnector()) {
-        OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
-      }
+      elementGeometry.setX1(extent1.x());
+      elementGeometry.setY1(extent1.y());
+      elementGeometry.setX2(extent2.x());
+      elementGeometry.setY2(extent2.y());
+      elementGeometry.setRotation(mTransformation.getRotateAngle());
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry);
+      mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
+    } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelConnector()) {
+      OMSModel::ConnectorGeometry connectorGeometry;
+      connectorGeometry.setX(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1));
+      connectorGeometry.setY(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1));
+      OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), connectorGeometry);
+      mpLibraryTreeItem->getOMSModelConnector()->setGeometry(connectorGeometry);
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.
        */
@@ -2249,12 +2203,12 @@ void Element::showParameters()
   pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpModel->getName()).arg(getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
-  bool inherited = false;
+  bool inherited = isInheritedElement();
   if (mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->isElementMode()
       && mpGraphicsView->getModelWidget()->getModelInstance() && mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()) {
     inherited = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()->isExtend();
   }
-  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, inherited, false, 0, 0, 0, pMainWindow);
+  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, inherited, false, false, 0, 0, 0, pMainWindow);
   pMainWindow->hideProgressBar();
   pMainWindow->getStatusBar()->clearMessage();
   pElementParameters->exec();
@@ -2295,7 +2249,8 @@ void Element::openClass()
 void Element::showElementPropertiesDialog()
 {
   if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()
-      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()
+          || mpLibraryTreeItem->getOMSModelConnector())) {
     ElementPropertiesDialog *pElementPropertiesDialog = new ElementPropertiesDialog(this, MainWindow::instance());
     pElementPropertiesDialog->exec();
   }

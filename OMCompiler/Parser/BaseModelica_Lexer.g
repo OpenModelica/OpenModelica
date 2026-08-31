@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 lexer grammar BaseModelica_Lexer;
 
 options {
@@ -390,18 +395,22 @@ SESCAPE : esc='\\' ('\'' | '"' | '\\' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
   {
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
-    int len = strlen((char*)$text->chars);
+    /* End the span at the real position of the offending byte (LA(1), the
+       current lexer position) rather than tokenStart + strlen, which produced
+       a nonsensical column on the string's first line when the string spans
+       several lines. GETCHARPOSITIONINLINE() is the 0-based column of LA(1);
+       +2 makes it the 1-based column just past it. */
     if (((chars[0] & 0xE0) == 0xC0) || ((chars[0] & 0xF0) == 0xE0) || ((chars[0] & 0xF8) == 0xF0) ) {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since the next byte is the start of a UTF-8 character and thus not a valid Modelica escape sequence.",
-          &str, 0, $line, $pos+1, $line, $pos+len+1,
+          &str, 0, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     } else if ((chars[0] & 0x80)) {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since the next byte is an invalid UTF-8 character and thus not a valid Modelica escape sequence.",
-          &str, 0, $line, $pos+1, $line, $pos+len+1,
+          &str, 0, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     } else {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
-          &str, 1, $line, $pos+1, $line, $pos+len+1,
+          &str, 1, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     }
   });
@@ -424,7 +433,7 @@ T_END : 'end' EAT_WS_COMMENT?;
 IDENT : QIDENT | IDENT2;
 
 fragment
-IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime';
+IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime' | '$Sensitivities' | '$DER';
 
 fragment
 QIDENT :

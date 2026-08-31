@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NSimPartition
 "file:        NSimPartition.mo
  package:     NSimPartition
@@ -59,8 +64,6 @@ public
   import DAE;
   import OldSimCode = SimCode;
 
-  type SimPartitions = list<SimPartition>;
-
   record BASE_PARTITION
     BClock baseClock;
     list<SimPartition> subPartitions;
@@ -86,23 +89,26 @@ public
   end createSubPartition;
 
   function createBasePartitions
-    input UnorderedMap<BClock, SimPartitions> clock_collector;
-    output SimPartitions baseParts = {};
+    input UnorderedMap<BClock, list<SimPartition>> clock_collector;
+    output list<SimPartition> baseParts = {};
     output list<Block> eventClocks = {};
     input output SimCodeIndices simCodeIndices;
   protected
     BClock baseClock;
-    SimPartitions subClocks;
+    list<SimPartition> subClocks;
     Integer clock_idx = 1;
   algorithm
+    // create all base partitions, sort the sub partitions according to their clock dependencies
     for tpl in UnorderedMap.toList(clock_collector) loop
       (baseClock, subClocks) := tpl;
-      baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      if not BClock.isInferredClock(baseClock) then
+        baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      end if;
     end for;
 
     // collect all event clocks
     for base in baseParts loop
-      _ := match base
+      () := match base
         local
           ComponentRef cond;
           DAE.ElementSource source;
@@ -135,6 +141,19 @@ public
     end for;
   end createBasePartitions;
 
+  function getClock
+    input SimPartition part;
+    output BClock clock;
+  algorithm
+    clock := match part
+      case BASE_PARTITION() then part.baseClock;
+      case SUB_PARTITION()  then part.subClock;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unknown partition:\n" + toString(part)});
+      then fail();
+    end match;
+  end getClock;
+
   function listToString
     input list<SimPartition> parts;
     input output String str = "";
@@ -153,8 +172,8 @@ public
     input output String str = "";
   algorithm
     str := match part
-      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), "", "\n", "", "\n");
-      case SUB_PARTITION()  then str + "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), "", "\n", "", "");
+      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), List.Style.NEWLINE) + "\n";
+      case SUB_PARTITION()  then str + "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), List.Style.NEWLINE);
       else "[ERR-]";
     end match;
   end toString;
@@ -201,5 +220,5 @@ public
     end match;
   end convertSub;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimPartition;

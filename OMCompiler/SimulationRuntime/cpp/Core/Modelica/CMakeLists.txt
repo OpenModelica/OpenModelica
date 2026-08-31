@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ModelicaName})
 
@@ -12,8 +12,12 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
 
-GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
+get_target_property(TARGET_TYPE ${ModelicaName} TYPE)
+if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
+  set(libModelicaSystemNameExt ${CMAKE_STATIC_LIBRARY_SUFFIX})
+elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+  set(libModelicaSystemNameExt ${CMAKE_SHARED_LIBRARY_SUFFIX})
+endif()
 
 IF(MSVC)
 	SET(LINKER_LIB_PREFIX "")
@@ -199,9 +203,15 @@ ENDFOREACH(lib ${SUNDIALS_LIBRARIES})
 
 SET(LAPACK_LIBRARIES_ "")
 FOREACH(lib ${LAPACK_LIBRARIES})
-	GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
-	STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
-	SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+	# FindLAPACK/FindBLAS may return raw linker flags (e.g. "-lm;-ldl") mixed in
+	# with library paths; pass those through instead of prefixing another "-l".
+	IF("${lib}" MATCHES "^-")
+		SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${lib}")
+	ELSE()
+		GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
+		STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
+		SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+	ENDIF()
 ENDFOREACH(lib ${LAPACK_LIBRARIES})
 
 SET(INTEL_TBB_LIBS "")
@@ -299,6 +309,3 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Policies/BufferReaderWrite
 #if(REDUCE_DAE)
 #install (FILES Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/policies)
 #endif()
-
-
-

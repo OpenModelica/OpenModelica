@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -67,7 +72,7 @@ QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
-int Helper::treeIndentation = 13;
+int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
 qreal Helper::minimumTextFontSize = 8.0;
@@ -107,6 +112,7 @@ QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
+QStringList Helper::timeDisplayUnits = QStringList() << "min" << "h" << "d";
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -135,10 +141,12 @@ QString Helper::displayLimitMsg = QString("Reached display limit. To read the fu
 QString Helper::arrayIndexRegularExpression = QString(R"(\[(\d+)(?:,(\d+))?\])");
 /* Global translated variables */
 QString Helper::newModelicaClass;
+QString Helper::newModelicaClassTip;
 QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
+QString Helper::loadCompiledModel;
 QString Helper::newCRMLModel;
 QString Helper::newCRMLModelTip;
 QString Helper::newMOSScript;
@@ -182,6 +190,7 @@ QString Helper::removeItem;
 QString Helper::general;
 QString Helper::output;
 QString Helper::parameters;
+QString Helper::parametersTip;
 QString Helper::inputs;
 QString Helper::name;
 QString Helper::startScript;
@@ -232,6 +241,8 @@ QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
+QString Helper::findUsage;
+QString Helper::findUsageTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -405,18 +416,8 @@ QString Helper::addSystem;
 QString Helper::addSystemTip;
 QString Helper::addSubModel;
 QString Helper::addSubModelTip;
-QString Helper::addBus;
-QString Helper::addBusTip;
-QString Helper::editBus;
-QString Helper::addTLMBus;
-QString Helper::addTLMBusTip;
-QString Helper::editTLMBus;
 QString Helper::addConnector;
 QString Helper::addConnectorTip;
-QString Helper::addBusConnection;
-QString Helper::editBusConnection;
-QString Helper::addTLMConnection;
-QString Helper::editTLMConnection;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -425,6 +426,7 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::saveWithErrors;
 QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
@@ -457,19 +459,22 @@ QString Helper::dataReconciliation;
 QString Helper::replaceSubModel;
 QString Helper::modelicaPathTip;
 QString Helper::selectParentClassName;
+QString Helper::switchModel;
 
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
   Helper::newModelicaClass = tr("Modelica Class");
+  Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
-  Helper::createNewModelicaClass = tr("Create New Modelica Class");
+  Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
+  Helper::loadCompiledModel = tr("Load Compiled Model");
   Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
   Helper::newMOSScript = tr("Modelica Script");
-  Helper::newMOSScriptTip = tr("Creates a new Modelca Script");
+  Helper::newMOSScriptTip = tr("Creates a new Modelica Script");
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
@@ -510,6 +515,7 @@ void Helper::initHelperVariables()
   Helper::general = tr("General");
   Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
+  Helper::parametersTip = tr("Shows the component parameters");
   Helper::inputs = tr("Inputs");
   Helper::name = tr("Name:");
   Helper::startScript = tr("Start Script:");
@@ -560,6 +566,8 @@ void Helper::initHelperVariables()
   Helper::loading = tr("Loading");
   Helper::question = tr("Question");
   Helper::search = tr("Search");
+  Helper::findUsage = tr("Find Usage");
+  Helper::findUsageTip = tr("Finds the usage of class");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
@@ -733,18 +741,8 @@ void Helper::initHelperVariables()
   Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");
   Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
-  Helper::addBus = tr("Add Bus");
-  Helper::addBusTip = tr("Adds the bus");
-  Helper::editBus = tr("Edit Bus");
-  Helper::addTLMBus = tr("Add TLM Bus");
-  Helper::addTLMBusTip = tr("Adds the TLM bus");
-  Helper::editTLMBus = tr("Edit TLM Bus");
   Helper::addConnector = tr("Add Connector");
   Helper::addConnectorTip = tr("Adds the connector");
-  Helper::addBusConnection = tr("Add Bus Connection");
-  Helper::editBusConnection = tr("Edit Bus Connection");
-  Helper::addTLMConnection = tr("Add TLM Connection");
-  Helper::editTLMConnection = tr("Edit TLM Connection");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");
@@ -753,6 +751,7 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::saveWithErrors = tr("Save with Errors");
   Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
@@ -765,7 +764,7 @@ void Helper::initHelperVariables()
   Helper::immediate = tr("Immediate");
   Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
-  Helper::secs = tr("secs");
+  Helper::secs = tr("s");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
   Helper::dateTime = tr("DateTime");
   Helper::startTime = tr("Start Time");
@@ -785,6 +784,7 @@ void Helper::initHelperVariables()
   Helper::replaceSubModel = tr("Replace SubModel");
   Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
   Helper::selectParentClassName = tr("Select Parent Class");
+  Helper::switchModel = tr("Switch Model");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -882,7 +882,7 @@ QString GUIMessages::getMessage(int type)
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case RELOAD_CLASS_MSG:
-      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes to the class and its containing classes will be lost.");
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:

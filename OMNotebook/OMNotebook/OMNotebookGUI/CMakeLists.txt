@@ -100,7 +100,7 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMNotebook WIN32 MACOSX_BUNDLE ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc ${app_icon_macos})
+add_executable(OMNotebook WIN32 ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc ${app_icon_macos})
 target_compile_definitions(OMNotebook PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 
 target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -116,13 +116,47 @@ endif ()
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
+omc_install_gui_client(OMNotebook)
 if(APPLE)
   set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
 
+if(MSVC)
 
-install(TARGETS OMNotebook
-        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
-install(FILES stylesheet.xml
-              commands.xml
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)
+else()
+  # Enable extra compilation warnings, but disable missing-field-initializers
+  # which causes false positives for MMC_TRY_TOP.
+  target_compile_options(OMNotebook PRIVATE -Wall -Wextra -Wno-missing-field-initializers -Wsuggest-override)
+endif()
+
+if(MINGW)
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
+
+  # Find windeployqt6
+  find_program(WINDEPLOYQT_EXECUTABLE
+    NAMES windeployqt windeployqt6
+    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
+    REQUIRED
+  )
+
+  install(CODE "
+    message(STATUS \"Running windeployqt6 on OMNotebook...\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-quick-import
+        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
+        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMNotebook.exe\"
+      RESULT_VARIABLE WINDEPLOYQT_RESULT
+      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
+      ERROR_VARIABLE  WINDEPLOYQT_ERROR
+    )
+    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
+      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
+    endif()
+    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
+  ")
+endif()
+

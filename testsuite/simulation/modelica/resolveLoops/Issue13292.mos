@@ -1,0 +1,35 @@
+// name:      Issue13292
+// keywords:  resolveLoops
+// status:    correct
+//
+// Regression test for #13292: resolveLoops wrongly combined equations with
+// non +/-1 coefficients (here m[i] = 2*n[i], with n a state) into a loop,
+// producing the bogus equation "m_total = 2*m[1] - n_total" and hence
+// m_total = 1 instead of the correct m_total = 6.
+//
+
+loadFile("Issue13292.mo"); getErrorString();
+
+simulate(Issue13292, startTime=0.0, stopTime=0.0, numberOfIntervals=1); getErrorString();
+
+val(m_total, 0.0);
+val(n_total, 0.0);
+val(m[1], 0.0);
+val(m[2], 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue13292_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue13292', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// 3.0
+// 2.0
+// 4.0
+// endResult

@@ -118,8 +118,7 @@ fix-whitespace:
 	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
 
 spellcheck:
-	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls OMCompiler/Compiler/*/*.mo | grep -v "Flags.*mo"` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
-	@test ! -s aspell.log
+	bash cmake/spellcheck.sh . aspell
 thumbsdb-error:
 	! find . -name "Thumbs.db" | grep Thumbs.db
 

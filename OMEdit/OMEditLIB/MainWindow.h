@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -37,9 +42,13 @@
 
 #undef smooth
 
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h" // Rust omc port: self-contained threadData_t (no MMC runtime)
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 }
+#endif
 
 #include "Util/StringHandler.h"
 
@@ -51,6 +60,7 @@ extern "C" {
 #include <QMainWindow>
 #include <QDialog>
 #include <QProgressBar>
+#include <QToolButton>
 #include <QMimeData>
 #include <QDomDocument>
 #include <QStackedWidget>
@@ -91,6 +101,7 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
+class NavigationManagerView;
 
 class MainWindow : public QMainWindow
 {
@@ -107,6 +118,8 @@ public:
   void setDebug(bool debug) {mDebug = debug;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
   void setNewApiProfiling(bool newApiProfiling);
+  bool isNewApiNoJson() const {return mNewApiNoJson;}
+  void setNewApiNoJson(bool newApiNoJson) {mNewApiNoJson = newApiNoJson;}
   bool isCRMLEnabled() const {return mCRMLEnabled;}
   void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
@@ -131,8 +144,9 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+  QDockWidget* getFindUsageDockWidget() {return mpFindUsageDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-  SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
+  SimulationDialog* getSimulationDialog();
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
@@ -144,6 +158,8 @@ public:
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
+  void showCancelOperationButton(bool show);
+  void setOmcOperationRunning(bool running);
   Label* getPositionLabel() {return mpPositionLabel;}
   bool isModelingPerspectiveActive();
   bool isPlottingPerspectiveActive();
@@ -194,13 +210,10 @@ public:
   QAction* getImportNgspiceNetlistAction() {return mpImportNgspiceNetlistAction;}
   QAction* getConnectModeAction() {return mpConnectModeAction;}
   QAction* getTransitionModeAction() {return mpTransitionModeAction;}
-  QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
-  QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
   QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
-  QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -223,8 +236,10 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
+  void loadCompiledModel(const QString &executableFilePath, const QString &modelInitFilePath, const QString &resultFilePath);
   void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
 #if !defined(WITHOUT_OSG)
@@ -257,13 +272,17 @@ public:
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
   void markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType);
+  static void switchToWindowMode(QMdiArea *pMdiArea);
+  static void switchToTabbedMode(QMdiArea *pMdiArea);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
+  enum class ViewSelection { SelectedInGUI, Class, Icon };
 private:
   bool mDebug;
   bool mNewApiProfiling = false;
   FILE *mpNewApiProfilingFile = nullptr;
+  bool mNewApiNoJson = false;
   bool mCRMLEnabled = false;
   bool mTestsuiteRunning = false;
   bool mSkipExpressionEvaluation = false;
@@ -273,10 +292,13 @@ private:
   SearchWidget *mpSearchWidget;
   QDockWidget *mpSearchDockWidget;
   QDockWidget *mpMessagesDockWidget;
+  NavigationManagerView *mpNavigationManagerView = nullptr;
+  QDockWidget *mpNavigationManagerDockWidget = nullptr;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
   QDockWidget *mpElementDockWidget;
+  QDockWidget *mpFindUsageDockWidget;
   GDBAdapter *mpGDBAdapter;
   StackFramesWidget *mpStackFramesWidget;
   QDockWidget *mpStackFramesDockWidget;
@@ -304,11 +326,13 @@ private:
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
-  QProgressBar *mpProgressBar;
+  QProgressBar *mpProgressBar = nullptr;
+  QToolButton *mpCancelOperationButton = nullptr;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
-  StatusBar *mpStatusBar;
-  QTimer *mpAutoSaveTimer;
+  StatusBar *mpStatusBar = nullptr;
+  QTimer *mpAutoSaveTimer = nullptr;
+  bool mAutoSaveWasActive = false;
   QShortcut *mpSearchBrowserShortcut;
   // File Menu
   // Modelica File Actions
@@ -320,6 +344,7 @@ private:
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpLoadEncryptedLibraryAction;
+  QAction *mpLoadCompiledModelAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
@@ -443,7 +468,6 @@ private:
   QAction *mpAddOrEditIconAction;
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
-  QAction *mpAddBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars
@@ -468,6 +492,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  QMdiSubWindow *mpLastModelingSubWindow = nullptr;
 signals:
   void resetMessagesTabWidgetNames();
 public slots:
@@ -476,6 +501,7 @@ public slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void switchToPerspectiveTab(int tabIndex);
   void showSearchBrowser();
   void createNewModelicaClass();
   void createNewMOSFile();
@@ -485,6 +511,7 @@ public slots:
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
   void loadEncryptedLibrary();
+  void loadCompiledModel();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
@@ -535,7 +562,9 @@ public slots:
   void updateLibraryIndex(bool forceUpdate);
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
-  void exportModelAsImage(bool copyToClipboard = false);
+  bool checkModelActiveExportModelAsImage();
+  void exportModelAsImage();
+  QImage exportModelAsImage(QString fileName, bool drawExtents = false, ViewSelection diagramSelection = ViewSelection::SelectedInGUI, ModelWidget *pModelWidget = nullptr, QSize size = QSize());
   void exportToClipboard();
   void openTemporaryDirectory();
   void openWorkingDirectory();
@@ -564,8 +593,8 @@ public slots:
   void runDebugConfiguration();
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
-  void enableReSimulationToolbar(bool visible);
 private slots:
+  void cancelOmcOperation();
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);
@@ -584,6 +613,8 @@ private slots:
   void commitFiles();
   void revertCommit();
   void cleanWorkingDirectory();
+  void directReSimulate();
+  void showReSimulateSetup();
 private:
   void createActions();
   void createToolbars();
@@ -597,6 +628,7 @@ private:
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
+  void reSimulate(bool showSetup);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;

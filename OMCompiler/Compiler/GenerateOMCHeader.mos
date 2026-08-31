@@ -3,7 +3,6 @@ loadFile("Script/GlobalScript.mo");
 loadFile("FrontEnd/Values.mo");
 loadFile("Util/ErrorTypes.mo");
 loadFile("Util/Config.mo");
-loadFile("Util/Gettext.mo");
 loadFile("Util/FMI.mo");
 loadFile("NFFrontEnd/NFType.mo");
 loadFile("NFFrontEnd/NFExpression.mo");

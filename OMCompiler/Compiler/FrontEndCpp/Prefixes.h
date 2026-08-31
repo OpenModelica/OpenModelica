@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #ifndef PREFIXES_H
 #define PREFIXES_H
 
@@ -8,8 +43,11 @@
 
 #include "MetaModelica.h"
 
-extern record_description SCode_Replaceable_REPLACEABLE__desc;
-extern record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+extern "C" record_description SCode_Replaceable_REPLACEABLE__desc;
+extern "C" record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+
+extern "C" record_description NFPrefixes_Replaceable_REPLACEABLE__desc;
+extern "C" record_description NFPrefixes_Replaceable_NOT__REPLACEABLE__desc;
 
 namespace OpenModelica
 {
@@ -25,7 +63,7 @@ namespace OpenModelica
     public:
       Visibility() = default;
       constexpr Visibility(Value value) noexcept : _value{value} {}
-      explicit Visibility(MetaModelica::Record value) noexcept;
+      explicit Visibility(MetaModelica::Value value) noexcept;
 
       MetaModelica::Value toSCode() const noexcept;
 
@@ -41,7 +79,7 @@ namespace OpenModelica
   bool operator== (Visibility vis1, Visibility vis2);
   bool operator!= (Visibility vis1, Visibility vis2);
 
-  std::ostream& operator<< (std::ostream &os, Visibility visibility) noexcept;
+  std::ostream& operator<< (std::ostream &os, Visibility visibility);
 
   class Variability
   {
@@ -60,9 +98,10 @@ namespace OpenModelica
     public:
       Variability() = default;
       constexpr Variability(Value value) noexcept : _value{value} {}
-      explicit Variability(MetaModelica::Record value) noexcept;
+      explicit Variability(MetaModelica::Value value) noexcept;
 
       MetaModelica::Value toSCode() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       Value value() const noexcept { return _value; }
       Variability effective() const noexcept;
@@ -80,6 +119,8 @@ namespace OpenModelica
   bool operator<= (Variability var1, Variability var2);
   bool operator>  (Variability var1, Variability var2);
   bool operator>= (Variability var1, Variability var2);
+
+  std::ostream& operator<< (std::ostream &os, Variability variability);
 
   class Final
   {
@@ -100,6 +141,8 @@ namespace OpenModelica
       bool _value = false;
   };
 
+  std::ostream& operator<< (std::ostream &os, Final fin);
+
   class Each
   {
     public:
@@ -119,6 +162,8 @@ namespace OpenModelica
       bool _value = false;
   };
 
+  std::ostream& operator<< (std::ostream &os, Each each);
+
   class InnerOuter
   {
     public:
@@ -133,9 +178,10 @@ namespace OpenModelica
     public:
       InnerOuter() = default;
       constexpr InnerOuter(Value value) noexcept : _value{value} {}
-      explicit InnerOuter(MetaModelica::Record value);
+      explicit InnerOuter(MetaModelica::Value value);
 
       MetaModelica::Value toAbsyn() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       bool isInner() const noexcept { return _value & Inner; }
       bool isOuter() const noexcept { return _value & Outer; }
@@ -155,6 +201,8 @@ namespace OpenModelica
   bool operator== (InnerOuter io1, InnerOuter io2) noexcept;
   bool operator!= (InnerOuter io1, InnerOuter io2) noexcept;
 
+  std::ostream& operator<< (std::ostream &os, InnerOuter io);
+
   class Redeclare
   {
     public:
@@ -173,6 +221,8 @@ namespace OpenModelica
     private:
       bool _value = false;
   };
+
+  std::ostream& operator<< (std::ostream &os, Redeclare redeclare);
 
   template<typename ConstrainingClass>
   class Replaceable
@@ -206,8 +256,6 @@ namespace OpenModelica
         return *this;
       }
 
-      Replaceable& operator= (Replaceable &&other) = default;
-
       void swap(Replaceable<ConstrainingClass> &other)
       {
         using std::swap;
@@ -218,12 +266,23 @@ namespace OpenModelica
       MetaModelica::Value toSCode() const noexcept
       {
         if (isReplaceable()) {
-          return MetaModelica::Record(REPLACEABLE, SCode_Replaceable_REPLACEABLE__desc, {
-            _cc ? MetaModelica::Option(_cc->toSCode()) : MetaModelica::Option()
-          });
+          return MetaModelica::Record{REPLACEABLE, SCode_Replaceable_REPLACEABLE__desc, {
+            _cc ? MetaModelica::Option{_cc->toSCode()} : MetaModelica::Option{}
+          }};
         }
 
-        return MetaModelica::Record(NOT_REPLACEABLE, SCode_Replaceable_NOT__REPLACEABLE__desc);
+        return MetaModelica::Record{NOT_REPLACEABLE, SCode_Replaceable_NOT__REPLACEABLE__desc};
+      }
+
+      MetaModelica::Value toNF() const
+      {
+        if (isReplaceable()) {
+          return MetaModelica::Record{REPLACEABLE, NFPrefixes_Replaceable_REPLACEABLE__desc, {
+            _cc ? MetaModelica::Option{_cc->toNF()} : MetaModelica::Option{}
+          }};
+        }
+
+        return MetaModelica::Record{NOT_REPLACEABLE, NFPrefixes_Replaceable_NOT__REPLACEABLE__desc};
       }
 
       bool isReplaceable() const noexcept { return _value; }
@@ -265,6 +324,8 @@ namespace OpenModelica
       bool _value = false;
   };
 
+  std::ostream& operator<< (std::ostream &os, Encapsulated encapsulated);
+
   class Partial
   {
     public:
@@ -283,6 +344,8 @@ namespace OpenModelica
     private:
       bool _value = false;
   };
+
+  std::ostream& operator<< (std::ostream &os, Partial partial);
 
   class Purity
   {
@@ -315,6 +378,8 @@ namespace OpenModelica
   // pur1 is less pure than pur2 if pur1 is impure and pur2 is not.
   bool operator<  (Purity pur1, Purity pur2) noexcept;
 
+  std::ostream& operator<< (std::ostream &os, Purity purity);
+
   class ConnectorType
   {
     public:
@@ -333,9 +398,10 @@ namespace OpenModelica
     public:
       ConnectorType() = default;
       constexpr ConnectorType(Value value) noexcept : _value{value} {}
-      explicit ConnectorType(MetaModelica::Record value);
+      explicit ConnectorType(MetaModelica::Value value);
 
       MetaModelica::Value toSCode() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       bool isPotential() const noexcept;
       bool isFlow() const noexcept;
@@ -355,8 +421,10 @@ namespace OpenModelica
       std::string_view unparse() const noexcept;
 
     private:
-      int _value = 0;
+      int64_t _value = 0;
   };
+
+  std::ostream& operator<< (std::ostream &os, ConnectorType cty);
 
   class Parallelism
   {
@@ -371,9 +439,10 @@ namespace OpenModelica
     public:
       Parallelism() = default;
       constexpr Parallelism(Value value) noexcept : _value{value} {}
-      explicit Parallelism(MetaModelica::Record value);
+      explicit Parallelism(MetaModelica::Value value);
 
       MetaModelica::Value toSCode() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       Value value() const noexcept { return _value; }
 
@@ -386,6 +455,8 @@ namespace OpenModelica
 
   bool operator== (Parallelism par1, Parallelism par2) noexcept;
   bool operator!= (Parallelism par1, Parallelism par2) noexcept;
+
+  std::ostream& operator<< (std::ostream &os, Parallelism par);
 
   class Direction
   {
@@ -400,9 +471,10 @@ namespace OpenModelica
     public:
       Direction() = default;
       constexpr Direction(Value value) noexcept : _value{value} {}
-      explicit Direction(MetaModelica::Record value);
+      explicit Direction(MetaModelica::Value value);
 
       MetaModelica::Value toAbsyn() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       Value value() const noexcept { return _value; }
 
@@ -417,6 +489,8 @@ namespace OpenModelica
 
   bool operator== (Direction dir1, Direction dir2) noexcept;
   bool operator!= (Direction dir1, Direction dir2) noexcept;
+
+  std::ostream& operator<< (std::ostream &os, Direction direction);
 
   class Field
   {
@@ -436,6 +510,8 @@ namespace OpenModelica
     private:
       bool _value = false;
   };
+
+  std::ostream& operator<< (std::ostream &os, Field field);
 }
 
 #endif /* PREFIXES_H */

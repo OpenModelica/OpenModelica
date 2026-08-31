@@ -2,7 +2,6 @@
 // keywords: linear system of equations
 // status: correct
 // teardown_command: rm -rf LinearSysEq_* LinearSysEq LinearSysEq.exe LinearSysEq.cpp LinearSysEq.makefile LinearSysEq.libs LinearSysEq.log output.log
-// cflags: -d=-newInst
 //
 // Solving of a linear system of equations
 //
@@ -39,23 +38,23 @@ val(pu.port.flowrate, 1.0);
 //   Real pi.port.flowrate;
 //   parameter Real pi.a = 1.0;
 // equation
-//   pu.port.flowrate = pu.port.pressure - time;
+//   pu.port.pressure = pi.port.pressure;
+//   pi.port.flowrate + pu.port.flowrate = 0.0;
+//   pu.port.flowrate = -(time - pu.port.pressure);
 //   pi.port.pressure = pi.port.flowrate * pi.a;
-//   pu.port.flowrate + pi.port.flowrate = 0.0;
-//   pi.port.pressure = pu.port.pressure;
 // end LinearSysEq;
 // "
 // record SimulationResult
 //     resultFile = "LinearSysEq_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'LinearSysEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'LinearSysEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// -0.0
-// -0.0
-// -0.0
 // 0.0
+// 0.0
+// 0.0
+// -0.0
 // 0.25
 // 0.25
 // 0.25

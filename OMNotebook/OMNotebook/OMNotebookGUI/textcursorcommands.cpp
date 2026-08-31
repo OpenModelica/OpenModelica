@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -66,53 +69,7 @@ namespace IAEX
   void TextCursorCutText::execute()
   {
     Cell *cell = document()->getCursor()->currentCell();
-    if( cell )
-    {
-      if( typeid(InputCell) == typeid(*cell) )
-      {
-        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-        if( inputcell->textEditOutput()->hasFocus() &&
-          inputcell->isEvaluated() )
-        {
-          inputcell->textEditOutput()->copy();
-        }
-        else
-          inputcell->textEdit()->cut();
-      }
-      else if( typeid(GraphCell) == typeid(*cell) )
-      {
-        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-        if( graphcell->textEditOutput()->hasFocus() &&
-          graphcell->isEvaluated() )
-        {
-          graphcell->textEditOutput()->copy();
-        }
-        else
-          graphcell->textEdit()->cut();
-      }
-
-      else if( typeid(LatexCell) == typeid(*cell) )
-      {
-        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-        if( latexcell->textEditOutput()->hasFocus() &&
-          latexcell->isEvaluated() )
-        {
-          latexcell->textEditOutput()->cut();
-        }
-        else
-          latexcell->textEdit()->cut();
-      }
-
-
-      else
-      {
-        QTextEdit *editor = cell->textEdit();
-        if( editor )
-        {
-          editor->cut();
-        }
-      }
-    }
+    if( cell ) cell->cutText();
   }
 
 
@@ -126,50 +83,7 @@ namespace IAEX
   void TextCursorCopyText::execute()
   {
     Cell *cell = document()->getCursor()->currentCell();
-    if( cell )
-    {
-      if( typeid(InputCell) == typeid(*cell) )
-      {
-        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-        if( inputcell->textEditOutput()->hasFocus() &&
-          inputcell->isEvaluated() )
-        {
-          inputcell->textEditOutput()->copy();
-        }
-        else
-          inputcell->textEdit()->copy();
-      }
-      else if( typeid(GraphCell) == typeid(*cell) )
-      {
-        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-        if( graphcell->textEditOutput()->hasFocus() &&
-          graphcell->isEvaluated() )
-        {
-          graphcell->textEditOutput()->copy();
-        }
-        else
-          graphcell->textEdit()->copy();
-      }
-      else if( typeid(LatexCell) == typeid(*cell) )
-      {
-        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-        if( latexcell->textEditOutput()->hasFocus() &&
-          latexcell->isEvaluated() )
-        {
-          latexcell->textEditOutput()->copy();
-        }
-        else
-          latexcell->textEdit()->copy();
-      }
-      else
-      {
-        QTextEdit *editor = cell->textEdit();
-        if( editor )
-        {
-          editor->copy();
-        }
-      }
-    }
+    if (cell) cell->copyText();
   }
 
 
@@ -183,37 +97,7 @@ namespace IAEX
   void TextCursorPasteText::execute()
   {
       Cell *cell = document()->getCursor()->currentCell();
-      if( cell )
-      {
-        if( typeid(LatexCell) == typeid(*cell) )
-        {
-          LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-          if( latexcell->textEditOutput()->hasFocus() &&
-            latexcell->isEvaluated() )
-          {
-            latexcell->textEditOutput()->paste();
-          }
-          else
-          {
-            latexcell->textEdit()->paste();
-          }
-        }
-        else
-        {
-          QTextEdit *editor = cell->textEdit();
-          if( editor )
-          {
-            editor->paste();
-          }
-        }
-
-      }
-
-  /*  QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-    if( editor )
-    {
-      editor->paste();
-    }*/
+      if ( cell ) cell->pasteText();
   }
 
 
@@ -430,19 +314,16 @@ namespace IAEX
       editor->setAlignment( (Qt::Alignment)alignment_ );
 
       // create a rule for the alignment
-      Rule *rule;
-      if( (Qt::Alignment)alignment_ == Qt::AlignLeft )
-        rule = new Rule( "TextAlignment", "Left" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignRight )
-        rule = new Rule( "TextAlignment", "Right" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignHCenter )
-        rule = new Rule( "TextAlignment", "Center" );
-      else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
-        rule = new Rule( "TextAlignment", "Justify" );
-      else
-        rule = new Rule( "TextAlignment", "Left" );
+      QString alignment_str;
+      switch (alignment_) {
+        case Qt::AlignLeft:    alignment_str = "Left";    break;
+        case Qt::AlignRight:   alignment_str = "Right";   break;
+        case Qt::AlignHCenter: alignment_str = "Center";  break;
+        case Qt::AlignJustify: alignment_str = "Justify"; break;
+        default:               alignment_str = "Left";    break;
+      }
 
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"TextAlignment", alignment_str});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->setAlignment( alignment_ );
@@ -495,10 +376,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the margin
-      QString ruleValue;
-      ruleValue.setNum( margin_ );
-      Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Margin", QString::number(margin_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setMargin( margin_ );
@@ -527,10 +405,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the padding
-      QString ruleValue;
-      ruleValue.setNum( padding_ );
-      Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Padding", QString::number(padding_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setPadding( padding_ );
@@ -559,10 +434,7 @@ namespace IAEX
       editor->document()->rootFrame()->setFrameFormat( format );
 
       // create a rule for the border
-      QString ruleValue;
-      ruleValue.setNum( border_ );
-      Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
-      document()->getCursor()->currentCell()->addRule( rule );
+      document()->getCursor()->currentCell()->addRule(Rule{"OMNotebook_Border", QString::number(border_)});
 
       // update the cells style
       document()->getCursor()->currentCell()->style()->textFrameFormat()->setBorder( border_ );
@@ -582,8 +454,8 @@ namespace IAEX
     QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
     if( !cursor.isNull() )
     {
-      QImage* image = new QImage( filepath_ );
-      if( !image->isNull() )
+      QImage image( filepath_ );
+      if( !image.isNull() )
       {
         QString imagename = document()->addImage( image );
 

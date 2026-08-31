@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -35,6 +32,7 @@
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/options.h"
+#include "om_format.h"
 
 static inline void generated_jac_struc(OptData *, int*, int*);
 static inline void set_row(int *, int *, int *, const modelica_boolean *const,
@@ -84,7 +82,7 @@ Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * use
   modelica_real ***v;
   long double a[5][5];
   long double *sdt;
-  double * vv[np+1];
+  double **vv = (double**)malloc((np+1) * sizeof(double*));
   int i, j, k, shift;
 
 
@@ -153,6 +151,7 @@ Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * use
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
+  free(vv);
   return TRUE;
 }
 
@@ -712,16 +711,19 @@ static inline void printMaxError(ipnumber *g, const int m, const int nx, const i
   }
 
   if(kk>-1){
+    char buf1[32], buf2[32];
+    ryu_hr_tdzp_buf(gmax, buf1);
+    ryu_hr_tdzp_buf(t[ii][jj], buf2);
     if(kk < nx){
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
-              gmax, data->modelData->realVarsData[kk].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %s for the approximation of the state %s(time = %s)\n",
+              buf1, data->modelData->realVarsData[kk].info.name, buf2);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
-              gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %s for the constraint %s(time = %s)\n",
+              buf1, data->modelData->realVarsData[ll].info.name, buf2);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %s for the final constraint %s(time = %s)\n", buf1, data->modelData->realVarsData[ll].info.name, buf2);
     }
   }
 }

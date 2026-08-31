@@ -3,6 +3,7 @@
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // ticket:4382
+// suite: metamodelica
 
 setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen"); getErrorString();
 

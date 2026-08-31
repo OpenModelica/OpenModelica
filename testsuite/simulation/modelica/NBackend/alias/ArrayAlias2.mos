@@ -27,7 +27,7 @@ simulate(ArrayAlias2); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[ARRY] (2) a = b ($RES_SIM_1)
+// 	[ARRY] (2) a = b; ($RES_SIM_1)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -60,7 +60,7 @@ simulate(ArrayAlias2); getErrorString();
 // "Warning: NBAlias.checkNominalThresholdSingle: The quotient of the greatest and lowest nominal value is greater than the nominal threshold = 1000.0.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[ARRY] (2) a = b ($RES_SIM_1)
+// 	[ARRY] (2) a = b; ($RES_SIM_1)
 //
 // 	Nominal map after replacements (conflicting array index = 2):
 // 	(a, {10.0, 1e5})

@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 #include <QDebug>
 
 #include "Element/Element.h"
@@ -105,7 +111,7 @@ bool DynamicAnnotation::update(double time, ModelInstance::Model *pModel)
     expression = mExp.arg(1);
 
     if (!expression.isNull()) {
-      fromExp(evaluate_wrap_helper(&expression, pModel, true, time, ""));
+      fromExp(evaluate_wrap_helper(&expression, pModel, true, time));
     }
     return true;
   }
@@ -119,10 +125,8 @@ bool DynamicAnnotation::update(double time, ModelInstance::Model *pModel)
  * Containing model provides the binding variable value.
  * If expression is DynamicSelect then use the static part of the expression.
  * \param pModel
- * \param instanceName - instanceName is prepended to the variable name while evaluating.
- *                       It is used when we go in nested ElementParameters.
  */
-void DynamicAnnotation::evaluate(ModelInstance::Model *pModel, const QString &instanceName)
+void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
 {
   /* Avoid expression evaluation when skip expression evaluation flag is set.
    * We skip expression evaluation when we call getModelInstance for icon.
@@ -135,7 +139,7 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel, const QString &in
       expression = mExp;
     }
     if (!expression.isNull()) {
-      fromExp(evaluate_wrap_helper(&expression, pModel, false, 0.0, instanceName));
+      fromExp(evaluate_wrap_helper(&expression, pModel, false, 0.0));
     }
   }
 }
@@ -213,18 +217,17 @@ QJsonValue DynamicAnnotation::serialize() const
  * \param pModel
  * \param readFromResultFileForDynamicSelect
  * \param time
- * \param instanceName
  * \return
  */
 FlatModelica::Expression DynamicAnnotation::evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,
-                                                                 bool readFromResultFileForDynamicSelect, double time, const QString &instanceName)
+                                                                 bool readFromResultFileForDynamicSelect, double time)
 {
-  FlatModelica::Expression bindingExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, false, instanceName);
+  FlatModelica::Expression bindingExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, false);
 
   // if we fail to evaluate using binding values then try with expresison value.
   if (bindingExpression.isNull() && !readFromResultFileForDynamicSelect) {
     // qDebug() << "Using value to evaluate expression.";
-    FlatModelica::Expression valueExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, true, instanceName);
+    FlatModelica::Expression valueExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, true);
     // if we fail to evaluate using value then return the original expresison.
     if (valueExpression.isNull()) {
       return *pExpression;
@@ -245,18 +248,14 @@ FlatModelica::Expression DynamicAnnotation::evaluate_wrap_helper(FlatModelica::E
  * \param pModel
  * \param readFromResultFileForDynamicSelect
  * \param time - only used when readFromResultFileForDynamicSelect is true.
- * \param instanceName
  * \return
  */
 FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,
-                                                            bool readFromResultFileForDynamicSelect, double time, bool value, const QString &instanceName)
+                                                            bool readFromResultFileForDynamicSelect, double time, bool value)
 {
   try {
-    auto expression = pExpression->evaluate([&](std::string name) -> auto {
+    auto var_eval = [&](std::string name) -> FlatModelica::Expression {
       auto vname = QString::fromStdString(name);
-      if (!instanceName.isEmpty() && !vname.startsWith(instanceName + ".")) {
-        vname = instanceName + "." + vname;
-      }
       if (readFromResultFileForDynamicSelect) {
         QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
         if (value.second) {
@@ -273,15 +272,24 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
           return *valueOrBindingExpression;
         }
       }
-    });
+    };
 
-    if (!value && !expression.isLiteral()) {
-      // qDebug() << "Expression is not literal:" << expression.toQString();
-      return evaluate_helper(&expression, pModel, readFromResultFileForDynamicSelect, time, value, instanceName);
-    } else {
-      // qDebug() << "Expression is literal:" << expression.toQString() << expression.isNull();
-      return expression;
+    // Keep evaluating until the expression reduces to a literal. Some DynamicSelect
+    // expressions (e.g. a function call that evaluates to another non-literal call)
+    // never reach a literal; without a bound this recurses until the stack overflows
+    // and OMEdit hangs. Loop with a depth cap and stop early if evaluation no longer
+    // makes progress (a non-literal fixed point).
+    const int maxIterations = 100;
+    FlatModelica::Expression expression = pExpression->evaluate(var_eval);
+    for (int i = 0; !value && !expression.isLiteral() && !expression.isNull() && i < maxIterations; ++i) {
+      FlatModelica::Expression next = expression.evaluate(var_eval);
+      if (next.toQString() == expression.toQString()) {
+        // Fixed point that is not a literal: further evaluation is pointless.
+        break;
+      }
+      expression = std::move(next);
     }
+    return expression;
   } catch (const std::exception &e) {
     if (MainWindow::instance()->isDebug()) {
       qDebug() << "Failed to evaluate expression.";

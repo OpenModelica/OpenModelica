@@ -20,14 +20,14 @@ constant Boolean debug = false;
 replaceable package LexTable
   constant Integer yy_limit;
   constant Integer yy_finish;
-  constant Integer yy_acclist[:];
-  constant Integer yy_accept[:];
-  constant Integer yy_ec[:];
-  constant Integer yy_meta[:];
-  constant Integer yy_base[:];
-  constant Integer yy_def[:];
-  constant Integer yy_nxt[:];
-  constant Integer yy_chk[:];
+  constant array<Integer> yy_acclist;
+  constant array<Integer> yy_accept;
+  constant array<Integer> yy_ec;
+  constant array<Integer> yy_meta;
+  constant array<Integer> yy_base;
+  constant array<Integer> yy_def;
+  constant array<Integer> yy_nxt;
+  constant array<Integer> yy_chk;
 end LexTable;
 
 function scan "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
@@ -61,7 +61,6 @@ function action
   input Integer startSt;
   input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   input Integer buffer;
-  input Boolean debug;
   input String fileNm;
   input String fileContents;
   input list<Token> inErrorTokens;
@@ -70,474 +69,472 @@ function action
   output Integer bufferRet;
   output list<Token> errorTokens=inErrorTokens;
 protected
-  SourceInfo info;
-  String sToken;
 algorithm
   mm_startSt := startSt;
   // nameSpan := 255;
   bufferRet := 0;
-  (token) := match (act)
+  token := match act
     local
       Token tok;
-    case (1) // #line 36 "lexerModelicaDiff.l"
+    case 1 // #line 36 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.WHITESPACE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (2) // #line 37 "lexerModelicaDiff.l"
+    case 2 // #line 37 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NEWLINE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (3) // #line 38 "lexerModelicaDiff.l"
+    case 3 // #line 38 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.UNSIGNED_REAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (4) // #line 39 "lexerModelicaDiff.l"
+    case 4 // #line 39 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.UNSIGNED_REAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (5) // #line 40 "lexerModelicaDiff.l"
+    case 5 // #line 40 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.UNSIGNED_REAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (6) // #line 41 "lexerModelicaDiff.l"
+    case 6 // #line 41 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ALGORITHM,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (7) // #line 42 "lexerModelicaDiff.l"
+    case 7 // #line 42 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.AND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (8) // #line 43 "lexerModelicaDiff.l"
+    case 8 // #line 43 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ANNOTATION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (9) // #line 44 "lexerModelicaDiff.l"
+    case 9 // #line 44 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.BLOCK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (10) // #line 45 "lexerModelicaDiff.l"
+    case 10 // #line 45 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.CLASS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (11) // #line 46 "lexerModelicaDiff.l"
+    case 11 // #line 46 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.CONNECT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (12) // #line 47 "lexerModelicaDiff.l"
+    case 12 // #line 47 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.CONNECTOR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (13) // #line 48 "lexerModelicaDiff.l"
+    case 13 // #line 48 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.CONSTANT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (14) // #line 49 "lexerModelicaDiff.l"
+    case 14 // #line 49 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.DISCRETE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (15) // #line 50 "lexerModelicaDiff.l"
+    case 15 // #line 50 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.DER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (16) // #line 51 "lexerModelicaDiff.l"
+    case 16 // #line 51 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.DEFINEUNIT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (17) // #line 52 "lexerModelicaDiff.l"
+    case 17 // #line 52 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EACH,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (18) // #line 53 "lexerModelicaDiff.l"
+    case 18 // #line 53 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ELSE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (19) // #line 54 "lexerModelicaDiff.l"
+    case 19 // #line 54 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ELSEIF,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (20) // #line 55 "lexerModelicaDiff.l"
+    case 20 // #line 55 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ELSEWHEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (21) // #line 56 "lexerModelicaDiff.l"
+    case 21 // #line 56 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.END,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (22) // #line 57 "lexerModelicaDiff.l"
+    case 22 // #line 57 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ENUMERATION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (23) // #line 58 "lexerModelicaDiff.l"
+    case 23 // #line 58 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EQUATION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (24) // #line 59 "lexerModelicaDiff.l"
+    case 24 // #line 59 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ENCAPSULATED,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (25) // #line 60 "lexerModelicaDiff.l"
+    case 25 // #line 60 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EXPANDABLE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (26) // #line 61 "lexerModelicaDiff.l"
+    case 26 // #line 61 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EXTENDS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (27) // #line 62 "lexerModelicaDiff.l"
+    case 27 // #line 62 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.CONSTRAINEDBY,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (28) // #line 63 "lexerModelicaDiff.l"
+    case 28 // #line 63 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EXTERNAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (29) // #line 64 "lexerModelicaDiff.l"
+    case 29 // #line 64 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FALSE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (30) // #line 65 "lexerModelicaDiff.l"
+    case 30 // #line 65 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FINAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (31) // #line 66 "lexerModelicaDiff.l"
+    case 31 // #line 66 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FLOW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (32) // #line 67 "lexerModelicaDiff.l"
+    case 32 // #line 67 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FOR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (33) // #line 68 "lexerModelicaDiff.l"
+    case 33 // #line 68 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FUNCTION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (34) // #line 69 "lexerModelicaDiff.l"
+    case 34 // #line 69 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IF,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (35) // #line 70 "lexerModelicaDiff.l"
+    case 35 // #line 70 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IMPORT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (36) // #line 71 "lexerModelicaDiff.l"
+    case 36 // #line 71 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (37) // #line 72 "lexerModelicaDiff.l"
+    case 37 // #line 72 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.INITIAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (38) // #line 73 "lexerModelicaDiff.l"
+    case 38 // #line 73 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.INNER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (39) // #line 74 "lexerModelicaDiff.l"
+    case 39 // #line 74 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.INPUT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (40) // #line 75 "lexerModelicaDiff.l"
+    case 40 // #line 75 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LOOP,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (41) // #line 76 "lexerModelicaDiff.l"
+    case 41 // #line 76 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.MODEL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (42) // #line 77 "lexerModelicaDiff.l"
+    case 42 // #line 77 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NOT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (43) // #line 78 "lexerModelicaDiff.l"
+    case 43 // #line 78 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OUTER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (44) // #line 79 "lexerModelicaDiff.l"
+    case 44 // #line 79 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OPERATOR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (45) // #line 80 "lexerModelicaDiff.l"
+    case 45 // #line 80 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OVERLOAD,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (46) // #line 81 "lexerModelicaDiff.l"
+    case 46 // #line 81 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (47) // #line 82 "lexerModelicaDiff.l"
+    case 47 // #line 82 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OUTPUT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (48) // #line 83 "lexerModelicaDiff.l"
+    case 48 // #line 83 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PACKAGE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (49) // #line 84 "lexerModelicaDiff.l"
+    case 49 // #line 84 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PARAMETER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (50) // #line 85 "lexerModelicaDiff.l"
+    case 50 // #line 85 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PARTIAL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (51) // #line 86 "lexerModelicaDiff.l"
+    case 51 // #line 86 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PROTECTED,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (52) // #line 87 "lexerModelicaDiff.l"
+    case 52 // #line 87 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PUBLIC,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (53) // #line 88 "lexerModelicaDiff.l"
+    case 53 // #line 88 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RECORD,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (54) // #line 89 "lexerModelicaDiff.l"
+    case 54 // #line 89 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.REDECLARE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (55) // #line 90 "lexerModelicaDiff.l"
+    case 55 // #line 90 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.REPLACEABLE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (56) // #line 91 "lexerModelicaDiff.l"
+    case 56 // #line 91 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.THEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (57) // #line 92 "lexerModelicaDiff.l"
+    case 57 // #line 92 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (58) // #line 93 "lexerModelicaDiff.l"
+    case 58 // #line 93 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.TYPE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (59) // #line 94 "lexerModelicaDiff.l"
+    case 59 // #line 94 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.WHEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (60) // #line 95 "lexerModelicaDiff.l"
+    case 60 // #line 95 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.WHILE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (61) // #line 96 "lexerModelicaDiff.l"
+    case 61 // #line 96 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.WITHIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (62) // #line 97 "lexerModelicaDiff.l"
+    case 62 // #line 97 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RETURN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (63) // #line 98 "lexerModelicaDiff.l"
+    case 63 // #line 98 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.BREAK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (64) // #line 100 "lexerModelicaDiff.l"
+    case 64 // #line 100 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LPAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (65) // #line 101 "lexerModelicaDiff.l"
+    case 65 // #line 101 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RPAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (66) // #line 102 "lexerModelicaDiff.l"
+    case 66 // #line 102 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LBRACK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (67) // #line 103 "lexerModelicaDiff.l"
+    case 67 // #line 103 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RBRACK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (68) // #line 104 "lexerModelicaDiff.l"
+    case 68 // #line 104 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LBRACE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (69) // #line 105 "lexerModelicaDiff.l"
+    case 69 // #line 105 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RBRACE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (70) // #line 106 "lexerModelicaDiff.l"
+    case 70 // #line 106 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EQEQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (71) // #line 107 "lexerModelicaDiff.l"
+    case 71 // #line 107 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EQUALS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (72) // #line 108 "lexerModelicaDiff.l"
+    case 72 // #line 108 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COMMA,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (73) // #line 109 "lexerModelicaDiff.l"
+    case 73 // #line 109 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ASSIGN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (74) // #line 110 "lexerModelicaDiff.l"
+    case 74 // #line 110 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLONCOLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (75) // #line 111 "lexerModelicaDiff.l"
+    case 75 // #line 111 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (76) // #line 112 "lexerModelicaDiff.l"
+    case 76 // #line 112 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SEMICOLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (77) // #line 114 "lexerModelicaDiff.l"
+    case 77 // #line 114 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PURE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (78) // #line 115 "lexerModelicaDiff.l"
+    case 78 // #line 115 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IMPURE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (79) // #line 116 "lexerModelicaDiff.l"
+    case 79 // #line 116 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OPTIMIZATION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (80) // #line 118 "lexerModelicaDiff.l"
+    case 80 // #line 118 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PLUS_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (81) // #line 119 "lexerModelicaDiff.l"
+    case 81 // #line 119 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.MINUS_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (82) // #line 120 "lexerModelicaDiff.l"
+    case 82 // #line 120 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STAR_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (83) // #line 121 "lexerModelicaDiff.l"
+    case 83 // #line 121 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SLASH_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (84) // #line 122 "lexerModelicaDiff.l"
+    case 84 // #line 122 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.POWER_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (85) // #line 124 "lexerModelicaDiff.l"
+    case 85 // #line 124 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (86) // #line 125 "lexerModelicaDiff.l"
+    case 86 // #line 125 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.MINUS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (87) // #line 126 "lexerModelicaDiff.l"
+    case 87 // #line 126 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PLUS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (88) // #line 127 "lexerModelicaDiff.l"
+    case 88 // #line 127 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESSEQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (89) // #line 128 "lexerModelicaDiff.l"
+    case 89 // #line 128 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESSGT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (90) // #line 129 "lexerModelicaDiff.l"
+    case 90 // #line 129 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (91) // #line 130 "lexerModelicaDiff.l"
+    case 91 // #line 130 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.GREATER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (92) // #line 131 "lexerModelicaDiff.l"
+    case 92 // #line 131 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.GREATEREQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (93) // #line 133 "lexerModelicaDiff.l"
+    case 93 // #line 133 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.POWER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (94) // #line 134 "lexerModelicaDiff.l"
+    case 94 // #line 134 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SLASH,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (95) // #line 136 "lexerModelicaDiff.l"
+    case 95 // #line 136 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SUBTYPEOF,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (96) // #line 138 "lexerModelicaDiff.l"
+    case 96 // #line 138 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STREAM,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (97) // #line 140 "lexerModelicaDiff.l"
+    case 97 // #line 140 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.DOT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (98) // #line 142 "lexerModelicaDiff.l"
+    case 98 // #line 142 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IDENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (99) // #line 144 "lexerModelicaDiff.l"
+    case 99 // #line 144 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IDENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (100) // #line 146 "lexerModelicaDiff.l"
+    case 100 // #line 146 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.UNSIGNED_INTEGER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (101) // #line 148 "lexerModelicaDiff.l"
+    case 101 // #line 148 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 7;
         bufferRet := buffer;
       then noToken;
-    case (102) // #line 153 "lexerModelicaDiff.l"
+    case 102 // #line 153 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (103) // #line 154 "lexerModelicaDiff.l"
+    case 103 // #line 154 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (104) // #line 155 "lexerModelicaDiff.l"
+    case 104 // #line 155 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (105) // #line 156 "lexerModelicaDiff.l"
+    case 105 // #line 156 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (106) // #line 157 "lexerModelicaDiff.l"
+    case 106 // #line 157 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (107) // #line 160 "lexerModelicaDiff.l"
+    case 107 // #line 160 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 3;
         bufferRet := buffer;
       then noToken;
-    case (108) // #line 165 "lexerModelicaDiff.l"
+    case 108 // #line 165 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.BLOCK_COMMENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (109) // #line 166 "lexerModelicaDiff.l"
+    case 109 // #line 166 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (110) // #line 167 "lexerModelicaDiff.l"
+    case 110 // #line 167 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (111) // #line 174 "lexerModelicaDiff.l"
+    case 111 // #line 174 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 5;
         bufferRet := buffer;
       then noToken;
-    case (112) // #line 180 "lexerModelicaDiff.l"
+    case 112 // #line 180 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.LINE_COMMENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (113) // #line 181 "lexerModelicaDiff.l"
+    case 113 // #line 181 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (114) // #line 184 "lexerModelicaDiff.l"
+    case 114 // #line 184 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId._NO_TOKEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         errorTokens := tok :: errorTokens;
@@ -725,11 +722,8 @@ function lex "Scan starts the lexical analysis, load the tables and consume the 
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens={};
 protected
-  Integer startSt,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
-  list<Integer> cProg,cProg2;
-  list<String> chars;
+  Integer startSt,i,cTok,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> states;
-  String s1,s2;
   import MetaModelica.Dangerous.listReverseInPlace;
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
 algorithm
@@ -781,7 +775,12 @@ function consume
   output list<Token> resToken;
   output Integer bkBuffer = 0;
   output Integer mm_startSt;
-  output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
+  output Integer mm_currSt;
+  output Integer mm_pos;
+  output Integer mm_sPos;
+  output Integer mm_ePos;
+  output Integer mm_linenr;
+  output Integer lineNrStart;
   output Integer buffer;
   output list<Integer> states;
   output list<Token> errorTokens=inErrorTokens;
@@ -850,7 +849,7 @@ algorithm
       print("\nFound rule: " + String(act));
     end if;
 
-    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents,errorTokens);
+    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,fileName,fileContents,errorTokens);
 
     if (debug==true) then
       print("\nDid action");
@@ -900,7 +899,6 @@ function findRule
   output Integer bkBuffer;
   output list<Integer> states;
 protected
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
   Integer lp,lp1,stCmp,cp;
   Boolean st;
   import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
@@ -984,16 +982,16 @@ algorithm
 end checkArray;
 
 function checkArrayModelica
-  input Integer arr[:];
+  input array<Integer> arr;
   input Integer index;
   input SourceInfo info;
 protected
   String filename;
   Integer lineStart;
 algorithm
-  if index<1 or index>size(arr,1) then
+  if index<1 or index>arrayLength(arr) then
     SOURCEINFO(fileName=filename, lineNumberStart=lineStart) := info;
-    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(size(arr,1))+" index=" + String(index) + "\n");
+    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(arrayLength(arr))+" index=" + String(index) + "\n");
     fail();
   end if;
 end checkArrayModelica;
@@ -1001,7 +999,7 @@ end checkArrayModelica;
 package LexTable
   constant Integer yy_limit = 395;
   constant Integer yy_finish = 453;
-  constant Integer yy_acclist[:] = array(
+  constant array<Integer> yy_acclist = MetaModelica.Dangerous.listArrayLiteral({
       115,  114,    1,  114,    2,  114,  114,  101,  114,  114,
        64,  114,   65,  114,   85,  114,   87,  114,   72,  114,
        86,  114,   97,  114,   94,  114,  100,  114,   75,  114,
@@ -1055,8 +1053,8 @@ package LexTable
        98,   98,   95,   98,    8,   98,   98,   16,   98,   98,
        98,   25,   98,   98,   98,   98,   98,   22,   98,   98,
        55,   98,   98,   24,   98,   79,   98,   27,   98
-   );
-  constant Integer yy_accept[:] = array(
+   });
+  constant array<Integer> yy_accept = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    2,
         3,    5,    7,    8,   10,   11,   13,   15,   17,   19,
        21,   23,   25,   27,   29,   31,   33,   35,   37,   39,
@@ -1101,8 +1099,8 @@ package LexTable
       471,  472,  474,  475,  476,  477,  478,  480,  481,  483,
       484,  486,  488,  490,  490
 
-   );
-  constant Integer yy_ec[:] = array(
+   });
+  constant array<Integer> yy_ec = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    4,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1131,16 +1129,16 @@ package LexTable
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1
-   );
-  constant Integer yy_meta[:] = array(
+   });
+  constant array<Integer> yy_meta = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    2,    2,    3,    3,    2,    2,
         2,    2,    2,    2,    2,    2,    4,    2,    2,    2,
         5,    2,    4,    4,    2,    5,    2,    2,    6,    6,
         4,    4,    4,    6,    4,    4,    4,    4,    4,    4,
         6,    4,    4,    4,    6,    4,    4,    4,    6,    4,
         4,    6,    4,    2,    2
-   );
-  constant Integer yy_base[:] = array(
+   });
+  constant array<Integer> yy_base = MetaModelica.Dangerous.listArrayLiteral({
         0,    0,   53,   54,  449,  448,   55,   56,  450,  453,
        64,  453,  446,  453,  422,  453,  453,  453,  453,  453,
       453,   56,   60,   62,   57,  453,   39,  426,  425,    0,
@@ -1185,8 +1183,8 @@ package LexTable
       150,    0,  148,  154,  156,  131,    0,   91,    0,   39,
         0,    0,    0,  453,  201,  207,  213,  218,  221,  225
 
-   );
-  constant Integer yy_def[:] = array(
+   });
+  constant array<Integer> yy_def = MetaModelica.Dangerous.listArrayLiteral({
       394,    1,  395,  395,  396,  396,  397,  397,  394,  394,
       394,  394,  394,  394,  398,  394,  394,  394,  394,  394,
       394,  394,  394,  394,  394,  394,  394,  394,  394,  399,
@@ -1231,8 +1229,8 @@ package LexTable
       399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
       399,  399,  399,    0,  394,  394,  394,  394,  394,  394
 
-   );
-  constant Integer yy_nxt[:] = array(
+   });
+  constant array<Integer> yy_nxt = MetaModelica.Dangerous.listArrayLiteral({
        10,   11,   12,   13,   11,   10,   14,   15,   16,   17,
        18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
        28,   29,   30,   30,   31,   10,   32,   33,   34,   35,
@@ -1289,8 +1287,8 @@ package LexTable
       394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
       394,  394,  394,  394,  394,  394,  394,  394
-   );
-  constant Integer yy_chk[:] = array(
+   });
+  constant array<Integer> yy_chk = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1347,7 +1345,7 @@ package LexTable
       394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
       394,  394,  394,  394,  394,  394,  394,  394
-   );
+   });
 
 end LexTable;
 
@@ -1412,7 +1410,7 @@ protected
   Integer depth;
 algorithm
   // No changes are easy
-  _ := match diffs
+  () := match diffs
     case {(Diff.Equal,_)}
       algorithm
         odiffs := diffs;
@@ -1614,7 +1612,7 @@ algorithm
   rest := inRest;
   result := {};
   while not listEmpty(rest) loop
-    (head as (diff,t as TOKEN(id=id))) := listHead(rest);
+    head as (diff,t as TOKEN(id=id)) := listHead(rest);
     if diff <> Diff.Delete then
       break;
     end if;
@@ -1635,7 +1633,7 @@ algorithm
     result := {};
     return;
   end if;
-  _ := match rest
+  () := match rest
     case (Diff.Equal,t)::_ then ();
     else
       algorithm
@@ -1671,7 +1669,7 @@ algorithm
   end if;
 end reportErrors;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 
 end LexerModelicaDiff;

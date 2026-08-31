@@ -1,39 +1,45 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
 #include <stdlib.h>
 #include <iostream>
+#include <cstring>
 
 #include "OMCProxy.h"
 #include "MainWindow.h"
@@ -42,7 +48,15 @@
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "util/simulation_options.h"
+#ifdef OMC_RUST_ABI
+// Rust omc port in-process: the self-contained MMC-replacement (mmc_mk_*,
+// MMC_STRINGDATA, the MMC_TRY no-op control flow, the full threadData_t with the
+// callback fields, printStacktraceMessages) plus the JSON walker, with no OMC
+// MMC runtime / Boehm GC. omc_error.h would otherwise pull in the real MMC ABI.
+#include "omc_rust_embedding.h"
+#else
 #include "util/omc_error.h"
+#endif
 #include "FlatModelica/Expression.h"
 
 extern "C" {
@@ -52,10 +66,580 @@ void omc_System_initGarbageCollector(void *threadData);
 #if defined(_WIN32)
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
+#if !defined(__EMSCRIPTEN__) && defined(OMC_RUST_ABI)
+void omc_compiler_clear_cancel();                       // Rust in-process: reset the cancel flag per op
+void omc_compiler_set_pump_callback(void (*cb)(void));  // register the event-pump callback
+int omc_compiler_progress_permille();                   // 0..1000, or <0 for indeterminate
+int omc_compiler_progress_phase();                      // PHASE_* (0 idle)
+#elif !defined(__EMSCRIPTEN__)
+void System_clearCancel();                              // classic C omc runtime
+void System_setPumpCallback(void (*cb)(void));
+int System_progressPermille();
+int System_progressPhase();
+const char* System_progressMessage();                   // label of the step in progress, "" if none
+#endif
 }
 
 #include <QMessageBox>
 #include <QStringBuilder>
+#include <QCoreApplication>
+
+// Progress phase (compiler PHASE_* / metamodelica::cancel) → user-facing label.
+// Shared by the wasm worker-wait UI and the native pump-driven progress bar.
+static QString omcPhaseLabel(int phase) {
+  switch (phase) {
+    case 1: return QObject::tr("Downloading…");
+    case 2: return QObject::tr("Parsing…");
+    case 3: return QObject::tr("Instantiating…");
+    case 4: return QObject::tr("Compiling model…");
+    case 5: return QObject::tr("Simulating…");
+    default: return QString();
+  }
+}
+
+#if defined(__EMSCRIPTEN__)
+#include <cstdlib>
+#include <emscripten.h>
+#include <emscripten/em_js.h>
+#include <emscripten/val.h>
+#include <QEventLoop>
+#include <QTimer>
+#include <QVarLengthArray>
+#include <QtCore/private/qwasmsuspendresumecontrol_p.h>
+
+// omc runs in the shared omc_worker.js Web Worker. Calls are posted without
+// suspending; the reply is stashed by id and the C++ side waits for it. A raw
+// Asyncify suspend is only safe before Qt's loop runs (it corrupts Qt's wasm
+// event pump mid-event), so once running we suspend a nested QEventLoop instead.
+bool g_omcMainLoopRunning = false;
+
+EM_JS(void, omedit_worker_setup, (const char *ver), {
+  if (Module.__omcWorker) return;
+  // Cache-bust the worker URL with the build id (workers cache past a hard-reload).
+  const url = new URL("../omc_worker.js", document.baseURI);
+  url.search = "v=" + UTF8ToString(ver);
+  const w = new Worker(url, { type: "module" });
+  Module.__omcWorker = w;
+  // Cooperative cancel + live progress: a shared "control block" the omc worker
+  // polls/writes (needs cross-origin isolation for SharedArrayBuffer). A long omc
+  // call blocks the worker, so cancel can't be a message — the main thread writes
+  // control[0], the worker reads it; the worker writes progress into control[1]/[2].
+  // Layout (Int32Array): [0] cancel, [1] progress permille, [2] phase, [3] generation.
+  Module.__omcControlView = null;
+  try {
+    if (typeof SharedArrayBuffer !== "undefined" && self.crossOriginIsolated) {
+      const cbuf = new SharedArrayBuffer(16);
+      Module.__omcControlView = new Int32Array(cbuf);
+      w.postMessage({ cmd: "controlBuf", buf: cbuf });
+    }
+  } catch (e) { Module.__omcControlView = null; }
+  Module.__omcPending = null;
+  Module.__omcMsgId = 0;
+  Module.__omcCallId = 0;
+  Module.__omcReplies = {};
+  Module.__omcCallPromises = {};
+  Module.__omcQueue = Promise.resolve();
+  Module.__omcSend = (msg) => {
+    const run = () => new Promise((resolve) => {
+      Module.__omcPending = resolve;
+      w.postMessage(msg);
+    });
+    const p = Module.__omcQueue.then(run);
+    Module.__omcQueue = p.catch(() => {});
+    return p;
+  };
+  // Post a worker message, returning a fresh call id; when the reply arrives it is
+  // stashed in __omcReplies[id] for the C++ side to poll/take. id-keyed so a
+  // reentrant call made while another's nested loop is spinning stays unambiguous.
+  // Resume the suspended nested loop the instant a reply lands (vs polling).
+  Module.__omcWake = () => {
+    const i = Module.__omcWakeIndex;
+    if (i === undefined) return;
+    const c = Module.qtSuspendResumeControl;
+    const h = c && c.eventHandlers && c.eventHandlers[i];
+    if (h) h();
+  };
+  Module.__omcPostCall = (msg) => {
+    const id = ++Module.__omcCallId;
+    Module.__omcCallPromises[id] = Module.__omcSend(msg).then((reply) => {
+      Module.__omcReplies[id] = reply || {};
+      Module.__omcWake();
+    }).catch((e) => {
+      Module.__omcReplies[id] = { __bridgeError: String(e) };
+      Module.__omcWake();
+    });
+    return id;
+  };
+  Module.__omcSetStatus = (p) => {
+    const amt = p ? (p.total > 0 ? Math.round(100 * p.done / p.total) + "%"
+                                 : Math.round(p.done / 1024) + " KiB") : "";
+    // Drive the HTML startup splash bar with the real download progress, if it is
+    // up and the library-tree pass has not yet claimed it (once it has, this fires
+    // on every worker reply and would keep resetting the determinate bar).
+    const sfill = Module.__omeditSplashDeterminate ? null : document.querySelector("#omedit-splash .bar > div");
+    const smsg = Module.__omeditSplashDeterminate ? null : document.getElementById("omedit-splash-msg");
+    if (sfill) {
+      if (p && p.total > 0) {
+        sfill.style.animation = "none";
+        sfill.style.transform = "none";
+        sfill.style.width = (100 * p.done / p.total) + "%";
+      } else {
+        // finished or unknown size: restore the indeterminate slide
+        sfill.style.animation = "";
+        sfill.style.transform = "";
+        sfill.style.width = "40%";
+      }
+    }
+    if (smsg && p) smsg.textContent = "Downloading libraries… " + amt;
+    let el = document.getElementById("omcStatus");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "omcStatus";
+      el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;"
+        + "font:12px sans-serif;padding:3px 8px;background:#2b2b2b;color:#e0e0e0;";
+      document.body.appendChild(el);
+    }
+    if (!p) { el.style.display = "none"; return; }
+    el.textContent = "Downloading " + p.file + "  " + amt;
+    el.style.display = "block";
+  };
+  w.onmessage = (e) => {
+    const m = e.data;
+    if (m && m.kind === "progress") { Module.__omcSetStatus(m); return; }
+    Module.__omcSetStatus(null);
+    const resolve = Module.__omcPending;     // serialised queue → one in flight
+    Module.__omcPending = null;
+    if (resolve) resolve(m);
+  };
+});
+
+// Non-suspending posts; replies collected via __omcReplies[id]. omedit_post_abi
+// is called by the generated bridge (OpenModelicaScriptingAPIQtBridge.cpp).
+EM_JS(int, omedit_post_init, (), {
+  return Module.__omcPostCall({ cmd: "init", installMsl: false });
+});
+EM_JS(char *, omedit_take_init_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && r.ok) return stringToNewUTF8("");
+  return stringToNewUTF8((r && (r.error || r.__bridgeError)) || "omc worker init failed");
+});
+EM_JS(int, omedit_post_eval, (const char *src), {
+  // keepErrors: OMEdit reads diagnostics itself (printMessagesStringInternal),
+  // so the worker must not drain omc's Error buffer into the reply.
+  return Module.__omcPostCall({ cmd: "eval", src: UTF8ToString(src), keepErrors: true });
+});
+EM_JS(int, omedit_post_abi, (const char *req), {
+  return Module.__omcPostCall({ cmd: "abi", request: UTF8ToString(req), id: ++Module.__omcMsgId });
+});
+EM_JS(int, omedit_call_ready, (int id), {
+  return Object.prototype.hasOwnProperty.call(Module.__omcReplies, id) ? 1 : 0;
+});
+EM_JS(char *, omedit_take_eval_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  // A worker-level failure (omc trapped, or the bridge threw) is the only error
+  // signal for these cases — omc's Error buffer is unreadable after a trap. Stash
+  // it so sendCommand can surface it; normal diagnostics still flow via the ABI.
+  Module.__omcLastEvalError = (r && (r.error || r.__bridgeError)) || "";
+  return stringToNewUTF8((r && r.result) || "");
+});
+EM_JS(char *, omedit_take_last_eval_error, (), {
+  const e = Module.__omcLastEvalError || "";
+  Module.__omcLastEvalError = "";
+  return stringToNewUTF8(e);
+});
+EM_JS(char *, omedit_take_abi_result, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  if (r && typeof r.response === "string") return stringToNewUTF8(r.response);
+  if (r && r.__bridgeError) return stringToNewUTF8(JSON.stringify({ error: "omc bridge call failed: " + r.__bridgeError }));
+  return stringToNewUTF8('{"error":"no response from omc worker"}');
+});
+
+EM_ASYNC_JS(void, omedit_await_call, (int id), {
+  const p = Module.__omcCallPromises[id];
+  if (p) { try { await p; } catch (e) {} }
+});
+
+EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
+
+// Cooperative cancel + progress control block (shared with the omc worker).
+// Available only when cross-origin isolated (SharedArrayBuffer);
+// omedit_cancel_available reports it. Indices: 0 cancel, 1 progress, 2 phase,
+// 3 generation.
+EM_JS(int, omedit_cancel_available, (), {
+  return Module.__omcControlView ? 1 : 0;
+});
+EM_JS(void, omedit_cancel_sim, (), {
+  if (Module.__omcControlView) Atomics.store(Module.__omcControlView, 0, 1);
+});
+// Clear the cancel flag and reset progress at the start of a new op; bump the
+// generation so a late progress write from the previous op is ignored.
+EM_JS(void, omedit_clear_cancel, (), {
+  const v = Module.__omcControlView;
+  if (v) {
+    Atomics.store(v, 0, 0);
+    Atomics.store(v, 1, -1);
+    Atomics.store(v, 2, 0);
+    Atomics.add(v, 3, 1);
+  }
+});
+// Read current progress permille (-1 indeterminate) / phase for the UI timer.
+EM_JS(int, omedit_progress_permille, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 1) : -1;
+});
+EM_JS(int, omedit_progress_phase, (), {
+  return Module.__omcControlView ? Atomics.load(Module.__omcControlView, 2) : 0;
+});
+
+static QVarLengthArray<QEventLoop *> g_omcWaitStack;
+static bool g_omcWakeInstalled = false;
+
+static void ensureWakeInstalled() {
+  if (g_omcWakeInstalled) return;
+  QWasmSuspendResumeControl *ctl = QWasmSuspendResumeControl::get();
+  if (!ctl) return;
+  uint32_t idx = ctl->registerEventHandler([](emscripten::val) {
+    if (!g_omcWaitStack.isEmpty()) g_omcWaitStack.last()->quit();
+  });
+  EM_ASM({ Module.__omcWakeIndex = $0; }, idx);
+  g_omcWakeInstalled = true;
+}
+
+// Read the worker's progress control block and reflect it on the main-window
+// status bar while a blocking call is in flight. Sets ownsBar when it is the
+// one that made the bar visible, so the wait can restore it on completion.
+static void omcDriveProgressUi(bool &ownsBar, bool &ownsCancel) {
+  int phase = omedit_progress_phase();
+  if (phase == 0) return; // PHASE_IDLE — nothing running to report
+  MainWindow *w = MainWindow::instance();
+  // The status bar / progress bar are built partway through MainWindow's
+  // constructor, but omc commands (getVersion, …) run before that from the
+  // OMCProxy constructor — and the wait's QTimer can fire during them. Bail
+  // until they exist so we never make a virtual call on an uninitialised member.
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    ownsBar = true;
+    w->showProgressBar();
+  }
+  int permille = omedit_progress_permille();
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  ownsCancel = true;
+  w->showCancelOperationButton(true);
+  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+}
+
+// Restore whatever this wait made visible. The bar and cancel button are
+// tracked separately: a wait may show the Cancel button while another widget
+// already owns the progress bar, and must still hide the button on completion.
+static void omcClearProgressUi(bool ownsBar, bool ownsCancel) {
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  if (ownsCancel) w->showCancelOperationButton(false);
+  if (ownsBar) {
+    w->hideProgressBar();
+    w->getProgressBar()->setRange(0, 100);
+    w->getStatusBar()->clearMessage();
+  }
+}
+
+void omcWorkerWaitReply(int id) {
+  if (omedit_call_ready(id)) return;
+  if (!g_omcMainLoopRunning) {
+    omedit_await_call(id);
+    return;
+  }
+  ensureWakeInstalled();
+  QEventLoop loop;
+  if (!g_omcWakeInstalled) {
+    QTimer poll;
+    QObject::connect(&poll, &QTimer::timeout, &loop, [&loop, id]() {
+      if (omedit_call_ready(id)) loop.quit();
+    });
+    poll.start(1);
+    loop.exec();
+    return;
+  }
+  // Only the outermost wait drives the progress UI (nested calls would fight
+  // over the same status bar) and only when the shared control block exists
+  // (cross-origin isolated); a quick call finishes before the 100 ms tick, so
+  // the bar never flashes for trivial requests.
+  bool outermost = g_omcWaitStack.isEmpty();
+  g_omcWaitStack.append(&loop);
+  QTimer progressTimer;
+  bool ownsBar = false;
+  bool ownsCancel = false;
+  if (outermost && omedit_cancel_available()) {
+    QObject::connect(&progressTimer, &QTimer::timeout, &loop, [&ownsBar, &ownsCancel]() {
+      omcDriveProgressUi(ownsBar, ownsCancel);
+    });
+    progressTimer.start(100);
+  }
+  while (!omedit_call_ready(id)) loop.exec();
+  progressTimer.stop();
+  g_omcWaitStack.removeLast();
+  if (ownsBar || ownsCancel) omcClearProgressUi(ownsBar, ownsCancel);
+  if (!g_omcWaitStack.isEmpty()) omedit_wake_now();
+}
+
+// Spawn + initialise the worker (replaces the in-process GC + omc_Main_init).
+// installMsl=false: OMEdit loads libraries itself as ordinary commands. Returns
+// "" on success or an error string (caller frees with free()).
+static char *omedit_worker_init() {
+  omedit_worker_setup(__DATE__ "T" __TIME__); // spawn worker, cache-busted by build id
+  int id = omedit_post_init();
+  omcWorkerWaitReply(id);
+  return omedit_take_init_result(id);
+}
+
+// String command path (replaces omc_Main_handleCommand). Returns the reply
+// string (caller frees with free()).
+static char *omedit_worker_eval(const char *src) {
+  int id = omedit_post_eval(src);
+  omcWorkerWaitReply(id);
+  return omedit_take_eval_result(id);
+}
+
+// Worker-VFS file read, backing the QAbstractFileEngine (wasm/worker_vfs_engine.cpp).
+EM_JS(int, omedit_worker_ready, (), {
+  return (Module.__omcWorker && Module.__omcSend) ? 1 : 0;
+});
+EM_JS(int, omedit_post_vfs_get, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsGet", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_bytes, (int id, int *outLen), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) { HEAP32[outLen >> 2] = -1; return 0; }
+  const len = bytes.length;
+  const ptr = _malloc(len || 1);
+  HEAPU8.set(bytes, ptr);
+  HEAP32[outLen >> 2] = len;
+  return ptr;
+});
+
+QByteArray omcWorkerReadFile(const char *path) {
+  if (!omedit_worker_ready()) return QByteArray();
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  int len = -1;
+  char *p = omedit_take_vfs_bytes(id, &len);
+  if (!p || len < 0) { if (p) free(p); return QByteArray(); }
+  QByteArray data(p, len);
+  free(p);
+  return data;
+}
+
+// Worker-VFS file write, backing the QAbstractFileEngine's write side; entries are
+// overwritten, there is no remove. Deliberately does NOT wait for the reply: files
+// get written from anywhere (a QSettings sync, a destructor, code before exec()) and
+// blocking on the worker there corrupts Qt's pending-event machinery. Ordering holds
+// anyway — Module.__omcSend is one serialised queue.
+EM_JS(void, omedit_post_vfs_put, (const char *path, const char *bytes, int len), {
+  Module.__omcSend({ cmd: "vfsPut", path: UTF8ToString(path),
+                     bytes: HEAPU8.slice(bytes, bytes + len) })
+    .then((r) => { if (!r || !r.ok) console.error("[OMEdit-wasm] vfsPut refused", UTF8ToString(path)); })
+    .catch((e) => console.error("[OMEdit-wasm] vfsPut failed", e));
+});
+
+bool omcWorkerWriteFile(const char *path, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return false;
+  omedit_post_vfs_put(path, data.constData(), data.size());
+  return true;
+}
+
+// Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
+// Returns the immediate child names of dir; directories carry a trailing '/'.
+EM_JS(int, omedit_post_vfs_list, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsList", path: UTF8ToString(path) });
+});
+EM_JS(char *, omedit_take_vfs_list, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const entries = (r && r.entries) || [];
+  const s = entries.map(e => e.name + (e.isDir ? "/" : "")).join("\n");
+  const len = lengthBytesUTF8(s) + 1;
+  const ptr = _malloc(len);
+  stringToUTF8(s, ptr, len);
+  return ptr;
+});
+
+QStringList omcWorkerListDir(const char *path) {
+  QStringList out;
+  if (!omedit_worker_ready()) return out;
+  int id = omedit_post_vfs_list(path);
+  omcWorkerWaitReply(id);
+  char *p = omedit_take_vfs_list(id);
+  if (!p) return out;
+  QString s = QString::fromUtf8(p);
+  free(p);
+  if (!s.isEmpty()) out = s.split('\n', Qt::SkipEmptyParts);
+  return out;
+}
+
+// Copy a worker-VFS file into the page MEMFS at the same path, for readers that
+// use raw C stdio (fopen) instead of QFile — e.g. OMPlot's .mat/.csv readers,
+// which the QAbstractFileEngine cannot intercept. Returns true if staged.
+EM_JS(int, omedit_stage_into_memfs, (int id, const char *path), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  const bytes = r && r.bytes;
+  if (!bytes) return 0;
+  const p = UTF8ToString(path);
+  try {
+    const slash = p.lastIndexOf("/");
+    if (slash > 0) FS.mkdirTree(p.substring(0, slash));
+    FS.writeFile(p, bytes);
+    return 1;
+  } catch (e) { return 0; }
+});
+
+bool omcWorkerStageFile(const char *path) {
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_get(path);
+  omcWorkerWaitReply(id);
+  return omedit_stage_into_memfs(id, path) != 0;
+}
+#endif // __EMSCRIPTEN__
+
+#if !defined(__EMSCRIPTEN__)
+// omc runs in-process on the UI thread, so a long compile would freeze the GUI.
+// omc invokes this at every cancel check (System.checkCancel); it hands the
+// thread back to Qt so the Cancel click is delivered (flipping the flag omc then
+// reads) and progress repaints. Rate-limited — checkCancel fires per class.
+// Reentering omc is prevented by OMCLongOperation disabling all UI but Cancel.
+// Reflect the compiler's last-reported progress (read via the backend getters)
+// on the status bar while an in-process op is in flight. Tracks whether it was
+// the one that made the bar visible so the scope can restore it on completion.
+static bool g_omcNativeOwnsBar = false;
+static void omcDriveNativeProgress()
+{
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+#if defined(OMC_RUST_ABI)
+  int phase = omc_compiler_progress_phase();
+  int permille = omc_compiler_progress_permille();
+  // The Rust runtime has no message channel yet, so the phase label is all there is.
+  const QString label = omcPhaseLabel(phase);
+#else
+  int phase = System_progressPhase();
+  int permille = System_progressPermille();
+  // A step that names itself, e.g. which FMU platform is being built, says more
+  // than the generic phase label.
+  const char *message = System_progressMessage();
+  const QString label = (message && *message) ? QString::fromUtf8(message) : omcPhaseLabel(phase);
+#endif
+  if (phase == 0) return; // nothing reported yet
+  QProgressBar *bar = w->getProgressBar();
+  if (!bar->isVisible()) {
+    g_omcNativeOwnsBar = true;
+    w->showProgressBar();
+  }
+  if (permille < 0) {
+    bar->setRange(0, 0); // indeterminate spinner
+  } else {
+    bar->setRange(0, 1000);
+    bar->setValue(permille);
+  }
+  w->getStatusBar()->showMessage(label);
+}
+
+static void omcClearNativeProgress()
+{
+  if (!g_omcNativeOwnsBar) return;
+  g_omcNativeOwnsBar = false;
+  MainWindow *w = MainWindow::instance();
+  if (!w || !w->getProgressBar() || !w->getStatusBar()) return;
+  w->hideProgressBar();
+  w->getProgressBar()->setRange(0, 100);
+  w->getStatusBar()->clearMessage();
+}
+
+extern "C" void omedit_pump_events()
+{
+  static QElapsedTimer sLastPump;
+  if (sLastPump.isValid() && sLastPump.elapsed() < 40) {
+    return;
+  }
+  sLastPump.restart();
+  omcDriveNativeProgress();
+  QCoreApplication::processEvents();
+}
+
+static void omedit_set_pump(bool install)
+{
+#if defined(OMC_RUST_ABI)
+  omc_compiler_set_pump_callback(install ? omedit_pump_events : nullptr);
+#else
+  System_setPumpCallback(install ? omedit_pump_events : nullptr);
+#endif
+}
+#endif // !__EMSCRIPTEN__
+
+static int g_omcLongOperationDepth = 0;
+
+/*!
+ * \brief OMCLongOperation::OMCLongOperation
+ */
+OMCLongOperation::OMCLongOperation()
+{
+  g_omcLongOperationDepth++;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 1) {
+    return;
+  }
+#if defined(OMC_RUST_ABI)
+  omc_compiler_clear_cancel();
+#else
+  System_clearCancel();
+#endif
+  omedit_set_pump(true);
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(true);
+  }
+  // Delayed so a quick operation never flashes the button. The UI-disable above
+  // is immediate — the pump can fire before this fires.
+  mShowCancelButtonTimer.setSingleShot(true);
+  QObject::connect(&mShowCancelButtonTimer, &QTimer::timeout, []() {
+    if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
+  });
+  mShowCancelButtonTimer.start(100);
+#endif
+}
+
+/*!
+ * \brief OMCLongOperation::~OMCLongOperation
+ */
+OMCLongOperation::~OMCLongOperation()
+{
+  g_omcLongOperationDepth--;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 0) {
+    return;
+  }
+  mShowCancelButtonTimer.stop();
+  omedit_set_pump(false);
+  omcClearNativeProgress();
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(false);
+  }
+#endif
+}
 
 /*!
  * \class OMCProxy
@@ -82,6 +666,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpOMCLoggerTextBox->setUseTimer(false);
+  mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -238,10 +823,29 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
 #else
   mpCommandsLogFile = fopen(commandsLogFilePath.toUtf8().constData(), "w");
 #endif
+  // Unbuffered: a crash mid-startup still leaves the last command on disk.
+  if (mpCommunicationLogFile) setvbuf(mpCommunicationLogFile, NULL, _IONBF, 0);
+  if (mpCommandsLogFile) setvbuf(mpCommandsLogFile, NULL, _IONBF, 0);
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? QLocale::system() : settingsLocale;
+#if defined(__EMSCRIPTEN__)
+  // omc runs in the Web Worker: spawn + initialise it instead of an in-process
+  // MMC runtime. The plot/loadModel callbacks are delivered as worker messages
+  // (TODO) rather than threadData function pointers. threadData is null here.
+  (void) settingsLocale;
+  {
+    char *initErr = omedit_worker_init();
+    QString initError = QString::fromUtf8(initErr);
+    free(initErr);
+    if (!initError.isEmpty()) {
+      fprintf(stderr, "OMEdit: omc worker init failed: %s\n", initError.toUtf8().constData());
+      return false;
+    }
+  }
+  mpOMCInterface = new OMCInterface(threadData);
+#else
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toUtf8().constData()), args);
@@ -255,10 +859,12 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
+#endif
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
+  setOMEditDebugFlag();
   // get OpenModelica version
   QString version = getVersion();
   Helper::OpenModelicaVersion = version;
@@ -290,6 +896,13 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   changeDirectory(tmpPath);
   // set the user home directory variable.
   Helper::userHomeDirectory = getHomeDirectoryPath();
+#if defined(__EMSCRIPTEN__)
+  // wasm-jit is the worker's simulation target; MSL isn't bundled, so fetch it
+  // before loadSystemLibraries runs.
+  setCommandLineOptions("--simCodeTarget=wasm-jit");
+  updatePackageIndex();
+  installPackage("Modelica", "", false);
+#endif
   return true;
 }
 
@@ -329,6 +942,28 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   MMC_TRY_STACK()
 
+#if defined(__EMSCRIPTEN__)
+  // String command path routed to the omc Web Worker (no in-process MMC).
+  (void) reply_str;
+  (void) threadData;
+  {
+    char *r = omedit_worker_eval(expression.toUtf8().constData());
+    mResult = QString::fromUtf8(r);
+    free(r);
+    // Surface a worker-level failure (omc trapped, or the bridge threw). omc's
+    // stderr is invisible on the web and its Error buffer is unreadable after a
+    // trap, so this is the only place these reach the user.
+    char *werr = omedit_take_last_eval_error();
+    QString workerError = QString::fromUtf8(werr);
+    free(werr);
+    if (!workerError.isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, workerError, Helper::scriptingKind, Helper::errorLevel));
+    }
+    if (expression == "quit()") {
+      return;
+    }
+  }
+#else
   if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;
@@ -336,6 +971,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
+#endif
   double elapsed = (double)commandTime.elapsed() / 1000.0;
   logResponse(expression, mResult.trimmed(), elapsed, saveToHistory);
 
@@ -416,7 +1052,8 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
   if (isLoggingEnabled()) {
     if (saveToHistory || MainWindow::instance()->isDebug()) {
       // insert the command to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QFont font = mpOMCLoggerTextBox->font();
+      font.setBold(true);
       QTextCharFormat format;
       format.setFont(font);
       mpOMCLoggerTextBox->appendOutput(command + "\n", format);
@@ -468,10 +1105,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
     }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-      QTextCharFormat format;
-      format.setFont(font);
-      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
@@ -778,7 +1412,9 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
           LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
           LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(lib);
           if (!pLibraryTreeItem) {
+#if !defined(__EMSCRIPTEN__)
             SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, lib), Qt::AlignRight, Qt::white);
+#endif
             pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
           }
         } else {
@@ -1548,10 +2184,8 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
-                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::systemFontInfo.pointSize()) % "px;}\n"
-                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::monospacedFontInfo.pointSize()) % "px;}\n"
+                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";}\n"
                                   "    </style>\n"
                                   "    " % infoHeader % "\n"
                                   "  </head>\n"
@@ -1639,17 +2273,29 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
 }
 
 /*!
-  Loads a file in OMC
-  \param fileName - the file to load.
-  \return true on success
-  */
-bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin)
+ * \brief OMCProxy::loadFile
+ * Loads a file in OMC.
+ * \param fileName
+ * \param encoding
+ * \param uses
+ * \param notify
+ * \param requireExactVersion
+ * \param allowWithin
+ * \param printErrors
+ * \return
+ */
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin, bool printErrors)
 {
   mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion, allowWithin);
-  printMessagesStringInternal();
+  /* If result is true then print messages anyway, because there might be warnings/notifications
+   * If result is false then print messages only if printErrors is true.
+   */
+  if (result || (!result && printErrors)) {
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1668,6 +2314,8 @@ bool OMCProxy::loadString(QString value, QString fileName, QString encoding, boo
   bool result = mpOMCInterface->loadString(value, fileName, encoding, merge, true, true, false);
   if (checkError) {
     printMessagesStringInternal();
+  } else {
+    getErrorString();
   }
   return result;
 }
@@ -1687,16 +2335,19 @@ bool OMCProxy::loadClassContentString(const QString &data, const QString &classN
 }
 
 /*!
-  Parse the file. Doesn't load it into OMC.
-  \param fileName - the file to parse.
-  \return true on success
-  */
-QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
+ * \brief OMCProxy::parseFile
+ * Parse the file. Doesn't load it into OMC.
+ * \param fileName
+ * \param encoding
+ * \param printErrors
+ * \return
+ */
+QList<QString> OMCProxy::parseFile(QString fileName, QString encoding, bool printErrors)
 {
   QList<QString> result;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->parseFile(fileName, encoding);
-  if (result.isEmpty()) {
+  if (result.isEmpty() && printErrors) {
     printMessagesStringInternal();
   }
   return result;
@@ -1796,15 +2447,17 @@ bool OMCProxy::existClass(QString className)
 }
 
 /*!
-  Renames a class.
-  \param oldName - the class old name.
-  \param newName - the class new name.
-  \return true on success.
-  */
-bool OMCProxy::renameClass(QString oldName, QString newName)
+ * \brief OMCProxy::renameClass
+ * Renames a class and updates references to it.
+ * \param oldName - The path of the class to rename.
+ * \param newName - The new non-qualified name of the class.
+ * \return Returns a list of classes that were changed.
+ */
+QList<QString> OMCProxy::renameClass(QString oldName, QString newName)
 {
-  sendCommand("renameClass(" + oldName + ", " + newName + ")");
-  return StringHandler::unparseBool(getResult());
+  QList<QString> result = mpOMCInterface->renameClass(oldName, newName);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
@@ -1896,6 +2549,22 @@ QString OMCProxy::list(QString className)
 QString OMCProxy::listFile(QString className, bool nestedClasses)
 {
   QString result = mpOMCInterface->listFile(className, nestedClasses);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getTotalModel
+ * Returns the class and all its dependencies as a single string.
+ * \param className
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
+ * \return
+ */
+QString OMCProxy::getTotalModel(QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
+{
+  QString result = mpOMCInterface->getTotalModel(className, stripAnnotations, stripComments, obfuscate);
   printMessagesStringInternal();
   return result;
 }
@@ -2456,10 +3125,10 @@ OMCInterface::getSimulationOptions_res OMCProxy::getSimulationOptions(QString cl
  * \param includeResources
  * \return
  */
-QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources)
+QString OMCProxy::buildModelFMU(QString className, QString version, QString type, QString fileNamePrefix, QList<QString> platforms, bool includeResources, QString method)
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources);
+  QString fmuFileName = mpOMCInterface->buildModelFMU(className, version, type, fileNamePrefix, platforms, includeResources, method);
   printMessagesStringInternal();
   return fmuFileName;
 }
@@ -2645,11 +3314,22 @@ bool OMCProxy::clearCommandLineOptions()
 {
   bool result = mpOMCInterface->clearCommandLineOptions();
   if (result) {
+    setOMEditDebugFlag();
     return true;
   } else {
     printMessagesStringInternal();
     return false;
   }
+}
+
+/*!
+ * \brief OMCProxy::setOMEditDebugFlag
+ * Tells omc that OMEdit is its host, so it emits the output only a GUI reads.
+ * A property of the session, hence re-applied whenever the options are cleared.
+ */
+void OMCProxy::setOMEditDebugFlag()
+{
+  setCommandLineOptions("-d=omedit");
 }
 
 bool OMCProxy::enableNewInstantiation()
@@ -3084,8 +3764,10 @@ QStringList OMCProxy::getEnumerationLiterals(QString className)
 void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = S_UNKNOWN + 1 ; i < S_MAX ; i++) {
-    *methods << SOLVER_METHOD_NAME[i];
-    *descriptions << SOLVER_METHOD_DESC[i];
+    if (SOLVER_METHOD_NAME[i] != NULL) {
+      *methods << SOLVER_METHOD_NAME[i];
+      *descriptions << (SOLVER_METHOD_DESC[i] != NULL ? SOLVER_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3098,8 +3780,10 @@ void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 void OMCProxy::getJacobianMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = JAC_UNKNOWN + 1 ; i < JAC_MAX ; i++) {
-    *methods << JACOBIAN_METHOD_NAME[i];
-    *descriptions << JACOBIAN_METHOD_DESC[i];
+    if (JACOBIAN_METHOD_NAME[i] != NULL) {
+      *methods << JACOBIAN_METHOD_NAME[i];
+      *descriptions << (JACOBIAN_METHOD_DESC[i] != NULL ? JACOBIAN_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3122,8 +3806,10 @@ QString OMCProxy::getJacobianFlagDetailedDescription()
 void OMCProxy::getInitializationMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = IIM_UNKNOWN + 1 ; i < IIM_MAX ; i++) {
-    *methods << INIT_METHOD_NAME[i];
-    *descriptions << INIT_METHOD_DESC[i];
+    if (INIT_METHOD_NAME[i] != NULL) {
+      *methods << INIT_METHOD_NAME[i];
+      *descriptions << (INIT_METHOD_DESC[i] != NULL ? INIT_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3136,8 +3822,10 @@ void OMCProxy::getInitializationMethods(QStringList *methods, QStringList *descr
 void OMCProxy::getLinearSolvers(QStringList *methods, QStringList *descriptions)
 {
   for (int i = LS_NONE + 1 ; i < LS_MAX ; i++) {
-    *methods << LS_NAME[i];
-    *descriptions << LS_DESC[i];
+    if (LS_NAME[i] != NULL) {
+      *methods << LS_NAME[i];
+      *descriptions << (LS_DESC[i] != NULL ? LS_DESC[i] : "");
+    }
   }
 }
 
@@ -3150,8 +3838,10 @@ void OMCProxy::getLinearSolvers(QStringList *methods, QStringList *descriptions)
 void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptions)
 {
   for (int i = NLS_NONE + 1 ; i < NLS_MAX ; i++) {
-    *methods << NLS_NAME[i];
-    *descriptions << NLS_DESC[i];
+    if (NLS_NAME[i] != NULL) {
+      *methods << NLS_NAME[i];
+      *descriptions << (NLS_DESC[i] != NULL ? NLS_DESC[i] : "");
+    }
   }
 }
 
@@ -3164,8 +3854,10 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
 void OMCProxy::getLogStreams(QStringList *names, QStringList *descriptions)
 {
   for (int i = firstOMCErrorStream ; i < OMC_SIM_LOG_MAX ; i++) {
-    *names << OMC_LOG_STREAM_NAME[i];
-    *descriptions << OMC_LOG_STREAM_DESC[i];
+    if (OMC_LOG_STREAM_NAME[i] != NULL) {
+      *names << OMC_LOG_STREAM_NAME[i];
+      *descriptions << (OMC_LOG_STREAM_DESC[i] != NULL ? OMC_LOG_STREAM_DESC[i] : "");
+    }
   }
 }
 
@@ -3371,6 +4063,132 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
   return result;
 }
 
+/*
+ * Accessors exported by the compiler runtime (Compiler/runtime/ModelInstanceReference_omc.c)
+ * for the getModelInstanceReference (issue #15219) handle registry. They are linked in via
+ * OpenModelicaCompiler. _get returns the boxed (list-form) JSON value for a handle and
+ * _release frees the registry slot.
+ */
+#if !defined(__EMSCRIPTEN__)
+extern "C" void* ModelInstanceReference_get(int handle);
+extern "C" int ModelInstanceReference_release(int handle);
+#endif
+
+/*!
+ * \brief OMCProxy::jsonValueFromMM
+ * Recursively converts a boxed MetaModelica JSON value (as produced by
+ * getModelInstanceReference and normalised by NFApi to list form) into a QJsonValue,
+ * bypassing string serialization and QJsonDocument::fromJson (issue #15219).
+ * Only the list-form node kinds appear (LIST_OBJECT/LIST), never OBJECT/ARRAY.
+ * \param value boxed JSON uniontype value
+ * \return
+ */
+/* Converts a boxed MetaModelica string to a QString.
+ * MMC_STRINGDATA expands to a struct member declared as `char data[1]` (a flexible array
+ * member with a bogus size of 1), so its type is char[1], not char*. Passed directly to
+ * QString::fromUtf8 that array binds Qt's QByteArrayView overload using the *declared* size
+ * (1 byte), truncating every string to its first character. The explicit (const char*) cast
+ * forces array-to-pointer decay so the strlen-based fromUtf8(const char*) overload is used. */
+#ifndef OMC_RUST_ABI
+static QString stringFromMM(void *mmString)
+{
+  return QString::fromUtf8((const char*) MMC_STRINGDATA(mmString));
+}
+#endif
+
+// Not on wasm: the boxed value lives in the worker, so getModelInstance() uses
+// the JSON-string path instead and this walker is never referenced.
+#if defined(OMC_RUST_ABI) && !defined(__EMSCRIPTEN__)
+// Rust omc port: the boxed value is the port's own JSON tree, walked through the
+// typed omc_json_* C ABI (openmodelica_backend_main::ModelInstanceReference)
+// rather than MMC record/cons-cell macros. Node kinds match the MMC version's
+// JSON.* constructors; the value reaches here normalised to list form
+// (LIST_OBJECT/LIST), so only those aggregates appear.
+QJsonValue OMCProxy::jsonValueFromMM(void *value)
+{
+  switch (omc_json_kind(value)) {
+    case OMC_JSON_LIST_OBJECT: {
+      QJsonObject object;
+      OmcJsonIter *it = omc_json_iter_new(value);
+      for (; !omc_json_iter_at_end(it); omc_json_iter_advance(it)) {
+        size_t keyLen = 0;
+        const char *key = omc_json_iter_key(it, &keyLen);
+        object.insert(QString::fromUtf8(key, (int) keyLen),
+                      jsonValueFromMM(const_cast<void*>(omc_json_iter_value(it))));
+      }
+      omc_json_iter_free(it);
+      return object;
+    }
+    case OMC_JSON_LIST: {
+      QJsonArray array;
+      OmcJsonIter *it = omc_json_iter_new(value);
+      for (; !omc_json_iter_at_end(it); omc_json_iter_advance(it)) {
+        array.append(jsonValueFromMM(const_cast<void*>(omc_json_iter_value(it))));
+      }
+      omc_json_iter_free(it);
+      return array;
+    }
+    case OMC_JSON_STRING: {
+      size_t len = 0;
+      const char *s = omc_json_string(value, &len);
+      return QJsonValue(QString::fromUtf8(s, (int) len));
+    }
+    case OMC_JSON_INTEGER:
+      // qint64 (not double) so the value is integer-typed, matching QJsonDocument::fromJson.
+      return QJsonValue((qint64) omc_json_integer(value));
+    case OMC_JSON_NUMBER:
+      return QJsonValue(omc_json_number(value));
+    case OMC_JSON_TRUE:
+      return QJsonValue(true);
+    case OMC_JSON_FALSE:
+      return QJsonValue(false);
+    default:
+      // OMC_JSON_NULL, and defensively OBJECT/ARRAY which should never reach here after normalisation.
+      return QJsonValue(QJsonValue::Null);
+  }
+}
+#elif !defined(OMC_RUST_ABI)
+QJsonValue OMCProxy::jsonValueFromMM(void *value)
+{
+  // A boxed uniontype record stores its record_description in slot 0 and its fields in slots 1..n.
+  struct record_description *desc = (struct record_description*) MMC_STRUCTDATA(value)[0];
+  const char *name = desc->name;
+  if (strcmp(name, "JSON.LIST_OBJECT") == 0) {
+    QJsonObject object;
+    void *lst = MMC_STRUCTDATA(value)[1];
+    while (!MMC_NILTEST(lst)) {
+      // each element is a tuple<String, JSON>: slot 0 is the key, slot 1 is the value (tuples carry no descriptor).
+      void *pair = MMC_CAR(lst);
+      object.insert(stringFromMM(MMC_STRUCTDATA(pair)[0]), jsonValueFromMM(MMC_STRUCTDATA(pair)[1]));
+      lst = MMC_CDR(lst);
+    }
+    return object;
+  } else if (strcmp(name, "JSON.LIST") == 0) {
+    QJsonArray array;
+    void *lst = MMC_STRUCTDATA(value)[1];
+    while (!MMC_NILTEST(lst)) {
+      array.append(jsonValueFromMM(MMC_CAR(lst)));
+      lst = MMC_CDR(lst);
+    }
+    return array;
+  } else if (strcmp(name, "JSON.STRING") == 0) {
+    return QJsonValue(stringFromMM(MMC_STRUCTDATA(value)[1]));
+  } else if (strcmp(name, "JSON.INTEGER") == 0) {
+    // qint64 (not double) so the value is integer-typed, matching QJsonDocument::fromJson
+    // which parses whole numbers as integers (Qt distinguishes integer vs double QJsonValues).
+    return QJsonValue((qint64) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(value)[1]));
+  } else if (strcmp(name, "JSON.NUMBER") == 0) {
+    return QJsonValue(mmc_prim_get_real(MMC_STRUCTDATA(value)[1]));
+  } else if (strcmp(name, "JSON.TRUE") == 0) {
+    return QJsonValue(true);
+  } else if (strcmp(name, "JSON.FALSE") == 0) {
+    return QJsonValue(false);
+  }
+  // JSON.NULL, and defensively JSON.OBJECT/JSON.ARRAY which should never reach here after normalisation.
+  return QJsonValue(QJsonValue::Null);
+}
+#endif // jsonValueFromMM (not on wasm)
+
 /*!
  * \brief OMCProxy::getModelInstance
  * \param className
@@ -3378,12 +4196,57 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
+  // Reference path (issue #15219): fetch an in-memory handle and walk the boxed JSON tree directly,
+  // skipping JSON.toString (omc) and QJsonDocument::fromJson (OMEdit). Gated behind --NAPINoJson=true.
+  // mpOMCInterface is the in-process linked compiler library, so the boxed value's address is valid here.
+  // Falls back to the JSON-string path on failure (handle <= 0).
+  // Not on wasm: omc runs in a Web Worker, so the boxed value's address is not
+  // valid on the main thread — always use the JSON-string path below (the string
+  // crosses the bridge fine and QJsonDocument parses it here).
+#if !defined(__EMSCRIPTEN__)
+  if (MainWindow::instance()->isNewApiNoJson()) {
+    QElapsedTimer refTimer;
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      refTimer.start();
+    }
+    QString cnt = context.isEmpty() ? QString("__NoContext") : context;
+    int handle = 0;
+    if (icon) {
+      QList<QString> filter;
+      filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
+      handle = mpOMCInterface->getModelInstanceAnnotationReference(className, filter);
+    } else {
+      handle = mpOMCInterface->getModelInstanceReference(className, cnt, modifier);
+    }
+    printMessagesStringInternal();
+    if (handle > 0) {
+      void *value = ModelInstanceReference_get(handle);
+      QJsonObject object;
+      if (value) {
+        object = jsonValueFromMM(value).toObject();
+      }
+      ModelInstanceReference_release(handle);
+      if (MainWindow::instance()->isNewApiProfiling()) {
+        const QString api = icon ? "getModelInstanceAnnotationReference" : "getModelInstanceReference";
+        double elapsed = (double)refTimer.elapsed() / 1000.0;
+        MainWindow::instance()->writeNewApiProfiling(QString("Time for %1(%2) + direct walk %3 secs").arg(api, className, QString::number(elapsed, 'f', 6)));
+      }
+      return object;
+    }
+    // handle <= 0: fall through to the JSON-string path below.
+  }
+#endif // reference-walker path (not on wasm)
+
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
 
   QString modelInstanceJson = "";
+  QString cnt = context.isEmpty() ? QString("__NoContext") : context;
+
   if (icon) {
     QList<QString> filter;
     filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
@@ -3398,10 +4261,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {
@@ -3412,7 +4275,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      timer.restart();
+    }
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3423,7 +4288,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting string JSON to QJsonDocument %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }
@@ -3477,6 +4342,42 @@ bool OMCProxy::restoreAST(int id)
   bool result = mpOMCInterface->restoreAST(id);
   printMessagesStringInternal();
   return result;
+}
+
+/*!
+ * \brief OMCProxy::reverseLookup
+ * Searches for uses of the given name in either all loaded classes or a given class.
+ * \param className
+ * \param scope
+ * \param exactMatch
+ * \param prettyPrint
+ * \return
+ */
+QJsonArray OMCProxy::reverseLookup(const QString &className, const QString &scope, bool exactMatch, bool prettyPrint)
+{
+  QString resultJson = mpOMCInterface->reverseLookup(className, scope, exactMatch, prettyPrint);
+  printMessagesStringInternal();
+  if (!resultJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8(), &jsonParserError);
+    // Check for parse errors
+    if (jsonParserError.error != QJsonParseError::NoError) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse reverse lookup json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    // Ensure root is an array
+    if (!doc.isArray()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Expected JSON array for class %1 but got different type.")
+                                                            .arg(className), Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    return doc.array();
+  }
+  return QJsonArray();
 }
 
 /*!

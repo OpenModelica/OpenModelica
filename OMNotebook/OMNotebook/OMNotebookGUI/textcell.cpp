@@ -1,35 +1,40 @@
-#define QT_NO_DEBUG_OUTPUT
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
+
+#define QT_NO_DEBUG_OUTPUT
+
 
 /*!
  * \file textcell.h
@@ -48,7 +53,6 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
-#include <QRegExp>
 
 
 //IAEX Headers
@@ -138,10 +142,9 @@ namespace IAEX
   {
     if( source->hasText() && !source->hasImage() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -171,6 +174,8 @@ namespace IAEX
     {
       event->ignore();
     }
+// wasm: base class handles Ctrl+C/X/V so Qt's WebAssembly clipboard works.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -192,6 +197,7 @@ namespace IAEX
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
     else
     {
       QTextBrowser::keyPressEvent( event );
@@ -207,7 +213,7 @@ namespace IAEX
    * \param name
    * \param type
    */
-  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType type)
+  void MyTextBrowser::doSetSource(const QUrl &name, QTextDocument::ResourceType /*type*/)
   {
     emit openLink( &name );
   }
@@ -248,13 +254,6 @@ namespace IAEX
     createTextWidget();
   }
 
-  TextCell::TextCell(TextCell &t)
-    : Cell(t)
-  {
-    setText(t.text());
-    setStyle(*t.style());
-  }
-
   /*!
    * \author Ingemar Axelsson
    *
@@ -262,8 +261,6 @@ namespace IAEX
    */
   TextCell::~TextCell()
   {
-    setMainWidget(0);
-    delete text_;
   }
 
   /*!
@@ -407,6 +404,21 @@ namespace IAEX
   QTextEdit* TextCell::textEdit()
   {
     return text_;
+  }
+
+  void TextCell::cutText()
+  {
+    text_->cut();
+  }
+
+  void TextCell::copyText()
+  {
+    text_->copy();
+  }
+
+  void TextCell::pasteText()
+  {
+    text_->paste();
   }
 
   /*!
@@ -670,7 +682,7 @@ namespace IAEX
    *
    * \param readonly The boolean value of readonly property
    */
-  void TextCell::setReadOnly(const bool readonly)
+  void TextCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -697,7 +709,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    */
-  void TextCell::setFocus(const bool focus)
+  void TextCell::setFocus(bool focus)
   {
     if(focus)
       text_->setFocus();
@@ -831,7 +843,7 @@ namespace IAEX
    *
    * \return True
    */
-  bool TextCell::isEditable()
+  bool TextCell::isEditable() const
   {
     return true;
   }
@@ -846,7 +858,7 @@ namespace IAEX
    * 2005-11-01 AF, Remade the function to reflect the new
    * QTextEdit
    */
-  void TextCell::viewExpression(const bool expr)
+  void TextCell::viewExpression(bool expr)
   {
     if( expr != isViewExpression() )
     {

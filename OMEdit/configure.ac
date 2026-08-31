@@ -14,6 +14,7 @@ AC_SUBST(QMAKE_CONFIG_OSG)
 AC_SUBST(LIBOSG)
 AC_SUBST(LSB_RELEASE)
 AC_SUBST(LIB_BOOST_REGEX)
+AC_SUBST(SHREXT)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
@@ -78,7 +79,12 @@ if test "$WITH_OSG" = 1; then
   AC_LINK_IFELSE(
         [AC_LANG_PROGRAM([[
 #include <osgViewer/GraphicsWindow>
+#include <QtCore/QtGlobal>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QGLWidget>
+#else
+#include <QtOpenGLWidgets/QOpenGLWidget>
+#endif
 ]],
   [[]])],
   [AC_MSG_RESULT([OK])],
@@ -119,10 +125,6 @@ else
   QMAKE_CONFIG_OSG="CONFIG += osg"
   LIBOSG="-losg -losgViewer -losgUtil -losgDB -losgGA -lOpenThreads -lGL"
   AC_MSG_RESULT("OSG is enabled")
-fi
-
-if test "$WITH_QT6" = "yes"; then
-  CPPFLAGS="$CPPFLAGS -DOM_OMEDIT_ENABLE_QTWEBENGINE"
 fi
 
 AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])
@@ -168,6 +170,12 @@ if test ! -z "$LSB_RELEASE"; then
   LSB_RELEASE="#define LSB_RELEASE \"$LSB_RELEASE\""
 else
   AC_MSG_RESULT([no])
+fi
+
+if echo $host | grep -i darwin; then
+  SHREXT=".dylib"
+else
+  SHREXT=".so"
 fi
 
 m4_include([common/m4/semver.m4])

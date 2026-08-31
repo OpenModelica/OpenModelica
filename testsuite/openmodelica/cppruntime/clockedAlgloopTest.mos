@@ -2,7 +2,6 @@
 // keywords: synchronous clocked equations, continuous equations
 // status: correct
 // teardown_command: rm -f *MixingUnit*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

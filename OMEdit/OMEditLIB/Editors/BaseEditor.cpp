@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -37,6 +43,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
 
@@ -665,11 +672,21 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
 {
   setObjectName("BaseEditor");
   setMouseTracking(true);
-  QTextDocument *pTextDocument = document();
-  pTextDocument->setDocumentMargin(2);
-  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
-  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
-  setDocument(pTextDocument);
+  // set the font
+  QFont font;
+  font.setFamily(OptionsDialog::instance()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  /*! Set the font on both editor and its underlying document
+   *  See issue #15005
+   *  If the font is set only on the document and not on the editor, a mismatch can occur between the editor and document fonts after a DPI change.
+   *  When the DPI changes, Qt re-evaluates the fonts and, due to this mismatch, resets the document font to match the editor font.
+   *  Setting the font on both the editor and the document ensures they remain synchronized, even after DPI changes.
+   */
+  setFont(font);
+  document()->setDefaultFont(font);
+  document()->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(document());
+  document()->setDocumentLayout(pModelicaTextDocumentLayout);
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor, this);
   mCanHaveBreakpoints = false;
@@ -1103,6 +1120,22 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    NavigationManager::instance()->recordNavigationPoint(this);
+    centerCursor();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the text cursor to the given position.
+ * \param position - the position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  if (position >= 0 && position <= textCursor().document()->characterCount()) {
+    QTextCursor textCursor = this->textCursor();
+    textCursor.setPosition(position);
+    setTextCursor(textCursor);
     centerCursor();
   }
 }
@@ -1236,6 +1269,10 @@ void PlainTextEdit::ensureCursorVisible()
  */
 void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(lineNumber);
+#else
   BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
@@ -1250,6 +1287,7 @@ void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
   }
+#endif
 }
 
 /*!
@@ -2066,6 +2104,9 @@ void PlainTextEdit::mousePressEvent(QMouseEvent *event)
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    NavigationManager::instance()->recordNavigationPoint(this);
+  }
 }
 
 /*!
@@ -2158,6 +2199,11 @@ void BaseEditor::initialize()
 {
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
+  mpReloadAsModelicaInfoBar = new ReloadAsModelicaInfoBar(this);
+  // Show the Reload as Modelica info bar only for text files which are internal.
+  if (!(mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isText() && mpModelWidget->getLibraryTreeItem()->isModelicaFile())) {
+    mpReloadAsModelicaInfoBar->hide();
+  }
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
@@ -2168,6 +2214,7 @@ void BaseEditor::initialize()
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpInfoBar, 0, Qt::AlignTop);
+  pMainLayout->addWidget(mpReloadAsModelicaInfoBar, 0, Qt::AlignTop);
   pMainLayout->addWidget(mpPlainTextEdit, 1);
   pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
   setLayout(pMainLayout);
@@ -2591,6 +2638,22 @@ void BaseEditor::toggleCommentSelection()
 }
 
 /*!
+ * \brief BaseEditor::reloadAsModelica
+ * Slot activated when reload button is clicked.
+ * Saves all files and reload them as Modelica model(s).
+ */
+void BaseEditor::reloadAsModelica()
+{
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem);
+    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem(), false);
+  }
+}
+
+/*!
  * \class FindReplaceWidget
  * Creates a widget within editor for find and replace.
  */
@@ -2759,6 +2822,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  NavigationManager::instance()->recordNavigationPoint(mpBaseEditor->getPlainTextEdit());
 }
 
 /*!
@@ -2987,4 +3051,47 @@ void InfoBar::showMessage(QString message)
 {
   mpInfoLabel->setText(message);
   show();
+}
+
+/*!
+ * \class ReloadAsModelicaInfoBar
+ * \brief Display message to reload as Modelica model above the BaseEditor.
+ */
+/*!
+ * \brief ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar
+ * \param pBaseEditor
+ */
+ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
+  : QFrame(pBaseEditor)
+{
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor(255, 255, 225));
+  pal.setColor(QPalette::WindowText, Qt::black);
+  setPalette(pal);
+  setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
+  mpInfoLabel = new Label;
+  mpInfoLabel->setWordWrap(true);
+  if (pBaseEditor->getModelWidget() && pBaseEditor->getModelWidget()->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pBaseEditor->getModelWidget()->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      const QString saveAndReload(tr("Once they have all been fixed, you can save and reload it in Modelica mode"));
+      QFileInfo fileInfo(pTopLevelLibraryTreeItem->getFileName());
+      if (fileInfo.isDir()) {
+        mpInfoLabel->setText(tr("The Modelica package %1 is open in text mode because of syntax errors in the code. %2.")
+                             .arg(pTopLevelLibraryTreeItem->getName(), saveAndReload));
+      } else {
+        mpInfoLabel->setText(tr("This Modelica file is open in text mode because of syntax errors in the code. %1.")
+                             .arg(saveAndReload));
+      }
+    }
+  }
+  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), tr("Save && Reload"));
+  connect(mpReloadButton, &QPushButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
+  // set the layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
+  pMainLayout->addWidget(mpInfoLabel);
+  pMainLayout->addWidget(mpReloadButton, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
 }

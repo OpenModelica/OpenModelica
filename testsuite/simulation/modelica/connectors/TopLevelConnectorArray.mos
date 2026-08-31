@@ -1,7 +1,6 @@
 // name:     TopLevelConnectorArray
 // keywords: connectors arrays
 // status: correct
-// cflags: -d=-newInst
 //
 //  Tests that input / output qualifiers are kept for connector arrays (#3794)
 //
@@ -28,7 +27,7 @@ instantiateModel(TopLevelConnectorArray.Test);
 //   input Real io[1].u;
 //   output Real io[1].y;
 // equation
-//   io[1].y = io[1].u * 2.0;
+//   io[1].y = 2.0 * io[1].u;
 // end TopLevelConnectorArray.Test;
 // "
 // endResult

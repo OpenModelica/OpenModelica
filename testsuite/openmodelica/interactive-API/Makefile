@@ -5,6 +5,7 @@ AddClassAnnotation.mos \
 addComponent1.mos \
 addComponent2.mos \
 addConnection1.mos \
+addEquation1.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2882.mos \
@@ -21,6 +22,8 @@ Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
+Cmd1.mos \
+Cmd2.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
@@ -32,10 +35,15 @@ CopyClass4.mos \
 CopyClass5.mos \
 CopyClass6.mos \
 CopyClass7.mos \
+CopyClass8.mos \
+CopyClass9.mos \
+CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
+daeModeHomotopy.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
+deleteEquation1.mos \
 DialogAnnotation.mos \
 FlagParsing.mos \
 ForStatement1.mos \
@@ -66,6 +74,8 @@ getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
+getInheritedClasses3.mos \
+getModelFigures1.mos \
 getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
@@ -101,6 +111,7 @@ ListImport.mos \
 ListMultilineComment.mos \
 loadClassContentString1.mos \
 loadClassContentString2.mos \
+LoadFile1.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
@@ -112,6 +123,7 @@ Obfuscation2.mos \
 Obfuscation3.mos \
 Obfuscation4.mos \
 Obfuscation5.mos \
+Promote1.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
 readSimulationResult1.mos \
@@ -119,9 +131,13 @@ refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
 Rename.mos \
+ReverseLookup1.mos \
+ReverseLookup2.mos \
+ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
 saveTotalModel.mos \
+saveTotalModel2.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \
@@ -131,12 +147,14 @@ setExtendsModifierValue.mos \
 setExtendsModifier.mos \
 setParameterValue.mos \
 setSourceFileListFile.mos \
+setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
 StateMachine.mos \
 StoreAST.mos \
 strings.mos  \
 stringSplit.mos \
+Sum1.mos \
 TestChoices.mos \
 Ticket4674.mos \
 Ticket5506.mos \
@@ -152,12 +170,15 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateResidualsDAE1.mos \
+UnpatchedModelicaServices.mos \
+updateEquation1.mos \
 UsesAnnotation1.mos \
 UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-
+Issue14178.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -206,4 +227,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

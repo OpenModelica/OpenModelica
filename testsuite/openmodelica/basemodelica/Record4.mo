@@ -28,7 +28,7 @@ end Record4;
 //   record 'ThermodynamicState'
 //     Real 'p';
 //     Real 'T';
-//     Real[2] 'X';
+//     Real 'X'[2];
 //   end 'ThermodynamicState';
 //
 //   model 'Record4'

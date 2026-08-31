@@ -20,14 +20,14 @@ constant Boolean debug = false;
 replaceable package LexTable
   constant Integer yy_limit;
   constant Integer yy_finish;
-  constant Integer yy_acclist[:];
-  constant Integer yy_accept[:];
-  constant Integer yy_ec[:];
-  constant Integer yy_meta[:];
-  constant Integer yy_base[:];
-  constant Integer yy_def[:];
-  constant Integer yy_nxt[:];
-  constant Integer yy_chk[:];
+  constant array<Integer> yy_acclist;
+  constant array<Integer> yy_accept;
+  constant array<Integer> yy_ec;
+  constant array<Integer> yy_meta;
+  constant array<Integer> yy_base;
+  constant array<Integer> yy_def;
+  constant array<Integer> yy_nxt;
+  constant array<Integer> yy_chk;
 end LexTable;
 
 function scan "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
@@ -60,7 +60,6 @@ function action
   input Integer startSt;
   input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   input Integer buffer;
-  input Boolean debug;
   input String fileNm;
   input String fileContents;
   input list<Token> inErrorTokens;
@@ -69,75 +68,73 @@ function action
   output Integer bufferRet;
   output list<Token> errorTokens=inErrorTokens;
 protected
-  SourceInfo info;
-  String sToken;
 algorithm
   mm_startSt := startSt;
   // nameSpan := 255;
   bufferRet := 0;
-  (token) := match (act)
+  token := match act
     local
       Token tok;
-    case (1) // #line 25 "lexerJSON.l"
+    case 1 // #line 25 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (2) // #line 26 "lexerJSON.l"
+    case 2 // #line 26 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (3) // #line 27 "lexerJSON.l"
+    case 3 // #line 27 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (4) // #line 28 "lexerJSON.l"
+    case 4 // #line 28 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (5) // #line 29 "lexerJSON.l"
+    case 5 // #line 29 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.INTEGER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (6) // #line 30 "lexerJSON.l"
+    case 6 // #line 30 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (7) // #line 31 "lexerJSON.l"
+    case 7 // #line 31 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FALSE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (8) // #line 32 "lexerJSON.l"
+    case 8 // #line 32 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NULL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (9) // #line 33 "lexerJSON.l"
+    case 9 // #line 33 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (10) // #line 34 "lexerJSON.l"
+    case 10 // #line 34 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (11) // #line 36 "lexerJSON.l"
+    case 11 // #line 36 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (12) // #line 38 "lexerJSON.l"
+    case 12 // #line 38 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (13) // #line 40 "lexerJSON.l"
+    case 13 // #line 40 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COMMA,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (14) // #line 41 "lexerJSON.l"
+    case 14 // #line 41 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (15) // #line 43 "lexerJSON.l"
+    case 15 // #line 43 "lexerJSON.l"
       algorithm
       then noToken;
-    case (16) // #line 45 "lexerJSON.l"
+    case 16 // #line 45 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId._NO_TOKEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         errorTokens := tok :: errorTokens;
@@ -236,11 +233,8 @@ function lex "Scan starts the lexical analysis, load the tables and consume the 
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens={};
 protected
-  Integer startSt,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
-  list<Integer> cProg,cProg2;
-  list<String> chars;
+  Integer startSt,i,cTok,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> states;
-  String s1,s2;
   import MetaModelica.Dangerous.listReverseInPlace;
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
 algorithm
@@ -292,7 +286,12 @@ function consume
   output list<Token> resToken;
   output Integer bkBuffer = 0;
   output Integer mm_startSt;
-  output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
+  output Integer mm_currSt;
+  output Integer mm_pos;
+  output Integer mm_sPos;
+  output Integer mm_ePos;
+  output Integer mm_linenr;
+  output Integer lineNrStart;
   output Integer buffer;
   output list<Integer> states;
   output list<Token> errorTokens=inErrorTokens;
@@ -361,7 +360,7 @@ algorithm
       print("\nFound rule: " + String(act));
     end if;
 
-    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents,errorTokens);
+    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,fileName,fileContents,errorTokens);
 
     if (debug==true) then
       print("\nDid action");
@@ -411,7 +410,6 @@ function findRule
   output Integer bkBuffer;
   output list<Integer> states;
 protected
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
   Integer lp,lp1,stCmp,cp;
   Boolean st;
   import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
@@ -495,16 +493,16 @@ algorithm
 end checkArray;
 
 function checkArrayModelica
-  input Integer arr[:];
+  input array<Integer> arr;
   input Integer index;
   input SourceInfo info;
 protected
   String filename;
   Integer lineStart;
 algorithm
-  if index<1 or index>size(arr,1) then
+  if index<1 or index>arrayLength(arr) then
     SOURCEINFO(fileName=filename, lineNumberStart=lineStart) := info;
-    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(size(arr,1))+" index=" + String(index) + "\n");
+    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(arrayLength(arr))+" index=" + String(index) + "\n");
     fail();
   end if;
 end checkArrayModelica;
@@ -512,20 +510,20 @@ end checkArrayModelica;
 package LexTable
   constant Integer yy_limit = 46;
   constant Integer yy_finish = 82;
-  constant Integer yy_acclist[:] = array(
+  constant array<Integer> yy_acclist = MetaModelica.Dangerous.listArrayLiteral({
        17,   16,   15,   16,   16,   13,   16,    5,   16,   14,
        16,   11,   16,   12,   16,   16,   16,   16,    9,   16,
        10,   16,   15,    1,    5,    2,    3,    4,    8,    6,
         3,    7
-   );
-  constant Integer yy_accept[:] = array(
+   });
+  constant array<Integer> yy_accept = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    2,    3,    5,    6,    8,   10,   12,
        14,   16,   17,   18,   19,   21,   23,   24,   24,   25,
        25,   25,   26,   26,   26,   26,   26,   27,   27,   28,
        28,   29,   29,   29,   29,   29,   29,   29,   30,   31,
        31,   31,   32,   33,   33,   33
-   );
-  constant Integer yy_ec[:] = array(
+   });
+  constant array<Integer> yy_ec = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    2,    2,
         1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -554,29 +552,29 @@ package LexTable
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1
-   );
-  constant Integer yy_meta[:] = array(
+  });
+  constant array<Integer> yy_meta = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    2,    1,    1,    1,    1,    2,    3,    1,
         3,    3,    1,    2,    1,    3,    4,    3,    4,    1,
         2,    2,    1,    2,    2,    1,    1
-   );
-  constant Integer yy_base[:] = array(
+   });
+  constant array<Integer> yy_base = MetaModelica.Dangerous.listArrayLiteral({
         0,    0,   81,   82,   78,   25,   82,   22,   82,   82,
        82,   63,   53,   55,   82,   82,   74,   27,   82,   50,
        65,   26,   39,   53,   52,   37,   82,    0,   37,   45,
        43,   27,   27,   24,    0,   47,   19,   82,   82,    0,
        27,   23,   82,    0,   82,   56,   59,   61,   63,   65,
        67
-   );
-  constant Integer yy_def[:] = array(
+  });
+  constant array<Integer> yy_def = MetaModelica.Dangerous.listArrayLiteral({
        45,    1,   45,   45,   45,   46,   45,   45,   45,   45,
        45,   45,   45,   45,   45,   45,   45,   46,   45,   47,
        45,   45,   45,   45,   45,   45,   45,   48,   45,   45,
        45,   45,   45,   45,   49,   45,   45,   45,   45,   50,
        45,   45,   45,   51,    0,   45,   45,   45,   45,   45,
        45
-   );
-  constant Integer yy_nxt[:] = array(
+  });
+  constant array<Integer> yy_nxt = MetaModelica.Dangerous.listArrayLiteral({
         4,    5,    6,    4,    7,    4,    4,    4,    8,    9,
         4,    4,   10,    4,   11,    4,    4,    4,   12,    4,
        13,    4,    4,   14,    4,   15,   16,   19,   21,   27,
@@ -589,8 +587,8 @@ package LexTable
        45,   45,   45,   45,   45,   45,   45,   45,   45,   45,
 
        45,   45,   45,   45,   45,   45,   45,   45,   45
-   );
-  constant Integer yy_chk[:] = array(
+  });
+  constant array<Integer> yy_chk = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    6,    8,   18,
@@ -603,7 +601,7 @@ package LexTable
        45,   45,   45,   45,   45,   45,   45,   45,   45,   45,
 
        45,   45,   45,   45,   45,   45,   45,   45,   45
-   );
+   });
 
 end LexTable;
 

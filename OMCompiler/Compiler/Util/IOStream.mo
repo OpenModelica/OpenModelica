@@ -1,34 +1,37 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 
 encapsulated package IOStream
 "file:        IOStream.mo
@@ -86,27 +89,27 @@ protected import List;
 public
 function create
   input String streamName;
-  input IOStreamType streamType;
+  input IOStreamType streamType = LIST();
   output IOStream outStream;
 algorithm
-  outStream := match (streamName, streamType)
+  outStream := match streamType
     local
       String fileName;
       Integer fileID, bufferID;
 
-    case (_, FILE(fileName))
-      equation
-        fileID = IOStreamExt.createFile(fileName);
+    case FILE(fileName)
+      algorithm
+        fileID := IOStreamExt.createFile(fileName);
       then
         IOSTREAM(streamName, streamType, FILE_DATA(fileID));
 
-    case (_, LIST())
+    case LIST()
       then
         IOSTREAM(streamName, streamType, LIST_DATA({}));
 
-    case (_, BUFFER())
-      equation
-        bufferID = IOStreamExt.createBuffer();
+    case BUFFER()
+      algorithm
+        bufferID := IOStreamExt.createBuffer();
       then
         IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
   end match;
@@ -117,26 +120,26 @@ function append
   input String inString;
   output IOStream outStream;
 algorithm
-  outStream := match (inStream, inString)
+  outStream := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      IOStream fStream, bStream;
       String streamName;
       IOStreamType streamType;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
-      equation
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
         IOStreamExt.appendFile(fileID, inString);
       then
         fStream;
 
-    case (IOSTREAM(streamName, streamType, LIST_DATA(listData)), _)
+    case IOSTREAM(streamName, streamType, LIST_DATA(listData))
       then
         IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
 
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
-      equation
+    case bStream as IOSTREAM(data = BUFFER_DATA(bufferID))
+      algorithm
         IOStreamExt.appendBuffer(bufferID, inString);
       then
         bStream;
@@ -197,14 +200,13 @@ function close
   input IOStream inStream;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream)
+  outStream := matchcontinue inStream
     local
-      list<String> listData;
-      Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      Integer fileID;
+      IOStream fStream;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
         IOStreamExt.closeFile(fileID);
       then
         fStream;
@@ -217,24 +219,22 @@ end close;
 function delete
   input IOStream inStream;
 algorithm
-  _ := match (inStream)
+  () := match inStream
     local
-      list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+    case IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
         IOStreamExt.deleteFile(fileID);
       then
         ();
 
-    case (IOSTREAM(data = LIST_DATA()))
+    case IOSTREAM(data = LIST_DATA())
       then
         ();
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
+      algorithm
         IOStreamExt.deleteBuffer(bufferID);
       then
         ();
@@ -245,27 +245,26 @@ function clear
   input IOStream inStream;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream)
+  outStream := matchcontinue inStream
     local
-      list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      IOStream fStream, bStream;
       String name;
       IOStreamData data;
       IOStreamType ty;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
         IOStreamExt.clearFile(fileID);
       then
         fStream;
 
-    case (IOSTREAM(name, ty, _))
+    case IOSTREAM(name, ty, _)
       then
         IOSTREAM(name, ty, LIST_DATA({}));
 
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
+    case bStream as IOSTREAM(data = BUFFER_DATA(bufferID))
+      algorithm
         IOStreamExt.clearBuffer(bufferID);
       then
         bStream;
@@ -287,28 +286,27 @@ function string
   input IOStream inStream;
   output String string;
 algorithm
-  string := match (inStream)
+  string := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
       String str;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)))
-      equation
-        str = IOStreamExt.readFile(fileID);
+    case IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
+        str := IOStreamExt.readFile(fileID);
       then
         str;
 
-    case (IOSTREAM(data = LIST_DATA(listData)))
-      equation
-        str = IOStreamExt.appendReversedList(listData);
+    case IOSTREAM(data = LIST_DATA(listData))
+      algorithm
+        str := IOStreamExt.appendReversedList(listData);
       then
         str;
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
-        str = IOStreamExt.readBuffer(bufferID);
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
+      algorithm
+        str := IOStreamExt.readBuffer(bufferID);
       then
         str;
   end match;
@@ -322,26 +320,25 @@ function print
   input IOStream inStream;
   input Integer whereToPrint;
 algorithm
-  _ := match (inStream, whereToPrint)
+  () := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)), _)
-      equation
+    case IOSTREAM(data = FILE_DATA(fileID))
+      algorithm
         IOStreamExt.printFile(fileID, whereToPrint);
       then
         ();
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)), _)
-      equation
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
+      algorithm
         IOStreamExt.printBuffer(bufferID, whereToPrint);
       then
         ();
 
-    case (IOSTREAM(data = LIST_DATA(listData)), _)
-      equation
+    case IOSTREAM(data = LIST_DATA(listData))
+      algorithm
         IOStreamExt.printReversedList(listData, whereToPrint);
       then
         ();

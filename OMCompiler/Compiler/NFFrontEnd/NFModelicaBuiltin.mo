@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -64,7 +68,7 @@ end der;
 impure function initial "True if in initialization phase"
   discrete output Boolean isInitial;
 external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
@@ -72,7 +76,7 @@ end initial;
 impure function terminal "True after successful analysis"
   discrete output Boolean isTerminal;
 external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -125,6 +129,16 @@ annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sqrt()'\">sqrt()</a>
 </html>"));
 end sqrt;
+
+function nthRoot
+  input Real v;
+  input Integer n;
+  output Real y;
+external "builtin";
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operator.'nthRoot()'\">nthRoot()</a>
+</html>"));
+end nthRoot;
 
 function sign "Sign of real or integer number"
   input Real v;
@@ -367,8 +381,8 @@ annotation(__OpenModelica_builtin=true, __OpenModelica_EarlyInline = true, prefe
 </html>"));
 end skew;
 
-function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
-  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+impure function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
+  annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 
@@ -631,7 +645,7 @@ impure function DynamicSelect<__Any> "select static or dynamic expressions in th
   input __Any dynamic;
   output __Any selected;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Annotations.DynamicSelect\">DynamicSelect</a>
 </html>"));
 end DynamicSelect;
@@ -1291,6 +1305,53 @@ record CheckSettingsResult
 annotation(preferredView="text");
 end CheckSettingsResult;
 
+record AxisScale
+  "Scale of a figure axis, from the figures annotation."
+  String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
+  Integer base = 10 "for Log; ignored otherwise";
+annotation(preferredView="text");
+end AxisScale;
+
+record Axis
+  "One axis of a figure plot, from the figures annotation."
+  Real[:] min = fill(0.0, 0) "empty = auto; length 1 = lower bound";
+  Real[:] max = fill(0.0, 0) "empty = auto; length 1 = upper bound";
+  String unit = "";
+  String label = "";
+  AxisScale scale = AxisScale();
+annotation(preferredView="text");
+end Axis;
+
+record Curve
+  "One curve of a figure plot, from the figures annotation."
+  String x = "time" "result reference";
+  String y "result reference";
+  String legend = "";
+  Integer zOrder = 0;
+annotation(preferredView="text");
+end Curve;
+
+record Plot
+  "One plot of a figure, from the figures annotation."
+  String title = "";
+  String identifier = "";
+  Curve[:] curves;
+  Axis x = Axis();
+  Axis y = Axis();
+annotation(preferredView="text");
+end Plot;
+
+record Figure
+  "One figure, from the figures sub-annotation of Documentation."
+  String title = "";
+  String identifier = "";
+  String group = "";
+  Boolean preferred = false;
+  Plot[:] plots;
+  String caption = "";
+annotation(preferredView="text");
+end Figure;
+
 package Internal
   "Internal definitions."
 
@@ -1386,9 +1447,9 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Loads the given file using the given encoding.</p>
 <p>
-  Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
+  Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
-  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
+  The main difference from loadModel is that loadFile appends this directory to OPENMODELICALIBRARY (MODELICAPATH in the language specification) (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
@@ -1497,7 +1558,7 @@ Example:
 <pre>
 loadClassContentString(\"
     Real y;
-  equation
+  algorithm
     y = x;
 \", P.M);
 </pre>
@@ -1802,7 +1863,7 @@ function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
 <p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
 </html>"),
   preferredView="text");
@@ -1813,7 +1874,7 @@ function getModelicaPath
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The MODELICAPATH is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
 <p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 <p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
 </html>"),
@@ -2095,7 +2156,7 @@ impure function compareFilesAndMove
   input String oldFile;
   output Boolean success;
 external "builtin";
-annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Compares <i>newFile</i> and <i>oldFile</i>. If they differ, overwrite <i>oldFile</i> with <i>newFile</i></p>
 <p>Basically: test -f ../oldFile && cmp newFile oldFile || mv newFile oldFile</p>
 </html>"));
@@ -2107,7 +2168,7 @@ impure function compareFiles
   input String file2;
   output Boolean isEqual;
 external "builtin";
-annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Compares <i>file1</i> and <i>file2</i> and returns true if their content is equal, otherwise false.</p>
 </html>"));
 end compareFiles;
@@ -2116,10 +2177,11 @@ impure function alarm
   "Schedules an alarm signal for the process."
   input Integer seconds;
   output Integer previousSeconds;
-external "builtin";
-annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+external "builtin" annotation(Library = {"omcruntime"});
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
+<p>The first signal asks the running command to stop, so that omc survives to report what it completed; a second one a tenth of the time later (at least 5 and at most 60 seconds) terminates omc if the command has no cancellation point to stop at. Re-arming or clearing the alarm withdraws the request.</p>
 </html>"));
 end alarm;
 
@@ -2316,7 +2378,7 @@ annotation(preferredView="text");
 end getDefaultOpenCLDevice;
 
 function setDefaultOpenCLDevice
-  "Sets the default OpenCL device to be used."
+  "Sets the default OpenCL device to be used. 0 selects one automatically."
   input Integer defdevid;
   output Boolean success;
 algorithm
@@ -2561,6 +2623,29 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
 </html>"),
   preferredView="text");
 end saveTotalModel;
+
+function getTotalModel
+  "Saves a model and dependencies to a single string."
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output String result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Save the <code>className</code> model in a single string, together with all the other classes
+that it depends upon, directly and indirectly. This file can be later reloaded
+with the <a href=\"modelica://OpenModelica.Scripting.loadString\">loadString()</a>
+API function, which loads <code>className</code> and all the other needed
+classes into memory.</p>
+<p>This is useful to allow third parties to run a certain model (e.g. for
+debugging) without worrying about all the library dependencies.</p>
+<p>Please note that the resulting file is not a valid Modelica .mo file according
+to the specification and cannot be loaded in OMEdit - it can only be
+loaded with loadFile() or passing the file to the compiler on the command line.</p>
+</html>"),
+  preferredView="text");
+end getTotalModel;
 
 function saveTotalModelDebug
   "Saves a model and dependencies to a single file using a heuristic."
@@ -2920,7 +3005,7 @@ annotation(Documentation(info="<html>
 end importFMUModelDescription;
 
 function translateModelFMU
-  "Deprecated: Translates a model into C code for a FMU without building it."
+  "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
@@ -2929,18 +3014,18 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p><b>Deprecated: Use buildModelFMU instead.</b></p>
 <p>The only required argument is the className, while all others have some default values.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
 </html>"),
-  preferredView="text", version="Deprecated");
+  preferredView="text");
 end translateModelFMU;
 
 function buildModelFMU
@@ -2953,8 +3038,10 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
+  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2989,6 +3076,7 @@ function simulate
   input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
+  input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
     String resultFile;
@@ -3099,6 +3187,17 @@ function reduceTerms
 external "builtin";
 annotation(preferredView="text");
 end reduceTerms;
+
+function translateResidualsDAE
+  input TypeName className;
+  input String fileNamePrefix = "<default>";
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Takes a model with top-level connectors as input and produces the DAE mode C code for the DAE residuals and Jacobian, guaranteed to be valid for any arbitrary causality once this component is coupled to other ones through the connector variables. Can be used for separate compilation of DAE-based components.</p>
+</html>"),
+  preferredView="text");
+end translateResidualsDAE;
 
 function createModel
   "Creates a new empty model."
@@ -3223,7 +3322,8 @@ annotation(Documentation(info="<html>
 <p>The only required argument is the className, while all others have some default values.</p>
 <h2>Usage:</h2>
 <p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
-<p>Creates the file \"linear_A.mo\" that contains the linearized matrices at stopTime.</p>
+<p>Creates the file in the selected linearization output language (modelica by default) that contains the linearized matrices at stopTime.</p>
+<p>The output language can be changed with the command line option <em>--linearizationDumpLanguage</em> e.g., <b>setCommandLineOptions(\"--linearizationDumpLanguage=modelica\")</b></p>
 </html>", revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
@@ -4329,6 +4429,71 @@ annotation(
   preferredView="text");
 end getConnectionList;
 
+function addEquation
+  "Adds an equation to a class."
+  input TypeName className "The name of the class to add the equation to";
+  input String eq "The equation given as a string";
+  input Boolean isInitial = false "Whether the equation should be added as an initial or normal equation";
+  output Boolean success "true if the equation could be added, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+The equation is added to the end of the last equation or initial equation section (depending on <pre>isInitial</pre>) in the class, or to a new section if no suitable section exists. The class must be able to contain equations, i.e. be a normal long class or class extends declaration.
+</html>"),
+  preferredView="text");
+end addEquation;
+
+function deleteEquation = updateEquation(newEq = "") "Deletes an equation in a class."
+  annotation(
+    Documentation(info="<html>
+Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
+</html>"),
+    preferredView="text");
+
+function updateEquation
+  "Replaces an equation with another equation in a class."
+  input TypeName className "The name of the class";
+  input String oldEq "The equation to replace";
+  input String newEq "The equation to replace with";
+  input Boolean matchAll = false "Update all matching equations if true, otherwise only the first matching";
+  input Boolean matchShallow = true "Ignore nested equations if true, otherwise match the equations recursively";
+  input Boolean matchDescription = false "Match description strings/annotations if true, otherwise ignore them";
+  input Boolean mergeDescription = false "Keep description string/annotations from the old equation if true";
+  output Boolean success "true if any equation was updated, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>updateEquation</b>(MyModel, \"x = 1\", \"x = 2\")</pre>
+</blockquote>
+<h4>Description</h4>
+<p>
+updateEquation takes two equations, given as strings that are parsed as Modelica equations, and replaces an equation in the given class that matches the first equation with the second. If <pre>newEq</pre> is an empty string, then the matching equation is removed instead of replaced.
+</p>
+<h4>Optional arguments</h4>
+<dl>
+  <dt>matchAll</dt>
+  <dd>
+    If <pre>matchAll</pre> is true, then updateEquation replaces all equations that matches. Otherwise it only replaces the first matching equation.
+  </dd>
+  <dt>matchShallow</dt>
+  <dd>
+    If <pre>matchShallow</pre> is true, then equations are only matched shallowly, ignoring any nested equations. I.e. <pre>updateEquation(M, \"if b then end if\", ...)</pre> will replace any if-equation that matches <pre>if b then</pre>, regardless of what equations the if-equation contains. If <pre>matchShallow</pre> is false, then the equations must match recursively.
+  </dd>
+  <dt>matchDescription</dt>
+  <dd>
+    If <pre>matchDescription</pre> is true, then the description strings and annotations of the equations must match. Otherwise these are ignored when matching equations.
+  </dd>
+  <dt>mergeDescription</dt>
+  <dd>
+    If <pre>mergeDescription</pre> is true, then the description string and/or annotations of the replaced equation are copied to the new equation if these are missing on the new equation. This requires that <pre>matchDescription</pre> is false, otherwise there will be nothing to merge since the equations must have the same description to match. If <pre>mergeDescription</pre> is false, then the new equation overwrites the old completely, including description strings and annotations.
+  </dd>
+</dl>
+</html>"),
+  preferredView="text");
+end updateEquation;
+
 function getAlgorithmCount
   "Counts the number of algorithm sections in a class."
   input TypeName class_;
@@ -4959,6 +5124,14 @@ function getSimulationOptions
 external "builtin";
 annotation(preferredView="text");
 end getSimulationOptions;
+
+function getModelFigures
+  "Returns the figures defined in the class' figures sub-annotation of Documentation."
+  input TypeName name;
+  output Figure[:] figures;
+external "builtin";
+annotation(preferredView="text");
+end getModelFigures;
 
 function getAnnotationNamedModifiers
   "Returns the names of the modifiers in the given annotation."
@@ -5608,6 +5781,7 @@ end convertPackageToLibrary;
 function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
   input String modifier = "";
   input Boolean prettyPrint = false;
   output String result;
@@ -5627,6 +5801,35 @@ annotation(
 </html>"),
    preferredView="text");
 end getModelInstanceAnnotation;
+
+function getModelInstanceReference
+  "Like getModelInstance, but returns an integer handle to an in-memory model
+   instance structure instead of a JSON string (see issue #15219). The handle is
+   intended to be read directly by an in-process client such as OMEdit and must
+   be released with releaseModelInstanceReference. Returns 0 on failure."
+  input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
+  input String modifier = "";
+  output Integer handle;
+external "builtin";
+end getModelInstanceReference;
+
+function getModelInstanceAnnotationReference
+  "Like getModelInstanceAnnotation, but returns an integer handle to an
+   in-memory structure instead of a JSON string (see getModelInstanceReference)."
+  input TypeName className;
+  input String[:] filter = fill("", 0);
+  output Integer handle;
+external "builtin";
+end getModelInstanceAnnotationReference;
+
+function releaseModelInstanceReference
+  "Releases a handle returned by getModelInstanceReference or
+   getModelInstanceAnnotationReference. Returns true on success."
+  input Integer handle;
+  output Boolean success;
+external "builtin";
+end releaseModelInstanceReference;
 
 function modifierToJSON
   "Parses a modifier given as a string and dumps it as JSON."
@@ -5671,8 +5874,21 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end getDefinitions;
 
+function reverseLookup
+  input TypeName name;
+  input TypeName scope = $TypeName(AllLoadedClasses);
+  input Boolean exactMatch = true;
+  input Boolean prettyPrint = false;
+  output String matches;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Searches for uses of the given name in either all loaded classes or a given class. Returns a JSON array containing the name and source location for each match.</p>
+<p>If exactMatch is true then only names that reference the same element is considered a match, otherwise names that reference elements inside that element are also included. I.e. reverseLookup(A, exactMatch = false) will match both A and A.B, while reverseLookup(A, exactMatch = true) will match A but not A.B.</p>
+</html>"));
+end reverseLookup;
+
 // OMSimulator API calls
-type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
+type oms_system = enumeration(oms_system_none, oms_system_wc, oms_system_sc, oms_system_sc3) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
 type oms_signal_type = enumeration (oms_signal_type_real,
   oms_signal_type_integer,

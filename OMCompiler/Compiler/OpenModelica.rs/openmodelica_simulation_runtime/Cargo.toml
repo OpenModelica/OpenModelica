@@ -1,0 +1,59 @@
+# `libSimulationRuntimeRust`: the simulation runtime the C code generator's output
+# links against under `--simCodeTarget=C+Rust`. The generated sources are byte for
+# byte the ones `--simCodeTarget=C` produces; only the runtime behind them differs.
+#
+# Nothing here re-implements a driver or an integrator: those, the event handling
+# and the result writers are the same crates the `wasm-jit` target runs
+# (`openmodelica_sim_meta`, `openmodelica_solvers`, `openmodelica_mat_writer`).
+# What this crate adds is the C ABI: mirrors of `simulation_data.h` (src/abi.rs),
+# the region map that lays the driver's flat `SimData` over `DATA`'s own arrays
+# (src/data.rs), a `SimEngine` that calls the model through `data->callback`
+# (src/engine.rs), the entry points the generated code names (src/run.rs,
+# src/support.rs, src/systems.rs, src/operators.rs), and what fills `MODEL_DATA`
+# and the driver's model description (src/model_data.rs, src/meta.rs).
+[package]
+name = "openmodelica_simulation_runtime"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "SimulationRuntimeRust"
+# `rlib` too: the ABI layout test links the mirror, so cargo rebuilds it when
+# `src/abi.rs` changes.
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# The sparse SVD behind `-lv=LOG_NLS_SVD`, over the same `libprimme.a` the C
+# runtime links (see SimulationRuntime/rust/CMakeLists.txt).
+primme = ["openmodelica_nls/primme"]
+
+[dependencies]
+# The driver (`driver::drive`) and the model description it runs on.
+openmodelica_sim_meta.workspace = true
+# The integrators and the `-lv` log formatting they share with the wasm-jit runtime.
+openmodelica_solvers = { path = "../openmodelica_solvers" }
+# The nonlinear solver they share too: `solve_nonlinear_system` and the ladder
+# under it, driven here over `NONLINEAR_SYSTEM_DATA` (src/nls.rs).
+openmodelica_nls = { path = "../openmodelica_nls" }
+# The result file.
+openmodelica_mat_writer.workspace = true
+openmodelica_plt_writer.workspace = true
+# `-iif`: the result file the start values are imported from.
+openmodelica_mat_reader.workspace = true
+# `_init.xml`: the variable names, attributes and start values the generated C
+# does not carry (C reads the same file with expat in `simulation_input_xml.c`).
+roxmltree.workspace = true
+# `<Model>_info.json`: the equation and variable names the generated residuals
+# name their iteration variables through (`simulation_info_json.c` reads the same
+# file with a hand-rolled scanner).
+serde_json.workspace = true
+libc.workspace = true
+# `dgesv` for the dense linear systems -- the same LAPACK the wasm-jit runtime
+# factors with, so a system gets the same pivot order and `INFO` either way.
+# Without `fortran-abi`: the executable already links the system liblapack, and
+# defining `d*_` here would collide with it.
+openmodelica_lapack = { path = "../openmodelica_lapack" }
+
+[build-dependencies]
+# Compiles src/shim.c -- the setjmp/longjmp and printf-varargs half of the ABI.
+cc.workspace = true

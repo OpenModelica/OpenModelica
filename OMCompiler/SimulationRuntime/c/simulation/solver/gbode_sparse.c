@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -38,271 +35,276 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
-// TODO: Describe me
-// TODO: Don't allocate memory for leadindex at each call but give it a work array
-void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT)
-{
-  unsigned int i, j, loc;
-  int* leadindex = calloc(sizeCols, sizeof(int));
-
-  for (i=0; i < sparsePattern->numberOfNonZeros; i++)
-  {
-    leadindex[sparsePattern->index[i]]++;
-  }
-  sparsePatternT->leadindex[0] = 0;
-  for(i=1;i<sizeCols+1;i++)
-  {
-    sparsePatternT->leadindex[i] = sparsePatternT->leadindex[i-1] + leadindex[i-1];
-  }
-  memcpy(leadindex, sparsePatternT->leadindex, sizeof(unsigned int)*sizeCols);
-  for (i=0,j=0;i<sizeRows;i++)
-  {
-    for(; j < sparsePattern->leadindex[i+1];) {
-      loc = leadindex[sparsePattern->index[j]];
-      sparsePatternT->index[loc] = i;
-      leadindex[sparsePattern->index[j]]++;
-      j++;
-    }
-  }
-  printSparseStructure(sparsePattern,
-                       sizeRows,
-                       sizeCols,
-                       OMC_LOG_GBODE_V,
-                       "sparsePattern");
-  printSparseStructure(sparsePatternT,
-                       sizeRows,
-                       sizeCols,
-                       OMC_LOG_GBODE_V,
-                       "sparsePatternT");
-
-  free(leadindex);
-}
+#include <limits.h>
 
 /**
- * @brief Simple sparse matrix coloring.
+ * Greedily pack structurally independent columns into colors.
  *
- * Determine column by column the next possible color,
- * by looking at columns with values in corresponding rows (transpose matrix necessary)
- *
- * @param sparsePattern Sparse pattern of the matirx
- * @param sizeRows      Number or rows
- * @param sizeCols      Number of columns
- * @param nStages       Number of stages (different stages will get different color for full
- *                      implicit RK methods)
+ * This works directly on CSC data in O(colors * (nnz + columns)) time and
+ * O(rows) workspace.
  */
-void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages)
+static void colorSparsePattern(SPARSE_PATTERN *pattern, int sizeRows, int sizeCols, int nStages, unsigned int *work)
 {
-  SPARSE_PATTERN* sparsePatternT;
-  int row, col, nCols, leadIdx;
-  int i, j, maxColors = 0;
-
-  // initialize array to zeros
-  int* tabu;
-  tabu = (int*) calloc(sizeCols*sizeCols, sizeof(int));
-
-  // Allocate memory for new sparsity pattern
-  sparsePatternT = allocSparsePattern(sizeCols, sparsePattern->numberOfNonZeros, sizeCols);
-
-  // Determine the sparse pattern of the transposed matrix
-  sparsePatternTranspose(sizeRows, sizeCols, sparsePattern, sparsePatternT);
-
-  // Projection of the stages on the ODE jacobian
-  int sizeCols_ODE = sizeCols/nStages;
-  int act_stage;
-
-  for (col=0; col<sizeCols; col++)
+  assertStreamPrint(NULL, sizeRows >= 0 && sizeCols >= 0 && nStages > 0 && sizeCols % nStages == 0,
+                    "Invalid GBODE sparse coloring dimensions %d x %d with %d stages.", sizeRows, sizeCols, nStages);
+  if (sizeCols == 0)
   {
-    // Look for the next free color, based on the tabu list
-    for (i=0; i<sizeCols ; i++)
-    {
-      if (tabu[col*sizeCols + i] == 0)
-      {
-        sparsePattern->colorCols[col] = i+1;
-        maxColors = fmax(maxColors, i+1);
+    pattern->maxColors = 0;
+    return;
+  }
+  modelica_boolean ownsWork = work == NULL;
+  if (ownsWork)
+  {
+    work = malloc(sizeRows * sizeof(unsigned int));
+  }
 
-        // set tabu for columns that have entries in the same row!
-        for (row=sparsePattern->leadindex[col]; row<sparsePattern->leadindex[col+1]; row++)
+  unsigned int color = 0;
+  const int stageSize = sizeCols / nStages;
+  memset(pattern->colorCols, 0, sizeCols * sizeof(unsigned int));
+  memset(work, 0, sizeRows * sizeof(unsigned int));
+  for (int stage = 0; stage < nStages; stage++)
+  {
+    const int firstCol = stage * stageSize;
+    const int endCol = firstCol + stageSize;
+    int remaining = stageSize;
+    while (remaining > 0)
+    {
+      color++;
+
+      for (int col = firstCol; col < endCol; col++)
+      {
+        if (pattern->colorCols[col])
         {
-          int rowIdx = sparsePattern->index[row];
-          for (j=sparsePatternT->leadindex[rowIdx]; j<sparsePatternT->leadindex[rowIdx+1]; j++)
+          continue;
+        }
+
+        modelica_boolean conflict = FALSE;
+        for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col + 1]; nz++)
+        {
+          if (work[pattern->index[nz]] == color)
           {
-            tabu[sparsePatternT->index[j]*sizeCols + i]=1;
+            conflict = TRUE;
+            break;
           }
         }
-
-        // each stage has different colors, due to the columnwise jacobian calculation
-        // only important and utilized, if a fully implicit RK-method is used
-        act_stage = col/sizeCols_ODE;
-        for (j=(act_stage+1)*sizeCols_ODE; j<sizeCols; j++)
+        if (conflict)
         {
-          tabu[j*sizeCols + i]=1;
+          continue;
         }
 
-        break;
+        pattern->colorCols[col] = color;
+        remaining--;
+        for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col + 1]; nz++)
+        {
+          work[pattern->index[nz]] = color;
+        }
       }
     }
   }
-  sparsePattern->maxColors = maxColors;
 
-  // free memory allocation for the transposed sprasity pattern
-  freeSparsePattern(sparsePatternT);
-  free(sparsePatternT);
-  free(tabu);
-}
-
-
-/**
- * @brief Initialize sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
- *
- * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
- * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
- * Calculate coloring otherwise.
- *
- * @param data                Runtime data struct.
- * @param sysData             Non-linear system.
- * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
- */
-SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
-{
-  unsigned int i,j;
-  unsigned int row, col;
-  unsigned int missingZeros = 0;
-  unsigned int nDiags = 0;
-  unsigned int shift = 0;
-  modelica_boolean diagElemNonZero;
-  SPARSE_PATTERN* sparsePattern_DIRK;
-
-  /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
-
-  int sizeRows = jacobian->sizeRows;
-  int sizeCols = jacobian->sizeCols;
-
-  /* Compute size of new sparsitiy pattern
-   * Increase the size to contain non-zero elements on diagonal. */
-  i = 0;
-  for(row=0; row < sizeRows; row++) {
-    for(; i < sparsePattern_ODE->leadindex[row+1]; i++) {
-      if(sparsePattern_ODE->index[i] == row) {
-        nDiags++;
-      }
-    }
-  }
-  int missingDiags = jacobian->sizeRows - nDiags;
-  int length_index = jacobian->sparsePattern->numberOfNonZeros + missingDiags;
-
-  // Allocate memory for new sparsity pattern
-  sparsePattern_DIRK = allocSparsePattern(sizeRows, length_index, sizeCols);
-
-  /* Set diagonal elements of sparsitiy pattern to non-zero */
-  i = 0;
-  j = 0;
-  sparsePattern_DIRK->leadindex[0] = sparsePattern_ODE->leadindex[0];
-  for(row=0; row < sizeRows; row++) {
-    diagElemNonZero = FALSE;
-    int leadIdx = sparsePattern_ODE->leadindex[row+1];
-    for(; j < leadIdx;) {
-      if(sparsePattern_ODE->index[j] == row) {
-        diagElemNonZero = TRUE;
-        sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
-      }
-      if(sparsePattern_ODE->index[j] > row && !diagElemNonZero) {
-        sparsePattern_DIRK->index[i] = row;
-        shift++;
-        sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
-        i++;
-        diagElemNonZero = TRUE;
-      }
-      sparsePattern_DIRK->index[i] = sparsePattern_ODE->index[j];
-      i++;
-      j++;
-    }
-    if (!diagElemNonZero) {
-      sparsePattern_DIRK->index[i] = row;
-      shift++;
-      sparsePattern_DIRK->leadindex[row+1] = sparsePattern_ODE->leadindex[row+1] + shift;
-      i++;
-    }
-  }
-
-  if (missingDiags == 0) {
-    // If missingDiags=0 we can re-use coloring (and everything else)
-    sparsePattern_DIRK->maxColors = sparsePattern_ODE->maxColors;
-    memcpy(sparsePattern_DIRK->colorCols, sparsePattern_ODE->colorCols, jacobian->sizeCols*sizeof(unsigned int));
-  } else {
-    // Calculate new coloring, because of additional nonZeroDiagonals
-    ColoringAlg(sparsePattern_DIRK, sizeRows, sizeCols, 1);
-  }
-
-  return sparsePattern_DIRK;
-}
-
-
-/**
- * @brief Update sparsity pattern for non-linear system of diagonal implicit Runge-Kutta methods.
- *
- * Get sparsity pattern of ODE Jacobian and edit to be non-zero on diagonal elements.
- * Coloring of ODE Jacobian will be used, if it had non-zero elements on all diagonal entries.
- * Calculate coloring otherwise.
- *
- * @param data                Runtime data struct.
- * @param sysData             Non-linear system.
- * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
- */
-void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR)
-{
-  DATA_GBODEF* gbfData = gbData->gbfData;
-  int nFastStates = gbData->nFastStates;
-  int i, j, l, r, ii, jj, ll, rr;
-
-  // The following assumes that the fastStates are sorted (i.e. [0, 2, 6, 7, ...])
-  SPARSE_PATTERN *sparsePattern_DIRK = gbfData->sparsePattern_DIRK;
-
-  /* Set sparsity pattern for the fast states */
-  ii = 0;
-  jj = 0;
-  ll = 0;
-
-  sparsePattern_MR->leadindex[0] = sparsePattern_DIRK->leadindex[0];
-  for (rr = 0; rr < nFastStates; rr++)
+  pattern->maxColors = color;
+  if (ownsWork)
   {
-    r = gbData->fastStatesIdx[rr];
-    ii = 0;
-    for (jj = sparsePattern_DIRK->leadindex[r]; jj < sparsePattern_DIRK->leadindex[r + 1];)
+    free(work);
+  }
+}
+
+static SPARSE_PATTERN *copySparsePattern(const SPARSE_PATTERN *source, int size, modelica_boolean copyColoring)
+{
+  SPARSE_PATTERN *copy = allocSparsePattern(size, source->nnz, size);
+  memcpy(copy->leadindex, source->leadindex, (size + 1) * sizeof(unsigned int));
+  memcpy(copy->index, source->index, source->nnz * sizeof(unsigned int));
+  if (copyColoring)
+  {
+    memcpy(copy->colorCols, source->colorCols, size * sizeof(unsigned int));
+    copy->maxColors = source->maxColors;
+  }
+  else
+  {
+    memset(copy->colorCols, 0, size * sizeof(unsigned int));
+    copy->maxColors = 0;
+  }
+  return copy;
+}
+
+// Build struct(I + J), optionally coloring it, allocating a pattern when target is NULL
+static SPARSE_PATTERN *sparsePatternWithDiagonal(const SPARSE_PATTERN *source, int size, SPARSE_PATTERN *target, unsigned int *work,
+                                                 modelica_boolean colorPattern, modelica_boolean reuseSourceColoring)
+{
+  int diagonalCount = 0;
+
+  if (target == NULL)
+  {
+    for (int col = 0; col < size; col++)
     {
-      i = gbData->fastStatesIdx[ii];
-      j = sparsePattern_DIRK->index[jj];
-      if (i == j)
+      for (unsigned int nz = source->leadindex[col]; nz < source->leadindex[col + 1]; nz++)
       {
-        sparsePattern_MR->index[ll] = ii;
-        ll++;
-      }
-      if (j > i)
-      {
-        ii++;
-        if (ii >= nFastStates)
+        if (source->index[nz] == col)
+        {
+          diagonalCount++;
           break;
+        }
       }
-      else
-        jj++;
     }
-    sparsePattern_MR->leadindex[rr + 1] = ll;
+    target = allocSparsePattern(size, source->nnz + size - diagonalCount, size);
   }
 
-  sparsePattern_MR->numberOfNonZeros = ll;
-  sparsePattern_MR->sizeofIndex = ll;
+  unsigned int targetNz = 0;
+  diagonalCount = 0;
+  target->leadindex[0] = 0;
+  for (int col = 0; col < size; col++)
+  {
+    modelica_boolean diagonalPresent = FALSE;
+    for (unsigned int nz = source->leadindex[col]; nz < source->leadindex[col + 1]; nz++)
+    {
+      unsigned int row = source->index[nz];
+      if (!diagonalPresent && row > col)
+      {
+        target->index[targetNz++] = col;
+        diagonalPresent = TRUE;
+      }
+      if (row == col)
+      {
+        diagonalPresent = TRUE;
+        diagonalCount++;
+      }
+      target->index[targetNz++] = row;
+    }
+    if (!diagonalPresent)
+    {
+      target->index[targetNz++] = col;
+    }
+    target->leadindex[col + 1] = targetNz;
+  }
+  target->nnz = targetNz;
 
-  ColoringAlg(sparsePattern_MR, nFastStates, nFastStates, 1);
+  if (!colorPattern)
+  {
+    memset(target->colorCols, 0, size * sizeof(unsigned int));
+    target->maxColors = 0;
+  }
+  else if (reuseSourceColoring && diagonalCount == size && source->maxColors > 0)
+  {
+    memcpy(target->colorCols, source->colorCols, size * sizeof(unsigned int));
+    target->maxColors = source->maxColors;
+  }
+  else
+  {
+    colorSparsePattern(target, size, size, 1, work);
+  }
 
-  printSparseStructure(sparsePattern_MR,
-                       nFastStates,
-                       nFastStates,
-                       OMC_LOG_GBODE_V,
-                       "sparsePattern_MR");
+  return target;
+}
 
+// Reduce a square CSC pattern to the principal submatrix selected by indices
+static void reduceSparsePattern(const SPARSE_PATTERN *source, int sourceSize, SPARSE_PATTERN *target,
+                                const int *indices, int targetSize, unsigned int *work)
+{
+  for (int i = 0; i < sourceSize; i++)
+  {
+    work[i] = UINT_MAX;
+  }
+  for (int i = 0; i < targetSize; i++)
+  {
+    work[indices[i]] = i;
+  }
 
-  return;
+  unsigned int targetNz = 0;
+  target->leadindex[0] = 0;
+  for (int col = 0; col < targetSize; col++)
+  {
+    int sourceCol = indices[col];
+    for (unsigned int nz = source->leadindex[sourceCol]; nz < source->leadindex[sourceCol + 1]; nz++)
+    {
+      unsigned int row = work[source->index[nz]];
+      if (row != UINT_MAX)
+      {
+        target->index[targetNz++] = row;
+      }
+    }
+    target->leadindex[col + 1] = targetNz;
+  }
+  target->nnz = targetNz;
+  memset(target->colorCols, 0, targetSize * sizeof(unsigned int));
+  target->maxColors = 0;
+}
+
+void gbodeMapSparsePattern(const SPARSE_PATTERN *source, const SPARSE_PATTERN *target,
+                           int size, int *sourceToTarget, int *targetDiagonal)
+{
+  for (int col = 0; col < size; col++)
+  {
+    unsigned int sourceNz = source->leadindex[col];
+    unsigned int sourceEnd = source->leadindex[col + 1];
+    targetDiagonal[col] = -1;
+
+    for (unsigned int targetNz = target->leadindex[col]; targetNz < target->leadindex[col + 1]; targetNz++)
+    {
+      unsigned int targetRow = target->index[targetNz];
+      if (targetRow == col)
+      {
+        targetDiagonal[col] = targetNz;
+      }
+      if (sourceNz < sourceEnd && source->index[sourceNz] == targetRow)
+      {
+        sourceToTarget[sourceNz++] = targetNz;
+      }
+    }
+
+    assertStreamPrint(NULL, targetDiagonal[col] >= 0 && sourceNz == sourceEnd, "GBODE sparse pattern mapping failed in column %d.", col);
+  }
+}
+
+// Create the struct(I + J) pattern used by block solves
+static SPARSE_PATTERN* initializeSparsePatternBlock(DATA* data, modelica_boolean colorPattern)
+{
+  JACOBIAN *jacobian = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+  return sparsePatternWithDiagonal(jacobian->sparsePattern, jacobian->sizeRows, NULL, NULL, colorPattern, TRUE);
+}
+
+static SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data);
+
+void initializeSparsePattern_GBODE(DATA* data, DATA_GBODE* gbData)
+{
+  assertStreamPrint(NULL, !gbData->isExplicit,
+                    "Cannot initialize GBODE sparsity for an explicit method.");
+  if (gbData->type == GM_TYPE_IMPLICIT && gbData->nlsSolverMethod != GB_NLS_INTERNAL)
+  {
+    gbData->sparsePattern_NLS = initializeSparsePattern_IRK(data);
+  }
+  else
+  {
+    gbData->sparsePattern_NLS = initializeSparsePatternBlock(data, gbData->nlsSolverMethod != GB_NLS_INTERNAL);
+  }
+}
+
+void initializeSparsePattern_GBODEF(DATA* data, DATA_GBODEF* gbfData)
+{
+  assertStreamPrint(NULL, !gbfData->isExplicit,
+                    "Cannot initialize GBODEF sparsity for an explicit method.");
+  JACOBIAN *jacobian = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+  const modelica_boolean useInternal = gbfData->nlsSolverMethod == GB_NLS_INTERNAL;
+  gbfData->sparseWork = malloc(jacobian->sizeRows * sizeof(unsigned int));
+  gbfData->sparsePattern_ODE = copySparsePattern(jacobian->sparsePattern, jacobian->sizeRows, useInternal);
+  gbfData->sparsePattern_NLS = sparsePatternWithDiagonal(jacobian->sparsePattern, jacobian->sizeRows,
+                                                         NULL, gbfData->sparseWork, !useInternal, TRUE);
+}
+
+void updateSparsePattern_GBODEF(DATA* data, DATA_GBODE* gbData)
+{
+  DATA_GBODEF *gbfData = gbData->gbfData;
+  SPARSE_PATTERN *fullPattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
+
+  reduceSparsePattern(fullPattern, gbData->nStates, gbfData->sparsePattern_ODE, gbData->fastStatesIdx, gbData->nFastStates, gbfData->sparseWork);
+  if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    colorSparsePattern(gbfData->sparsePattern_ODE, gbData->nFastStates, gbData->nFastStates, 1, gbfData->sparseWork);
+  }
+
+  sparsePatternWithDiagonal(gbfData->sparsePattern_ODE, gbData->nFastStates, gbfData->sparsePattern_NLS,
+                            gbfData->sparseWork, gbfData->nlsSolverMethod != GB_NLS_INTERNAL, FALSE);
+
+  printSparseStructure(gbfData->sparsePattern_NLS, gbData->nFastStates, gbData->nFastStates, OMC_LOG_GBODE_V, "sparsePattern_MR");
 }
 
 /**
@@ -314,10 +316,9 @@ void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR
  * column-wise calculation of the Jacobian
  *
  * @param data                Runtime data struct.
- * @param sysData             Non-linear system.
  * @return SPARSE_PATTERN*    Pointer to sparsity pattern of non-linear system.
  */
-SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData)
+static SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data)
 {
   unsigned int i,j,k,l;
   unsigned int row, col;
@@ -362,11 +363,11 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     }
   }
   int missingDiags = jacobian->sizeRows - nDiags;
-  int numberOfNonZeros = nnz_A*sparsePattern_ODE->numberOfNonZeros + nDiags_A*missingDiags + (nStages-nDiags_A)*nStates;
+  int nnz = nnz_A*sparsePattern_ODE->nnz + nDiags_A*missingDiags + (nStages-nDiags_A)*nStates;
 
   // first generated a coordinate format and transform this later to Column pressed format
-  int *coo_col = (int*) malloc(numberOfNonZeros*sizeof(int));
-  int *coo_row = (int*) malloc(numberOfNonZeros*sizeof(int));
+  int *coo_col = (int*) malloc(nnz*sizeof(int));
+  int *coo_row = (int*) malloc(nnz*sizeof(int));
 
   i = 0;
   for (k=0; k<nStages; k++)
@@ -406,23 +407,23 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
     }
   }
 
-  numberOfNonZeros = i;
+  nnz = i;
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)){
-    printIntVector_gb(OMC_LOG_GBODE_V, "rows", coo_row, numberOfNonZeros, 0.0);
-    printIntVector_gb(OMC_LOG_GBODE_V, "cols", coo_col, numberOfNonZeros, 0.0);
+    printIntVector_gb(OMC_LOG_GBODE_V, "rows", coo_row, nnz, 0.0);
+    printIntVector_gb(OMC_LOG_GBODE_V, "cols", coo_col, nnz, 0.0);
   }
 
   int length_row_indices = jacobian->sizeCols*nStages+1;
 
   // Allocate memory for new sparsity pattern
-  sparsePattern_IRK = allocSparsePattern(jacobian->sizeCols*nStages, numberOfNonZeros, jacobian->sizeCols*nStages);
+  sparsePattern_IRK = allocSparsePattern(jacobian->sizeCols*nStages, nnz, jacobian->sizeCols*nStages);
 
   /* Set diagonal elements of sparsitiy pattern to non-zero */
   for (i=0; i<length_row_indices; i++)
     sparsePattern_IRK->leadindex[i] = 0;
 
-  for (int i = 0; i < numberOfNonZeros; i++)
+  for (int i = 0; i < nnz; i++)
   {
     sparsePattern_IRK->index[i] = coo_row[i];
     sparsePattern_IRK->leadindex[coo_col[i] + 1]++;
@@ -435,10 +436,7 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   free(coo_col);
   free(coo_row);
 
-  ColoringAlg(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages);
-
-  // for (int k=0; k<nStages; k++)
-  //   printIntVector_gb("colorCols: ", &sparsePattern_IRK->colorCols[k*nStates], sizeCols, 0);
+  colorSparsePattern(sparsePattern_IRK, sizeRows*nStages, sizeCols*nStages, nStages, NULL);
 
   return sparsePattern_IRK;
 }

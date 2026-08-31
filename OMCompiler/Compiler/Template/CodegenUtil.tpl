@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines util functions for templates for transforming Modelica/MetaModelica code to C like
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -55,9 +90,14 @@ import ExpressionDumpTpl.*;
 end symbolName;
 
 template replaceDotAndUnderscore(String str)
- "Replace _ with __ and dot in identifiers with _"
+ "Replace _ with __ and dot in identifiers with _.
+  For quoted identifiers (those starting with a single quote) the dots are
+  part of the name itself (e.g. 'Modelica.Media.X') and must be sanitized by
+  unquoteIdentifier (-> _2E), not treated as path separators (-> _5F_5F).
+  Otherwise the generated name diverges from the record type name built by
+  AbsynUtil.pathStringUnquoteReplaceDot and the C code fails to compile. See #13009."
 ::=
-  let str_dots = System.stringReplace(str,".", "_")
+  let str_dots = if stringEq(substring(str,1,1), "'") then str else System.stringReplace(str,".", "_")
   let str_underscores = System.stringReplace(str_dots, "_", "__")
   System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
@@ -246,31 +286,31 @@ end getVariablity;
 template variabilityString(VarKind varKind)
 ::=
   match varKind
-    case VARIABLE() then "variable"
-    case STATE(derName=NONE()) then 'STATE(<%index%>)'
+    case VARIABLE()               then "variable"
+    case STATE(derName=NONE())    then 'STATE(<%index%>)'
     case STATE(derName=SOME(dcr)) then 'STATE(<%index%>,<%crefStrNoUnderscore(dcr)%>)'
-    case STATE_DER()   then "STATE_DER"
-    case DUMMY_DER()   then "DUMMY_DER"
-    case DUMMY_STATE() then "DUMMY_STATE"
-    case CLOCKED_STATE()  then "CLOCKED_STATE"
-    case DISCRETE()    then "DISCRETE"
-    case PARAM()       then "PARAM"
-    case CONST()       then "CONST"
-    case EXTOBJ()  then 'EXTOBJ: <%dotPath(fullClassName)%>'
-    case JAC_VAR()     then "JACOBIAN_VAR"
-    case JAC_TMP_VAR()then "JACOBIAN_TMP_VAR"
-    case SEED_VAR()    then "SEED_VAR"
-    case OPT_CONSTR()  then "OPT_CONSTR"
-    case OPT_FCONSTR()  then "OPT_FCONSTR"
-    case OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER"
-    case OPT_INPUT_DER()  then "OPT_INPUT_DER"
-    case OPT_TGRID()  then "OPT_TGRID"
-    case OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT"
-    case ALG_STATE()  then "ALG_STATE"
-    case DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR"
-    case DAE_AUX_VAR() then "DAE_AUX_VAR"
-    case LOOP_ITERATION() then "LOOP_ITERATION"
-    case LOOP_SOLVED() then "LOOP_SOLVED"
+    case STATE_DER()              then "STATE_DER"
+    case DUMMY_DER()              then "DUMMY_DER"
+    case DUMMY_STATE()            then "DUMMY_STATE"
+    case CLOCKED_STATE()          then "CLOCKED_STATE"
+    case DISCRETE()               then "DISCRETE"
+    case PARAM()                  then "PARAM"
+    case CONST()                  then "CONST"
+    case EXTOBJ()                 then 'EXTOBJ: <%dotPath(fullClassName)%>'
+    case JAC_VAR()                then "JACOBIAN_VAR"
+    case JAC_TMP_VAR()            then "JACOBIAN_TMP_VAR"
+    case SEED_VAR()               then "SEED_VAR"
+    case OPT_CONSTR()             then "OPT_CONSTR"
+    case OPT_FCONSTR()            then "OPT_FCONSTR"
+    case OPT_INPUT_WITH_DER()     then "OPT_INPUT_WITH_DER"
+    case OPT_INPUT_DER()          then "OPT_INPUT_DER"
+    case OPT_TGRID()              then "OPT_TGRID"
+    case OPT_LOOP_INPUT()         then "OPT_LOOP_INPUT"
+    case ALG_STATE()              then "ALG_STATE"
+    case DAE_RESIDUAL_VAR()       then "DAE_RESIDUAL_VAR"
+    case DAE_AUX_VAR()            then "DAE_AUX_VAR"
+    case LOOP_ITERATION()         then "LOOP_ITERATION"
+    case LOOP_SOLVED()            then "LOOP_SOLVED"
     else "#UNKNOWN_VARKIND"
   end match
 end variabilityString;
@@ -285,79 +325,6 @@ template getAliasVar(AliasVariable aliasvar)
     else '"noAlias"'
 end getAliasVar;
 
-template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
- "Generates code for ScalarVariable Type file for FMU target."
-::=
-  match type_
-    case T_INTEGER(__) then
-      let start_  = attributeOptionString(startValue, "start")
-      let fixed_  = ' fixed="<%isFixed%>"'
-      let min_    = attributeOptionString(minValue, "min")
-      let max_    = attributeOptionString(maxValue, "max")
-      let unit_   = unitString(unit, "unit")
-      let disp_   = unitString(displayUnit, "displayUnit")
-      '<Integer<%start_%><%fixed_%><%min_%><%max_%><%unit_%><%disp_%> />'
-    case T_REAL(__) then
-      let start_  = attributeOptionString(startValue, "start")
-      let fixed_  = ' fixed="<%isFixed%>"'
-      let nom_    = ' useNominal="<%Util.isSome(nominalValue)%>"<%attributeOptionString(nominalValue, "nominal")%>'
-      let min_    = attributeOptionString(minValue, "min")
-      let max_    = attributeOptionString(maxValue, "max")
-      let unit_   = unitString(unit, "unit")
-      let disp_   = unitString(displayUnit, "displayUnit")
-      '<Real<%start_%><%fixed_%><%nom_%><%min_%><%max_%><%unit_%><%disp_%> />'
-    case T_BOOL(__) then
-      let start_  = attributeOptionString(startValue, "start")
-      let fixed_  = ' fixed="<%isFixed%>"'
-      let unit_   = unitString(unit, "unit")
-      let disp_   = unitString(displayUnit, "displayUnit")
-      '<Boolean<%start_%><%fixed_%><%unit_%><%disp_%> />'
-    case T_STRING(__) then
-      let start_  = attributeOptionString(startValue, "start")
-      let fixed_  = ' fixed="<%isFixed%>"'
-      let unit_   = unitString(unit, "unit")
-      let disp_   = unitString(displayUnit, "displayUnit")
-      '<String<%start_%><%fixed_%><%unit_%><%disp_%> />'
-    case T_ENUMERATION(__) then
-      let start_  = attributeOptionString(startValue, "start")
-      let fixed_  = ' fixed="<%isFixed%>"'
-      let unit_   = unitString(unit, "unit")
-      let disp_   = unitString(displayUnit, "displayUnit")
-      '<Integer<%start_%><%fixed_%><%unit_%><%disp_%> />'
-    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then
-      '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
-    case T_ARRAY(__) then
-      ScalarVariableType(unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
-    else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
-end ScalarVariableType;
-
-template attributeString(DAE.Exp exp, String attr_name)
-::=
-  match exp
-    case ICONST(__)
-    case RCONST(__)
-    case SCONST(__)
-    case BCONST(__)
-    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp, '')%>"'
-    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem, '&quot;') ;separator=" "%>"' else ''
-    /* this is basically an each operator, just write one value and repeat it for the size when using it later */
-    case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
-    else ''
-end attributeString;
-
-template attributeOptionString(Option<DAE.Exp> exp_opt, String attr_name)
- "generates code for an attribute"
-::=
-  match exp_opt
-    case SOME(exp) then '<%attributeString(exp, attr_name)%>'
-    else ''
-end attributeOptionString;
-
-template unitString(String unit, String attr_name)
- "generates code for unit attribute"
-::=
-  '<% if unit then ' <%attr_name%>="<%Util.escapeModelicaStringToXmlString(unit)%>"' %>'
-end unitString;
 
 /*********************************************************************
  *********************************************************************
@@ -403,6 +370,15 @@ let() = Tpl.addTemplateError(errMessage)
 #error "<% errMessage %>"<%\n%>
 >>
 end errorMsg;
+
+/* public */ template extFunctionName(String name, String language) "used in Compiler/Template/CodegenFMU.tpl"
+::=
+  match language
+  case "BUILTIN"
+  case "C" then '<%name%>'
+  case "FORTRAN 77" then '<%name%>_'
+  else error(sourceInfo(), 'Unsupported external language: <%language%>')
+end extFunctionName;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenUtil;

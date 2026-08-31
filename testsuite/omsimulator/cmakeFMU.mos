@@ -6,7 +6,8 @@
 loadFile("DualMassOscillator.mo"); getErrorString();
 buildModelFMU(DualMassOscillator.System1, fileNamePrefix="DualMassOscillator.System1", platforms={"dynamic"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu", "DualMassOscillator_System1_systemCall.log");
+// this should be later replaced by a call to the OMSimulatorPython DualMassOscillator.fmu  when command line interface is implemented with oms3
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu --mode=me", "DualMassOscillator_System1_systemCall.log");
 readFile("DualMassOscillator_System1_systemCall.log");
 
 // Result:
@@ -16,11 +17,20 @@ readFile("DualMassOscillator_System1_systemCall.log");
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
 // "
 // "DualMassOscillator.System1.fmu"
-// ""
+// "Notification: Building FMU for platform 'dynamic' (1/1).
+// Notification: Finished FMU for platform 'dynamic' (1/1).
+// "
 // 0
-// "info:    maximum step size for 'model.root': 0.002000
-// info:    Result file: model_res.mat (bufferSize=10)
-// info:    Final Statistics for 'model.root':
+// "info: *** FMU Simulation Info ***
+//      - model     : DualMassOscillator.System1 (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    maximum step size for 'System1.root': 0.002000
+// info:    Result file: DualMassOscillator.System1_res.mat (bufferSize=10)
+// info:    Final Statistics for 'System1.root':
 //          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
 //          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

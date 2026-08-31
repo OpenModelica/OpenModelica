@@ -16,7 +16,6 @@ end B;
 model AsubCrefExpType
   B b;
   A a(J=b.I[1, 1]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AsubCrefExpType;
 
 // Result:

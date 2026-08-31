@@ -1,0 +1,43 @@
+# The native side of an fmi-ls-wasm FMU: a model-agnostic shared library that
+# exports the FMI 3.0 C API and serves it from the FMU's WebAssembly component.
+# One binary per platform, built once (see openmodelica_wasm_jit/build.rs) and
+# byte-copied into every exported FMU — the model itself is entirely in the
+# `.cwasm` the FMU carries as a resource.
+#
+# Nothing here is OpenModelica-specific: it converts any tool's fmi-ls-wasm FMU.
+#
+# Standalone `[workspace]` so the host workspace never links a second wasmtime
+# with the runtime feature on.
+[package]
+name = "openmodelica_fmi_ls_wasm_to_native"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+# Compile the component at instantiate time from `resources/model.wasm` when no
+# `.cwasm` for this platform is present. Costs ~6x the binary; the AOT path is
+# the default because the FMU carries a `.cwasm` per platform it was built for.
+default = []
+jit = ["wasmtime/cranelift", "wasmtime/parallel-compilation"]
+
+[dependencies]
+# `runtime` without `cranelift`: this side only deserializes what the exporter
+# precompiled. `gc` is not optional — a model with a torn nonlinear system uses
+# a funcref table, which needs the function-references/gc proposals.
+wasmtime = { version = "45", default-features = false, features = [
+  "std", "runtime", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+] }
+# An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
+wasmtime-wasi = { version = "45", default-features = false, features = ["p2"] }
+# `external "C"` functions the FMU ships as platform libraries (`om:ext/native`).
+openmodelica_ext_native = { path = "../openmodelica_ext_native", features = ["utilities"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+
+[workspace]

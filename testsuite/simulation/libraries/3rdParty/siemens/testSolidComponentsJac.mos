@@ -2,7 +2,6 @@
 // keywords: SiemensPower SolidComponents
 // status:   correct
 // teardown_command: rm -rf SiemensPower.Components.SolidComponents.Tests.wall_test* _SiemensPower.Components.SolidComponents.Tests.wall_test* output.log
-// cflags: -d=-newInst
 //
 //  Test SiemensPower component SolidComponents
 //
@@ -46,6 +45,7 @@ res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // {"Files Equal!"}
 // endResult

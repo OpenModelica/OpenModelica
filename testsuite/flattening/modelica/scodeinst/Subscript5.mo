@@ -2,7 +2,7 @@
 // status: correct
 //
 // Checks that partially subscripted crefs are padded with :.
-// 
+//
 
 function f
   input Real x[:, :];
@@ -16,7 +16,7 @@ model Subscript5
   Real x[3, 3] = {{time, 1, 2}, {3, 4, 5}, {6, 7, 8}};
   Real y = f(x, x);
 end Subscript5;
-  
+
 
 // Result:
 // function f
@@ -24,7 +24,7 @@ end Subscript5;
 //   input Real[:, :] y;
 //   output Real z;
 // algorithm
-//   z := x[1] * y[2];
+//   z := x[1,:] * y[2,:];
 // end f;
 //
 // class Subscript5

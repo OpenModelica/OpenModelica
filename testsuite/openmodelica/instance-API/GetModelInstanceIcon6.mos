@@ -1,0 +1,158 @@
+// name: GetModelInstanceIcon1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package IconMap
+    model ClassWithInstance
+      MainClass mainClass annotation(Placement(transformation(extent = {{-20, -20}, {20, 20}})));
+      equation
+    end ClassWithInstance;
+
+    model MainClass
+      extends IconMap.BaseClass annotation(IconMap(primitivesVisible=false));
+      annotation(
+        Icon(graphics = {Ellipse(origin = {0, 20}, lineColor = {238, 46, 47}, fillColor = {255, 0, 0}, fillPattern = FillPattern.Solid, extent = {{-60, 60}, {60, -60}})}));
+    end MainClass;
+
+    model BaseClass
+      annotation(
+        Icon(graphics = {Rectangle(origin = {0, -50}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid, extent = {{-80, 30}, {80, -30}})}));
+    end BaseClass;
+  end IconMap;
+");
+
+getModelInstanceAnnotation(IconMap.MainClass, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"IconMap.MainClass\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"extends\",
+//       \"baseClass\": {
+//         \"name\": \"IconMap.BaseClass\",
+//         \"restriction\": \"model\",
+//         \"annotation\": {
+//           \"Icon\": {
+//             \"graphics\": [
+//               {
+//                 \"$kind\": \"record\",
+//                 \"name\": \"Rectangle\",
+//                 \"elements\": [
+//                   true,
+//                   [
+//                     0,
+//                     -50
+//                   ],
+//                   0,
+//                   [
+//                     0,
+//                     0,
+//                     255
+//                   ],
+//                   [
+//                     0,
+//                     0,
+//                     255
+//                   ],
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"LinePattern.Solid\",
+//                     \"index\": 2
+//                   },
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"FillPattern.Solid\",
+//                     \"index\": 2
+//                   },
+//                   0.25,
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"BorderPattern.None\",
+//                     \"index\": 1
+//                   },
+//                   [
+//                     [
+//                       -80,
+//                       30
+//                     ],
+//                     [
+//                       80,
+//                       -30
+//                     ]
+//                   ],
+//                   0
+//                 ]
+//               }
+//             ]
+//           }
+//         }
+//       }
+//     }
+//   ],
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Ellipse\",
+//           \"elements\": [
+//             true,
+//             [
+//               0,
+//               20
+//             ],
+//             0,
+//             [
+//               238,
+//               46,
+//               47
+//             ],
+//             [
+//               255,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.Solid\",
+//               \"index\": 2
+//             },
+//             0.25,
+//             [
+//               [
+//                 -60,
+//                 60
+//               ],
+//               [
+//                 60,
+//                 -60
+//               ]
+//             ],
+//             0,
+//             360,
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"EllipseClosure.Chord\",
+//               \"index\": 2
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   }
+// }"
+// ""
+// endResult

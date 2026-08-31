@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -31,7 +35,9 @@
 
 encapsulated uniontype NFDimension
 protected
+  import Absyn;
   import Dimension = NFDimension;
+  import DAE;
   import Dump;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
@@ -40,6 +46,7 @@ protected
   import Ceval = NFCeval;
 
 public
+  import BaseModelica;
   import Absyn.{Exp, Path, Subscript};
   import Class = NFClass;
   import Expression = NFExpression;
@@ -96,10 +103,8 @@ public
   algorithm
     dim := match exp
       local
-        Expression e;
-        Integer value;
-        Class cls;
-        ComponentRef cref;
+        Expression exp_simple, e1, e2;
+        Integer value, value_original;
         Type ty;
 
       case Expression.INTEGER() then INTEGER(exp.value, var);
@@ -111,7 +116,7 @@ public
             case Type.ENUMERATION() then ENUM(ty);
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got invalid typename", sourceInfo());
+                Error.terminate(getInstanceName() + " got invalid typename", sourceInfo());
               then
                 fail();
           end match;
@@ -125,16 +130,23 @@ public
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
       else algorithm
-        e := SimplifyExp.simplify(exp);
-      then match e
+        exp_simple := SimplifyExp.simplify(exp);
+      then match exp_simple
         // if it can be simplified to an integer its just an integer
         case Expression.INTEGER(value) then INTEGER(value, var);
         // if it can be simplified to an integer after replacing resizables its resizable
         else algorithm
-          e := Expression.map(e, Expression.replaceResizableParameter);
-          e := SimplifyExp.simplify(e);
-        then match e
-          case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
+          e1 := Expression.map(exp_simple, Expression.replaceResizableParameter);
+          e1 := SimplifyExp.simplify(e1);
+        then match e1
+          case Expression.INTEGER(value) algorithm
+            // if replacing the body with original yields another solution, it has already been resized
+            e2 := Expression.map(exp_simple, Expression.replaceResizableParameterWithOriginal);
+            e2 := SimplifyExp.simplify(e2);
+            then match e2
+              case Expression.INTEGER(value_original) guard(value <> value_original) then RESIZABLE(value_original, SOME(value), exp, var);
+              else RESIZABLE(value, NONE(), exp, var);
+            end match;
           // otherwise it is just an expression
           else EXP(exp, var);
         end match;
@@ -158,11 +170,11 @@ public
                             stop  = Expression.INTEGER(stop))
       then (start, step, stop);
       else algorithm
-        Error.assertion(false, getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
+        Error.terminate(getInstanceName() + " got non-range expression: " + Expression.toString(range), sourceInfo());
       then fail();
     end match;
 
-    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
+    dim := INTEGER(intDiv(stop-start, step) + 1, NFPrefixes.Variability.CONSTANT);
   end fromRange;
 
   function fromInteger
@@ -266,15 +278,18 @@ public
     end match;
   end size;
 
+  function sizes
+    "Returns the sizes of the given dimension sizes."
+    input list<Dimension> dims;
+    input Boolean resize = false;
+    output list<Integer> outSizes = list(Dimension.size(d, resize) for d in dims);
+  end sizes;
+
   function sizesProduct
     "Returns the product of the given dimension sizes."
     input list<Dimension> dims;
     input Boolean resize = false;
-    output Integer outSize = 1;
-  algorithm
-    for dim in dims loop
-      outSize := outSize * Dimension.size(dim, resize);
-    end for;
+    output Integer outSize = product(Dimension.size(d, resize) for d in dims);
   end sizesProduct;
 
   function isEqual
@@ -319,8 +334,6 @@ public
     input InstNode node2;
     input Integer index2;
     output Boolean isEqual;
-  protected
-    Expression cref_exp, index_exp;
   algorithm
     isEqual := match (dim1, dim2)
       // dim1 is equal to dim2 if dim1 = size(node2, ...)
@@ -336,6 +349,26 @@ public
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqualKnownSize;
+
+  function isSame
+    input Dimension dim1;
+    input Dimension dim2;
+    output Boolean same;
+  algorithm
+    same := match (dim1, dim2)
+      case (RAW_DIM(), RAW_DIM())
+        then InstNode.isSame(dim1.scope, dim2.scope) and
+             AbsynUtil.subscriptEqual(dim1.dim, dim2.dim);
+      case (UNTYPED(), UNTYPED()) then Expression.isEqual(dim1.dimension, dim2.dimension);
+      case (INTEGER(), INTEGER()) then dim1.size == dim2.size;
+      case (BOOLEAN(), BOOLEAN()) then true;
+      case (ENUM(), ENUM()) then Type.isEqual(dim1.enumType, dim2.enumType);
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (UNKNOWN(), UNKNOWN()) then true;
+      else false;
+    end match;
+  end isSame;
 
   function isSizeOf
     "Returns true if the dimension is size(node, index)."
@@ -454,7 +487,7 @@ public
 
   function hashList
     input list<Dimension> dims;
-    output Integer hash = 5381;
+    output Integer hash = Util.HASH_SEED;
   algorithm
     for dim in dims loop
       hash := stringHashDjb2Continue(toString(dim), hash);
@@ -488,6 +521,15 @@ public
       case UNTYPED() then Expression.toFlatString(dim.dimension, format);
     end match;
   end toFlatString;
+
+  function toFlatStringList
+    input list<Dimension> dims;
+    input BaseModelica.OutputFormat format;
+    input String name = "";
+    output String str;
+  algorithm
+    str := List.toStringCustom(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
+  end toFlatStringList;
 
   function endExp
     "Returns an expression for the last index in a dimension."
@@ -721,5 +763,5 @@ public
     end match;
   end typeOf;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFDimension;

@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -88,15 +93,16 @@ public:
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
+  bool isTabDefined() const {return mTabDefined;}
   void setGroup(QString group) {mGroup = group;}
   const StringAnnotation &getGroup() {return mGroup;}
-  void setGroupDefined(bool groupDefined) {mGroupDefined = groupDefined;}
   bool isGroupDefined() const {return mGroupDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
   bool isShowStartAttribute() const {return mShowStartAttribute;}
   void setShowStartAndFixed(bool showStartAndFixed) {mShowStartAndFixed = showStartAndFixed;}
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
+  bool hasGroupImage() const {return mHasGroupImage;}
   void updateNameLabel();
   QString getName() const {return mName;}
   QString getExtendName() const {return mExtendName;}
@@ -106,10 +112,11 @@ public:
   QString getOriginalFixedValue() const {return mOriginalFixedValue;}
   FinalEachToolButton *getFixedFinalEachMenu() const {return mpFixedFinalEachMenuButton;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool adjustSize = true, bool unitComboBoxChanged = false);
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool unitComboBoxChanged = false);
   bool isEnumeration() const {return mValueType == Enumeration;}
   bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
   bool isReplaceableClass() const {return mValueType == ReplaceableClass;}
+  bool isChoicesAllMatching() const {return mValueType == ChoicesAllMatching;}
   bool isRecord() const {return mValueType == Record;}
   bool isChoices() const {return mValueType == Choices;}
   QWidget* getValueWidget();
@@ -147,6 +154,7 @@ private:
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
+  bool mTabDefined = false;
   StringAnnotation mGroup;
   bool mGroupDefined;
   BooleanAnnotation mEnable;
@@ -158,6 +166,7 @@ private:
   StringAnnotation mSaveSelectorFilter;
   StringAnnotation mSaveSelectorCaption;
   StringAnnotation mGroupImage;
+  bool mHasGroupImage = false;
   BooleanAnnotation mConnectorSizing;
 
   QString mName;
@@ -188,10 +197,12 @@ private:
 
   void createEditClassButton();
   void createValueWidget();
+  void createValueComboBox();
   void enableDisableUnitComboBox(const QString &value);
-  void updateValueBinding(const FlatModelica::Expression expression);
+  void updateValueBinding(const FlatModelica::Expression& expression);
   bool isValueModifiedHelper() const;
   void resetUnitCombobox();
+  void valueTextBoxChanged(const QString &text);
 private slots:
   void setBreakValue(bool breakValue);
 public slots:
@@ -243,7 +254,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool subDialog, ModelInstance::Modifier *pDefaultElementModifier,
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementQualifiedName() const;
@@ -252,19 +263,23 @@ public:
   QString getComponentClassComment() const;
   ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  ModelInstance::Element *getElement() const {return mpElement;}
   bool hasElement() const {return mpElement ? true : false;}
   bool isElementArray() const {return mpElement->getDimensions().isArray();}
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
-  bool isNested() const {return mNested;}
+  bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
-  bool mInherited;
-  bool mNested;
+  bool mInherited = false;
+  bool mNested = false;
+  bool mSubDialog = false;
+  bool mSkipFocusOutEvent = false;
   ModelInstance::Modifier *mpDefaultElementModifier;
   ModelInstance::Modifier *mpReplaceableConstrainedByModifier;
   ModelInstance::Modifier *mpElementModifier;
@@ -284,6 +299,9 @@ private:
   Label *mpComponentClassCommentTextBox;
   Label *mpModifiersLabel;
   QLineEdit *mpModifiersTextBox;
+  QVector<QString> mHandledModifiersVector;
+  QVector<Label*> mModifierLabelsVector;
+  QVector<QLineEdit*> mModifierTextBoxesVector;
   QMap<QString, int> mTabsMap;
   QList<Parameter*> mParametersList;
   QPushButton *mpOkButton;
@@ -292,13 +310,13 @@ private:
 
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void addOrUpdateParametersScrollArea(Parameter *pParameter);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchModifiers(ModelInstance::Modifier *pModifier);
   void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();

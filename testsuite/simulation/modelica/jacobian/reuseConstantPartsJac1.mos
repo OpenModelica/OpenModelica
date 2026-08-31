@@ -15,32 +15,28 @@ setCommandLineOptions("-d=newInst,symJacConstantSplit --generateDynamicJacobian=
 buildModel(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler); getErrorString();
 
 // Test DASSL
-system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=symbolical", "out.log"); getErrorString();
-readFile("out.log"); remove("out.log");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, simflags="-s=dassl -jacobian=symbolical", resimulateExecutable="Modelica.Fluid.Examples.DrumBoiler.DrumBoiler"); getErrorString();
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
-system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=coloredSymbolical", "out.log"); getErrorString();
-readFile("out.log"); remove("out.log");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, simflags="-s=dassl -jacobian=coloredSymbolical", resimulateExecutable="Modelica.Fluid.Examples.DrumBoiler.DrumBoiler"); getErrorString();
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
 // Test IDA
-system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=symbolical", "out.log"); getErrorString();
-readFile("out.log"); remove("out.log");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, simflags="-s=ida -jacobian=symbolical", resimulateExecutable="Modelica.Fluid.Examples.DrumBoiler.DrumBoiler"); getErrorString();
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
-system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=coloredSymbolical", "out.log"); getErrorString();
-readFile("out.log"); remove("out.log");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, simflags="-s=ida -jacobian=coloredSymbolical", resimulateExecutable="Modelica.Fluid.Examples.DrumBoiler.DrumBoiler"); getErrorString();
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff",
                       vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
 getErrorString();
 
@@ -53,37 +49,45 @@ getErrorString();
 // {"Modelica.Fluid.Examples.DrumBoiler.DrumBoiler", "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_init.xml"}
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=symbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // (true, {})
 // ""
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=coloredSymbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // (true, {})
 // ""
-// 0
-// ""
-// "LOG_STDOUT        | warning | Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=ida -jacobian=symbolical'",
+//     messages = "LOG_STDOUT        | warning | Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // (true, {})
 // ""
-// 0
-// ""
-// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=ida -jacobian=coloredSymbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// true
+// end SimulationResult;
+// ""
 // (true, {})
 // ""
 // endResult

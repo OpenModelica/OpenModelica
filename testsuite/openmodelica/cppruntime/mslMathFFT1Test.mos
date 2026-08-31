@@ -2,7 +2,6 @@
 // keywords: array slice asub
 // status: correct
 // teardown_command: rm -f *RealFFT1*
-// cflags: -d=newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

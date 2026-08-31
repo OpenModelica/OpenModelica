@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -71,7 +75,7 @@ public
   algorithm
     str := match iter
       case ARRAY_ITERATOR()
-      then List.toString(iter.arrays, function Array.toString(
+      then List.toStringCustom(iter.arrays, function Array.toString(
         inPrintFunc   = Expression.toString,
         inNameStr     = "",
         inBeginStr    = "{",
@@ -91,20 +95,20 @@ public
   function fromExp
     input Expression exp;
     input Boolean backend = false;
+    input Boolean resize = false;
     output ExpressionIterator iterator;
   algorithm
     iterator := match exp
       local
-        list<Expression> arr, slice;
         Expression e;
         Boolean expanded;
 
       case Expression.ARRAY()
         algorithm
-          (e, expanded) := ExpandExp.expand(exp, backend);
+          (e, expanded) := ExpandExp.expand(exp, backend, resize);
 
           if not expanded then
-            Error.assertion(false, getInstanceName() + " got unexpandable expression `" +
+            Error.terminate(getInstanceName() + " got unexpandable expression `" +
               Expression.toString(exp) + "`", sourceInfo());
           end if;
         then
@@ -115,7 +119,7 @@ public
           e := ExpandExp.expandCref(exp, backend);
 
           iterator := match e
-            case Expression.ARRAY() then fromExp(e, backend);
+            case Expression.ARRAY() then fromExp(e, backend, resize);
             else SCALAR_ITERATOR(e);
           end match;
         then
@@ -123,10 +127,10 @@ public
 
       else
         algorithm
-          (e, expanded) := ExpandExp.expand(exp, backend);
+          (e, expanded) := ExpandExp.expand(exp, backend, resize);
         then
           if expanded then
-            (if Expression.isEqual(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
+            (if Expression.isEqual(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend, resize)) else
             NONE_ITERATOR();
 
     end match;
@@ -151,7 +155,6 @@ public
   algorithm
     iterator := match binding
       local
-        list<Expression> expl;
 
       case Binding.TYPED_BINDING(eachType = NFBinding.EachType.EACH)
         then EACH_ITERATOR(binding.bindingExp);
@@ -269,8 +272,6 @@ public
       input Expression exp;
       input Boolean trySimplify;
       output Boolean res;
-    protected
-      Expression call;
     algorithm
       res := match exp
         case Expression.SUBSCRIPTED_EXP(exp = Expression.CALL())
@@ -290,7 +291,6 @@ protected
     input Expression exp;
     output ExpressionIterator iterator;
   protected
-    array<Expression> arr;
     list<array<Expression>> arrays;
   algorithm
     arrays := flattenArray(exp, {});
@@ -327,5 +327,5 @@ protected
     end if;
   end flattenArray_impl;
 
-annotation(__OpenModelica_Interface = "frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFExpressionIterator;

@@ -209,6 +209,13 @@ package TplAbsyn
       Ident eltName;
       list<MMExp> statements;
     end MM_FOR_LOOP;
+
+    record MM_LIST_FOR_LOOP
+      Ident eltName;
+      Ident listName;
+      TypedIdents matchLocals;
+      list<MMMatchCase> matchCases;
+    end MM_LIST_FOR_LOOP;
   end MMExp;
 
   // **** types for dumping purposes ... i.e. Susan input AST
@@ -362,6 +369,12 @@ package TplAbsyn
     input TypedIdents inList2;
     output tuple<TypedIdents, TypedIdents, TypedIdents> outIntersectionAndRests;
   end intersectInOutArgs;
+
+  function isTupleListMember
+    input Ident inId;
+    input TypedIdents inList;
+    output Boolean outIsMember;
+  end isTupleListMember;
 
 end TplAbsyn;
 

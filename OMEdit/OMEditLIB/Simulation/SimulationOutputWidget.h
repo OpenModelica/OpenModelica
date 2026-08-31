@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -87,6 +93,7 @@ public:
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   void start();
+  void runWasmJitSimulation(const QString &simulationParameters);
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
@@ -105,11 +112,15 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
-  void addGeneratedFileTab(QString fileName);
+  QString getCompilationStandardError();
+  QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
+  QString getSimulationStandardError() {return mSimulationStandardError;}
   void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
+  void reSimulate(bool showSetup);
+  void startSimulationAfterBuild();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
@@ -119,8 +130,8 @@ private:
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
-  QList<QString> mGeneratedAlgLoopFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
+  QString mCompilationStandardError;
   QString mSimulationStandardOutput;
   QString mSimulationStandardError;
   SimulationOutputHandler *mpSimulationOutputHandler;
@@ -140,14 +151,20 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
+  // wasm-jit in-process run (no QProcess): whether a cancellable simulate() is in
+  // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
+  bool mIsWasmJitSimulationRunning = false;
+  bool mWasmJitCancelled = false;
   QDateTime mResultFileLastModifiedDateTime;
 
   void compileModel();
   void runPostCompilation();
-  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void runSimulationExecutable();
   void writeCompilationOutput(QString output, QColor color);
+#if QT_CONFIG(process)
+  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
@@ -157,6 +174,7 @@ private slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();
   void socketDisconnected();
+#if QT_CONFIG(process)
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
@@ -172,6 +190,7 @@ private slots:
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 public slots:
   void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);

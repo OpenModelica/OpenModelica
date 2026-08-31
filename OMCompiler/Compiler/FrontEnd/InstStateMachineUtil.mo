@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -38,10 +42,13 @@ encapsulated package InstStateMachineUtil
 
 public import DAE;
 
+protected import Absyn;
+protected import AvlTreePathFunction;
 protected import Config;
 protected import Flags;
 protected import List;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import HashTable;
 protected import HashTableSM1;
 protected import HashTableCG;
@@ -55,6 +62,7 @@ protected import Expression;
 protected import Debug;
 protected import PrefixUtil;
 protected import DAEDump;
+protected import SCode;
 
 public uniontype SMNode
   record SMNODE "Collecting information about a state/mode"
@@ -75,7 +83,7 @@ end FlatSMGroup;
 public uniontype AdjacencyTable
   record ADJACENCY_TABLE
     HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
-    Boolean adjacency[:,:] "Adjacency matrix showing which modes are connected by transitions";
+    array<array<Boolean>> adjacency "Adjacency matrix showing which modes are connected by transitions";
   end ADJACENCY_TABLE;
 end AdjacencyTable;
 
@@ -131,7 +139,7 @@ algorithm
 
     if DEBUG_SMDUMP then print("***** Initial States: ***** \n"); end if;
     initialStates := extractInitialStates(smNodeTable);
-    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
+    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReferenceBasics.printComponentRefStr), ", ") + "\n"); end if;
 
     if DEBUG_SMDUMP then print("***** Flat State Machine Groups: ***** \n"); end if;
     flatSMGroup := extractFlatSMGroup(initialStates, transClosure, nStates);
@@ -202,8 +210,8 @@ protected
   List<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> innerCrefToOuterOutputCrefs_nonDer = {} "The non-der(..) rest";
   List<DAE.ComponentRef> uniqueHashValues, crefs, derCrefsAcc = {}, outerOutputCrefs;
   HashSet.HashSet derCrefsSet;
-  DAE.FunctionTree emptyTree;
-  list<DAE.Element> dAElistNew, mergeEqns, mergeEqns_der, aliasEqns_der;
+  AvlTreePathFunction.Tree emptyTree;
+  list<DAE.Element> mergeEqns, mergeEqns_der, aliasEqns_der;
   Integer nOfHits;
   Boolean hasDer;
   // FLAT_SM
@@ -228,7 +236,7 @@ algorithm
   // print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
-  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  emptyTree := AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
@@ -328,30 +336,30 @@ Create RHS expression of merging equation.
   input DAE.Type ty "type of inner cref (inner cref type expected to the same as outer crefs type)";
   output DAE.Exp res;
 protected
-  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 algorithm
-  res := match (inOuterCrefs)
+  res := match inOuterCrefs
     local
       DAE.ComponentRef outerCref, crefState;
       List<DAE.ComponentRef> rest;
-      DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
-    case (outerCref::{})
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = DAE.RCONST(0);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      DAE.Exp outerCrefExp, crefStateExp, ifExp, expCond, expElse;
+    case outerCref::{}
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := DAE.RCONST(0);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
-    case (outerCref::rest)
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = mergingRhs_der(rest, inInnerCref, ty);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+    case outerCref::rest
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := mergingRhs_der(rest, inInnerCref, ty);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
   end match;
 
@@ -375,9 +383,8 @@ algorithm
     local
       DAE.ComponentRef componentRef;
       list<DAE.Exp> expLst;
-      DAE.CallAttributes attr;
     case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.CREF(componentRef=componentRef)})
-      guard ComponentReference.crefEqual(componentRef, cref)
+      guard ComponentReferenceBasics.crefEqual(componentRef, cref)
         then (inExp, (cref, hitCount + 1));
     else (inExp,inCref_HitCount);
   end match;
@@ -414,31 +421,31 @@ Create RHS expression of merging equation.
   input DAE.Type ty "type of inner cref (inner cref type expected to the same as outer crefs type)";
   output DAE.Exp res;
 protected
-  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 algorithm
-  res := match (inOuterCrefs)
+  res := match inOuterCrefs
     local
       DAE.ComponentRef outerCref, crefState;
       List<DAE.ComponentRef> rest;
       DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
-    case (outerCref::{})
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        innerCrefExp = DAE.CREF(inInnerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = DAE.CALL(Absyn.IDENT("previous"), {innerCrefExp}, callAttributes);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+    case outerCref::{}
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        innerCrefExp := DAE.CREF(inInnerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := DAE.CALL(Absyn.IDENT("previous"), {innerCrefExp}, callAttributes);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
-    case (outerCref::rest)
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = mergingRhs(rest, inInnerCref, ty);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+    case outerCref::rest
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := mergingRhs(rest, inInnerCref, ty);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
   end match;
 
@@ -468,7 +475,7 @@ protected
   DAE.ComponentRef tuple22;
 algorithm
   tuple22 := Util.tuple22(inHashEntry);
-  isEqual := ComponentReference.crefEqual(tuple22, inCref);
+  isEqual := ComponentReferenceBasics.crefEqual(tuple22, inCref);
   if (not isEqual) then fail(); end if;
   outCref := Util.tuple21(inHashEntry);
 end crefEqualTuple22;
@@ -518,7 +525,7 @@ Helper function to mergeVariableDefinitions
 protected
   DAE.ComponentRef crefIdent, crefFound, strippedCref1, strippedCref2;
 algorithm
-  crefIdent := ComponentReference.crefLastCref(inOuterCref);
+  crefIdent := ComponentReferenceBasics.crefLastCref(inOuterCref);
 
   // inOuterCref is supposed to be "outer" or "inner outer" and we want to move one level up the instance hierachy for starting the search for the corresponding inner
   strippedCref1 := ComponentReference.crefStripLastIdent(inOuterCref);
@@ -541,12 +548,12 @@ Helper function to matchOuterWithInner
   input InnerOuter.InstHierarchy inIH;
   output DAE.ComponentRef outCrefFound;
 protected
-  DAE.ComponentRef testCref, strippedCref1, strippedCref2;
+  DAE.ComponentRef strippedCref1, strippedCref2;
   InnerOuter.InstHierarchyHashTable ht;
 algorithm
   InnerOuter.TOP_INSTANCE(ht=ht) := listHead(inIH);
   try
-    _ := InnerOuter.get(inCrefTest, ht);
+    InnerOuter.get(inCrefTest, ht);
     outCrefFound := inCrefTest;
   else
     strippedCref1 := ComponentReference.crefStripLastIdent(inCrefTest);
@@ -613,7 +620,7 @@ protected
   list<DAE.Element> smElemsInFlatSM;
 algorithm
   smElemsInFlatSM := List.filter2OnTrue(smElemsLst, isInFlatSM, smInitialCref, smNodeToFlatSMGroup);
-  flatSM := DAE.FLAT_SM(ComponentReference.printComponentRefStr(smInitialCref), smElemsInFlatSM);
+  flatSM := DAE.FLAT_SM(ComponentReferenceBasics.printComponentRefStr(smInitialCref), smElemsInFlatSM);
 end createFlatSM;
 
 protected function isInFlatSM "
@@ -640,14 +647,14 @@ algorithm
       expLst={DAE.CREF(componentRef=cref1)})) guard BaseHashTable.hasKey(cref1, smNodeToFlatSMGroup)
       then BaseHashTable.get(cref1, smNodeToFlatSMGroup);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstStateMachineUtil.isInFlatSM failed: Hash table lookup failed for " + DAEDump.dumpElementsStr({inElement}));
         BaseHashTable.dumpHashTableStatistics(smNodeToFlatSMGroup);
       then fail();
   end match;
 
-  outResult := ComponentReference.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
+  outResult := ComponentReferenceBasics.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
 end isInFlatSM;
 
 protected function isSMComp "
@@ -657,7 +664,7 @@ Check if element is a SM_COMP.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.SM_COMP(_,_) then true;
     else false;
   end match;
@@ -691,7 +698,7 @@ transitive closure associated with that initial state."
   output list<FlatSMGroup> flatSMGroup;
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   list<tuple<DAE.ComponentRef, Integer>> entries;
   array<DAE.ComponentRef> i2cref;
   DAE.ComponentRef cref;
@@ -715,8 +722,8 @@ algorithm
     i := BaseHashTable.get(cref, cref2index);
     members := {};
     for j in 1:n loop
-      if adjacency[i,j] then
-        members := i2cref[j]::members;
+      if arrayGet(arrayGet(adjacency,i),j) then
+        members := arrayGet(i2cref,j)::members;
       end if;
     end for;
 
@@ -748,9 +755,9 @@ protected
   array<DAE.ComponentRef> states;
 algorithm
   FLAT_SM_GROUP(initState=initState, states=states) := flatA;
-  initialStateStr := ComponentReference.printComponentRefStr(initState);
+  initialStateStr := ComponentReferenceBasics.printComponentRefStr(initState);
   crefs := arrayList(states);
-  statesStrs := List.map(crefs, ComponentReference.printComponentRefStr);
+  statesStrs := List.map(crefs, ComponentReferenceBasics.printComponentRefStr);
   statesStr := stringDelimitList(statesStrs, ", ");
 
   flatStr := initialStateStr+"( states("+statesStr+"))";
@@ -794,9 +801,8 @@ http://de.wikipedia.org/wiki/Warshall-Algorithmus
   output AdjacencyTable  transClosure;
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   Integer n,k,i,j;
-  Boolean c;
 algorithm
   ADJACENCY_TABLE(cref2index, adjacency) := iTable;
   n := BaseHashTable.hashTableCurrentSize(cref2index);
@@ -806,10 +812,10 @@ algorithm
   // Warshall's algorithm for computing the transitive closure
   for k in 1:n loop
     for i in 1:n loop
-      if adjacency[i,k] then
+      if arrayGet(arrayGet(adjacency,i),k) then
         for j in 1:n loop
-          if adjacency[k,j] then
-            adjacency[i,j] := true;
+          if arrayGet(arrayGet(adjacency,k),j) then
+            arrayUpdate(arrayGet(adjacency,i), j, true);
           end if;
         end for;
       end if;
@@ -827,8 +833,7 @@ Create adjacency table showing which modes are connected by transitions."
   output AdjacencyTable iTable;
 protected
   HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
-  Boolean adjacency[nStates,nStates] "Adjacency matrix showing which states are connected by transitions";
-  array<Boolean> iRow;
+  array<array<Boolean>> adjacency "Adjacency matrix showing which states are connected by transitions";
   Integer n,m,i,j,k;
   DAE.ComponentRef cref;
   HashSet.HashSet edges;
@@ -838,7 +843,7 @@ algorithm
   n := arrayLength(crefs1);
   cref2index := HashTable.emptyHashTableSized(n);
   assert(n == nStates, "Value of nStates needs to be equal to number of modes within mode table argument.");
-  adjacency := fill(false,n,n);
+  adjacency := listArray(list(arrayCreate(n, false) for i in 1:n));
 
   for i in 1:n loop
     cref2index := BaseHashTable.addNoUpdCheck((crefs1[i], i), cref2index);
@@ -851,7 +856,7 @@ algorithm
     for j in 1:m loop
       cref := crefs2[j];
       k := BaseHashTable.get(cref, cref2index);
-      adjacency[i,k] := true;
+      arrayUpdate(arrayGet(adjacency,i), k, true);
     end for;
   end for;
 
@@ -865,12 +870,11 @@ Print adjacency table."
   input Integer nStates "Number of states";
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   list<tuple<DAE.ComponentRef, Integer>> entries;
   tuple<DAE.ComponentRef, Integer> entry;
   DAE.ComponentRef cref;
   Integer n,i,j,padn;
-  array<Boolean> row;
   String str,pads;
   Boolean b;
 algorithm
@@ -884,7 +888,7 @@ algorithm
   entries := List.sort(entries, crefIndexCmp);
   for entry in entries loop
     (cref, i) := entry;
-    print( ComponentReference.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
+    print( ComponentReferenceBasics.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
   end for;
 
   pads := " ";
@@ -899,7 +903,7 @@ algorithm
   for i in 1:n loop
     str := Util.stringPadRight(intString(i), padn, pads);
     for j in 1:n loop
-      b := adjacency[i,j];
+      b := arrayGet(arrayGet(adjacency,i),j);
       str := str + Util.stringPadLeft(boolString(b)+",", padn, pads);
     end for;
     print(str + "\n");
@@ -982,7 +986,7 @@ Helper function to getSMNodeTable"
   output SMNodeTable outTable = inTable;
 algorithm
 
-  outTable := match (inElement)
+  outTable := match inElement
     local
       SMNode smnode1, smnode2;
       DAE.ComponentRef cref1, cref2;
@@ -990,37 +994,37 @@ algorithm
       HashSet.HashSet edges1, edges2;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition"),
       expLst=DAE.CREF(componentRef=cref1)::DAE.CREF(componentRef=cref2)::_))
-      equation
+      algorithm
         //print("InstStateMachineUtil.extractSMStates: transition("+ComponentReference.crefStr(cref1)+", "+ComponentReference.crefStr(cref2)+")\n");
-        smnode1 = if BaseHashTable.hasKey(cref1, outTable)
+        smnode1 := if BaseHashTable.hasKey(cref1, outTable)
           then BaseHashTable.get(cref1, outTable)
             else SMNODE(cref1, false, HashSet.emptyHashSet());
-        SMNODE(_,isInitial1,edges1) = smnode1;
-        edges1 = BaseHashSet.add(cref1, edges1);
-        edges1 = BaseHashSet.add(cref2, edges1);
-        smnode1 = SMNODE(cref1, isInitial1, edges1);
-        outTable = BaseHashTable.add((cref1, smnode1), outTable);
+        SMNODE(_,isInitial1,edges1) := smnode1;
+        edges1 := BaseHashSet.add(cref1, edges1);
+        edges1 := BaseHashSet.add(cref2, edges1);
+        smnode1 := SMNODE(cref1, isInitial1, edges1);
+        outTable := BaseHashTable.add((cref1, smnode1), outTable);
 
-        smnode2 = if BaseHashTable.hasKey(cref2, outTable)
+        smnode2 := if BaseHashTable.hasKey(cref2, outTable)
           then BaseHashTable.get(cref2, outTable)
             else SMNODE(cref2, false, HashSet.emptyHashSet());
-        SMNODE(_,isInitial2,edges2) = smnode2;
-        edges2 = BaseHashSet.add(cref1, edges2);
-        edges2 = BaseHashSet.add(cref2, edges2);
-        smnode2 = SMNODE(cref2, isInitial2, edges2);
-        outTable = BaseHashTable.add((cref2, smnode2), outTable);
+        SMNODE(_,isInitial2,edges2) := smnode2;
+        edges2 := BaseHashSet.add(cref1, edges2);
+        edges2 := BaseHashSet.add(cref2, edges2);
+        smnode2 := SMNODE(cref2, isInitial2, edges2);
+        outTable := BaseHashTable.add((cref2, smnode2), outTable);
       then outTable;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"),
       expLst={DAE.CREF(componentRef=cref1)}))
-      equation
+      algorithm
         //print("InstStateMachineUtil.extractSMStates: initialState("+ComponentReference.crefStr(cref1)+")\n");
-        smnode1 = if BaseHashTable.hasKey(cref1, outTable)
+        smnode1 := if BaseHashTable.hasKey(cref1, outTable)
           then BaseHashTable.get(cref1, outTable)
             else SMNODE(cref1, true, HashSet.emptyHashSet());
-        SMNODE(_,_,edges1) = smnode1;
-        edges1 = BaseHashSet.add(cref1, edges1);
-        smnode1 = SMNODE(cref1,true,edges1);
-        outTable = BaseHashTable.add((cref1, smnode1), outTable);
+        SMNODE(_,_,edges1) := smnode1;
+        edges1 := BaseHashSet.add(cref1, edges1);
+        smnode1 := SMNODE(cref1,true,edges1);
+        outTable := BaseHashTable.add((cref1, smnode1), outTable);
       then outTable;
   end match;
 
@@ -1076,7 +1080,7 @@ Return state instance componenent refs used as arguments in operator 'initialSta
 input SCode.Equation inElement;
 output Absyn.ComponentRef outElement;
 algorithm
-  outElement := match (inElement)
+  outElement := match inElement
     local
       Absyn.ComponentRef cref1;
     case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
@@ -1096,7 +1100,7 @@ Return list of state instance componenent refs used as arguments in operators 't
 input SCode.Equation inElement;
 output list<Absyn.ComponentRef> outElement;
 algorithm
-  outElement := match (inElement)
+  outElement := match inElement
     local
       Absyn.ComponentRef cref1, cref2;
     case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=

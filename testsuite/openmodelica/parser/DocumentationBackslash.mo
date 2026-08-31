@@ -14,7 +14,7 @@ end DocumentationBackslash;
 // Result:
 // class DocumentationBackslash
 // end DocumentationBackslash;
-// [openmodelica/parser/DocumentationBackslash.mo:9:158-9:172:writable] Warning: Lexer treating \ as \\, since \L is not a valid Modelica escape sequence.
-// [openmodelica/parser/DocumentationBackslash.mo:9:158-9:182:writable] Warning: Lexer treating \ as \\, since \C is not a valid Modelica escape sequence.
+// [openmodelica/parser/DocumentationBackslash.mo:9:158-10:14:writable] Warning: Lexer treating \ as \\, since \L is not a valid Modelica escape sequence.
+// [openmodelica/parser/DocumentationBackslash.mo:9:158-10:24:writable] Warning: Lexer treating \ as \\, since \C is not a valid Modelica escape sequence.
 //
 // endResult

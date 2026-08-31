@@ -27,7 +27,7 @@ end M;
 //
 //   model 'M'
 //     Real 'x';
-//     Real[3] 'y';
+//     Real 'y'[3];
 //     'R' 'r';
 //     parameter Integer 'n' = 0;
 //     Real 'z';

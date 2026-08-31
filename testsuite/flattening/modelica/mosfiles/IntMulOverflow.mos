@@ -2,6 +2,7 @@
 // keywords:
 // status:   correct
 // cflags: -d=-newInst
+// suite: 63bit
 //
 //  Making sure that multiplication is correct when multiplying large integers
 //

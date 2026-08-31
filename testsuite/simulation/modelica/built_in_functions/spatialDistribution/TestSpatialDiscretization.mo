@@ -1,5 +1,5 @@
 within ;
-model TestSpatialDiscretization
+model TestSpatialDiscretization "Test models for spatialDistribution with piecewise-exact spatial discretization"
   model Test1
     import Modelica.Constants.pi;
     parameter Real f0 = 9;
@@ -38,8 +38,8 @@ model TestSpatialDiscretization
     assert(err0 < 1e-3, "Numerical solution too far from exact one");
     assert(err1 < 1e-3, "Numerical solution too far from exact one");
 
-   annotation(uses(Modelica(version="3.2.3")),
-             experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
+   annotation(uses(Modelica(version="4.1.0")),
+              experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
   end Test1;
 
   model Test2
@@ -81,8 +81,8 @@ model TestSpatialDiscretization
     assert(err0 < 1e-3, "Numerical solution too far from exact one");
     assert(err1 < 1e-3, "Numerical solution too far from exact one");
 
-   annotation(uses(Modelica(version="3.2.3")),
-             experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
+   annotation(uses(Modelica(version="4.1.0")),
+              experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
   end Test2;
 
   model Test3
@@ -125,8 +125,8 @@ model TestSpatialDiscretization
     assert(err0 < 1e-3, "Numerical solution too far from exact one");
     assert(err1 < 1e-3, "Numerical solution too far from exact one");
 
-   annotation (
-             experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
+   annotation(uses(Modelica(version="4.1.0")),
+              experiment(stopTime = 2, Interval = 1e-4, Tolerance = 1e-7));
   end Test3;
 
 end TestSpatialDiscretization;

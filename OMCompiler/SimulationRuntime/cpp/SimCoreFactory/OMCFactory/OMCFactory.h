@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #pragma once
 /** @defgroup simcorefactoryOMCFactory SimCoreFactory.OMCFactory
  *  Object factories for  gcc/msvc build and linux and windows targets
@@ -45,15 +72,14 @@ public:
 
 protected:
   /**
-   * This function handles complex c-runtime arguments like "-override=startTime=0,...". The
-   * arguments are separated correctly returned as vector. Furthermore the are added to the given
-   * opts-map (old values are overwritten).
+   * This function handles overridden options, e.g. from OMEdit "-endTime=10".
+   * Furthermore they are added to the given opts-map (old values are overwritten).
    * @param argc Number of arguments in the argv-array.
    * @param argv The command line arguments as c-string array.
    * @param opts Already parsed command line arguments (as key-value-pairs)
    * @return All arguments as simple entries.
    */
-  std::vector<const char *> handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  std::vector<const char *> handleOverrides(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
   /**
    * Evaluate all given command line arguments and store their values into the SimSettings structure.

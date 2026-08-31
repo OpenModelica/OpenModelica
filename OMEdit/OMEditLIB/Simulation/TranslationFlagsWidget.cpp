@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -68,6 +74,11 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
   mpEnableFMUImportCheckBox = new QCheckBox(tr("Enable FMU Import"));
+  mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
+  mpProfilingComboBox = new ComboBox;
+  OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
+  mpProfilingComboBox->addItems(profiling.validOptions);
+  Utilities::setToolTip(mpProfilingComboBox, profiling.mainDescription, profiling.descriptions);
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
   mpAdditionalTranslationFlagsTextBox = new QLineEdit;
@@ -91,6 +102,8 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpOldInstantiationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpEnableFMUImportCheckBox, row++, 0, 1, 3);
+  pMainLayout->addWidget(mpProfilingLabel, row, 0);
+  pMainLayout->addWidget(mpProfilingComboBox, row++, 1, 1, 2);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
   pMainLayout->addWidget(mpTranslationFlagsHelpButton, row++, 2);
@@ -118,6 +131,11 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
   mpOldInstantiationCheckBox->setChecked(simulationOptions.getOldInstantiation());
   mpEnableFMUImportCheckBox->setChecked(simulationOptions.getEnableFMUImport());
+  // profiling
+  currentIndex = mpProfilingComboBox->findText(simulationOptions.getProfiling(), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpProfilingComboBox->setCurrentIndex(currentIndex);
+  }
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
 
@@ -136,6 +154,7 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
   pSimulationOptions->setOldInstantiation(mpOldInstantiationCheckBox->isChecked());
   pSimulationOptions->setEnableFMUImport(mpEnableFMUImportCheckBox->isChecked());
+  pSimulationOptions->setProfiling(mpProfilingComboBox->currentText());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
 
@@ -164,6 +183,8 @@ QString TranslationFlagsWidget::commandLineOptions()
   configFlags.append(QString("--matchingAlgorithm=%1").arg(mpMatchingAlgorithmComboBox->currentText()));
   // index reduction method
   configFlags.append(QString("--indexReductionMethod=%1").arg(mpIndexReductionMethodComboBox->currentText()));
+  // profiling
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--profiling=" + mpProfilingComboBox->currentText());
 
   QStringList debugFlags;
   // initialization

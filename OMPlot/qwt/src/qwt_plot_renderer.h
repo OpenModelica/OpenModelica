@@ -108,10 +108,10 @@ class QWT_EXPORT QwtPlotRenderer : public QObject
     void setLayoutFlags( LayoutFlags flags );
     LayoutFlags layoutFlags() const;
 
-    void renderDocument( QwtPlot*, const QString& fileName,
+    bool renderDocument( QwtPlot*, const QString& fileName,
         const QSizeF& sizeMM, int resolution = 85 );
 
-    void renderDocument( QwtPlot*,
+    bool renderDocument( QwtPlot*,
         const QString& fileName, const QString& format,
         const QSizeF& sizeMM, int resolution = 85 );
 

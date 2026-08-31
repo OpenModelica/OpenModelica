@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBDetectStates
 " file:         NBDetectStates.mo
   package:      NBDetectStates
@@ -52,7 +57,7 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFBackendExtension.VariableKind;
+  import NFBackendExtension.{StateSelect, VariableKind};
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -60,6 +65,8 @@ protected
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
+  import FunctionAlias = NBFunctionAlias;
+  import BPartition = NBPartition;
   import NBVariable.{VariablePointers, VarData};
 
   // Util
@@ -136,6 +143,9 @@ protected
     list<Pointer<Equation>> aux_eqns;
     EqData newEqData;
   algorithm
+    // introduce sliced state alias before resolving the der() calls
+    (varData, eqData) := FunctionAlias.introduceSlicedStateAlias(varData, eqData, NBPartition.Kind.ODE);
+
     (varData, eqData) := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
 
@@ -201,10 +211,13 @@ protected
     // move stuff to their correct arrays
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
 
+    // promote StateSelect.prefer variables if their derivative already exists
+    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := promotePreferStates(variables, unknowns, knowns, initials, states, derivatives, algebraics);
+
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(aux_eqns)) + ") Created auxiliary equations:"));
-      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n") + "\n");
+      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), List.Style.NEWLINE_TAB) + "\n\n");
     end if;
   end detectContinuousStatesDefault;
 
@@ -235,8 +248,9 @@ protected
         ComponentRef state_cref, der_cref;
         Pointer<Variable> state_var, der_var;
 
+      // parse all der(x) calls where x is not a state derivative. those need to be handled by resolveGeneralDer()
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),
-        arguments = {Expression.CREF(cref = state_cref)}))
+        arguments = {Expression.CREF(cref = state_cref)})) guard(not BVariable.checkCref(state_cref, BVariable.isStateDerivative, sourceInfo()))
         algorithm
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
 
@@ -279,7 +293,6 @@ protected
         Expression arg, returnExp;
         Pointer<Equation> aux_equation;
         Differentiate.DifferentiationArguments oDiffArgs;
-        Integer idx;
 
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")), arguments = {arg}))
         algorithm
@@ -314,11 +327,13 @@ protected
 
   function checkAlgebraic
     "Needs to be mapped with Expression.fold()
-    counts the number of algebraic variables in an expression."
+    counts the number of algebraic variables in an expression.
+    Count state derivatives double to ensure that they get an auxiliary."
     input Expression exp;
     input output Integer i;
   algorithm
     i := match exp
+      case Expression.CREF() guard(BVariable.isStateDerivative(BVariable.getVarPointer(exp.cref, sourceInfo()))) then i + 2;
       case Expression.CREF() guard(BVariable.isAlgebraic(BVariable.getVarPointer(exp.cref, sourceInfo()))) then i + 1;
       else i;
     end match;
@@ -355,7 +370,7 @@ protected
       if listEmpty(acc_states) then
         print("\t<no states>\n\n");
       else
-        print(List.toString(acc_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
   end updateStatesAndDerivatives;
@@ -391,7 +406,7 @@ protected
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "previous")), arguments = args))
       algorithm
         (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "previous");
-        _ := match old_exp
+        () := match old_exp
           case Expression.CREF() algorithm
             Pointer.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref, sourceInfo()) :: Pointer.access(acc_clocked_states));
           then ();
@@ -437,7 +452,7 @@ protected
     output Expression old_exp;
   protected
     ComponentRef state_cref, pre_cref;
-    Pointer<Variable> state_var, pre_var;
+    Pointer<Variable> state_var;
     Boolean negated;
   algorithm
     (state_var, old_exp, negated) := match args
@@ -445,13 +460,11 @@ protected
       case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref, sourceInfo()), old_exp, true);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
-          + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
+          + List.toString(args, Expression.toString, List.Style.FLAT) + ")."});
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
-    if not scalarized then
-      pre_cref := ComponentRef.copySubscripts(state_cref, pre_cref);
-    end if;
+
     new_exp := Expression.fromCref(pre_cref);
     if negated then
       new_exp := Expression.logicNegate(new_exp);
@@ -487,18 +500,18 @@ protected
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       if not listEmpty(acc_discrete_states) then
         print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
-        print(List.toString(acc_discrete_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_discrete_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
       if not listEmpty(acc_clocked_states) then
         print(StringUtil.headline_4("[stateselection] Natural clocked states from " + context + ":"));
-        print(List.toString(acc_clocked_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_clocked_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 
     if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
       if not listEmpty(acc_previous) then
         print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
-        print(List.toString(acc_previous, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_previous, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 
@@ -537,7 +550,7 @@ protected
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
-          ComponentRef state_cref, pre_cref;
+          ComponentRef state_cref;
           Pointer<Variable> state_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
@@ -563,7 +576,7 @@ protected
     for eqn in body.then_eqns loop
       collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
     end for;
-    if Util.isSome(body.else_if) then
+    if isSome(body.else_if) then
       collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
     end if;
   end collectDiscreteStatesFromWhenInIf;
@@ -578,9 +591,10 @@ protected
     Option<Pointer<Variable>> pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> pre_var;
   algorithm
-    if Util.isSome(pre) then
+    if isSome(pre) then
       SOME(pre_var) := pre;
       pre_cref := BVariable.getVarName(pre_var);
+      pre_cref := ComponentRef.copySubscripts(var_cref, pre_cref);
     else
       if not scalarized then
         // prevent the created pre variable from having the subscripts, but add it to the pre_cref
@@ -602,12 +616,12 @@ protected
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
-          ComponentRef state_cref, pre_cref;
+          ComponentRef state_cref;
           Pointer<Variable> state_var, pre_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          _ := match BVariable.getVarPre(state_var)
+          () := match BVariable.getVarPre(state_var)
             case SOME(pre_var) algorithm
               Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
             then ();
@@ -626,7 +640,7 @@ protected
   protected
     Expression lhs, rhs;
   algorithm
-    _ := match eqn
+    () := match eqn
       case Equation.SCALAR_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
         updateStateOrder(lhs.cref, rhs.cref, state_order);
       then ();
@@ -646,15 +660,65 @@ protected
     end match;
   end stateOrder;
 
+  function promotePreferStates
+    "Promotes StateSelect.prefer variables to states if the model has ANY der() calls.
+    Only relevant for variables that have StateSelect.prefer but do NOT occur inside der()
+    calls — those that do occur are already promoted by natural state collection and removed
+    from algebraics before this function runs."
+    input output VariablePointers variables;
+    input output VariablePointers unknowns;
+    input output VariablePointers knowns;
+    input output VariablePointers initials;
+    input output VariablePointers states;
+    input output VariablePointers derivatives;
+    input output VariablePointers algebraics;
+  protected
+    list<Pointer<Variable>> acc_prefer_states = {};
+    list<Pointer<Variable>> acc_prefer_ders = {};
+    ComponentRef der_cref;
+    Pointer<Variable> der_var;
+  algorithm
+    // only promote if the model is dynamic (has at least one der() call)
+    if VariablePointers.size(states) > 0 then
+      for alg_ptr in VariablePointers.toList(algebraics) loop
+        if BVariable.isStateSelect(alg_ptr, StateSelect.PREFER) then
+          // this variable has StateSelect.prefer but is not inside any der() call;
+          // create its derivative and promote it to a state
+          (der_cref, der_var) := BVariable.makeDerVar(BVariable.getVarName(alg_ptr), variables.scalarized);
+          BVariable.setVarKind(alg_ptr, VariableKind.STATE(1, SOME(der_var), false));
+          acc_prefer_states := alg_ptr :: acc_prefer_states;
+          acc_prefer_ders := der_var :: acc_prefer_ders;
+        end if;
+      end for;
+
+      if not listEmpty(acc_prefer_states) then
+        // update state variable arrays
+        states     := VariablePointers.addList(acc_prefer_states, states);
+        unknowns   := VariablePointers.removeList(acc_prefer_states, unknowns);
+        algebraics := VariablePointers.removeList(acc_prefer_states, algebraics);
+
+        // update derivative variable arrays (newly created — not yet in any array)
+        variables    := VariablePointers.addList(acc_prefer_ders, variables);
+        unknowns     := VariablePointers.addList(acc_prefer_ders, unknowns);
+        initials     := VariablePointers.addList(acc_prefer_ders, initials);
+        derivatives  := VariablePointers.addList(acc_prefer_ders, derivatives);
+
+        if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+          print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_prefer_states)) + ") Forced states by StateSelect.PREFER:"));
+          print(List.toString(acc_prefer_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
+        end if;
+      end if;
+    end if;
+  end promotePreferStates;
+
   function updateStateOrder
     input ComponentRef lhs;
     input ComponentRef rhs;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
   protected
     Pointer<Variable> state;
-    VariableKind lhs_k, rhs_k;
   algorithm
-    _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
+    () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
         UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
@@ -667,7 +731,7 @@ protected
     end match;
   end updateStateOrder;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;
 
 

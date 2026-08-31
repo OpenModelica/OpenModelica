@@ -33,7 +33,7 @@ val(y2, 1.0);
 // ""
 // record SimulationResult
 //     resultFile = "Synchronous.SubClocks.subSuperSample2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Synchronous.SubClocks.subSuperSample2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Synchronous.SubClocks.subSuperSample2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
 //     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
 // |                 | |       | | Number of base clocks: 1
 // |                 | |       | | Base clock 1
@@ -41,12 +41,12 @@ val(y2, 1.0);
 // |                 | |       | | | Number of sub-clocks: 2
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
-// |                 | |       | | | | factor: 4/1
+// |                 | |       | | | | factor: 2/1
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | | Sub-clock 2 of base clock 1
 // |                 | |       | | | | shift: 0/1
-// |                 | |       | | | | factor: 2/1
+// |                 | |       | | | | factor: 4/1
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -55,14 +55,14 @@ val(y2, 1.0);
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.000000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.100000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.200000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.200000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.300000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.500000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.600000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.600000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.700000
 // LOG_SYNCHRONOUS   | info    | Activated event-clock 0 at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.800000

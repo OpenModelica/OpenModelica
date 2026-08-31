@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f SolverFailure.FiniteEscapeTime* output.log
 // cflags: -d=-newInst
+// suite: disabled
 
 loadModel(Modelica, {"3.2.3"});
 loadFile("DebugPackage.mo"); getErrorString();

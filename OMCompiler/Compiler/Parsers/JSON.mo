@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,6 +46,7 @@ import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Util;
 import Print;
+import Testsuite;
 
 public
 
@@ -54,6 +59,9 @@ end LIST_OBJECT;
 record ARRAY
   Vector<JSON> values;
 end ARRAY;
+record LIST
+  list<JSON> values;
+end LIST;
 record STRING
   String str;
 end STRING;
@@ -89,6 +97,12 @@ algorithm
   obj := addPair(key, value, obj);
 end fromPair;
 
+function listObjectFromPair
+  input String key;
+  input JSON value;
+  output JSON obj = LIST_OBJECT({(key, value)});
+end listObjectFromPair;
+
 function emptyArray
   input Integer capacity = 0;
   output JSON obj = ARRAY(Vector.new<JSON>(capacity));
@@ -98,6 +112,11 @@ function makeArray
   input list<JSON> elements;
   output JSON obj = ARRAY(Vector.fromList(elements));
 end makeArray;
+
+function makeList
+  input list<JSON> elements;
+  output JSON obj = LIST(elements);
+end makeList;
 
 function makeString
   input String str;
@@ -193,6 +212,65 @@ algorithm
   outObj := if isNull(value) then obj else addPair(key, value, obj);
 end addPairNotNull;
 
+function toListForm
+  "Returns a JSON value where all OBJECT (hash-map backed) and ARRAY (vector
+   backed) nodes have been converted, recursively, into the list-based
+   LIST_OBJECT and LIST nodes. The result consists only of plain MetaModelica
+   lists, tuples and scalars, which can be traversed from C/C++ (e.g. from
+   OMEdit, see issue #15219) without knowing the internal layout of UnorderedMap
+   and Vector."
+  input JSON value;
+  output JSON outValue;
+algorithm
+  outValue := match value
+    local
+      list<tuple<String, JSON>> pairs;
+      list<JSON> elems;
+      String key;
+      JSON v;
+
+    case OBJECT()
+      algorithm
+        pairs := {};
+        for i in 1:UnorderedMap.size(value.values) loop
+          pairs := (UnorderedMap.keyAt(value.values, i),
+                    toListForm(UnorderedMap.valueAt(value.values, i))) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case LIST_OBJECT()
+      algorithm
+        pairs := {};
+        for p in value.values loop
+          (key, v) := p;
+          pairs := (key, toListForm(v)) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case ARRAY()
+      algorithm
+        elems := {};
+        for i in Vector.size(value.values):-1:1 loop
+          elems := toListForm(Vector.getNoBounds(value.values, i)) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    case LIST()
+      algorithm
+        elems := {};
+        for e in listReverse(value.values) loop
+          elems := toListForm(e) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    else value;
+  end match;
+end toListForm;
+
 function toString
   input JSON value;
   input Boolean prettyPrint = false;
@@ -260,6 +338,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toString_list(value.values);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toString_object(value.values);
@@ -291,6 +375,26 @@ algorithm
 
   Print.printBuf("]");
 end toString_array;
+
+function toString_list
+  input list<JSON> values;
+protected
+  Boolean first = true;
+algorithm
+  Print.printBuf("[");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(", ");
+    end if;
+
+    toString_work(v);
+  end for;
+
+  Print.printBuf("]");
+end toString_list;
 
 function toString_object
   input UnorderedMap<String, JSON> map;
@@ -387,6 +491,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toStringPP_list(value.values, indent);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toStringPP_object(value.values, indent);
@@ -424,6 +534,31 @@ algorithm
   Print.printBuf(indent);
   Print.printBuf("]");
 end toStringPP_array;
+
+function toStringPP_list
+  input list<JSON> values;
+  input String indent;
+protected
+  String next_indent = indent + "  ";
+  Boolean first = true;
+algorithm
+  Print.printBuf("[\n");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(",\n");
+    end if;
+
+    Print.printBuf(next_indent);
+    toStringPP_work(v, next_indent);
+  end for;
+
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("]");
+end toStringPP_list;
 
 function toStringPP_object
   input UnorderedMap<String, JSON> map;
@@ -585,6 +720,7 @@ algorithm
     case OBJECT() then list(getString(v) for v in UnorderedMap.valueList(obj.values));
     case LIST_OBJECT() then listReverse(getString(Util.tuple22(v)) for v in obj.values);
     case ARRAY() then Vector.mapToList(obj.values, getString);
+    case LIST() then list(getString(v) for v in obj.values);
   end match;
 end getStringList;
 
@@ -616,6 +752,7 @@ algorithm
     case OBJECT() then UnorderedMap.size(obj.values);
     case LIST_OBJECT() then listLength(obj.values);
     case ARRAY() then Vector.size(obj.values);
+    case LIST() then listLength(obj.values);
     else 1;
   end match;
 end size;
@@ -666,8 +803,6 @@ end parse_value;
 function parse_string
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -679,7 +814,7 @@ algorithm
   if stringLength(content)==2 then
     content := "";
   else
-    content := System.unescapedString(System.substring(content,2,stringLength(content)-1));
+    content := System.unescapedString(substring(content,2,stringLength(content)-1));
   end if;
   value := STRING(content);
 end parse_string;
@@ -687,8 +822,6 @@ end parse_string;
 function parse_integer
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -703,8 +836,6 @@ end parse_integer;
 function parse_number
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -849,6 +980,25 @@ algorithm
   Error.addSourceMessage(Error.COMPILER_ERROR, {"JSON expected "+expected+", got token "+String(tok.id)+": " + tokenContent(tok)}, tokenSourceInfo(tok));
   fail();
 end errorExpected;
+
+public function dumpJSONSourceInfo
+  input SourceInfo info;
+  input Boolean dumpFilename = true;
+  output JSON json = JSON.makeNull();
+algorithm
+  if dumpFilename then
+    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+  end if;
+
+  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
+  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
+  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
+  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
+
+  if info.isReadOnly then
+    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSourceInfo;
 
 annotation(__OpenModelica_Interface="util");
 end JSON;

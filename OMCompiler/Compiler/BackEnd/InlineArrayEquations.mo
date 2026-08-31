@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -45,7 +49,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
@@ -77,17 +81,13 @@ protected function inlineArrayEqn1
 algorithm
   (outEqSystem, outOptimized) := matchcontinue inEqSystem
     local
-      BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqnLst;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      (eqnLst, true) = getScalarArrayEqns(eqnLst);
-      orderedEqs = BackendEquation.listEquation(eqnLst);
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
+      eqnLst := BackendEquation.equationList(orderedEqs);
+      (eqnLst, true) := getScalarArrayEqns(eqnLst);
+      orderedEqs := BackendEquation.listEquation(eqnLst);
     then (BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(inEqSystem, orderedEqs)), true);
 
     else (inEqSystem, inOptimized);
@@ -112,18 +112,18 @@ protected function getScalarArrayEqns0 "
   output list<BackendDAE.Equation> outEqnLst;
   output Boolean outFound;
 algorithm
-  (outEqnLst, outFound) := match(inEqnLst, inAccEqnLst, inFound)
+  (outEqnLst, outFound) := match inEqnLst
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns, eqns1;
       Boolean b;
 
-    case ({}, _, _)
+    case {}
     then (listReverse(inAccEqnLst), inFound);
 
-    case (eqn::eqns, _, _) equation
-      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);
-      (eqns1, b) = getScalarArrayEqns0(eqns, eqns1, b or inFound);
+    case eqn::eqns algorithm
+      (eqns1, b) := getScalarArrayEqns1(eqn, inAccEqnLst);
+      (eqns1, b) := getScalarArrayEqns0(eqns, eqns1, b or inFound);
     then (eqns1, b);
   end match;
 end getScalarArrayEqns0;
@@ -141,7 +141,6 @@ algorithm
       list<DAE.Exp> ea1, ea2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
-      DAE.Exp e1_1, e2_1;
 
     case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
       algorithm
@@ -163,7 +162,7 @@ algorithm
           ea2 := Expression.flattenArrayExpToList(e2);
         end if;
 
-        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+        (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
           source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
       then
         (eqns, true);
@@ -172,7 +171,7 @@ algorithm
       algorithm
         ea1 := Expression.splitRecord(lhs, Expression.typeof(lhs));
         ea2 := Expression.splitRecord(rhs, Expression.typeof(rhs));
-        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+        (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
           source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
       then
         (eqns, true);
@@ -202,41 +201,41 @@ algorithm
       DAE.ElementSource source;
 
     // complex types to complex equations
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      true = DAEUtil.expTypeComplex(tp);
-      size = Expression.sizeOf(tp);
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      true := DAEUtil.expTypeComplex(tp);
+      size := Expression.sizeOf(tp);
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, eqAttr)::eqns));
 
     // array types to array equations
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      true = DAEUtil.expTypeArray(tp);
-      dims = Expression.arrayDimension(tp);
-      tp = DAEUtil.expTypeElementType(tp);
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      true := DAEUtil.expTypeArray(tp);
+      dims := Expression.arrayDimension(tp);
+      tp := DAEUtil.expTypeElementType(tp);
       if DAEUtil.expTypeComplex(tp) then
-        recordSize = SOME(Expression.sizeOf(tp));
+        recordSize := SOME(Expression.sizeOf(tp));
       else
-        recordSize = NONE();
+        recordSize := NONE();
       end if;
-      ds = Expression.dimensionsSizes(dims);
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+      ds := Expression.dimensionsSizes(dims);
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, eqAttr, recordSize)::eqns));
 
     // other types
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      b1 = DAEUtil.expTypeComplex(tp);
-      b2 = DAEUtil.expTypeArray(tp);
-      false = b1 or b2;
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      b1 := DAEUtil.expTypeComplex(tp);
+      b2 := DAEUtil.expTypeArray(tp);
+      false := b1 or b2;
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, eqAttr)::eqns));
 
-    else equation
+    else algorithm
       // show only on failtrace!
-      true = Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
+      true := Flags.isSet(Flags.FAILTRACE);
+      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\n");
     then fail();
   end matchcontinue;
 end generateScalarArrayEqns2;

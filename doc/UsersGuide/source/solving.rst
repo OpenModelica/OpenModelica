@@ -216,6 +216,27 @@ with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
 :ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
 
+Homotopy support in DAE mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In `DAE mode` the :ref:`homotopy operator <homotopy-method>` is kept in the
+simulation residual (in ODE mode it is only used during initialization). This
+makes `DAE mode` robust against models whose *initial operating point is a
+degenerate point* of a ``homotopy(actual, simplified)`` characteristic — a
+typical example is a fan or pump that starts at zero speed and zero flow, where
+the derivative of the actual pressure characteristic vanishes and the initial
+DAE Jacobian is singular. Such models would otherwise fail at ``time = 0`` with
+``IDA_LSETUP_FAIL``.
+
+When this happens, OpenModelica automatically performs a homotopy continuation:
+the homotopy parameter :math:`\lambda` is ramped from 0 to 1 over the first part
+of the simulation interval (10% by default), so the simulation starts from the
+regularized *simplified* system and continuously transitions to the *actual*
+system once it has moved off the degenerate point. The continuation is activated
+only after a singular initial Jacobian is detected, so models that integrate
+normally are unaffected, and it removes the need for a model-level workaround
+such as giving the mover a non-zero ``m_flow_start``.
+
 
 .. _initialization :
 
@@ -455,6 +476,8 @@ Finally, when running model `M3`, parameters are handled like in the previous ca
 in this case the solution of the initial equations is skipped, so the state variable gets its initial value `x = 4` straight from the imported `initial.mat` file.
 
 
+.. _homotopy-method:
+
 Homotopy Method
 ~~~~~~~~~~~~~~~
 
@@ -510,6 +533,58 @@ Several compiler and simulation flags influence initialization with homotopy:
 :ref:`-homTauMin <simflag-homTauMin>`,
 :ref:`-homTauStart <simflag-homTauStart>`,
 :ref:`-ils <simflag-ils>`.
+
+
+Tearing
+-------
+
+The size of linear and nonlinear equation systems can be substantially reduced by
+means of the Tearing method. Consider a system of :math:`N` equations. The Tearing method requires
+to pick :math:`M < N` variables :math:`x_t` as *tearing* or *iteration* variables, so that
+assuming their values are known, :math:`N - M` *torn* equations can be solved explicitly for the
+remaining :math:`N - M` *torn* variables, by sorting them appropriately. Then, the remaining
+M equations are put in *residual* form :math:`f(x_t) = 0`, where the residuals can ultimately be
+computed by explicit computations as a function of the tearing variables :math:`x_t` only.
+The result is thus an equivalent implicit system of :math:`M < N` equations in the :math:`M`
+tearing variables, with an explicit procedure to compute the residual function :math:`f(x_t)`.
+The Jacobian of that function, which is required by the Newton method, can then be obtained
+by either symbolic or numerical differentiation techniques.
+
+The Tearing method has three main advantages:
+
+- the size of the Jacobian matrix to be factorized in order to solve it is greatly reduced;
+- for nonlinear systems solved by iterative methods like Newton-Raphson, it is only necessary
+  to give initial guess values to the much smaller set of variables :math:`x_t`; the initial
+  guess values are set to the start attributes of the tearing variables;
+- the method allows to solve mixed systems containing Real and discrete (Boolean or Integer)
+  variables and equations by means of standard nonlinear equation solvers, as long as the
+  discrete variables are selected as torn variables and the resulting residual equations have
+  a continuous dependency on the Real tearing variables.
+
+OpenModelica implements some heuristic algorithms to automatically choose the set of
+tearing variables. The tearing algorithm can be selected with the compiler flags:
+:ref:`--tearingMethod <omcflag-tearingMethod>`,
+:ref:`--tearingHeuristic <omcflag-tearingHeuristic>`.
+Since the tearing algorithms can be very time-consuming for large systems, they are automatically
+disabled for systems above a certain size, see
+:ref:`--maxSizeLinearTearing <omcflag-maxSizeLinearTearing>`,
+:ref:`--maxSizeNonlinearTearing <omcflag-maxSizeNonlinearTearing>`.
+
+As of Modelica 3.6, there is no standardized way to influence the choice of tearing variables. OpenModelica
+provides a custom `__OpenModelica_tearingSelect` annotation that can be added to variable declarations to
+influence the choice of tearing variables:
+
+.. code-block:: modelica
+
+  Real x annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real y annotation(__OpenModelica_tearingSelect = TearingSelect.prefer);
+  Real z annotation(__OpenModelica_tearingSelect = TearingSelect.default);
+  Real v annotation(__OpenModelica_tearingSelect = TearingSelect.avoid);
+  Real w annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+
+This feature is currently experimental. There is discussion going on within the MAP-Lang group of the
+Modelica Association to standardize features for the selection of tearing variables and residual
+equations.
 
 
 .. _cruntime-algebraic-solvers :

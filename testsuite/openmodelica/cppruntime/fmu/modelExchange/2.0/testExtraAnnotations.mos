@@ -1,0 +1,257 @@
+// name:  testExtraAnnotations
+// keywords: FMI 2.0 export multiple clocks and sub-clocks
+// status: correct
+// teardown_command: rm -rf binaries sources modelAnnotations.json *ModelWithAnnotations*
+//
+
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("--exposeLocalIOs=2"); getErrorString();
+setCommandLineOptions("--fmiExtraAnnotations=__Optimization|__Estimation"); getErrorString();
+
+loadString("
+package ExtraAnnotationsTest
+  connector RealInput = input Real;
+  connector ActiveInput = RealInput annotation(__Optimization(u_min = 0, u_active = true));
+  connector RealOutput = output Real;
+
+  model M
+    parameter Real p = 1 annotation(__Estimation(p_min=0));
+    ActiveInput u;
+    RealOutput y annotation(__Optimization(y_soft_min = 0, y_soft_weight1 = 100));
+  equation
+    y = p*u;
+    annotation(__Optimization(y(y_order = 1)));
+  end M;
+
+  model MM
+    M[2] m;
+  end MM;
+
+  model ModelWithAnnotations
+    MM[3] m1;
+    M[3,2] m2;
+    M m3;
+    parameter Real[5] s = zeros(5) annotation(__Estimation(p_max=1));
+    annotation(
+      __Estimation(m3(p(p_min = 1))),
+      __Optimization(m3(y(y_soft_max = 10, y_soft_weight1 = 1000), u(u_connection = \"MyInputSignal\"))));
+  end ModelWithAnnotations;
+end ExtraAnnotationsTest;
+");
+getErrorString();
+
+buildModelFMU(ExtraAnnotationsTest.ModelWithAnnotations, version="2.0");
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq ModelWithAnnotations.fmu extra/org.openmodelica/modelAnnotations.json > modelAnnotations.json");
+readFile("modelAnnotations.json");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "ModelWithAnnotations.fmu"
+// ""
+// 0
+// "{
+//   \"name\": \"ExtraAnnotationsTest.ModelWithAnnotations\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"__Estimation\": {
+//       \"m3\": {
+//         \"p\": {
+//           \"p_min\": 1
+//         }
+//       }
+//     },
+//     \"__Optimization\": {
+//       \"m3\": {
+//         \"y\": {
+//           \"y_soft_max\": 10,
+//           \"y_soft_weight1\": 1000
+//         },
+//         \"u\": {
+//           \"u_connection\": \"MyInputSignal\"
+//         }
+//       }
+//     }
+//   },
+//   \"elements\": [
+//     {
+//       \"dims\": [
+//         \"3\"
+//       ],
+//       \"name\": \"m1\",
+//       \"type\": {
+//         \"name\": \"ExtraAnnotationsTest.MM\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"dims\": [
+//               \"2\"
+//             ],
+//             \"name\": \"m\",
+//             \"type\": {
+//               \"name\": \"ExtraAnnotationsTest.M\",
+//               \"restriction\": \"model\",
+//               \"annotation\": {
+//                 \"__Optimization\": {
+//                   \"y\": {
+//                     \"y_order\": 1
+//                   }
+//                 }
+//               },
+//               \"elements\": [
+//                 {
+//                   \"name\": \"p\",
+//                   \"annotation\": {
+//                     \"__Estimation\": {
+//                       \"p_min\": 0
+//                     }
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"u\",
+//                   \"type\": {
+//                     \"name\": \"ExtraAnnotationsTest.ActiveInput\",
+//                     \"restriction\": \"connector\",
+//                     \"annotation\": {
+//                       \"__Optimization\": {
+//                         \"u_min\": 0,
+//                         \"u_active\": true
+//                       }
+//                     }
+//                   }
+//                 },
+//                 {
+//                   \"name\": \"y\",
+//                   \"annotation\": {
+//                     \"__Optimization\": {
+//                       \"y_soft_min\": 0,
+//                       \"y_soft_weight1\": 100
+//                     }
+//                   }
+//                 }
+//               ]
+//             }
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"dims\": [
+//         \"3\",
+//         \"2\"
+//       ],
+//       \"name\": \"m2\",
+//       \"type\": {
+//         \"name\": \"ExtraAnnotationsTest.M\",
+//         \"restriction\": \"model\",
+//         \"annotation\": {
+//           \"__Optimization\": {
+//             \"y\": {
+//               \"y_order\": 1
+//             }
+//           }
+//         },
+//         \"elements\": [
+//           {
+//             \"name\": \"p\",
+//             \"annotation\": {
+//               \"__Estimation\": {
+//                 \"p_min\": 0
+//               }
+//             }
+//           },
+//           {
+//             \"name\": \"u\",
+//             \"type\": {
+//               \"name\": \"ExtraAnnotationsTest.ActiveInput\",
+//               \"restriction\": \"connector\",
+//               \"annotation\": {
+//                 \"__Optimization\": {
+//                   \"u_min\": 0,
+//                   \"u_active\": true
+//                 }
+//               }
+//             }
+//           },
+//           {
+//             \"name\": \"y\",
+//             \"annotation\": {
+//               \"__Optimization\": {
+//                 \"y_soft_min\": 0,
+//                 \"y_soft_weight1\": 100
+//               }
+//             }
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"name\": \"m3\",
+//       \"type\": {
+//         \"name\": \"ExtraAnnotationsTest.M\",
+//         \"restriction\": \"model\",
+//         \"annotation\": {
+//           \"__Optimization\": {
+//             \"y\": {
+//               \"y_order\": 1
+//             }
+//           }
+//         },
+//         \"elements\": [
+//           {
+//             \"name\": \"p\",
+//             \"annotation\": {
+//               \"__Estimation\": {
+//                 \"p_min\": 0
+//               }
+//             }
+//           },
+//           {
+//             \"name\": \"u\",
+//             \"type\": {
+//               \"name\": \"ExtraAnnotationsTest.ActiveInput\",
+//               \"restriction\": \"connector\",
+//               \"annotation\": {
+//                 \"__Optimization\": {
+//                   \"u_min\": 0,
+//                   \"u_active\": true
+//                 }
+//               }
+//             }
+//           },
+//           {
+//             \"name\": \"y\",
+//             \"annotation\": {
+//               \"__Optimization\": {
+//                 \"y_soft_min\": 0,
+//                 \"y_soft_weight1\": 100
+//               }
+//             }
+//           }
+//         ]
+//       }
+//     },
+//     {
+//       \"dims\": [
+//         \"5\"
+//       ],
+//       \"name\": \"s\",
+//       \"annotation\": {
+//         \"__Estimation\": {
+//           \"p_max\": 1
+//         }
+//       }
+//     }
+//   ]
+// }
+// "
+// endResult

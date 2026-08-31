@@ -112,7 +112,6 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidDiscrete.cOut );
   connect(tank.tSensor, pidDiscrete.cIn );
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TankHybridPID;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,13 +1,51 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #ifndef MMAVLTREE_H
 #define MMAVLTREE_H
 
-#include <iosfwd>
+#include <ostream>
+#include <string>
+#include <algorithm>
+
 #include "MetaModelica.h"
 
 #define DEFINE_MM_AVL_TREE_TYPE(name, mm_type, comp_func) \
-  extern record_description mm_type##_NODE__desc; \
-  extern record_description mm_type##_LEAF__desc; \
-  extern record_description mm_type##_EMPTY__desc; \
+  extern "C" record_description mm_type##_NODE__desc; \
+  extern "C" record_description mm_type##_LEAF__desc; \
+  extern "C" record_description mm_type##_EMPTY__desc; \
   using name = OpenModelica::MetaModelica::AvlTree<mm_type##_NODE__desc, mm_type##_LEAF__desc, mm_type##_EMPTY__desc, comp_func>;
 
 namespace OpenModelica
@@ -34,11 +72,22 @@ namespace OpenModelica
         {
         }
 
+        AvlTree(MetaModelica::Record value)
+          : _value{value}
+        {
+        }
+
         operator Value() const noexcept { return _value; }
 
         void add(Value key, Value value)
         {
           _value = add(_value, key, value);
+        }
+
+        template<typename FoldFunc>
+        void apply(FoldFunc f) const
+        {
+          apply(_value, f);
         }
 
         static std::string treeString(Record tree)
@@ -214,6 +263,22 @@ namespace OpenModelica
         static Record makeEmpty()
         {
           return Record(EMPTY, EmptyDesc, {});
+        }
+
+        template<typename FoldFunc>
+        static void apply(Record tree, FoldFunc f)
+        {
+          switch (tree.index()) {
+            case NODE:
+              apply(tree[LEFT], f);
+              f(tree[KEY], tree[VALUE]);
+              apply(tree[RIGHT], f);
+              break;
+
+            case LEAF:
+              f(tree[KEY], tree[VALUE]);
+              break;
+          }
         }
 
         static std::string treeString2(Record tree, bool isLeft, std::string indent)

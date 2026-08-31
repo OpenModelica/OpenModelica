@@ -15,6 +15,9 @@ pipeline {
       agent {
         label 'linux'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {
@@ -28,23 +31,24 @@ pipeline {
     }
     stage('cpp-test') {
       agent {
-         dockerfile {
-          additionalBuildArgs '--pull'
-          dir '.CI/cache'
-          label 'linux'
-          args "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +
-               "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-        }
+        label 'linux'
       }
       environment {
         RUNTESTDB = "/cache/runtest/"
         LIBRARIES = "/cache/omlibrary"
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
-          common.buildOMC('clang', 'clang++', '--without-hwloc')
-          common.makeLibsAndCache()
-          common.partest(true, '-cppruntime')
+          common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                 "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +
+                                 "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
+            common.buildOMC('clang', 'clang++', '--without-hwloc')
+            common.makeLibsAndCache()
+            common.partest(true, '-cppruntime')
+          }
         }
       }
     }

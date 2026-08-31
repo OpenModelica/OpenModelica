@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -145,19 +149,16 @@ public
   function toIndexList
     input Subscript subscript;
     input Integer length;
-    input Boolean baseZero = true;
     output list<Integer> indices;
-  protected
-    Integer shift = if baseZero then 1 else 0;
   algorithm
     indices := match subscript
       local
         array<Expression> elems;
         Integer start, step, stop;
 
-      case INDEX() then {toInteger(subscript)-shift};
+      case INDEX() then {toInteger(subscript)};
 
-      case WHOLE() then List.intRange2(1-shift,length-shift);
+      case WHOLE() then List.intRange2(1,length);
 
       case SLICE(slice = Expression.ARRAY(elements = elems))
       then list(Expression.toInteger(e) for e in elems);
@@ -166,16 +167,16 @@ public
         start = Expression.INTEGER(start),
         step  = SOME(Expression.INTEGER(step)),
         stop  = Expression.INTEGER(stop)))
-      then List.intRange3(start-shift, step, stop-shift);
+      then List.intRange3(start, step, stop);
 
       case SLICE(slice = Expression.RANGE(
         start = Expression.INTEGER(start),
         step  = NONE(),
         stop  = Expression.INTEGER(stop)))
-      then List.intRange2(start-shift, stop-shift);
+      then List.intRange2(start, stop);
 
       else algorithm
-        Error.assertion(false, getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
+        Error.terminate(getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());
       then fail();
     end match;
   end toIndexList;
@@ -196,7 +197,7 @@ public
     if isValidIndexType(ty) then
       subscript := INDEX(exp);
     else
-      Error.assertion(false, getInstanceName() + " got a non integer type exp to make an index sub", sourceInfo());
+      Error.terminate(getInstanceName() + " got a non integer type exp to make an index sub", sourceInfo());
       fail();
     end if;
   end makeIndex;
@@ -207,7 +208,7 @@ public
     output Subscript subscript = SPLIT_INDEX(node, dimIndex);
   algorithm
     if dimIndex < 1 then
-      Error.assertion(false, getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
+      Error.terminate(getInstanceName() + " got invalid index " + String(dimIndex), sourceInfo());
     end if;
   end makeSplitIndex;
 
@@ -299,8 +300,6 @@ public
   function isIterator
     input Subscript sub;
     output Boolean res;
-  protected
-    ComponentRef cref;
   algorithm
     res := match sub
       case UNTYPED() then Expression.isIterator(sub.exp);
@@ -755,7 +754,7 @@ public
       case WHOLE() then Absyn.Subscript.NOSUB();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
+          Error.terminate(getInstanceName() + " failed on unknown subscript", sourceInfo());
         then
           fail();
     end match;
@@ -771,27 +770,11 @@ public
       case WHOLE() then DAE.WHOLEDIM();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript " + toString(subscript), sourceInfo());
+          Error.terminate(getInstanceName() + " failed on unknown subscript " + toString(subscript), sourceInfo());
         then
           fail();
     end match;
   end toDAE;
-
-  function toDAEExp
-    input Subscript subscript;
-    output DAE.Exp daeExp;
-  algorithm
-    daeExp := match subscript
-      case INDEX() then Expression.toDAE(subscript.index);
-      case SLICE() then Expression.toDAE(subscript.slice);
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript '" +
-            toString(subscript) + "'", sourceInfo());
-        then
-          fail();
-    end match;
-  end toDAEExp;
 
   function toString
     input Subscript subscript;
@@ -803,7 +786,7 @@ public
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toString(subscript.indices, toString, List.Style.FLAT_CURLY);
       case WHOLE() then ":";
       case SPLIT_PROXY()
         then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
@@ -816,7 +799,7 @@ public
     input list<Subscript> subscripts;
     output String string;
   algorithm
-    string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
+    string := List.toStringCustom(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
   function toFlatString
@@ -830,7 +813,7 @@ public
       case INDEX() then Expression.toFlatString(subscript.index, format);
       case SLICE() then Expression.toFlatString(subscript.slice, format);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toStringCustom(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
       case SPLIT_INDEX()
         then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
@@ -840,9 +823,14 @@ public
   function toFlatStringList
     input list<Subscript> subscripts;
     input BaseModelica.OutputFormat format;
+    input Boolean escapeQuotes;
     output String string;
   algorithm
-    string := List.toString(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
+    string := List.toStringCustom(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
+
+    if escapeQuotes then
+      string := Util.escapeQuotes(string);
+    end if;
   end toFlatStringList;
 
   function toJSON
@@ -926,8 +914,6 @@ public
       // with expandable connector elements, treat the dimensions as unknown.
       outSubscripts := list(simplify(s, Dimension.UNKNOWN()) for s in subscripts);
     else
-      rest_d := List.lastN(dimensions, listLength(subscripts));
-
       for s in subscripts loop
         d :: rest_d := rest_d;
         outSubscripts := simplify(s, d) :: outSubscripts;
@@ -951,6 +937,9 @@ public
       case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
       case WHOLE() then Dimension.UNKNOWN();
       case SPLIT_INDEX() then Dimension.fromInteger(1);
+      else algorithm
+        Error.terminate(getInstanceName() + " got wrong subscript " + toString(subscript) + "\n", sourceInfo());
+      then fail();
     end match;
   end toDimension;
 
@@ -1036,7 +1025,6 @@ public
   algorithm
     (outSubscript, expanded) := match subscript
       local
-        Expression exp;
         RangeIterator iter;
 
       case SLICE() then expandSlice(subscript, resize);
@@ -1071,7 +1059,9 @@ public
 
       case SLICE()
         algorithm
-          exp := ExpandExp.expand(subscript.slice, resize);
+          // A range with constant but non-literal bounds (`3:end-1` becomes
+          // `3:5-1`) does not expand until it is simplified.
+          exp := ExpandExp.expand(SimplifyExp.simplify(subscript.slice), resize);
 
           if Expression.isArray(exp) then
             outSubscript := EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(exp)));
@@ -1250,16 +1240,46 @@ public
     outSubs := listReverseInPlace(outSubs);
   end mergeList;
 
+  function nth
+    input Dimension dim;
+    input Integer i;
+    output Subscript sub;
+  algorithm
+    sub := match dim
+      case Dimension.INTEGER()                then INDEX(Expression.INTEGER(i));
+      case Dimension.BOOLEAN() guard(i == 1)  then INDEX(Expression.BOOLEAN(false));
+      case Dimension.BOOLEAN() guard(i == 2)  then INDEX(Expression.BOOLEAN(true));
+      case Dimension.ENUM()                   then INDEX(Expression.nthEnumLiteral(dim.enumType, i));
+      case Dimension.RESIZABLE()              then INDEX(Expression.INTEGER(i));
+      else algorithm
+        Error.terminate(getInstanceName() + " got an incorrect dimension type " + Dimension.toString(dim) + ".", sourceInfo());
+      then fail();
+    end match;
+  end nth;
+
   function first
     input Dimension dim;
     output Subscript sub;
   algorithm
     sub := match dim
-      case Dimension.INTEGER() then INDEX(Expression.INTEGER(1));
-      case Dimension.BOOLEAN() then INDEX(Expression.BOOLEAN(false));
-      case Dimension.ENUM()    then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
+      case Dimension.INTEGER()    then INDEX(Expression.INTEGER(1));
+      case Dimension.BOOLEAN()    then INDEX(Expression.BOOLEAN(false));
+      case Dimension.ENUM()       then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
+      case Dimension.RESIZABLE()  then INDEX(Expression.INTEGER(1));
     end match;
   end first;
+
+  function isFirst
+    input Subscript sub;
+    output Boolean b;
+  algorithm
+    b := match sub
+      case INDEX(Expression.INTEGER(1))               then true;
+      case INDEX(Expression.BOOLEAN(false))           then true;
+      case INDEX(Expression.ENUM_LITERAL(index = 1))  then true;
+      else false;
+    end match;
+  end isFirst;
 
   function isSplit
     input Subscript sub;
@@ -1341,14 +1361,46 @@ public
 
   function hash
     input Subscript sub;
-    output Integer hash;
+    output Integer hash = hashContinue(sub, Util.HASH_SEED);
+  end hash;
+
+  function hashContinue
+    input Subscript sub;
+    input output Integer hash;
   algorithm
     hash := match sub
-      case SPLIT_PROXY() then InstNode.hash(sub.origin) + InstNode.hash(sub.parent);
-      case SPLIT_INDEX() then InstNode.hash(sub.node) + sub.dimIndex;
-      else stringHashDjb2(toString(sub));
+      case RAW_SUBSCRIPT() then stringHashDjb2Continue(Dump.printSubscriptStr(sub.subscript), hash);
+      case UNTYPED() then Expression.hashContinue(sub.exp, hash);
+      case INDEX() then Expression.hashContinue(sub.index, hash);
+      case SLICE() then Expression.hashContinue(sub.slice, hash);
+
+      case EXPANDED_SLICE()
+        algorithm
+          hash := stringHashDjb2Continue("{", hash);
+          for s in sub.indices loop
+            hash := hashContinue(s, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("}", hash);
+        then hash;
+
+      case WHOLE() then stringHashDjb2Continue(":", hash);
+
+      case SPLIT_PROXY()
+        algorithm
+          hash := InstNode.hashContinue(sub.origin, hash);
+          hash := InstNode.hashContinue(sub.parent, hash);
+        then hash;
+
+      case SPLIT_INDEX()
+        algorithm
+          hash := InstNode.hashContinue(sub.node, hash);
+          hash := stringHashDjb2Continue(intString(sub.dimIndex), hash);
+        then hash;
+
+      else hash;
     end match;
-  end hash;
+  end hashContinue;
 
   function splitIndexDimExp
     input Subscript sub;
@@ -1374,5 +1426,12 @@ public
     end match;
   end isLiteral;
 
-annotation(__OpenModelica_Interface="frontend");
+  function fillWithWholeLeft
+    input output list<Subscript> subs;
+    input Integer targetLength;
+  algorithm
+    subs := listAppend(List.fill(Subscript.WHOLE(), targetLength - listLength(subs)), subs);
+  end fillWithWholeLeft;
+
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSubscript;

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -86,33 +90,33 @@ public function inst
   input SCode.Program inProgram;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(inPath, inProgram)
+  dae := matchcontinue inProgram
     local
-      Graph g, gclone;
+      Graph g;
       SCode.Program p;
       list<Real> lst;
 
-    case (_, _)
-      equation
-        p = doSCodeDep(inProgram, inPath);
+    case _
+      algorithm
+        p := doSCodeDep(inProgram, inPath);
 
-        lst = {};
+        lst := {};
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
-        g = FGraphBuild.mkProgramGraph(
+        (_, g) := FBuiltin.initialGraph(FCore.emptyCache());
+        g := FGraphBuild.mkProgramGraph(
                  p,
                  FCore.USERDEFINED(),
                  g);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode->FGraph:  " + realString(listHead(lst)) + "\n");
         //print("FGraph nodes:   " + intString(listLength(FNode.dfs(FGraph.top(g)))) + "\n");
         //print("FGraph refs:    " + intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all
-        g = FExpand.all(g);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        g := FExpand.all(g);
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
 
         //print("FGraph nodes:   " + intString(listLength(FNode.dfs(FGraph.top(g)))) + "\n");
         //print("FGraph refs:    " + intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) + "\n");
@@ -121,16 +125,16 @@ algorithm
         FGraphDump.dumpGraph(g, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.graphml");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        _ = FGraph.clone(g);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        FGraph.clone(g);
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FGraph->clone:  " + realString(listHead(lst)) + "\n");
 
         // FGraphDump.dumpGraph(gclone, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.clone.graphml");
       then
         DAE.emptyDae;
 
-    case (_, _)
-      equation
+    case _
+      algorithm
         print("FInst.inst failed!\n");
       then
         DAE.emptyDae;
@@ -145,41 +149,40 @@ public function instPath
   input SCode.Program inProgram;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(inPath, inProgram)
+  dae := matchcontinue inProgram
     local
       Graph g;
-      Ref r;
       SCode.Program p;
       list<Real> lst;
 
-    case (_, _) then inst(inPath, inProgram);
+    case _ then inst(inPath, inProgram);
 
-    case (_, _)
-      equation
-        lst = {};
+    case _
+      algorithm
+        lst := {};
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        p = doSCodeDep(inProgram, inPath);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        p := doSCodeDep(inProgram, inPath);
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode depend:   " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        (_, g) := FBuiltin.initialGraph(FCore.emptyCache());
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("Initial graph:  " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        g = FGraphBuild.mkProgramGraph(
+        g := FGraphBuild.mkProgramGraph(
                  p,
                  FCore.USERDEFINED(),
                  g);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("SCode->FGraph:  " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all references on path
-        (g,_) = FExpand.path(g, inPath);
-        lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
+        (g,_) := FExpand.path(g, inPath);
+        lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FExpand.path:   " + realString(listHead(lst)) + "\n");
 
         // print("FGraph nodes:   " + intString(FGraph.lastId(g)) + "\n");
@@ -189,8 +192,8 @@ algorithm
       then
         DAE.emptyDae;
 
-    case (_, _)
-      equation
+    case _
+      algorithm
         print("FInst.inst failed!\n");
       then
         DAE.emptyDae;
@@ -204,12 +207,12 @@ protected function doSCodeDep
   input Absyn.Path inPath;
   output SCode.Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram, inPath)
+  outProgram := matchcontinue inPath
 
-    case (_, _)
-      equation
-        true = Flags.isSet(Flags.GRAPH_INST_RUN_DEP);
-        outProgram = InstUtil.scodeFlatten(inProgram, inPath);
+    case _
+      algorithm
+        true := Flags.isSet(Flags.GRAPH_INST_RUN_DEP);
+        outProgram := InstUtil.scodeFlatten(inProgram, inPath);
       then
         outProgram;
 

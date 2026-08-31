@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 //STD Headers
@@ -45,38 +48,34 @@
 
 namespace IAEX
 {
-   /*! \class CellCommandCenter
-    *
-    * \brief Executes and store commands.
-    *
-    * This class has the responsibility of storing and executing
-    * commands. Support for undo is not implemented yet.
-    *
-    * \todo implement undo/redo functionality. This needs some changes
-    * in the command classes.(Ingemar Axelsson)
-    */
-   CellCommandCenter::CellCommandCenter(CellApplication *a) : app_(a)
-   {
-   }
+  /*! \class CellCommandCenter
+   *
+   * \brief Executes and store commands.
+   *
+   * This class has the responsibility of storing and executing
+   * commands. Support for undo is not implemented yet.
+   *
+   * \todo implement undo/redo functionality. This needs some changes
+   * in the command classes.(Ingemar Axelsson)
+   *
+   * \todo Storing commands has been removed, since it wasn't used and would
+   * need a redesign of the commands to be safe (e.g. making sure they don't
+   * contain stale references).
+   */
+  CellCommandCenter::CellCommandCenter(CellApplication *a) : app_(a)
+  {
+  }
 
-   CellCommandCenter::~CellCommandCenter()
-   {
-      storeCommands();
-   }
-
-  void CellCommandCenter::executeCommand(Command *cmd)
+  void CellCommandCenter::executeCommand(std::unique_ptr<Command> cmd)
   {
     cmd->setApplication(application());
-
-    //Save for undo redo, or atleast for printing.
-    storage_.push_back(cmd);
 
     // 2005-12-01 AF, Added try-catch and messagebox
     try
     {
       cmd->execute();
     }
-    catch( std::exception &e )
+    catch( const std::exception &e )
     {
       QString msg = e.what();
 
@@ -90,25 +89,13 @@ namespace IAEX
     }
   }
 
-   CellApplication *CellCommandCenter::application()
-   {
-      return app_;
-   }
+  CellApplication *CellCommandCenter::application()
+  {
+     return app_;
+  }
 
-   void CellCommandCenter::setApplication(CellApplication *app)
-   {
-      app_ = app;
-   }
-
-   void CellCommandCenter::storeCommands()
-   {
-      std::ofstream diskstorage("lastcommands.txt");
-
-      std::vector<Command *>::iterator i = storage_.begin();
-
-      for(;i!= storage_.end();++i)
-      {
-      diskstorage << (*i)->commandName().toStdString() << std::endl;
-      }
-   }
+  void CellCommandCenter::setApplication(CellApplication *app)
+  {
+     app_ = app;
+  }
 }

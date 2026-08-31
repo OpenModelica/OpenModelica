@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -651,8 +655,6 @@ function position<T>
   input T inElement;
   input Integer inFilledSize = arrayLength(inArray) "The filled size of the array.";
   output Integer outIndex;
-protected
-  T e;
 algorithm
   for i in 1:inFilledSize loop
     if valueEq(inElement, inArray[i]) then
@@ -763,6 +765,17 @@ algorithm
   end match;
 end toString;
 
+function hashIntArray
+  "Computes a hash value for an array of Integer.
+   The same array contents always give the same hash value."
+  input array<Integer> arr;
+  output Integer hash = 5381;
+algorithm
+  for i in 1:arrayLength(arr) loop
+    hash := intMod(hash * 31 + arrayGetNoBoundsChecking(arr, i), 536870911);
+  end for;
+end hashIntArray;
+
 function isEqual<T>
   "Checks if two arrays are equal."
   input array<T> inArr1;
@@ -836,22 +849,22 @@ algorithm
   end for;
 end allEqual;
 
-function isLess<T1, T2>
+function isLess<T>
   "Returns true if arr1 is less than arr2 using a lexicographical comparison."
-  input array<T1> arr1;
-  input array<T2> arr2;
+  input array<T> arr1;
+  input array<T> arr2;
   input LessFn lessFn;
   output Boolean res;
 
   partial function LessFn
-    input T1 e1;
-    input T2 e2;
+    input T e1;
+    input T e2;
     output Boolean res;
   end LessFn;
 protected
   Integer len1, len2;
-  T1 e1;
-  T2 e2;
+  T e1;
+  T e2;
 algorithm
   len1 := arrayLength(arr1);
   len2 := arrayLength(arr2);
@@ -898,6 +911,7 @@ function remove<T>
 protected
   Integer len = arrayLength(arr);
 algorithm
+  true := index <= len and index >= 1;
   if len <= 1 then
     outArr := listArray({});
   else
@@ -907,7 +921,7 @@ algorithm
       arrayUpdateNoBoundsChecking(outArr, i, arrayGetNoBoundsChecking(arr, i));
     end for;
 
-    for i in index+1:len-1 loop
+    for i in index+1:len loop
       arrayUpdateNoBoundsChecking(outArr, i - 1, arrayGetNoBoundsChecking(arr, i));
     end for;
   end if;
@@ -1202,5 +1216,5 @@ algorithm
   end for;
 end filter;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end Array;

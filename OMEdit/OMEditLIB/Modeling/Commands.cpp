@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -572,22 +578,23 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
 {
   if (mCopyProperties) {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedIconCoordinateSystem = coordinateSystem;
 
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedDiagramCoordinateSystem = coordinateSystem;
   } else if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedIconCoordinateSystem = coordinateSystem;
   } else {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedDiagramCoordinateSystem = coordinateSystem;
   }
   mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
 
-  mpGraphicsView->drawCoordinateSystem();
+  // set custom scale to true so that fitInViewInternal does not call fitInView
+  mpGraphicsView->setIsCustomScale(true);
+  mpGraphicsView->drawCoordinateSystem(false);
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
@@ -596,9 +603,9 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    pGraphicsView->drawCoordinateSystem();
+    mpGraphicsView->setIsCustomScale(true);
+    pGraphicsView->drawCoordinateSystem(false);
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
   }
 }
 
@@ -712,10 +719,11 @@ void OMSimulatorUndoCommand::redoInternal()
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
   // save the opened ModelWidgets that belong to this model and save the selected elements
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(mModelName, &mOpenedModelWidgetsAndSelectedElements);
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pModelLibraryTreeItem, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
+    QString rootCref = "";
+    OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, mModelName, rootCref);
   }
   // reload/redraw the OMSimulator model
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot, mOldEditedCref, mNewEditedCref);
@@ -738,7 +746,8 @@ void OMSimulatorUndoCommand::undo()
 {
   // load the old snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->importSnapshot(mModelName, mOldSnapshot, &mModelName);
+    QString rootCref = "";
+    OMSProxy::instance()->importSnapshot(mModelName, mOldSnapshot, mModelName, rootCref);
   }
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot, mNewEditedCref, mOldEditedCref);
   // Get the new model LibraryTreeItem
@@ -803,7 +812,8 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
  */
 void OMCUndoCommand::redoInternal()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   if (!mSkipGetModelInstance || mUndoCalledOnce) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
   }
@@ -816,6 +826,7 @@ void OMCUndoCommand::redoInternal()
 void OMCUndoCommand::undo()
 {
   mUndoCalledOnce = true;
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

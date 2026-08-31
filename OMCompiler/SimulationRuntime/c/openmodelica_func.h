@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -100,6 +97,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   *  \param [ref] [data]
   */
   int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
+
+  /* get dependency graph for functionODE */
+  void (*getDAG_ODE)(DATA*, threadData_t*);
 
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
@@ -249,6 +249,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /* function for calculation Jacobian */
   /*#ifdef D_OMC_JACOBIAN*/
   const int INDEX_JAC_A;
+  const int INDEX_JAC_ADJ;
   const int INDEX_JAC_B;
   const int INDEX_JAC_C;
   const int INDEX_JAC_D;
@@ -262,6 +263,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 1: jac is not present
   */
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianADJ;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianB;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianC;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
@@ -272,12 +274,16 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * These functions calculate specific jacobian column.
   */
   jacobianColumn_func_ptr functionJacA_column;
+  jacobianColumn_func_ptr functionJacADJ_column;
   jacobianColumn_func_ptr functionJacB_column;
   jacobianColumn_func_ptr functionJacC_column;
   jacobianColumn_func_ptr functionJacD_column;
   jacobianColumn_func_ptr functionJacF_column;
   jacobianColumn_func_ptr functionJacH_column;
   /*#endif*/
+
+  /* get dependency graph for JacA */
+  void (*getDAG_JacA)(DATA*, threadData_t*, JACOBIAN*);
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
   const char *(*linear_model_datarecovery_frame)(void); /* printf format-string with holes for 9 strings */
@@ -299,7 +305,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * This function fills a buffer with all set control variable indices.
   */
-  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
+  /* `input_var_indices[k]` is the real-variable index of input `k`;
+   * `loop_input_indices[k]` is the real-variable index whose value an
+   * `OPT_LOOP_INPUT` takes when the initial guess comes from a file, -1 for an
+   * ordinary input. Both arrays hold `modelData->nInputVars` entries. */
+  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices, int* loop_input_indices);
 
   /*
   * This function is used only for optimization purpose
@@ -314,15 +324,16 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * and set simulationInfo->inputVars. In case it's not present
   * a dummy function is added which return -1.
   */
-  int (*setInputData)(DATA* data, const modelica_boolean file);
+  int (*setInputData)(DATA* data);
 
 
   /*
-  * This function is used only for optimization purpose
-  * and return the time gride. In case it's not present
-  * a dummy function is added which return -1.
+  * This function is used only for optimization purpose and returns the model's
+  * time grid as indices into simulationInfo->realParameter -- the `isTimeGrid`
+  * parameters, which the caller reads the values of. In case it's not present a
+  * dummy function is added which returns -1. The array is malloc'd by the callee.
   */
-  int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_real**t);
+  int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_integer**idx);
 
 
   /*

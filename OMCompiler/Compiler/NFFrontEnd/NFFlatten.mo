@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -48,6 +52,7 @@ import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
 protected
+import Absyn;
 import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -89,6 +94,7 @@ import EvalConstants = NFEvalConstants;
 import SimplifyModel = NFSimplifyModel;
 import InstNodeType = NFInstNode.InstNodeType;
 import ExpandableConnectors = NFExpandableConnectors;
+import SCode;
 import SCodeUtil;
 import DAE;
 import Structural = NFStructural;
@@ -98,9 +104,11 @@ import UnorderedSet;
 import Inline = NFInline;
 import ExpandExp = NFExpandExp;
 import InstUtil = NFInstUtil;
+import StreamFlowAlias = NFStreamFlowAlias;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
+type DeletedVariables = UnorderedSet<ComponentRef>;
 
 encapsulated package FunctionTreeImpl
   import Absyn.Path;
@@ -125,24 +133,6 @@ encapsulated package FunctionTreeImpl
   algorithm
     outResult := AbsynUtil.pathCompareNoQual(inKey1, inKey2);
   end keyCompare;
-
-  function mapExp
-    "maps the expressions of all functions in the tree"
-    input output Tree tree;
-    input MapFunc func;
-    partial function MapFunc
-      input output NFExpression exp;
-    end MapFunc;
-    function mapBody
-      input Key key;
-      input output Value val;
-      input MapFunc func;
-    algorithm
-      val := Function.mapExp(val, func);
-    end mapBody;
-  algorithm
-    tree := map(tree, function mapBody(func = func));
-  end mapExp;
 
   redeclare function addConflictDefault = addConflictKeep;
 end FunctionTreeImpl;
@@ -341,9 +331,8 @@ protected
   list<Equation> eql, ieql;
   list<Algorithm> alg, ialg;
   DAE.ElementSource src;
-  Option<SCode.Comment> cmt;
   FlattenSettings settings;
-  UnorderedSet<ComponentRef> deleted_vars;
+  DeletedVariables deleted_vars;
   Prefix prefix;
 algorithm
   settings := FlattenSettings.SETTINGS(
@@ -391,6 +380,10 @@ algorithm
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
   if getConnectionResolved then
+    if settings.newBackend then
+      flatModel.equations := evaluateIfWithConnects(flatModel.equations);
+    end if;
+
     if settings.arrayConnect then
       flatModel := resolveArrayConnections(flatModel);
     else
@@ -400,6 +393,10 @@ algorithm
   end if;
 
   flatModel.variables := list(updateVariability(var) for var in flatModel.variables);
+
+  if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "illegalConditionalContext") then
+    checkDeletedVarRefs(flatModel, deleted_vars, settings);
+  end if;
 end flatten;
 
 function flattenConnection
@@ -408,13 +405,13 @@ function flattenConnection
   output Connections conns;
 protected
   FlatModel flatModel;
-  UnorderedSet<ComponentRef> deleted_vars;
+  DeletedVariables deleted_vars;
 algorithm
   flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
+  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedCref(deletedVars = deleted_vars));
   // Elaborate expandable connectors.
   (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
   conns := Connections.collectFlows(flatModel, conns);
@@ -460,7 +457,7 @@ function flattenClass
   input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   array<InstNode> comps;
@@ -507,7 +504,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
       then
         ();
 
@@ -521,7 +518,7 @@ function flattenComponent
   input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   InstNode comp_node;
@@ -533,7 +530,7 @@ protected
   list<Variable> children;
 algorithm
   // Remove components that are only outer.
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 
@@ -570,7 +567,7 @@ algorithm
 
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+              Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
             then
               fail();
         end match;
@@ -586,7 +583,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
       then
         fail();
 
@@ -629,7 +626,7 @@ end isDeletedComponent;
 function deleteComponent
   input InstNode node;
   input Prefix prefix;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
 protected
   ComponentRef cref;
 algorithm
@@ -674,7 +671,6 @@ protected
   SCode.Comment cmt;
   SourceInfo info;
   Attributes comp_attr;
-  Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
@@ -710,8 +706,8 @@ algorithm
        not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding)
        or fillVectorizedBindingFails then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
-      eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-        InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
+      eq := Equation.makeEquality(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
+        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
 
@@ -888,10 +884,12 @@ protected
   Expression binding_exp;
   Variability var;
   Binding.Source bind_src;
+  Integer confidence;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
   bind_src := NFBinding.Source.GENERATED;
+  confidence := Binding.confidence(binding);
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -901,17 +899,17 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.makeFlat(e, var, bind_src)
+               Binding.makeFlat(e, var, bind_src, confidence)
            for e in binding_exp.elements);
 
     case Expression.ARRAY()
       guard Type.isRecord(Type.arrayElementType(Expression.typeOf(binding_exp)))
-      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src)
+      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, confidence)
                   for i in 1:arrayLength(comps));
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-record binding " +
+        Error.terminate(getInstanceName() + " got non-record binding " +
           Expression.toString(binding_exp), sourceInfo());
       then
         fail();
@@ -932,7 +930,7 @@ function flattenComplexComponent
   input Prefix prefix;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   list<Dimension> dims;
@@ -962,7 +960,7 @@ algorithm
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       // Constant evaluate parameters that are structural/constant.
-      binding_exp := Ceval.evalExp(binding_exp);
+      binding_exp := Ceval.evalExp(binding_exp, Ceval.EvalTarget.new(info, NFInstContext.BINDING));
       binding_exp := flattenExp(binding_exp, prefix, Binding.getInfo(binding));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
@@ -1002,8 +1000,8 @@ algorithm
       // conflict with the binding on the actual record instance.
       if not settings.newBackend then
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
-        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-          InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
+        eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
+          ElementSource.createElementSource(info));
         sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
@@ -1051,7 +1049,7 @@ algorithm
         for i in arrayLength(comps):-1:1 loop
           ty := InstNode.getType(comps[i]);
           field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr), AbsynUtil.dummyInfo);
+          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr), Absyn.dummyInfo);
           fields := Expression.fromCref(field_cr) :: fields;
         end for;
       then
@@ -1091,7 +1089,7 @@ function flattenArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input SourceInfo info;
   input FlattenSettings settings;
 protected
@@ -1131,14 +1129,13 @@ function vectorizeArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   list<Variable> vrs;
   Sections sects;
   list<Equation> eq, ieq;
   list<Algorithm> alg, ialg;
-  ComponentRef indexed_prefix;
 algorithm
   // Skip the array if any dimension is zero.
   if List.any(dimensions, Dimension.isZero) then
@@ -1184,7 +1181,7 @@ algorithm
   for d in dimensions loop
     index := index + 1;
     iter := ComponentRef.makeIterator(InstNode.newIterator(name + String(index),
-      Type.INTEGER(), AbsynUtil.dummyInfo));
+      Type.INTEGER(), Absyn.dummyInfo));
     subs := Subscript.makeIndex(Expression.fromCref(iter)) :: subs;
   end for;
 
@@ -1203,6 +1200,7 @@ protected
   Type binding_ty;
   list<tuple<InstNode, Expression>> iters;
   ComponentRef prefix_cr;
+  Integer confidence;
 algorithm
   if not Binding.isBound(binding) then
     return;
@@ -1225,7 +1223,7 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       guard Subscript.isEqualList(exp.subscripts, subs)
       algorithm
-        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding));
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
         return;
       then
         ();
@@ -1253,7 +1251,7 @@ algorithm
     exp := Expression.CALL(array_call);
   end if;
 
-  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding));
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
 end vectorizeBinding;
 
 function fillVectorizedBinding
@@ -1263,7 +1261,6 @@ protected
   Expression bind_exp;
   Type bind_ty;
   Integer dim_diff;
-  list<Dimension> dims;
   list<Expression> dim_expl;
 algorithm
   () := match binding
@@ -1313,21 +1310,14 @@ function vectorizeEquation
   input output list<Equation> equations;
 protected
   list<Equation> eql;
+  Type ty;
+  Expression lhs, rhs;
 algorithm
   // Flatten with an empty prefix to get rid of any split indices.
   eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
 
   for eq in eql loop
     equations := match eq
-      local
-        Type ty;
-        InstNode iter, scope;
-        list<InstNode> iters;
-        Expression lhs, rhs, range;
-        list<Expression> ranges;
-        list<Subscript> subs;
-        DAE.ElementSource src;
-
       // convert simple equality of crefs to array equality
       // kabdelhak: only do it if all subscripts are simple enough
       //            will lead to complicated code if not index or whole dim
@@ -1340,7 +1330,7 @@ algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
           rhs := Expression.CREF(ty, rhs.cref);
-        then Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, eq.source) :: equations;
+        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
       // Pass Connections.* operators as they are and let the connection
       // handling deal with them.
@@ -1351,27 +1341,40 @@ algorithm
       // wrap general equation into for loop
       else
         algorithm
-          (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
-          subs := listReverseInPlace(subs);
-          eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
-          scope := Equation.scope(eqn);
-          src := Equation.source(eqn);
-
-          iter :: iters := iters;
-          range :: ranges := ranges;
-          eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
-
-          while not listEmpty(iters) loop
-            iter :: iters := iters;
-            range :: ranges := ranges;
-            eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
-          end while;
+          eq := vectorizeEquationGeneric(eq, dimensions, prefix);
         then
           splitForLoop(eq, EMPTY_PREFIX, equations, settings);
 
     end match;
   end for;
 end vectorizeEquation;
+
+function vectorizeEquationGeneric
+  input Equation eqn;
+  input list<Dimension> dimensions;
+  input Prefix prefix;
+  output Equation vectorizedEqn;
+protected
+  InstNode iter;
+  list<InstNode> iters;
+  Expression range;
+  list<Expression> ranges;
+  list<Subscript> subs;
+  InstNode scope;
+  DAE.ElementSource src;
+algorithm
+  (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+  subs := listReverseInPlace(subs);
+  vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
+  scope := Equation.scope(eqn);
+  src := Equation.source(eqn);
+
+  while not listEmpty(iters) loop
+    iter :: iters := iters;
+    range :: ranges := ranges;
+    vectorizedEqn := Equation.FOR(iter, SOME(range), {vectorizedEqn}, scope, src);
+  end while;
+end vectorizeEquationGeneric;
 
 function vectorizeAlgorithms
   input list<Algorithm> algs;
@@ -1417,10 +1420,10 @@ algorithm
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
+          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source, {})};
         end while;
       then
-        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, alg.scope, alg.source); // ToDo: update inputs, outputs?
+        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, NONE(), alg.scope, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 
@@ -1431,7 +1434,6 @@ public function makeIterators
   output list<Expression> ranges = {};
   output list<Subscript> subscripts = {};
 protected
-  Component iter_comp;
   InstNode prefix_node, iter;
   Expression range;
   Subscript sub;
@@ -1564,11 +1566,6 @@ public function flattenBinding
   input Prefix prefix;
   input Boolean isTypeAttribute = false;
 protected
-  list<Subscript> subs, accum_subs;
-  Integer binding_level;
-  Expression bind_exp;
-  list<InstNode> pars;
-  InstNode par;
   SourceInfo info;
 algorithm
   binding := match binding
@@ -1600,7 +1597,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding.", sourceInfo());
       then
         fail();
 
@@ -1685,8 +1682,6 @@ function flattenCref
   input output ComponentRef cref;
   input Prefix prefix;
   input SourceInfo info;
-protected
-  Type ty, ty2;
 algorithm
   cref := Prefix.apply(prefix, cref);
 
@@ -1878,7 +1873,7 @@ algorithm
         e2 := flattenExp(eq.rhs, prefix, info);
         ty := flattenType(eq.ty, prefix, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -1974,8 +1969,10 @@ algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
               if has_connect then
-                // If-equations containing connects must be evaluated.
-                should_eval := true;
+                // If-equations containing connects must be evaluated, but with
+                // the new backend it needs to be done after vectorization.
+                should_eval := not settings.newBackend;
+                structural := true;
               elseif settings.minimalEval then
                 // Don't evaluate if --evaluateStructuralParameters=strictlyNecessary
                 should_eval := false;
@@ -2002,13 +1999,13 @@ algorithm
               end if;
 
               if should_eval then
-                cond := Ceval.evalExp(cond, target);
+                cond := Ceval.tryEvalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;
             end if;
 
             // Conditions in an if-equation that contains connects must be possible to evaluate.
-            if not Expression.isBoolean(cond) and has_connect then
+            if not Expression.isBoolean(cond) and has_connect and not settings.newBackend then
               Error.addInternalError(
                 "Failed to evaluate branch condition in if equation containing connect equations: `" +
                 Expression.toString(cond) + "`", info);
@@ -2128,7 +2125,7 @@ protected
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
-  (connects, non_connects) := splitForLoop2(body);
+  (connects, non_connects) := splitForLoop2(body, settings);
 
   if not listEmpty(connects) then
     if isSome(opt_range) then
@@ -2154,21 +2151,9 @@ end splitForLoop;
 
 function splitForLoop2
   input list<Equation> forBody;
+  input FlattenSettings settings;
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
-protected
-  function is_conn_operator
-    input Expression exp;
-    output Boolean res;
-  algorithm
-    res := match exp
-      case Expression.CALL()
-        then Call.isConnectionsOperator(exp.call) or
-             Call.isStreamOperator(exp.call) or
-             Call.isCardinality(exp.call);
-      else false;
-    end match;
-  end is_conn_operator;
 protected
   list<Equation> conns, nconns;
 algorithm
@@ -2182,7 +2167,7 @@ algorithm
 
       case Equation.FOR()
         algorithm
-          (conns, nconns) := splitForLoop2(eq.body);
+          (conns, nconns) := splitForLoop2(eq.body, settings);
 
           if not listEmpty(conns) then
             connects := Equation.FOR(eq.iterator, eq.range, conns, eq.scope, eq.source) :: connects;
@@ -2196,7 +2181,8 @@ algorithm
 
       else
         algorithm
-          if Equation.containsExp(eq, function Expression.contains(func = is_conn_operator)) then
+          if Equation.contains(eq, Equation.isConnect) or
+             Equation.containsExp(eq, function Expression.contains(func = Expression.isConnectionCall)) then
             connects := eq :: connects;
           else
             nonConnects := eq :: nonConnects;
@@ -2207,6 +2193,66 @@ algorithm
     end match;
   end for;
 end splitForLoop2;
+
+function unrollForStatementsInAlg
+  input output Algorithm alg;
+algorithm
+  alg.statements := unrollForStatements(alg.statements);
+end unrollForStatementsInAlg;
+
+function unrollForStatements
+  input list<Statement> stmts;
+  output list<Statement> outStmts = {};
+algorithm
+  for s in stmts loop
+    outStmts := unrollForStatement(s, outStmts);
+  end for;
+
+  outStmts := listReverseInPlace(outStmts);
+end unrollForStatements;
+
+function unrollForStatement
+  input Statement stmt;
+  input output list<Statement> statements;
+protected
+  Expression range, val;
+  SourceInfo info;
+  RangeIterator range_iter;
+  list<Statement> stmts;
+  Boolean has_for;
+algorithm
+  statements := match stmt
+    case Statement.FOR(range = SOME(range))
+      algorithm
+        info := Statement.info(stmt);
+
+        try
+          range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
+          range_iter := RangeIterator.fromExp(range);
+        else
+          Error.addSourceMessage(Error.UNROLL_FAILURE, {Statement.toString(stmt)}, info);
+          fail();
+        end try;
+
+        has_for := Statement.containsList(stmt.body, Statement.isFor);
+
+        while RangeIterator.hasNext(range_iter) loop
+          (range_iter, val) := RangeIterator.next(range_iter);
+          stmts := Statement.replaceIteratorList(stmt.body, stmt.iterator, val);
+
+          if has_for then
+            // Unroll recursively if there are nested for loops, otherwise skip it to save time.
+            stmts := unrollForStatements(stmts);
+          end if;
+
+          statements := List.append_reverse(stmts, statements);
+        end while;
+      then
+        statements;
+
+    else stmt :: statements;
+  end match;
+end unrollForStatement;
 
 function flattenAlgorithms
   input list<Algorithm> algorithms;
@@ -2346,15 +2392,15 @@ algorithm
     {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
     DAE.ComponentPrefix.NOCOMPPRE(),
     ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
-    AbsynUtil.dummyInfo
+    Absyn.dummyInfo
   );
 
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
 end addElementSourceArrayPrefix;
 
-function isDeletedConnector
+function isDeletedCref
   input ComponentRef cref;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   output Boolean res;
 protected
   ComponentRef cr = cref;
@@ -2376,24 +2422,27 @@ algorithm
   end while;
 
   res := false;
-end isDeletedConnector;
+end isDeletedCref;
 
 function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, ec_eql, tlio_eql;
+  list<Equation> conn_eql, stream_eql, ec_eql, tlio_eql;
   list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
+  list<list<Connector>> unhandled_stream_sets;
   CardinalityTable.Table ctable;
   Connections.BrokenEdges broken = {};
   UnorderedMap<ComponentRef, Variable> vars;
   UnorderedSet<ComponentRef> connectedLocalIOs;
   Integer exposeLocalIOs;
+  StreamFlowAlias.Replacements flow_alias_repl;
+  Option<StreamFlowAlias.Replacements> flow_alias_repl_opt = NONE();
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2404,7 +2453,7 @@ algorithm
 
   // Collect connections from the model.
   (flatModel, conns) := Connections.collectConnections(flatModel,
-    function isDeletedConnector(deletedVars = deletedVars));
+    function isDeletedCref(deletedVars = deletedVars));
   ctable := CardinalityTable.fromConnections(conns);
 
   // Elaborate expandable connectors.
@@ -2422,7 +2471,7 @@ algorithm
   // - return the broken connects + the equations
   if  System.getHasOverconstrainedConnectors() then
     (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns,
-      function isDeletedConnector(deletedVars = deletedVars));
+      function isDeletedCref(deletedVars = deletedVars));
   end if;
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
@@ -2433,7 +2482,7 @@ algorithm
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   // generate the equations
-  (conn_eql, connectedLocalIOs) := ConnectEquations.generateEquations(csets_array, vars);
+  (conn_eql, connectedLocalIOs, unhandled_stream_sets) := ConnectEquations.generateEquations(csets_array, vars);
 
   // append the equalityConstraint call equations for the broken connects
   if System.getHasOverconstrainedConnectors() then
@@ -2443,6 +2492,15 @@ algorithm
 
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
+
+  // do flow alias elimination if it's enabled
+  if not listEmpty(unhandled_stream_sets) then
+    (flatModel, flow_alias_repl) := StreamFlowAlias.eliminateAliases(flatModel, vars);
+    conn_eql := ConnectEquations.generateStreamEquationsList(unhandled_stream_sets, vars, flow_alias_repl);
+    conn_eql := StreamFlowAlias.applyReplacementsInEql(flow_alias_repl, conn_eql);
+    flatModel.equations := listAppend(conn_eql, flatModel.equations);
+    flow_alias_repl_opt := SOME(flow_alias_repl);
+  end if;
 
   // add top-level IOs for unconnected local IOs
   exposeLocalIOs := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
@@ -2454,7 +2512,17 @@ algorithm
 
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then
-    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable, flow_alias_repl_opt);
+  end if;
+
+  // FMI 3.0 flange causalization: expose unconnected acausal connectors as a
+  // causal FMU boundary (flow -> input, potential -> output) so the FMU can be
+  // reconnected into a physical circuit (issue #15686). Restricted to the old
+  // backend: the new backend's initialization (NBResolveSingularities) cannot yet
+  // balance the model once the zero-flow equations are replaced by boundary inputs.
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0")
+     and not settings.newBackend then
+    flatModel := causalizeAcausalConnectors(flatModel);
   end if;
 
   execStat(getInstanceName());
@@ -2510,18 +2578,113 @@ algorithm
   end for;
 end generateTopLevelIOs;
 
+function causalizeAcausalConnectors
+  "FMI 3.0 flange causalization (issue #15686). Turn the model's unconnected
+   acausal (physical) connectors into a causal FMU boundary so the exported FMU can
+   be reconnected into a Modelica physical circuit. An unconnected flow variable
+   normally gets a `flow = 0` equation; instead expose the flow as an input and the
+   connector's potential variable(s) as outputs (the convention Dymola uses for
+   FMI terminal export) and drop the zero-flow equation. The backend then
+   causalizes the model in the natural 'component driven by its boundary flows'
+   form. Only triggered for FMI 3.0 export."
+  input output FlatModel flatModel;
+protected
+  list<ComponentRef> flowCrefs;
+  list<ComponentRef> unconnectedFlows = {};
+  list<ComponentRef> boundaryConnectors = {};
+  list<Equation> kept = {};
+  Boolean isZeroFlowEq;
+  ComponentRef fc;
+algorithm
+  // crefs of all flow connector members (to tell a generated zero-flow equation
+  // apart from a genuine `x = 0` model equation). Only public ones: a protected
+  // connector is an internal wiring node, not an FMU boundary.
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) and Variable.isPublic(v) in flatModel.variables);
+  if listEmpty(flowCrefs) then return; end if;
+
+  // collect and drop the `flow = 0` equations of unconnected flows.
+  // Only the exported model's OWN top-level connectors form the FMU boundary, so
+  // restrict to flows whose connector is a direct child of the model root
+  // (ComponentRef.rest(fc) is simple, e.g. flange_a.tau -> flange_a). Internal
+  // unconnected sub-connector flows (e.g. cylinder.fixed.flange.f) legitimately
+  // keep their `flow = 0` equation; causalizing them would drop equations the
+  // model needs and leave it under-determined (issue #15686).
+  for eq in flatModel.equations loop
+    isZeroFlowEq := false;
+    () := match eq
+      local Real rv;
+      case Equation.EQUALITY(lhs = Expression.CREF(cref = fc), rhs = Expression.REAL(value = rv))
+        guard rv == 0.0 and List.isMemberOnTrue(fc, flowCrefs, ComponentRef.isEqual)
+              and ComponentRef.isSimple(ComponentRef.rest(fc))
+        algorithm
+          unconnectedFlows := fc :: unconnectedFlows;
+          boundaryConnectors := ComponentRef.rest(fc) :: boundaryConnectors;
+          isZeroFlowEq := true;
+        then ();
+      else ();
+    end match;
+    if not isZeroFlowEq then
+      kept := eq :: kept;
+    end if;
+  end for;
+
+  if listEmpty(unconnectedFlows) then
+    return;
+  end if;
+
+  flatModel.equations := listReverseInPlace(kept);
+  flatModel.variables := list(causalizeAcausalVar(v, unconnectedFlows, boundaryConnectors)
+                              for v in flatModel.variables);
+end causalizeAcausalConnectors;
+
+function causalizeAcausalVar
+  "Reclassify a boundary connector member: an unconnected flow becomes an input,
+   a potential of such a connector becomes an output."
+  input output Variable var;
+  input list<ComponentRef> unconnectedFlows;
+  input list<ComponentRef> boundaryConnectors;
+protected
+  Attributes attr;
+algorithm
+  if Variable.isFlow(var) and List.isMemberOnTrue(var.name, unconnectedFlows, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.INPUT;
+    var.attributes := attr;
+  elseif Variable.isPotential(var) and
+         List.isMemberOnTrue(ComponentRef.rest(var.name), boundaryConnectors, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.OUTPUT;
+    var.attributes := attr;
+  end if;
+end causalizeAcausalVar;
+
 function evaluateConnectionOperators
   input output FlatModel flatModel;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable) for c in flatModel.variables);
-  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable);
-  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable);
-  // TODO: Implement evaluation for algorithm sections.
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable, replacements);
+  flatModel.algorithms := evaluateAlgorithmsConnOp(flatModel.algorithms, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialAlgorithms := evaluateAlgorithmsConnOp(flatModel.initialAlgorithms, sets, setsArray, variables, ctable, replacements);
 end evaluateConnectionOperators;
+
+function evaluateAlgorithmsConnOp
+  input output list<Algorithm> algorithms;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
+algorithm
+  algorithms := Algorithm.mapExpList(algorithms,
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
+      variables = variables, ctable = ctable, replacements = replacements));
+end evaluateAlgorithmsConnOp;
 
 function evaluateBindingConnOp
   input output Variable var;
@@ -2529,6 +2692,7 @@ function evaluateBindingConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 protected
   Expression exp, eval_exp;
 algorithm
@@ -2537,7 +2701,7 @@ algorithm
       guard Binding.hasExp(var.binding)
       algorithm
         exp := Binding.getExp(var.binding);
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
 
         if not referenceEq(exp, eval_exp) then
           var.binding := Binding.setExp(eval_exp, var.binding);
@@ -2555,8 +2719,9 @@ function evaluateEquationsConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable) for eq in equations);
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable, replacements) for eq in equations);
 end evaluateEquationsConnOp;
 
 function evaluateEquationConnOp
@@ -2565,10 +2730,11 @@ function evaluateEquationConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
   eq := Equation.mapExp(eq,
     function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
-      variables = variables, ctable = ctable));
+      variables = variables, ctable = ctable, replacements = replacements));
 
   () := match eq
     case Equation.IF()
@@ -2707,14 +2873,6 @@ algorithm
     case Equation.EQUALITY()
       algorithm
         funcs := collectExpFuncs(eq.lhs, funcs);
-        funcs := collectExpFuncs(eq.rhs, funcs);
-        funcs := collectTypeFuncs(eq.ty, funcs);
-      then
-        ();
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        // Lhs is always a cref, no need to check it.
         funcs := collectExpFuncs(eq.rhs, funcs);
         funcs := collectTypeFuncs(eq.ty, funcs);
       then
@@ -3129,5 +3287,163 @@ algorithm
   end if;
 end updateVariability;
 
-annotation(__OpenModelica_Interface="frontend");
+function evaluateIfWithConnects
+  input list<Equation> eql;
+  output list<Equation> outEql = {};
+algorithm
+  for eq in eql loop
+    outEql := evaluateIfWithConnects2(eq, outEql);
+  end for;
+
+  outEql := listReverseInPlace(outEql);
+end evaluateIfWithConnects;
+
+function evaluateIfWithConnects2
+  input Equation eq;
+  input output list<Equation> equations;
+protected
+  Expression cond;
+  Variability var;
+  list<Equation> eql;
+  Ceval.EvalTarget target;
+  list<Equation.Branch> bl = {};
+algorithm
+  equations := match eq
+    case Equation.IF()
+      guard Equation.contains(eq, Equation.isConnect) or
+            Equation.containsExp(eq, function Expression.contains(func = Expression.isConnectionCall))
+      algorithm
+        target := Ceval.EvalTarget.new(Equation.info(eq));
+
+        for branch in eq.branches loop
+          Equation.Branch.BRANCH(cond, var, eql) := branch;
+
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            if Expression.isPure(cond) then
+              Structural.markExp(cond);
+              cond := Ceval.evalExp(cond, target);
+            end if;
+
+            if not Expression.isBoolean(cond) then
+              Error.addInternalError(
+                "Failed to evaluate branch condition in if equation containing connect equations: `" +
+                Expression.toString(cond) + "`", Equation.info(eq));
+              fail();
+            end if;
+          end if;
+
+          if Expression.isTrue(cond) then
+            if listEmpty(bl) then
+              eql := evaluateIfWithConnects(eql);
+              equations := listAppend(eql, equations);
+              bl := {};
+            else
+              bl := Equation.makeBranch(cond, eql, var) :: bl;
+            end if;
+
+            break;
+          elseif not Expression.isFalse(cond) then
+            bl := Equation.makeBranch(cond, eql, var) :: bl;
+          end if;
+        end for;
+
+        if not listEmpty(bl) then
+          equations := Equation.IF(listReverseInPlace(bl), eq.scope, eq.source) :: equations;
+        end if;
+      then
+        equations;
+
+    else eq :: equations;
+  end match;
+end evaluateIfWithConnects2;
+
+function checkDeletedVarRefs
+  input FlatModel flatModel;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  for var in flatModel.variables loop
+    checkDeletedVarRefsInVar(var, deletedVars, settings);
+  end for;
+
+  for eq in flatModel.equations loop
+    checkDeletedVarRefsInEq(eq, deletedVars, settings);
+  end for;
+
+  for eq in flatModel.initialEquations loop
+    checkDeletedVarRefsInEq(eq, deletedVars, settings);
+  end for;
+
+  for alg in flatModel.algorithms loop
+    checkDeletedVarRefsInAlg(alg, deletedVars, settings);
+  end for;
+
+  for alg in flatModel.initialAlgorithms loop
+    checkDeletedVarRefsInAlg(alg, deletedVars, settings);
+  end for;
+end checkDeletedVarRefs;
+
+function checkDeletedVarRefsInVar
+  input Variable var;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  Variable.applyExpShallow(var,
+    function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = var.info));
+end checkDeletedVarRefsInVar;
+
+function checkDeletedVarRefsInExp
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+  input SourceInfo info;
+algorithm
+  Expression.apply(exp,
+    function checkDeletedVarRefsInExp_traverser(deletedVars = deletedVars, settings = settings, info = info));
+end checkDeletedVarRefsInExp;
+
+function checkDeletedVarRefsInExp_traverser
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+  input SourceInfo info;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      guard isDeletedCref(exp.cref, deletedVars)
+      algorithm
+        Error.addSourceMessage(Error.INVALID_DELETED_COMPONENT_CONTEXT,
+          {ComponentRef.toString(exp.cref)}, info);
+
+        if not settings.relaxedErrorChecking then
+          fail();
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkDeletedVarRefsInExp_traverser;
+
+function checkDeletedVarRefsInEq
+  input Equation eq;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  Equation.applyExp(eq,
+    function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = Equation.info(eq)));
+end checkDeletedVarRefsInEq;
+
+function checkDeletedVarRefsInAlg
+  input Algorithm alg;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  for stmt in alg.statements loop
+    Statement.applyExp(stmt,
+      function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = Statement.info(stmt)));
+  end for;
+end checkDeletedVarRefsInAlg;
+
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFFlatten;

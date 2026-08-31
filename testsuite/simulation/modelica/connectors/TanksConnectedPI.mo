@@ -87,7 +87,6 @@ model TanksConnectedPI
   connect(tank1.qOut,tank2.qIn);
   connect(tank2.tActuator,piContinuous2.cOut);
   connect(tank2.tSensor,piContinuous2.cIn);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TanksConnectedPI;
 
 // insert expected flat file here. Can be done by issuing the command

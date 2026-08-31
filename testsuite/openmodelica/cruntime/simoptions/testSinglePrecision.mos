@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model testModel
@@ -25,31 +24,35 @@ equation
 
 end testModel;");
 
-buildModel(testModel, stopTime=3.0);getErrorString();
-system("./testModel -single -r single.mat");
-system("./testModel -r double.mat");
-echo(false);
+simulate(testModel, stopTime=3.0, simflags="-single -r single.mat");
+simulate(testModel, stopTime=3.0, simflags="-r double.mat", resimulateExecutable="testModel");
 (b1,s1,m1) := OpenModelica.Scripting.stat("single.mat");
 (b2,s2,m1) := OpenModelica.Scripting.stat("double.mat");
-echo(true);
 b1 and b2;
 s2 > s1;
 diffSimulationResults("single.mat", "double.mat", "single-double-diff");getErrorString();
 
 // Result:
 // true
-// {"testModel", "testModel_init.xml"}
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// record SimulationResult
+//     resultFile = "single.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-single -r single.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// end SimulationResult;
+// record SimulationResult
+//     resultFile = "double.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r double.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
-// true
+// "
+// end SimulationResult;
+//
+//
 // true
 // true
 // (true, {})
-// ""
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
 // endResult

@@ -53,6 +53,18 @@ getModelInstance(M, prettyPrint=true);
 //               \"elements\": [
 //                 {
 //                   \"$kind\": \"component\",
+//                   \"name\": \"world\",
+//                   \"type\": {
+//                     \"$kind\": \"class\",
+//                     \"name\": \"World\",
+//                     \"restriction\": \"model\"
+//                   },
+//                   \"prefixes\": {
+//                     \"outer\": true
+//                   }
+//                 },
+//                 {
+//                   \"$kind\": \"component\",
 //                   \"name\": \"x\",
 //                   \"type\": \"Real\",
 //                   \"condition\": {

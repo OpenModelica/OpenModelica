@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -88,14 +91,21 @@ namespace IAEX
   class SaveDocumentCommand : public Command
   {
   public:
-    SaveDocumentCommand(Document *doc) : doc_(doc)
+    SaveDocumentCommand(Document *doc)
+      : doc_(doc)
     {
       filename_ = doc->getFilename();
     }
-    SaveDocumentCommand(Document *doc, const QString filename) : doc_(doc), filename_(filename)
-    {}
+
+    SaveDocumentCommand(Document *doc, const QString filename)
+      : filename_(filename), doc_(doc)
+    {
+
+    }
+
     virtual ~SaveDocumentCommand(){}
-    void execute()
+
+    void execute() override
     {
       try
       {
@@ -111,30 +121,23 @@ namespace IAEX
         QString newFilepath;
 
         // 2005-12-05 AF, update links
-        try
+        oldFilepath = doc_->getFilename();
+        newFilepath = QFileInfo( filename_ ).absolutePath();
+
+        // if no oldFilepath, use current work dir
+        if( oldFilepath.isNull() || oldFilepath.isEmpty() )
         {
-          oldFilepath = doc_->getFilename();
-          newFilepath = QFileInfo( filename_ ).absolutePath();
-
-          // if no oldFilepath, use current work dir
-          if( oldFilepath.isNull() || oldFilepath.isEmpty() )
-          {
-            QDir dir;
-            oldFilepath  = dir.absolutePath();
-          }
-          else
-            oldFilepath = QFileInfo(oldFilepath).absolutePath();
-
-          // use visitor if the new path is different from the old
-          if( oldFilepath != newFilepath )
-          {
-            UpdateLinkVisitor visitor( oldFilepath, newFilepath );
-            doc_->runVisitor( visitor );
-          }
+          QDir dir;
+          oldFilepath  = dir.absolutePath();
         }
-        catch(std::exception &e )
+        else
+          oldFilepath = QFileInfo(oldFilepath).absolutePath();
+
+        // use visitor if the new path is different from the old
+        if( oldFilepath != newFilepath )
         {
-          throw e;
+          UpdateLinkVisitor visitor( oldFilepath, newFilepath );
+          doc_->runVisitor( visitor );
         }
 
         // save the document
@@ -192,7 +195,7 @@ namespace IAEX
           throw std::runtime_error( msg.c_str() );
         }
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("SaveDocumentCommand(), Exception: ") + e.what();
@@ -216,13 +219,13 @@ namespace IAEX
   public:
     OpenFileCommand(const QString filename) : filename_(filename){}
     virtual ~OpenFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
         application()->open( filename_, READMODE_NORMAL );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("OpenFileCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -249,13 +252,13 @@ namespace IAEX
     OpenOldFileCommand( const QString filename, int readmode )
       : filename_( filename ), readmode_( readmode ){}
     virtual ~OpenOldFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
         application()->open( filename_, readmode_ );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("OpenOldFileCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -283,26 +286,23 @@ namespace IAEX
     PrintDocumentCommand( Document *doc, QPrinter *printer )
       : doc_( doc ), printer_( printer ){}
     virtual ~PrintDocumentCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
-        QTextDocument* printDocument = new QTextDocument();
+        QTextDocument printDocument;
         QTextOption opt;
         opt.setAlignment(Qt::AlignLeft);
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        printDocument->setDefaultTextOption(opt);
-        printDocument->setTextWidth(700);
+        printDocument.setDefaultTextOption(opt);
+        printDocument.setTextWidth(700);
 
-        PrinterVisitor visitor( printDocument, printer_ );
+        PrinterVisitor visitor( &printDocument, printer_ );
         doc_->runVisitor( visitor );
 
-        printDocument->print( printer_ );
-
-        // 2006-03-16 AF
-        delete printDocument;
+        printDocument.print( printer_ );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string msg = std::string("PrintDocumentCommand(), Exception:\r\n") + e.what();
         throw std::runtime_error( msg.c_str() );
@@ -325,14 +325,14 @@ namespace IAEX
   public:
     CloseFileCommand(){}
     virtual ~CloseFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
 
         document()->close();
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("CloseFileCommand(), Exception: ") + e.what();
@@ -353,7 +353,7 @@ namespace IAEX
   public:
     NewFileCommand(){}
     virtual ~NewFileCommand(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -362,7 +362,7 @@ namespace IAEX
         doc = new CellDocument( application(), QString() );
         */
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("NewFileCommand(), Exception: ") + e.what();
@@ -385,7 +385,7 @@ namespace IAEX
     ExportToPureText(Document *doc, const QString filename)
       :filename_(filename), doc_(doc){}
     virtual ~ExportToPureText(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -403,7 +403,7 @@ namespace IAEX
 
         file.close();
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         // 2006-01-30 AF, add exception
         std::string str = std::string("ExportToPureText(), Exception: ") + e.what();
@@ -430,7 +430,7 @@ namespace IAEX
     EvalSelectedCells( Document *doc )
       :doc_(doc){}
     virtual ~EvalSelectedCells(){}
-    void execute()
+    void execute() override
     {
       try
       {
@@ -445,7 +445,7 @@ namespace IAEX
 
         doc_->setChanged( true );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string str = std::string("EvalSelectedCells(), Exception: ") + e.what();
         throw std::runtime_error( str.c_str() );
@@ -502,14 +502,14 @@ namespace IAEX
     UpdateChapterCounters( Document *doc )
       :doc_(doc){}
     virtual ~UpdateChapterCounters(){}
-    void execute()
+    void execute() override
     {
       try
       {
         ChapterCounterVisitor visitor;
         doc_->runVisitor( visitor );
       }
-      catch(std::exception &e)
+      catch(const std::exception &e)
       {
         std::string str = std::string("UpdateChapterCounters(), Exception: ") + e.what();
         throw std::runtime_error( str.c_str() );

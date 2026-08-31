@@ -1,7 +1,6 @@
 // name:     Random2.mos
 // keywords: #2352
 // status:   correct
-// cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Random2.mo"); getErrorString();

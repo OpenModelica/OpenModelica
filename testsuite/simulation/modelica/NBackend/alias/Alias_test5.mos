@@ -28,15 +28,15 @@ simulate(Test5); getErrorString();
 //
 // Alias Set 1:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time ($RES_SIM_1)
+// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time; ($RES_SIM_1)
 // 	###<No Set Equations>
 //
 // Alias Set 2:
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
@@ -71,8 +71,8 @@ simulate(Test5); getErrorString();
 // "Warning: NBAlias.checkNominalThresholdSingle: The quotient of the greatest and lowest nominal value is greater than the nominal threshold = 1000.0.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
 //
 // 	Nominal map after replacements (conflicting array index = 1):
 // 	(x, 2.0)
@@ -80,8 +80,8 @@ simulate(Test5); getErrorString();
 // Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+// 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z; ($RES_SIM_2)
 //
 // 	Start map after replacements:
 // 	(x, 5.0)

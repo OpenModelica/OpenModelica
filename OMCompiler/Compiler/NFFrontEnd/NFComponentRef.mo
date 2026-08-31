@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -49,7 +53,6 @@ protected
   import Prefixes = NFPrefixes;
   import MetaModelica.Dangerous.*;
   import JSON;
-  import StringUtil;
   import Variable = NFVariable;
   import Binding = NFBinding;
   import NFBackendExtension.{BackendInfo, Annotations};
@@ -173,6 +176,16 @@ public
     end match;
   end isSimple;
 
+  function isQualified
+    input ComponentRef cref;
+    output Boolean qualified;
+  algorithm
+    qualified := match cref
+      case CREF(restCref = CREF()) then true;
+      else false;
+    end match;
+  end isQualified;
+
   function isTopLevel
     input ComponentRef cref;
     output Boolean b;
@@ -194,6 +207,21 @@ public
       else false;
     end match;
   end isTopLevel;
+
+  function isFlow
+    input ComponentRef cref;
+    output Boolean isFlow;
+  protected
+    Component comp;
+  algorithm
+    isFlow := match cref
+      case CREF()
+        guard InstNode.isComponent(cref.node)
+        then Component.isFlow(InstNode.component(InstNode.resolveInner(cref.node)));
+
+      else false;
+    end match;
+  end isFlow;
 
   function isCref
     input ComponentRef cref;
@@ -681,7 +709,7 @@ public
   algorithm
     (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend, reverse);
     if not listEmpty(new_subscripts) then
-      Error.assertion(false, getInstanceName() + " failed because the subscripts "
+      Error.terminate(getInstanceName() + " failed because the subscripts "
         + List.toString(subscripts, Subscript.toString) + " could not be fully merged onto "
         + ComponentRef.toString(old_cref) + ".\nResult: " + ComponentRef.toString(cref)
         + " with leftover: " + List.toString(new_subscripts, Subscript.toString) + ".", sourceInfo());
@@ -698,7 +726,7 @@ public
   algorithm
     (subscripts, cref) := match cref
       local
-        ComponentRef rest_cref;
+        ComponentRef rest_cref = EMPTY();
         list<Subscript> cref_subs;
 
       case CREF(subscripts = cref_subs)
@@ -714,6 +742,7 @@ public
           end if;
 
           if reverse then
+            cref_subs := listReverse(cref_subs);
             (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
           end if;
         then
@@ -730,28 +759,46 @@ public
     input output ComponentRef cref;
     input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
     input UnorderedMap<ComponentRef, Subscript> iter_map;
+  protected
+    function checkLocalDimensions
+      "checks if the current dimension configuration results in new subscripts for the cref"
+      input output ComponentRef cref;
+      input list<Dimension> dims;
+      input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
+      input UnorderedMap<ComponentRef, Subscript> iter_map;
+    protected
+      Option<list<ComponentRef>> iter_crefs;
+      list<Subscript> new_subs;
+    algorithm
+      iter_crefs    := UnorderedMap.get(dims, dims_map);
+      if isSome(iter_crefs) then
+        // dimension configuration was found, map to subscripts and apply in reverse
+        new_subs  := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
+        cref      := mergeSubscripts(new_subs, cref, true, true, true);
+      end if;
+    end checkLocalDimensions;
   algorithm
     cref := match cref
       local
         list<Dimension> dims;
-        Option<list<ComponentRef>> iter_crefs;
         ComponentRef new_cref;
-        list<Subscript> new_subs, rest_subs;
         Type ty = getSubscriptedType(cref);
+        Integer num_local_dims;
 
       // local array type -> try to find the current dimension configuration in the map and add subscripts
       case CREF() guard(Type.isArray(ty)) algorithm
         // get dimensions and check in map
-        dims          := Type.arrayDims(ty);
-        iter_crefs    := UnorderedMap.get(dims, dims_map);
-        if Util.isSome(iter_crefs) then
-          // dimension configuration was found, map to subscripts and apply in reverse
-          new_subs    := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
-          new_cref    := mergeSubscripts(new_subs, cref, true, true, true);
-        else
-          // not found, just keep current cref
-          new_cref    := cref;
-        end if;
+        dims            := Type.arrayDims(ty);
+        num_local_dims  := listLength(Type.arrayDims(cref.ty));
+
+        // check if the dimension configuration exists in the map
+        // and iteratively remove one dimension to check all local configurations
+        new_cref := cref;
+        while num_local_dims > 0 loop
+          new_cref := checkLocalDimensions(new_cref, dims, dims_map, iter_map);
+          dims := List.stripLast(dims);
+          num_local_dims := num_local_dims - 1;
+        end while;
 
         // apply to restCref afterwards such that the outermost dimensions are handled first
         // this is important because the full dimension list is considered when checking in the map
@@ -836,6 +883,33 @@ public
     end match;
   end getSubscripts;
 
+  function outermostIntegerSubscript
+    "Returns the integer value of the outermost (root-side) INDEX(INTEGER(n))
+     subscript in the cref chain. Returns 0 if none."
+    input ComponentRef cref;
+    output Integer value = 0;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          value := outermostIntegerSubscript(cref.restCref);
+          if value == 0 then
+            for s in cref.subscripts loop
+              () := match s
+                local Integer v;
+                case Subscript.INDEX(index = Expression.INTEGER(v))
+                  algorithm value := v;
+                then ();
+                else ();
+              end match;
+              if value <> 0 then return; end if;
+            end for;
+          end if;
+        then ();
+      else ();
+    end match;
+  end outermostIntegerSubscript;
+
   function setSubscripts
     "Sets the subscripts of the first part of a cref."
     input list<Subscript> subscripts;
@@ -893,15 +967,15 @@ public
   algorithm
     subscripts := match cref
       local
-        list<Integer> sizes_;
+        list<Expression> sizes_;
         list<Subscript> subs;
 
-      case CREF(subscripts = {}) guard(not backendCref(cref)) algorithm
-        sizes_ := sizes_local(cref, false);
+      case CREF(subscripts = {}) algorithm
+        sizes_ := sizes_local_exp(cref, false);
         subs := {};
         for size in listReverse(sizes_) loop
-          if size <> 1 then
-            subs := Subscript.SLICE(Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
+          if not Expression.isOne(size) then
+            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), size)) :: subs;
           end if;
         end for;
       then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
@@ -1015,7 +1089,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+          Error.terminate(getInstanceName() + " failed", sourceInfo());
         then
           fail();
     end match;
@@ -1094,7 +1168,9 @@ public
   end mapSubscripts;
 
   function fillSubscripts
-    "Fills in any unsubscripted dimensions in the cref with : subscripts."
+    "Fills in any unsubscripted dimensions in the cref with : subscripts,
+     appending them at the end to preserve subscript order.
+     E.g. a[i] for Real[10,2] becomes a[i,:]."
     input output ComponentRef cref;
   algorithm
     () := match cref
@@ -1109,7 +1185,7 @@ public
           sub_count := listLength(cref.subscripts);
 
           if sub_count < dim_count then
-            cref.subscripts := List.consN(dim_count - sub_count, Subscript.WHOLE(), cref.subscripts);
+            cref.subscripts := listAppend(cref.subscripts, List.fill(Subscript.WHOLE(), dim_count - sub_count));
           end if;
 
           cref.restCref := fillSubscripts(cref.restCref);
@@ -1204,7 +1280,7 @@ public
       case (EMPTY(), _)       then -1;
       case (WILD(), _)        then -1;
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+        Error.terminate(getInstanceName() + " failed", sourceInfo());
       then fail();
     end match;
   end compare;
@@ -1282,12 +1358,6 @@ public
       else false;
     end match;
   end isPrefix;
-
-  function backendCref
-    "returns true if the cref was generated by the backend (starts with $)"
-    input ComponentRef cref;
-    output Boolean b = StringUtil.startsWith(firstName(cref), "$");
-  end backendCref;
 
   function toAbsyn
     input ComponentRef cref;
@@ -1401,6 +1471,7 @@ public
     list<ComponentRef> crefs;
     list<Subscript> subs;
     ComponentRef cr;
+    Boolean escapeQuotes;
   algorithm
     str := firstName(cref, baseModelica = true);
 
@@ -1423,7 +1494,7 @@ public
           strl := "'" :: strl;
 
           if not listEmpty(subs) then
-            strl := Subscript.toFlatStringList(subs, format) :: strl;
+            strl := Subscript.toFlatStringList(subs, format, escapeQuotes = false) :: strl;
             subs := {};
           end if;
 
@@ -1442,7 +1513,7 @@ public
 
         if not listEmpty(subs) and
            not (format.scalarizeMode == BaseModelica.ScalarizeMode.PARTIALLY_SCALARIZED and listEmpty(crefs)) then
-          strl := Subscript.toFlatStringList(subs, format) :: strl;
+          strl := Subscript.toFlatStringList(subs, format, escapeQuotes = true) :: strl;
         end if;
 
         if not listEmpty(crefs) then
@@ -1465,7 +1536,8 @@ public
     strl := "'" :: strl;
 
     if not listEmpty(subs) then
-      strl := Subscript.toFlatStringList(subs, format) :: strl;
+      strl := Subscript.toFlatStringList(subs, format,
+        escapeQuotes = format.scalarizeMode == BaseModelica.ScalarizeMode.SCALARIZED) :: strl;
     end if;
 
     str := stringAppendList(listReverse(strl));
@@ -1487,7 +1559,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
-          json := JSON.addPair("parts", JSON.makeArray(toJSON_impl(cref)), json);
+          json := JSON.addPair("parts", JSON.makeList(toJSON_impl(cref)), json);
         then
           json;
 
@@ -1497,7 +1569,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
-          json := JSON.addPair("parts", JSON.makeArray(
+          json := JSON.addPair("parts", JSON.makeList(
             {JSON.fromPair("name", JSON.makeString("_"))}), json);
         then
           json;
@@ -1511,7 +1583,7 @@ public
     input list<JSON> accum = {};
     output list<JSON> objs;
   protected
-    JSON obj, subs;
+    JSON obj;
   algorithm
     objs := match cref
       case CREF()
@@ -1523,74 +1595,61 @@ public
             obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
           end if;
         then
-          toJSON_impl(cref.restCref, obj :: accum);
+          if isEmpty(cref.restCref) then toJSON_context(cref.node, obj :: accum) else
+                                         toJSON_impl(cref.restCref, obj :: accum);
 
       else accum;
     end match;
   end toJSON_impl;
 
+  function toJSON_context
+    input InstNode node;
+    input output list<JSON> accum;
+  protected
+    Option<Absyn.Path> opt_context;
+  algorithm
+    opt_context := InstNode.rootClassContext(InstNode.instanceParent(node));
+
+    if isSome(opt_context) then
+      for name in AbsynUtil.pathToStringListReverse(Util.getOption(opt_context)) loop
+        accum := JSON.addPair("name", JSON.makeString(name), JSON.emptyListObject()) :: accum;
+      end for;
+    end if;
+  end toJSON_context;
+
   function hash
     input ComponentRef cref;
-    output Integer hash;
-  protected
-    Integer h;
-
-    function hash_rest
-      input ComponentRef cref;
-      input output Integer hash;
-    algorithm
-      hash := match cref
-        case CREF()
-          algorithm
-            hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
-
-            for s in cref.subscripts loop
-              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
-            end for;
-          then
-            hash_rest(cref.restCref, hash);
-
-        else hash;
-      end match;
-    end hash_rest;
-  algorithm
-    hash := match cref
-      case CREF()
-        algorithm
-          h := stringHashDjb2(InstNode.name(cref.node));
-
-          for s in cref.subscripts loop
-            h := stringHashDjb2Continue(Subscript.toString(s), h);
-          end for;
-        then
-          hash_rest(cref.restCref, h);
-
-      case WILD() then stringHashDjb2("_");
-      else 0;
-    end match;
+    output Integer hash = hashContinue(cref, false, Util.HASH_SEED);
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    output Integer hash;
-  protected
-    function hash_rest
-      input ComponentRef cref;
-      input output Integer hash;
-    algorithm
-      hash := match cref
-        case CREF() then hash_rest(cref.restCref, stringHashDjb2Continue(InstNode.name(cref.node), hash));
-        else hash;
-      end match;
-    end hash_rest;
+    output Integer hash = hashContinue(cref, true, Util.HASH_SEED);
+  end hashStrip;
+
+  function hashContinue
+    input ComponentRef cref;
+    input Boolean strip;
+    input output Integer hash;
   algorithm
     hash := match cref
-      case CREF() then hash_rest(cref.restCref, stringHashDjb2(InstNode.name(cref.node)));
-      case WILD() then stringHashDjb2("_");
-      else 0;
+      case CREF()
+        algorithm
+          hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
+
+          if not strip then
+            for s in cref.subscripts loop
+              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
+            end for;
+          end if;
+        then
+          hashContinue(cref.restCref, strip, hash);
+
+      case WILD() then stringHashDjb2Continue("_", hash);
+      else hash;
     end match;
-  end hashStrip;
+  end hashContinue;
 
   function toPath
     input ComponentRef cref;
@@ -1647,6 +1706,9 @@ public
   end scalarize;
 
   function scalarizeAll
+    "output list is in reverse order.
+    cref:  b.A (Real[2, 3])
+    crefs: {b[2].A[3], b[2].A[2], b[2].A[1], b[1].A[3], b[1].A[2], b[1].A[1]}"
     input ComponentRef cref;
     input Boolean resize;
     output list<ComponentRef> crefs;
@@ -1803,22 +1865,23 @@ public
   function simplifySubscripts
     input output ComponentRef cref;
     input Boolean trim = false;
+  protected
+    list<Subscript> subs;
+    ComponentRef rest_cref;
+    Boolean dirty = false;
   algorithm
     cref := match cref
-      local
-        list<Subscript> subs;
-
-      case CREF(subscripts = {}, origin = Origin.CREF)
+      case CREF(subscripts = subs)
         algorithm
-          cref.restCref := simplifySubscripts(cref.restCref, trim);
-        then
-          cref;
+          if not listEmpty(subs) then
+            subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+            dirty := true;
+          end if;
 
-      case CREF(origin = Origin.CREF)
-        algorithm
-          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+          rest_cref := simplifySubscripts(cref.restCref, trim);
+          dirty := dirty or not referenceEq(rest_cref, cref.restCref);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref, trim));
+          if dirty then CREF(cref.node, subs, cref.ty, cref.origin, rest_cref) else cref;
 
       else cref;
     end match;
@@ -1903,11 +1966,12 @@ public
         then d;
 
       case WILD() then 0;
-      else "EMPTY_CREF" then 0;
+      else /* EMPTY_CREF */ then 0;
     end match;
   end depth;
 
   function size
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
@@ -1915,6 +1979,7 @@ public
   end size;
 
   function sizes
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
@@ -1933,6 +1998,7 @@ public
   end sizes;
 
   function sizes_local
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
@@ -1941,17 +2007,37 @@ public
     Option<Integer> complex_size;
   algorithm
     s_lst := match cref
-      case EMPTY() then {};
       case CREF() algorithm
         complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.size(dim, resize) for dim in Type.arrayDims(cref.ty));
-        if withComplex and Util.isSome(complex_size) then
+        if withComplex and isSome(complex_size) then
           s_lst := Util.getOption(complex_size) :: s_lst;
         end if;
         s_lst := if listEmpty(s_lst) then {1} else s_lst;
       then s_lst;
+      else {};
     end match;
   end sizes_local;
+
+  function sizes_local_exp
+    input ComponentRef cref;
+    input Boolean withComplex;
+    output list<Expression> s_lst = {};
+  protected
+    Option<Integer> complex_size;
+  algorithm
+    s_lst := match cref
+      case CREF() algorithm
+        complex_size := Type.complexSize(cref.ty);
+        s_lst := list(Dimension.sizeExp(dim) for dim in Type.arrayDims(cref.ty));
+        if withComplex and isSome(complex_size) then
+          s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+        end if;
+        s_lst := if listEmpty(s_lst) then {Expression.INTEGER(1)} else s_lst;
+      then s_lst;
+      else {};
+    end match;
+  end sizes_local_exp;
 
   function sizeKnown
     input ComponentRef cref;
@@ -2340,7 +2426,7 @@ public
       if listEmpty(subs) then
         // do not do it for scalar variables
         arr := NONE();
-      elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
+      elseif List.all(subs, Subscript.isFirst) then
         // if it is the first element, save the array var
         arr := SOME(stripSubscriptsAll(scal));
       else
@@ -2348,7 +2434,7 @@ public
         arr := NONE();
       end if;
     else
-      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(scal) else NONE();
+      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(stripSubscriptsAll(scal)) else NONE();
     end if;
   end getArrayCrefOpt;
 
@@ -2377,6 +2463,22 @@ public
       else false;
     end match;
   end isSliced;
+
+  function hasImplicitTrailingIndex
+    "Returns true if the outermost cref component has fewer subscripts than
+     dimensions.
+     E.g. a[i] where a : Real[10,2] returns true, because
+     one scalar index is given but a second dimension is left implicit (:)."
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.CREF)
+        then not listEmpty(cref.subscripts) and
+             listLength(cref.subscripts) < Type.dimensionCount(cref.ty);
+      else false;
+    end match;
+  end hasImplicitTrailingIndex;
 
   function iterate
     input output ComponentRef cref;
@@ -2478,5 +2580,5 @@ public
     end if;
   end getRecordChildren;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFComponentRef;

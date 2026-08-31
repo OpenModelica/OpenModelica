@@ -97,8 +97,8 @@ package ExpressionTest "test function like
 
     base     := {Exp1, Exp2, Exp3, Exp4, Exp5, Exp6, Exp7, Exp8, Exp9, Exp10, Exp11, Exp12, Exp13, Exp14, Exp15, Exp16, Exp17, Exp18, Exp19, Exp20, Exp21, Exp22, ExpSum, ExpSum, ExpProduct};
     simpl    := {Exp1_1, Exp2_1, Exp3_1, Exp4_1, Exp5_1, Exp6_1, Exp7_1, Exp8_1, Exp9_1, Exp10_1, Exp11_1, Exp12_1, Exp13_1, Exp14_1, Exp15_1, Exp16_1, Exp17_1, Exp18_1,Exp19_1, Exp20_1, Exp21_1, Exp22_1, ExpSum_1, ExpSumSimple, ExpProduct_1};
-    baseStr  := List.map(base, ExpressionDump.printExpStr);
-    simplStr := List.map(simpl, ExpressionDump.printExpStr);
+    baseStr  := List.map(base, ExpressionBasics.printExpStr);
+    simplStr := List.map(simpl, ExpressionBasics.printExpStr);
     List.map_0(List.zip(baseStr,simplStr), printResult);
 
   end test;

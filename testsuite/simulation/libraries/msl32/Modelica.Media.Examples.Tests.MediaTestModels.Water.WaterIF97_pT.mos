@@ -1,7 +1,6 @@
 // name:     Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

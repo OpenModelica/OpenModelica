@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -122,7 +126,7 @@ public function handleOverconstrainedConnections
   output DaeEdges outConnected;
   output DaeEdges outBroken;
 algorithm
-  (outDAE, outConnected, outBroken) := matchcontinue(inGraph, modelNameQualified, inDAE)
+  (outDAE, outConnected, outBroken) := matchcontinue(inGraph, inDAE)
     local
       ConnectionGraph graph;
       list<DAE.Element> elts;
@@ -130,11 +134,11 @@ algorithm
       DaeEdges broken, connected;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}, {}), _, _) then (inDAE, {}, {});
+    case (GRAPH(_, {}, {}, {}, {}, {}), _) then (inDAE, {}, {});
 
     // handle the connection braking
-    case (graph, _, DAE.DAE(elts))
-      equation
+    case (graph, DAE.DAE(elts))
+      algorithm
 
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("Summary: \n\t" +
@@ -145,22 +149,22 @@ algorithm
            "Nr Connections:     " + intString(listLength(getConnections(graph))));
         end if;
 
-        (roots, connected, broken) = findResultGraph(graph, modelNameQualified);
+        (roots, connected, broken) := findResultGraph(graph, modelNameQualified);
 
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("Roots: " + stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+          Debug.traceln("Roots: " + stringDelimitList(List.map(roots, ComponentReferenceBasics.printComponentRefStr), ", "));
           Debug.traceln("Broken connections: " + stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", "));
           Debug.traceln("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
         end if;
 
-        elts = evalConnectionsOperators(roots, graph, elts);
+        elts := evalConnectionsOperators(roots, graph, elts);
       then
         (DAE.DAE(elts), connected, broken);
 
     // handle the connection breaking
     else
-      equation
-        true = Flags.isSet(Flags.CGRAPH);
+      algorithm
+        true := Flags.isSet(Flags.CGRAPH);
         Debug.traceln("- ConnectionGraph.handleOverconstrainedConnections failed for model: " + modelNameQualified);
       then
         fail();
@@ -184,9 +188,9 @@ algorithm
       DaeEdges connections;
 
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root)
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addDefiniteRoot(" + ComponentReference.printComponentRefStr(root) + ")");
+          Debug.traceln("- ConnectionGraph.addDefiniteRoot(" + ComponentReferenceBasics.printComponentRefStr(root) + ")");
         end if;
       then
         GRAPH(updateGraph,root::definiteRoots,potentialRoots,uniqueRoots,branches,connections);
@@ -212,9 +216,9 @@ algorithm
       DaeEdges connections;
 
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root, priority)
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addPotentialRoot(" + ComponentReference.printComponentRefStr(root) + ", " + realString(priority) + ")");
+          Debug.traceln("- ConnectionGraph.addPotentialRoot(" + ComponentReferenceBasics.printComponentRefStr(root) + ", " + realString(priority) + ")");
         end if;
       then
         GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,uniqueRoots,branches,connections);
@@ -228,11 +232,10 @@ public function addUniqueRoots
   input DAE.Exp inMessage;
   output ConnectionGraph outGraph;
 algorithm
-  outGraph := match(inGraph, inRoots, inMessage)
+  outGraph := match(inGraph, inRoots)
     local
       Boolean updateGraph;
       DAE.ComponentRef root;
-      DAE.Exp roots;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
       UniqueRoots uniqueRoots;
@@ -245,35 +248,33 @@ algorithm
 
     // just one component reference
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                DAE.CREF(root, _), _)
-      equation
+                branches = branches,connections = connections), DAE.CREF(root, _))
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReferenceBasics.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
         end if;
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
 
     // array of component references, empty case
-    case (GRAPH(), DAE.ARRAY(_, _, {}), _)
+    case (GRAPH(), DAE.ARRAY(_, _, {}))
       then
         inGraph;
 
     // array of component references, something still there
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
-      equation
+                branches = branches,connections = connections), DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest))
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReferenceBasics.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
         end if;
-        graph = GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
-        graph = addUniqueRoots(graph, DAE.ARRAY(ty, scalar, rest), inMessage);
+        graph := GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
+        graph := addUniqueRoots(graph, DAE.ARRAY(ty, scalar, rest), inMessage);
       then
         graph;
 
-    case (_, _, _)
-      equation
+    case (_, _)
+      algorithm
         // TODO! FIXME! print some meaningful error message here that the input is not an array of roots or a cref
       then
         inGraph;
@@ -300,9 +301,9 @@ algorithm
       DaeEdges connections;
 
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), ref1, ref2)
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addBranch(" + ComponentReference.printComponentRefStr(ref1) + ", " + ComponentReference.printComponentRefStr(ref2) + ")");
+          Debug.traceln("- ConnectionGraph.addBranch(" + ComponentReferenceBasics.printComponentRefStr(ref1) + ", " + ComponentReferenceBasics.printComponentRefStr(ref2) + ")");
         end if;
       then
         GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,(ref1,ref2)::branches,connections);
@@ -330,9 +331,9 @@ algorithm
       DaeEdges connections;
 
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots, branches = branches, connections = connections), ref1, ref2, dae)
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.trace("- ConnectionGraph.addConnection(" + ComponentReference.printComponentRefStr(ref1) + ", " + ComponentReference.printComponentRefStr(ref2) + ")\n");
+          Debug.trace("- ConnectionGraph.addConnection(" + ComponentReferenceBasics.printComponentRefStr(ref1) + ", " + ComponentReferenceBasics.printComponentRefStr(ref2) + ")\n");
         end if;
       then GRAPH(updateGraph, definiteRoots, potentialRoots, uniqueRoots, branches, (ref1,ref2,dae)::connections);
   end match;
@@ -344,15 +345,16 @@ end addConnection;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ConnectUtil;
 protected import Debug;
-protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import Util;
 protected import System;
 protected import IOStream;
 protected import Settings;
+protected import ExpressionBasics;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.
@@ -368,20 +370,20 @@ algorithm
       DAE.ComponentRef ref, parent, parentCanonical;
 
     case (partition, ref)
-      equation
-        parent = BaseHashTable.get(ref, partition);
-        parentCanonical = canonical(partition, parent);
+      algorithm
+        parent := BaseHashTable.get(ref, partition);
+        parentCanonical := canonical(partition, parent);
         //fprintln(Flags.CGRAPH,
-        //  "- ConnectionGraph.canonical_case1(" + ComponentReference.printComponentRefStr(ref) + ") = " +
-        //  ComponentReference.printComponentRefStr(parentCanonical));
+        //  "- ConnectionGraph.canonical_case1(" + ComponentReferenceBasics.printComponentRefStr(ref) + ") = " +
+        //  ComponentReferenceBasics.printComponentRefStr(parentCanonical));
         //partition2 = BaseHashTable.add((ref, parentCanonical), partition);
       then parentCanonical;
 
     case (_,ref)
-      equation
+      algorithm
         //fprintln(Flags.CGRAPH,
-        //  "- ConnectionGraph.canonical_case2(" + ComponentReference.printComponentRefStr(ref) + ") = " +
-        //  ComponentReference.printComponentRefStr(ref));
+        //  "- ConnectionGraph.canonical_case2(" + ComponentReferenceBasics.printComponentRefStr(ref) + ") = " +
+        //  ComponentReferenceBasics.printComponentRefStr(ref));
       then ref;
   end matchcontinue;
 end canonical;
@@ -401,10 +403,10 @@ algorithm
       DAE.ComponentRef ref1, ref2, canon1,canon2;
 
     case(partition,ref1,ref2)
-      equation
-        canon1 = canonical(partition,ref1);
-        canon2 = canonical(partition,ref2);
-        true = ComponentReference.crefEqualNoStringCompare(canon1, canon2);
+      algorithm
+        canon1 := canonical(partition,ref1);
+        canon2 := canonical(partition,ref2);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(canon1, canon2);
       then true;
     else false;
   end matchcontinue;
@@ -428,15 +430,15 @@ algorithm
 
     // can connect them
     case(partition,ref1,ref2)
-      equation
-        canon1 = canonical(partition,ref1);
-        canon2 = canonical(partition,ref2);
-        (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
+      algorithm
+        canon1 := canonical(partition,ref1);
+        canon2 := canonical(partition,ref2);
+        (partition, true) := connectCanonicalComponents(partition,canon1,canon2);
       then partition;
 
     // cannot connect them
     case(partition,_,_)
-      equation
+      algorithm
       then partition;
   end matchcontinue;
 end connectBranchComponents;
@@ -459,32 +461,32 @@ algorithm
 
     // leave the connect(ref1,ref2)
     case(partition,(ref1,_,_))
-      equation
-        failure(_ = canonical(partition,ref1)); // no parent
+      algorithm
+        failure(canonical(partition,ref1)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
     case(partition,(_,ref2,_))
-      equation
-        failure(_ = canonical(partition,ref2)); // no parent
+      algorithm
+        failure(canonical(partition,ref2)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
     case(partition,(ref1,ref2,_))
-      equation
-        canon1 = canonical(partition,ref1);
-        canon2 = canonical(partition,ref2);
-        (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
+      algorithm
+        canon1 := canonical(partition,ref1);
+        canon2 := canonical(partition,ref2);
+        (partition, true) := connectCanonicalComponents(partition,canon1,canon2);
       then (partition, {inDaeEdge}, {});
 
     // break the connect(ref1, ref2)
     case(partition,(ref1,ref2,_))
-      equation
+      algorithm
         // debug print
         if Flags.isSet(Flags.CGRAPH) then
           Debug.trace("- ConnectionGraph.connectComponents: should remove equations generated from: connect(" +
-             ComponentReference.printComponentRefStr(ref1) + ", " +
-             ComponentReference.printComponentRefStr(ref2) + ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.\n");
+             ComponentReferenceBasics.printComponentRefStr(ref1) + ", " +
+             ComponentReferenceBasics.printComponentRefStr(ref2) + ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.\n");
         end if;
       then (partition, {}, {inDaeEdge});
   end matchcontinue;
@@ -506,14 +508,14 @@ algorithm
 
     // they are the same
     case(partition,ref1,ref2)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(ref1, ref2);
+      algorithm
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(ref1, ref2);
       then (partition, false);
 
     // not the same, add it
     case(partition,ref1,ref2)
-      equation
-        partition = BaseHashTable.add((ref1,ref2), partition);
+      algorithm
+        partition := BaseHashTable.add((ref1,ref2), partition);
       then (partition, true);
   end matchcontinue;
 end connectCanonicalComponents;
@@ -532,9 +534,9 @@ algorithm
       list<DAE.ComponentRef> tail;
 
     case(table, (root::tail), firstRoot)
-      equation
-        table = BaseHashTable.add((root,firstRoot), table);
-        table = addRootsToTable(table, tail, firstRoot);
+      algorithm
+        table := BaseHashTable.add((root,firstRoot), table);
+        table := addRootsToTable(table, tail, firstRoot);
       then table;
     case(table, {}, _) then table;
   end match;
@@ -548,7 +550,7 @@ protected
   HashTableCG.HashTable table0;
   DAE.ComponentRef dummyRoot;
 algorithm
-  dummyRoot := ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
+  dummyRoot := ComponentReferenceBasics.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
   table0 := HashTableCG.emptyHashTable();
   outTable := addRootsToTable(table0, roots, dummyRoot);
 end resultGraphWithRoots;
@@ -566,9 +568,9 @@ algorithm
       Edges tail;
 
     case(table, ((ref1,ref2)::tail))
-      equation
-        table1 = connectBranchComponents(table, ref1, ref2);
-        table2 = addBranchesToTable(table1, tail);
+      algorithm
+        table1 := connectBranchComponents(table, ref1, ref2);
+        table2 := addBranchesToTable(table1, tail);
       then table2;
     case(table, {}) then table;
   end match;
@@ -587,11 +589,11 @@ algorithm
       String s1, s2;
 
     case((c1,r1), (c2,r2)) // if equal order by cref
-      equation
-        true = realEq(r1, r2);
-        s1 = ComponentReference.printComponentRefStr(c1);
-        s2 = ComponentReference.printComponentRefStr(c2);
-        1 = stringCompare(s1, s2);
+      algorithm
+        true := realEq(r1, r2);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c1);
+        s2 := ComponentReferenceBasics.printComponentRefStr(c2);
+        1 := stringCompare(s1, s2);
       then
         true;
 
@@ -618,15 +620,15 @@ algorithm
 
     case(table, {}, roots, _) then (table,roots);
     case(table, ((potentialRoot,_)::tail), roots, firstRoot)
-      equation
-        canon1 = canonical(table, potentialRoot);
-        canon2 = canonical(table, firstRoot);
-        (table, true) = connectCanonicalComponents(table, canon1, canon2);
-        (table, finalRoots) = addPotentialRootsToTable(table, tail, potentialRoot::roots, firstRoot);
+      algorithm
+        canon1 := canonical(table, potentialRoot);
+        canon2 := canonical(table, firstRoot);
+        (table, true) := connectCanonicalComponents(table, canon1, canon2);
+        (table, finalRoots) := addPotentialRootsToTable(table, tail, potentialRoot::roots, firstRoot);
       then (table, finalRoots);
     case(table, (_::tail), roots, firstRoot)
-      equation
-        (table, finalRoots) = addPotentialRootsToTable(table, tail, roots, firstRoot);
+      algorithm
+        (table, finalRoots) := addPotentialRootsToTable(table, tail, roots, firstRoot);
       then (table, finalRoots);
   end matchcontinue;
 end addPotentialRootsToTable;
@@ -650,11 +652,11 @@ algorithm
     case(table, {}) then (table, {}, {});
     // normal case
     case(table, e::tail)
-      equation
-        (table, connected1, broken1) = connectComponents(table, e);
-        (table, connected2, broken2) = addConnections(table, tail);
-        connected = listAppend(connected1, connected2);
-        broken = listAppend(broken1, broken2);
+      algorithm
+        (table, connected1, broken1) := connectComponents(table, e);
+        (table, connected2, broken2) := addConnections(table, tail);
+        connected := listAppend(connected1, connected2);
+        broken := listAppend(broken1, broken2);
       then (table, connected, broken);
   end match;
 end addConnections;
@@ -668,7 +670,7 @@ protected function findResultGraph
   output DaeEdges outConnectedConnections;
   output DaeEdges outBrokenConnections;
 algorithm
-  (outRoots, outConnectedConnections, outBrokenConnections) := matchcontinue(inGraph, modelNameQualified)
+  (outRoots, outConnectedConnections, outBrokenConnections) := match inGraph
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
@@ -683,36 +685,36 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
+    case GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {})
       then ({}, {}, {});
 
     // we have something in the connection graph
-    case (GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
-                   branches = branches, connections = connections), _)
-      equation
+    case GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
+                   branches = branches, connections = connections)
+      algorithm
         // reverse the conenction list to have them as in the model
-        connections = listReverse(connections);
+        connections := listReverse(connections);
         // add definite roots to the table
-        table = resultGraphWithRoots(definiteRoots);
+        table := resultGraphWithRoots(definiteRoots);
         // add branches to the table
-        table = addBranchesToTable(table, branches);
+        table := addBranchesToTable(table, branches);
         // order potential roots in the order or priority
-        orderedPotentialRoots = List.sort(potentialRoots, ord);
+        orderedPotentialRoots := List.sort(potentialRoots, ord);
 
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("Ordered Potential Roots: " + stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
         end if;
 
         // add connections to the table and return the broken/connected connections
-        (table, connected, broken) = addConnections(table, connections);
+        (table, connected, broken) := addConnections(table, connections);
 
         // create a dummy root
-        dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
+        dummyRoot := ComponentReferenceBasics.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
         // select final roots
-        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
+        (table, finalRoots) := addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
 
         // generate the graphviz representation and display
-        brokenConnectsViaGraphViz = generateGraphViz(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken);
+        brokenConnectsViaGraphViz := generateGraphViz(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken);
 
         if stringEq(brokenConnectsViaGraphViz, "")
         then
@@ -720,27 +722,27 @@ algorithm
         else
           // interpret brokenConnectsViaGraphViz and pass it to the breaking algorithm again
           // graphviz returns the broken connects as: cr1|cr2#cr3|cr4#
-          userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
-          userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
-          userBrokenTplLst = makeTuple(userBrokenLstLst);
+          userBrokenLst := Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
+          userBrokenLstLst := List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
+          userBrokenTplLst := makeTuple(userBrokenLstLst);
           Debug.traceln("User selected the following connect edges for breaking:\n\t" + stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
           // print("\nBefore ordering:\n");
           printDaeEdges(connections);
           // order the connects with the input given by the user!
-          connections = orderConnectsGuidedByUser(connections, userBrokenTplLst);
+          connections := orderConnectsGuidedByUser(connections, userBrokenTplLst);
           // reverse the reverse! uh oh!
-          connections = listReverse(connections);
+          connections := listReverse(connections);
           print("\nAfer ordering:\n");
           // printDaeEdges(connections);
           // call findResultGraph again with ordered connects!
-          (finalRoots, connected, broken) =
+          (finalRoots, connected, broken) :=
              findResultGraph(GRAPH(false, definiteRoots, potentialRoots, uniqueRoots, branches, connections), modelNameQualified);
         end if;
 
       then
         (finalRoots, connected, broken);
 
-  end matchcontinue;
+  end match;
 end findResultGraph;
 
 protected function orderConnectsGuidedByUser
@@ -755,8 +757,8 @@ protected
 algorithm
   for e in inConnections loop
     (c1, c2, _) := e;
-    sc1 := ComponentReference.printComponentRefStr(c1);
-    sc2 := ComponentReference.printComponentRefStr(c2);
+    sc1 := ComponentReferenceBasics.printComponentRefStr(c1);
+    sc2 := ComponentReferenceBasics.printComponentRefStr(c2);
 
     if listMember((sc1, sc2), inUserSelectedBreaking) or listMember((sc2, sc1), inUserSelectedBreaking) then
       // put them at the end to be tried last (more chance to be broken)
@@ -773,10 +775,10 @@ protected function printTupleStr
   input tuple<String,String> inTpl;
   output String out;
 algorithm
-  out := match(inTpl)
+  out := match inTpl
     local
       String c1,c2;
-    case ((c1,c2)) then c1 + " -- " + c2;
+    case (c1,c2) then c1 + " -- " + c2;
   end match;
 end printTupleStr;
 
@@ -784,7 +786,7 @@ protected function makeTuple
   input list<list<String>> inLstLst;
   output list<tuple<String,String>> outLst;
 algorithm
-  outLst := matchcontinue(inLstLst)
+  outLst := matchcontinue inLstLst
     local
       String c1,c2;
       list<list<String>> rest;
@@ -792,32 +794,32 @@ algorithm
       list<String> bad;
 
     // empty case
-    case ({}) then {};
+    case {} then {};
     // somthing case
-    case ({c1,c2}::rest)
-      equation
-        lst = makeTuple(rest);
+    case {c1,c2}::rest
+      algorithm
+        lst := makeTuple(rest);
       then
         (c1,c2)::lst;
     // ignore empty strings
-    case ({""}::rest)
-      equation
-        lst = makeTuple(rest);
+    case {""}::rest
+      algorithm
+        lst := makeTuple(rest);
       then
         lst;
     // ignore empty list
-    case ({}::rest)
-      equation
-        lst = makeTuple(rest);
+    case {}::rest
+      algorithm
+        lst := makeTuple(rest);
       then
         lst;
     // somthing case
-    case (bad::rest)
-      equation
+    case bad::rest
+      algorithm
         Debug.traceln("The following output from GraphViz OpenModelica assistant cannot be parsed:" +
             stringDelimitList(bad, ", ") +
             "\nExpected format from GrapViz: cref1|cref2#cref3|cref4#. Ignoring malformed input.");
-        lst = makeTuple(rest);
+        lst := makeTuple(rest);
       then
         lst;
   end matchcontinue;
@@ -827,14 +829,14 @@ protected function printPotentialRootTuple
   input PotentialRoot potentialRoot;
   output String outStr;
 algorithm
-  outStr := match(potentialRoot)
+  outStr := match potentialRoot
     local
       DAE.ComponentRef cr;
       Real priority;
       String str;
-    case ((cr, priority))
-      equation
-        str = ComponentReference.printComponentRefStr(cr) + "(" + realString(priority) + ")";
+    case (cr, priority)
+      algorithm
+        str := ComponentReferenceBasics.printComponentRefStr(cr) + "(" + realString(priority) + ")";
       then str;
   end match;
 end printPotentialRootTuple;
@@ -847,46 +849,46 @@ protected function setRootDistance
   input HashTable.HashTable irooted;
   output HashTable.HashTable orooted;
 algorithm
-  orooted := matchcontinue(finalRoots,table,distance,nextLevel,irooted)
+  orooted := matchcontinue(finalRoots, nextLevel)
     local
       HashTable.HashTable rooted;
       list<DAE.ComponentRef> rest,next;
       DAE.ComponentRef cr;
-    case({},_,_,{},_) then irooted;
-    case({},_,_,_,_)
+    case({}, {}) then irooted;
+    case({}, _)
       then
         setRootDistance(nextLevel,table,distance+1,{},irooted);
-    case(cr::rest,_,_,_,_)
-      equation
-        false = BaseHashTable.hasKey(cr, irooted);
-        rooted = BaseHashTable.add((cr,distance),irooted);
-        next = BaseHashTable.get(cr, table);
+    case(cr::rest, _)
+      algorithm
+        false := BaseHashTable.hasKey(cr, irooted);
+        rooted := BaseHashTable.add((cr,distance),irooted);
+        next := BaseHashTable.get(cr, table);
         //print("- ConnectionGraph.setRootDistance: Set Distance " +
-        //   ComponentReference.printComponentRefStr(cr) + " , " + intString(distance) + "\n");
+        //   ComponentReferenceBasics.printComponentRefStr(cr) + " , " + intString(distance) + "\n");
         //print("- ConnectionGraph.setRootDistance: add " +
-        //   stringDelimitList(List.map(next,ComponentReference.printComponentRefStr),"\n") + " to the queue\n");
-        next = listAppend(nextLevel,next);
+        //   stringDelimitList(List.map(next,ComponentReferenceBasics.printComponentRefStr),"\n") + " to the queue\n");
+        next := listAppend(nextLevel,next);
       then
         setRootDistance(rest,table,distance,next,rooted);
-    case(cr::rest,_,_,_,_)
-      equation
-        false = BaseHashTable.hasKey(cr, irooted);
-        rooted = BaseHashTable.add((cr,distance),irooted);
+    case(cr::rest, _)
+      algorithm
+        false := BaseHashTable.hasKey(cr, irooted);
+        rooted := BaseHashTable.add((cr,distance),irooted);
         //print("- ConnectionGraph.setRootDistance: Set Distance " +
-        //   ComponentReference.printComponentRefStr(cr) + " , " + intString(distance) + "\n");
+        //   ComponentReferenceBasics.printComponentRefStr(cr) + " , " + intString(distance) + "\n");
       then
         setRootDistance(rest,table,distance,nextLevel,rooted);
 /*    case(cr::rest,_,_,_,_)
-      equation
+      algorithm
         i = BaseHashTable.get(cr, irooted);
         print("- ConnectionGraph.setRootDistance: found " +
-           ComponentReference.printComponentRefStr(cr) + " twice, value is " + intString(i) + "\n");
+           ComponentReferenceBasics.printComponentRefStr(cr) + " twice, value is " + intString(i) + "\n");
       then
         setRootDistance(rest,table,distance,nextLevel,irooted);
 */
-    case (_::rest,_,_,_,_)
+    case (_::rest, _)
       //equation
-      //  print("- ConnectionGraph.setRootDistance: cannot found " + ComponentReference.printComponentRefStr(cr) + "\n");
+      //  print("- ConnectionGraph.setRootDistance: cannot found " + ComponentReferenceBasics.printComponentRefStr(cr) + "\n");
       then
         setRootDistance(rest,table,distance,nextLevel,irooted);
   end matchcontinue;
@@ -922,18 +924,18 @@ protected function addConnectionRooted
   input HashTable3.HashTable itable;
   output HashTable3.HashTable otable;
 algorithm
-  otable := match(cref1,cref2,itable)
+  otable := match itable
     local
       HashTable3.HashTable table;
       list<DAE.ComponentRef> crefs;
 
-    case(_, _, _)
-      equation
-          crefs = matchcontinue()
+    case _
+      algorithm
+          crefs := matchcontinue()
             case () then BaseHashTable.get(cref1,itable);
             else {};
           end matchcontinue;
-          table = BaseHashTable.add((cref1,cref2::crefs),itable);
+          table := BaseHashTable.add((cref1,cref2::crefs),itable);
       then
         table;
 
@@ -955,34 +957,34 @@ protected function evalConnectionsOperators
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
-  outDae := matchcontinue(inRoots,graph,inDae)
+  outDae := match inDae
     local
       HashTable.HashTable rooted;
       HashTable3.HashTable table;
       Edges branches;
       DaeEdges connections;
 
-    case (_,_, {}) then {};
+    case {} then {};
 
     else
-      equation
+      algorithm
         // built table
-        table = HashTable3.emptyHashTable();
+        table := HashTable3.emptyHashTable();
         // add branches to table
-        branches = getBranches(graph);
-        table = List.fold(branches,addBranches,table);
+        branches := getBranches(graph);
+        table := List.fold(branches,addBranches,table);
         // add connections to table
-        connections = getConnections(graph);
-        table = List.fold(connections,addConnectionsRooted,table);
+        connections := getConnections(graph);
+        table := List.fold(connections,addConnectionsRooted,table);
         // get distanste to root
-        //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentReference.printComponentRefStr),"\n") + "\n");
+        //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentReferenceBasics.printComponentRefStr),"\n") + "\n");
         //  BaseHashTable.dumpHashTable(table);
-        rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
+        rooted := setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        (outDae, _) = DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
+        (outDae, _) := DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
       then outDae;
 
-  end matchcontinue;
+  end match;
 end evalConnectionsOperators;
 
 protected function evalConnectionsOperatorsHelper
@@ -1005,30 +1007,30 @@ algorithm
 
     // handle rooted - with zero size array
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
     // handle rooted
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
-      equation
+      algorithm
         // find partner in branches
-        branches = getBranches(graph);
-        cref1 = getEdge(cref,branches);
+        branches := getBranches(graph);
+        cref1 := getEdge(cref,branches);
         // print("- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-        //   ComponentReference.printComponentRefStr(cref) + ", " + ComponentReference.printComponentRefStr(cref1) + "\n");
+        //   ComponentReferenceBasics.printComponentRefStr(cref) + ", " + ComponentReferenceBasics.printComponentRefStr(cref1) + "\n");
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-           ComponentReference.printComponentRefStr(cref) + ", " + ComponentReference.printComponentRefStr(cref1));
+           ComponentReferenceBasics.printComponentRefStr(cref) + ", " + ComponentReferenceBasics.printComponentRefStr(cref1));
         end if;
-        result = getRooted(cref,cref1,rooted);
+        result := getRooted(cref,cref1,rooted);
         //print("- ConnectionGraph.evalRootedAndIsRootHelper: " +
-        //   ComponentReference.printComponentRefStr(cref) + " is " + boolString(result) + " rooted\n");
+        //   ComponentReferenceBasics.printComponentRefStr(cref) + " is " + boolString(result) + " rooted\n");
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -1037,58 +1039,58 @@ algorithm
 
     // deal with Connections.isRoot - with zero size array
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
     // deal with NOT Connections.isRoot - with zero size array
     case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})})), (rooted,roots,graph))
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
 
     // deal with Connections.isRoot
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
-      equation
-        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
+      algorithm
+        result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
     // deal with NOT Connections.isRoot
     case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)})), (rooted,roots,graph))
-      equation
-        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
-        result = boolNot(result);
+      algorithm
+        result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
+        result := boolNot(result);
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
     // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")),
           expLst={uroots as DAE.ARRAY(array = lst),nodes,message}), (rooted,roots,graph))
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
-            ExpressionDump.printExpStr(uroots) + "," +
-            ExpressionDump.printExpStr(nodes) + "," +
-            ExpressionDump.printExpStr(message) + ")");
+            ExpressionBasics.printExpStr(uroots) + "," +
+            ExpressionBasics.printExpStr(nodes) + "," +
+            ExpressionBasics.printExpStr(message) + ")");
         end if;
-        lst = List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
+        lst := List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
       then
         (DAE.ARRAY(DAE.T_INTEGER_DEFAULT, false, lst), (rooted,roots,graph));
 
     // no replacement needed
     else (inExp, inRoots);
-    // fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) + " not found in roots!");
+    // fprintln(Flags.CGRAPH, ExpressionBasics.printExpStr(exp) + " not found in roots!");
   end matchcontinue;
 end evalConnectionsOperatorsHelper;
 
@@ -1098,13 +1100,13 @@ protected function getRooted
   input HashTable.HashTable rooted;
   output Boolean result;
 algorithm
-  result := matchcontinue(cref1,cref2,rooted)
+  result := matchcontinue rooted
     local
       Integer i1,i2;
-    case(_,_,_)
-      equation
-        i1 = BaseHashTable.get(cref1,rooted);
-        i2 = BaseHashTable.get(cref2,rooted);
+    case _
+      algorithm
+        i1 := BaseHashTable.get(cref1,rooted);
+        i2 := BaseHashTable.get(cref2,rooted);
       then
         intLt(i1,i2);
     // in faile case return true
@@ -1120,16 +1122,16 @@ protected function getEdge
   input Edges edges;
   output DAE.ComponentRef ocr;
 algorithm
-  ocr := matchcontinue(cr,edges)
+  ocr := matchcontinue edges
     local
       Edges rest;
       DAE.ComponentRef cref1,cref2;
-    case(_,(cref1,cref2)::_)
-      equation
-        cref1 = getEdge1(cr,cref1,cref2);
+    case (cref1,cref2)::_
+      algorithm
+        cref1 := getEdge1(cr,cref1,cref2);
       then
         cref1;
-    case(_,_::rest)
+    case _::rest
       then
         getEdge(cr,rest);
   end matchcontinue;
@@ -1142,15 +1144,15 @@ protected function getEdge1
   input DAE.ComponentRef cref2;
   output DAE.ComponentRef ocr;
 algorithm
-  ocr := matchcontinue(cr,cref1,cref2)
-    case(_,_,_)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr,cref1);
+  ocr := matchcontinue cref2
+    case _
+      algorithm
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr,cref1);
       then
         cref2;
     else
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr,cref2);
+      algorithm
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr,cref2);
       then
         cref1;
   end matchcontinue;
@@ -1162,17 +1164,17 @@ protected function printConnectionStr
   input String ty;
   output String outStr;
 algorithm
-  outStr := match(connectTuple, ty)
+  outStr := match connectTuple
     local
       DAE.ComponentRef c1, c2;
       String str;
 
-    case ((c1, c2, _), _)
-      equation
-        str = ty + "(" +
-          ComponentReference.printComponentRefStr(c1) +
+    case (c1, c2, _)
+      algorithm
+        str := ty + "(" +
+          ComponentReferenceBasics.printComponentRefStr(c1) +
           ", " +
-          ComponentReference.printComponentRefStr(c2) +
+          ComponentReferenceBasics.printComponentRefStr(c2) +
           ")";
       then str;
   end match;
@@ -1182,18 +1184,18 @@ protected function printEdges
 "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
-  _ := match(inEdges)
+  () := match inEdges
     local
       DAE.ComponentRef c1, c2;
       Edges tail;
 
-    case ({}) then ();
-    case ((c1, c2) :: tail)
-      equation
+    case {} then ();
+    case (c1, c2) :: tail
+      algorithm
         print("    ");
-        print(ComponentReference.printComponentRefStr(c1));
+        print(ComponentReferenceBasics.printComponentRefStr(c1));
         print(" -- ");
-        print(ComponentReference.printComponentRefStr(c2));
+        print(ComponentReferenceBasics.printComponentRefStr(c2));
         print("\n");
         printEdges(tail);
       then ();
@@ -1204,19 +1206,19 @@ protected function printDaeEdges
 "Prints a list of dae edges to stdout."
   input DaeEdges inEdges;
 algorithm
-  _ := match(inEdges)
+  () := match inEdges
     local
       DAE.ComponentRef c1, c2;
       DaeEdges tail;
 
-    case ({}) then ();
+    case {} then ();
 
-    case ((c1, c2, _) :: tail)
-      equation
+    case (c1, c2, _) :: tail
+      algorithm
         print("    ");
-        print(ComponentReference.printComponentRefStr(c1));
+        print(ComponentReferenceBasics.printComponentRefStr(c1));
         print(" -- ");
-        print(ComponentReference.printComponentRefStr(c2));
+        print(ComponentReferenceBasics.printComponentRefStr(c2));
         print("\n");
         printDaeEdges(tail);
       then ();
@@ -1227,13 +1229,13 @@ protected function printConnectionGraph
   "Prints the content of ConnectionGraph structure."
   input ConnectionGraph inGraph;
 algorithm
-  _ := match(inGraph)
+  () := match inGraph
     local
       DaeEdges connections;
       Edges branches;
 
-    case (GRAPH(connections = connections, branches = branches))
-      equation
+    case GRAPH(connections = connections, branches = branches)
+      algorithm
         print("Connections:\n");
         printDaeEdges(connections);
         print("Branches:\n");
@@ -1247,10 +1249,10 @@ protected function getDefiniteRoots
   input ConnectionGraph inGraph;
   output DefiniteRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       DefiniteRoots result;
-    case (GRAPH(definiteRoots = result)) then result;
+    case GRAPH(definiteRoots = result) then result;
   end match;
 end getDefiniteRoots;
 
@@ -1259,10 +1261,10 @@ protected function getUniqueRoots
   input ConnectionGraph inGraph;
   output UniqueRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       UniqueRoots result;
-    case (GRAPH(uniqueRoots = result)) then result;
+    case GRAPH(uniqueRoots = result) then result;
   end match;
 end getUniqueRoots;
 
@@ -1271,9 +1273,9 @@ protected function getPotentialRoots
   input ConnectionGraph inGraph;
   output PotentialRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local PotentialRoots result;
-    case (GRAPH(potentialRoots = result)) then result;
+    case GRAPH(potentialRoots = result) then result;
   end match;
 end getPotentialRoots;
 
@@ -1282,9 +1284,9 @@ protected function getBranches
   input ConnectionGraph inGraph;
   output Edges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local Edges result;
-    case (GRAPH(branches = result)) then result;
+    case GRAPH(branches = result) then result;
   end match;
 end getBranches;
 
@@ -1293,9 +1295,9 @@ protected function getConnections
   input ConnectionGraph inGraph;
   output DaeEdges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local DaeEdges result;
-    case (GRAPH(connections = result)) then result;
+    case GRAPH(connections = result) then result;
   end match;
 end getConnections;
 
@@ -1326,8 +1328,8 @@ algorithm
 
     // they are equal, return any
     case (_, _)
-      equation
-        equality(inGraph1 = inGraph2);
+      algorithm
+        true := valueEq(inGraph1, inGraph2);
       then
         inGraph1;
 
@@ -1336,16 +1338,16 @@ algorithm
                 branches = branches1, connections = connections1),
           GRAPH(updateGraph = updateGraph2, definiteRoots = definiteRoots2, potentialRoots = potentialRoots2, uniqueRoots=uniqueRoots2,
                 branches = branches2,connections = connections2))
-      equation
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
           Debug.trace("- ConnectionGraph.merge()\n");
         end if;
-        updateGraph    = boolOr(updateGraph1, updateGraph2);
-        definiteRoots  = List.union(definiteRoots1, definiteRoots2);
-        potentialRoots = List.union(potentialRoots1, potentialRoots2);
-        uniqueRoots    = List.union(uniqueRoots1, uniqueRoots2);
-        branches       = List.union(branches1, branches2);
-        connections    = List.union(connections1, connections2);
+        updateGraph    := boolOr(updateGraph1, updateGraph2);
+        definiteRoots  := List.union(definiteRoots1, definiteRoots2);
+        potentialRoots := List.union(potentialRoots1, potentialRoots2);
+        uniqueRoots    := List.union(uniqueRoots1, uniqueRoots2);
+        branches       := List.union(branches1, branches2);
+        connections    := List.union(connections1, connections2);
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,uniqueRoots,branches,connections);
   end matchcontinue;
@@ -1359,11 +1361,11 @@ protected function graphVizEdge
   input  Edge inEdge;
   output String out;
 algorithm
-  out := match(inEdge)
+  out := match inEdge
     local DAE.ComponentRef c1, c2; String strEdge;
-    case ((c1, c2))
-      equation
-        strEdge = "\"" + ComponentReference.printComponentRefStr(c1) + "\" -- \"" + ComponentReference.printComponentRefStr(c2) + "\"" +
+    case (c1, c2)
+      algorithm
+        strEdge := "\"" + ComponentReferenceBasics.printComponentRefStr(c1) + "\" -- \"" + ComponentReferenceBasics.printComponentRefStr(c2) + "\"" +
         " [color = blue, dir = \"none\", fontcolor=blue, label = \"branch\"];\n\t";
       then strEdge;
   end match;
@@ -1374,24 +1376,24 @@ protected function graphVizDaeEdge
   input  DaeEdges inBrokenDaeEdges;
   output String out;
 algorithm
-  out := match(inDaeEdge, inBrokenDaeEdges)
+  out := match inDaeEdge
     local
       DAE.ComponentRef c1, c2;
       String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor;
       Boolean isBroken;
 
-    case ((c1, c2, _), _)
-      equation
-        isBroken = listMember(inDaeEdge, inBrokenDaeEdges);
-        label = if isBroken then "[[broken connect]]" else "connect";
-        color = if isBroken then "red" else "green";
-        style = if isBroken then "\"bold, dashed\"" else "solid";
-        decorate = boolString(isBroken);
-        fontColor = if isBroken then "red" else "green";
-        labelFontSize = if isBroken then "labelfontsize = 20.0, " else "";
-        sc1 = ComponentReference.printComponentRefStr(c1);
-        sc2 = ComponentReference.printComponentRefStr(c2);
-        strDaeEdge = stringAppendList({
+    case (c1, c2, _)
+      algorithm
+        isBroken := listMember(inDaeEdge, inBrokenDaeEdges);
+        label := if isBroken then "[[broken connect]]" else "connect";
+        color := if isBroken then "red" else "green";
+        style := if isBroken then "\"bold, dashed\"" else "solid";
+        decorate := boolString(isBroken);
+        fontColor := if isBroken then "red" else "green";
+        labelFontSize := if isBroken then "labelfontsize = 20.0, " else "";
+        sc1 := ComponentReferenceBasics.printComponentRefStr(c1);
+        sc2 := ComponentReferenceBasics.printComponentRefStr(c2);
+        strDaeEdge := stringAppendList({
           "\"", sc1, "\" -- \"", sc2, "\" [",
           "dir = \"none\", ",
           "style = ", style,  ", ",
@@ -1410,13 +1412,13 @@ protected function graphVizDefiniteRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inDefiniteRoot, inFinalRoots)
+  out := match inDefiniteRoot
     local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
-    case (c, _)
-      equation
-        isSelectedRoot = listMember(c, inFinalRoots);
-        strDefiniteRoot = "\"" + ComponentReference.printComponentRefStr(c) + "\"" +
-           " [fillcolor = red, rank = \"source\", label = " + "\"" + ComponentReference.printComponentRefStr(c) + "\", " +
+    case c
+      algorithm
+        isSelectedRoot := listMember(c, inFinalRoots);
+        strDefiniteRoot := "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\"" +
+           " [fillcolor = red, rank = \"source\", label = " + "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\", " +
            (if isSelectedRoot then "shape=polygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"" else "shape=box") +
            "];\n\t";
       then strDefiniteRoot;
@@ -1428,13 +1430,13 @@ protected function graphVizPotentialRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inPotentialRoot, inFinalRoots)
+  out := match inPotentialRoot
     local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
-    case ((c, priority), _)
-      equation
-        isSelectedRoot = listMember(c, inFinalRoots);
-        strPotentialRoot = "\"" + ComponentReference.printComponentRefStr(c) + "\"" +
-           " [fillcolor = orangered, rank = \"min\" label = " + "\"" + ComponentReference.printComponentRefStr(c) + "\\n" + realString(priority) + "\", " +
+    case (c, priority)
+      algorithm
+        isSelectedRoot := listMember(c, inFinalRoots);
+        strPotentialRoot := "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\"" +
+           " [fillcolor = orangered, rank = \"min\" label = " + "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\\n" + realString(priority) + "\", " +
            (if isSelectedRoot then "shape=ploygon, sides=7, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"" else "shape=box") +
            "];\n\t";
       then strPotentialRoot;
@@ -1454,7 +1456,7 @@ protected function generateGraphViz
   input DaeEdges broken;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken)
+  brokenConnectsViaGraphViz := matchcontinue broken
     local
       String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
@@ -1462,28 +1464,28 @@ algorithm
       list<String> infoNode;
 
     // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
-    case(_, _, _, _, _, _, _, _)
-      equation
-        false = boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
+    case _
+      algorithm
+        false := boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
       then
         "";
 
-    case(_, _, _, _, _, _, _, _)
-      equation
-        tStart = clock();
-        i = "\t";
-        fileName = stringAppend(modelNameQualified, ".gv");
+    case _
+      algorithm
+        tStart := clock();
+        i := "\t";
+        fileName := stringAppend(modelNameQualified, ".gv");
         // create a stream
-        graphVizStream = IOStream.create(fileName, IOStream.LIST());
-        nrDR = intString(listLength(definiteRoots));
-        nrPR = intString(listLength(potentialRoots));
-        nrUR = intString(listLength(uniqueRoots));
-        nrBR = intString(listLength(branches));
-        nrCO = intString(listLength(connections));
-        nrFR = intString(listLength(finalRoots));
-        nrBC = intString(listLength(broken));
+        graphVizStream := IOStream.create(fileName, IOStream.LIST());
+        nrDR := intString(listLength(definiteRoots));
+        nrPR := intString(listLength(potentialRoots));
+        nrUR := intString(listLength(uniqueRoots));
+        nrBR := intString(listLength(branches));
+        nrCO := intString(listLength(connections));
+        nrFR := intString(listLength(finalRoots));
+        nrBC := intString(listLength(broken));
 
-        infoNode =
+        infoNode :=
         {
           "// Generated by OpenModelica. \n",
           "// Overconstrained connection graph for model: \n//    ", modelNameQualified, "\n",
@@ -1497,62 +1499,62 @@ algorithm
           "//   Final Roots:        ", nrFR, "\n",
           "//   Broken Connections: ", nrBC, "\n"
         };
-        infoNodeStr = stringAppendList(infoNode);
+        infoNodeStr := stringAppendList(infoNode);
         // replace \n with \\l (left align), replace \t with " "
-        infoNodeStr = System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr = System.stringReplace(infoNodeStr, "\t", " ");
+        infoNodeStr := System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr := System.stringReplace(infoNodeStr, "\t", " ");
         // replace / with ""
-        infoNodeStr = System.stringReplace(infoNodeStr, "/", "");
+        infoNodeStr := System.stringReplace(infoNodeStr, "/", "");
 
         // output header
-        graphVizStream = IOStream.appendList(graphVizStream,infoNode);
+        graphVizStream := IOStream.appendList(graphVizStream,infoNode);
         // output command to be used
         // output graphviz header
-        graphVizStream = IOStream.appendList(graphVizStream,{"\n\n"});
-        graphVizStream = IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
+        graphVizStream := IOStream.appendList(graphVizStream,{"\n\n"});
+        graphVizStream := IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
 
         // output global settings
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "overlap=false;\n"});
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
+        graphVizStream := IOStream.appendList(graphVizStream, {i, "overlap=false;\n"});
+        graphVizStream := IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
 
         // output settings for nodes
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "node [",
+        graphVizStream := IOStream.appendList(graphVizStream, {i, "node [",
            "fillcolor = \"lightsteelblue1\", ",
            "shape = box, ",
            "style = \"bold, filled\", ",
            "rank = \"max\"","]\n\n"});
         // output settings for edges
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [",
+        graphVizStream := IOStream.appendList(graphVizStream, {i, "edge [",
            "color = \"black\", ",
            "style = bold",
            "]\n\n"});
 
         // output summary node
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});
+        graphVizStream := IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});
 
         // output definite roots
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, List.map1(definiteRoots, graphVizDefiniteRoot, finalRoots));
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
+        graphVizStream := IOStream.appendList(graphVizStream, List.map1(definiteRoots, graphVizDefiniteRoot, finalRoots));
         // output potential roots
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, List.map1(potentialRoots, graphVizPotentialRoot, finalRoots));
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
+        graphVizStream := IOStream.appendList(graphVizStream, List.map1(potentialRoots, graphVizPotentialRoot, finalRoots));
 
         // output branches
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, List.map(branches, graphVizEdge));
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
+        graphVizStream := IOStream.appendList(graphVizStream, List.map(branches, graphVizEdge));
 
         // output connections
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, List.map1(connections, graphVizDaeEdge, broken));
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
+        graphVizStream := IOStream.appendList(graphVizStream, List.map1(connections, graphVizDaeEdge, broken));
 
         // output graphviz footer
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n}\n"});
-        tEnd = clock();
-        t = tEnd - tStart;
-        timeStr = realString(t);
-        graphVizStream = IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n}\n"});
+        tEnd := clock();
+        t := tEnd - tStart;
+        timeStr := realString(t);
+        graphVizStream := IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
         System.writeFile(fileName, IOStream.string(graphVizStream));
         Debug.traceln("GraphViz with connection graph for model: " + modelNameQualified + " was writen to file: " + fileName);
-        brokenConnects = showGraphViz(fileName, modelNameQualified);
+        brokenConnects := showGraphViz(fileName, modelNameQualified);
       then
         brokenConnects;
 
@@ -1564,37 +1566,37 @@ protected function showGraphViz
   input String modelNameQualified;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(fileNameGraphViz, modelNameQualified)
+  brokenConnectsViaGraphViz := matchcontinue modelNameQualified
     local
       String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
       Integer leftyExitStatus;
 
     // do not start graphviz if we don't have -d=cgraphGraphVizShow
-    case (_, _)
-      equation
-        false = Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
+    case _
+      algorithm
+        false := Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
       then
         "";
 
     else
-      equation
-        fileNameTraceRemovedConnections = modelNameQualified + "_removed_connections.txt";
+      algorithm
+        fileNameTraceRemovedConnections := modelNameQualified + "_removed_connections.txt";
         Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");
         Debug.traceln("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.");
         Debug.traceln("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.");
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome = System.stringReplace(omhome, "\"", "");
+        omhome := Settings.getInstallationDirectoryPath();
+        omhome := System.stringReplace(omhome, "\"", "");
         // omhome = System.stringReplace(omhome, "\\", "/");
 
         // create a lefty command and execute it
-        leftyCMD = "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
+        leftyCMD := "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
             fileNameGraphViz + "','file',null,null);txtview('off');";
         Debug.traceln("Running command: " + "lefty -e " + leftyCMD + " > " + fileNameTraceRemovedConnections);
         // execute lefty
-        leftyExitStatus = System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
+        leftyExitStatus := System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
         // show the exit status
         Debug.traceln("GraphViz *lefty* exited with status:" + intString(leftyExitStatus));
-        brokenConnects = System.readFile(fileNameTraceRemovedConnections);
+        brokenConnects := System.readFile(fileNameTraceRemovedConnections);
         Debug.traceln("GraphViz OpenModelica assistant returned the following broken connects: " + brokenConnects);
       then
         brokenConnects;
@@ -1613,48 +1615,48 @@ public function removeBrokenConnects
   input DaeEdges inBroken;
   output list<list<Connect.ConnectorElement>> outConnects "we return a list of lists of elements as a particular connection set might be broken into several!";
 algorithm
-  outConnects := match(inConnects, inConnected, inBroken)
+  outConnects := match inBroken
     local
       list<DAE.ComponentRef> toRemove, toKeep, intersect;
       list<Connect.ConnectorElement> cset;
       list<list<Connect.ConnectorElement>> csets;
 
     // if we have no broken then we don't care!
-    case (_, _, {}) then {inConnects};
+    case {} then {inConnects};
 
     // if we have nothing toRemove then we don't care!
-    case (_, _, _)
-      equation
-        toRemove = filterFromSet(inConnects, inBroken, {}, "removed");
+    case _
+      algorithm
+        toRemove := filterFromSet(inConnects, inBroken, {}, "removed");
 
         if listEmpty(toRemove)
         then
-          csets = {inConnects};
+          csets := {inConnects};
         else
-          toKeep = filterFromSet(inConnects, inConnected, {}, "allowed");
-          intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
+          toKeep := filterFromSet(inConnects, inConnected, {}, "allowed");
+          intersect := List.intersectionOnTrue(toRemove, toKeep, ComponentReferenceBasics.crefEqualNoStringCompare);
 
           if Flags.isSet(Flags.CGRAPH)
           then
             Debug.traceln("- ConnectionGraph.removeBrokenConnects: CS: " +
               stringDelimitList(List.map(inConnects, ConnectUtil.printElementStr), "\n"));
             Debug.traceln("- ConnectionGraph.removeBrokenConnects: keep: " +
-              stringDelimitList(List.map(toKeep, ComponentReference.printComponentRefStr), ", "));
+              stringDelimitList(List.map(toKeep, ComponentReferenceBasics.printComponentRefStr), ", "));
             Debug.traceln("- ConnectionGraph.removeBrokenConnects: delete: " +
-              stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
+              stringDelimitList(List.map(toRemove, ComponentReferenceBasics.printComponentRefStr), ", "));
             Debug.traceln("- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +
-              stringDelimitList(List.map(intersect, ComponentReference.printComponentRefStr), ", "));
+              stringDelimitList(List.map(intersect, ComponentReferenceBasics.printComponentRefStr), ", "));
           end if;
 
-          toRemove = List.setDifference(toRemove, intersect);
+          toRemove := List.setDifference(toRemove, intersect);
 
           if Flags.isSet(Flags.CGRAPH) then
             Debug.traceln("- ConnectionGraph.removeBrokenConnects: allow - delete: " +
-              stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
+              stringDelimitList(List.map(toRemove, ComponentReferenceBasics.printComponentRefStr), ", "));
           end if;
 
-          cset = removeFromConnects(inConnects, toRemove);
-          csets = splitSetByAllowed(cset, inConnected);
+          cset := removeFromConnects(inConnects, toRemove);
+          csets := splitSetByAllowed(cset, inConnected);
           /*
           if Flags.isSet(Flags.CGRAPH) then
             for cset in csets loop
@@ -1681,17 +1683,17 @@ protected
   list<list<Connect.ConnectorElement>> csets;
   DaeEdge e;
   DAE.ComponentRef cr1, cr2;
-  Connect.ConnectorElement ce, ce1, ce2;
+  Connect.ConnectorElement ce;
 algorithm
   csets := {};
   for e in inConnected loop
     cset := {};
     (cr1, cr2, _) := e;
     for ce in inConnects loop
-      if ComponentReference.crefPrefixOf(cr1, ce.name) then
+      if ComponentReferenceBasics.crefPrefixOf(cr1, ce.name) then
         cset := ce::cset;
       end if;
-      if ComponentReference.crefPrefixOf(cr2, ce.name) then
+      if ComponentReferenceBasics.crefPrefixOf(cr2, ce.name) then
         cset := ce::cset;
       end if;
     end for;
@@ -1712,30 +1714,30 @@ protected function filterFromSet
   input String msg;
   output list<DAE.ComponentRef> filteredCrefs;
 algorithm
-  filteredCrefs := matchcontinue(inConnects, inFilter, inAcc)
+  filteredCrefs := matchcontinue inFilter
     local
       DAE.ComponentRef c1, c2;
       DaeEdges rest;
       list<DAE.ComponentRef> filtered;
 
-    case (_, {}, _) then List.unique(inAcc);
+    case {} then List.unique(inAcc);
 
     // both are there and append crefs to the filter list!
-    case (_, (c1, c2, _)::rest, _)
-      equation
-        true = ConnectUtil.isReferenceInConnects(inConnects, c1);
-        true = ConnectUtil.isReferenceInConnects(inConnects, c2);
+    case (c1, c2, _)::rest
+      algorithm
+        true := ConnectUtil.isReferenceInConnects(inConnects, c1);
+        true := ConnectUtil.isReferenceInConnects(inConnects, c2);
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.filterFromSet: " + msg + " connect(" + ComponentReference.printComponentRefStr(c1) + ", " + ComponentReference.printComponentRefStr(c2) + ")");
+          Debug.traceln("- ConnectionGraph.filterFromSet: " + msg + " connect(" + ComponentReferenceBasics.printComponentRefStr(c1) + ", " + ComponentReferenceBasics.printComponentRefStr(c2) + ")");
         end if;
-        filtered = filterFromSet(inConnects, rest, c1::c2::inAcc, msg);
+        filtered := filterFromSet(inConnects, rest, c1::c2::inAcc, msg);
       then
         filtered;
 
     // some are not there, move forward ...
-    case (_, _::rest, _)
-      equation
-        filtered = filterFromSet(inConnects, rest, inAcc, msg);
+    case _::rest
+      algorithm
+        filtered := filterFromSet(inConnects, rest, inAcc, msg);
       then
         filtered;
   end matchcontinue;
@@ -1755,9 +1757,9 @@ algorithm
     case (_, {}) then inConnects;
 
     case (cset, c::rest)
-      equation
-        (cset, true) = ConnectUtil.removeReferenceFromConnects(cset, c);
-        cset = removeFromConnects(cset, rest);
+      algorithm
+        (cset, true) := ConnectUtil.removeReferenceFromConnects(cset, c);
+        cset := removeFromConnects(cset, rest);
       then
         cset;
   end match;
@@ -1770,21 +1772,21 @@ public function addBrokenEqualityConstraintEquations
   input DaeEdges inBroken;
   output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(inDAE, inBroken)
+  outDAE := match inBroken
     local
       list<DAE.Element> equalityConstraintElements;
       DAE.DAElist dae;
 
-    case (_, {}) then inDAE;
+    case {} then inDAE;
 
     else
-      equation
-        equalityConstraintElements = List.flatten(List.map(inBroken, Util.tuple33));
-        dae = DAEUtil.joinDaes(DAE.DAE(equalityConstraintElements), inDAE);
+      algorithm
+        equalityConstraintElements := List.flatten(List.map(inBroken, Util.tuple33));
+        dae := DAEUtil.joinDaes(DAE.DAE(equalityConstraintElements), inDAE);
       then
         dae;
 
-  end matchcontinue;
+  end match;
 end addBrokenEqualityConstraintEquations;
 
 annotation(__OpenModelica_Interface="frontend");

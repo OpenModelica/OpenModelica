@@ -1,6 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+EnumerationTest.mos \
+ExportFMUCLI.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
@@ -26,47 +28,59 @@ fmi_attributes_22.mos \
 fmi_attributes_23.mos \
 fmi_attributes_24.mos \
 fmi_attributes_25.mos \
+fmi2_array_attributes_nb.mos \
+fmi2_array_attributes.mos \
+Issue13905.mos \
+Issue13905_pool_expand.mos \
+Issue16354.mos \
+fmi_import_boolean.mos \
+fmi2_array_nonscalarized.mos \
+fmi2_arrays_initial_unknowns.mos \
+fmi2_string_variability.mos \
+fmi_export_derivative_annotation.mos \
+fmi_export_derivative_annotation_buildings.mos \
+fmi_export_derivative_annotation_unused.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
+HelloFMIWorld.mos \
+HelloFMIWorldEvent.mos \
+IntegerNetwork1.mos \
+issue10978.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
 RealFFT1.mos \
+testAssert.mos \
 testBug2764.mos \
 testBug2765.mos \
+testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug5673.mos \
+testChangeParam.mos \
 testDgesvSources.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
+testInitialEquationsFMI.mos \
 testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \
+ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 testExperimentalFMU.mos \
 
 FAILING_FMI_IMPORT = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
-EnumerationTest.mos \
 FMIExercise.mos \
-HelloFMIWorld.mos \
-HelloFMIWorldEvent.mos \
-IntegerNetwork1.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
 Modelica.Blocks.Sources.BooleanPulse.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-testAssert.mos \
-testBug3034.mos \
-testChangeParam.mos \
-testInitialEquationsFMI.mos \
-ZeroStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -115,4 +129,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

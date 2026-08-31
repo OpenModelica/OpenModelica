@@ -5,27 +5,28 @@ BuiltinMath.mos \
 Compare.mos \
 Delta.mos \
 DerInvalid.mos \
-DerValid.mos \
 dertest.mos \
+DerValid.mos \
 DummyDerMatching.mos \
 Epidemics1.mos \
 HydrogenIodide.mos \
 Identity.mos \
 LotkaVolterra.mos \
 MeasureTime.mos \
+NthRoot1.mos \
+NthRoot2.mos \
+NthRoot3.mos \
+SampledPrints.mos \
+SampleElseWhen.mos \
 SemiLinear.mos \
 SemiLinearTest2.mos \
 Sign.mos \
 Time.mos \
 TwoRateSampler.mos
 
-
-
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=  \
-
-
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -33,8 +34,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
@@ -68,4 +67,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

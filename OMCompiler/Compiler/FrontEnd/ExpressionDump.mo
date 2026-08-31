@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,21 +46,24 @@ encapsulated package ExpressionDump
 public import Absyn;
 public import AbsynUtil;
 public import DAE;
+public import ExpressionBasics;
 public import Graphviz;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEDump;
 protected import Dump;
+protected import Error;
 protected import Expression;
 public import ExpressionDumpTpl;
 protected import List;
-protected import Patternm;
 protected import Print;
 protected import System;
 protected import Tpl;
 protected import Types;
+protected import Util;
 
 /*
  * - Printing expressions
@@ -70,19 +77,19 @@ public function subscriptString
   input DAE.Subscript subscript;
   output String str;
 algorithm
-  str := match(subscript)
+  str := match subscript
     local
       Integer i;
       String res;
       Absyn.Path enum_lit;
-    case (DAE.INDEX(exp = DAE.ICONST(integer = i)))
-      equation
-        res = intString(i);
+    case DAE.INDEX(exp = DAE.ICONST(integer = i))
+      algorithm
+        res := intString(i);
       then
         res;
-    case (DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit)))
-      equation
-        res = AbsynUtil.pathString(enum_lit);
+    case DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit))
+      algorithm
+        res := AbsynUtil.pathString(enum_lit);
       then
         res;
   end match;
@@ -104,27 +111,27 @@ public function binopSymbol1
   input DAE.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
-    case (DAE.ADD()) then " + ";
-    case (DAE.SUB()) then " - ";
-    case (DAE.MUL()) then " * ";
-    case (DAE.DIV()) then " / ";
-    case (DAE.POW()) then " ^ ";
-    case (DAE.ADD_ARR()) then " + ";
-    case (DAE.SUB_ARR()) then " - ";
-    case (DAE.MUL_ARR()) then " * ";
-    case (DAE.DIV_ARR()) then " / ";
-    case (DAE.POW_ARR()) then " ^ ";
-    case (DAE.POW_ARR2()) then " ^ ";
-    case (DAE.MUL_ARRAY_SCALAR()) then " * ";
-    case (DAE.ADD_ARRAY_SCALAR()) then " + ";
-    case (DAE.SUB_SCALAR_ARRAY()) then " - ";
-    case (DAE.POW_SCALAR_ARRAY()) then " ^ ";
-    case (DAE.POW_ARRAY_SCALAR()) then " ^ ";
-    case (DAE.MUL_SCALAR_PRODUCT()) then " * ";
-    case (DAE.MUL_MATRIX_PRODUCT()) then " * ";
-    case (DAE.DIV_SCALAR_ARRAY()) then " / ";
-    case (DAE.DIV_ARRAY_SCALAR()) then " / ";
+  outString := match inOperator
+    case DAE.ADD() then " + ";
+    case DAE.SUB() then " - ";
+    case DAE.MUL() then " * ";
+    case DAE.DIV() then " / ";
+    case DAE.POW() then " ^ ";
+    case DAE.ADD_ARR() then " + ";
+    case DAE.SUB_ARR() then " - ";
+    case DAE.MUL_ARR() then " * ";
+    case DAE.DIV_ARR() then " / ";
+    case DAE.POW_ARR() then " ^ ";
+    case DAE.POW_ARR2() then " ^ ";
+    case DAE.MUL_ARRAY_SCALAR() then " * ";
+    case DAE.ADD_ARRAY_SCALAR() then " + ";
+    case DAE.SUB_SCALAR_ARRAY() then " - ";
+    case DAE.POW_SCALAR_ARRAY() then " ^ ";
+    case DAE.POW_ARRAY_SCALAR() then " ^ ";
+    case DAE.MUL_SCALAR_PRODUCT() then " * ";
+    case DAE.MUL_MATRIX_PRODUCT() then " * ";
+    case DAE.DIV_SCALAR_ARRAY() then " / ";
+    case DAE.DIV_ARRAY_SCALAR() then " / ";
     else " <UNKNOWN_SYMBOL> ";
   end match;
 end binopSymbol1;
@@ -134,28 +141,28 @@ public function debugBinopSymbol
   input DAE.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
-    case (DAE.ADD()) then " + ";
-    case (DAE.SUB()) then " - ";
-    case (DAE.MUL()) then " * ";
-    case (DAE.DIV()) then " / ";
-    case (DAE.POW()) then " ^ ";
-    case (DAE.EQUAL()) then " = ";
-    case (DAE.ADD_ARR()) then " +ARR ";
-    case (DAE.SUB_ARR()) then " -ARR ";
-    case (DAE.MUL_ARR()) then " *ARR ";
-    case (DAE.DIV_ARR()) then " /ARR ";
-    case (DAE.POW_ARR()) then " ^ARR ";
-    case (DAE.POW_ARR2()) then " ^ARR2 ";
-    case (DAE.MUL_ARRAY_SCALAR()) then " ARR*S ";
-    case (DAE.ADD_ARRAY_SCALAR()) then " ARR+S ";
-    case (DAE.SUB_SCALAR_ARRAY()) then " - ";
-    case (DAE.POW_SCALAR_ARRAY()) then " S^ARR ";
-    case (DAE.POW_ARRAY_SCALAR()) then " ARR^S ";
-    case (DAE.MUL_SCALAR_PRODUCT()) then " Dot ";
-    case (DAE.MUL_MATRIX_PRODUCT()) then " MatrixProd ";
-    case (DAE.DIV_SCALAR_ARRAY()) then " S/ARR ";
-    case (DAE.DIV_ARRAY_SCALAR()) then " ARR/S ";
+  outString := match inOperator
+    case DAE.ADD() then " + ";
+    case DAE.SUB() then " - ";
+    case DAE.MUL() then " * ";
+    case DAE.DIV() then " / ";
+    case DAE.POW() then " ^ ";
+    case DAE.EQUAL() then " = ";
+    case DAE.ADD_ARR() then " +ARR ";
+    case DAE.SUB_ARR() then " -ARR ";
+    case DAE.MUL_ARR() then " *ARR ";
+    case DAE.DIV_ARR() then " /ARR ";
+    case DAE.POW_ARR() then " ^ARR ";
+    case DAE.POW_ARR2() then " ^ARR2 ";
+    case DAE.MUL_ARRAY_SCALAR() then " ARR*S ";
+    case DAE.ADD_ARRAY_SCALAR() then " ARR+S ";
+    case DAE.SUB_SCALAR_ARRAY() then " - ";
+    case DAE.POW_SCALAR_ARRAY() then " S^ARR ";
+    case DAE.POW_ARRAY_SCALAR() then " ARR^S ";
+    case DAE.MUL_SCALAR_PRODUCT() then " Dot ";
+    case DAE.MUL_MATRIX_PRODUCT() then " MatrixProd ";
+    case DAE.DIV_SCALAR_ARRAY() then " S/ARR ";
+    case DAE.DIV_ARRAY_SCALAR() then " ARR/S ";
   end match;
 end debugBinopSymbol;
 
@@ -164,70 +171,70 @@ protected function binopSymbol2
   input DAE.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
+  outString := match inOperator
     local
       String ts,s;
       DAE.Type t;
 
-    case (DAE.ADD(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" +<", ts, "> "});
+    case DAE.ADD(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" +<", ts, "> "});
       then
         s;
 
-    case (DAE.SUB(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" -<", ts, "> "});
+    case DAE.SUB(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" -<", ts, "> "});
       then
         s;
 
-    case (DAE.MUL(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" *<", ts, "> "});
+    case DAE.MUL(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" *<", ts, "> "});
       then
         s;
 
-    case (DAE.DIV(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" /<", ts, "> "});
+    case DAE.DIV(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" /<", ts, "> "});
       then
         s;
 
-    case (DAE.POW()) then " ^ ";
-    case (DAE.ADD_ARR(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" +<ADD_ARR><", ts, "> "});
+    case DAE.POW() then " ^ ";
+    case DAE.ADD_ARR(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" +<ADD_ARR><", ts, "> "});
       then
         s;
-    case (DAE.SUB_ARR(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" -<SUB_ARR><", ts, "> "});
+    case DAE.SUB_ARR(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" -<SUB_ARR><", ts, "> "});
       then
         s;
-    case (DAE.MUL_ARR()) then " *<MUL_ARRAY> ";
-    case (DAE.DIV_ARR(ty = t))
-      equation
-        ts = Types.unparseType(t);
-        s = stringAppendList({" /<DIV_ARR><", ts, "> "});
+    case DAE.MUL_ARR() then " *<MUL_ARRAY> ";
+    case DAE.DIV_ARR(ty = t)
+      algorithm
+        ts := TypesDump.unparseType(t);
+        s := stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
-    case (DAE.POW_ARR()) then " ^<POW_ARR> ";
-    case (DAE.POW_ARR2()) then " ^<POW_ARR2> ";
-    case (DAE.MUL_ARRAY_SCALAR()) then " *<MUL_ARRAY_SCALAR> ";
-    case (DAE.ADD_ARRAY_SCALAR()) then " +<ADD_ARRAY_SCALAR> ";
-    case (DAE.SUB_SCALAR_ARRAY()) then " -<SUB_SCALAR_ARRAY> ";
-    case (DAE.POW_SCALAR_ARRAY()) then " ^<POW_SCALAR_ARRAY> ";
-    case (DAE.POW_ARRAY_SCALAR()) then " ^<POW_ARRAY_SCALAR> ";
-    case (DAE.MUL_SCALAR_PRODUCT()) then " *<MUL_SCALAR_PRODUCT> ";
-    case (DAE.MUL_MATRIX_PRODUCT()) then " *<MUL_MATRIX_PRODUCT> ";
-    case (DAE.DIV_SCALAR_ARRAY()) then " /<DIV_SCALAR_ARRAY> ";
-    case (DAE.DIV_ARRAY_SCALAR()) then " /<DIV_ARRAY_SCALAR> ";
+    case DAE.POW_ARR() then " ^<POW_ARR> ";
+    case DAE.POW_ARR2() then " ^<POW_ARR2> ";
+    case DAE.MUL_ARRAY_SCALAR() then " *<MUL_ARRAY_SCALAR> ";
+    case DAE.ADD_ARRAY_SCALAR() then " +<ADD_ARRAY_SCALAR> ";
+    case DAE.SUB_SCALAR_ARRAY() then " -<SUB_SCALAR_ARRAY> ";
+    case DAE.POW_SCALAR_ARRAY() then " ^<POW_SCALAR_ARRAY> ";
+    case DAE.POW_ARRAY_SCALAR() then " ^<POW_ARRAY_SCALAR> ";
+    case DAE.MUL_SCALAR_PRODUCT() then " *<MUL_SCALAR_PRODUCT> ";
+    case DAE.MUL_MATRIX_PRODUCT() then " *<MUL_MATRIX_PRODUCT> ";
+    case DAE.DIV_SCALAR_ARRAY() then " /<DIV_SCALAR_ARRAY> ";
+    case DAE.DIV_ARRAY_SCALAR() then " /<DIV_ARRAY_SCALAR> ";
   end match;
 end binopSymbol2;
 
@@ -237,9 +244,9 @@ public function unaryopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
-    case (DAE.UMINUS()) then if Config.typeinfo() then "-<UMINUS>" else "-";
-    case (DAE.UMINUS_ARR()) then if Config.typeinfo() then "-<UMINUS_ARR>" else "-";
+  match inOperator
+    case DAE.UMINUS() then if Config.typeinfo() then "-<UMINUS>" else "-";
+    case DAE.UMINUS_ARR() then if Config.typeinfo() then "-<UMINUS_ARR>" else "-";
   end match;
 end unaryopSymbol;
 
@@ -249,9 +256,9 @@ public function lbinopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
-    case (DAE.AND(_)) then " and ";
-    case (DAE.OR(_)) then " or ";
+  match inOperator
+    case DAE.AND(_) then " and ";
+    case DAE.OR(_) then " or ";
   end match;
 end lbinopSymbol;
 
@@ -260,8 +267,8 @@ public function lunaryopSymbol
   input DAE.Operator inOperator;
   output String outString;
 algorithm
-  outString := match (inOperator)
-    case (DAE.NOT(_)) then "not ";
+  outString := match inOperator
+    case DAE.NOT(_) then "not ";
   end match;
 end lunaryopSymbol;
 
@@ -271,13 +278,13 @@ public function relopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
-    case (DAE.LESS()) then " < ";
-    case (DAE.LESSEQ()) then " <= ";
-    case (DAE.GREATER()) then " > ";
-    case (DAE.GREATEREQ()) then " >= ";
-    case (DAE.EQUAL()) then " == ";
-    case (DAE.NEQUAL()) then " <> ";
+  match inOperator
+    case DAE.LESS() then " < ";
+    case DAE.LESSEQ() then " <= ";
+    case DAE.GREATER() then " > ";
+    case DAE.GREATEREQ() then " >= ";
+    case DAE.EQUAL() then " == ";
+    case DAE.NEQUAL() then " <> ";
   end match;
 end relopSymbol;
 
@@ -292,7 +299,7 @@ public function printList
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:=
+  ():=
   matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
       Type_a h;
@@ -301,12 +308,12 @@ algorithm
       String sep;
     case ({},_,_) then ();
     case ({h},r,_)
-      equation
+      algorithm
         r(h);
       then
         ();
     case ((h :: t),r,sep)
-      equation
+      algorithm
         r(h);
         Print.printBuf(sep);
         printList(t, r, sep);
@@ -322,72 +329,43 @@ algorithm
   printList(es_1, printExp, ",");
 end printRow;
 
-public function printListStr
-"Same as printList, except it returns
-  a string instead of printing."
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aToString inFuncTypeTypeAToString;
-  input String inString;
-  output String outString;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToString
-    input Type_a inTypeA;
-    output String outString;
-  end FuncTypeType_aToString;
-algorithm
-  outString := stringDelimitList(List.map(inTypeALst,inFuncTypeTypeAToString),inString);
-end printListStr;
-
 public function debugPrintSubscriptStr "
   Print a Subscript into a String."
   input DAE.Subscript inSubscript;
   output String outString;
 algorithm
-  outString := match (inSubscript)
+  outString := match inSubscript
     local
       String s;
       DAE.Exp e1;
-    case (DAE.WHOLEDIM()) then ":";
-    case (DAE.INDEX(exp = e1))
-      equation
-        s = dumpExpStr(e1,0);
-        s = System.stringReplace(s, "\n", "");
+    case DAE.WHOLEDIM() then ":";
+    case DAE.INDEX(exp = e1)
+      algorithm
+        s := dumpExpStr(e1,0);
+        s := System.stringReplace(s, "\n", "");
       then
         s;
-    case (DAE.SLICE(exp = e1))
-      equation
-        s = dumpExpStr(e1,0);
-        s = System.stringReplace(s, "\n", "");
+    case DAE.SLICE(exp = e1)
+      algorithm
+        s := dumpExpStr(e1,0);
+        s := System.stringReplace(s, "\n", "");
       then
         s;
-    case (DAE.WHOLE_NONEXP(exp = e1))
-      equation
-        s = dumpExpStr(e1,0);
-        s = System.stringReplace(s, "\n", "");
+    case DAE.WHOLE_NONEXP(exp = e1)
+      algorithm
+        s := dumpExpStr(e1,0);
+        s := System.stringReplace(s, "\n", "");
       then
         "1:"+s;
   end match;
 end debugPrintSubscriptStr;
-
-public function printSubscriptStr "
-  Print a Subscript into a String."
-  input DAE.Subscript sub;
-  output String outString;
-algorithm
-  outString := match sub
-    case DAE.WHOLEDIM() then ":";
-    case DAE.INDEX() then printExpStr(sub.exp);
-    case DAE.SLICE() then printExpStr(sub.exp);
-    case DAE.WHOLE_NONEXP() then "1:" + printExpStr(sub.exp);
-  end match;
-end printSubscriptStr;
 
 public function printSubscriptLstStr
   "Print a list of Subscripts into a String."
   input list<DAE.Subscript> inSubscriptLst;
   output String outString;
 algorithm
-  outString := stringDelimitList(List.map(inSubscriptLst,printSubscriptStr)," , ");
+  outString := stringDelimitList(List.map(inSubscriptLst,ExpressionBasics.printSubscriptStr)," , ");
 end printSubscriptLstStr;
 
 public function printExpListStr
@@ -395,7 +373,7 @@ public function printExpListStr
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringDelimitList(List.map(expl,printExpStr),", ");
+  res := stringDelimitList(List.map(expl,ExpressionBasics.printExpStr),", ");
 end printExpListStr;
 
 // stefan
@@ -404,7 +382,7 @@ public function printExpListStrNoSpace
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringAppendList(List.map(expl,printExpStr));
+  res := stringAppendList(List.map(expl,ExpressionBasics.printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
@@ -412,20 +390,12 @@ Returns a string if SOME otherwise ''"
   input Option<DAE.Exp> oexp;
   output String str;
 algorithm
-  str := match(oexp)
+  str := match oexp
     local DAE.Exp e;
-    case(SOME(e)) then printExpStr(e);
+    case SOME(e) then ExpressionBasics.printExpStr(e);
     else "";
   end match;
 end printOptExpStr;
-
-public function printExpStr
-"This function prints a complete expression."
-  input DAE.Exp e;
-  output String s;
-algorithm
-  s := Tpl.tplString2(ExpressionDumpTpl.dumpExp, e, "\"");
-end printExpStr;
 
 public function printCrefsFromExpStr
   input DAE.Exp e;
@@ -459,13 +429,13 @@ public function printExp2Str
     end printComponentRefStrFunc;
   end printCallFunc;
 algorithm
-  outString := matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
+  outString := matchcontinue (inExp, opcreffunc, opcallfunc)
     local
       String s,s_1,s_2,sym,s1,s2,s3,s4,res,fs,argstr,s_4,str,crstr,dimstr,expstr,iterstr,s1_1,s2_1,cs,ts,cs_1,ts_1,fs_1,s3_1;
       Integer i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real r;
       DAE.ComponentRef c,name;
-      DAE.Type t,tp;
+      DAE.Type tp;
       DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,cond,tb,fb;
       DAE.Operator op;
       Absyn.Path fcn,lit;
@@ -477,332 +447,333 @@ algorithm
       list<DAE.Exp> aexpl;
       list<list<DAE.Exp>> lstes;
       DAE.MatchType matchTy;
-      DAE.Type et;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
       String  scope, tyStr;
+      list<DAE.Subscript> subs;
 
-    case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
-      then "<EMPTY(scope: " + scope + ", name: " + ComponentReference.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
+    case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _)
+      then "<EMPTY(scope: " + scope + ", name: " + ComponentReferenceBasics.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
 
-    case (DAE.ICONST(integer = i), _, _, _)
-      equation
-        s = intString(i);
+    case (DAE.ICONST(integer = i), _, _)
+      algorithm
+        s := intString(i);
       then
         s;
 
-    case (DAE.RCONST(real = r), _, _, _)
-      equation
-        s = realString(r);
+    case (DAE.RCONST(real = r), _, _)
+      algorithm
+        s := realString(r);
       then
         s;
 
-    case (DAE.SCONST(string = s), _, _, _)
-      equation
-        s = System.escapedString(s,false);
-        s = stringAppendList({stringDelimiter, s, stringDelimiter});
+    case (DAE.SCONST(string = s), _, _)
+      algorithm
+        s := System.escapedString(s,false);
+        s := stringAppendList({stringDelimiter, s, stringDelimiter});
       then
         s;
 
-    case (DAE.BCONST(bool = b), _, _, _) then boolString(b);
+    case (DAE.BCONST(bool = b), _, _) then boolString(b);
 
-    case (DAE.CREF(componentRef = c), _, SOME((pcreffunc,creffuncparam)), _)
-      equation
-        s = pcreffunc(c,creffuncparam);
+    case (DAE.CREF(componentRef = c), SOME((pcreffunc,creffuncparam)), _)
+      algorithm
+        s := pcreffunc(c,creffuncparam);
       then
         s;
 
-    case (DAE.CREF(componentRef = c), _, _, _)
-      equation
-        s = ComponentReference.printComponentRefStr(c);
-        if listMember("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
-          s = System.stringReplace(s, ".", "_"); // replace cref's to modelica output format for dumping to reconciled_dataReconciliation.mo
+    case (DAE.CREF(componentRef = c), _, _)
+      algorithm
+        s := ComponentReferenceBasics.printComponentRefStr(c);
+        if listMember("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationStateEstimation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationBoundaryConditions", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
+          s := System.stringReplace(s, ".", "_"); // replace cref's to modelica output format for dumping to reconciled_dataReconciliation.mo
         end if;
       then
         s;
 
-    case (DAE.ENUM_LITERAL(name = lit), _, _, _)
-      equation
-        s = AbsynUtil.pathString(lit);
+    case (DAE.ENUM_LITERAL(name = lit), _, _)
+      algorithm
+        s := AbsynUtil.pathString(lit);
       then
         s;
 
-    case (e as DAE.BINARY(e1,op,e2), _, _, _)
-      equation
-        sym = binopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p,false);
-        s2_1 = parenthesize(s2, p2, p,true);
-        s = stringAppendList({s1_1, sym, s2_1});
+    case (e as DAE.BINARY(e1,op,e2), _, _)
+      algorithm
+        sym := binopSymbol(op);
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s2 := printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        p1 := expPriority(e1);
+        p2 := expPriority(e2);
+        s1_1 := parenthesize(s1, p1, p,false);
+        s2_1 := parenthesize(s2, p2, p,true);
+        s := stringAppendList({s1_1, sym, s2_1});
       then
         s;
 
-    case ((e as DAE.UNARY(op,e1)), _, _, _)
-      equation
-        sym = unaryopSymbol(op);
-        s = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        s_1 = parenthesize(s, p1, p,true);
-        s_2 = stringAppend(sym, s_1);
+    case ((e as DAE.UNARY(op,e1)), _, _)
+      algorithm
+        sym := unaryopSymbol(op);
+        s := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        p1 := expPriority(e1);
+        s_1 := parenthesize(s, p1, p,true);
+        s_2 := stringAppend(sym, s_1);
       then
         s_2;
 
-    case ((e as DAE.LBINARY(e1,op,e2)), _, _, _)
-      equation
-        sym = lbinopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p,false);
-        s2_1 = parenthesize(s2, p2, p,true);
-        s = stringAppendList({s1_1, sym, s2_1});
+    case ((e as DAE.LBINARY(e1,op,e2)), _, _)
+      algorithm
+        sym := lbinopSymbol(op);
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s2 := printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        p1 := expPriority(e1);
+        p2 := expPriority(e2);
+        s1_1 := parenthesize(s1, p1, p,false);
+        s2_1 := parenthesize(s2, p2, p,true);
+        s := stringAppendList({s1_1, sym, s2_1});
       then
         s;
 
-    case ((e as DAE.LUNARY(op,e1)), _, _, _)
-      equation
-        sym = lunaryopSymbol(op);
-        s = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        s_1 = parenthesize(s, p1, p,false);
-        s_2 = stringAppend(sym, s_1);
+    case ((e as DAE.LUNARY(op,e1)), _, _)
+      algorithm
+        sym := lunaryopSymbol(op);
+        s := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        p1 := expPriority(e1);
+        s_1 := parenthesize(s, p1, p,false);
+        s_2 := stringAppend(sym, s_1);
       then
         s_2;
 
-    case ((e as DAE.RELATION(exp1=e1,operator=op,exp2=e2)), _, _, _)
-      equation
-        sym = relopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p,false);
-        s2_1 = parenthesize(s2, p2, p,true);
-        s = stringAppendList({s1_1, sym, s2_1});
+    case ((e as DAE.RELATION(exp1=e1,operator=op,exp2=e2)), _, _)
+      algorithm
+        sym := relopSymbol(op);
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s2 := printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        p1 := expPriority(e1);
+        p2 := expPriority(e2);
+        s1_1 := parenthesize(s1, p1, p,false);
+        s2_1 := parenthesize(s2, p2, p,true);
+        s := stringAppendList({s1_1, sym, s2_1});
       then
         s;
 
-    case ((e as DAE.IFEXP(cond,tb,fb)), _, _, _)
-      equation
-        cs = printExp2Str(cond, stringDelimiter, opcreffunc, opcallfunc);
-        ts = printExp2Str(tb, stringDelimiter, opcreffunc, opcallfunc);
-        fs = printExp2Str(fb, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        pc = expPriority(cond);
-        pt = expPriority(tb);
-        pf = expPriority(fb);
-        cs_1 = parenthesize(cs, pc, p,false);
-        ts_1 = parenthesize(ts, pt, p,false);
-        fs_1 = parenthesize(fs, pf, p,false);
-        str = stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
+    case ((e as DAE.IFEXP(cond,tb,fb)), _, _)
+      algorithm
+        cs := printExp2Str(cond, stringDelimiter, opcreffunc, opcallfunc);
+        ts := printExp2Str(tb, stringDelimiter, opcreffunc, opcallfunc);
+        fs := printExp2Str(fb, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        pc := expPriority(cond);
+        pt := expPriority(tb);
+        pf := expPriority(fb);
+        cs_1 := parenthesize(cs, pc, p,false);
+        ts_1 := parenthesize(ts, pt, p,false);
+        fs_1 := parenthesize(fs, pf, p,false);
+        str := stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
 
-    case (e as DAE.CALL(), _, _, SOME(pcallfunc))
-      equation
-        s_2 = pcallfunc(e,stringDelimiter,opcreffunc);
+    case (e as DAE.CALL(), _, SOME(pcallfunc))
+      algorithm
+        s_2 := pcallfunc(e,stringDelimiter,opcreffunc);
       then
         s_2;
 
-    case (DAE.CALL(path = fcn,expLst = args), _, _, _)
-      equation
-        fs = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
-        argstr = stringDelimitList(
+    case (DAE.CALL(path = fcn,expLst = args), _, _)
+      algorithm
+        fs := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
+        argstr := stringDelimitList(
           List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppendList({fs, "(", argstr, ")"});
+        s := stringAppendList({fs, "(", argstr, ")"});
       then
         s;
 
-    case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _, _)
-      equation
-        fs = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
-        argstr = stringDelimitList(
+    case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _)
+      algorithm
+        fs := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
+        argstr := stringDelimitList(
           List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppendList({"function ", fs, "(", argstr, ")"});
+        s := stringAppendList({"function ", fs, "(", argstr, ")"});
       then
         s;
 
-    case (DAE.ARRAY(array = es), _, _, _)
-      equation
-        // s3 = Types.unparseType(tp); // adrpo: not used!
-        s = stringDelimitList(
+    case (DAE.ARRAY(array = es), _, _)
+      algorithm
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
+        s := stringDelimitList(
           List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppendList({"{", s, "}"});
+        s := stringAppendList({"{", s, "}"});
       then
         s;
 
-    case (DAE.TUPLE(PR = es), _, _, _)
-      equation
-        s = stringDelimitList(
+    case (DAE.TUPLE(PR = es), _, _)
+      algorithm
+        s := stringDelimitList(
           List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppendList({"(", s, ")"});
+        s := stringAppendList({"(", s, ")"});
       then
         s;
 
-    case (DAE.MATRIX(matrix = lstes), _, _, _)
-      equation
-        // s3 = Types.unparseType(tp); // adrpo: not used!
-        s = stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
-        s = stringAppendList({"{{",s,"}}"});
+    case (DAE.MATRIX(matrix = lstes), _, _)
+      algorithm
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
+        s := stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
+        s := stringAppendList({"{{",s,"}}"});
       then
         s;
 
-    case (e as DAE.RANGE(_,start,NONE(),stop), _, _, _)
-      equation
-        s1 = printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
-        s3 = printExp2Str(stop, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        pstart = expPriority(start);
-        pstop = expPriority(stop);
-        s1_1 = parenthesize(s1, pstart, p,false);
-        s3_1 = parenthesize(s3, pstop, p,false);
-        s = stringAppendList({s1_1, ":", s3_1});
+    case (e as DAE.RANGE(_,start,NONE(),stop), _, _)
+      algorithm
+        s1 := printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
+        s3 := printExp2Str(stop, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        pstart := expPriority(start);
+        pstop := expPriority(stop);
+        s1_1 := parenthesize(s1, pstart, p,false);
+        s3_1 := parenthesize(s3, pstop, p,false);
+        s := stringAppendList({s1_1, ":", s3_1});
       then
         s;
 
-    case ((e as DAE.RANGE(_,start,SOME(step),stop)), _, _, _)
-      equation
-        s1 = printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
-        s2 = printExp2Str(step, stringDelimiter, opcreffunc, opcallfunc);
-        s3 = printExp2Str(stop, stringDelimiter, opcreffunc, opcallfunc);
-        p = expPriority(e);
-        pstart = expPriority(start);
-        pstop = expPriority(stop);
-        pstep = expPriority(step);
-        s1_1 = parenthesize(s1, pstart, p,false);
-        s3_1 = parenthesize(s3, pstop, p,false);
-        s2_1 = parenthesize(s2, pstep, p,false);
-        s = stringAppendList({s1_1,":",s2_1,":",s3_1});
+    case ((e as DAE.RANGE(_,start,SOME(step),stop)), _, _)
+      algorithm
+        s1 := printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
+        s2 := printExp2Str(step, stringDelimiter, opcreffunc, opcallfunc);
+        s3 := printExp2Str(stop, stringDelimiter, opcreffunc, opcallfunc);
+        p := expPriority(e);
+        pstart := expPriority(start);
+        pstop := expPriority(stop);
+        pstep := expPriority(step);
+        s1_1 := parenthesize(s1, pstart, p,false);
+        s3_1 := parenthesize(s3, pstop, p,false);
+        s2_1 := parenthesize(s2, pstep, p,false);
+        s := stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
 
-    case (DAE.CAST(ty = tp,exp = e), _, _, _)
-      equation
-        str = Types.unparseType(tp);
-        s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        res = stringAppendList({"DAE.CAST(",str,", ",s,")"});
+    case (DAE.CAST(ty = tp,exp = e), _, _)
+      algorithm
+        str := TypesDump.unparseType(tp);
+        s := printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
+        res := stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
         res;
 
-    case (e as DAE.ASUB(exp = e1,sub = aexpl), _, _, _)
-      equation
-        p = expPriority(e);
-        pe1 = expPriority(e1);
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s1_1 = parenthesize(s1, pe1, p,false);
-        s4 = stringDelimitList(
+    case (e as DAE.ASUB(exp = e1,sub = subs), _, _)
+      algorithm
+        aexpl := list(Expression.getSubscriptExp(sub) for sub in subs);
+        p := expPriority(e);
+        pe1 := expPriority(e1);
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s1_1 := parenthesize(s1, pe1, p,false);
+        s4 := stringDelimitList(
           List.map3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s_4 = s1_1+ "["+ s4 + "]";
+        s_4 := s1_1+ "["+ s4 + "]";
       then
         s_4;
 
-    case (DAE.SIZE(exp = cr,sz = SOME(dim)), _, _, _)
-      equation
-        crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
-        dimstr = printExp2Str(dim, stringDelimiter, opcreffunc, opcallfunc);
-        str = stringAppendList({"size(",crstr,",",dimstr,")"});
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)), _, _)
+      algorithm
+        crstr := printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
+        dimstr := printExp2Str(dim, stringDelimiter, opcreffunc, opcallfunc);
+        str := stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
 
-    case (DAE.SIZE(exp = cr,sz = NONE()), _, _, _)
-      equation
-        crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
-        str = stringAppendList({"size(",crstr,")"});
+    case (DAE.SIZE(exp = cr,sz = NONE()), _, _)
+      algorithm
+        crstr := printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
+        str := stringAppendList({"size(",crstr,")"});
       then
         str;
 
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = riters), _, _, _)
-      equation
-        fs = AbsynUtil.pathStringNoQual(fcn);
-        expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
-        iterstr = stringDelimitList(List.map(riters, reductionIteratorStr),",");
-        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = riters), _, _)
+      algorithm
+        fs := AbsynUtil.pathStringNoQual(fcn);
+        expstr := printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
+        iterstr := stringDelimitList(List.map(riters, reductionIteratorStr),",");
+        str := stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
       then
         str;
 
     // MetaModelica tuple
-    case (DAE.META_TUPLE(es), _, _, _)
-      equation
-        s = "Tuple" + printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
+    case (DAE.META_TUPLE(es), _, _)
+      algorithm
+        s := "Tuple" + printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
       then
         s;
 
     // MetaModelica list
-    case (DAE.LIST(valList=es), _, _, _)
-      equation
-        s = stringDelimitList(List.map3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = stringAppendList({"List(", s, ")"});
+    case (DAE.LIST(valList=es), _, _)
+      algorithm
+        s := stringDelimitList(List.map3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
+        s := stringAppendList({"List(", s, ")"});
       then
         s;
 
     // MetaModelica list cons
-    case (DAE.CONS(car=e1,cdr=e2), _, _, _)
-      equation
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = stringAppendList({"listCons(", s1, ",", s2, ")"});
+    case (DAE.CONS(car=e1,cdr=e2), _, _)
+      algorithm
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s2 := printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
+        s_2 := stringAppendList({"listCons(", s1, ",", s2, ")"});
       then
         s_2;
 
     // MetaModelica Option
-    case (DAE.META_OPTION(NONE()), _, _, _) then "NONE()";
-    case (DAE.META_OPTION(SOME(e1)), _, _, _)
-      equation
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s_1 = stringAppendList({"SOME(",s1,")"});
+    case (DAE.META_OPTION(NONE()), _, _) then "NONE()";
+    case (DAE.META_OPTION(SOME(e1)), _, _)
+      algorithm
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s_1 := stringAppendList({"SOME(",s1,")"});
       then
         s_1;
 
-    case (DAE.BOX(e1), _, _, _)
-      equation
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s_1 = stringAppendList({"#(",s1,")"});
+    case (DAE.BOX(e1), _, _)
+      algorithm
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s_1 := stringAppendList({"#(",s1,")"});
       then
         s_1;
 
-    case (DAE.UNBOX(e1,_), _, _, _)
-      equation
-        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s_1 = stringAppendList({"unbox(",s1,")"});
+    case (DAE.UNBOX(e1,_), _, _)
+      algorithm
+        s1 := printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s_1 := stringAppendList({"unbox(",s1,")"});
       then
         s_1;
 
     // MetaModelica Uniontype Constructor
-    case (DAE.METARECORDCALL(path = fcn, args=args), _, _, _)
-      equation
-        fs = AbsynUtil.pathString(fcn);
-        argstr = stringDelimitList(
+    case (DAE.METARECORDCALL(path = fcn, args=args), _, _)
+      algorithm
+        fs := AbsynUtil.pathString(fcn);
+        argstr := stringDelimitList(
           List.map3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = stringAppendList({fs, "(", argstr, ")"});
+        s := stringAppendList({fs, "(", argstr, ")"});
       then
         s;
 
-    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _, _, _)
-      equation
-        s1 = printMatchType(matchTy);
-        s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
-        s3 = stringAppendList(List.map(cases,printCase2Str));
-        s = stringAppendList({s1,s2,"\n",s3,"  end ",s1});
+    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es,cases=cases), _, _)
+      algorithm
+        s1 := printMatchType(matchTy);
+        s2 := printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
+        s3 := stringAppendList(List.map(cases,printCase2Str));
+        s := stringAppendList({s1,s2,"\n",s3,"  end ",s1});
       then s;
 
-    case (DAE.SHARED_LITERAL(exp=e), _, _, _)
+    case (DAE.SHARED_LITERAL(exp=e), _, _)
       then printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
 
-    case (DAE.PATTERN(pattern=pat),_,_,_)
-      then Patternm.patternStr(pat);
+    case (DAE.PATTERN(pattern=pat), _, _)
+      then patternStr(pat);
 
-    case (DAE.CODE(code=code),_,_,_) then "$Code(" + Dump.printCodeStr(code) + ")";
+    case (DAE.CODE(code=code), _, _) then "$Code(" + Dump.printCodeStr(code) + ")";
 
     else printExpTypeStr(inExp);
 
@@ -814,7 +785,7 @@ protected function printExpTypeStr
   input DAE.Exp inExp;
   output String outString;
 algorithm
-  outString := match(inExp)
+  outString := match inExp
     case DAE.ICONST(_) then "ICONST";
     case DAE.RCONST(_) then "RCONST";
     case DAE.SCONST(_) then "SCONST";
@@ -862,13 +833,13 @@ algorithm
     local
       String id;
       DAE.Exp exp,gexp;
-    case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
-      equation
-        str = id + " in " + printExpStr(exp);
+    case DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE())
+      algorithm
+        str := id + " in " + ExpressionBasics.printExpStr(exp);
       then str;
-    case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp)))
-      equation
-        str = id + " guard " + printExpStr(gexp) + " in " + printExpStr(exp);
+    case DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp))
+      algorithm
+        str := id + " guard " + ExpressionBasics.printExpStr(gexp) + " in " + ExpressionBasics.printExpStr(exp);
       then str;
   end match;
 end reductionIteratorStr;
@@ -896,24 +867,24 @@ algorithm
       DAE.Exp result;
       String resultStr,patternsStr,bodyStr;
     case DAE.CASE(patterns=patterns, body={}, result=SOME(result))
-      equation
-        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr = printExpStr(result);
+      algorithm
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
+        resultStr := ExpressionBasics.printExpStr(result);
       then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body={}, result=NONE())
-      equation
-        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+      algorithm
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
       then stringAppendList({"    case ",patternsStr," then fail();\n"});
     case DAE.CASE(patterns=patterns, body=body, result=SOME(result))
-      equation
-        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr = printExpStr(result);
-        bodyStr = stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
+      algorithm
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
+        resultStr := ExpressionBasics.printExpStr(result);
+        bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body=body, result=NONE())
-      equation
-        patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        bodyStr = stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
+      algorithm
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
+        bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then fail();\n"});
   end match;
 end printCase2Str;
@@ -926,53 +897,53 @@ public function expPriority
   input DAE.Exp inExp;
   output Integer outInteger;
 algorithm
-  outInteger := match (inExp)
-    case (DAE.ICONST(_)) then 0;
-    case (DAE.RCONST(_)) then 0;
-    case (DAE.SCONST(_)) then 0;
-    case (DAE.BCONST(_)) then 0;
-    case (DAE.ENUM_LITERAL()) then 0;
-    case (DAE.CREF(_,_)) then 0;
-    case (DAE.ASUB(_,_)) then 0;
-    case (DAE.CAST(_,_)) then 0;
-    case (DAE.CALL()) then 0;
-    case (DAE.PARTEVALFUNCTION()) then 0;
-    case (DAE.ARRAY()) then 0;
-    case (DAE.MATRIX()) then 0;
-    case (DAE.BINARY(operator = DAE.POW(_))) then 3;
-    case (DAE.BINARY(operator = DAE.POW_ARR(_))) then 3;
-    case (DAE.BINARY(operator = DAE.POW_ARR2(_))) then 3;
-    case (DAE.BINARY(operator = DAE.POW_SCALAR_ARRAY(_))) then 3;
-    case (DAE.BINARY(operator = DAE.POW_ARRAY_SCALAR(_))) then 3;
-    case (DAE.BINARY(operator = DAE.DIV(_))) then 5;
-    case (DAE.BINARY(operator = DAE.DIV_ARR(_))) then 5;
-    case (DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(_))) then 5;
-    case (DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_))) then 5;
-    case (DAE.BINARY(operator = DAE.MUL(_))) then 7;
-    case (DAE.BINARY(operator = DAE.MUL_ARR(_))) then 7;
-    case (DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(_))) then 7;
-    case (DAE.BINARY(operator = DAE.MUL_SCALAR_PRODUCT(_))) then 7;
-    case (DAE.BINARY(operator = DAE.MUL_MATRIX_PRODUCT(_))) then 7;
-    case (DAE.UNARY(operator = DAE.UMINUS(_))) then 8;
-    case (DAE.UNARY(operator = DAE.UMINUS_ARR(_))) then 8;
-    case (DAE.BINARY(operator = DAE.ADD(_))) then 9;
-    case (DAE.BINARY(operator = DAE.ADD_ARR(_))) then 9;
-    case (DAE.BINARY(operator = DAE.ADD_ARRAY_SCALAR(_))) then 9;
-    case (DAE.BINARY(operator = DAE.SUB(_))) then 9;
-    case (DAE.BINARY(operator = DAE.SUB_ARR(_))) then 9;
-    case (DAE.BINARY(operator = DAE.SUB_SCALAR_ARRAY(_))) then 9;
-    case (DAE.RELATION(operator = DAE.LESS(_))) then 11;
-    case (DAE.RELATION(operator = DAE.LESSEQ(_))) then 11;
-    case (DAE.RELATION(operator = DAE.GREATER(_))) then 11;
-    case (DAE.RELATION(operator = DAE.GREATEREQ(_))) then 11;
-    case (DAE.RELATION(operator = DAE.EQUAL(_))) then 11;
-    case (DAE.RELATION(operator = DAE.NEQUAL(_))) then 11;
-    case (DAE.LUNARY(operator = DAE.NOT(_))) then 13;
-    case (DAE.LBINARY(operator = DAE.AND(_))) then 15;
-    case (DAE.LBINARY(operator = DAE.OR(_))) then 17;
-    case (DAE.RANGE()) then 19;
-    case (DAE.IFEXP()) then 21;
-    case (DAE.TUPLE(_)) then 23;  /* Not valid in inner expressions, only included here for completeness */
+  outInteger := match inExp
+    case DAE.ICONST(_) then 0;
+    case DAE.RCONST(_) then 0;
+    case DAE.SCONST(_) then 0;
+    case DAE.BCONST(_) then 0;
+    case DAE.ENUM_LITERAL() then 0;
+    case DAE.CREF(_,_) then 0;
+    case DAE.ASUB(_,_) then 0;
+    case DAE.CAST(_,_) then 0;
+    case DAE.CALL() then 0;
+    case DAE.PARTEVALFUNCTION() then 0;
+    case DAE.ARRAY() then 0;
+    case DAE.MATRIX() then 0;
+    case DAE.BINARY(operator = DAE.POW(_)) then 3;
+    case DAE.BINARY(operator = DAE.POW_ARR(_)) then 3;
+    case DAE.BINARY(operator = DAE.POW_ARR2(_)) then 3;
+    case DAE.BINARY(operator = DAE.POW_SCALAR_ARRAY(_)) then 3;
+    case DAE.BINARY(operator = DAE.POW_ARRAY_SCALAR(_)) then 3;
+    case DAE.BINARY(operator = DAE.DIV(_)) then 5;
+    case DAE.BINARY(operator = DAE.DIV_ARR(_)) then 5;
+    case DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(_)) then 5;
+    case DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_)) then 5;
+    case DAE.BINARY(operator = DAE.MUL(_)) then 7;
+    case DAE.BINARY(operator = DAE.MUL_ARR(_)) then 7;
+    case DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(_)) then 7;
+    case DAE.BINARY(operator = DAE.MUL_SCALAR_PRODUCT(_)) then 7;
+    case DAE.BINARY(operator = DAE.MUL_MATRIX_PRODUCT(_)) then 7;
+    case DAE.UNARY(operator = DAE.UMINUS(_)) then 8;
+    case DAE.UNARY(operator = DAE.UMINUS_ARR(_)) then 8;
+    case DAE.BINARY(operator = DAE.ADD(_)) then 9;
+    case DAE.BINARY(operator = DAE.ADD_ARR(_)) then 9;
+    case DAE.BINARY(operator = DAE.ADD_ARRAY_SCALAR(_)) then 9;
+    case DAE.BINARY(operator = DAE.SUB(_)) then 9;
+    case DAE.BINARY(operator = DAE.SUB_ARR(_)) then 9;
+    case DAE.BINARY(operator = DAE.SUB_SCALAR_ARRAY(_)) then 9;
+    case DAE.RELATION(operator = DAE.LESS(_)) then 11;
+    case DAE.RELATION(operator = DAE.LESSEQ(_)) then 11;
+    case DAE.RELATION(operator = DAE.GREATER(_)) then 11;
+    case DAE.RELATION(operator = DAE.GREATEREQ(_)) then 11;
+    case DAE.RELATION(operator = DAE.EQUAL(_)) then 11;
+    case DAE.RELATION(operator = DAE.NEQUAL(_)) then 11;
+    case DAE.LUNARY(operator = DAE.NOT(_)) then 13;
+    case DAE.LBINARY(operator = DAE.AND(_)) then 15;
+    case DAE.LBINARY(operator = DAE.OR(_)) then 17;
+    case DAE.RANGE() then 19;
+    case DAE.IFEXP() then 21;
+    case DAE.TUPLE(_) then 23;  /* Not valid in inner expressions, only included here for completeness */
     else 25;
   end match;
 end expPriority;
@@ -991,13 +962,13 @@ public function dumpExpGraphviz
   input DAE.Exp inExp;
   output Graphviz.Node outNode;
 algorithm
-  outNode := matchcontinue (inExp)
+  outNode := matchcontinue inExp
     local
-      String s,s_1,s_2,sym,fs,tystr,istr,id;
+      String s,sym,fs,tystr,istr;
       Integer i;
       DAE.ComponentRef c;
       Graphviz.Node lt,rt,ct,tt,ft,t1,t2,t3,crt,dimt,expt,itert;
-      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
+      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond;
       DAE.Operator op;
       list<Graphviz.Node> argnodes,nodes;
       Absyn.Path fcn;
@@ -1007,170 +978,171 @@ algorithm
       Boolean b;
       list<list<DAE.Exp>> lstes;
 
-    case (DAE.ICONST(integer = i))
-      equation
-        s = intString(i);
+    case DAE.ICONST(integer = i)
+      algorithm
+        s := intString(i);
       then
         Graphviz.LNODE("ICONST",{s},{},{});
 
-    case (DAE.RCONST(real = r))
-      equation
-        s = realString(r);
+    case DAE.RCONST(real = r)
+      algorithm
+        s := realString(r);
       then
         Graphviz.LNODE("RCONST",{s},{},{});
 
-    case (DAE.SCONST(string = s))
-      equation
-        s = System.escapedString(s,true);
-        s = stringAppendList({"\"", s, "\""});
+    case DAE.SCONST(string = s)
+      algorithm
+        s := System.escapedString(s,true);
+        s := stringAppendList({"\"", s, "\""});
       then
         Graphviz.LNODE("SCONST",{s},{},{});
 
-    case (DAE.BCONST(bool = b))
-      equation
-        s = boolString(b);
+    case DAE.BCONST(bool = b)
+      algorithm
+        s := boolString(b);
       then
         Graphviz.LNODE("BCONST",{s},{},{});
 
-    case (DAE.CREF(componentRef = c))
-      equation
-        s = ComponentReference.printComponentRefStr(c);
+    case DAE.CREF(componentRef = c)
+      algorithm
+        s := ComponentReferenceBasics.printComponentRefStr(c);
       then
         Graphviz.LNODE("CREF",{s},{},{});
 
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        sym = binopSymbol(op);
-        lt = dumpExpGraphviz(e1);
-        rt = dumpExpGraphviz(e2);
+    case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)
+      algorithm
+        sym := binopSymbol(op);
+        lt := dumpExpGraphviz(e1);
+        rt := dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("BINARY",{sym},{},{lt,rt});
 
-    case (DAE.UNARY(operator = op,exp = e))
-      equation
-        sym = unaryopSymbol(op);
-        ct = dumpExpGraphviz(e);
+    case DAE.UNARY(operator = op,exp = e)
+      algorithm
+        sym := unaryopSymbol(op);
+        ct := dumpExpGraphviz(e);
       then
         Graphviz.LNODE("UNARY",{sym},{},{ct});
 
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        sym = lbinopSymbol(op);
-        lt = dumpExpGraphviz(e1);
-        rt = dumpExpGraphviz(e2);
+    case DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)
+      algorithm
+        sym := lbinopSymbol(op);
+        lt := dumpExpGraphviz(e1);
+        rt := dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("LBINARY",{sym},{},{lt,rt});
 
-    case (DAE.LUNARY(operator = op,exp = e))
-      equation
-        sym = lunaryopSymbol(op);
-        ct = dumpExpGraphviz(e);
+    case DAE.LUNARY(operator = op,exp = e)
+      algorithm
+        sym := lunaryopSymbol(op);
+        ct := dumpExpGraphviz(e);
       then
         Graphviz.LNODE("LUNARY",{sym},{},{ct});
 
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        sym = relopSymbol(op);
-        lt = dumpExpGraphviz(e1);
-        rt = dumpExpGraphviz(e2);
+    case DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)
+      algorithm
+        sym := relopSymbol(op);
+        lt := dumpExpGraphviz(e1);
+        rt := dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("RELATION",{sym},{},{lt,rt});
 
-    case (DAE.IFEXP(expCond = cond,expThen = t,expElse = f))
-      equation
-        ct = dumpExpGraphviz(cond);
-        tt = dumpExpGraphviz(t);
-        ft = dumpExpGraphviz(f);
+    case DAE.IFEXP(expCond = cond,expThen = t,expElse = f)
+      algorithm
+        ct := dumpExpGraphviz(cond);
+        tt := dumpExpGraphviz(t);
+        ft := dumpExpGraphviz(f);
       then
         Graphviz.NODE("IFEXP",{},{ct,tt,ft});
 
-    case (DAE.CALL(path = fcn,expLst = args))
-      equation
-        fs = AbsynUtil.pathString(fcn);
-        argnodes = List.map(args, dumpExpGraphviz);
+    case DAE.CALL(path = fcn,expLst = args)
+      algorithm
+        fs := AbsynUtil.pathString(fcn);
+        argnodes := List.map(args, dumpExpGraphviz);
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
 
-    case(DAE.PARTEVALFUNCTION(expList = args))
-      equation
-        argnodes = List.map(args, dumpExpGraphviz);
+    case DAE.PARTEVALFUNCTION(expList = args)
+      algorithm
+        argnodes := List.map(args, dumpExpGraphviz);
       then
         Graphviz.NODE("PARTEVALFUNCTION",{},argnodes);
 
-    case (DAE.ARRAY(array = es))
-      equation
-        nodes = List.map(es, dumpExpGraphviz);
+    case DAE.ARRAY(array = es)
+      algorithm
+        nodes := List.map(es, dumpExpGraphviz);
       then
         Graphviz.NODE("ARRAY",{},nodes);
 
-    case (DAE.TUPLE(PR = es))
-      equation
-        nodes = List.map(es, dumpExpGraphviz);
+    case DAE.TUPLE(PR = es)
+      algorithm
+        nodes := List.map(es, dumpExpGraphviz);
       then
         Graphviz.NODE("TUPLE",{},nodes);
 
-    case (DAE.MATRIX(matrix = lstes))
-      equation
-        s = stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
-        s = stringAppendList({"{{", s, "}}"});
+    case DAE.MATRIX(matrix = lstes)
+      algorithm
+        s := stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
+        s := stringAppendList({"{{", s, "}}"});
       then
         Graphviz.LNODE("MATRIX",{s},{},{});
 
-    case (DAE.RANGE(start = start,step = NONE(),stop = stop))
-      equation
-        t1 = dumpExpGraphviz(start);
-        t2 = Graphviz.NODE(":",{},{});
-        t3 = dumpExpGraphviz(stop);
+    case DAE.RANGE(start = start,step = NONE(),stop = stop)
+      algorithm
+        t1 := dumpExpGraphviz(start);
+        t2 := Graphviz.NODE(":",{},{});
+        t3 := dumpExpGraphviz(stop);
       then
         Graphviz.NODE("RANGE",{},{t1,t2,t3});
 
-    case (DAE.RANGE(start = start,step = SOME(step),stop = stop))
-      equation
-        t1 = dumpExpGraphviz(start);
-        t2 = dumpExpGraphviz(step);
-        t3 = dumpExpGraphviz(stop);
+    case DAE.RANGE(start = start,step = SOME(step),stop = stop)
+      algorithm
+        t1 := dumpExpGraphviz(start);
+        t2 := dumpExpGraphviz(step);
+        t3 := dumpExpGraphviz(stop);
       then
         Graphviz.NODE("RANGE",{},{t1,t2,t3});
 
-    case (DAE.CAST(ty = ty,exp = e))
-      equation
-        tystr = Types.unparseType(ty);
-        ct = dumpExpGraphviz(e);
+    case DAE.CAST(ty = ty,exp = e)
+      algorithm
+        tystr := TypesDump.unparseType(ty);
+        ct := dumpExpGraphviz(e);
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
 
-    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})))
-      equation
-        ct = dumpExpGraphviz(e);
-        istr = intString(i);
-        s = stringAppendList({"[",istr,"]"});
+    case DAE.ASUB(exp = e,sub = (DAE.INDEX((DAE.ICONST(i)))::{}))
+      algorithm
+        ct := dumpExpGraphviz(e);
+        istr := intString(i);
+        s := stringAppendList({"[",istr,"]"});
       then
         Graphviz.LNODE("ASUB",{s},{},{ct});
 
-    case (DAE.SIZE(exp = cr,sz = SOME(dim)))
-      equation
-        crt = dumpExpGraphviz(cr);
-        dimt = dumpExpGraphviz(dim);
+    case DAE.SIZE(exp = cr,sz = SOME(dim))
+      algorithm
+        crt := dumpExpGraphviz(cr);
+        dimt := dumpExpGraphviz(dim);
       then
         Graphviz.NODE("SIZE",{},{crt,dimt});
 
-    case (DAE.SIZE(exp = cr,sz = NONE()))
-      equation
-        crt = dumpExpGraphviz(cr);
+    case DAE.SIZE(exp = cr,sz = NONE())
+      algorithm
+        crt := dumpExpGraphviz(cr);
       then
         Graphviz.NODE("SIZE",{},{crt});
 
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = {DAE.REDUCTIONITER(exp=iterexp)}))
-      equation
-        fs = AbsynUtil.pathString(fcn);
-        expt = dumpExpGraphviz(exp);
-        itert = dumpExpGraphviz(iterexp);
+    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = {DAE.REDUCTIONITER(exp=iterexp)})
+      algorithm
+        fs := AbsynUtil.pathString(fcn);
+        expt := dumpExpGraphviz(exp);
+        itert := dumpExpGraphviz(iterexp);
       then
         Graphviz.LNODE("REDUCTION",{fs},{},{expt,itert});
 
-    case (_) then Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",{},{});
+    case _ then Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",{},{});
   end matchcontinue;
 end dumpExpGraphviz;
+
 
 public function dumpExpStr
 "Dumps expression to a string."
@@ -1180,10 +1152,10 @@ public function dumpExpStr
 algorithm
   outString := matchcontinue (inExp,inInteger)
     local
-      String gen_str,res_str,s,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id,tpStr,str;
+      String gen_str,res_str,s,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,istr,crt,dimt,expt,itert,tpStr,str;
       Integer level,x,new_level1,new_level2,new_level3,i;
       DAE.ComponentRef c;
-      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
+      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond;
       DAE.Operator op;
       DAE.ClockKind clk;
       list<String> argnodes,nodes;
@@ -1195,324 +1167,324 @@ algorithm
       Boolean b;
 
     case (DAE.ICONST(integer = x),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = intString(x);
-        res_str = stringAppendList({gen_str,"ICONST ",s,"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := intString(x);
+        res_str := stringAppendList({gen_str,"ICONST ",s,"\n"});
       then
         res_str;
 
     case (DAE.RCONST(real = r),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = realString(r);
-        res_str = stringAppendList({gen_str,"RCONST ",s,"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := realString(r);
+        res_str := stringAppendList({gen_str,"RCONST ",s,"\n"});
       then
         res_str;
 
     case (DAE.SCONST(string = s),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = System.escapedString(s,true);
-        res_str = stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := System.escapedString(s,true);
+        res_str := stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
       then
         res_str;
 
     case (DAE.BCONST(bool = false),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        res_str = stringAppendList({gen_str,"BCONST ","false","\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        res_str := stringAppendList({gen_str,"BCONST ","false","\n"});
       then
         res_str;
 
     case (DAE.BCONST(bool = true),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        res_str = stringAppendList({gen_str,"BCONST ","true","\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        res_str := stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
 
     // BTH TODO
     case (DAE.CLKCONST(clk = clk),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = clockKindString(clk);
-        res_str = stringAppendList({gen_str,"CLKCONST ",s,"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := clockKindString(clk);
+        res_str := stringAppendList({gen_str,"CLKCONST ",s,"\n"});
       then
         res_str;
 
     case (DAE.ENUM_LITERAL(name = fcn, index = i), level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = AbsynUtil.pathString(fcn);
-        istr = intString(i);
-        res_str = stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", istr, "]", "\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := AbsynUtil.pathString(fcn);
+        istr := intString(i);
+        res_str := stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", istr, "]", "\n"});
       then
         res_str;
 
     case (DAE.CREF(componentRef = c,ty=ty),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
-        tpStr= Types.unparseType(ty);
-        res_str = stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := ComponentReferenceBasics.printComponentRefStr/*ComponentReference.debugPrintComponentRefTypeStr*/(c);
+        tpStr:= TypesDump.unparseType(ty);
+        res_str := stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
 
     case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        sym = debugBinopSymbol(op);
-        tp = Expression.typeof(exp);
-        str = Types.unparseType(tp);
-        lt = dumpExpStr(e1, new_level1);
-        rt = dumpExpStr(e2, new_level2);
-        res_str = stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        sym := debugBinopSymbol(op);
+        tp := Expression.typeof(exp);
+        str := TypesDump.unparseType(tp);
+        lt := dumpExpStr(e1, new_level1);
+        rt := dumpExpStr(e2, new_level2);
+        res_str := stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
       then
         res_str;
 
     case (DAE.UNARY(operator = op,exp = e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        sym = unaryopSymbol(op);
-        ct = dumpExpStr(e, new_level1);
-        str = "expType:"+Types.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
-        res_str = stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        sym := unaryopSymbol(op);
+        ct := dumpExpStr(e, new_level1);
+        str := "expType:"+TypesDump.unparseType(Expression.typeof(e))+" optype:"+TypesDump.unparseType(Expression.typeofOp(op));
+        res_str := stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
 
     case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        sym = lbinopSymbol(op);
-        lt = dumpExpStr(e1, new_level1);
-        rt = dumpExpStr(e2, new_level2);
-        res_str = stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        sym := lbinopSymbol(op);
+        lt := dumpExpStr(e1, new_level1);
+        rt := dumpExpStr(e2, new_level2);
+        res_str := stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
       then
         res_str;
 
     case (DAE.LUNARY(operator = op,exp = e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        sym = lunaryopSymbol(op);
-        ct = dumpExpStr(e, new_level1);
-        res_str = stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        sym := lunaryopSymbol(op);
+        ct := dumpExpStr(e, new_level1);
+        res_str := stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
       then
         res_str;
 
     case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        sym = relopSymbol(op);
-        lt = dumpExpStr(e1, new_level1);
-        rt = dumpExpStr(e2, new_level2);
-        res_str = stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        sym := relopSymbol(op);
+        lt := dumpExpStr(e1, new_level1);
+        rt := dumpExpStr(e2, new_level2);
+        res_str := stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
       then
         res_str;
 
     case (DAE.IFEXP(expCond = cond,expThen = t,expElse = f),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        new_level3 = level + 1;
-        ct = dumpExpStr(cond, new_level1);
-        tt = dumpExpStr(t, new_level2);
-        ft = dumpExpStr(f, new_level3);
-        res_str = stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        new_level3 := level + 1;
+        ct := dumpExpStr(cond, new_level1);
+        tt := dumpExpStr(t, new_level2);
+        ft := dumpExpStr(f, new_level3);
+        res_str := stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
       then
         res_str;
 
     case (DAE.CALL(path = fcn,expLst = args),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        fs = AbsynUtil.pathString(fcn);
-        new_level1 = level + 1;
-        argnodes = List.map1(args, dumpExpStr, new_level1);
-        argnodes_1 = stringAppendList(argnodes);
-        res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        fs := AbsynUtil.pathString(fcn);
+        new_level1 := level + 1;
+        argnodes := List.map1(args, dumpExpStr, new_level1);
+        argnodes_1 := stringAppendList(argnodes);
+        res_str := stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
 
     case (DAE.PARTEVALFUNCTION(path = fcn,expList = args),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        fs = AbsynUtil.pathString(fcn);
-        new_level1 = level + 1;
-        argnodes = List.map1(args, dumpExpStr, new_level1);
-        argnodes_1 = stringAppendList(argnodes);
-        res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        fs := AbsynUtil.pathString(fcn);
+        new_level1 := level + 1;
+        argnodes := List.map1(args, dumpExpStr, new_level1);
+        argnodes_1 := stringAppendList(argnodes);
+        res_str := stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
 
     case (DAE.ARRAY(array = es,scalar=b,ty=tp),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        nodes = List.map1(es, dumpExpStr, new_level1);
-        nodes_1 = stringAppendList(nodes);
-        s = boolString(b);
-        tpStr = Types.unparseType(tp);
-        res_str = stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        nodes := List.map1(es, dumpExpStr, new_level1);
+        nodes_1 := stringAppendList(nodes);
+        s := boolString(b);
+        tpStr := TypesDump.unparseType(tp);
+        res_str := stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
 
     case (DAE.TUPLE(PR = es),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        nodes = List.map1(es, dumpExpStr, new_level1);
-        nodes_1 = stringAppendList(nodes);
-        res_str = stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        nodes := List.map1(es, dumpExpStr, new_level1);
+        nodes_1 := stringAppendList(nodes);
+        res_str := stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
       then
         res_str;
 
     case (DAE.MATRIX(matrix = lstes),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        s = stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
-        res_str = stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        s := stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
+        res_str := stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
       then
         res_str;
 
     case (DAE.RANGE(start = start,step = NONE(),stop = stop),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        t1 = dumpExpStr(start, new_level1);
-        t2 = ":";
-        t3 = dumpExpStr(stop, new_level2);
-        res_str = stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        t1 := dumpExpStr(start, new_level1);
+        t2 := ":";
+        t3 := dumpExpStr(stop, new_level2);
+        res_str := stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
 
     case (DAE.RANGE(start = start,step = SOME(step),stop = stop),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        new_level3 = level + 1;
-        t1 = dumpExpStr(start, new_level1);
-        t2 = dumpExpStr(step, new_level2);
-        t3 = dumpExpStr(stop, new_level3);
-        res_str = stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        new_level3 := level + 1;
+        t1 := dumpExpStr(start, new_level1);
+        t2 := dumpExpStr(step, new_level2);
+        t3 := dumpExpStr(stop, new_level3);
+        res_str := stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
 
     case (DAE.CAST(exp = e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        res_str = stringAppendList({gen_str,"CAST ","\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        res_str := stringAppendList({gen_str,"CAST ","\n",ct,""});
       then
         res_str;
 
-    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        istr = intString(i);
-        s = stringAppendList({"[",istr,"]"});
-        res_str = stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
+    case (DAE.ASUB(exp = e,sub = ((DAE.INDEX(DAE.ICONST(i)))::{})),level)
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        istr := intString(i);
+        s := stringAppendList({"[",istr,"]"});
+        res_str := stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
       then
         res_str;
 
     case (DAE.ASUB(exp = e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        res_str = stringAppendList({gen_str,"ASUB ","\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        res_str := stringAppendList({gen_str,"ASUB ","\n",ct,""});
       then
         res_str;
 
     case (DAE.SIZE(exp = cr,sz = SOME(dim)),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        crt = dumpExpStr(cr, new_level1);
-        dimt = dumpExpStr(dim, new_level2);
-        res_str = stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        crt := dumpExpStr(cr, new_level1);
+        dimt := dumpExpStr(dim, new_level2);
+        res_str := stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
       then
         res_str;
 
     case (DAE.SIZE(exp = cr,sz = NONE()),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        crt = dumpExpStr(cr, new_level1);
-        res_str = stringAppendList({gen_str,"SIZE ","\n",crt,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        crt := dumpExpStr(cr, new_level1);
+        res_str := stringAppendList({gen_str,"SIZE ","\n",crt,""});
       then
         res_str;
 
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        new_level2 = level + 1;
-        expt = dumpExpStr(exp, new_level1);
-        itert = dumpExpStr(iterexp, new_level2);
-        res_str = stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        new_level2 := level + 1;
+        expt := dumpExpStr(exp, new_level1);
+        itert := dumpExpStr(iterexp, new_level2);
+        res_str := stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
       then
         res_str;
 
     case (DAE.RECORD(path=fcn, exps=args),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        fs = AbsynUtil.pathString(fcn);
-        new_level1 = level + 1;
-        argnodes = List.map1(args, dumpExpStr, new_level1);
-        argnodes_1 = stringAppendList(argnodes);
-        res_str = stringAppendList({gen_str,"RECORD ",fs,"\n",argnodes_1,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        fs := AbsynUtil.pathString(fcn);
+        new_level1 := level + 1;
+        argnodes := List.map1(args, dumpExpStr, new_level1);
+        argnodes_1 := stringAppendList(argnodes);
+        res_str := stringAppendList({gen_str,"RECORD ",fs,"\n",argnodes_1,""});
       then
         res_str;
 
     case (DAE.RSUB(exp=e, ix=i, fieldName=fs, ty=tp),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        istr = intString(i);
-        s = stringAppendList({"[",istr,"]"});
-        tpStr = Types.unparseType(tp);
-        res_str = stringAppendList({gen_str,"RSUB ",s," fieldName: ",fs," tp: ",tpStr,"\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        istr := intString(i);
+        s := stringAppendList({"[",istr,"]"});
+        tpStr := TypesDump.unparseType(tp);
+        res_str := stringAppendList({gen_str,"RSUB ",s," fieldName: ",fs," tp: ",tpStr,"\n",ct,""});
       then
         res_str;
 
     case (DAE.BOX(exp=e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        res_str = stringAppendList({gen_str,"BOX ","\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        res_str := stringAppendList({gen_str,"BOX ","\n",ct,""});
       then
         res_str;
 
      case (DAE.UNBOX(exp=e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        ct = dumpExpStr(e, new_level1);
-        res_str = stringAppendList({gen_str,"UNBOX ","\n",ct,""});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        new_level1 := level + 1;
+        ct := dumpExpStr(e, new_level1);
+        res_str := stringAppendList({gen_str,"UNBOX ","\n",ct,""});
       then
         res_str;
 
     case (_,level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        res_str = stringAppendList({gen_str," UNKNOWN EXPRESSION (" + printExpTypeStr(inExp) + ")","\n"});
+      algorithm
+        gen_str := genStringNTime("   |", level);
+        res_str := stringAppendList({gen_str," UNKNOWN EXPRESSION (" + printExpTypeStr(inExp) + ")","\n"});
       then
         res_str;
   end matchcontinue;
@@ -1525,7 +1497,7 @@ protected function genStringNTime
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := matchcontinue (inString,inInteger)
+  outString := match (inString,inInteger)
     local
       String str,new_str,res_str;
       Integer new_level,level;
@@ -1533,48 +1505,57 @@ algorithm
     case (_,0) then "";  /* n */
 
     case (str,level)
-      equation
-        new_level = level + (-1);
-        new_str = genStringNTime(str, new_level);
-        res_str = stringAppend(str, new_str);
+      algorithm
+        new_level := level + (-1);
+        new_str := genStringNTime(str, new_level);
+        res_str := stringAppend(str, new_str);
       then
         res_str;
-  end matchcontinue;
+  end match;
 end genStringNTime;
+
+public function dumpExp
+  input DAE.Exp exp;
+  protected String str;
+algorithm
+  str := dumpExpStr(exp,0);
+  print(str);
+  print("--------------------\n");
+end dumpExp;
 
 protected function printExpIfDiff ""
   input DAE.Exp e1,e2;
   output String s;
 algorithm
-  s := if Expression.expEqual(e1,e2)
+  s := if ExpressionBasics.expEqual(e1,e2)
        then ""
-       else printExpStr(e1) + " =!= " + printExpStr(e2) + "\n";
+       else ExpressionBasics.printExpStr(e1) + " =!= " + ExpressionBasics.printExpStr(e2) + "\n";
 end printExpIfDiff;
 
 public function printArraySizes "Function: printArraySizes"
   input list<Option <Integer>> inLst;
   output String out;
 algorithm
-  out := matchcontinue(inLst)
+  out := match inLst
     local
       Integer x;
       list<Option<Integer>> lst;
       String s,s2;
 
-    case({}) then "";
+    case {} then "";
 
-    case(SOME(x) :: lst)
-      equation
-        s = printArraySizes(lst);
-        s2 = intString(x);
-        s = stringAppendList({s2, s});
+    case SOME(x) :: lst
+      algorithm
+        s := printArraySizes(lst);
+        s2 := intString(x);
+        s := stringAppendList({s2, s});
       then s;
 
-    case(_ :: lst)
-      equation
-        s = printArraySizes(lst);
+    case _ :: lst
+      algorithm
+        s := printArraySizes(lst);
       then s;
-  end matchcontinue;
+  end match;
 end printArraySizes;
 
 public function typeOfString
@@ -1585,7 +1566,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inExp);
-  str := Types.unparseType(ty);
+  str := TypesDump.unparseType(ty);
 end typeOfString;
 
 public function debugPrintComponentRefExp "
@@ -1595,71 +1576,27 @@ NOTE Only used for debugging.
 "
   input DAE.Exp inExp;
   output String str;
-algorithm str := matchcontinue(inExp)
+algorithm str := matchcontinue inExp
   local
     DAE.ComponentRef cr;
     String s1;
     list<DAE.Exp> expl;
-  case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
-  case(DAE.ARRAY(_,_,expl))
-    equation
-      s1 = "{" + stringAppendList(List.map(expl,debugPrintComponentRefExp)) + "}";
+  case DAE.CREF(cr,_) then ComponentReference.debugPrintComponentRefTypeStr(cr);
+  case DAE.ARRAY(_,_,expl)
+    algorithm
+      s1 := "{" + stringAppendList(List.map(expl,debugPrintComponentRefExp)) + "}";
     then
       s1;
-  else printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
+  else ExpressionBasics.printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
 end matchcontinue;
 end debugPrintComponentRefExp;
-
-public function dimensionString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimension dim;
-  output String str;
-algorithm
-  str := match(dim)
-    local
-      String s;
-      Integer x;
-      Absyn.Path p;
-      DAE.Exp e;
-      Integer size;
-    case DAE.DIM_UNKNOWN() then ":";
-
-    case DAE.DIM_ENUM(enumTypeName = p)
-      equation
-        s = AbsynUtil.pathString(p);
-      then
-        s;
-
-    case DAE.DIM_BOOLEAN() then "Boolean";
-
-    case DAE.DIM_INTEGER(integer = x)
-      equation
-        s = intString(x);
-      then
-        s;
-
-    case DAE.DIM_EXP(exp = e)
-      equation
-        s = printExpStr(e);
-      then
-        s;
-  end match;
-end dimensionString;
-
-public function dimensionsString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimensions dims;
-  output String str;
-algorithm
-  str := stringDelimitList(List.map(dims,dimensionString),",");
-end dimensionsString;
 
 public function dimensionIntString
   "Returns a integer string representation of an array dimension."
   input DAE.Dimension dim;
   output String str;
 algorithm
-  str := match(dim)
+  str := match dim
     local
       String s;
       Integer x, size;
@@ -1671,8 +1608,8 @@ algorithm
     case DAE.DIM_INTEGER(integer = x)
       then intString(x);
     case DAE.DIM_EXP(exp = e)
-      equation
-        s = printExpStr(e);
+      algorithm
+        s := ExpressionBasics.printExpStr(e);
       then s;
   end match;
 end dimensionIntString;
@@ -1688,38 +1625,29 @@ algorithm
   print("\n");
 end dumpExpWithTitle;
 
-public function dumpExp
-  input DAE.Exp exp;
-  protected String str;
-algorithm
-  str := dumpExpStr(exp,0);
-  print(str);
-  print("--------------------\n");
-end dumpExp;
-
 public function printSubscript
 "Print a Subscript."
   input DAE.Subscript inSubscript;
 algorithm
-  _ := match (inSubscript)
+  () := match inSubscript
     local DAE.Exp e1;
-    case (DAE.WHOLEDIM())
-      equation
+    case DAE.WHOLEDIM()
+      algorithm
         Print.printBuf(":");
       then
         ();
-    case (DAE.INDEX(exp = e1))
-      equation
+    case DAE.INDEX(exp = e1)
+      algorithm
         printExp(e1);
       then
         ();
-    case (DAE.SLICE(exp = e1))
-      equation
+    case DAE.SLICE(exp = e1)
+      algorithm
         printExp(e1);
       then
         ();
-    case (DAE.WHOLE_NONEXP(exp = e1))
-      equation
+    case DAE.WHOLE_NONEXP(exp = e1)
+      algorithm
         Print.printBuf("1:");
         printExp(e1);
       then
@@ -1750,16 +1678,16 @@ algorithm
 
     // expr, prio. parent expr, prio. expr
     case (str,pparent,pexpr,_)
-      equation
-        (pparent > pexpr) = true;
-        str_1 = stringAppendList({"(",str,")"});
+      algorithm
+        true := (pparent > pexpr);
+        str_1 := stringAppendList({"(",str,")"});
       then str_1;
 
     // If priorites are equal and str is from right hand side, parenthesize to make left associative
     case (str,pparent,pexpr,true)
-      equation
-        (pparent == pexpr) = true;
-        str_1 = stringAppendList({"(",str,")"});
+      algorithm
+        true := (pparent == pexpr);
+        str_1 := stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_,_) then str;
@@ -1804,7 +1732,7 @@ protected
   Boolean localCon;
 algorithm
   DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) := con;
-  str := printExpStr(c);
+  str := ExpressionBasics.printExpStr(c);
   str := if localCon then str + " (local)" else str + " (global)";
 end constraintDTtoString;
 
@@ -1816,8 +1744,6 @@ Converts list of DAE.CONSTRAINT_DT to string."
   input String delim;
   output String str="";
 protected
-  DAE.Exp c;
-  Boolean localCon;
   DAE.Constraint con;
 algorithm
   for con in cons loop
@@ -1825,5 +1751,62 @@ algorithm
   end for;
 end constraintDTlistToString;
 
-annotation(__OpenModelica_Interface="frontend");
+public function patternStr "Pattern to String unparsing"
+  input DAE.Pattern pattern;
+  output String str;
+algorithm
+  str := match pattern
+    local
+      list<DAE.Pattern> pats;
+      list<String> fields,patsStr;
+      DAE.Exp exp;
+      DAE.Pattern pat,head,tail;
+      String id;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
+      Absyn.Path name;
+    case DAE.PAT_WILD() then "_";
+    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
+    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
+    case DAE.PAT_SOME(pat)
+      algorithm
+        str := patternStr(pat);
+      then "SOME(" + str + ")";
+    case DAE.PAT_META_TUPLE(pats)
+      algorithm
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then "(" + str + ")";
+
+    case DAE.PAT_CALL_TUPLE(pats)
+      algorithm
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then "(" + str + ")";
+
+    case DAE.PAT_CALL(name=name, patterns=pats)
+      algorithm
+        id := AbsynUtil.pathString(name);
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then stringAppendList({id,"(",str,")"});
+
+    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
+      algorithm
+        id := AbsynUtil.pathString(name);
+        fields := List.map(namedpats, Util.tuple32);
+        patsStr := List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
+        str := stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
+      then stringAppendList({id,"(",str,")"});
+
+    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
+
+    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
+    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
+    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
+    else
+      algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {"ExpressionDump.patternStr not implemented correctly"});
+      then "*PATTERN*";
+  end match;
+end patternStr;
+
+annotation(__OpenModelica_Interface="frontend_base");
 end ExpressionDump;

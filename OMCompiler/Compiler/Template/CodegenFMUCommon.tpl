@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines templates for transforming Modelica/MetaModelica code to FMU
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -49,8 +84,6 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenUtilSimulation.*;
-import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
-import CodegenCFunctions.*;
 
 template ModelExchange(SimCode simCode, list<String> sourceFiles)
  "Generates ModelExchange code for ModelDescription file for FMU target."
@@ -65,8 +98,8 @@ case SIMCODE(__) then
     completedIntegratorStepNotNeeded="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    canGetAndSetFMUstate="true"
+    canSerializeFMUstate="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>
@@ -485,7 +518,7 @@ match simVar
   let defaultValueReference = '<%System.tmpTick()%>'
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
+  let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariabilityFMI2(variability, type_)
   let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableFMIIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
@@ -513,6 +546,27 @@ match variability
   case SOME(TUNABLE(__)) then "tunable"
   else ""
 end getVariability2;
+
+template getVariabilityFMI2(Option<Variability> variability, DAE.Type type_)
+ "Returns the variability Attribute of an FMI 2.0 ScalarVariable.
+
+  FMI 2.0 allows variability='continuous' only for Real (FMI 2.0 specification,
+  section 2.2.7), and the attribute defaults to 'continuous' when it is left out.
+  A non-Real variable that is continuous in Modelica, or that carries no
+  variability of its own, therefore has to be written out as discrete -- leaving
+  it to the default would produce an invalid modelDescription.xml.
+
+  FMI 3.0 does not need this: there the default is 'discrete' for every type
+  other than Float32/Float64, so getVariability2 is used as is."
+::=
+match type_
+  case T_REAL(__) then getVariability2(variability)
+  else
+    match variability
+      case SOME(CONTINUOUS(__)) then "discrete"
+      case NONE() then "discrete"
+      else getVariability2(variability)
+end getVariabilityFMI2;
 
 template getCausality2(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
@@ -736,14 +790,14 @@ template baseUnitAttributes(BaseUnit baseUnit)
  "Generates code for BaseUnit for FMU target."
 ::=
 match baseUnit
-case (BASEUNIT(mol=mol, cd=cd, m=m, s=s, A=A, K=K, kg=kg, factor=factor, offset=offset)) then
-  let mol_Value = if not intEq(mol, 0) then 'mol="<% mol %>" ' else ""
-  let cd_Value = if not intEq(cd, 0) then 'cd="<% cd %>" ' else ""
-  let m_Value = if not intEq(m, 0) then 'm="<% m %>" ' else ""
+case (BASEUNIT(__)) then
   let s_Value = if not intEq(s, 0) then 's="<% s %>" ' else ""
+  let m_Value = if not intEq(m, 0) then 'm="<% m %>" ' else ""
+  let kg_Value = if not intEq(kg, 0) then 'kg="<% kg %>" ' else ""
   let A_Value = if not intEq(A, 0) then 'A="<% A %>" ' else ""
   let K_Value = if not intEq(K, 0) then 'K="<% K %>" ' else ""
-  let kg_Value = if not intEq(kg, 0) then 'kg="<% kg %>" ' else ""
+  let mol_Value = if not intEq(mol, 0) then 'mol="<% mol %>" ' else ""
+  let cd_Value = if not intEq(cd, 0) then 'cd="<% cd %>" ' else ""
   let factor_Value = if not realAlmostEq(factor, 1.0, 1e-6) then 'factor="<% factor %>" ' else ""
   let offset_Value = if not realAlmostEq(offset, 0.0, 1e-6) then 'offset="<% offset %>" ' else ""
   <<
@@ -834,7 +888,24 @@ match simulationSettings
     >>
 end DefaultExperimentAttribute;
 
-annotation(__OpenModelica_Interface="backend");
+template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
+  "Generates <fmiPrefix>_flags.json file for FMUs with custom simulation flags.
+   Lives in the codegen_fmu tier: the wasm export ships the same file and reads
+   its solver back out of it, so it must not depend on the C target."
+ ::=
+  match fmiSimulationFlags
+  case flags as FMI_SIMULATION_FLAGS(__) then
+  let fileContent = (flags.nameValueTuples |> (name, value) =>
+      '"<%name%>" : "<%value%>"'
+      ;separator=",\n")
+    <<
+    {
+      <%fileContent%>
+    }
+    >>
+end fmuSimulationFlagsFile;
+
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;
 
 // vim: filetype=susan sw=2 sts=2

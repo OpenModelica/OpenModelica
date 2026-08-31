@@ -1,7 +1,6 @@
 // name: Bug2432.mos
 // keywords: mixed system
 // status: correct
-// cflags: -d=-newInst
 //
 // test for #2432
 //

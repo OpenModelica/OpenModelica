@@ -1,0 +1,29 @@
+// name:     BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2
+// keywords: vectorized components, array equations, for loops
+// status: correct
+
+
+loadFile("BenchmarksForResizeableArrays.mo"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2); getErrorString();
+
+diffSimulationResults("BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2_res.mat", "ReferenceFiles/BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2_res.mat", "BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.csv", 1e-8);
+// Result:
+// true
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from BenchmarksForResizeableArrays.
+// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

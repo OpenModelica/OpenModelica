@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -37,6 +41,7 @@ encapsulated uniontype NFEquation
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
   import ErrorTypes;
+  import BaseModelica;
 
 protected
   import ElementSource;
@@ -117,40 +122,56 @@ public
 
     function toStream
       input Branch branch;
+      input String header;
+      input Boolean potentialElse;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toString(branch.condition));
-            s := IOStream.append(s, " then\n");
+            if potentialElse and Expression.isTrue(branch.condition) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, header);
+              s := IOStream.append(s, Expression.toString(branch.condition));
+              s := IOStream.append(s, " then\n");
+            end if;
+
             s := toStreamList(branch.body, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toStream(branch.branch, indent, s);
+          then toStream(branch.branch, header, potentialElse, indent, s);
       end match;
     end toStream;
 
     function toFlatStream
       input Branch branch;
+      input String header;
       input BaseModelica.OutputFormat format;
+      input Boolean potentialElse;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
-            s := IOStream.append(s, " then\n");
+            if potentialElse and Expression.isTrue(branch.condition) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, header);
+              s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
+              s := IOStream.append(s, " then\n");
+            end if;
+
             s := toFlatStreamList(branch.body, format, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toFlatStream(branch.branch, format, indent, s);
+          then toFlatStream(branch.branch, header, format, potentialElse, indent, s);
       end match;
     end toFlatStream;
 
@@ -162,7 +183,7 @@ public
       IOStream.IOStream s;
     algorithm
       s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-      s := toStream(branch, indent, s);
+      s := toStream(branch, "", false, indent, s);
       str := IOStream.string(s);
       IOStream.delete(s);
     end toString;
@@ -182,21 +203,20 @@ public
     end triggerErrors;
   end Branch;
 
+  type ScalarizeMode = enumeration(
+    DONT_SCALARIZE,
+    SCALARIZE,
+    NO_PREFERENCE
+  );
+
   record EQUALITY
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
     Type ty;
     InstNode scope;
     DAE.ElementSource source;
+    ScalarizeMode scalarizeMode;
   end EQUALITY;
-
-  record ARRAY_EQUALITY
-    Expression lhs;
-    Expression rhs;
-    Type ty;
-    InstNode scope;
-    DAE.ElementSource source;
-  end ARRAY_EQUALITY;
 
   record CONNECT
     Expression lhs;
@@ -256,11 +276,12 @@ public
     input Expression lhs;
     input Expression rhs;
     input Type ty;
-    input InstNode scope;
-    input DAE.ElementSource src;
+    input DAE.ElementSource src = DAE.emptyElementSource;
+    input InstNode scope = InstNode.EMPTY_NODE();
+    input ScalarizeMode scalarizeMode = ScalarizeMode.NO_PREFERENCE;
     output Equation eq;
   algorithm
-    eq := EQUALITY(lhs, rhs, ty, scope, src);
+    eq := EQUALITY(lhs, rhs, ty, scope, src, scalarizeMode);
     annotation(__OpenModelica_EarlyInline=true);
   end makeEquality;
 
@@ -275,7 +296,7 @@ public
   algorithm
     e1 := Expression.fromCref(lhsCref);
     e2 := Expression.fromCref(rhsCref);
-    eq := makeEquality(e1, e2, Expression.typeOf(e1), scope, src);
+    eq := makeEquality(e1, e2, Expression.typeOf(e1), src, scope);
   end makeCrefEquality;
 
   function makeBranch
@@ -304,7 +325,6 @@ public
   algorithm
     source := match eq
       case EQUALITY() then eq.source;
-      case ARRAY_EQUALITY() then eq.source;
       case CONNECT() then eq.source;
       case FOR() then eq.source;
       case IF() then eq.source;
@@ -322,7 +342,6 @@ public
   algorithm
     () := match eq
       case EQUALITY()       algorithm eq.source := source; then ();
-      case ARRAY_EQUALITY() algorithm eq.source := source; then ();
       case CONNECT()        algorithm eq.source := source; then ();
       case FOR()            algorithm eq.source := source; then ();
       case IF()             algorithm eq.source := source; then ();
@@ -340,7 +359,6 @@ public
   algorithm
     scope := match eq
       case EQUALITY() then eq.scope;
-      case ARRAY_EQUALITY() then eq.scope;
       case CONNECT() then eq.scope;
       case FOR() then eq.scope;
       case IF() then eq.scope;
@@ -503,13 +521,6 @@ public
         then
           ();
 
-      case Equation.ARRAY_EQUALITY()
-        algorithm
-          func(eq.lhs);
-          func(eq.rhs);
-        then
-          ();
-
       case Equation.CONNECT()
         algorithm
           func(eq.lhs);
@@ -602,13 +613,6 @@ public
   algorithm
     () := match eq
       case Equation.EQUALITY()
-        algorithm
-          func(eq.lhs);
-          func(eq.rhs);
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY()
         algorithm
           func(eq.lhs);
           func(eq.rhs);
@@ -711,7 +715,6 @@ public
     eq := match eq
       local
         Expression e1, e2, e3;
-        ComponentRef cr1, cr2;
 
       case EQUALITY()
         algorithm
@@ -719,22 +722,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      case ARRAY_EQUALITY()
-        algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
-        then
-          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      //case CREF_EQUALITY()
-      //  algorithm
-      //    Expression.CREF(cref = cr1) := func(Expression.fromCref(eq.lhs));
-      //    Expression.CREF(cref = cr2) := func(Expression.fromCref(eq.rhs));
-      //  then
-      //    Equation.CREF_EQUALITY(cr1, cr2, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
 
       case CONNECT()
         algorithm
@@ -810,15 +798,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      case ARRAY_EQUALITY()
-        algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
-        then
-          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
 
       case CONNECT()
         algorithm
@@ -906,13 +886,6 @@ public
   algorithm
     () := match eq
       case Equation.EQUALITY()
-        algorithm
-          arg := func(eq.lhs, arg);
-          arg := func(eq.rhs, arg);
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY()
         algorithm
           arg := func(eq.lhs, arg);
           arg := func(eq.rhs, arg);
@@ -1093,7 +1066,6 @@ public
   algorithm
     res := match eq
       case Equation.EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
-      case Equation.ARRAY_EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
       case Equation.CONNECT() then fn(eq.lhs) or fn(eq.rhs);
 
       case Equation.FOR()
@@ -1193,6 +1165,16 @@ public
       function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
   end replaceIteratorList;
 
+  function isArrayEquality
+    input Equation eq;
+    output Boolean isArray;
+  algorithm
+    isArray := match eq
+      case EQUALITY() then Type.isArray(eq.ty);
+      else false;
+    end match;
+  end isArrayEquality;
+
   function isConnect
     "Checks if an equation is a connect equation."
     input Equation eq;
@@ -1234,7 +1216,6 @@ public
   algorithm
     size := matchcontinue eq
       case EQUALITY() then Type.sizeOf(eq.ty);
-      case ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
       case CONNECT() then Type.sizeOf(Expression.typeOf(eq.lhs));
       case FOR()
         algorithm
@@ -1278,19 +1259,14 @@ public
     input Equation eq;
     input String indent;
     input output IOStream.IOStream s;
+  protected
+    list<Branch> branches;
+    Branch branch;
   algorithm
     s := IOStream.append(s, indent);
 
     s := match eq
       case EQUALITY()
-        algorithm
-          s := IOStream.append(s, Expression.toString(eq.lhs));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toString(eq.rhs));
-        then
-          s;
-
-      case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toString(eq.lhs));
           s := IOStream.append(s, " = ");
@@ -1327,14 +1303,14 @@ public
 
       case IF()
         algorithm
-          s := IOStream.append(s, "if ");
-          s := Branch.toStream(listHead(eq.branches), indent, s);
+          branch :: branches := eq.branches;
+          s := Branch.toStream(listHead(eq.branches), "if ", false, indent, s);
 
-          for b in listRest(eq.branches) loop
+          while not listEmpty(branches) loop
+            branch :: branches := branches;
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elseif ");
-            s := Branch.toStream(b, indent, s);
-          end for;
+            s := Branch.toStream(branch, "elseif ", listEmpty(branches), indent, s);
+          end while;
 
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end if");
@@ -1343,13 +1319,11 @@ public
 
       case WHEN()
         algorithm
-          s := IOStream.append(s, "when ");
-          s := Branch.toStream(listHead(eq.branches), indent, s);
+          s := Branch.toStream(listHead(eq.branches), "when ", false, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elsewhen ");
-            s := Branch.toStream(b, indent, s);
+            s := Branch.toStream(b, "elsewhen ", false, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1425,19 +1399,14 @@ public
     input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
+  protected
+    list<Branch> branches;
+    Branch branch;
   algorithm
     s := IOStream.append(s, indent);
 
     s := match eq
       case EQUALITY()
-        algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
-        then
-          s;
-
-      case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
@@ -1474,14 +1443,14 @@ public
 
       case IF()
         algorithm
-          s := IOStream.append(s, "if ");
-          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
+          branch :: branches := eq.branches;
+          s := Branch.toFlatStream(branch, "if ", format, false, indent, s);
 
-          for b in listRest(eq.branches) loop
+          while not listEmpty(branches) loop
+            branch :: branches := branches;
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elseif ");
-            s := Branch.toFlatStream(b, format, indent, s);
-          end for;
+            s := Branch.toFlatStream(branch, "elseif ", format, listEmpty(branches), indent, s);
+          end while;
 
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end if");
@@ -1490,13 +1459,11 @@ public
 
       case WHEN()
         algorithm
-          s := IOStream.append(s, "when ");
-          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), "when ", format, false, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elsewhen ");
-            s := Branch.toFlatStream(b, format, indent, s);
+            s := Branch.toFlatStream(b, "elsewhen ", format, false, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1611,14 +1578,10 @@ public
           for i in 1:Type.recordFieldCount(Type.arrayElementType(eq.ty)) loop
             lhs := Expression.nthRecordElement(i, eq.lhs);
             rhs := Expression.nthRecordElement(i, eq.rhs);
-            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source) :: equations;
+            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source, eq.scalarizeMode) :: equations;
           end for;
         then
           equations;
-
-      case ARRAY_EQUALITY()
-        guard Type.isRecord(Type.arrayElementType(eq.ty))
-        then splitRecordEquation(EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations);
 
       case FOR()
         algorithm
@@ -1656,5 +1619,5 @@ public
     end match;
   end splitRecordEquationBranch;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFEquation;

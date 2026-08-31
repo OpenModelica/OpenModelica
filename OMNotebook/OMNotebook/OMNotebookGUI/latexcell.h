@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 #ifndef LatexCell_H_
@@ -53,21 +56,29 @@ namespace IAEX
 
   public:
     LatexCell(Document *doc, QWidget *parent=0);
-    virtual ~LatexCell();
-    QString text();
-    QString textHtml();
+    virtual ~LatexCell() {};
+    QString text() override;
+    QString textHtml() override;
+    QTextDocument* document() override;
     virtual QString textOutput();
     virtual QString textOutputHtml();
-    virtual QTextCursor textCursor();
-    virtual QTextEdit* textEdit();
+    virtual QTextCursor textCursor() override;
+    virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    virtual void viewExpression(const bool){}
+    void viewExpression(bool) override;
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
+    bool findText(const QString &exp, QTextDocument::FindFlags options) override;
 
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
-    virtual void accept(Visitor &v);
-    virtual bool isClosed();
-    virtual bool isEditable();
+    void clearSelection() override;
+    void moveCursor(QTextCursor::MoveOperation operation) override;
+
+    virtual void addCellWidgets() override;
+    virtual void removeCellWidgets() override;
+    virtual void accept(Visitor &v) override;
+    virtual bool isClosed() const override;
+    virtual bool isEditable() const override;
     virtual bool isEvaluated();
 
   signals:
@@ -84,26 +95,26 @@ namespace IAEX
     void clickEvent();
     void clickEventOutput();
     void contentChanged();
-    void setText(QString text);
-    void setTextHtml(QString html);
+    void setText(QString text) override;
+    void setTextHtml(QString html) override;
     virtual void setTextOutput(QString output);
     virtual void setTextOutputHtml(QString html);
-    void setStyle(const QString &stylename);
-    void setStyle(CellStyle style);
+    void setStyle(const QString &stylename) override;
+    void setStyle(CellStyle style) override;
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly);
-    void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true);
-    virtual void setFocus(const bool focus);
-    virtual void setFocusOutput(const bool focus);
+    void setReadOnly(bool readonly) override;
+    void setEvaluated(bool evaluated);
+    void setClosed(bool closed, bool update = true) override;
+    virtual void setFocus(bool focus) override;
+    virtual void setFocusOutput(bool focus);
     void setExpr(QString);
     void setState(int state);
 
   protected:
-    void resizeEvent(QResizeEvent *event);
-    void mouseDoubleClickEvent(QMouseEvent *);
+    void resizeEvent(QResizeEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *) override;
     void clear();
 
   private slots:
@@ -124,18 +135,11 @@ namespace IAEX
   public:
     MyTextEdit3* input_;
     MyTextEdit3* output_;
-    //QTextBrowser *output_;
+
   private:
     QTextBrowser *chaptercounter_;
-    //InputCellDelegate *delegate_;
     QGridLayout *layout_;
     Document *document_;
-
-  public:
-    //QPushButton* variableButton;
-    //QPushButton* hideButton;
-    //QPushButton* latexButton;
-    QTemporaryFile* imageFile;
   };
 
 
@@ -165,11 +169,11 @@ namespace IAEX
     //void showVariableButton(bool);
 
   protected:
-    void mousePressEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
-    void keyPressEvent(QKeyEvent *event );
-    void insertFromMimeData(const QMimeData *source);
-    void focusInEvent(QFocusEvent* event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event ) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent* event) override;
 
   private:
   };

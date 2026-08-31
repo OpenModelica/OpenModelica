@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5...4.3)
 
 project(${PeerName})
 
@@ -20,9 +20,9 @@ endif(OPENMP_FOUND)
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${PeerName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 else(NOT BUILD_SHARED_LIBS)
-IF(MSVC)
-  install(FILES $<TARGET_PDB_FILE:${PeerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-ENDIF(MSVC)
+  if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:${PeerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 set_target_properties(${PeerName} PROPERTIES COMPILE_DEFINITIONS "${PEER_COMPILE_DEFINITIONS}")
@@ -34,6 +34,6 @@ add_precompiled_header(${PeerName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${PeerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Peer/Peer.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Peer/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Peer/Peer.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Peer/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/Peer)

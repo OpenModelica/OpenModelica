@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -47,7 +51,6 @@ import FGraph;
 
 protected
 
-import ClassInf;
 import Config;
 import FBuiltin;
 import Flags;
@@ -89,11 +92,11 @@ end variableNameIsBuiltin;
 public function isDer
   input Absyn.Path inPath;
 algorithm
-  _:=
-  match (inPath)
+  ():=
+  match inPath
     local Absyn.Path path;
-    case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(path)) equation isDer(path); then ();
+    case Absyn.IDENT(name = "der") then ();
+    case Absyn.FULLYQUALIFIED(path) algorithm isDer(path); then ();
   end match;
 end isDer;
 
@@ -113,59 +116,45 @@ public function initialGraph
   output FGraph.Graph graph;
 protected
   FCore.Cache cache;
-  constant DAE.Type anyNonExpandableConnector2int =
-          DAE.T_FUNCTION(
-            {DAE.FUNCARG("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-            DAE.T_INTEGER_DEFAULT,
-            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-            Absyn.IDENT("cardinality"));
 
-  constant DAE.Type anyExpandableConnector2int =
-          DAE.T_FUNCTION(
-            {DAE.FUNCARG("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-            DAE.T_INTEGER_DEFAULT,
-            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-            Absyn.IDENT("cardinality"));
 algorithm
-  (outCache, graph) := matchcontinue(inCache)
+  (outCache, graph) := matchcontinue inCache
     local
-      list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
-      list<SCode.Element> types;
 
     // First look for cached version
-    case (cache) equation
-      graph = FCore.getCachedInitialGraph(cache);
+    case cache algorithm
+      graph := FCore.getCachedInitialGraph(cache);
       // we have references in the graph so we need to clone it before giving it away
-      graph = FGraph.clone(graph);
+      graph := FGraph.clone(graph);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
-    case (cache)
-      equation
-        graph = getSetInitialGraph(NONE());
+    case cache
+      algorithm
+        graph := getSetInitialGraph(NONE());
       then
         (cache, graph);
 
     // if no cached version found create initial graph.
-    case (cache)
-      equation
-        graph = FGraph.new("graph", FCore.dummyTopModel);
-        graph = FGraphBuildEnv.mkProgramGraph(FBuiltin.getBasicTypes(), FCore.BASIC_TYPE(), graph);
+    case cache
+      algorithm
+        graph := FGraph.new("graph", FCore.dummyTopModel);
+        graph := FGraphBuildEnv.mkProgramGraph(FBuiltin.getBasicTypes(), FCore.BASIC_TYPE(), graph);
 
-        graph = FBuiltin.initialGraphModelica(graph, FGraphBuildEnv.mkTypeNode, FGraphBuildEnv.mkCompNode);
+        graph := FBuiltin.initialGraphModelica(graph, FGraphBuildEnv.mkTypeNode, FGraphBuildEnv.mkCompNode);
 
-        (_, initialProgram) = FBuiltin.getInitialFunctions();
+        (_, initialProgram) := FBuiltin.getInitialFunctions();
         // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
-        graph = FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+        graph := FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
-        graph = FBuiltin.initialGraphOptimica(graph, FGraphBuildEnv.mkCompNode);
-        graph = FBuiltin.initialGraphMetaModelica(graph, FGraphBuildEnv.mkTypeNode);
+        graph := FBuiltin.initialGraphOptimica(graph, FGraphBuildEnv.mkCompNode);
+        graph := FBuiltin.initialGraphMetaModelica(graph, FGraphBuildEnv.mkTypeNode);
 
-        cache = FCore.setCachedInitialGraph(cache,graph);
-        _ = getSetInitialGraph(SOME(graph));
+        cache := FCore.setCachedInitialGraph(cache,graph);
+        getSetInitialGraph(SOME(graph));
 
-        graph = FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
+        graph := FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
       then
         (cache,graph);
 
@@ -177,34 +166,34 @@ protected function getSetInitialGraph
   input Option<FGraph.Graph> inEnvOpt;
   output FGraph.Graph initialEnv;
 algorithm
-  initialEnv := matchcontinue (inEnvOpt)
+  initialEnv := matchcontinue inEnvOpt
     local
       list<tuple<Integer,FGraph.Graph>> assocLst;
       FGraph.Graph graph;
       Integer f;
 
     // nothing there
-    case (_)
-      equation
-        failure(_ = getGlobalRoot(Global.builtinGraphIndex));
+    case _
+      algorithm
+        failure(getGlobalRoot(Global.builtinGraphIndex));
         setGlobalRoot(Global.builtinGraphIndex, {});
       then
         fail();
 
     // return the correct graph depending on flags
-    case (NONE())
-      equation
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+    case NONE()
+      algorithm
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
         // we have references in the graph so we need to clone it before giving it away
-        graph = FGraph.clone(Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst));
+        graph := FGraph.clone(Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst));
       then
         graph;
 
-    case (SOME(graph))
-      equation
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
-        f = Flags.getConfigEnum(Flags.GRAMMAR);
-        assocLst = if f == Flags.METAMODELICA
+    case SOME(graph)
+      algorithm
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
+        f := Flags.getConfigEnum(Flags.GRAMMAR);
+        assocLst := if f == Flags.METAMODELICA
                    then (Flags.METAMODELICA,graph)::assocLst
                    else if f == Flags.PARMODELICA
                         then (Flags.PARMODELICA,graph)::assocLst

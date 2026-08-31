@@ -192,6 +192,7 @@
         <file>Resources/icons/update.svg</file>
         <file>Resources/icons/wc-system-icon.svg</file>
         <file>Resources/icons/sc-system-icon.svg</file>
+        <file>Resources/icons/system-icon.svg</file>
         <file>Resources/icons/fmu-icon.svg</file>
         <file>Resources/icons/add-system.svg</file>
         <file>Resources/icons/bitmap-delete.svg</file>
@@ -210,5 +211,7 @@
         <file>Resources/icons/completerAnnotation.svg</file>
         <file>Resources/icons/auto_scale.svg</file>
         <file>Resources/icons/drop-menu.svg</file>
+        <file>Resources/json/MCPTools.json</file>
+        <file>Resources/json/MCPAdminTools.json</file>
     </qresource>
 </RCC>

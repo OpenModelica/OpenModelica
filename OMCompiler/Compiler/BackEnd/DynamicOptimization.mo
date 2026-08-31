@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -41,7 +45,6 @@ public import BackendDAE;
 public import BackendDAEOptimize;
 
 protected import BackendDump;
-protected import ExpressionDump;
 
 protected import BackendEquation;
 protected import BackendDAEUtil;
@@ -49,6 +52,7 @@ protected import BackendDAEUtil;
 
 protected import BackendVariable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 
 protected import Differentiate;
@@ -59,6 +63,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import FlagsUtil;
 protected import List;
+protected import ExpressionBasics;
 
 
 public function createDynamicOptimization
@@ -88,7 +93,6 @@ protected function addOptimizationVarsEqns
 protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
   list<BackendDAE.Var> varlst;
-  BackendDAE.Var tG;
   list<BackendDAE.Equation> eqnsLst;
 
   list< .DAE.ClassAttributes> classAttrs;
@@ -114,7 +118,7 @@ algorithm
 
    (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
     varlst :=  BackendVariable.varList(globalKnownVars);
-    _ := addTimeGrid(varlst, globalKnownVars);
+    addTimeGrid(varlst, globalKnownVars);
     varlst := listAppend(varlst, BackendVariable.varList(vars)) annotation(__OpenModelica_DisableListAppendWarning=true);
 
     (vars, eqnsLst, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), vars, eqnsLst);
@@ -140,10 +144,10 @@ protected function getOptimicaArgs
   output Option<DAE.Exp> mayer,lagrange,startTimeE,finalTimeE;
 algorithm
   (mayer,lagrange,startTimeE,finalTimeE) :=
-  match(inClassAttr)
+  match inClassAttr
     local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
 
-    case({DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)})
+    case {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)}
     then(mayer_,lagrange_,startTimeE_,finalTimeE_);
 
     else (NONE(), NONE(),NONE(),NONE());
@@ -201,10 +205,10 @@ protected function joinObjectFun "author: Vitalij Ruge"
   output list<BackendDAE.Equation> oe;
   output Option<DAE.Exp> objExp;
 algorithm
-  (ovars, oe, objExp) := match(obj)
+  (ovars, oe, objExp) := match obj
                 local BackendDAE.Var v; list<BackendDAE.Equation> e_; Option<DAE.Exp> e1;
-                case((_,{},_)) then(vars, e, NONE());
-                case((v, e_, e1)) then(BackendVariable.addNewVar(v, vars), listAppend(e_, e), e1);
+                case (_,{},_) then(vars, e, NONE());
+                case (v, e_, e1) then(BackendVariable.addNewVar(v, vars), listAppend(e_, e), e1);
                 end match;
 end joinObjectFun;
 
@@ -239,7 +243,7 @@ protected function makeVar "author: Vitalij Ruge"
   output BackendDAE.Var v;
 
 algorithm
-  cr := ComponentReference.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
+  cr := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
   v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeVar;
 
@@ -264,7 +268,7 @@ algorithm
 
  for elem in constraintLst loop
    try
-     conCrefName := prefConCrefName + ComponentReference.printComponentRefStr(Expression.expCref(elem));
+     conCrefName := prefConCrefName + ComponentReferenceBasics.printComponentRefStr(Expression.expCref(elem));
    else
      conCrefName := prefConCrefName + intString(i);
      i := i + 1;
@@ -287,13 +291,13 @@ protected function addOptimizationVarsEqns2
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind)
+  (outVars, outEqns) := match inConstraint
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) equation
-      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
+    case {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)} algorithm
+      (v, e) := addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
       then (v, e);
   else (inVars, inEqns);
   end match;
@@ -359,8 +363,8 @@ algorithm
   mayer := match(inmayer1, inmayer2)
   local DAE.Exp e1, e2, e3;
 
-    case(SOME(e1), SOME(e2)) equation
-      e3 = Expression.expAdd(e1,e2);
+    case(SOME(e1), SOME(e2)) algorithm
+      e3 := Expression.expAdd(e1,e2);
     then SOME(e3);
     case(NONE(), SOME(_)) then inmayer2;
     case(_, NONE()) then inmayer1;
@@ -386,9 +390,9 @@ protected
 list<BackendDAE.Var> varlst;
 list< .DAE.Exp> constraintLst;
 algorithm
-  constraintLst := match(inConstraint)
+  constraintLst := match inConstraint
                    local list< .DAE.Exp> constraintLst_;
-                   case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst_)}) then constraintLst_;
+                   case {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst_)} then constraintLst_;
                    else {};
                    end match;
 
@@ -449,15 +453,13 @@ algorithm
     local
       BackendDAE.EquationArray orderedEqs "ordered Equations";
       list<DAE.ComponentRef> idercr={}, icr={};
-      DAE.ComponentRef cr;
-      String s;
       list<BackendDAE.Var> varLst={};
       BackendDAE.Variables vars;
 
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       vars := BackendVariable.daeGlobalKnownVars(outShared);
 
-      ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
+      (_, idercr, icr, varLst) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
       if listEmpty(idercr) then
         fail();
       end if;
@@ -473,7 +475,6 @@ algorithm
         v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
         outShared := BackendVariable.addGlobalKnownVarDAE(v, outShared);
       end for;
-      _ := BackendVariable.daeGlobalKnownVars(outShared);
        //BackendDump.printVariables(vars);
     then (isyst, true);
 
@@ -500,7 +501,6 @@ algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables vars;
-      DAE.Type tp;
       DAE.Exp e;
       DAE.ComponentRef cr, cr1;
       BackendDAE.Var var;
@@ -508,13 +508,13 @@ algorithm
       list<BackendDAE.Var> varLst;
 
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,lst,lst1,varLst))
-      equation
-        (var,_) = BackendVariable.getVarSingle(cr, vars);
-        true = BackendVariable.isVarOnTopLevelAndInput(var);
-        var = BackendVariable.setHideResult(var, SOME(DAE.BCONST(true)));
-        cr1 = ComponentReference.prependStringCref("$TMP$DER$P", cr);
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, vars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+        var := BackendVariable.setHideResult(var, SOME(DAE.BCONST(true)));
+        cr1 := ComponentReference.prependStringCref("$TMP$DER$P", cr);
         //cr1 = ComponentReference.crefPrefixDer(cr);
-        e = Expression.crefExp(cr1);
+        e := Expression.crefExp(cr1);
       then (e,true,(vars, List.unionElt(cr1,lst), List.unionElt(cr,lst1),  List.unionElt(var,varLst)));
 
     else (inExp,true,tpl);
@@ -567,7 +567,6 @@ protected function findLoops1
   output BackendDAE.Shared oshared = ishared;
   output Boolean changed = inchanged "not used";
 protected
-  BackendDAE.EquationArray eqns;
   Boolean l2p_all = Flags.getConfigString(Flags.LOOP2CON) == "all";
   Boolean l2p_nl;
   Boolean l2p_l;
@@ -611,7 +610,7 @@ algorithm
       DAE.Exp e1, e2, varexp;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.JacobianType jacType;
       BackendDAE.EqSystem syst;
       Boolean linear;
@@ -638,7 +637,7 @@ algorithm
     guard l2p_all or not l2p_l
     algorithm
       BackendDAE.EQUATION(exp=e1, scalar=e2) := BackendEquation.get(eqns, eindex_);
-      (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx_);
+      v as BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, vindx_);
       varexp := Expression.crefExp(cr);
       varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
       failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
@@ -683,7 +682,6 @@ protected
   BackendDAE.Var var, var_;
   list<DAE.ComponentRef> cr_lst = List.map(var_lst, BackendVariable.varCref);
   DAE.ComponentRef cr, cr_var;
-  list<String> name_lst = List.map(cr_lst,ComponentReference.crefStr);
   DAE.Exp e, res;
   Integer ind_e, ind_v;
   list<Integer> ind_lst_v = List.map(vindx,intAbs);
@@ -700,7 +698,7 @@ algorithm
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
     ind_v :: ind_lst_v := ind_lst_v;
-    cr  := ComponentReference.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReferenceBasics.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
     var := BackendVariable.makeVar(cr);
@@ -749,18 +747,16 @@ public function simplifyConstraints
 protected
   list<BackendDAE.EqSystem> systlst, new_systlst = {};
   BackendDAE.Shared shared;
-  BackendDAE.Equation eqn_;
+  BackendDAE.Equation eqn_ = BackendDAE.DUMMY_EQUATION();
   BackendDAE.Var var_, var_con;
   BackendDAE.StrongComponents comps;
   Integer eindex,vindx;
   DAE.ComponentRef cr;
   list<BackendDAE.Var> var_lst, var_lst_opt, var_lst1;
-  DAE.Exp e1, e2, e, c;
+  DAE.Exp e1, e2 = DAE.ICONST(0), e, c;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.StateSets stateSets;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Option<DAE.Exp> oMax_con, oMin_con;
   DAE.Exp max_con, min_con, zero, con2, z, der_e;
   Boolean b1,b2,b, b3, b4;
@@ -785,8 +781,8 @@ algorithm
          b3 := BackendVariable.isRealOptimizeConstraintsVars(var_con);
          if b3 then
            try
-             (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.get(eqns, eindex);
-             true := Expression.expEqual(e1, BackendVariable.varExp(var_con));
+             eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2):= BackendEquation.get(eqns, eindex);
+             true := ExpressionBasics.expEqual(e1, BackendVariable.varExp(var_con));
            else
              b3 := false;
            end try;
@@ -812,12 +808,12 @@ algorithm
                 continue;
               end if;
               (z,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
-              ((c,_)) := Expression.replaceExp(e2, e, z);
+              (c,_) := Expression.replaceExp(e2, e, z);
               (c,_) := ExpressionSimplify.simplify(c);
-              //print("\nde = " + ExpressionDump.printExpStr(der_e));
-              //print("\nc = " + ExpressionDump.printExpStr(c));
-              //print("\ne = " + ExpressionDump.printExpStr(e));
-              //print("\ne2 = " + ExpressionDump.printExpStr(e2));
+              //print("\nde = " + ExpressionBasics.printExpStr(der_e));
+              //print("\nc = " + ExpressionBasics.printExpStr(c));
+              //print("\ne = " + ExpressionBasics.printExpStr(e));
+              //print("\ne2 = " + ExpressionBasics.printExpStr(e2));
 
               var_lst := BackendEquation.expressionVars(der_e, globalKnownVars);
               if b3 then
@@ -950,7 +946,7 @@ algorithm
     opt_varlst := listAppend(conVarsList, listAppend(fconVarsList, listAppend(objMayer, objLagrange)));
 
     if not listEmpty(opt_varlst) then
-      newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;
+      newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst, false) :: newsyst;
     end if;
   end for;
 
@@ -966,7 +962,7 @@ public function checkObjectIsSet
 protected
   DAE.ComponentRef leftcref;
 algorithm
-  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+  leftcref := ComponentReferenceBasics.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
 
   try
     outVars := BackendVariable.getVar(leftcref, inVars);

@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -36,12 +33,13 @@
 
 #include "../../util/omc_file.h"
 
-#include "simulation/solver/dassl.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
+#include "simulation/solver/dassl.h"
 #include "simulation/solver/external_input.h"
-#include "simulation/solver/model_help.h"
 #include "simulation/solver/initialization/initialization.h"
+#include "simulation/solver/model_help.h"
 
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
@@ -53,7 +51,7 @@ static inline void init_ipopt_data(OptData *optData, const short o);
  *  create initial guess
  *  author: Vitalij Ruge
  **/
-inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
+void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
 
   char *cflags;
   int opt = 1;
@@ -187,10 +185,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          lookupRingBuffer(data->simulationData, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
-            if(data->modelData->realVarsData[l].dimension.numberOfDimensions > 0){
-              throwStreamPrint(NULL, "Support for array variables not yet implemented!");
-            }
-            data->localData[0]->realVars[l] = real_get(data->modelData->realVarsData[l].attribute.start, 0);
+            data->localData[0]->realVars[l] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, l);
          }
        }
 
@@ -299,10 +294,23 @@ static inline void init_ipopt_data(OptData *optData, const short op){
   ipop->gmax =  calloc(NRes, sizeof(double));
   ipop->mult_g =  calloc(NRes, sizeof(double));
 
+  /* An OPT_LOOP_INPUT takes the value of the variable that replaced it when the
+   * guess comes from a file; the model names the pair, this applies it. */
+  int *uIdx = (int*) malloc((nv-nx)*sizeof(int));
+  int *uLoop = (int*) malloc((nv-nx)*sizeof(int));
+  data->callback->getInputVarIndicesInOptimization(data, uIdx, uLoop);
+
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-      optData->data->callback->setInputData(optData->data, op == 2);
+      if(op == 2){
+        for(l = 0; l < nv-nx; ++l){
+          if(uLoop[l] >= 0){
+            data->localData[0]->realVars[uIdx[l]] = data->localData[0]->realVars[uLoop[l]];
+          }
+        }
+      }
+      optData->data->callback->setInputData(optData->data);
       for(l = 0; l<nx; ++l){
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
       }
@@ -316,18 +324,19 @@ static inline void init_ipopt_data(OptData *optData, const short op){
   l = NRes-ncf;
   for(j = 0; j< nc; ++j){
     for(i = nx; i < l; i += nJ){
-      ipop->gmin[i+j] = data->modelData->realVarsData[j + index_con].attribute.min;
-      ipop->gmax[i+j] = data->modelData->realVarsData[j + index_con].attribute.max;
+      ipop->gmin[i+j] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_con);
+      ipop->gmax[i+j] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_con);
     }
   }
 
   /*terminal constraint(s)*/
   for(j = 0; j < ncf; ++j, ++i){
-    ipop->gmin[l+j] = data->modelData->realVarsData[j + index_conf].attribute.min;
-    ipop->gmax[l+j] = data->modelData->realVarsData[j + index_conf].attribute.max;
+    ipop->gmin[l+j] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_conf);
+    ipop->gmax[l+j] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_conf);
   }
 
-
+  free(uIdx);
+  free(uLoop);
 }
 
 static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const double tstop){

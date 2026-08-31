@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -553,7 +557,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
   // MetaModelica extensions
   record ALG_FAILURE
-    list<AlgorithmItem> equ;
+    list<AlgorithmItem> equ; // TODO: This is only 1 AlgorithmItem in the parser
   end ALG_FAILURE;
 
   record ALG_TRY
@@ -760,7 +764,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record CALL
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs;
-    list<Absyn.Path> typeVars;
+    list<Path> typeVars;
   end CALL;
 
   // stefan
@@ -811,7 +815,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp inputExp                 " match expression of         ";
     list<ElementItem> localDecls " local declarations          ";
     list<Case> cases             " case list + else in the end ";
-    Option<String> comment       " match expr comment_optional ";
+    Option<String> comment       "TODO: Remove this as it was removed from the grammar";
   end MATCHEXP;
 
   // The following are only used internally in the compiler
@@ -845,20 +849,20 @@ uniontype Case "case in match or matchcontinue"
     Exp pattern " patterns to be matched ";
     Option<Exp> patternGuard;
     Info patternInfo "file information of the pattern";
-    list<ElementItem> localDecls " local decls ";
+    list<ElementItem> localDecls "TODO: Remove this as it was removed from the grammar";
     ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
-    Option<String> comment " comment after case like: case pattern string_comment ";
+    Option<String> comment "TODO: Remove this as it was removed from the grammar";
     Info info "file information of the whole case";
   end CASE;
 
   record ELSE "else in match or matchcontinue"
-    list<ElementItem> localDecls " local decls ";
+    list<ElementItem> localDecls "TODO: Remove this as it was removed from the grammar";
     ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
-    Option<String> comment " comment after case like: case pattern string_comment ";
+    Option<String> comment "TODO: Remove this as it was removed from the grammar";
     Info info "file information of the whole case";
   end ELSE;
 end Case;
@@ -1145,5 +1149,9 @@ public uniontype Msg "Controls output of error-messages"
   record NO_MSG "Do not give error message" end NO_MSG;
 end Msg;
 
-annotation(__OpenModelica_Interface="frontend");
+constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
+constant Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
+constant Program dummyProgram = PROGRAM({},TOP());
+
+annotation(__OpenModelica_Interface="parser");
 end Absyn;

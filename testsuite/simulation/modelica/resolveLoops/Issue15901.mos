@@ -1,0 +1,40 @@
+// name:      Issue15901
+// keywords:  resolveLoops
+// status:    correct
+//
+// Regression test for #15901: resolveLoops wrongly folded equations that
+// contain an array element indexed by a non-constant subscript (u[f+1]) into
+// a loop, producing a bogus equation and hence wrong results. With f=1 the
+// correct solution is y=u[2]=20.25, z=0; with f=0 it is y=16, z=-5.
+//
+
+loadFile("Issue15901.mo"); getErrorString();
+
+simulate(Issue15901, startTime=0.0, stopTime=1.0, numberOfIntervals=4); getErrorString();
+
+val(f, 0.25);
+val(y, 0.25);
+val(z, 0.25);
+val(f, 1.0);
+val(y, 1.0);
+val(z, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue15901_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue15901', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 1.0
+// 20.25
+// 0.0
+// 0.0
+// 16.0
+// -5.0
+// endResult

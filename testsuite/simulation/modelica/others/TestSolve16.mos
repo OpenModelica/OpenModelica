@@ -1,6 +1,5 @@
 // name: TestSolve
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that the backend knows how to solve certain expressions
 //

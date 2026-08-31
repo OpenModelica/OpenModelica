@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines templates for transforming Modelica/MetaModelica code to FMU
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -73,6 +108,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numBoolVars = numBoolvars(modelInfo)
   let numStringVars = numStringvars(modelInfo)
 
+  let extraAnnotations = Flags.getConfigString(FMI_EXTRA_ANNOTATIONS)
+
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, true)
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -81,7 +118,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
                    CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
-  let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", "", extraAnnotations), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, false)
 
@@ -230,9 +267,16 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
 
   <%if isFMIVersion10(FMUVersion) then
     '#include <FMU/FMUWrapper.h>'
+  else if isFMIVersion30(FMUVersion) then
+    '#include "FMU3/FMU3Wrapper.cpp"'
   else
     '#include "FMU2/FMU2Wrapper.cpp"'%>
-  <%if isFMIVersion10(FMUVersion) then
+  <%if isFMIVersion30(FMUVersion) then
+    // FMI 3.0 uses its own FMU3Wrapper (included above); the FMI 3.0 C API is
+    // provided by FMU3Interface.cpp using the per-base-type value-reference
+    // offsets defined here (see SimCodeUtil.getFMI3TypeOffset).
+    (fmi3CppOffsetDefines(simCode) + "\n  #include \"FMU3/FMU3Interface.cpp\"")
+  else if isFMIVersion10(FMUVersion) then
     '#include <FMU/FMULibInterface.h>'
   else
     '#include "FMU2/FMU2Interface.cpp"'%>
@@ -325,6 +369,36 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
   // <%setStartValues(modelInfo)%>
   // <%setExternalFunction(modelInfo)%>
 end fmuModelCppFile;
+
+template fmi3CppOffsetDefines(SimCode simCode)
+ "Generates the FMI 3.0 per-base-type value-reference offset macros used by
+  FMU3Interface.cpp. They must match SimCodeUtil.getFMI3TypeOffset, i.e. reals
+  first, then integers, booleans and strings."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__), nClocks=numberOfClocks)) then
+  // emit the per-base-type counts as C preprocessor expressions (the compiler
+  // evaluates them); the offsets are then composed from those, matching
+  // SimCodeUtil.getFMI3TypeOffset.
+  <<
+  #define FMI3_NUMBER_OF_REALS (2*<%varInfo.numStateVars%> + <%varInfo.numDiscreteReal%> + <%varInfo.numAlgVars%> + <%varInfo.numParams%> + <%varInfo.numAlgAliasVars%>)
+  #define FMI3_NUMBER_OF_INTEGERS (<%varInfo.numIntAlgVars%> + <%varInfo.numIntParams%> + <%varInfo.numIntAliasVars%>)
+  #define FMI3_NUMBER_OF_BOOLEANS (<%varInfo.numBoolAlgVars%> + <%varInfo.numBoolParams%> + <%varInfo.numBoolAliasVars%>)
+  #define FMI3_NUMBER_OF_STRINGS (<%varInfo.numStringAlgVars%> + <%varInfo.numStringParamVars%> + <%varInfo.numStringAliasVars%>)
+  #define FMI3_NUMBER_OF_EXTERNALOBJECTS (<%varInfo.numExternalObjects%>)
+  #define FMI3_NUMBER_OF_CLOCKS (<%numberOfClocks%>)
+  #define FMI3_REAL_VR_OFFSET    0
+  #define FMI3_INTEGER_VR_OFFSET (FMI3_NUMBER_OF_REALS)
+  #define FMI3_BOOLEAN_VR_OFFSET (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS)
+  #define FMI3_STRING_VR_OFFSET  (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS)
+  // external objects are exported as FMI 3.0 Binary, then the model clocks, after the string block
+  #define FMI3_BINARY_VR_OFFSET  (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS)
+  #define FMI3_CLOCK_VR_OFFSET   (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS + FMI3_NUMBER_OF_EXTERNALOBJECTS)
+  #define FMI3_TIME_VR           (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS + FMI3_NUMBER_OF_EXTERNALOBJECTS + FMI3_NUMBER_OF_CLOCKS)
+  #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+  #define FMI3_NUMBER_OF_STATES  <%varInfo.numStateVars%>
+  >>
+end fmi3CppOffsetDefines;
 
 template ModelDefineData(ModelInfo modelInfo)
  "Generates global data in simulation file."
@@ -673,7 +747,7 @@ case SIMCODE(modelInfo=MODELINFO(), modelStructure=fmiModelStructure) then
 end directionalDerivativeFunction;
 
 template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String FMUVersion, String additionalLinkerFlags_GCC,
-                            String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC)
+                     String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC, String extraAnnotations)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match getGeneralTarget(target)
@@ -744,10 +818,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsExtra = (makefileParams.libs |> lib => lib ;separator=" ")
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
   // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
-  let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
+  // FMI 3.0 uses the "{arch}-{os}" platform tuple for the binaries folder
+  // (e.g. x86_64-linux), unlike FMI 1.0/2.0 which use "{os}{bitness}" (linux64).
+  let platformstr = if isFMIVersion30(FMUVersion) then
+      (match makefileParams.platform
+         case "i386-pc-linux" case "linux32" case "i686-linux" then 'i686-linux'
+         case "x86_64-linux"  case "linux64" then 'x86_64-linux'
+         case "win64" then 'x86_64-windows'
+         case "win32" then 'i686-windows'
+         case "darwin64" then 'x86_64-darwin'
+         else '<%makefileParams.platform%>')
+    else
+      (match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>')
   let omhome = makefileParams.omhome
-  let platformbins = match platformstr case "win32" case "win64" then '"<%omhome%>/bin/libgcc_s_*.dll" "<%omhome%>/bin/libstdc++-6.dll" "<%omhome%>/bin/libwinpthread-1.dll"' else ''
-  let lapackbins = match platformstr case "win32" case "win64" then '"<%omhome%>/bin/libopenblas.dll"' else ''
+  let platformbins = match platformstr case "win32" case "win64" case "i686-windows" case "x86_64-windows" then '"<%omhome%>/bin/libgcc_s_*.dll" "<%omhome%>/bin/libstdc++-6.dll" "<%omhome%>/bin/libwinpthread-1.dll"' else ''
+  let lapackbins = match platformstr case "win32" case "win64" case "i686-windows" case "x86_64-windows" then '"<%omhome%>/bin/libopenblas.dll"' else ''
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
   # Makefile generated by OpenModelica for native and cross compilation
@@ -766,9 +851,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #      make TARGET_TRIPLET=i686-w64-mingw32 -f <%fileNamePrefix%>_FMU.makefile
 
   #TARGET_TRIPLET=
-  OMHOME=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '$(OPENMODELICAHOME)' else makefileParams.omhome%>
-  include $(OMHOME)/include/omc/cpp/ModelicaConfig_gcc.inc
-  include $(OMHOME)/include/omc/cpp/ModelicaLibraryConfig_gcc.inc
+  # escape spaces for make
+  empty :=
+  space := $(empty) $(empty)
+  escape_path = $(subst $(space),\$(space),$1)
+
+  OMHOME:=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '$(OPENMODELICAHOME)' else makefileParams.omhome%>
+  OMHOME_ESCAPED:=$(call escape_path,$(OMHOME))
+  include $(OMHOME_ESCAPED)/include/omc/cpp/ModelicaConfig_gcc.inc
+  include $(OMHOME_ESCAPED)/include/omc/cpp/ModelicaLibraryConfig_gcc.inc
 
   # simulations use -O0 by default; can be changed to e.g. -O2 or -Ofast
   SIM_OPT_LEVEL=-O0
@@ -847,7 +938,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%fmuTargetName%>.fmu: $(OFILES)
   <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
-  <%\t%>mv $(BINARIES) "binaries/$(PLATFORM)/"
+  # copy (do not move): $(BINARIES) includes shared dependency DLLs such as
+  # libopenblas.dll taken from <omhome>/bin; moving them out would break a
+  # second FMU export in the same session (the C target copies here too).
+  <%\t%>cp $(BINARIES) "binaries/$(PLATFORM)/"
   <%\t%>rm -rf sources
   <%\t%><%mkdir%> -p sources
   <%\t%>install -p OMCpp<%fileNamePrefix%>*.h OMCpp<%fileNamePrefix%>*.cpp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>_FMU.makefile sources/
@@ -866,19 +960,29 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources
   endif
   endif
+  ifneq ("<%extraAnnotations%>","")
+  <%\t%><%mkdir%> -p extra/org.openmodelica
+  ifneq ("$(wildcard <%fileNamePrefix%>_modelInstance.json)","")
+  <%\t%>jq --arg regex "<%extraAnnotations%>" -f "$(OMHOME)/share/omc/scripts/filter-annotations.jq" <%fileNamePrefix%>_modelInstance.json > extra/org.openmodelica/modelAnnotations.json
+  endif
+  ifeq ($(ZIP_FMU),ON)
+  <%\t%>zip -ur "<%fmuTargetName%>.fmu" extra
+  endif
+  endif
 
   ifeq ($(ZIP_FMU),OFF)
   <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
+  <%\t%>rm -f <%fileNamePrefix%>_modelInstance.json
   endif
 
   clean:
   <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
-  <%\t%>rm -rf modelDescription.xml binaries sources documentation
+  <%\t%>rm -rf modelDescription.xml binaries sources documentation extra <%fileNamePrefix%>_modelInstance.json
 
   >>
 end fmuMakefile;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_cpp_ext");
 end CodegenFMUCpp;
 
 // vim: filetype=susan sw=2 sts=2

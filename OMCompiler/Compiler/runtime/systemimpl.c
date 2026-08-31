@@ -1,28 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -113,7 +118,6 @@ typedef void* iconv_t;
 #include <dirent.h>
 #include <sys/ioctl.h>
 #include <sys/param.h> /* MAXPATHLEN */
-#include <sys/unistd.h>
 #include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
 #include <stdlib.h>
@@ -140,6 +144,12 @@ extern char **environ;
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
 static modelica_integer last_ptr_index = -1;
+
+/* Why the last loadLibrary failed.  A caller that tries a list of candidate
+ * paths needs this: the error it reports is about the whole list, so the
+ * per-path dlerror() has to survive until it decides none of them worked.
+ * Cleared on every attempt, so it never describes an older failure. */
+static char last_load_library_error[1024] = "";
 
 static inline modelica_integer alloc_ptr(void);
 static inline void free_ptr(modelica_integer index);
@@ -173,6 +183,21 @@ static int isPartialInstantiation = 0;
 static int usesCardinality = 1;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
+
+/* Cooperative cancellation + progress, mirrors metamodelica::cancel in the Rust
+ * port. The flag is set from another context (an OMEdit Cancel button) and
+ * polled at the frontend/backend chokepoints via System_isCancelled. */
+static volatile int cancelRequested = 0;
+/* Tracks that the alarm, rather than a host, asked for the cancellation. */
+static volatile int cancelledByAlarm = 0;
+static volatile int progressPermille = -1;
+static volatile int progressPhase = 0;
+/* Free-form label for the step in progress, shown by the host instead of the
+ * generic phase label. GC-allocated; NULL until something reports one. */
+static const char *progressMessage = NULL;
+/* Host event-pump invoked at each cancel check; keeps an in-process GUI live
+ * during a long call. NULL for the CLI. */
+static void (*pumpCallback)(void) = NULL;
 
 
 /* TODO: Unused functions referenced by the bootstrapping sources.
@@ -321,12 +346,19 @@ extern int SystemImpl__regularFileExists(const char* filename)
   return (buf.st_mode & S_IFREG) != 0;
 }
 
+extern int SystemImpl__regularFileReadable(const char* str)
+{
+  FILE *f;
+  f = omc_fopen(str, "r");
+  if (f == NULL)
+    return 0;
+  fclose(f);
+  return 1;
+}
 
 extern int SystemImpl__regularFileWritable(const char* str)
 {
   FILE *f;
-  if (!SystemImpl__regularFileExists(str))
-    return 0;
   f = omc_fopen(str, "a");
   if (f == NULL)
     return 0;
@@ -591,8 +623,13 @@ int runProcess(const char* cmd, const char* outFile)
   startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
   startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
   startupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-  startupInfo.hStdError  = logFileHandle;
-  startupInfo.hStdOutput = logFileHandle;
+  /* Without an output file the child writes where we write, as it does on Unix
+   * where systemCall simply lets the fork inherit. STARTF_USESTDHANDLES with a
+   * NULL handle does not mean "inherit", it hands the child an invalid stdout:
+   * anything that checks its writes then fails, e.g. system("... | grep ...")
+   * returns grep's write-error status 2 and prints nothing. */
+  startupInfo.hStdError  = logFileHandle ? logFileHandle : GetStdHandle(STD_ERROR_HANDLE);
+  startupInfo.hStdOutput = logFileHandle ? logFileHandle : GetStdHandle(STD_OUTPUT_HANDLE);
 
   BOOL bSuccess = CreateProcessW(NULL,
     unicodeCommand,
@@ -679,9 +716,10 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
       dup2(fd, 2);
 #if defined(__APPLE_CC__)
       /* OSX likes to not redirect the Segmentation Fault: messages unless the command is in a subshell */
-      char command[strlen(str)+3];
+      char * command = (char*) omc_alloc_interface.malloc_atomic(strlen(str)+3);
       sprintf(command, "(%s)", str);
       execl("/bin/sh", "/bin/sh", "-c", command, NULL);
+      free(command);
 #else
       execl("/bin/sh", "/bin/sh", "-c", str, NULL);
 #endif
@@ -1030,7 +1068,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
   return rv;
 }
 
-static char * SystemImpl__NextDir(const char * path)
+static char * SystemImpl__NextDir(char * path)
 {
   char * res = NULL;
 
@@ -1126,7 +1164,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
 extern int SystemImpl__removeDirectory(const char *path)
 {
   int retval = -1;
-  char * wild = strchr(path, '*');
+  const char * wild = strchr(path, '*');
 
   if (wild == NULL)
   {
@@ -1138,7 +1176,7 @@ extern int SystemImpl__removeDirectory(const char *path)
     /* replace first wildcard item */
     char * basepath;
     char * ctmp = NULL;
-    const char * str = path;
+    char * str = omc_alloc_interface.malloc_strdup(path);
     DIR * d;
     char * pattern;
     char * pat_pre = NULL;
@@ -1167,7 +1205,7 @@ extern int SystemImpl__removeDirectory(const char *path)
         else
         {
           /* basepath is finally found */
-          pattern = omc_alloc_interface.malloc_strdup(str);
+          pattern = str;
           sub = res;
           len_sub = strlen(sub);
           break;
@@ -1319,9 +1357,11 @@ static int file_select_moc(direntry entry)
 int setenv(const char* envname, const char* envvalue, int overwrite)
 {
   int res;
-  char *temp = (char*)omc_alloc_interface.malloc_atomic(strlen(envname)+strlen(envvalue)+2);
-  sprintf(temp,"%s=%s", envname, envvalue);
+  int len = strlen(envname)+strlen(envvalue)+2;
+  char *temp = (char*)malloc(len);
+  snprintf(temp, len, "%s=%s", envname, envvalue);
   res = _putenv(temp);
+  free(temp);
   return res;
 }
 #endif
@@ -1353,7 +1393,7 @@ static const char* SystemImpl__getUUIDStr(void)
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+static int loadLibraryWithBinding(const char *str, int relativePath, int printDebug, int lazy)
 {
   char libname[MAXPATHLEN];
   char currentDirectory[MAXPATHLEN];
@@ -1363,6 +1403,10 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   HMODULE h;
   const char* ctokens[2];
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
+
+  /* Windows resolves a module's imports when it is loaded and offers no way to
+   * defer it, so there is no lazy binding to select here. */
+  (void) lazy;
 
   if (str[0] != '\0') {
     /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
@@ -1401,6 +1445,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
             0, NULL );
     ctokens[0] = lpMsgBuf;
     ctokens[1] = libname;
+    snprintf(last_load_library_error, sizeof(last_load_library_error), "%s", (const char*) lpMsgBuf);
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     LocalFree(lpMsgBuf);
     return -1;
@@ -1420,7 +1465,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 }
 
 #else
-int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+static int loadLibraryWithBinding(const char *str, int relativePath, int printDebug, int lazy)
 {
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
@@ -1428,10 +1473,12 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   void *h = NULL;
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
+  /* RTLD_NOW resolves every symbol in the library, so a library with one
+   * unresolvable symbol will not load even when the function being looked up
+   * is fine.  Binding lazily is the fallback for that case. */
+  int flags = RTLD_LOCAL | (lazy ? RTLD_LAZY : RTLD_NOW);
 #if defined(RTLD_DEEPBIND)
-  int flags = RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND;
-#else
-  int flags = RTLD_LOCAL | RTLD_NOW;
+  flags |= RTLD_DEEPBIND;
 #endif
 
   if (str[0] != '\0') {
@@ -1448,6 +1495,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
+    snprintf(last_load_library_error, sizeof(last_load_library_error), "%s", ctokens[0] ? ctokens[0] : "unknown error");
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
@@ -1467,6 +1515,23 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   return libIndex;
 }
 #endif
+
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+{
+  last_load_library_error[0] = '\0';
+  return loadLibraryWithBinding(str, relativePath, printDebug, 0 /* resolve now */);
+}
+
+int SystemImpl__loadLibraryLazy(const char *str, int relativePath, int printDebug)
+{
+  last_load_library_error[0] = '\0';
+  return loadLibraryWithBinding(str, relativePath, printDebug, 1 /* resolve on use */);
+}
+
+const char* SystemImpl__getLoadLibraryError(void)
+{
+  return last_load_library_error;
+}
 
 static inline modelica_integer alloc_ptr(void)
 {
@@ -2447,9 +2512,9 @@ const char* SystemImpl__iconv__ascii(const char * str)
 static int isUtf8Encoding(const char *str)
 {
 #if defined(_MSC_VER)
-  return _stricmp(str, "UTF-8") || _stricmp(str, "UTF8");
+  return 0 == _stricmp(str, "UTF-8") || 0 == _stricmp(str, "UTF8");
 #else
-  return strcasecmp(str, "UTF-8") || strcasecmp(str, "UTF8");
+  return 0 == strcasecmp(str, "UTF-8") || 0 == strcasecmp(str, "UTF8");
 #endif
 }
 
@@ -2579,17 +2644,14 @@ void SystemImpl__gettextInit(const char *locale)
   int omlen;
 #if defined(__MINGW32__)
   if (*locale) {
-    char environment[strlen(locale)+9];
-    strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, locale));
+    setenv("LANGUAGE", locale, 1);
   } else {
     LCID userLocaleId = GetUserDefaultLCID();
     int localeBufferSize = GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, NULL, 0);
-    char userLocaleStr[localeBufferSize];
+    char *userLocaleStr = (char*)malloc(localeBufferSize);
     GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, userLocaleStr, localeBufferSize);
-    char environment[localeBufferSize+9];
-    strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, userLocaleStr));
+    setenv("LANGUAGE", userLocaleStr, 1);
+    free(userLocaleStr);
   }
 #else
   /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
@@ -2922,7 +2984,7 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 {
   char buf1[OMC_MAX_FREAD_BUF_SIZE+1],buf2[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *f1,*f2;
-  int i1,i2,totalread=0,error=0;
+  int i1,i2,error=0;
   omc_stat_t stbuf1;
   omc_stat_t stbuf2;
 
@@ -2944,7 +3006,6 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
-    totalread += i1;
   } while(i1 != 0 && error == 0);
   fclose(f1);
   fclose(f2);
@@ -3048,13 +3109,34 @@ int SystemImpl__alarm(int seconds)
 #else
 
 static int default_alarm_action_set = 0;
-static struct sigaction default_alarm_action;
+
+/* Seconds to unwind in before the process is killed outright: a tenth of the
+ * deadline, bounded. OpenModelicaLibraryTesting/shared.py mirrors the formula,
+ * because the harness has to outwait it. */
+#define OMC_ALARM_GRACE_MIN 5
+#define OMC_ALARM_GRACE_MAX 60
+static volatile int alarmGraceSeconds = OMC_ALARM_GRACE_MIN;
 
 static void alarm_handler(int signo, siginfo_t *si, void *ptr)
 {
   assert(signo == SIGALRM);
-  kill(-getpid(), SIGALRM);
-  sigaction(SIGALRM, &default_alarm_action, 0);
+  /* Our own group broadcast coming back, not a second deadline. */
+  if (si != NULL && si->si_code == SI_USER && si->si_pid == getpid()) {
+    return;
+  }
+  if (!cancelledByAlarm) {
+    /* Ask the running command to unwind, so that omc survives to report the
+     * phases it completed. The group kill only lands when omc leads its own
+     * group; the re-armed alarm is what ends the process when it does not. */
+    cancelledByAlarm = 1;
+    cancelRequested = 1;
+    kill(-getpid(), signo);
+    alarm(alarmGraceSeconds);
+    return;
+  }
+  /* The grace ran out: what is running has no cancellation point. */
+  signal(SIGALRM, SIG_DFL);
+  raise(signo);
 }
 
 int SystemImpl__alarm(int seconds)
@@ -3066,6 +3148,16 @@ int SystemImpl__alarm(int seconds)
     };
     sigaction(SIGALRM, &sa, NULL);
     default_alarm_action_set = 1;
+  }
+  /* Re-arming or clearing withdraws the previous deadline's request. */
+  if (cancelledByAlarm) {
+    cancelledByAlarm = 0;
+    cancelRequested = 0;
+  }
+  if (seconds > 0) {
+    alarmGraceSeconds = seconds / 10;
+    if (alarmGraceSeconds < OMC_ALARM_GRACE_MIN) alarmGraceSeconds = OMC_ALARM_GRACE_MIN;
+    if (alarmGraceSeconds > OMC_ALARM_GRACE_MAX) alarmGraceSeconds = OMC_ALARM_GRACE_MAX;
   }
   return alarm(seconds);
 }

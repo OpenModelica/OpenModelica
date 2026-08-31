@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 /** @addtogroup solverRK12
  *
  *  @{
@@ -68,6 +95,16 @@ RK12::~RK12()
         delete [] _f0;
     if(_f1)
         delete [] _f1;
+    if(_zPred)
+        delete [] _zPred;
+    if(_zDotPred)
+        delete [] _zDotPred;
+    if(_zDot0)
+        delete [] _zDot0;
+    if(_zeroSignIter)
+        delete [] _zeroSignIter;
+    if(_activeStates)
+        delete [] _activeStates;
     if(_activePartitions)
         delete [] _activePartitions;
 
@@ -112,7 +149,6 @@ void RK12::initialize()
         if(_z_a_0)        	delete [] _z_a_0;
         if(_z_a_1)         delete [] _z_a_1;
 
-        if(_zPred)        	delete [] _zPred;
         if(_zDotPred)      delete [] _zDotPred;
         if(_zDot0)          delete [] _zDot0;
 
@@ -133,7 +169,6 @@ void RK12::initialize()
         _z_a_0 	= new double[_dimSys];
         _z_a_1 	= new double[_dimSys];
 
-        _zPred	 	= new double[_dimSys];
         _zDotPred 	= new double[_dimSys];
         _zDot0 		= new double[_dimSys];
 
@@ -148,7 +183,6 @@ void RK12::initialize()
 
         memset(_z,			0,_dimSys*sizeof(double));
         memset(_z0,			0,_dimSys*sizeof(double));
-        memset(_zPred,		0,_dimSys*sizeof(double));
         memset(_z1,			0,_dimSys*sizeof(double));
         memset(_z_a,		0,_dimSys*sizeof(double));
         memset(_z_a_0,		0,_dimSys*sizeof(double));
@@ -163,7 +197,7 @@ void RK12::initialize()
 
         memset(_f0,0,_dimSys*sizeof(double));
         memset(_f1,0,_dimSys*sizeof(double));
-        memset(_zeroSignIter,0,_dimSys*sizeof(int));
+        memset(_zeroSignIter,0,_dimZeroFunc*sizeof(int));
 
         memset(_activeStates,0,_dimSys*sizeof(bool));
 
@@ -807,7 +841,19 @@ void RK12::doMyZeroSearch()
                 notDone = true;
                 giveZeroIdx(vL,vR,zeroIdx,zeroExist);
                 if ( zeroExist == 0)
+                {
+                    delete [] yL;
+                    delete [] yR;
+                    delete [] yTry;
+                    delete [] ySwap;
+                    delete [] vL;
+                    delete [] vR;
+                    delete [] vTry;
+                    delete [] vSwap;
+                    delete [] IllinoisV;
+                    delete [] zeroIdx;
                     return;
+                }
                 //Ist das Zeitintervall noch groß genug ?
                 tDelta = tR - tL;
 
@@ -819,10 +865,10 @@ void RK12::doMyZeroSearch()
 
                 leftZero = 0;
                 for (int i=0;i<_dimZeroFunc;i++)
-                    if ((zeroIdx[i] == 1) && ((abs(vL[i]) < UROUND) & (abs(vR[i]) >= UROUND)))
+                    if ((zeroIdx[i] == 1) && ((abs(vL[i]) < UROUND) && (abs(vR[i]) >= UROUND)))
                         leftZero = 1;
 
-                if((tL==_tCurrent) & leftZero)
+                if((tL==_tCurrent) && leftZero)
                     tTry = tL + 0.5*_zeroTol;
                 else
                 {
@@ -849,7 +895,7 @@ void RK12::doMyZeroSearch()
                         }
                         else
                         {
-                            if (abs(vR[i] < UROUND))
+                            if (abs(vR[i]) < UROUND)
                             {
                                 if (tTry<tL && vTry[i] != vL[i])
                                 {

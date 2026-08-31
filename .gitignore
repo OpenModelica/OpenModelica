@@ -1,11 +1,14 @@
+/.cache/
+/.claude/
 /.externalToolBuilders/*.launch
 /.metadata/
 /.project
 /.settings
 /.vscode/
+/.qtcreator/
 /autom4te.cache/
 /build/
-/build_cmake/
+/build_cmake*/
 /config.guess
 /config.log
 /config.status
@@ -15,6 +18,7 @@
 /install_cmake/
 /install/
 /issues/
+/.mailmap
 /Makefile
 /OMCompiler/SimulationRuntime/ModelicaExternalC/build/
 /OMCompiler/compile
@@ -30,3 +34,6 @@
 /testsuite/libraries-for-testing/.ccache/
 /testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/libFFITestLib.dll
 trace.txt
+
+# Claude handoffs
+**/HANDOFF*.md

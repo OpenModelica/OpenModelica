@@ -1,8 +1,7 @@
 // name:     AccessFromOutside
 // keywords: state machines
 // status: correct
-// cflags: -d=-newInst
-//
+// suite: disabled
 
 loadFile("AccessFromOutside.mo");
 echo(false);

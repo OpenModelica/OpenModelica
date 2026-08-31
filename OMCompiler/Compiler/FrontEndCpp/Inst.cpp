@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -42,7 +77,7 @@ class Timer
 void* Inst_makeTopNode(void *program, void *annotationProgram)
 {
   // Create an Absyn class for the top scope to put the elements in.
-  auto top_elements = MetaModelica::List(program).mapVector(
+  auto top_elements = MetaModelica::List{program}.mapVector(
     [] (auto e) { return Absyn::Element::fromSCode(e); }
   );
 
@@ -61,7 +96,7 @@ void* Inst_makeTopNode(void *program, void *annotationProgram)
   // Create a node for the builtin annotation classes. These should only be
   // accessible in annotations, so they're stored in a separate scope stored in
   // the node type for the top scope.
-  auto ann_elements = MetaModelica::List(annotationProgram).mapVector(
+  auto ann_elements = MetaModelica::List{annotationProgram}.mapVector(
     [] (auto e) { return Absyn::Element::fromSCode(e); }
   );
   auto ann_package = Absyn::Class("<annotations>", Absyn::ElementPrefixes{}, Encapsulated{true},
@@ -101,7 +136,7 @@ void* Inst_makeTopNode(void *program, void *annotationProgram)
   // the actual Clock node (which can't be defined in regular Modelica).
   // ClassTree.replaceClass(NFBuiltin.CLOCK_NODE, elems);
 
-  return top_node->toMetaModelica().data();
+  return top_node->toNF().data();
 }
 
 void* Inst_test(void *scode)

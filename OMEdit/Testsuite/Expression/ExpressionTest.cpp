@@ -1,47 +1,46 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Per Östlund <per.ostlund@liu.se>
  */
 
 #include "ExpressionTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "FlatModelica/Expression.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(ExpressionTest)
 
@@ -80,11 +79,11 @@ void ExpressionTest::dynamicSelect_data()
     << "DynamicSelect({{-35,35},{35,-35}},{{0,0},{0,0}})";
 
   QTest::addRow("DynamicSelect3")
-    << "DynamicSelect(\"\", String(T - 273.15, \".1f\"))"
+    << "DynamicSelect(\"\", String(T - 273.15, format = \".1f\"))"
     << "DynamicSelect(\"\",\"-272.1\")";
 
   QTest::addRow("DynamicSelect4")
-    << "DynamicSelect(\"\", String((if use_T_in then T_in else T) - 273.15, \".1f\"))"
+    << "DynamicSelect(\"\", String((if use_T_in then T_in else T) - 273.15, format = \".1f\"))"
     << "DynamicSelect(\"\",\"-272.1\")";
 
   QTest::addRow("DynamicSelect5")
@@ -130,6 +129,30 @@ void ExpressionTest::dynamicSelect_data()
   QTest::addRow("DynamicSelect15")
     << "DynamicSelect({0, 127, 255}, {min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 28.0 + min(1.0, max(0.0, ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 255.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 108.0, min(1.0, max(0.0, 1.0 - ((if use_T_in then T_in else T) - 273.15) / 50.0)) * 200.0})"
     << "DynamicSelect({0,127,255},{28,108,200})";
+
+  // Exact DynamicSelect expressions from OpenIPSL 3.1.0 that triggered #15965.
+  // The dynamic part is a call to a user function (displayPower), which the
+  // FlatModelica evaluator cannot execute, so it stays a non-literal call. The
+  // whole DynamicSelect is likewise not a reducible builtin, so evaluation
+  // leaves it as a non-literal expression (a fixed point). It must NOT loop; the
+  // fix that matters is in DynamicAnnotation::evaluate_helper (see the
+  // DynamicAnnotation testsuite), but this documents why the expression does not
+  // reduce to a literal.
+  // The real expression uses the qualified name
+  // OpenIPSL.NonElectrical.Functions.displayPower; the string parser used here
+  // only handles simple names, but the evaluation behaviour (a user-function
+  // call that stays non-literal) is identical.
+  QTest::addRow("OpenIPSL Generator P")
+    << "DynamicSelect(\"0.0 MW\", displayPower(P, \" MW\"))"
+    << "DynamicSelect(\"0.0 MW\",displayPower(1,\" MW\"))";
+
+  QTest::addRow("OpenIPSL Bus voltage")
+    << "DynamicSelect(\"Vpu\", String(v, significantDigits=3))"
+    << "DynamicSelect(\"Vpu\",\"1\")";
+
+  QTest::addRow("OpenIPSL Bus angle")
+    << "DynamicSelect(\"Angle\", String(angleDisplay, significantDigits=3) + \"°\")"
+    << "DynamicSelect(\"Angle\",\"1°\")";
 }
 
 void ExpressionTest::operators()
@@ -310,7 +333,7 @@ void ExpressionTest::parseJSON()
   try {
     FlatModelica::Expression e;
     e.deserialize(jsonValue);
-    qDebug() << e.toQString();
+    //qDebug() << e.toQString();
     //qDebug() << jsonValue;
     //qDebug() << e.serialize();
     QCOMPARE(e.serialize(), jsonValue);
@@ -385,7 +408,7 @@ void ExpressionTest::parseJSON_data()
     {"op", ".+"},
     {"rhs", QJsonArray{4, 5, 6}}
   };
-  QTest::newRow("json_binary1") << value << "({1,2,3} .+ {4,5,6})";
+  QTest::newRow("json_binary1") << value << "{1,2,3} .+ {4,5,6}";
 
   value = QJsonObject{
     {"$kind", "unary_op"},
@@ -401,6 +424,19 @@ void ExpressionTest::parseJSON_data()
     {"false", 2}
   };
   QTest::newRow("json_if1") << value << "if true then 1 else 2";
+
+  value = QJsonObject{
+    {"$kind", "binary_op"},
+    {"lhs", QJsonObject{
+      {"$kind", "if"},
+      {"condition", true},
+      {"true", 1},
+      {"false", 2}
+    }},
+    {"op", "<"},
+    {"rhs", 0.7}
+  };
+  QTest::newRow("json_if2") << value << "(if true then 1 else 2) < 0.7";
 
   value = QJsonObject{
     {"$kind", "enum"},

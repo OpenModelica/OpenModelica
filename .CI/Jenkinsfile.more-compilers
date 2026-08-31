@@ -12,6 +12,9 @@ pipeline {
       agent {
         label 'linux'
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
           if (changeRequest()) {

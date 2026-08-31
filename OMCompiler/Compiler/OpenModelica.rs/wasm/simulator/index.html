@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — Simulator</title>
+<link rel="stylesheet" href="../theme.css" />
+<style>
+
+  main { flex:1 1 auto; display:grid; grid-template-columns:minmax(320px,40%) 1fr; min-height:0; }
+  .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow:hidden; }
+  .right { display:flex; flex-direction:column; min-height:0; }
+  /* Documentation column, shown only when the screen is wide enough (see below). */
+  .docs { display:none; flex-direction:column; min-height:0; border-left:1px solid var(--border); }
+  .docs-head { display:flex; align-items:center; gap:6px; padding-right:4px; flex:0 0 auto; }
+  .docs-head .section-label { flex:1 1 auto; }
+  .doc-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer;
+    padding:6px 8px; display:inline-flex; align-items:center; justify-content:center; }
+  .doc-toggle:hover { color:var(--fg); }
+  .doc-toggle svg { width:16px; height:16px; display:block; transition:transform .15s; }
+  .doc-expand { display:none; }                 /* the collapsed-rail reopen button (desktop) */
+  .doc-body { flex:1 1 auto; overflow-y:auto; padding:4px 14px 16px; font-size:13.5px; line-height:1.5; }
+  .doc-body.empty { color:var(--muted); display:grid; place-items:center; text-align:center; }
+  .doc-body img, .doc-body svg { max-width:100%; height:auto; }
+  .doc-body a { color:var(--accent); }
+  .doc-body table { border-collapse:collapse; max-width:100%; display:block; overflow-x:auto; }
+  .doc-body td, .doc-body th { border:1px solid var(--border); padding:3px 6px; }
+  .doc-body pre, .doc-body code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; }
+  .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
+  .editor-label { display:flex; align-items:center; gap:10px; }
+  .editor-label > span { flex:1 1 auto; }
+  .ex-select { text-transform:none; letter-spacing:normal; width:auto; min-width:0; max-width:60%;
+    background:#1b1b1b; color:var(--fg); border:1px solid var(--border); border-radius:4px;
+    padding:3px 6px; font:inherit; font-size:12px; }
+  textarea {
+    flex:1 1 auto; resize:none; border:0; outline:none; min-height:120px;
+    background:#1b1b1b; color:var(--fg); padding:10px 12px;
+    font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2;
+  }
+  /* log-scale tolerance stepper */
+  .stepper { display:flex; align-items:stretch; gap:0; }
+  .stepper input { text-align:center; border-radius:0; border-left:0; border-right:0; }
+  .stepper button { background:#1b1b1b; border:1px solid var(--border); color:var(--fg);
+    padding:0 9px; font-size:13px; border-radius:4px; }
+  .stepper button:first-child { border-radius:4px 0 0 4px; }
+  .stepper button:last-child { border-radius:0 4px 4px 0; }
+  .stepper button:hover { background:#2d2d30; }
+
+  /* Settings dialog: label above control, two fields per row, so the solver names
+     and the tolerance stepper each get half the dialog instead of competing for it.
+     The modal frame itself is shared (theme.css). */
+  #settingsBackdrop .modal { width:min(520px,100%); }
+  .settings { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
+  .settings .fld { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .settings .fld.wide { grid-column:1 / -1; }
+  .settings label { color:var(--muted); font-size:13px; }
+  .settings label .flag { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; opacity:.65; white-space:nowrap; }
+  .settings select { padding:6px 8px; font-size:15px; }
+
+  #icPanel { max-height:34%; overflow-y:auto; }
+  /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
+  /* Enum: name dropdown, no unit column. */
+  .ic-item.enum { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); }
+
+  /* The 3D animation panel styles live in the shared theme.css (anim/anim-view.js). */
+
+  /* charts area: one card per plot, scrollable */
+  /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
+
+  @media (max-width:820px), (orientation:portrait) {
+    body { overflow:auto; height:auto; min-height:100vh; }
+    main { grid-template-columns:1fr; }
+    .left { border-right:0; border-bottom:1px solid var(--border); }
+    /* Settings moved to the dialog, so the editor claims that height. */
+    textarea { min-height:46vh; }
+    #icPanel { max-height:none; }
+    .charts { overflow:visible; }
+    header { flex-wrap:wrap; }
+    header .status { order:3; flex-basis:100%; white-space:normal; }
+    .ex-select { max-width:56%; }
+    /* Documentation flows at the end of the page (scroll down to reach it). */
+    .docs { display:block; border-left:0; border-top:1px solid var(--border); }
+    .doc-body { overflow:visible; }
+    .doc-body.empty { min-height:80px; }
+    /* Collapsed: keep the header strip (with its reopen chevron), hide the body. */
+    body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .docs-head .doc-toggle svg { transform:rotate(180deg); }
+  }
+
+  /* Landscape screens: a third column for the model documentation. Always at
+     least a thin rail with a reopen chevron, so it never vanishes entirely — it
+     just starts collapsed on the narrower widths (see autoDocs). */
+  @media (min-width:821px) and (orientation:landscape) {
+    main { grid-template-columns:minmax(320px,30%) 1fr minmax(260px,22%); }
+    .docs { display:flex; }
+    /* Collapsed: the column becomes a thin rail with a reopen chevron. */
+    body.docs-hidden main { grid-template-columns:minmax(320px,40%) 1fr 34px; }
+    body.docs-hidden .docs-head, body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .doc-expand { display:flex; flex:1 1 auto; align-items:flex-start;
+      justify-content:center; width:100%; padding:10px 0; }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "../anim/three.module.min.js" } }
+</script>
+</head>
+<body>
+<header>
+  <span class="title">Simulator</span>
+  <span class="status" id="status">Loading compiler…</span>
+  <button id="viewToggle" class="ghost" style="display:none"></button>
+  <button id="settingsBtn" class="ghost icon-only" title="Simulation settings" aria-label="Simulation settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
+  <button id="run" disabled>Run</button>
+  <button id="downloadRes" class="ghost icon-only" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+</header>
+
+<main>
+  <div class="left">
+    <div class="section-label editor-label">
+      <span>Modelica model</span>
+      <select id="examples" class="ex-select" title="Load an example"></select>
+    </div>
+    <textarea id="src" spellcheck="false"></textarea>
+
+    <div class="panel" id="icPanel">
+      <div class="section-label">Initial conditions &amp; parameters</div>
+      <div class="ic-grid" id="icGrid"></div>
+      <div class="ic-empty" id="icEmpty">—</div>
+    </div>
+  </div>
+
+  <div class="right" id="right">
+    <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Run a model to see results.</div></div>
+  </div>
+
+  <div class="docs" id="docs">
+    <div class="docs-head">
+      <span class="section-label">Documentation</span>
+      <button class="doc-toggle" id="docCollapse" title="Hide documentation" aria-label="Hide documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="doc-body empty" id="docBody">—</div>
+    <button class="doc-toggle doc-expand" id="docExpand" title="Show documentation" aria-label="Show documentation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="settingsBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Simulation settings" aria-modal="true">
+    <div class="modal-head">
+      <span>Simulation settings</span>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body settings">
+      <div class="fld"><label for="stop">Stop time</label>
+        <input id="stop" type="number" step="any" /></div>
+      <div class="fld"><label for="intervals">Intervals</label>
+        <input id="intervals" type="number" step="1" min="1" /></div>
+      <div class="fld"><label for="method">Integration method <span class="flag">-s</span></label>
+        <select id="method"><option value="dassl">dassl</option><option value="euler">euler</option></select></div>
+      <div class="fld"><label for="tol">Tolerance</label>
+        <div class="stepper">
+          <button type="button" id="tolDn" title="÷10">▼</button>
+          <input id="tol" type="text" inputmode="decimal" />
+          <button type="button" id="tolUp" title="×10">▲</button>
+        </div></div>
+      <div class="fld"><label for="nls">Nonlinear solver <span class="flag">-nls</span></label>
+        <select id="nls"></select></div>
+      <div class="fld"><label for="nlsLS" title="Linear solver used by the nonlinear solver">NLS linear solver <span class="flag">-nlsLS</span></label>
+        <select id="nlsLS"></select></div>
+      <div class="fld"><label for="ls">Linear solver <span class="flag">-ls</span></label>
+        <select id="ls"></select></div>
+      <div class="fld"><label for="lss">Sparse linear solver <span class="flag">-lss</span></label>
+        <select id="lss"></select></div>
+      <div class="fld wide"><label for="lv">Log streams <span class="flag">-lv</span></label>
+        <input id="lv" type="text" placeholder="LOG_STATS, LOG_SOLVER, …" title="Comma separated" /></div>
+      <p class="modal-hint">Solver selectors and log streams are read at each run, so changing one re-simulates without recompiling. The model's output goes to the browser console.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Export FMU" aria-modal="true">
+    <div class="modal-head">
+      <span>Export FMU</span>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Interfaces</label>
+      <div class="chk-group">
+        <label class="chk"><input type="checkbox" id="fmiMe" checked /> Model Exchange</label>
+        <label class="chk"><input type="checkbox" id="fmiCs" checked /> Co-Simulation</label>
+      </div>
+      <label for="csSolver">CS solver</label>
+      <select id="csSolver"></select>
+      <label>Also run natively on</label>
+      <div class="chk-group" id="fmuPlatforms"></div>
+      <p class="modal-hint">FMI 3.0 wasm component, built around the module this model was compiled to — the export links an adapter onto it rather than translating again. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
+      <p class="modal-hint" id="csOnlyHint" hidden>Co-Simulation on its own is translated separately, so that export takes as long as a compile: it needs the output derivatives <code>fmi3GetOutputDerivatives</code> answers from, which only a pure Co-Simulation translation carries.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" data-close>Cancel</button>
+      <button id="exportGo">Export</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { AnimView } from '../anim/anim-view.js';
+import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { attachFmuAot } from '../fmu-aot.js';
+import { bindModal, downloadBlob } from '../ui.js';
+// The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
+// compile/simulate never freezes the UI. Two are spawned: a plain one that is
+// ready fast, and a second that installs the MSL in the background and takes
+// over once ready (so library examples like PID_Controller can run).
+
+// Selectable examples come from ./config.json (shipped alongside this page), so a
+// host can curate their own set without touching the code. Each entry is either
+// inline (`source` text, or `sourceFile` fetched lazily) run on any worker, or a
+// `library` class inside the MSL (needs the MSL worker) with an optional `figures`
+// annotation that curates the plotted variables. Populated by loadConfig().
+let EXAMPLES = [];
+// Minimal safety net if config.json is missing or invalid — the app still runs.
+const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: [
+  { id: 'demo', label: 'Demo',
+    source: 'model Demo\n  Real x(start = 1, fixed = true);\nequation\n  der(x) = -x;\nend Demo;\n' } ] };
+
+// Categorical series palette, validated for the dark chart surface (#252526):
+// eight distinct hues in a fixed, CVD-optimized order (dataviz reference palette).
+// The always-present legend is the secondary encoding for the one adjacent pair
+// that sits in the CVD floor band.
+
+const el = (id) => document.getElementById(id);
+const statusEl = el('status'), runBtn = el('run'), srcEl = el('src');
+const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
+const charts = createCharts(chartsEl);
+const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
+const exSel = el('examples'), docBody = el('docBody');
+const settingsBtn = el('settingsBtn'), downloadResBtn = el('downloadRes');
+const rightEl = el('right');
+
+// Documentation collapse/expand, driven from inside the widget: a chevron in the
+// doc header hides it; when collapsed it leaves a thin rail (desktop) or header
+// strip (mobile) whose chevron reopens it. Collapsing widens the charts.
+let docsUserToggled = false;   // once the user decides, stop auto-collapsing
+function reflowDocs() {
+  charts.redraw();                                   // chart width changed
+  if (animView) animView.resize();
+}
+function toggleDocs() {
+  docsUserToggled = true;
+  document.body.classList.toggle('docs-hidden');
+  reflowDocs();
+}
+// Landscape screens narrower than the full 3-column layout start with the doc
+// column collapsed to its rail (the chevron stays, so it's never lost) rather
+// than vanishing. Wide screens start expanded; the user's choice overrides both.
+function autoDocs() {
+  if (docsUserToggled) return;
+  const landscape = window.matchMedia('(orientation:landscape)').matches && window.innerWidth >= 821;
+  const wantHidden = landscape && window.innerWidth < 1300;
+  if (document.body.classList.contains('docs-hidden') === wantHidden) return;
+  document.body.classList.toggle('docs-hidden', wantHidden);
+  reflowDocs();
+}
+el('docCollapse').addEventListener('click', toggleDocs);
+el('docExpand').addEventListener('click', toggleDocs);
+
+let tolValue = 1e-6;
+// Round to 6 significant figures so `1e-6 * 10` shows as `1e-5`, not `9.999…e-6`.
+const cleanTol = (v) => Number(v.toPrecision(6));
+function renderTol() { tolEl.value = cleanTol(tolValue).toExponential(); }
+renderTol();
+
+function setStatus(text, cls='') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
+function num(v, d) { const n = parseFloat(v); return isFinite(n) ? n : d; }
+const dur = (ms) => ms >= 10000 ? (ms / 1000).toFixed(1) + ' s' : Math.round(ms) + ' ms';
+
+// What the page is doing, so `fail` can name it and say how long it took.
+let opStart = null, opLabel = 'Failed';
+function beginOp(label) { opLabel = label; return (opStart = performance.now()); }
+
+function showEmpty(text, isErr = false) {
+  chartsEmpty.textContent = text;
+  chartsEmpty.className = 'charts-empty' + (isErr ? ' err' : '');
+  chartsEmpty.style.display = '';
+}
+
+// --- logging ---------------------------------------------------------------
+const DEBUG = true;
+const T0 = performance.now();
+const tstamp = () => ((performance.now() - T0) / 1000).toFixed(2) + 's';
+const log = (...a) => { if (DEBUG) console.log('[sim ' + tstamp() + ']', ...a); };
+// Debug handle for the console: window.__sim.snap, .mode, .builtModel, etc.
+if (DEBUG) window.__sim = {
+  get snap() { return snap; }, get mode() { return mode; },
+  get builtModel() { return builtModel; }, get figures() { return modelFigures; },
+  get anim() { return animView && animView.info; }, get animView() { return animView; },
+  finalValue: (n) => { const c = snap && snap.cols && snap.cols[n]; return c ? c[c.length - 1] : null; },
+};
+
+// --- Worker RPC ------------------------------------------------------------
+let nextId = 1;
+let w1 = null, w2 = null;          // w1: plain, fast start. w2: MSL, ready later.
+let primaryWorker = null;          // w1 until the MSL worker is promoted, then w2
+let mslReady = null;               // resolves to w2 once its MSL is installed
+let jobWorker = null;              // worker running the current foreground job
+let statusFocus = null;            // also surface this worker's status (while awaiting MSL)
+
+function attach(worker, tag) {
+  worker._tag = tag; worker._pending = new Map();
+  worker.onmessage = (ev) => {
+    const d = ev.data;
+    if (d.type === 'log') { log(tag + ':', d.text); return; }
+    if (d.type === 'status') { if (worker === jobWorker || worker === statusFocus) setStatus(d.text, 'busy'); return; }
+    const p = worker._pending.get(d.id); if (!p) return;
+    worker._pending.delete(d.id);
+    if (d.ok) p.resolve(d.result); else p.reject(new Error(d.error));
+  };
+  worker.onerror = (e) => {
+    log(tag + ' onerror:', e.message || e);
+    for (const [, p] of worker._pending) p.reject(new Error('worker error: ' + (e.message || e)));
+    worker._pending.clear();
+  };
+}
+function call(worker, cmd, args) {
+  const id = nextId++;
+  const t0 = performance.now();
+  log('→', worker._tag, cmd, args && args.name ? args.name : '');
+  return new Promise((resolve, reject) => {
+    worker._pending.set(id, {
+      resolve: (r) => { log('←', worker._tag, cmd, Math.round(performance.now() - t0) + 'ms'); resolve(r); },
+      reject,
+    });
+    worker.postMessage({ id, cmd, ...(args || {}) });
+  });
+}
+// `?driver=host|inwasm` overrides the simulation driver, for A/B'ing the two.
+const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).get('driver')] ?? null;
+
+// Per-worker cancel control block (SharedArrayBuffer, needs the page's COOP/COEP
+// headers): each worker gets its own so cancelling an export never disturbs another
+// worker's job, e.g. the background MSL install. activeExportWorker is the target.
+const canShareCancel = (typeof SharedArrayBuffer !== 'undefined');
+let activeExportWorker = null;
+function requestExportCancel() {
+  const w = activeExportWorker;
+  if (w && w._cancel) Atomics.store(w._cancel, 0, 1);
+}
+
+function makeWorker(tag) {
+  const w = new Worker(new URL('./omc-worker.js', import.meta.url), { type: 'module' });
+  attach(w, tag);
+  if (canShareCancel) {
+    w._cancel = new Int32Array(new SharedArrayBuffer(16));
+    w.postMessage({ cmd: 'setCancelBuffer', buf: w._cancel.buffer });
+  }
+  // A worker cannot spawn the FMU compiler itself; connect it to the shared one
+  // before `init`, so the platform list is known by then.
+  attachFmuAot(w);
+  if (DRIVER_MODE !== null) w.postMessage({ cmd: 'setDriver', mode: DRIVER_MODE });
+  return w;
+}
+// The MSL worker took over: make it primary and terminate the plain worker so we
+// keep a single wasm instance. A model built on w1 is dropped (rebuilt on demand).
+function promote() {
+  if (primaryWorker === w2) return;
+  primaryWorker = w2;
+  log('promoted MSL worker to primary');
+  retireW1();
+}
+async function retireW1() {
+  // Not while a job is on it: terminating a worker mid-call leaves the page
+  // waiting on a reply that can never come. An export holds w1 through
+  // activeExportWorker rather than jobWorker, and retires it when it finishes.
+  if (primaryWorker === w1 || !w1 || jobWorker === w1 || activeExportWorker === w1) return;
+  const dying = w1, model = builtModel;
+  // The result file lives in this worker, but the plot the user is looking at
+  // outlives it — so copy the file out first.
+  if (builtWorker === dying && resultReady && !resultCache) {
+    const got = await fetchResultFile(dying, model).catch(() => null);
+    // A run started while that was in flight: its result replaces this one.
+    if (got && resultReady && builtWorker === dying) resultCache = got;
+  }
+  if (w1 !== dying || jobWorker === dying || activeExportWorker === dying) return;   // raced
+  log('terminating w1');
+  if (builtWorker === dying) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
+  dying.terminate(); w1 = null;
+  syncResultDownload();
+}
+
+// A user model needs the MSL if it is a library copy, imports/extends Modelica,
+// or refers to a Modelica.* name. Such models must run on the MSL worker.
+function needsMsl(text) {
+  return mode === 'librarycopy' || /\bwithin\s+Modelica\b|\bimport\s+Modelica\b|\bextends\s+Modelica\b|\bModelica\./.test(text);
+}
+async function pickWorker(text) {
+  if (needsMsl(text)) { mslJobStarted = true; if (!mslDone) statusFocus = w2; try { return await mslReady; } finally { statusFocus = null; } }
+  return primaryWorker;
+}
+
+// Protect the single loaded MSL: never load a class into the Modelica namespace
+// (a `within Modelica…` clause or a Modelica.* class name would modify it).
+function touchesModelica(text) {
+  if (/^\s*within\s+Modelica\b/m.test(text)) return true;
+  const name = parseModelName(text);
+  return !!(name && /^Modelica(\.|$)/.test(name));
+}
+
+// Model name from source: within-path + class name (so within-scoped copies and
+// plain models both resolve without relying on getClassNames against a busy AST).
+function parseModelName(text) {
+  const within = (text.match(/^\s*within\s+([\w.]+)\s*;/m) || [])[1] || '';
+  const cls = (text.match(/\b(?:model|class|block|package|record|connector|function)\s+([A-Za-z_]\w*)/) || [])[1] || '';
+  if (!cls) return null;
+  return within ? within + '.' + cls : cls;
+}
+
+// --- state ------------------------------------------------------------------
+let icValues = new Map();     // param name -> input value (string)
+let icBaseline = new Map();   // the same, as the last run left it: unedited values
+let builtModel = null, lastText = null;
+let running = false, pendingKind = null, runningKind = null;
+let modelFigures = null;      // parsed figures for the current model, or null
+let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
+let colMap = new Map();       // result-variable name -> { values:Float64Array, unit }
+let snap = null;              // last simulation snapshot from a worker
+let modelDoc = '';            // current model's documentation HTML (persists across re-sims)
+let currentExample = null;
+let mode = 'inline';          // 'inline' | 'librarycopy'
+let builtWorker = null;       // worker that holds the current built model (for resim)
+let mslDone = false;          // true once the MSL worker has finished install+load
+let mslJobStarted = false;    // true once a real MSL job is requested → skip the throwaway warmup
+let copyName = null;          // top-level name of the current library copy (copyClass), else null
+let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
+let freshModel = true;        // true until a model's own experiment settings have been read back from a run
+let animView = null;          // the shared 3D animation panel (lazily created on first use)
+let resultReady = false;      // the built worker's VFS holds a complete `<model>_res.mat`
+let resultCache = null;       // { name, bytes } — kept when the worker holding it had to go
+
+// Only the parameters the user actually edited. Sending the whole grid back would
+// re-seed every start value from the last run's row 0, and the flag string is
+// parsed per run.
+function overrideFlag() {
+  const parts = [];
+  for (const [name, val] of icValues) {
+    if (val === icBaseline.get(name) || val === '' || !isFinite(parseFloat(val))) continue;
+    parts.push(name + '=' + parseFloat(val));
+  }
+  return parts.length ? '-override=' + parts.join(',') : '';
+}
+
+// -nls/-nlsLS/-ls/-lss. The values come from the compiler (omc_sim_solver_options),
+// so the menus only offer what this build can actually run — KLU, for one, is there
+// only when SUNDIALS was linked. Empty means "don't pass the flag", i.e. the
+// runtime's own choice, which is the default and not always one of the named values.
+const SOLVER_FLAGS = ['nls', 'nlsLS', 'ls', 'lss'];
+function fillSolverMenus(options) {
+  if (!options) return;
+  for (const flag of SOLVER_FLAGS) {
+    const sel = el(flag), keep = sel.value;
+    sel.replaceChildren(new Option('default', ''));
+    for (const v of options[flag] || []) sel.add(new Option(v, v));
+    sel.value = keep;                     // survives a second worker reporting the same set
+  }
+  // The integration method is the `-s` flag, so its menu is that flag's values —
+  // but with no "unset" entry: a run always names one.
+  const m = el('method'), keep = m.value;
+  if (options.s && options.s.length) {
+    m.replaceChildren(...options.s.map((v) => new Option(v, v)));
+    m.value = options.s.includes(keep) ? keep : options.s[0];
+  }
+}
+// A Co-Simulation FMU embeds the driver, and the FMU carries no SUNDIALS, so its
+// method list is its own (omc_fmu_cs_solvers), not the simulator's `-s` menu.
+function fillCsSolvers(values) {
+  const sel = el('csSolver'), keep = sel.value;
+  if (!values || !values.length) return;
+  sel.replaceChildren(...values.map((v) => new Option(v, v)));
+  sel.value = values.includes(keep) ? keep : values[0];
+}
+
+// The platforms this build has an FMI loader for. Empty when it has none, or when
+// the page is not cross-origin isolated (see fmu-aot.js).
+const PLATFORM_NAMES = {
+  'x86_64-linux': 'Linux x86-64', 'aarch64-linux': 'Linux ARM64',
+  'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
+  'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
+};
+function fillPlatforms(values) {
+  const group = el('fmuPlatforms');
+  if (!values || !values.length) {
+    group.replaceChildren(Object.assign(document.createElement('span'), {
+      className: 'modal-hint',
+      textContent: 'None available in this build — export with a desktop omc.',
+    }));
+    return;
+  }
+  group.replaceChildren(...values.map((p) => {
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: p });
+    const label = Object.assign(document.createElement('label'), { className: 'chk' });
+    label.append(box, ' ' + (PLATFORM_NAMES[p] || p));
+    return label;
+  }));
+}
+
+// The selectors plus `-lv` (log streams). Of these the runtime acts on LOG_STATS;
+// the rest are accepted and ignored, as unknown streams are for the C executable.
+const solverFlags = () => ({
+  ...Object.fromEntries(SOLVER_FLAGS.map((f) => [f, el(f).value])),
+  lv: el('lv').value.split(',').map((s) => s.trim()).filter(Boolean).join(','),
+});
+
+const unquote = (s) => { s = (s || '').trim(); return (s.startsWith('"') && s.endsWith('"'))
+  ? s.slice(1, -1).replace(/\\(.)/g, (_, c) => c === 'n' ? '\n' : c === 't' ? '\t' : c) : s; };
+
+function seedFromOptions(o) {
+  if (!o) return;
+  if (o.stopTime != null) el('stop').value = o.stopTime;
+  if (o.tolerance != null) { tolValue = o.tolerance; renderTol(); }
+  if (o.intervals != null) el('intervals').value = Math.round(o.intervals);
+}
+
+async function run(kind) {                       // 'full' | 'resim'
+  if (running) {
+    pendingKind = pendingKind === 'full' ? 'full' : kind;
+    // Cancel an in-flight resim so the latest values run now; a full build is left
+    // alone (its compiled model is needed, and it can't yield mid-build).
+    if (runningKind === 'resim' && jobWorker) jobWorker.postMessage({ cmd: 'cancelSim' });
+    return;
+  }
+  running = true; runningKind = kind; setRunUI(true);
+  resultReady = false; resultCache = null; syncResultDownload();
+  const tRun = beginOp(kind === 'resim' ? 'Re-simulation failed' : 'Simulation failed');
+  let runMs = 0;
+  log('run', kind, 'mode', mode);
+  setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
+
+  try {
+    const method = el('method').value, ov = overrideFlag(), solvers = solverFlags();
+    // A freshly loaded model drives its own settings: omit stopTime/intervals/
+    // tolerance so simulate() uses the experiment annotation; we read back what it
+    // used and seed the dialog. Once seeded (or user-overridden), pass the values.
+    const settings = freshModel ? { method } : { method,
+      stopTime: num(el('stop').value, 1),
+      intervals: Math.max(1, Math.round(num(el('intervals').value, 500))),
+      tolerance: tolValue };
+
+    // Re-simulate the already-built model (fast, no recompile) when possible.
+    if (kind === 'resim' && builtModel && builtWorker) {
+      jobWorker = builtWorker;
+      // The experiment reaches the run as simflags, so a changed stopTime,
+      // tolerance or solver is honoured here too — no rebuild.
+      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers, ...settings });
+      runMs = performance.now() - tRun;
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
+      if (!r.ok) return fail(r.error);
+      snap = r;
+    } else {
+      const text = srcEl.value, textChanged = text !== lastText;
+      if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
+      if (needsMsl(text) && !mslDone) setStatus('Loading Modelica library…', 'busy');
+      const worker = await pickWorker(text);
+      if (!worker) throw new Error('compiler not ready');
+      jobWorker = worker;
+      const name = parseModelName(text);
+      let lm;
+      if (preloaded && preloaded === name && !textChanged) {
+        lm = { ok: true, name };            // copyClass already loaded it — skip the redundant loadString
+      } else {
+        lm = await call(worker, 'loadSource', { text, name });
+      }
+      preloaded = null;
+      if (!lm.ok) return fail(lm.error);
+      // figures/doc are annotations, not results — show docs now, before simulating.
+      if (lm.figures !== undefined) modelFigures = lm.figures || null;
+      if (lm.doc !== undefined) { modelDoc = lm.doc || ''; renderDoc(); }
+      const r = await call(worker, 'simulate', { name: lm.name, override: ov, solvers, ...settings });
+      runMs = performance.now() - tRun;
+      if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
+      if (!r.ok) return fail(r.error);
+      builtModel = lm.name; builtWorker = worker; lastText = text; snap = r;
+    }
+
+    // Reflect the settings the run actually used, then treat them as user-editable.
+    if (kind !== 'resim' && snap.options) { seedFromOptions(snap.options); freshModel = false; }
+    if (kind !== 'resim') buildInitialConditions();   // docs already rendered pre-simulation
+    renderCharts();
+    resultReady = true; syncResultDownload();
+    await fetchAnim(builtWorker);      // 3D scene, if the model enabled -d=visxml
+    const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
+    const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
+    const t = snap.timing;
+    const phases = (t && t.chunks)
+      ? ` (start ${Math.round(t.startMs)} + integrate ${Math.round(t.advanceMs)} ms, ${t.chunks} chunks)` : '';
+    // Solver counters alongside the time: the same work taking longer is a very
+    // different bug from more work being done.
+    const i = snap.info;
+    const work = (i && i.steps != null)
+      ? ` · ${i.steps} steps, ${i.resEvals} ODE, ${i.jacEvals} jac, ${i.stateEvents} events` : '';
+    const msNote = t
+      ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${phases}${drv}${work}`
+      : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
+    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
+    log('done', snap.info.model, snap.info.rows, 'points');
+  } catch (e) {
+    log('run failed', e); fail('' + e);
+  }
+  finally {
+    running = false; runningKind = null; setRunUI(false); jobWorker = null; retireW1();
+    if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
+  }
+}
+
+// Read back on demand from the worker, or from retireW1's copy once that worker is
+// gone. Offered only for a run that finished: a failed one leaves a truncated file.
+function syncResultDownload() {
+  const name = resultCache ? resultCache.name
+             : (resultReady && builtModel && builtWorker) ? `${builtModel}_res.mat` : null;
+  downloadResBtn.hidden = !name;
+  if (name) downloadResBtn.title = downloadResBtn.ariaLabel = `Download ${name}`;
+}
+
+async function fetchResultFile(worker, model) {
+  if (!worker || !model) return null;
+  const r = await call(worker, 'resultFile', { name: model });
+  if (!r.ok) throw new Error(r.error);
+  return { name: r.filename, bytes: r.bytes };
+}
+
+downloadResBtn.addEventListener('click', async () => {
+  if (downloadResBtn.disabled) return;
+  downloadResBtn.disabled = true;
+  try {
+    const r = resultCache || await fetchResultFile(builtWorker, builtModel);
+    if (!r) return;
+    downloadBlob(r.name, r.bytes);
+    setStatus(`${r.name} — ${r.bytes.length} bytes.`);
+  } catch (e) { setStatus('' + e, 'err'); }
+  finally { downloadResBtn.disabled = false; }
+});
+
+// Run ↔ Cancel: while a job is running the button turns into a red Cancel.
+function setRunUI(busy) {
+  runBtn.textContent = busy ? 'Cancel' : 'Run';
+  runBtn.classList.toggle('cancel', busy);
+  runBtn.disabled = false;
+}
+
+// Cooperative cancel: the worker yields to its message loop every ~150ms, so this
+// message lands and the in-flight simulate resolves {cancelled:true} — worker (MSL +
+// JIT) and the built model survive for a re-run.
+function cancelRun() {
+  if (!running || !jobWorker) return;
+  pendingKind = null;
+  log('cancel: requesting', jobWorker._tag);
+  setStatus('Cancelling…', 'busy');
+  jobWorker.postMessage({ cmd: 'cancelSim' });
+}
+
+// --- examples ---------------------------------------------------------------
+// Immediately blank the stale panels so a switch doesn't keep showing the old
+// model's initial conditions / plots / docs until the new run finishes.
+function showBuilding() {
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
+  icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
+  charts.clear(chartsEmpty);
+  showEmpty('Simulating…');
+  docBody.className = 'doc-body empty'; docBody.textContent = '…';
+  if (animView) animView.hide();
+}
+
+async function selectExample(ex) {
+  beginOp('Loading the example failed');
+  currentExample = ex;
+  builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
+  snap = null; resultReady = false; resultCache = null; syncResultDownload();
+  showBuilding();
+  if (ex.library) {
+    // A genuine editable copy via copyClass: a self-contained top-level class with
+    // fully-qualified references. It never modifies the library and owns the copied
+    // figures/doc annotations. Runs on the MSL worker.
+    mode = 'librarycopy';
+    copyName = ex.library.split('.').pop();
+    mslJobStarted = true;
+    if (!mslDone) setStatus('Loading Modelica library…', 'busy');
+    let worker;
+    try { if (!mslDone) statusFocus = w2; worker = await mslReady; } catch (e) { return fail('' + e); } finally { statusFocus = null; }
+    let cc;
+    try { cc = await call(worker, 'copyClass', { from: ex.library, name: copyName, figures: ex.figures }); } catch (e) { return fail('' + e); }
+    if (!cc.ok) return fail(cc.error);
+    srcEl.value = unquote(cc.source);
+    modelFigures = cc.figures || null; modelDoc = cc.doc || ''; renderDoc();   // docs before simulating
+    preloaded = copyName; lastText = srcEl.value;   // copyClass already loaded it; skip the first loadSource
+    run('full');
+  } else {
+    mode = 'inline'; copyName = null;
+    if (ex.source == null && ex.sourceFile) {
+      try { ex.source = await fetchText(ex.sourceFile); } catch (e) { return fail('Could not load ' + ex.sourceFile + ': ' + e); }
+    }
+    srcEl.value = ex.source || '';
+    run('full');
+  }
+}
+
+// Fetch a text asset shipped with the page (example .mo files, config).
+async function fetchText(path) {
+  const r = await fetch(path, { cache: 'no-cache' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.text();
+}
+
+// Load ./config.json: title, example list, default example. Falls back to a
+// minimal built-in config so the page still works if it is missing.
+async function loadConfig() {
+  let cfg;
+  try { cfg = await (await fetch('./config.json', { cache: 'no-cache' })).json(); }
+  catch (e) { log('config.json load failed, using fallback', e); cfg = FALLBACK_CONFIG; }
+  if (cfg.title) { document.title = 'OpenModelica — ' + cfg.title; const t = document.querySelector('header .title'); if (t) t.textContent = cfg.title; }
+  EXAMPLES = Array.isArray(cfg.examples) && cfg.examples.length ? cfg.examples : FALLBACK_CONFIG.examples;
+  exSel.replaceChildren();
+  for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
+  currentExample = EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
+  exSel.value = currentExample.id;
+  // Pre-fill the editor with an inline default's source so it shows while the
+  // compiler boots; library examples fill in after copyClass.
+  if (!currentExample.library) {
+    try { if (currentExample.source == null && currentExample.sourceFile) currentExample.source = await fetchText(currentExample.sourceFile); }
+    catch (e) { log('default source load failed', e); }
+    if (currentExample.source) srcEl.value = currentExample.source;
+  }
+}
+
+// The status bar is one truncated line, so it keeps the verdict and the charts
+// box — the only panel big enough — carries the diagnostic itself.
+function fail(msg) {
+  log('FAIL', msg);
+  const took = opStart === null ? '' : ' after ' + dur(performance.now() - opStart);
+  setStatus(`${opLabel}${took} — see the message below.`, 'err');
+  modelFigures = null;
+  charts.clear(chartsEmpty);
+  showEmpty(('' + msg).trim() || 'Failed without a message.', true);
+}
+
+// --- editable initial conditions -------------------------------------------
+function buildInitialConditions() {
+  const params = (snap && snap.parameters) || [];
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
+  if (!params.length) { icEmpty.style.display = ''; icEmpty.textContent = 'This model has no editable parameters.'; return; }
+  icEmpty.style.display = 'none';
+  for (const p of params) {
+    const item = document.createElement('div'); item.className = 'ic-item';
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.name; nm.title = p.comment || p.name;
+    item.appendChild(nm);
+    if (p.enumNames && p.enumNames.length) {
+      // Enum: the overridden value is the 1-based index.
+      item.classList.add('enum');
+      const idx = Math.round(p.value) || 1;
+      icValues.set(p.name, String(idx));
+      icBaseline.set(p.name, String(idx));
+      const sel = document.createElement('select');
+      p.enumNames.forEach((n, i) => { const o = document.createElement('option'); o.value = String(i + 1); o.textContent = n; sel.appendChild(o); });
+      sel.value = String(idx);
+      sel.addEventListener('change', () => onParamChange(p.name, sel.value));
+      item.appendChild(sel);
+    } else {
+      icValues.set(p.name, String(p.value));
+      icBaseline.set(p.name, String(p.value));
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
+      inp.addEventListener('change', () => onParamChange(p.name, inp.value));
+      const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
+      item.append(inp, unit);
+    }
+    icGrid.appendChild(item);
+  }
+}
+
+// -override=name=value re-simulates the built model without recompiling; no
+// write-back to the model text.
+function onParamChange(name, value) {
+  icValues.set(name, value);
+  run('resim');
+}
+
+// Render the model's documentation HTML in the (wide-screen) doc column. The
+// content is the model's own Documentation(info=...); strip <script> as a guard.
+function renderDoc() {
+  const html = (modelDoc || '').replace(/<script[\s\S]*?<\/script>/gi, '').trim();
+  if (!html) { docBody.className = 'doc-body empty'; docBody.textContent = 'This model has no documentation.'; return; }
+  docBody.className = 'doc-body'; docBody.innerHTML = html; docBody.scrollTop = 0;
+}
+
+// --- result column access ---------------------------------------------------
+function buildColMap() {
+  colMap = new Map();
+  const series = (snap && snap.series) || [];
+  series.forEach((m) => { const c = snap.cols[m.name]; if (c) colMap.set(m.name, { values: c, unit: m.unit || '' }); });
+  if (snap && snap.time) colMap.set('time', { values: snap.time, unit: 's' });
+}
+function finalValue(name) { const c = colMap.get(name); if (!c) return null; const a = c.values; return a.length ? a[a.length - 1] : null; }
+// Expand the spec's variable-reference markup in titles/legends/captions using
+// final simulated values: %{x}, the MSL 4.1 %(variable:x); drop %(plot:id).
+function expandText(s) {
+  if (!s) return s || '';
+  const rep = (n) => { const v = finalValue(n.trim()); return v == null ? n : String(+v.toPrecision(5)); };
+  return s.replace(/%\{([^}]+)\}/g, (_, n) => rep(n))
+          .replace(/%\(variable:([^)]+)\)/g, (_, n) => rep(n))
+          .replace(/%\(plot:[^)]*\)/g, '');
+}
+// Align an x column and a y column to equal length (a constant is length 1).
+function alignXY(xcol, ycol) {
+  let xs = xcol.values, ys = ycol.values;
+  const n = Math.max(xs.length, ys.length);
+  const grow = (a) => a.length === 1 ? new Float64Array(n).fill(a[0]) : a;
+  xs = grow(xs); ys = grow(ys);
+  const L = Math.min(xs.length, ys.length);
+  return { xs: xs.subarray(0, L), ys: ys.subarray(0, L) };
+}
+
+// --- chart rendering --------------------------------------------------------
+function renderCharts() {
+  charts.clear();
+  buildColMap();
+  const haveFigs = !!(modelFigures && modelFigures.length);
+  toggleBtn.style.display = haveFigs ? '' : 'none';
+  const useFigs = haveFigs && viewMode !== 'all';
+  toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
+  if (useFigs) renderFigures(); else renderAllVariables();
+  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); showEmpty('No variables to plot.'); }
+}
+
+function renderAllVariables() {
+  const series = (snap && snap.series) || [];
+  const time = colMap.get('time');
+  if (!time) return;
+  const curves = [];
+  series.forEach((m) => {
+    if (m.constant || m.alias) return;
+    const yc = colMap.get(m.name); if (!yc) return;
+    const { xs, ys } = alignXY(time, yc);
+    curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
+  });
+  charts.add({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
+}
+
+function renderFigures() {
+  modelFigures.forEach((fig, fi) => {
+    const ftitle = expandText(fig.title);
+    if (ftitle) { const h = document.createElement('div'); h.className = 'fig-head'; h.textContent = ftitle; chartsEl.appendChild(h); }
+    (fig.plots || []).forEach((plot, pi) => {
+      const curves = [];
+      (plot.curves || []).forEach((cv) => {
+        const yc = colMap.get(cv.y); if (!yc) return;
+        const xname = cv.x && cv.x !== '' ? cv.x : 'time';
+        const xc = colMap.get(xname) || colMap.get('time'); if (!xc) return;
+        const { xs, ys } = alignXY(xc, yc);
+        curves.push({ label: expandText(cv.legend) || cv.y, unit: yc.unit || '',
+          color: COLORS[curves.length % COLORS.length], xs, ys, xName: xname });
+      });
+      const xAxis = plot.x || {}, yAxis = plot.y || {};
+      const xIsTime = curves.every((c) => c.xName === 'time' || !c.xName);
+      const spec = {
+        title: expandText(plot.title),
+        curves,
+        xIsTime,
+        xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
+        xUnit: xAxis.unit || (xIsTime ? 's' : ''),
+        yText: yAxis.label || '',
+        yUnit: yAxis.unit || '',
+        yMin: bound(yAxis.min), yMax: bound(yAxis.max),
+        yLog: (yAxis.scale && yAxis.scale.scaleType === 'Log'),
+        note: (plot.curves || []).length && !curves.length ? 'Referenced variables are not in the result.' : '',
+      };
+      charts.add(spec, 'f' + fi + 'p' + pi);
+    });
+    const cap = expandText(fig.caption);
+    if (cap) { const c = document.createElement('div'); c.className = 'caption'; c.textContent = cap; chartsEl.appendChild(c); }
+  });
+}
+function bound(arr) { return Array.isArray(arr) && arr.length ? arr[0] : null; }
+
+// Click a time-based chart to jump the animation (and the shared cursor) to that time.
+chartsEl.addEventListener('click', (ev) => {
+  if (!animView || !animView.info) return;
+  const c = charts.at(ev.target);
+  if (!c || !c.state || !c.spec.xIsTime || !c.state.active.length) return;
+  const st = c.state, xs = st.active[0].xs;
+  const vbX = (ev.clientX - c.svgEl.getBoundingClientRect().left) / c.svgEl.clientWidth * st.geom.W;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < xs.length; i++) { const d = Math.abs(st.px(xs[i]) - vbX); if (d < bd) { bd = d; best = i; } }
+  animView.seek(xs[best]);
+});
+
+// --- 3D animation (shown alongside the charts) ------------------------------
+// Ask the worker for the last run's scene; show the panel only if it has shapes.
+// Playback drives the shared time cursor on the charts (onTime).
+async function fetchAnim(worker) {
+  let info = null;
+  try {
+    const r = await call(worker, 'anim');
+    if (r && r.available) info = { shapes: r.shapes, times: r.times, data: r.data, stride: r.stride };
+  } catch (e) { log('anim fetch failed', e); }
+  if (info) {
+    if (!animView) { animView = new AnimView({ onTime: setChartsCursor }); rightEl.insertBefore(animView.el, chartsEl); }
+    animView.setData(info);
+  } else if (animView) {
+    animView.hide();
+  }
+}
+
+// --- synchronized time cursor on the charts ---------------------------------
+function nearestByX(xs, xv) { let b = 0, bd = Infinity; for (let i = 0; i < xs.length; i++) { const d = Math.abs(xs[i] - xv); if (d < bd) { bd = d; b = i; } } return b; }
+
+// Place a chart's hover-style cursor (vertical line, dots, tooltip) at sample i0.
+function placeCursor(chart, i0) {
+  const st = chart.state; if (!st) return;
+  const { active, px, py, geom, cursor, vline, dots } = st;
+  const cx = px(active[0].xs[i0]);
+  cursor.setAttribute('style', ''); vline.setAttribute('x1', cx); vline.setAttribute('x2', cx);
+  let html = '';
+  active.forEach((c, k) => {
+    const i = c.xs === active[0].xs ? i0 : nearestByX(c.xs, active[0].xs[i0]);
+    dots[k].setAttribute('cx', px(c.xs[i])); dots[k].setAttribute('cy', py(c.ys[i]));
+    html += '<div class="row"><span class="sw" style="background:' + c.color + '"></span>'
+      + escapeHtml(c.label) + ' = ' + (+c.ys[i].toPrecision(6)) + (c.unit ? ' ' + unitHTML(c.unit) : '') + '</div>';
+  });
+  const xLbl = (chart.spec.xText || 't').replace(/\s*\[.*\]$/, '');
+  chart.tip.innerHTML = '<div class="t">' + xLbl + ' = ' + (+active[0].xs[i0].toPrecision(6)) + '</div>' + html;
+  chart.tip.style.display = 'block';
+  const sw = chart.svgEl.clientWidth || geom.W, ww = chart.wrap.clientWidth || sw;
+  let tx = cx / geom.W * sw + 12;
+  if (tx + chart.tip.offsetWidth > ww) tx = cx / geom.W * sw - chart.tip.offsetWidth - 12;
+  chart.tip.style.left = Math.max(2, tx) + 'px'; chart.tip.style.top = '6px';
+}
+
+// Move the cursor of every time-based chart to time t (driven by playback/scrub).
+function setChartsCursor(t) {
+  for (const chart of charts.list) {
+    if (!chart.spec.xIsTime || !chart.state || !chart.state.active.length) continue;
+    placeCursor(chart, nearestByX(chart.state.active[0].xs, t));
+  }
+}
+
+// --- settings dialog --------------------------------------------------------
+const settingsDialog = bindModal(el('settingsBackdrop'));
+settingsBtn.addEventListener('click', () => settingsDialog.open());
+
+// --- wiring -----------------------------------------------------------------
+let debounce;
+srcEl.addEventListener('input', () => {   // manual edits are authoritative: re-read the model's settings
+  preloaded = null; freshModel = true;
+  clearTimeout(debounce); debounce = setTimeout(() => run('full'), 700);
+});
+for (const id of ['stop', 'intervals', 'method']) el(id).addEventListener('change', () => run('full'));
+// Solver selectors are runtime flags, not build settings: re-simulate, don't rebuild.
+for (const id of [...SOLVER_FLAGS, 'lv']) el(id).addEventListener('change', () => run('resim'));
+function stepTol(factor) { tolValue = cleanTol(Math.min(1e-1, Math.max(1e-15, tolValue * factor))); renderTol(); run('full'); }
+el('tolUp').addEventListener('click', () => stepTol(10));
+el('tolDn').addEventListener('click', () => stepTol(0.1));
+tolEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp') { e.preventDefault(); stepTol(10); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepTol(0.1); } });
+tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (isFinite(v) && v > 0) { tolValue = cleanTol(v); } renderTol(); run('full'); });
+runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('full'); });
+
+const exportBtn = el('exportFmu');
+let exporting = false;
+async function exportFmu({ fmuType, method, platforms }) {
+  if (running || exporting) return;
+  const text = srcEl.value;
+  if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
+  exporting = true;
+  beginOp('FMU export failed');
+  exportBtn.textContent = 'Cancel';         // the button cancels the running export
+  setStatus('Exporting FMU…', 'busy');
+  try {
+    if (needsMsl(text) && !mslDone) setStatus('Loading Modelica library…', 'busy');
+    const worker = await pickWorker(text);
+    if (!worker) throw new Error('compiler not ready');
+    activeExportWorker = worker;   // so a Cancel targets this worker's control block
+    // Loading the source again replaces the program in omc's symbol table, which
+    // is precisely what marks the compile step's translation stale — so an
+    // unchanged model goes straight to the export and links onto the kernel it
+    // already has. A changed one has to be reloaded, and is translated again.
+    let name = builtModel;
+    if (!(name && builtWorker === worker && text === lastText)) {
+      const lm = await call(worker, 'loadSource', { text, name: parseModelName(text) });
+      if (!lm.ok) return fail(lm.error);
+      name = lm.name;
+    }
+    const r = await call(worker, 'exportFmu', { name, fmuType, method, platforms });
+    if (r.cancelled) { setStatus('Export cancelled.'); return; }
+    if (!r.ok) return fail(r.error);
+    downloadBlob(r.filename, r.bytes);
+    setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
+  } catch (e) { fail('' + e); }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; retireW1(); }
+}
+
+// FMU export dialog: pick interface(s) and (for CS) the embedded solver.
+const exportBackdrop = el('exportBackdrop'), fmiMe = el('fmiMe'), fmiCs = el('fmiCs'), csSolver = el('csSolver');
+function syncExportDialog() {
+  // Only a pure Co-Simulation export needs its own translation; every other
+  // combination is served by the one the model was compiled with.
+  el('csOnlyHint').hidden = !(fmiCs.checked && !fmiMe.checked);
+  csSolver.disabled = !fmiCs.checked;
+  el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
+}
+const exportDialog = bindModal(exportBackdrop, {
+  onOpen: () => { if (exportBtn.disabled) return false; syncExportDialog(); },
+});
+fmiCs.addEventListener('change', syncExportDialog);
+fmiMe.addEventListener('change', syncExportDialog);
+// While exporting the button cancels; otherwise it opens the dialog.
+exportBtn.addEventListener('click', () => { if (exporting) requestExportCancel(); else exportDialog.open(); });
+el('exportGo').addEventListener('click', () => {
+  const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
+  const method = fmiCs.checked ? csSolver.value : undefined;
+  const platforms = [...el('fmuPlatforms').querySelectorAll('input:checked')].map((c) => c.value);
+  exportDialog.close();
+  exportFmu({ fmuType, method, platforms });
+});
+toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
+  if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });
+window.addEventListener('resize', () => { autoDocs(); charts.redraw(); });
+autoDocs();
+
+exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
+
+(async () => {
+  try {
+    await loadConfig();                             // examples + title, before the first run
+
+    if (DRIVER_MODE !== null) log('sim driver forced to', DRIVER_MODE ? 'in-wasm' : 'host', '(?driver=)');
+    w1 = makeWorker('w1');
+    w2 = makeWorker('w2-msl');
+    primaryWorker = w1;
+
+    // Bring the MSL worker up in the background; it takes over once ready. Once
+    // loaded, if the user hasn't already asked for an MSL model, warm it with a
+    // throwaway simulate so its first real run isn't cold (see mslJobStarted).
+    mslReady = (async () => {
+      await call(w2, 'init'); await call(w2, 'installMSL'); mslDone = true; promote();
+      if (!mslJobStarted) call(w2, 'warmup').catch((e) => log('warmup failed', e));
+      return w2;
+    })();
+    mslReady.catch((e) => log('MSL worker failed to initialise', e));
+
+    const v = await call(w1, 'init');
+    if (!v || !v.ok) return setStatus('omc_init() failed — see the devtools console.', 'err');
+    fillSolverMenus(v.solverOptions);
+    fillCsSolvers(v.fmuCsSolvers);
+    fillPlatforms(v.fmuPlatforms);
+    runBtn.disabled = false;
+    el('exportFmu').disabled = false;
+    setStatus('Ready. ' + v.version);
+    selectExample(currentExample);                  // run the configured default example
+  } catch (e) { log('startup error', e); setStatus('Startup error: ' + e, 'err'); }
+})();
+</script>
+</body>
+</html>

@@ -2,7 +2,6 @@
 // keywords: jacobian differentiation linearization
 // status:   correct
 // teardown_command: rm -rf testSteamPipeLin* output.log
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.3"});getErrorString();

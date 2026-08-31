@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -60,6 +64,7 @@ import Record = NFRecord;
 import InstContext = NFInstContext;
 
 protected
+import Absyn;
 import Attributes = NFAttributes;
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
@@ -71,10 +76,10 @@ import ExecStat.execStat;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import Call = NFCall;
+import DAE;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
-import Types;
 import NFSections.Sections;
 import List;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -100,6 +105,8 @@ uniontype TypingError
   record OUT_OF_BOUNDS
     Integer upperBound;
   end OUT_OF_BOUNDS;
+
+  record UNKNOWN_TYPE end UNKNOWN_TYPE;
 
   function isError
     input TypingError error;
@@ -140,7 +147,7 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  InstNode ext_node, con, de;
+  InstNode con, de;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -205,7 +212,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -303,7 +310,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got noninstantiated class " +
+        Error.terminate(getInstanceName() + " got noninstantiated class " +
           InstNode.name(clsNode), sourceInfo());
       then
         fail();
@@ -419,7 +426,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got record type without constructor", sourceInfo());
       then
         fail();
@@ -432,15 +439,18 @@ function typeComponent
   input Boolean typeChildren = true;
   output Type ty;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
-  Expression cond;
+  InstNode node;
+  Component c;
   Boolean is_deleted;
   array<Dimension> dims;
+  Binding binding;
 algorithm
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   ty := match c
     // An untyped component, type it.
@@ -491,7 +501,7 @@ algorithm
     // Any other type of component shouldn't show up here.
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got noninstantiated component " + InstNode.name(component), sourceInfo());
+        Error.terminate(getInstanceName() + " got noninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 
@@ -571,7 +581,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-iterator " + InstNode.name(iterator), sourceInfo());
+        Error.terminate(getInstanceName() + " got non-iterator " + InstNode.name(iterator), sourceInfo());
       then
         fail();
 
@@ -601,15 +611,13 @@ function typeDimension
 algorithm
   dimension := match dimension
     local
-      Expression exp, dim_exp;
-      Option<Expression> oexp;
+      Expression exp;
       Variability var;
       Dimension dim;
       Binding b;
       Type ty;
       TypingError ty_err;
-      Integer parent_dims, dim_index;
-      Boolean evaluated;
+      Integer parent_dims;
       Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
@@ -634,18 +642,16 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
-        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
             if InstContext.inRelaxed(context) then
               exp := Ceval.tryEvalExp(exp);
-              evaluated := Expression.isLiteral(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
                 SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
-              exp := Ceval.evalExp(exp, target);
+              exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
@@ -794,10 +800,19 @@ algorithm
   // dimensions of the parent(s).
   dim_index := index + parentDims;
 
-  if isSome(ty) then
+  if isSome(ty) and not Type.isConditionalArray(Util.getOption(ty)) then
     // If the type is known, take the dimension directly from it.
     (dim, error) := nthDimensionBoundsChecked(Util.getOption(ty), dim_index);
-    oe := NONE();
+
+    if Dimension.isUnknown(dim) then
+      // Fall back to typing the expression if the dimension we got from the
+      // type is unknown, which can happen when the type of the binding isn't
+      // fully typed yet due to cyclic dependencies.
+      (dim, oe, error) := typeExpDim(exp, dim_index,
+        InstContext.set(context, NFInstContext.DIMENSION), info);
+    else
+      oe := NONE();
+    end if;
   else
     // If the type is unknown, try to type the expression only as much as is
     // needed to get the dimension we're looking for.
@@ -908,7 +923,6 @@ function getRecordElementBinding
 protected
   InstNode parent;
   Component comp;
-  Expression exp;
   Binding parent_binding;
 algorithm
   parent := InstNode.instanceParent(component);
@@ -949,7 +963,6 @@ function typeBindings
 protected
   Class c;
   ClassTree cls_tree;
-  InstNode node;
 algorithm
   c := InstNode.getClass(cls);
 
@@ -980,7 +993,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -992,21 +1005,20 @@ function typeComponentBinding
   input InstContext.Type context;
   input Boolean typeChildren = true;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node;
   Component c;
   Binding binding;
-  InstNode cls;
-  MatchKind matchKind;
   String name;
-  Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
+  Variability comp_var;
   Attributes attrs;
   Type ty;
 algorithm
-  c := InstNode.component(node);
-
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   () := match c
     case Component.COMPONENT()
@@ -1113,7 +1125,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
       then
         fail();
 
@@ -1171,7 +1183,6 @@ algorithm
       Variability var;
       Purity purity;
       SourceInfo info;
-      NFBinding.EachType each_ty;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
@@ -1180,14 +1191,14 @@ algorithm
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, binding.eachType,
           Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false,
-          binding.source, binding.info);
+          binding.source, binding.confidence, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated binding", sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated binding", sourceInfo());
       then
         fail();
 
@@ -1243,7 +1254,7 @@ algorithm
         end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, NFBinding.EachType.NOT_EACH,
-          Mutable.create(eval_state), false, condition.source, info);
+          Mutable.create(eval_state), false, condition.source, condition.confidence, info);
 
   end match;
 end typeComponentCondition;
@@ -1257,7 +1268,6 @@ protected
   String name;
   Binding binding;
   InstNode parent;
-  Type ty;
 algorithm
   attribute := match attribute
     // Modifier with submodifier, e.g. Real x(start(y = 1)), is an error.
@@ -1348,7 +1358,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, context, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, exp.ty, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -1431,8 +1441,11 @@ algorithm
     case Expression.CAST()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
+        exp.exp := e1;
+        exp.ty  := Type.copyDims(ty, exp.ty);
       then
-        typeExp(exp.exp, next_context, info, retype);
+        (exp, exp.ty, variability, purity);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -1650,7 +1663,7 @@ function typeSubscriptedExp2
   input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
-  output Type ty;
+  output Type ty = Type.UNKNOWN();
   output Variability variability;
   output Purity purity;
 protected
@@ -1829,7 +1842,6 @@ function typeCrefDim
   output TypingError error = TypingError.NO_ERROR();
 protected
   list<ComponentRef> crl;
-  list<Subscript> subs;
   Integer index, dim_count, dim_total = 0;
   InstNode node;
   Component c;
@@ -1855,7 +1867,7 @@ algorithm
 
   for cr in crl loop
     () := match cr
-      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = subs)
+      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = _)
         algorithm
           node := InstNode.resolveOuter(cr.node);
           c := InstNode.component(node);
@@ -1913,8 +1925,6 @@ function checkCyclicDimension
   input InstNode component;
   input Integer index;
   input SourceInfo info;
-protected
-  Expression dim_exp;
 algorithm
   () := match dim
     case Dimension.UNTYPED(isProcessing = true)
@@ -1943,12 +1953,20 @@ protected
   Integer dim_size = Type.dimensionCount(ty);
   Integer index = dimIndex + offset;
 algorithm
+  // Check that the dimension index is within bounds.
   if index < 1 or index > dim_size then
     dim := Dimension.UNKNOWN();
     error := TypingError.OUT_OF_BOUNDS(dim_size - offset);
   else
-    dim := Type.nthDimension(ty, index);
-    error := TypingError.NO_ERROR();
+    try
+      dim := Type.nthDimension(ty, index);
+      error := TypingError.NO_ERROR();
+    else
+      // Type.nthDimension doesn't work for e.g. conditional arrays that don't have a
+      // selected branch yet. Return an error in that case instead of just failing.
+      dim := Dimension.UNKNOWN();
+      error := TypingError.UNKNOWN_TYPE();
+    end try;
   end if;
 end nthDimensionBoundsChecked;
 
@@ -1963,7 +1981,6 @@ function typeCrefExp
 protected
   ComponentRef cr;
   Variability node_var, subs_var;
-  Boolean eval;
 algorithm
   (cr, ty, node_var, subs_var) := typeCref(cref, context, info);
   exp := Expression.CREF(ty, cr);
@@ -1978,8 +1995,6 @@ function typeCref
         output Type ty;
         output Variability nodeVariability;
         output Variability subsVariability;
-protected
-  Variability subs_var;
 algorithm
   // Check that time isn't used in a function context.
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
@@ -1991,6 +2006,12 @@ algorithm
   end if;
 
   (cref, subsVariability) := typeCref2(cref, context, info);
+
+  // Fill all implicit array subscripts with explicit `:`
+  if ComponentRef.hasImplicitTrailingIndex(cref) then
+    cref := ComponentRef.fillSubscripts(cref);
+  end if;
+
   ty := ComponentRef.getSubscriptedType(cref);
   nodeVariability := ComponentRef.nodeVariability(cref);
 end typeCref;
@@ -2049,7 +2070,7 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.NAME_NODE())
       algorithm
-        (subs, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
+        (_, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
           Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
         cref.restCref := rest_cr;
@@ -2129,7 +2150,6 @@ function typeSubscript
 protected
   Expression e = Expression.EMPTY(Type.UNKNOWN());
   Type ty, matched_ty;
-  MatchKind mk;
 algorithm
   (ty, variability) := match subscript
     // An untyped subscript, type the expression and create a typed subscript.
@@ -2138,21 +2158,19 @@ algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
+        if Type.isArray(ty) and InstContext.inEquation(context) then
+          Structural.markExp(e);
+          e := Ceval.tryEvalExp(e);
+          ty := Expression.typeOf(e);
+        end if;
+
         if checkSubscript then
           (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
         else
           matched_ty := ty;
         end if;
 
-        if Type.isArray(ty) then
-          outSubscript := Subscript.SLICE(e);
-
-          if InstContext.inEquation(context) then
-            Structural.markExp(e);
-          end if;
-        else
-          outSubscript := Subscript.INDEX(e);
-        end if;
+        outSubscript := if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
       then
         (matched_ty, variability);
 
@@ -2185,7 +2203,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown subscript", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown subscript", sourceInfo());
       then
         fail();
   end match;
@@ -2215,6 +2233,7 @@ end checkSubscriptType;
 function typeArray
   input array<Expression> elements;
   input Boolean isLiteral;
+  input Type ty;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2258,6 +2277,11 @@ algorithm
       expl := exp :: expl;
       tys := ty2 :: tys;
     end for;
+  else
+    // If the array is empty it probably already has a type, since empty arrays
+    // can't be created in Modelica without evaluating some expression. So use
+    // that type instead of an unknown type so we don't lose it.
+    ty1 := Type.arrayElementType(ty);
   end if;
 
   // Give the actual error-messages here after we got the super-type of the array
@@ -2514,7 +2538,7 @@ protected
   Expression exp, index;
   Type exp_ty, index_ty;
   TypeCheck.MatchKind ty_match;
-  Integer iindex, dim_size;
+  Integer iindex;
   Dimension dim;
   TypingError ty_err;
   Option<Expression> oexp;
@@ -2644,8 +2668,6 @@ function evaluateEnd
  algorithm
    outExp := match exp
      local
-      Type ty;
-      ComponentRef cr;
 
     case Expression.END() then Dimension.endExp(dim, subscriptedExp, index);
 
@@ -2690,7 +2712,8 @@ algorithm
 
   (tb, tb_ty, tb_var, tb_pur) := typeExp(tb, next_context, info);
   (fb, fb_ty, fb_var, fb_pur) := typeExp(fb, next_context, info);
-  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty);
+  // Type match the branches, using the context for the whole if-expression rather than the branches.
+  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty, context);
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
@@ -2724,7 +2747,7 @@ protected
 algorithm
   cls := InstNode.getClass(classNode);
 
-  _ := match cls
+  () := match cls
     case Class.INSTANCED_CLASS() guard Type.isBasic(Type.arrayElementType(cls.ty)) then ();
 
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components),
@@ -2772,7 +2795,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
       then
         fail();
   end match;
@@ -2789,7 +2812,7 @@ protected
 algorithm
   cls := InstNode.getClass(classNode);
 
-  _ := match cls
+  () := match cls
     case Class.INSTANCED_CLASS(sections = sections)
       algorithm
         sections := match sections
@@ -2834,7 +2857,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
       then
         fail();
   end match;
@@ -2900,7 +2923,6 @@ algorithm
   extDecl := match extDecl
     local
       list<Expression> args;
-      ComponentRef output_ref;
       Function fn;
       Boolean single_output;
       array<InstNode> comps;
@@ -2998,6 +3020,10 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
   comp := InstNode.component(component);
 
   if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
@@ -3014,7 +3040,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
+        Error.terminate(getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 
@@ -3027,37 +3053,18 @@ function typeEquation
 algorithm
   eq := match eq
     local
-      Expression cond, e1, e2, e3;
-      Type ty, ty1, ty2;
-      list<Equation> eqs1, body;
-      list<Equation.Branch> tybrs;
+      Expression e1, e2, e3;
+      list<Equation> body;
       InstNode iterator;
-      MatchKind mk;
-      Variability var, bvar;
       Integer next_context;
       SourceInfo info;
+      Variability var;
 
     case Equation.EQUALITY() then typeEqualityEquation(eq.lhs, eq.rhs, context, eq.scope, eq.source);
     case Equation.CONNECT()  then typeConnect(eq.lhs, eq.rhs, context, eq.scope, eq.source);
-
-    case Equation.FOR()
-      algorithm
-        info := ElementSource.getInfo(eq.source);
-
-        if isSome(eq.range) then
-          SOME(e1) := eq.range;
-        else
-          e1 := deduceIterationRangeEq(eq, eq.iterator, info);
-        end if;
-
-        e1 := typeIterator(eq.iterator, e1, context, structural = true);
-        next_context := InstContext.set(context, NFInstContext.FOR);
-        body := list(typeEquation(e, next_context) for e in eq.body);
-      then
-        Equation.FOR(eq.iterator, SOME(e1), body, eq.scope, eq.source);
-
-    case Equation.IF() then typeIfEquation(eq.branches, context, eq.scope, eq.source);
-    case Equation.WHEN() then typeWhenEquation(eq.branches, context, eq.scope, eq.source);
+    case Equation.FOR()      then typeForEquation(eq, context);
+    case Equation.IF()       then typeIfEquation(eq.branches, context, eq.scope, eq.source);
+    case Equation.WHEN()     then typeWhenEquation(eq.branches, context, eq.scope, eq.source);
 
     case Equation.ASSERT()
       algorithm
@@ -3099,21 +3106,18 @@ function typeConnect
 protected
   Expression lhs, rhs;
   Type lhs_ty, rhs_ty;
-  Variability lhs_var, rhs_var;
   MatchKind mk;
   InstContext.Type next_context;
   SourceInfo info;
-  list<Equation> eql;
   Boolean lhs_deleted, rhs_deleted;
 algorithm
   info := ElementSource.getInfo(source);
 
-  // Connections may not be used in if-equations unless the conditions are
-  // parameter expressions.
+  // Connections may not be used in if-equations or for-equations unless the
+  // conditions are evaluable expressions.
   // TODO: Also check for cardinality etc. as per 8.3.3.
   if InstContext.inNonexpandable(context) then
-    Error.addSourceMessage(Error.CONNECT_IN_IF,
-      {Expression.toString(lhsConn), Expression.toString(rhsConn)}, info);
+    Error.addSourceMessage(Error.IN_NON_EVALUABLE_IF_OR_FOR, {"connect"}, info);
     fail();
   end if;
 
@@ -3328,7 +3332,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := typeStatements(st.body, next_context);
       then
-        Statement.FOR(st.iterator, SOME(e1), body, st.forType, st.source);
+        Statement.FOR(st.iterator, SOME(e1), body, st.forType, st.source, st.sub_iters);
 
     case Statement.IF()
       algorithm
@@ -3507,7 +3511,7 @@ algorithm
     fail();
   end if;
 
-  eq := Equation.EQUALITY(e1, e2, ty, scope, source);
+  eq := Equation.makeEquality(e1, e2, ty, source, scope);
 
   if Expression.isExternalCall(e2) then
     Call.updateExternalRecordArgs(Expression.tupleElements(e1));
@@ -3542,6 +3546,40 @@ algorithm
     fail();
   end if;
 end typeCondition;
+
+function typeForEquation
+  input Equation eq;
+  input InstContext.Type context;
+  output Equation forEq;
+protected
+  InstNode iterator;
+  Option<Expression> range;
+  list<Equation> body;
+  InstNode scope;
+  DAE.ElementSource src;
+  SourceInfo info;
+  Expression range_exp;
+  Variability range_var;
+  InstContext.Type next_context;
+algorithm
+  Equation.FOR(iterator, range, body, scope, src) := eq;
+
+  if isSome(range) then
+    SOME(range_exp) := range;
+  else
+    range_exp := deduceIterationRangeEq(eq, iterator, ElementSource.getInfo(src));
+  end if;
+
+  (range_exp, _, range_var) := typeIterator(iterator, range_exp, context, structural = true);
+  next_context := InstContext.set(context, NFInstContext.FOR);
+
+  if range_var > Variability.PARAMETER or Structural.isExpressionNotFixed(range_exp, maxDepth = 100) then
+    next_context := InstContext.set(context, NFInstContext.NONEXPANDABLE);
+  end if;
+
+  body := list(typeEquation(e, next_context) for e in body);
+  forEq := Equation.FOR(iterator, SOME(range_exp), body, scope, src);
+end typeForEquation;
 
 function typeIfEquation
   input list<Equation.Branch> branches;
@@ -3644,6 +3682,11 @@ function typeWhenCondition
   output Type ty;
   output Variability variability;
 algorithm
+  if InstContext.inNonexpandable(context) then
+    Error.addSourceMessage(Error.IN_NON_EVALUABLE_IF_OR_FOR, {"when"}, ElementSource.getInfo(source));
+    fail();
+  end if;
+
   (outCondition, ty, variability) := typeCondition(condition, context, source,
     Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = allowClock);
 
@@ -3713,7 +3756,6 @@ function typeReinit
   input InstContext.Type context;
   input DAE.ElementSource source;
 protected
-  Variability var;
   MatchKind mk;
   Type ty1, ty2;
   ComponentRef cref;
@@ -3919,5 +3961,5 @@ algorithm
   end if;
 end deduceIterationRange2;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFTyping;

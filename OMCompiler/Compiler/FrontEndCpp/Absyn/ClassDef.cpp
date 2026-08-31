@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include <ostream>
 
 #include "Util.h"
@@ -15,14 +50,23 @@ constexpr int ENUMERATION = 3;
 constexpr int OVERLOAD = 4;
 constexpr int PDER = 5;
 
-extern record_description SCode_ClassDef_PARTS__desc;
-extern record_description SCode_ClassDef_CLASS__EXTENDS__desc;
-extern record_description SCode_ClassDef_DERIVED__desc;
-extern record_description SCode_ClassDef_ENUMERATION__desc;
-extern record_description SCode_ClassDef_OVERLOAD__desc;
-extern record_description SCode_ClassDef_PDER__desc;
+constexpr int PARTS_ELEMENT_LST = 0;
+constexpr int PARTS_NORMAL_EQUATION_LST = 1;
+constexpr int PARTS_INITIAL_EQUATION_LST = 2;
+constexpr int PARTS_NORMAL_ALGORITHM_LST = 3;
+constexpr int PARTS_INITIAL_ALGORITHM_LST = 4;
+constexpr int PARTS_CONSTRAINT_LST = 5;
+constexpr int PARTS_CLS_ATTRS = 6;
+constexpr int PARTS_EXTERNAL_DECL = 7;
 
-extern record_description SCode_Enum_ENUM__desc;
+extern "C" record_description SCode_ClassDef_PARTS__desc;
+extern "C" record_description SCode_ClassDef_CLASS__EXTENDS__desc;
+extern "C" record_description SCode_ClassDef_DERIVED__desc;
+extern "C" record_description SCode_ClassDef_ENUMERATION__desc;
+extern "C" record_description SCode_ClassDef_OVERLOAD__desc;
+extern "C" record_description SCode_ClassDef_PDER__desc;
+
+extern "C" record_description SCode_Enum_ENUM__desc;
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
@@ -52,12 +96,14 @@ ClassParts::ClassParts(std::vector<std::unique_ptr<Element>> elements)
 }
 
 ClassParts::ClassParts(MetaModelica::Record value)
-  : _elements{value[0].mapVector([](auto v) { return Element::fromSCode(v); })},
-    _equations{value[1].mapVector<Equation>()},
-    _initialEquations{value[2].mapVector<Equation>()},
-    _algorithms{value[3].mapVector<Algorithm>()},
-    _initialAlgorithms{value[4].mapVector<Algorithm>()},
-    _externalDecl{value[7].mapPointer<ExternalDecl>()}
+  : _elements{value[PARTS_ELEMENT_LST].mapVector([](auto v) { return Element::fromSCode(v); })},
+    _equations{value[PARTS_NORMAL_EQUATION_LST].mapVector<Equation>()},
+    _initialEquations{value[PARTS_INITIAL_EQUATION_LST].mapVector<Equation>()},
+    _algorithms{value[PARTS_NORMAL_ALGORITHM_LST].mapVector<Algorithm>()},
+    _initialAlgorithms{value[PARTS_INITIAL_ALGORITHM_LST].mapVector<Algorithm>()},
+    _constraints{value[PARTS_CONSTRAINT_LST]},
+    _classAttributes{value[PARTS_CLS_ATTRS]},
+    _externalDecl{value[PARTS_EXTERNAL_DECL].mapPointer<ExternalDecl>()}
 {
 
 }
@@ -68,6 +114,8 @@ ClassParts::ClassParts(const ClassParts &other) noexcept
     _initialEquations{other._initialEquations},
     _algorithms{other._algorithms},
     _initialAlgorithms{other._initialAlgorithms},
+    _constraints{other._constraints},
+    _classAttributes{other._classAttributes},
     _externalDecl{other._externalDecl ? std::make_unique<ExternalDecl>(*other._externalDecl) : nullptr}
 {
 
@@ -86,11 +134,13 @@ namespace OpenModelica::Absyn
   {
     using std::swap;
     swap(first._elements, second._elements);
-    swap(first._externalDecl, second._externalDecl);
     swap(first._equations, second._equations);
     swap(first._initialEquations, second._initialEquations);
     swap(first._algorithms, second._algorithms);
     swap(first._initialAlgorithms, second._initialAlgorithms);
+    swap(first._constraints, second._constraints);
+    swap(first._classAttributes, second._classAttributes);
+    swap(first._externalDecl, second._externalDecl);
   }
 }
 
@@ -103,16 +153,16 @@ std::unique_ptr<ClassDef> ClassParts::clone() const noexcept
 
 MetaModelica::Value ClassParts::toSCode() const noexcept
 {
-  return MetaModelica::Record(PARTS, SCode_ClassDef_PARTS__desc, {
-    MetaModelica::List(_elements, [](const auto &e) { return e->toSCode(); }),
+  return MetaModelica::Record{PARTS, SCode_ClassDef_PARTS__desc, {
+    MetaModelica::List{_elements, [](const auto &e) { return e->toSCode(); }},
     Equation::toSCodeList(_equations),
     Equation::toSCodeList(_initialEquations),
-    MetaModelica::List(_algorithms, [](const auto &alg) { return alg.toSCode(); }),
-    MetaModelica::List(_initialAlgorithms, [](const auto &alg) { return alg.toSCode(); }),
-    MetaModelica::List(),
-    MetaModelica::List(),
-    MetaModelica::Option(_externalDecl.get(), [](const auto &decl) { return decl.toSCode(); })
-  });
+    MetaModelica::List{_algorithms, [](const auto &alg) { return alg.toSCode(); }},
+    MetaModelica::List{_initialAlgorithms, [](const auto &alg) { return alg.toSCode(); }},
+    _constraints,
+    _classAttributes,
+    MetaModelica::Option{_externalDecl.get(), [](const auto &decl) { return decl.toSCode(); }}
+  }};
 }
 
 void ClassParts::apply(ClassDefVisitor &visitor) const
@@ -210,10 +260,10 @@ std::unique_ptr<ClassDef> ClassExtends::clone() const noexcept
 
 MetaModelica::Value ClassExtends::toSCode() const noexcept
 {
-  return MetaModelica::Record(CLASS_EXTENDS, SCode_ClassDef_CLASS__EXTENDS__desc, {
+  return MetaModelica::Record{CLASS_EXTENDS, SCode_ClassDef_CLASS__EXTENDS__desc, {
     _modifier.toSCode(),
     _composition->toSCode()
-  });
+  }};
 }
 
 void ClassExtends::apply(ClassDefVisitor &visitor) const
@@ -251,11 +301,11 @@ std::unique_ptr<ClassDef> Derived::clone() const noexcept
 
 MetaModelica::Value Derived::toSCode() const noexcept
 {
-  return MetaModelica::Record(DERIVED, SCode_ClassDef_DERIVED__desc, {
+  return MetaModelica::Record{DERIVED, SCode_ClassDef_DERIVED__desc, {
     _typeSpec.toAbsyn(),
     _modifier.toSCode(),
     _attributes.toSCode()
-  });
+  }};
 }
 
 void Derived::apply(ClassDefVisitor &visitor) const
@@ -290,14 +340,14 @@ std::unique_ptr<ClassDef> Enumeration::clone() const noexcept
 
 MetaModelica::Value Enumeration::toSCode() const noexcept
 {
-  return MetaModelica::Record(ENUMERATION, SCode_ClassDef_ENUMERATION__desc, {
-    MetaModelica::List(_literals, [](const auto &lit) {
-      return MetaModelica::Record(0, SCode_Enum_ENUM__desc, {
-        MetaModelica::Value(lit.first),
+  return MetaModelica::Record{ENUMERATION, SCode_ClassDef_ENUMERATION__desc, {
+    MetaModelica::List{_literals, [](const auto &lit) {
+      return MetaModelica::Record{0, SCode_Enum_ENUM__desc, {
+        MetaModelica::Value{lit.first},
         lit.second.toSCode()
-      });
-    })
-  });
+      }};
+    }}
+  }};
 }
 
 void Enumeration::apply(ClassDefVisitor &visitor) const
@@ -346,9 +396,9 @@ std::unique_ptr<ClassDef> Overload::clone() const noexcept
 
 MetaModelica::Value Overload::toSCode() const noexcept
 {
-  return MetaModelica::Record(OVERLOAD, SCode_ClassDef_OVERLOAD__desc, {
-    MetaModelica::List(_paths, [](const Path &path) { return path.toAbsyn(); })
-  });
+  return MetaModelica::Record{OVERLOAD, SCode_ClassDef_OVERLOAD__desc, {
+    MetaModelica::List{_paths, [](const Path &path) { return path.toAbsyn(); }}
+  }};
 }
 
 void Overload::apply(ClassDefVisitor &visitor) const
@@ -381,10 +431,10 @@ std::unique_ptr<ClassDef> PartialDerivative::clone() const noexcept
 
 MetaModelica::Value PartialDerivative::toSCode() const noexcept
 {
-  return MetaModelica::Record(PDER, SCode_ClassDef_PDER__desc, {
+  return MetaModelica::Record{PDER, SCode_ClassDef_PDER__desc, {
     _functionPath.toAbsyn(),
-    MetaModelica::List(_derivedVariables)
-  });
+    MetaModelica::List{_derivedVariables}
+  }};
 }
 
 void PartialDerivative::apply(ClassDefVisitor &visitor) const

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,6 +46,7 @@ public import DAE;
 protected import BaseHashSet;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -63,11 +68,13 @@ public function checkModel "This function perform a model check. Count Variables
 protected
   list<DAE.Element> eqns, lst;
   HashSet.HashSet hs;
+  Boolean debug_dump = Flags.isSet(Flags.DUMP_CHECK_MODEL);
+  CountVarEqnFoldArg arg;
 algorithm
   ExecStat.execStat("CheckModel - start counting");
   DAE.DAE(lst) := inDAELst;
   hs := HashSet.emptyHashSet();
-  (varSize, eqnSize, eqns, hs) := List.fold(lst, countVarEqnSize, (0, 0, {}, hs));
+  (varSize, eqnSize, eqns, hs) := countVarEqnSizeList(lst, (0, 0, {}, hs), debug_dump);
   simpleEqnSize := countSimpleEqnSize(eqns, 0, hs);
   ExecStat.execStat("CheckModel - end counting");
 end checkModel;
@@ -75,26 +82,34 @@ end checkModel;
 protected type CountVarEqnFoldArg =
   tuple<Integer/*varSize*/, Integer/*eqnSize*/, list<DAE.Element>/*eqns*/, HashSet.HashSet/*vars*/>;
 
+protected function countVarEqnSizeList
+  input list<DAE.Element> elements;
+  input output CountVarEqnFoldArg arg;
+  input Boolean debugDump;
+algorithm
+  for e in elements loop
+    arg := countVarEqnSize(e, arg, debugDump);
+  end for;
+end countVarEqnSizeList;
+
 protected function countVarEqnSize
   input DAE.Element element;
   input CountVarEqnFoldArg inArg;
+  input Boolean debugDump;
   output CountVarEqnFoldArg outArg;
 algorithm
   outArg := match element
     local
-      Boolean b;
-      DAE.Exp e, ce;
+      DAE.Exp e;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-      DAE.ConnectorType ct;
-      DAE.VarDirection dir;
       Integer varSize, eqnSize, size;
       list<DAE.Element> eqns, daeElts;
       HashSet.HashSet hs;
-      DAE.Dimensions dims;
       DAE.Algorithm alg;
       list<DAE.ComponentRef> crlst;
       DAE.Type tp;
+      DAE.Element elem;
 
     // external Objects
     case DAE.EXTOBJECTCLASS()
@@ -118,13 +133,17 @@ algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(element.ty);
         varSize := varSize + size;
+        dumpVar(cr, size, debugDump);
 
         if DAEUtil.isInput(element) and DAEUtil.isPublicVar(element) then
           eqnSize := eqnSize + size;
+          dumpEqn(element, size, debugDump);
         else
           if isSome(element.binding) then
             eqnSize := eqnSize + size;
-            eqns := DAE.EQUATION(Expression.crefExp(element.componentRef), Util.getOption(element.binding), element.source) :: eqns;
+            elem := DAE.EQUATION(Expression.crefExp(element.componentRef), Util.getOption(element.binding), element.source);
+            dumpEqn(elem, size, debugDump);
+            eqns := elem :: eqns;
           end if;
 
           hs := BaseHashSet.add(cr, hs);
@@ -134,9 +153,10 @@ algorithm
 
     // equations
     case DAE.EQUATION(exp=e)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        size = Expression.sizeOf(Expression.typeof(e));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        size := Expression.sizeOf(Expression.typeof(e));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial equations
@@ -145,25 +165,28 @@ algorithm
 
     // effort variable equality equations
     case DAE.EQUEQUATION(cr1 = cr)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        tp = ComponentReference.crefTypeConsiderSubs(cr);
-        size = Expression.sizeOf(tp);
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        tp := ComponentReference.crefTypeConsiderSubs(cr);
+        size := Expression.sizeOf(tp);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // a solved equation
     case DAE.DEFINE(componentRef = cr)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        tp = ComponentReference.crefTypeConsiderSubs(cr);
-        size = Expression.sizeOf(tp);
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        tp := ComponentReference.crefTypeConsiderSubs(cr);
+        size := Expression.sizeOf(tp);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex equations
     case DAE.COMPLEX_EQUATION(lhs = e)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        size = Expression.sizeOf(Expression.typeof(e));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        size := Expression.sizeOf(Expression.typeof(e));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex initial equations
@@ -171,10 +194,11 @@ algorithm
       then inArg;
 
     // array equations
-    case DAE.ARRAY_EQUATION(dimension=_)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        size = Expression.sizeOf(Expression.typeof(element.exp));
+    case DAE.ARRAY_EQUATION()
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        size := Expression.sizeOf(Expression.typeof(element.exp));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial array equations
@@ -183,24 +207,27 @@ algorithm
 
     // when equations
     case DAE.WHEN_EQUATION(equations = daeElts)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        (_, size, _, _) = List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        (_, size, _, _) := countVarEqnSizeList(daeElts, (0, 0, {}, hs), false);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, eqns, hs);
 
     case DAE.INITIAL_FOR_EQUATION()
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        (_, size, _, _) = List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
-        size = size * Expression.sizeOf(Expression.typeof(element.range));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        (_, size, _, _) := countVarEqnSizeList(element.equations, (0, 0, {}, hs), false);
+        size := size * Expression.sizeOf(Expression.typeof(element.range));
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
     case DAE.FOR_EQUATION()
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        (_, size, _, _) = List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
-        size = size * Expression.sizeOf(Expression.typeof(element.range));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        (_, size, _, _) := countVarEqnSizeList(element.equations, (0, 0, {}, hs), false);
+        size := size * Expression.sizeOf(Expression.typeof(element.range));
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
@@ -210,9 +237,10 @@ algorithm
 
     // if equation
     case DAE.IF_EQUATION(equations2 = daeElts::_)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        (_, size, _, _) = List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        (_, size, _, _) := countVarEqnSizeList(daeElts, (0, 0, {}, hs), false);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, eqns, hs);
 
     // initial if equation with condition false and no else
@@ -225,10 +253,11 @@ algorithm
 
     // algorithm
     case DAE.ALGORITHM(algorithm_ = alg, source = source)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        crlst = checkAndGetAlgorithmOutputs(alg, source, DAE.EXPAND());
-        size = listLength(crlst);
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        crlst := checkAndGetAlgorithmOutputs(alg, source, DAE.EXPAND());
+        size := listLength(crlst);
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
@@ -238,7 +267,7 @@ algorithm
 
     // flat class / COMP
     case DAE.COMP(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     // reinit
     case DAE.REINIT()
@@ -271,21 +300,41 @@ algorithm
 
     // flat state machine section
     case DAE.FLAT_SM(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     // a state/mode component in a state machine
     case DAE.SM_COMP(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     else
-      equation
+      algorithm
         // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({element}));
       then
         fail();
   end match;
 end countVarEqnSize;
+
+protected function dumpVar
+  input DAE.ComponentRef cref;
+  input Integer size;
+  input Boolean dump;
+algorithm
+  if dump then
+    print("[var: " + String(size) + "] " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
+  end if;
+end dumpVar;
+
+protected function dumpEqn
+  input DAE.Element eqn;
+  input Integer size;
+  input Boolean dump;
+algorithm
+  if dump then
+    print("[eqn: " + String(size) + "] " + DAEDump.dumpEquationStr(eqn));
+  end if;
+end dumpEqn;
 
 public function checkAndGetAlgorithmOutputs
 "mahge:
@@ -302,23 +351,21 @@ See spec 3.3 Modelica spec 3.3 rev 11.1.2 and ticket 2452
   input DAE.Expand inCrefExpansionRule;
   output list<DAE.ComponentRef> outCrefLst;
 algorithm
-  outCrefLst := matchcontinue(inAlgorithm, inSource, inCrefExpansionRule)
+  outCrefLst := matchcontinue inSource
     local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crefLst;
 
-    case (_, DAE.SOURCE(instance = DAE.NOCOMPPRE()), _)
+    case DAE.SOURCE(instance = DAE.NOCOMPPRE())
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     // the algorithm came from a component that is member of an array or not
-    case (_, DAE.SOURCE(), _)
+    case DAE.SOURCE()
       then
         if PrefixUtil.hasSubs(inSource.instance)
         then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND())
         else algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"checkAndGetAlgorithmOutputs failed."});
       then fail();
   end matchcontinue;
@@ -383,7 +430,7 @@ protected function statementOutputs "Helper relation to algorithmOutputs"
   input  HashSet.HashSet iht;
   output HashSet.HashSet oht;
 algorithm
-  oht := matchcontinue (inStatement, inCrefExpansion, iht)
+  oht := matchcontinue inStatement
     local
       HashSet.HashSet ht;
       DAE.ComponentRef cr;
@@ -396,94 +443,93 @@ algorithm
       DAE.Type tp;
       DAE.Ident iteratorName;
       String str;
-      DAE.Ident ident;
       list<DAE.Subscript> subs;
 
     // a := expr;
-    case (DAE.STMT_ASSIGN(exp1 = exp1), _, _)
-      equation
-        (_, (_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
+    case DAE.STMT_ASSIGN(exp1 = exp1)
+      algorithm
+        (_, (_, ht)) := Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
       then ht;
 
     // (a, b, ...) := expr;
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _, _)
-      equation
-        (_, (_, ht)) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
+    case DAE.STMT_TUPLE_ASSIGN(expExpLst = expl)
+      algorithm
+        (_, (_, ht)) := Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
       then ht;
 
     // a := expr;  // where a is array
-    case (DAE.STMT_ASSIGN_ARR(lhs=exp1), _, _)
-      equation
+    case DAE.STMT_ASSIGN_ARR(lhs=exp1)
+      algorithm
         // (_, (_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
-        cr = Expression.expCref(exp1);
-        subs = ComponentReference.crefLastSubs(cr);
+        cr := Expression.expCref(exp1);
+        subs := ComponentReference.crefLastSubs(cr);
         if not listEmpty(subs) // not an empty subs list
         then
-          subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
-          cr = ComponentReference.crefSetLastSubs(cr, subs);
+          subs := List.fill(DAE.WHOLEDIM(), listLength(subs));
+          cr := ComponentReference.crefSetLastSubs(cr, subs);
         end if;
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, iht);
+        crlst := ComponentReference.expandCref(cr, true);
+        ht := List.fold(crlst, BaseHashSet.add, iht);
       then ht;
 
-    case(DAE.STMT_IF(statementLst = stmts, else_ = elsebranch), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-        ht = statementElseOutputs(elsebranch, inCrefExpansion, ht);
+    case DAE.STMT_IF(statementLst = stmts, else_ = elsebranch)
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+        ht := statementElseOutputs(elsebranch, inCrefExpansion, ht);
       then ht;
 
-    case(DAE.STMT_FOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
-      equation
+    case DAE.STMT_FOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts)
+      algorithm
         // replace the iterator variable with the range expression
-        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
-        (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
-        ht = List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
+        (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
+        ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
 
-    case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
-      equation
+    case DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts)
+      algorithm
         // replace the iterator variable with the range expression
-        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
-        (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
-        ht = List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
+        (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
+        ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
 
-    case(DAE.STMT_WHILE(statementLst = stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+    case DAE.STMT_WHILE(statementLst = stmts)
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
 
-    case (DAE.STMT_WHEN(statementLst = stmts, elseWhen = NONE()), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+    case DAE.STMT_WHEN(statementLst = stmts, elseWhen = NONE())
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
 
-    case (DAE.STMT_WHEN(statementLst = stmts, elseWhen = SOME(stmt)), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-        ht = statementOutputs(stmt, inCrefExpansion, ht);
+    case DAE.STMT_WHEN(statementLst = stmts, elseWhen = SOME(stmt))
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+        ht := statementOutputs(stmt, inCrefExpansion, ht);
       then ht;
 
-    case(DAE.STMT_ASSERT(), _, _) then iht;
-    case(DAE.STMT_TERMINATE(), _, _) then iht;
+    case DAE.STMT_ASSERT() then iht;
+    case DAE.STMT_TERMINATE() then iht;
 
     // reinit is not a output
-    case(DAE.STMT_REINIT(), _, _) then iht;
-    case(DAE.STMT_NORETCALL(), _, _) then iht;
-    case(DAE.STMT_RETURN(_), _, _) then iht;
-    case(DAE.STMT_BREAK(_), _, _) then iht;
-    case(DAE.STMT_CONTINUE(_), _, _) then iht;
-    case(DAE.STMT_ARRAY_INIT(), _, _) then iht;
+    case DAE.STMT_REINIT() then iht;
+    case DAE.STMT_NORETCALL() then iht;
+    case DAE.STMT_RETURN(_) then iht;
+    case DAE.STMT_BREAK(_) then iht;
+    case DAE.STMT_CONTINUE(_) then iht;
+    case DAE.STMT_ARRAY_INIT() then iht;
     // MetaModelica extension. KS
-    case(DAE.STMT_FAILURE(body = stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+    case DAE.STMT_FAILURE(body = stmts)
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = DAEDump.ppStatementStr(inStatement);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        str := DAEDump.ppStatementStr(inStatement);
         Debug.traceln("- CheckModel.statementOutputs failed for " + str);
     then
       fail();
@@ -497,23 +543,23 @@ protected function statementElseOutputs "Helper function to statementOutputs"
   input HashSet.HashSet iht;
   output HashSet.HashSet oht;
 algorithm
-  oht := match (inElseBranch, inCrefExpansion, iht)
+  oht := match inElseBranch
     local
       list<DAE.Statement> stmts;
       DAE.Else elseBranch;
       HashSet.HashSet ht;
 
-    case(DAE.NOELSE(), _, _) then iht;
+    case DAE.NOELSE() then iht;
 
-    case(DAE.ELSEIF(statementLst=stmts, else_=elseBranch), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-        ht = statementElseOutputs(elseBranch, inCrefExpansion, ht);
+    case DAE.ELSEIF(statementLst=stmts, else_=elseBranch)
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+        ht := statementElseOutputs(elseBranch, inCrefExpansion, ht);
       then ht;
 
-    case(DAE.ELSE(statementLst=stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+    case DAE.ELSE(statementLst=stmts)
+      algorithm
+        ht := List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
   end match;
 end statementElseOutputs;
@@ -531,7 +577,6 @@ algorithm
       HashSet.HashSet ht;
       DAE.ComponentRef cr, first_cref;
       list<DAE.ComponentRef> crlst;
-      list<DAE.Subscript> subs;
       DAE.Expand expand;
 
     // Skip wild
@@ -548,16 +593,16 @@ algorithm
 
     // records are not arays, expand them always
     case (e as DAE.CREF(componentRef=cr, ty=DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), (expand,ht))
-      equation
-        cr = ComponentReference.crefStripSubs(cr);
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, ht);
+      algorithm
+        cr := ComponentReference.crefStripSubs(cr);
+        crlst := ComponentReference.expandCref(cr, true);
+        ht := List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
 
     // NOT_EXPAND strategy (needed for equations translated to algorithms)
     case (e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))
-      equation
-        ht = List.fold({cr}, BaseHashSet.add, ht);
+      algorithm
+        ht := List.fold({cr}, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
 
     // EXPAND
@@ -568,25 +613,25 @@ algorithm
       So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
     */
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
-      equation
-        cr = ComponentReference.crefStripSubsExceptModelSubs(cr);
+      algorithm
+        cr := ComponentReference.crefStripSubsExceptModelSubs(cr);
         // check if first element already is in the set and only expand if not (saves a lot of expand work)
         // ticket #7832
-        first_cref = ComponentReference.crefArrayGetFirstCref(cr);
+        first_cref := ComponentReference.crefArrayGetFirstCref(cr);
         if not BaseHashSet.has(first_cref, ht) then
-          crlst = ComponentReference.expandCref(cr, true);
-          ht = List.fold(crlst, BaseHashSet.add, ht);
+          crlst := ComponentReference.expandCref(cr, true);
+          ht := List.fold(crlst, BaseHashSet.add, ht);
         end if;
       then (e, false, (expand,ht));
 
     case (e as DAE.ASUB(exp=exp), _)
-      equation
-        (_, outTpl) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
+      algorithm
+        (_, outTpl) := Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
       then (e, false, outTpl);
 
     case (e as DAE.TSUB(exp=exp), _)
-      equation
-        (_, outTpl) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
+      algorithm
+        (_, outTpl) := Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, inTpl);
       then (e, false, outTpl);
 
     case (e as DAE.RELATION(), _)
@@ -596,9 +641,9 @@ algorithm
       then (e, false, inTpl);
 
     case (e as DAE.IFEXP(expThen=e1, expElse=e2), _)
-      equation
-        (_, outTpl) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, inTpl);
-        (_, outTpl) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, outTpl);
+      algorithm
+        (_, outTpl) := Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, inTpl);
+        (_, outTpl) := Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, outTpl);
       then (e, false, outTpl);
 
     case (e, _) then (e, true, inTpl);
@@ -620,36 +665,34 @@ protected function countSimpleEqnSizeWork
   input HashSet.HashSet ihs;
   output Integer osimpleEqnSize;
 algorithm
-  osimpleEqnSize := matchcontinue(inEqns, ihs)
+  osimpleEqnSize := matchcontinue inEqns
     local
       DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       DAE.Type tp;
-      Integer size;
-      DAE.Dimensions dims;
 
     // equations
-    case(DAE.EQUATION(exp=e1, scalar=e2), _)
+    case DAE.EQUATION(exp=e1, scalar=e2)
       then simpleEquation(e1, e2, ihs);
 
     // effort variable equality equations
-    case (DAE.EQUEQUATION(cr1 = cr), _)
-      equation
-        tp = ComponentReference.crefTypeConsiderSubs(cr);
+    case DAE.EQUEQUATION(cr1 = cr)
+      algorithm
+        tp := ComponentReference.crefTypeConsiderSubs(cr);
       then Expression.sizeOf(tp);
 
     // a solved equation
-    case (DAE.DEFINE(componentRef = cr, exp=e2), _)
-      equation
-        e1 = Expression.crefExp(cr);
+    case DAE.DEFINE(componentRef = cr, exp=e2)
+      algorithm
+        e1 := Expression.crefExp(cr);
       then simpleEquation(e1, e2, ihs);
 
     // complex equations
-    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2), _)
+    case DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2)
       then simpleEquation(e1, e2, ihs);
 
     // array equations
-    case (DAE.ARRAY_EQUATION(exp = e1, array = e2), _)
+    case DAE.ARRAY_EQUATION(exp = e1, array = e2)
       then simpleEquation(e1, e2, ihs);
 
     else 0;
@@ -662,214 +705,214 @@ protected function simpleEquation
   input HashSet.HashSet ihs;
   output Integer osimpleEqnSize;
 algorithm
-  osimpleEqnSize := matchcontinue(e1, e2, ihs)
+  osimpleEqnSize := matchcontinue(e1, e2)
     local
       list<DAE.Exp> ea1, ea2;
     // a = b;
-    case (DAE.CREF(), DAE.CREF(), _)
+    case (DAE.CREF(), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e1));
     // a = -b;
-    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e1));
     // -a = b;
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.CREF(), _)
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.CREF(), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e1));
     // a + b = 0
-    case (DAE.BINARY(DAE.CREF(), DAE.ADD(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.CREF(), DAE.ADD(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.BINARY(DAE.CREF(), DAE.ADD_ARR(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.CREF(), DAE.ADD_ARR(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // a - b = 0
-    case (DAE.BINARY(DAE.CREF(), DAE.SUB(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.CREF(), DAE.SUB(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.BINARY(DAE.CREF(), DAE.SUB_ARR(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.CREF(), DAE.SUB_ARR(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // -a + b = 0
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.ADD(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.ADD(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.ADD_ARR(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.ADD_ARR(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // -a - b = 0
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.SUB(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.SUB(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(), DAE.CREF()), _, _)
-      equation
-        true = Expression.isZero(e2);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(), DAE.CREF()), _)
+      algorithm
+        true := Expression.isZero(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // 0 = a + b
-    case (_, DAE.BINARY(DAE.CREF(), DAE.ADD(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.CREF(), DAE.ADD(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (_, DAE.BINARY(DAE.CREF(), DAE.ADD_ARR(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.CREF(), DAE.ADD_ARR(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // 0 = a - b
-    case (_, DAE.BINARY(DAE.CREF(), DAE.SUB(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.CREF(), DAE.SUB(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (_, DAE.BINARY(DAE.CREF(), DAE.SUB_ARR(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.CREF(), DAE.SUB_ARR(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // 0 = -a + b
-    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.ADD(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.ADD(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.ADD_ARR(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.ADD_ARR(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // 0 = -a - b
-    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.SUB(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.SUB(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(), DAE.CREF()), _)
-      equation
-        true = Expression.isZero(e1);
+    case (_, DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(), DAE.CREF()))
+      algorithm
+        true := Expression.isZero(e1);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // a = der(b);
-    case (DAE.CREF(), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), _)
+    case (DAE.CREF(), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}))
       then
         Expression.sizeOf(Expression.typeof(e1));
     // der(a) = b;
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.CREF(), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e2));
     // a = -der(b);
-    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})))
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})))
       then
         Expression.sizeOf(Expression.typeof(e1));
     // -der(a) = b;
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.CREF(), _)
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e2));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.CREF(), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.CREF())
       then
         Expression.sizeOf(Expression.typeof(e2));
     // -a = der(b);
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), _)
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}))
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}))
       then
         Expression.sizeOf(Expression.typeof(e1));
     // der(a) = -b;
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e2));
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()}), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e2));
     // -a = -der(b);
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), _)
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})))
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})))
       then
         Expression.sizeOf(Expression.typeof(e1));
     // -der(a) = -b;
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _)
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.UNARY(DAE.UMINUS(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e2));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF()})), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()))
       then
         Expression.sizeOf(Expression.typeof(e2));
 
     // a = const;
-    case (DAE.CREF(), _, _)
-      equation
-        true = Expression.isConst(e2);
+    case (DAE.CREF(), _)
+      algorithm
+        true := Expression.isConst(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // const = a;
-    case (_, DAE.CREF(), _)
-      equation
-        true = Expression.isConst(e1);
+    case (_, DAE.CREF())
+      algorithm
+        true := Expression.isConst(e1);
       then
         Expression.sizeOf(Expression.typeof(e2));
 
     // -a = const;
-    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _, _)
-      equation
-        true = Expression.isConst(e2);
+    case (DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _)
+      algorithm
+        true := Expression.isConst(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _, _)
-      equation
-        true = Expression.isConst(e2);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _)
+      algorithm
+        true := Expression.isConst(e2);
       then
         Expression.sizeOf(Expression.typeof(e1));
     // const = -a;
-    case (_, DAE.UNARY(DAE.UMINUS(_), DAE.CREF()), _)
-      equation
-        true = Expression.isConst(e1);
+    case (_, DAE.UNARY(DAE.UMINUS(_), DAE.CREF()))
+      algorithm
+        true := Expression.isConst(e1);
       then
         Expression.sizeOf(Expression.typeof(e2));
-    case (_, DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _)
-      equation
-        true = Expression.isConst(e1);
+    case (_, DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()))
+      algorithm
+        true := Expression.isConst(e1);
       then
         Expression.sizeOf(Expression.typeof(e2));
 
-    case(_, _, _)
-      equation
-        true = Expression.isArray(e1) or Expression.isMatrix(e1);
-        true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ea1 = Expression.flattenArrayExpToList(e1);
-        ea2 = Expression.flattenArrayExpToList(e2);
+    case(_, _)
+      algorithm
+        true := Expression.isArray(e1) or Expression.isMatrix(e1);
+        true := Expression.isArray(e2) or Expression.isMatrix(e2);
+        ea1 := Expression.flattenArrayExpToList(e1);
+        ea2 := Expression.flattenArrayExpToList(e2);
       then
         simpleEquations(ea1, ea2, 0, ihs);
 
-    case(_, _, _)
-      equation
-        (_, (_, _::{})) = Expression.traverseExpBottomUp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
+    case(_, _)
+      algorithm
+        (_, (_, _::{})) := Expression.traverseExpBottomUp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
       then
         Expression.sizeOf(Expression.typeof(e1));
 
@@ -896,9 +939,9 @@ algorithm
       then (inExp,inTpl);
 
     case (e as DAE.CREF(componentRef=cr), (hs, crefs))
-      equation
-        crlst = ComponentReference.expandCref(cr, true);
-        crefs = getcr(crlst, hs, crefs);
+      algorithm
+        crlst := ComponentReference.expandCref(cr, true);
+        crefs := getcr(crlst, hs, crefs);
       then (e, (hs, crefs));
 
     else (inExp,inTpl);
@@ -912,17 +955,17 @@ protected function getcr
   input list<DAE.ComponentRef> iAcc;
   output list<DAE.ComponentRef> oAcc;
 algorithm
-  oAcc := match(crefs, hs, iAcc)
+  oAcc := match crefs
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest, crlst;
-    case ({}, _, _) then iAcc;
-    case(cr::rest, _, _) guard BaseHashSet.has(cr, hs)
-      equation
-        crlst = List.unionEltOnTrue(cr, iAcc, ComponentReference.crefEqual);
+    case {} then iAcc;
+    case cr::rest guard BaseHashSet.has(cr, hs)
+      algorithm
+        crlst := List.unionEltOnTrue(cr, iAcc, ComponentReferenceBasics.crefEqual);
       then
         getcr(rest, hs, crlst);
-    case(_::rest, _, _)
+    case _::rest
       then
         getcr(rest, hs, iAcc);
   end match;
@@ -935,15 +978,15 @@ protected function simpleEquations
   input HashSet.HashSet ihs;
   output Integer osimpleEqnSize;
 algorithm
-  osimpleEqnSize := match(e1lst, e2lst, isimpleEqnSize, ihs)
+  osimpleEqnSize := match(e1lst, e2lst)
     local
       DAE.Exp e1, e2;
       list<DAE.Exp> r1, r2;
       Integer size;
-    case ({}, {}, _, _) then isimpleEqnSize;
-    case (e1::r1, e2::r2, _, _)
-      equation
-        size = simpleEquation(e1, e2, ihs);
+    case ({}, {}) then isimpleEqnSize;
+    case (e1::r1, e2::r2)
+      algorithm
+        size := simpleEquation(e1, e2, ihs);
       then
         simpleEquations(r1, r2, size+isimpleEqnSize, ihs);
   end match;

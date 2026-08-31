@@ -1,0 +1,26 @@
+// name: numericJacobianRows
+// keywords: NewBackend, differentiation, jacobian
+// status: correct
+
+loadString("
+model numericJacobianRows
+  Real x(start=1, fixed=true, stateSelect=StateSelect.always);
+  Real a(stateSelect=StateSelect.never);
+equation
+  a = 2*x;
+  der(x) = a;
+end numericJacobianRows;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=numeric -d=dumpSparsePattern"); getErrorString();
+
+buildModel(numericJacobianRows); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"numericJacobianRows", "numericJacobianRows_init.xml"}
+// ""
+// endResult

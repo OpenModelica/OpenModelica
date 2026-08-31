@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -102,7 +106,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
   let _ = generateOmsiFunctionCode_inner(omsiFunction, FileNamePrefix, modelFunctionnamePrefixStr,omsiName, &includes, &evaluationCode, &functionCall, "", &functionPrototypes, omsiName)
 
   // generate header file
-  let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* simulation, omsi_values* model_vars_and_params, void* data);<%\n%>'
+  let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(struct omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);<%\n%>'
 
 
   let headerFileName =     '<%fileNamePrefix%>_<%omsiName%>'
@@ -131,7 +135,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 
 
     /* Equations evaluation */
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(struct omsi_function_t* <%omsiName%>, const omsi_values* model_vars_and_params, void* data){
 
 
       /* Variables */
@@ -237,8 +241,8 @@ template generateOmsiMemberFunction(OMSIFunction omsiFunction, String FileNamePr
     )
 
   <<
-    virtual omsi_status initialize_omsi_<%FunctionnamePrefix%>_functions (omsi_function_t* omsi_function);
-    virtual omsi_status omsi_<%FunctionnamePrefix%>All(omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);
+    virtual omsi_status initialize_omsi_<%FunctionnamePrefix%>_functions (struct omsi_function_t* omsi_function);
+    virtual omsi_status omsi_<%FunctionnamePrefix%>All(struct omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);
     <%functionPrototypes%>
   >>
 end generateOmsiMemberFunction;
@@ -272,7 +276,7 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     // generate algebraic system header file
     let &functionPrototypes +=
       <<
-      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res);
+      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);
       omsi_status <%FileNamePrefix%>_<%omsiName%>_algSystFunction_<%algSystem.algSysIndex%>(omsi_algebraic_system_t* this_alg_system, const omsi_values* model_vars_and_params, void* data);
       >>
     let headerFileName = fileNamePrefix+"_"+omsiName+"_algSyst_"+algSystem.algSysIndex
@@ -296,7 +300,8 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     /* Evaluation functions for <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> */
     <%evaluationCode%>
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data) {
+      omsi_real* res = (omsi_real*) data;
       omsi_unsigned_int i=0;
       <%functionCall%>
       <%residualCall%>
@@ -347,7 +352,7 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     // generate algebraic system header file
     let &functionPrototypes +=
       <<
-      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res);
+      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);
       omsi_status <%FileNamePrefix%>_<%omsiName%>_algSystFunction_<%algSystem.algSysIndex%>(omsi_algebraic_system_t* this_alg_system, const omsi_values* model_vars_and_params, void* data);
       >>
     let headerFileName = fileNamePrefix+"_"+omsiName+"_algSyst_"+algSystem.algSysIndex
@@ -371,7 +376,8 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     /* Evaluation functions for <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> */
     <%evaluationCode%>
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data) {
+      omsi_real* res = (omsi_real*) data;
       omsi_unsigned_int i=0;
       <%functionCall%>
       <%residualCall%>
@@ -617,7 +623,7 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
 ::=
   match omsiFunction
   case func as OMSI_FUNCTION(__) then
-    let &functionPrototypes += "omsi_status " + FileNamePrefix + "_" + omsiName + "_instantiate_" + functionName + "_OMSIFunc (omsi_function_t* omsi_function);\n"
+    let &functionPrototypes += "omsi_status " + FileNamePrefix + "_" + omsiName + "_instantiate_" + functionName + "_OMSIFunc (struct omsi_function_t* omsi_function);\n"
 
     let evaluationTarget = FileNamePrefix+"_"+omsiName+"_"+functionName
     let algSystemInit = generateAlgebraicSystemInstantiation (FileNamePrefix, nAlgebraicSystems, equations, omsiName)
@@ -635,7 +641,7 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
     <<
 
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (omsi_function_t* omsi_function) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (struct omsi_function_t* omsi_function) {
 
 
 
@@ -780,5 +786,5 @@ template insertCopyrightOpenModelica()
 end insertCopyrightOpenModelica;
 
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_fmu_omsi");
 end CodegenOMSI_common;

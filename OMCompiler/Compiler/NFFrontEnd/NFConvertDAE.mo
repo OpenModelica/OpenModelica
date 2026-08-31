@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -44,8 +48,10 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import AbsynUtil;
+import AvlTreePathFunction;
 import Call = NFCall;
-import ComponentReference;
+import ComponentReferenceBasics;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ElementSource;
@@ -65,6 +71,7 @@ import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import Prefixes = NFPrefixes;
 import Sections = NFSections;
+import SCode;
 import Type = NFType;
 import Util;
 import Variable = NFVariable;
@@ -74,13 +81,21 @@ function convert
   input FlatModel flatModel;
   input FunctionTree functions;
   output DAE.DAElist dae;
-  output DAE.FunctionTree daeFunctions;
+  output AvlTreePathFunction.Tree daeFunctions;
+protected
+algorithm
+  daeFunctions := convertFunctionTree(functions);
+  dae := convertModel(flatModel);
+  execStat(getInstanceName());
+end convert;
+
+function convertModel
+  input FlatModel flatModel;
+  output DAE.DAElist dae;
 protected
   list<DAE.Element> elems;
   DAE.Element class_elem;
 algorithm
-  daeFunctions := convertFunctionTree(functions);
-
   elems := convertVariables(flatModel.variables, {});
   elems := convertEquations(flatModel.equations, elems);
   elems := convertInitialEquations(flatModel.initialEquations, elems);
@@ -89,9 +104,7 @@ algorithm
 
   class_elem := DAE.COMP(FlatModel.fullName(flatModel), elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
-
-  execStat(getInstanceName());
-end convert;
+end convertModel;
 
 function convertStatements
   input list<Statement> statements;
@@ -157,7 +170,6 @@ protected
   DAE.ComponentRef dcref;
   DAE.Type dty;
   DAE.ElementSource source;
-  Direction dir;
 algorithm
   dcref := ComponentRef.toDAE(cref);
   dty := Type.toDAE(if settings.isFunctionParameter then Type.arrayElementType(ty) else ty);
@@ -178,7 +190,7 @@ algorithm
           Prefixes.visibilityToDAE(vis),
           dty,
           binding,
-          ComponentReference.crefDims(dcref),
+          ComponentReferenceBasics.crefDims(dcref),
           ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,
@@ -203,14 +215,94 @@ algorithm
   source := match cref
     case ComponentRef.CREF()
       algorithm
-        source := ElementSource.addElementSourceType(source,
-          InstNode.scopePath(InstNode.classScope(InstNode.getDerivedNode(InstNode.parent(cref.node)))));
+        source := addComponentLevelTypeToSource(InstNode.parent(cref.node), source);
       then
         addComponentTypeToSource(cref.restCref, source);
 
     else source;
   end match;
 end addComponentTypeToSource;
+
+function addComponentLevelTypeToSource
+  "Records the type(s) of the class that owns the component referenced at one
+   level of a cref into the element source. For a regular component this is a
+   single class (the class in which the component is declared). When a component
+   is inherited through one or more `extends` of a visualization type, e.g.
+
+     model MyShape
+       extends ModelicaServices.Animation.Shape;
+     end MyShape;
+
+   getDerivedNode collapses the whole extends chain down to the most derived
+   class (MyShape), so the visualization base class (Shape) would be lost and
+   the backend (VisualXML) could no longer recognize it. In that case we record
+   the full extends chain, with the visualization base class kept in the primary
+   slot of this level so that the identifier prefix computed from the type index
+   in VisualXML.isVisualizationVarFold still points at the right component.
+
+   This is only reached when the element source types are recorded at all, i.e.
+   under -d=visxml (animation) or infoXmlOperations; otherwise the original
+   single most derived class entry is kept."
+  input InstNode parentNode;
+  input output DAE.ElementSource source;
+protected
+  InstNode concrete, n;
+  Absyn.Path concretePath, p;
+  list<Absyn.Path> chain = {};
+  Option<Absyn.Path> visPath = NONE();
+algorithm
+  // the collapsed, most derived class (default behaviour)
+  concrete := InstNode.classScope(InstNode.getDerivedNode(parentNode));
+  concretePath := InstNode.scopePath(concrete);
+
+  // Skip the chain walk when the most derived class is itself a visualization
+  // type (direct ModelicaServices/MultiBody shapes already match as a single
+  // entry); only an inherited shape needs the base classes recorded.
+  if not isVisualizerLeafName(concretePath) then
+    // walk the extends chain from where the component is actually declared up
+    // to the most derived class, collecting the intermediate base classes
+    n := InstNode.classScope(parentNode);
+    while InstNode.isBaseClass(n) loop
+      p := InstNode.scopePath(n, ignoreBaseClass = true);
+      chain := p :: chain;
+      if isNone(visPath) and isVisualizerLeafName(p) then
+        visPath := SOME(p);
+      end if;
+      n := InstNode.classScope(InstNode.getDerivedNode(n, recursive = false));
+    end while;
+  end if;
+
+  if isSome(visPath) then
+    // a visualization type appears as a base class -> record the whole chain
+    // with the visualization base class in the primary slot of this level
+    SOME(p) := visPath;
+    chain := listAppend(list(c for c guard not AbsynUtil.pathEqual(c, p) in chain),
+                        {concretePath});
+    for c in listReverse(chain) loop
+      source := ElementSource.addElementSourceType(source, c);
+    end for;
+    source := ElementSource.addElementSourceType(source, p);
+  else
+    // default (unchanged): single most derived class entry
+    source := ElementSource.addElementSourceType(source, concretePath);
+  end if;
+end addComponentLevelTypeToSource;
+
+function isVisualizerLeafName
+  "Returns true if the last identifier of the path is one of the visualization
+   type names (Shape, Vector, Surface). This is only used to position the type
+   in the element source; VisualXML.hasVisPath remains the authority on whether
+   a fully qualified path is actually a visualization type."
+  input Absyn.Path path;
+  output Boolean isVisualizer;
+algorithm
+  isVisualizer := match AbsynUtil.pathLastIdent(path)
+    case "Shape" then true;
+    case "Vector" then true;
+    case "Surface" then true;
+    else false;
+  end match;
+end isVisualizerLeafName;
 
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
@@ -220,8 +312,6 @@ function convertVarAttributes
 protected
   Boolean is_final;
   Option<Boolean> is_final_opt;
-  Type elTy;
-  Boolean is_array = false;
 algorithm
   is_final := compAttrs.isFinal or
               compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
@@ -278,7 +368,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -314,7 +404,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -348,7 +438,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -381,7 +471,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -416,7 +506,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -453,7 +543,7 @@ algorithm
     case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = e)) then getStateSelectName(e);
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
       then
         fail();
@@ -472,7 +562,7 @@ algorithm
     case "always" then DAE.StateSelect.ALWAYS();
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
       then
         fail();
   end match;
@@ -491,7 +581,7 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
     else
       algorithm
-        Error.assertion(false, getInstanceName() +
+        Error.terminate(getInstanceName() +
           " got invalid Uncertainty expression " + Expression.toString(exp), sourceInfo());
       then
         fail();
@@ -511,7 +601,7 @@ algorithm
     case "propagate" then DAE.Uncertainty.PROPAGATE();
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
       then
         fail();
   end match;
@@ -541,8 +631,6 @@ algorithm
       Expression lhs, rhs;
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cr1, cr2;
-      list<DAE.Dimension> dims;
-      list<DAE.Element> body;
 
     case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
       guard Type.isScalarBuiltin(eq.ty)
@@ -563,14 +651,6 @@ algorithm
            DAE.Element.ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source)
          else
            DAE.Element.EQUATION(e1, e2, eq.source)) :: elements;
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        e1 := Expression.toDAE(eq.lhs);
-        e2 := Expression.toDAE(eq.rhs);
-        dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
-      then
-        DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
       then convertForEquation(eq, isInitial = false) :: elements;
@@ -604,7 +684,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
       then
         fail();
   end match;
@@ -725,9 +805,6 @@ algorithm
   elements := match eq
     local
       DAE.Exp e1, e2, e3;
-      DAE.ComponentRef cref;
-      list<DAE.Dimension> dims;
-      list<DAE.Element> body;
 
     case Equation.EQUALITY()
       algorithm
@@ -735,16 +812,11 @@ algorithm
         e2 := Expression.toDAE(eq.rhs);
       then
         (if Type.isComplex(eq.ty) then
-           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source) else
+           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source)
+         elseif Type.isArray(eq.ty) then
+           DAE.Element.INITIAL_ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source)
+         else
            DAE.Element.INITIALEQUATION(e1, e2, eq.source)) :: elements;
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        e1 := Expression.toDAE(eq.lhs);
-        e2 := Expression.toDAE(eq.rhs);
-        dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
-      then
-        DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
       then convertForEquation(eq, isInitial = true) :: elements;
@@ -768,7 +840,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation " + Equation.toString(eq), sourceInfo());
       then
         fail();
   end match;
@@ -789,7 +861,6 @@ function convertAlgorithm
 protected
   list<DAE.Statement> stmts;
   DAE.Algorithm dalg;
-  DAE.ElementSource src;
 algorithm
   stmts := convertStatements(alg.statements);
   dalg := DAE.ALGORITHM_STMTS(stmts);
@@ -857,7 +928,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown statement " + Statement.toString(stmt), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown statement " + Statement.toString(stmt), sourceInfo());
       then
         fail();
   end match;
@@ -930,15 +1001,21 @@ protected
   DAE.ElementSource source;
   Statement.ForType for_type;
   list<tuple<DAE.ComponentRef, SourceInfo>> loop_vars;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters_dae;
+  list<tuple<ComponentRef, array<Expression>>> sub_iters;
 algorithm
-  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, forType = for_type, source = source, sub_iters = sub_iters) := forStmt;
   dbody := convertStatements(body);
   ty := InstNode.getType(iterator);
+  sub_iters_dae := list(
+    (ComponentRef.toDAE(Util.tuple21(si)),
+     listArray(list(Expression.toDAE(e) for e in arrayList(Util.tuple22(si)))))
+    for si in sub_iters);
 
   forDAE := match for_type
     case Statement.ForType.NORMAL()
       then DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-        InstNode.name(iterator), Expression.toDAE(range), dbody, source);
+        InstNode.name(iterator), Expression.toDAE(range), dbody, source, sub_iters_dae);
 
     case Statement.ForType.PARALLEL()
       algorithm
@@ -1039,11 +1116,11 @@ end convertInitialAlgorithm;
 
 public function convertFunctionTree
   input FunctionTree funcs;
-  output DAE.FunctionTree dfuncs;
+  output AvlTreePathFunction.Tree dfuncs;
 algorithm
   dfuncs := match funcs
     local
-      DAE.FunctionTree left, right;
+      AvlTreePathFunction.Tree left, right;
       DAE.Function fn;
 
     case FunctionTree.NODE()
@@ -1052,16 +1129,16 @@ algorithm
         left := convertFunctionTree(funcs.left);
         right := convertFunctionTree(funcs.right);
       then
-        DAE.FunctionTree.NODE(funcs.key, SOME(fn), funcs.height, left, right);
+        AvlTreePathFunction.Tree.NODE(funcs.key, SOME(fn), funcs.height, left, right);
 
     case FunctionTree.LEAF()
       algorithm
         fn := convertFunction(funcs.value);
       then
-        DAE.FunctionTree.LEAF(funcs.key, SOME(fn));
+        AvlTreePathFunction.Tree.LEAF(funcs.key, SOME(fn));
 
     case FunctionTree.EMPTY()
-      then DAE.FunctionTree.EMPTY();
+      then AvlTreePathFunction.Tree.EMPTY();
 
   end match;
 end convertFunctionTree;
@@ -1117,7 +1194,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown function", sourceInfo());
       then
         fail();
 
@@ -1163,7 +1240,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid component.", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid component.", sourceInfo());
       then
         fail();
 
@@ -1237,8 +1314,6 @@ function makeTypeVars
   input InstNode complexCls;
   output list<DAE.Var> typeVars;
 protected
-  Component comp;
-  DAE.Var type_var;
 algorithm
   typeVars := match cls as InstNode.getClass(complexCls)
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
@@ -1364,5 +1439,5 @@ algorithm
 
 end stripScopePrefixCref;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFConvertDAE;

@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 package GenerateAPIFunctionsTpl
 
 import interface SimCodeTV;
@@ -15,6 +50,7 @@ template getCevalScriptInterface(list<DAE.Type> tys)
   protected
 
   import Values;
+  import ValuesMake;
   import ValuesUtil;
   constant Absyn.Msg dummyMsg = Absyn.MSG(SOURCEINFO("<interactive>",false,1,1,1,1,0.0));
 
@@ -43,7 +79,7 @@ template getInValue(Text name, DAE.Type ty)
     case T_INTEGER(__) then 'Values.INTEGER(<%name%>)'
     case T_BOOL(__) then 'Values.BOOL(<%name%>)'
     case T_REAL(__) then 'Values.REAL(<%name%>)'
-    case aty as T_ARRAY(__) then 'ValuesUtil.makeArray(list(<%getInValue('<%name%>_iter', aty.ty)%> for <%name%>_iter in <%name%>))'
+    case aty as T_ARRAY(__) then 'ValuesMake.makeArray(list(<%getInValue('<%name%>_iter', aty.ty)%> for <%name%>_iter in <%name%>))'
     case T_CODE(ty=C_TYPENAME(__)) then 'Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(<%name%>)))'
     else error(sourceInfo(), 'getInValue failed for <%unparseType(ty)%>')
 end getInValue;
@@ -447,7 +483,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   >>
 end getQtInterfaceFunc;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end GenerateAPIFunctionsTpl;
 
 // vim: filetype=susan sw=2 sts=2

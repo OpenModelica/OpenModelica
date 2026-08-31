@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package ElementSource "A package for recording symbolic operations (used by the debugger) as well as other operations recording where an equation came from"
 
 import DAE;
@@ -5,9 +40,8 @@ import DAE;
 protected
 
 import Absyn;
-import Algorithm;
 import Error;
-import Expression;
+import ExpressionBasics;
 import Flags;
 import List;
 import SCode;
@@ -30,13 +64,13 @@ algorithm
       list<SCode.Comment> comment, comment1,comment2;
     case (DAE.SOURCE(info, partOfLst1, instanceOpt1, connectEquationOptLst1, typeLst1, operations1, comment1),
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
-      equation
-        p = List.union(partOfLst1, partOfLst2);
-        i = match instanceOpt1 case DAE.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
-        c = List.union(connectEquationOptLst1, connectEquationOptLst2);
-        t = List.union(typeLst1, typeLst2);
-        o = listAppend(operations1, operations2);
-        comment = List.union(comment1,comment2);
+      algorithm
+        p := List.union(partOfLst1, partOfLst2);
+        i := match instanceOpt1 case DAE.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
+        c := List.union(connectEquationOptLst1, connectEquationOptLst2);
+        t := List.union(typeLst1, typeLst2);
+        o := listAppend(operations1, operations2);
+        comment := List.union(comment1,comment2);
       then DAE.SOURCE(info,p,i,c,t, o,comment);
  end match;
 end mergeSources;
@@ -47,13 +81,6 @@ function addCommentToSource
 algorithm
   source := match(source,commentIn)
     local
-      SourceInfo info;
-      list<Absyn.Within> partOfLst1;
-      DAE.ComponentPrefix instanceOpt1;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst1;
-      list<Absyn.Path> typeLst1;
-      list<DAE.SymbolicOperation> operations1;
-      list<SCode.Comment> comment1,comment2;
       SCode.Comment comment;
     case (DAE.SOURCE(_, _, _, _, _, _, _),SOME(comment))
       algorithm
@@ -90,7 +117,7 @@ function addAdditionalComment
   input String message;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := match (source,message)
+  outSource := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -102,11 +129,11 @@ algorithm
       Boolean b;
       SCode.Comment c;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
-      equation
-        c = SCode.COMMENT(NONE(), SOME(message));
-        b = listMember(c, comment);
-        comment = if b then comment else (c::comment);
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment)
+      algorithm
+        c := SCode.COMMENT(NONE(), SOME(message));
+        b := listMember(c, comment);
+        comment := if b then comment else (c::comment);
       then
         DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment);
 
@@ -127,8 +154,6 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> commentLst;
-      Boolean b;
-      SCode.Comment c;
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, commentLst),SCode.COMMENT(annotation_=SOME(_)))
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment::commentLst);
@@ -141,11 +166,11 @@ function getComments
   input DAE.ElementSource source;
   output list<SCode.Comment> outComments;
 algorithm
-  outComments := match (source)
+  outComments := match source
     local
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(comment = comment)) then comment;
+    case DAE.SOURCE(comment = comment) then comment;
 
   end match;
 end getComments;
@@ -184,11 +209,11 @@ algorithm
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations,comment),DAE.SUBSTITUTION(es2,t2))
       guard
         // The tail of the new substitution chain is the same as the head of the old one...
-        Expression.expEqual(t2,h1)
-      equation
+        ExpressionBasics.expEqual(t2,h1)
+      algorithm
         // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
         // true = referenceEq(t2,h1);
-        es = listAppend(es2,es1);
+        es := listAppend(es2,es1);
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations,comment);
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
@@ -222,9 +247,9 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_) then source;
     case(exp1::rexplst1,exp2::rexplst2)
-      equation
-        op = DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
-        source = addSymbolicTransformation(source,op);
+      algorithm
+        op := DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
+        source := addSymbolicTransformation(source,op);
       then
         addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
   end match;
@@ -237,7 +262,7 @@ algorithm
   if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
     return;
   end if;
-  source := match (source,elt)
+  source := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -245,14 +270,12 @@ algorithm
       DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
-      DAE.Exp h1,t1,t2;
       list<SCode.Comment> comment;
       SCode.Equation scode;
-      list<DAE.Element> elts;
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);
-    case (DAE.SOURCE(info=info),_)
-      equation
+    case DAE.SOURCE(info=info)
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Tried to add the flattened elements to the list of operations, but did not find the SCode equation"}, info);
       then fail();
   end match;
@@ -274,8 +297,8 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_,_) then source;
     case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformationSubstitution(true,source,exp1,exp2);
+      algorithm
+        source := addSymbolicTransformationSubstitution(true,source,exp1,exp2);
       then
         addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_::rexplst1,_::rexplst2)
@@ -312,8 +335,8 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_,_) then source;
     case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
+      algorithm
+        source := addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
       then
         addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_::rexplst1,_::rexplst2)
@@ -348,11 +371,18 @@ algorithm
   if not (add and Flags.isSet(Flags.INFO_XML_OPERATIONS)) then
     return;
   end if;
-  op1 := DAE.SOLVE(cr,exp1,exp2,exp,list(Algorithm.getAssertCond(ass) for ass in asserts));
+  op1 := DAE.SOLVE(cr,exp1,exp2,exp,list(getAssertCond(ass) for ass in asserts));
   op2 := DAE.SOLVED(cr,exp2) "If it was already on solved form";
-  op := if Expression.expEqual(exp2,exp) then op2 else op1;
+  op := if ExpressionBasics.expEqual(exp2,exp) then op2 else op1;
   source := addSymbolicTransformation(source,op);
 end addSymbolicTransformationSolve;
+
+function getAssertCond
+  input DAE.Statement stmt;
+  output DAE.Exp cond;
+algorithm
+  DAE.STMT_ASSERT(cond=cond) := stmt;
+end getAssertCond;
 
 function getSymbolicTransformations
   input DAE.ElementSource source;
@@ -393,7 +423,7 @@ algorithm
     case DAE.INITIAL_NORETCALL() then element.source;
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ElementSource.getElementSource failed: Element does not have a source"});
       then fail();
   end match;
@@ -404,7 +434,7 @@ function getStatementSource
   input DAE.Statement stmt;
   output DAE.ElementSource source;
 algorithm
-  source := match(stmt)
+  source := match stmt
     case DAE.STMT_ASSIGN() then stmt.source;
     case DAE.STMT_TUPLE_ASSIGN() then stmt.source;
     case DAE.STMT_ASSIGN_ARR() then stmt.source;
@@ -488,13 +518,13 @@ algorithm
   if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
-  source := match(source, classPathOpt)
+  source := match classPathOpt
     local
       Absyn.Path classPath;
     // a top level
-    case (_, NONE())
+    case NONE()
       then source;
-    case (_, SOME(classPath))
+    case SOME(classPath)
       then addElementSourcePartOf(source, Absyn.WITHIN(classPath));
   end match;
 end addElementSourcePartOfOpt;
@@ -535,7 +565,7 @@ algorithm
   if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
-  source := match(source, classPath)
+  source := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -545,7 +575,7 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment), _)
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, classPath::typeLst, operations,comment);
   end match;
 end addElementSourceType;
@@ -566,5 +596,5 @@ algorithm
   end match;
 end addElementSourceInstanceOpt;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end ElementSource;

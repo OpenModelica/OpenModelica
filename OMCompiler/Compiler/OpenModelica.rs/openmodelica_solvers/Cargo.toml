@@ -1,0 +1,29 @@
+# The simulation algorithms that do not depend on where the model comes from:
+# the gbode Runge-Kutta family, the fixed-step solvers, the SUNDIALS bindings,
+# the simulation flags and the log formatting. A model is anything implementing
+# [`Ode`] — the wasm-jit runtime's linear-memory model (openmodelica_sim_meta)
+# or an imported FMU (openmodelica_fmi_driver) — so both drive the same solvers,
+# and a wasm build of either compiles these once.
+[package]
+name = "openmodelica_solvers"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+std = ["daskr/std", "sparse"]
+# rsparse LU for the big gbode Newton matrices (KLU's stand-in, as in the
+# wasm-jit runtime's linear systems). Needs std, so the FMI3 no_std build
+# falls back to the dense LINPACK factorization.
+sparse = ["dep:rsparse"]
+# Compile the CVODE/IDA bindings without linking an archive: the symbols stay
+# undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
+sundials_extern = []
+
+[dependencies]
+# LINPACK's `dgefa`/`dgesl` for gbode's Newton matrix.
+daskr = { path = "../daskr", default-features = false }
+# no_std `sqrt`/`pow`/`log` for the solver math; unused under `std`.
+libm = "0.2"
+# Sparse LU with AMD ordering (CSparse port), for `sparse` above.
+rsparse = { version = "1.2", optional = true }

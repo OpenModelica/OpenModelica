@@ -1,4 +1,71 @@
 
+# Rust (mmtorust) omc port. When enabled, the compiler is produced by
+# transpiling the MetaModelica sources to Rust and cargo-building them; bomc/omc
+# are never compiled from C, so we skip the entire C-build path below (the
+# bootstrap C runtime, the bomc bootstrapper, the C++ frontend, and the
+# .mo -> .c -> libOpenModelicaCompiler/omc steps). The simulation/function
+# runtime libraries live under OMCompiler/SimulationRuntime and are still built.
+if(OM_OMC_ENABLE_RUST)
+  # Defines the build tools + susan, sets OMC_EXE to the susan binary, and
+  # TPL_EXTRA_DEPENDS so the template rules wait for susan.
+  include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_omc.cmake)
+  if(RUST_OMC_PREBUILT_CDYLIB)
+    # GUI-only build against a prebuilt Rust omc (split CI stage 2): a stage-1
+    # build already produced the cdylib + the generated Qt API sources, handed
+    # over via RUST_OMC_PREBUILT_CDYLIB / RUST_OMC_PREBUILT_SCRIPTING_API_QT_DIR.
+    # Skip susan, mmtorust and the whole codegen — no cargo runs here; only the
+    # Qt GUI clients (and the C/C++ simulation runtime they link) are built. This
+    # lets the GUI compile in parallel with the testsuite off the stage-1 cdylib.
+    omc_rust_setup_omedit()
+  else()
+    # The same template rules as the C build, now driven by ${OMC_EXE} == susan,
+    # producing Compiler/Template/*.mo and populating TPL_OUTPUT_MO_FILES.
+    include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
+    # The canonical MetaModelica source list (OMC_MM_ALWAYS_SOURCES /
+    # OMC_MM_BACKEND_SOURCES) — mmtorust is driven from this, not a separate txt.
+    include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
+    # Full transpile (mmtorust) + the rust_scripting_api target, and — unless this
+    # is the wasm/web build — the native rust_omc / rust_libopenmodelica artifacts.
+    omc_rust_setup_codegen()
+    if(OM_OMC_WASM)
+      # Web target: build only the wasm bundle (cargo wasm + wasm-bindgen). The
+      # native artifacts and GUI clients are skipped (OM_OMC_WASM forces the
+      # clients off at top level), so `make all` produces just the wasm bundle.
+      omc_rust_setup_wasm()
+    elseif(OM_ENABLE_GUI_CLIENTS)
+      # Provide the OpenModelicaCompiler target the Qt GUI clients link (the C
+      # build's is skipped under Rust mode along with the rest of this file).
+      omc_rust_setup_omedit()
+    endif()
+  endif()
+  # The simulation/function runtime (under OMCompiler/SimulationRuntime) is built
+  # even in Rust mode and angle-includes omc_config.unix.h. Its generation lives
+  # in runtime/CMakeLists.txt, which the return() below skips — so generate the
+  # build-tree header here, or the runtime fails with "'omc_config.unix.h' file
+  # not found".
+  include(${CMAKE_CURRENT_SOURCE_DIR}/runtime/omc_config_unix.cmake)
+  # runtime/CMakeLists.txt (skipped above) also generates Autoconf.mo from
+  # Autoconf.mo.in — a compiler source the transpile reads. Without it mmtorust
+  # silently skips the missing source and emits an openmodelica_util lib.rs with
+  # no `pub mod Autoconf;`, so the hand-written OMSimulatorExt.rs
+  # (`use crate::Autoconf;`) fails to build. The Rust port only needs the package
+  # to parse: its runtime values are never used (Autoconf.rs is hand-maintained),
+  # so substitute the .in without the C build's ldflags/Corba/etc. plumbing. The
+  # only @vars@ used in non-string positions are OMC_TARGET_ARCH_IS_64 and
+  # WITH_HWLOC (set by omc_config_unix.cmake above) and BSTATIC (set here); the
+  # rest are strings and may be empty. Written to the BUILD tree (RUST_AUTOCONF_MO,
+  # from rust_omc.cmake) rather than Compiler/Util — an in-source generated
+  # Autoconf.mo collides with a parallel autotools build of the same checkout; the
+  # two mmtorust source lists redirect their Util/Autoconf.mo entry to this path.
+  # Only mmtorust consumes it, so skip it in the prebuilt GUI-only mode (no codegen).
+  if(NOT RUST_OMC_PREBUILT_CDYLIB)
+    set(BSTATIC "false")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Util/Autoconf.mo.in
+                   ${RUST_AUTOCONF_MO} @ONLY)
+  endif()
+  return()
+endif()
+
 omc_add_subdirectory(runtime)
 omc_add_subdirectory(boot)
 omc_add_subdirectory(FrontEndCpp)
@@ -12,6 +79,11 @@ set(OMC_EXE $<TARGET_FILE:bomc>)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(GEN_DEBUG_SYMBOLS "-d=gendebugsymbols")
 endif()
+
+# Compile the compiler against itself with the def-use static analysis enabled so that
+# conditionally-assigned variables are caught at build time. -d= is additive and survives
+# the setCommandLineOptions("-d=rml") in mm_compile.in.mos.
+set(CHECK_DEF_USE "-d=checkDefUse")
 
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
 # enable_language(MODELICA)
@@ -33,7 +105,12 @@ macro(add_compile_script mo_source_file)
 
     set(MM_PACKAGE_NAME ${file_name_no_ext})
     set(MM_INPUT_SOURCE_DIR ${source_dir})
+    # MM_OUTPUT_DIR is where the interfaces (and the dependency information derived
+    # from them) live, MM_C_OUTPUT_DIR is where the translated C ends up. They are
+    # separate because .cmake/bootstrap_sources.cmake reuses the interfaces of this
+    # build but writes its C somewhere else.
     set(MM_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(MM_C_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/c_files)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/mm_compile.in.mos ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos)
 endmacro(add_compile_script)
 
@@ -90,7 +167,7 @@ macro(add_compile_step mo_source_file)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CHECK_DEF_USE} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c
@@ -108,23 +185,28 @@ endmacro(add_compile_step)
 
 
 
+# OpenModelicaScriptingAPI.mo (a compiler source) stays in Script/; the C++ Qt
+# files go under the build tree (OMEditLIB reads OMC_SCRIPTING_API_QT_DIR), so C
+# and Rust builds don't fight over Script/.
+set(OMC_SCRIPTING_API_QT_DIR ${CMAKE_CURRENT_BINARY_DIR}/scripting-api-qt
+    CACHE INTERNAL "Generated OpenModelicaScriptingAPIQt C++ sources (build tree)")
 add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
             ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
             ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.tpl
 
-    # We want to generate OpenModelicaScriptingAPI.mo in scripts folder. Since the script
-    # generates it in the current working directory we go there. Later we can fix the script to
-    # take a path or change the MM source list to pick up the generated OpenModelicaScriptingAPI.mo
-    # from <build_dir>/Compiler.
+    # The script generates in its working directory.
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Script
 
     COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${OMC_SCRIPTING_API_QT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
 
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h
-    COMMENT "Generating ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo using ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos"
+    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+    COMMENT "Generating OpenModelicaScriptingAPI.mo + Qt API"
 )
 
 
@@ -292,6 +374,11 @@ endif()
 # endif()
 
 
+# Defines generate-bootstrap-sources / update-bootstrap-sources, the way to
+# refresh the pre-translated C sources bomc is built from. Neither target is part
+# of 'all'. Needs the omc target above and the interfaces of this build.
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
+
 
 ### INSTALLATION
 
@@ -300,24 +387,16 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
-  # Escape the environment variable path
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
-
-  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
-  else()
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-  endif()
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
 
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
   set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
   set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
+
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+    cmake_policy(SET CMP0207 NEW)
+  endif()
 
   message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
   install(TARGETS OpenModelicaCompiler
@@ -327,6 +406,17 @@ if(WIN32)
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
   install(TARGETS omc
           COMPONENT omc)
+
+  # libopenblas.dll is linked dynamically (-lopenblas) by the *generated*
+  # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
+  # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
+  # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
+  # Install it explicitly so e.g. buildModelFMU() can bundle it into the
+  # exported FMU.
+  install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
+          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          COMPONENT omc
+          OPTIONAL)
 else(WIN32)
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)
@@ -367,6 +457,6 @@ install(DIRECTORY scripts
 # or 'cmake --build <b_dir> --target install_omc' in the general case.
 add_custom_target(install_omc
                   DEPENDS omc
-                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=compiler -P cmake_install.cmake
+                  COMMAND ${CMAKE_COMMAND} -DCOMPONENT=omc -P cmake_install.cmake
                   COMMENT "Installing omc."
                   )

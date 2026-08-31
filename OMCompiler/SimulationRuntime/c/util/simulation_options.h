@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -107,7 +104,7 @@ enum _FLAG
   FLAG_IPOPT_MAX_ITER,
   FLAG_IPOPT_WARM_START,
   FLAG_JACOBIAN,
-  FLAG_JACOBIAN_THREADS,
+  FLAG_JACOBIAN_NOMINAL_FACTOR,
   FLAG_L,
   FLAG_L_DATA_RECOVERY,
   FLAG_LOG_FORMAT,
@@ -155,6 +152,7 @@ enum _FLAG
   FLAG_OPTIMIZER_NP,
   FLAG_OPTIMIZER_TGRID,
   FLAG_OUTPUT,
+  FLAG_OUTPUT_FORMAT,
   FLAG_OUTPUT_PATH,
   FLAG_OVERRIDE,
   FLAG_OVERRIDE_FILE,
@@ -165,11 +163,14 @@ enum _FLAG
   FLAG_DATA_RECONCILE_STATE,
   FLAG_SR,
   FLAG_SR_CTRL,
+  FLAG_SR_CTRL_EVNT_REINIT,
   FLAG_SR_CTRL_FILTER,
   FLAG_SR_CTRL_FHR,
   FLAG_SR_ERR,
   FLAG_SR_INT,
   FLAG_SR_NLS,
+  FLAG_SR_NLS_INTERNAL_DAMPING_FAC,
+  FLAG_SR_NLS_INTERNAL_JACKEEP,
   FLAG_MR,
   FLAG_MR_CTRL,
   FLAG_MR_ERR,
@@ -178,16 +179,30 @@ enum _FLAG
   FLAG_MR_PAR,
   FLAG_RT,
   FLAG_S,
+  FLAG_SAVE_INITIAL_GUESS_SYSTEM,
   FLAG_SINGLE_PRECISION,
   FLAG_SOLVER_STEPS,
+  FLAG_START_TIME,
   FLAG_STEADY_STATE,
   FLAG_STEADY_STATE_TOL,
+  FLAG_STEP_SIZE,
+  FLAG_STOP_AT_SYSTEM,
+  FLAG_STOP_TIME,
   FLAG_SVD_SPARSE_COUNT,
   FLAG_SVD_SPARSE_SIGMA,
+  FLAG_SVD_SPARSE_TOL,
   FLAG_DATA_RECONCILE_Sx,
+  FLAG_TOLERANCE,
   FLAG_UP_HESSIAN,
+  FLAG_VARIABLE_FILTER,
   FLAG_W,
   FLAG_PARMODNUMTHREADS,
+  FLAG_PARMOD_SCHEDULER,
+  FLAG_PARMOD_CLUSTERING,
+  FLAG_PARMOD_CLUSTERS_PER_LEVEL,
+  FLAG_PARMOD_EXPORT_TASKGRAPH,
+  FLAG_PARMOD_IMPORT_CLUSTERING,
+  FLAG_PARMOD_DUMP_STAGES,
 
   FLAG_MAX
 };
@@ -224,15 +239,33 @@ enum GB_METHOD {
   RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
+  RK_SDIRK4,          /* sdirk4*/
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
+  RK_ESDIRK4_7L2SA,   /* esdirk4s7*/
+  RK_SIRK3_2_3L2SA,   /* sirk3l */
+  RK_SIRK3_2_4L3SA,   /* sirk3 */
+  RK_SIRK3_2_5L3SA,   /* sirk3s5 */
+  RK_SIRK4_3_LAGUERRE,/* sirk4lag*/
+  RK_SIRK4_3_5L3SA,   /* sirk4 */
+  RK_SIRK5_4_5L3SA,   /* sirk5 */
+  RK_SIRK4_3_6L4SA,   /* sirk4s6 */
+  RK_SIRK5_4_6L4SA,   /* sirk5s6 */
+  RK_SIRK5_4_7L4SA,   /* sirk5s7 */
+  RK_SIRK6_5_7L4SA,   /* sirk6s7 */
+  RK_SIRK6_5_8L4SA,   /* sirk6s8 */
+  RK_SIRK5_4_7L5SA,   /* sirk5s7l5 */
+  RK_FIRK7_6TS_5L4SA, /* firk7 */
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/
   RK_RADAU_IIA_2,     /* radauIIA2*/
   RK_RADAU_IIA_3,     /* radauIIA3*/
   RK_RADAU_IIA_4,     /* radauIIA4*/
+  RK_RADAU_IIA_5,     /* radauIIA5*/
+  RK_RADAU_IIA_6,     /* radauIIA6*/
+  RK_RADAU_IIA_7,     /* radauIIA7*/
   RK_LOBA_IIIA_3,     /* lobattoIIIA3*/
   RK_LOBA_IIIA_4,     /* lobattoIIIA4*/
   RK_LOBA_IIIB_3,     /* lobattoIIIB3*/
@@ -275,6 +308,7 @@ enum GB_NLS_METHOD {
   GB_NLS_NEWTON,
   GB_NLS_KINSOL,
   GB_NLS_KINSOL_B,
+  GB_NLS_INTERNAL,
 
   GB_NLS_MAX
 };
@@ -294,7 +328,14 @@ enum GB_CTRL_METHOD {
   GB_CTRL_PID_H312 = 5,       /* PID controller for step size */
   GB_CTRL_PID_SOEDERLIND = 6, /* PID controller for step size */
   GB_CTRL_PID_STIFF = 7,      /* PID controller for step size */
-  GB_CTRL_CNST = 8,           /* Constant step size */
+  GB_CTRL_PI_PC = 8,          /* Standard PI Predictive controller */
+  GB_CTRL_PI_PC_HYBRID = 9,   /* Hybrid I / PI Predictive controller */
+  GB_CTRL_PI_H211 = 10,       /* PI Predictive controller */
+  GB_CTRL_PI_H0_211 = 11,     /* PI Predictive controller */
+  GB_CTRL_PID_H0_312 = 12,    /* PID Predictive controller */
+  GB_CTRL_PID_H0_321 = 13,    /* PID Predictive controller */
+  GB_CTRL_PPID = 14,          /* PID Predictive controller */
+  GB_CTRL_CNST = 15,          /* Constant step size */
 
   GB_CTRL_MAX
 };
@@ -317,6 +358,25 @@ enum GB_INTERPOL_METHOD {
 
 extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+
+/**
+ * @brief Method for single-rate / multi-rate error estimation.
+ */
+enum GB_ERROR_METHOD {
+  GB_ERROR_UNKNOWN = 0,    /* Unknown method */
+
+  GB_ERROR_DEFAULT,        /* Default, depending on the Runge-Kutta method */
+  GB_ERROR_RICHARDSON,     /* Richardson extrapolation */
+  GB_ERROR_EMBEDDED,       /* Embedded scheme */
+  GB_ERROR_TWO_STEP,       /* Two-step estimator */
+  GB_ERROR_CONTRACTIVE,    /* Contractive defect estimator */
+  GB_ERROR_FILTER,         /* Contractive filter applied to embedded estimator */
+
+  GB_ERROR_MAX
+};
+
+extern const char *GB_ERROR_METHOD_NAME[GB_ERROR_MAX];
+extern const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX];
 
 enum SOLVER_METHOD
 {
@@ -437,8 +497,10 @@ typedef enum JACOBIAN_METHOD
   COLOREDNUMJAC,      /* Colored numeric Jacobian */
   INTERNALNUMJAC,     /* Internal numeric Jacobian */
   COLOREDSYMJAC,      /* Colored symbolic Jacobian */
+  COLOREDSYMJACADJ,   /* Colored symbolic Jacobian (adjoint) */
   NUMJAC,             /* Non-colored numeric Jacobian */
   SYMJAC,             /* Non-colored symbolic Jacobian */
+  BICOLOREDSYMJAC,    /* Bidirectional (star bicolored) symbolic Jacobian */
 
   JAC_MAX
 } JACOBIAN_METHOD;

@@ -24,6 +24,5 @@ end f;
 
 model ArraySlice2
   Real y = f();
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice2;
 

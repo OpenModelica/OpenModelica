@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -89,12 +93,15 @@ protected import BackendVariable;
 protected import BackendDAETransform;
 protected import BackendEquation;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
+protected import DAEDumpTypes;
 protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
@@ -405,13 +412,13 @@ function: binopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
+  match inOperator
     local
       DAE.Ident s;
       DAE.Operator op;
     case op
-      equation
-        s = binopSymbol2(op);
+      algorithm
+        s := binopSymbol2(op);
       then
         s;
   end match;
@@ -425,23 +432,23 @@ Helper function to binopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
+  match inOperator
     local String error_msg;
-    case (DAE.ADD()) then MathMLPlus;
-    case (DAE.SUB()) then MathMLMinus;
-    case (DAE.MUL()) then MathMLTimes;
-    case (DAE.DIV()) then MathMLDivide;
-    case (DAE.POW()) then MathMLPower;
-    case (DAE.ADD_ARR()) then MathMLPlus;
-    case (DAE.SUB_ARR()) then MathMLMinus;
-    case (DAE.MUL_ARRAY_SCALAR()) then MathMLTimes;
-    case (DAE.MUL_SCALAR_PRODUCT()) then MathMLScalarproduct;
-    case (DAE.MUL_MATRIX_PRODUCT()) then MathMLVectorproduct;
-    case (DAE.DIV_ARRAY_SCALAR()) then MathMLDivide;
+    case DAE.ADD() then MathMLPlus;
+    case DAE.SUB() then MathMLMinus;
+    case DAE.MUL() then MathMLTimes;
+    case DAE.DIV() then MathMLDivide;
+    case DAE.POW() then MathMLPower;
+    case DAE.ADD_ARR() then MathMLPlus;
+    case DAE.SUB_ARR() then MathMLMinus;
+    case DAE.MUL_ARRAY_SCALAR() then MathMLTimes;
+    case DAE.MUL_SCALAR_PRODUCT() then MathMLScalarproduct;
+    case DAE.MUL_MATRIX_PRODUCT() then MathMLVectorproduct;
+    case DAE.DIV_ARRAY_SCALAR() then MathMLDivide;
     else
-      equation
-        error_msg = "in XMLDump.binopSymbol2 - Unknown operator: ";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.binopSymbol2 - Unknown operator: ";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -461,13 +468,12 @@ on the value of the second input (the String content) prints:
   input list<Absyn.Path> absynPathLst;
   input String Content;
 algorithm
-  _ := match (absynPathLst,Content)
+  () := match absynPathLst
     local
-      Integer len;
-    case ({},_)
+    case {}
       then();
-    case (_,_)
-      equation
+    case _
+      algorithm
         dumpStrOpenTag(Content);
         dumpAbsynPathLst2(absynPathLst);
         dumpStrCloseTag(Content);
@@ -482,15 +488,15 @@ method.
 "
   input list<Absyn.Path> absynPathLst;
 algorithm
-  _:= match (absynPathLst)
+  ():= match absynPathLst
         local
           list<Absyn.Path> apLst;
           Absyn.Path ap;
           String str;
       case {} then ();
-      case (ap :: apLst)
-      equation
-        str=AbsynUtil.pathStringNoQual(ap);
+      case ap :: apLst
+      algorithm
+        str:=AbsynUtil.pathStringNoQual(ap);
         dumpStrTagContent(ELEMENT,str);
         dumpAbsynPathLst2(apLst);
       then();
@@ -507,13 +513,13 @@ is present the output is:
 "
   input list<DAE.Constraint> constrs;
 algorithm
-  _:= match(constrs)
+  ():= match constrs
     local
       Integer len;
     case {} then ();
     case _
-      equation
-        len = listLength(constrs);
+      algorithm
+        len := listLength(constrs);
         dumpStrOpenTagAttr(CONSTRAINTS,DIMENSION,intString(len));
         dumpConstraints2(constrs,0);
         dumpStrCloseTag(CONSTRAINTS);
@@ -536,7 +542,7 @@ XML format. The output is something like:
   input list<DAE.Constraint> iConstrs;
   input Integer inConsNo;
 algorithm
-  _ := match(iConstrs,inConsNo)
+  () := match(iConstrs,inConsNo)
     local
       list<DAE.Exp> exps;
       Integer conNo,conNo_1;
@@ -544,11 +550,11 @@ algorithm
 
     case({},_) then ();
     case(DAE.CONSTRAINT_EXPS(exps)::constrs,conNo)
-      equation
+      algorithm
         dumpStrOpenTagAttr(CONSTRAINT, LABEL, stringAppend(stringAppend(CONSTRAINT_REF,"_"),intString(conNo)));
         Print.printBuf(Util.xmlEscape(DAEDump.dumpConstraintsStr({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)})));
         dumpStrCloseTag(CONSTRAINT);
-        conNo_1=conNo+1;
+        conNo_1:=conNo+1;
         dumpConstraints2(constrs,conNo_1);
       then ();
   end match;
@@ -559,19 +565,19 @@ protected function dumpBltInvolvedEquations
   input BackendDAE.StrongComponent inComp;
   input Integer offset;
 algorithm
-  _:=
-  match (inComp,offset)
+  ():=
+  match inComp
     local
       Integer e;
       list<Integer> elst;
-    case (BackendDAE.SINGLEEQUATION(eqn=e),_)
-      equation
+    case BackendDAE.SINGLEEQUATION(eqn=e)
+      algorithm
          dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e+offset));
       then
         ();
-    case (_,_)
-      equation
-        (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
+    case _
+      algorithm
+        (elst,_) := BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
         dumpBltInvolvedEquations1(elst,offset);
       then
         ();
@@ -587,14 +593,14 @@ using an xml representation:
   input list<Integer> inList;
   input Integer offset;
 algorithm
-  _:=
-  match(inList,offset)
+  ():=
+  match inList
       local
         Integer el;
         list<Integer> remList;
-    case ({},_) then ();
-    case(el :: remList,_)
-      equation
+    case {} then ();
+    case el :: remList
+      algorithm
         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el+offset));
         dumpBltInvolvedEquations1(remList,offset);
       then();
@@ -610,17 +616,17 @@ nothing is printed.
   input Option<DAE.Exp> inOptExpExp;
   input Boolean addMathMLCode;
 algorithm
-    _ := match (inOptExpExp)
-    case(NONE())
-      equation
+    () := match inOptExpExp
+    case NONE()
+      algorithm
       then();
-    case(SOME(_))
-      equation
+    case SOME(_)
+      algorithm
         // dumpStrOpenTag(BIND_EXPRESSION);
         dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMathMLCode);
         // dumpStrCloseTag(BIND_EXPRESSION);
       then();
-    case(_)
+    case _
       then ();
   end match;
 end dumpBindExpression;
@@ -646,7 +652,7 @@ The output is something like:
   input BackendDAE.BackendDAE dae;
 algorithm
   dumpStrOpenTag(BLT_REPRESENTATION);
-  _ := BackendDAEUtil.foldEqSystem(dae,dumpComponentsWork,(0,0));
+  BackendDAEUtil.foldEqSystem(dae,dumpComponentsWork,(0,0));
   dumpStrCloseTag(BLT_REPRESENTATION);
 end dumpComponents;
 
@@ -683,15 +689,15 @@ The output is something like:
   input Integer voffset;
   input Integer eoffset;
 algorithm
-  _:=
-  matchcontinue(l,voffset,eoffset)
-    case({},_,_)
+  ():=
+  match l
+    case {}
         then();
-    case(_,_,_)
-      equation
+    case _
+      algorithm
         dumpComponents2(l,1+voffset,eoffset);
       then();
-  end matchcontinue;
+  end match;
 end dumpComponents1;
 
 
@@ -703,14 +709,14 @@ function: dumpComponents2
   input Integer i;
   input Integer offset;
 algorithm
-  _:=
-  match (inIntegerLstLst,i,offset)
+  ():=
+  match inIntegerLstLst
     local
       BackendDAE.StrongComponent l;
       BackendDAE.StrongComponents lst;
-    case ({},_,_) then ();
-    case ((l :: lst),_,_)
-      equation
+    case {} then ();
+    case l :: lst
+      algorithm
         dumpStrOpenTagAttr(BLT_BLOCK, ID, intString(i));
         dumpBltInvolvedEquations(l,offset);
         dumpStrCloseTag(BLT_BLOCK);
@@ -730,19 +736,19 @@ a XML format. See dumpCrefIdxLst for details.
   input String Content;
   input Integer inInteger;
 algorithm
-  _:=
-  matchcontinue (crefIdxLstArr,Content,inInteger)
+  ():=
+  matchcontinue inInteger
     local String error_msg;
-    case (_,_,_) guard listEmpty(crefIdxLstArr[inInteger])
+    case _ guard listEmpty(crefIdxLstArr[inInteger])
       then ();
-    case (_,_,_)
-      equation
+    case _
+      algorithm
         dumpCrefIdxLst(crefIdxLstArr[inInteger],Content);
       then ();
-    case (_,_,_)
-      equation
-        error_msg = "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
-        error_msg = error_msg + intString(inInteger);
+    case _
+      algorithm
+        error_msg := "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
+        error_msg := error_msg + intString(inInteger);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then fail();
   end matchcontinue;
@@ -762,12 +768,11 @@ See dumpCrefIdxLst2 for details.
   input list<BackendDAE.CrefIndex> crefIdxLst;
   input String Content;
 algorithm
-  _ := match(crefIdxLst,Content)
-   local Integer len;
-    case ({},_)
+  () := match crefIdxLst
+   local    case {}
       then ();
     else
-      equation
+      algorithm
         dumpStrOpenTag(Content);
         dumpCrefIdxLst2(crefIdxLst);
         dumpStrCloseTag(Content);
@@ -784,18 +789,17 @@ and using an XML format like:
 "
   input list<BackendDAE.CrefIndex> crefIdxLst;
 algorithm
-  _:=
-  match (crefIdxLst)
+  ():=
+  match crefIdxLst
       local
         list<BackendDAE.CrefIndex> crefIndexList;
-        BackendDAE.CrefIndex crefIndex;
         Integer index_c;
         DAE.ComponentRef cref_c;
         String cref;
       case {}  then ();
-      case ((BackendDAE.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
-      equation
-        cref=ComponentReference.crefStr(cref_c);
+      case (BackendDAE.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList
+      algorithm
+        cref:=ComponentReference.crefStr(cref_c);
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_c));
         Print.printBuf(cref);
         dumpStrCloseTag(ELEMENT);
@@ -817,17 +821,16 @@ content of the list. The output could be something like:
   input DAE.InstDims arry_Dim;
   input String Content;
 algorithm
-    _ := matchcontinue (arry_Dim,Content)
-   local Integer len;
-    case ({},_)
+    () := match arry_Dim
+   local    case {}
       then ();
     else
-      equation
+      algorithm
         dumpStrOpenTag(Content);
         dumpDAEInstDims2(arry_Dim);
         dumpStrCloseTag(Content);
       then();
-  end matchcontinue;
+  end match;
 end dumpDAEInstDims;
 
 
@@ -842,13 +845,13 @@ See dump Subscript for details.
 "
   input DAE.InstDims arry_Dim;
 algorithm
-  _:= match (arry_Dim)
+  ():= match arry_Dim
     local
       list<DAE.Dimension> lDim;
       DAE.Dimension dim;
   case {} then ();
-  case (dim :: lDim)
-    equation
+  case dim :: lDim
+    algorithm
       dumpStrOpenTag(DIMENSION);
       dumpDimension(dim);
       dumpStrCloseTag(DIMENSION);
@@ -920,7 +923,7 @@ the relative tag is not printed.
   input Boolean dumpResiduals;
   input Boolean dumpSolvedEquations;
 algorithm
-  _ := matchcontinue (inBackendDAE,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,dumpSolvedEquations)
+  () := matchcontinue (inBackendDAE,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,dumpSolvedEquations)
     local
       list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
 
@@ -931,22 +934,16 @@ algorithm
       BackendDAE.Variables vars_knownVars;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_knownVars;
-      Integer bucketSize_knownVars;
-      Integer numberOfVars_knownVars;
 
       //External Object: external variables.
       BackendDAE.Variables vars_externalObject;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_externalObject;
-      Integer bucketSize_externalObject;
-      Integer numberOfVars_externalObject;
 
       //Alias Variables: alias variables
       BackendDAE.Variables vars_aliasVars;
       //VARIABLES record for aliasVars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_aliasVars;
-      Integer bucketSize_aliasVars;
-      Integer numberOfVars_aliasVars;
 
       //External Classes
       BackendDAE.ExternalObjectClasses extObjCls;
@@ -954,15 +951,12 @@ algorithm
       list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
       BackendDAE.EquationArray reqns,ieqns;
       list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
 
       list<DAE.Function> functionsElems;
 
-      Boolean addOrInMatrix,addSolInfo,addMML,dumpRes,dumpSolved;
-      BackendDAE.BackendDAEType btp;
+      Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
       list<BackendDAE.EqSystem> systs;
-      BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
       BackendDAE.EventInfo eventInfo;
@@ -975,36 +969,36 @@ algorithm
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,_,constrs,_,_,_,funcs,eventInfo,
                  extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
-      equation
+      algorithm
 
-        knvars  = BackendVariable.varList(vars_knownVars);
-        extvars = BackendVariable.varList(vars_externalObject);
-        aliasvars = BackendVariable.varList(vars_aliasVars);
+        knvars  := BackendVariable.varList(vars_knownVars);
+        extvars := BackendVariable.varList(vars_externalObject);
+        aliasvars := BackendVariable.varList(vars_aliasVars);
 
-        reqns = BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
+        reqns := BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)+listLength(aliasvars)));
         //Bucket size info is no longer present.
-        vars = List.fold(systs,getOrderedVars,{});
+        vars := List.fold(systs,getOrderedVars,{});
         dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
-        eqnsl = List.fold(systs,getEqsList,{});
+        eqnsl := List.fold(systs,getEqsList,{});
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes, false);
-        reqnsl = BackendEquation.equationList(reqns);
+        reqnsl := BackendEquation.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
-        ieqnsl = BackendEquation.equationList(ieqns);
+        ieqnsl := BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
 
         dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
-        functionsElems = DAEUtil.getFunctionList(funcs);
+        functionsElems := DAEUtil.getFunctionList(funcs);
         dumpFunctions(functionsElems);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
@@ -1018,46 +1012,46 @@ algorithm
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,_,constrs,_,_,_,funcs,eventInfo,
                  extObjCls,_,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
-      equation
+      algorithm
 
-        knvars  = BackendVariable.varList(vars_knownVars);
-        extvars = BackendVariable.varList(vars_externalObject);
-        aliasvars = BackendVariable.varList(vars_aliasVars);
+        knvars  := BackendVariable.varList(vars_knownVars);
+        extvars := BackendVariable.varList(vars_externalObject);
+        aliasvars := BackendVariable.varList(vars_aliasVars);
 
-        reqns = BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
+        reqns := BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)+listLength(aliasvars)));
         //Bucket size info is no longer present.
-        vars = List.fold(systs,getOrderedVars,{});
+        vars := List.fold(systs,getOrderedVars,{});
         dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
-        eqnsVarsinOrderLst = List.fold(systs,getOrderedEqsandVars,{});
+        eqnsVarsinOrderLst := List.fold(systs,getOrderedEqsandVars,{});
 
         dumpStrOpenTagAttr(EQUATIONS, DIMENSION, intString(listLength(eqnsVarsinOrderLst)));
         dumpSolvedEqns(eqnsVarsinOrderLst,1,EQUATIONS,addMML,dumpRes, true);
         dumpStrCloseTag(EQUATIONS);
 
-        reqnsl = BackendEquation.equationList(reqns);
+        reqnsl := BackendEquation.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
-        ieqnsl = BackendEquation.equationList(ieqns);
+        ieqnsl := BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
 
         dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
-        functionsElems = DAEUtil.getFunctionList(funcs);
+        functionsElems := DAEUtil.getFunctionList(funcs);
         dumpFunctions(functionsElems);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"XMLDump.dumpBackendDAE failed"});
       then
         fail();
@@ -1068,14 +1062,14 @@ protected function dumpEventInfo
   input BackendDAE.EventInfo inEventInfo;
   input Boolean addMML;
 algorithm
-  _ := match(inEventInfo, addMML)
+  () := match inEventInfo
     local
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ZeroCrossingSet zc;
 
-    case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                zeroCrossings=zc), _)
-      equation
+    case BackendDAE.EVENT_INFO(timeEvents=timeEvents,
+                                zeroCrossings=zc)
+      algorithm
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
         dumpZeroCrossing(ZeroCrossings.toList(zc), stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
@@ -1112,8 +1106,6 @@ protected function getOrderedEqsandVars
   input list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> inEqnsVars;
   output list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> outEqnsVars;
 protected
-  list<BackendDAE.Equation> eqnsl;
-  list<BackendDAE.Var> varlst;
   BackendDAE.StrongComponents comps;
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
@@ -1130,94 +1122,92 @@ protected function getOrderedEqs2
   output list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> outEqnsVarsLst;
 algorithm
   outEqnsVarsLst :=
-  match(inComps, eqns, vars, inAccum)
+  match inComps
     local
       Integer e,v;
       list<Integer> elst,vlst,vlst1,elst1;
       list<list<Integer>> vlst1Lst;
-      BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents rest;
       BackendDAE.Var var;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Var> inAccumVars, varlst, varlst1;
-      list<BackendDAE.Equation> inAccumEqns, eqnlst, eqnlst1;
+      list<BackendDAE.Var> varlst, varlst1;
+      list<BackendDAE.Equation> eqnlst, eqnlst1;
       BackendDAE.InnerEquations innerEquations;
-      tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>> eqnsVars;
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> result;
-    case ({},_,_,_)  then inAccum;
-    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_,_)
-      equation
-        var = BackendVariable.getVarAt(vars,v);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},{var})});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case {}  then inAccum;
+    case BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest
+      algorithm
+        var := BackendVariable.getVarAt(vars,v);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},{var})});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqnlst = BackendEquation.getList(elst,eqns);
-        result = listAppend(inAccum,{(eqnlst,varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqnlst := BackendEquation.getList(elst,eqns);
+        result := listAppend(inAccum,{(eqnlst,varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
-      equation
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        eqn = BackendEquation.get(eqns,e);
-        result = listAppend(inAccum,{({eqn},varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest
+      algorithm
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn := BackendEquation.get(eqns,e);
+        result := listAppend(inAccum,{({eqn},varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations))::rest,_,_,_)
-      equation
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst1 = List.map1r(vlst1, BackendVariable.getVarAt, vars);
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        varlst = listAppend(varlst1,varlst);
-        eqnlst1 = BackendEquation.getList(elst1,eqns);
-        eqnlst = BackendEquation.getList(elst,eqns);
-        eqnlst = listAppend(eqnlst1,eqnlst);
-        result = listAppend(inAccum,{(eqnlst,varlst)});
-        result = getOrderedEqs2(rest,eqns,vars,result);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations))::rest
+      algorithm
+        (elst1,vlst1Lst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 := List.flatten(vlst1Lst);
+        varlst1 := List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := listAppend(varlst1,varlst);
+        eqnlst1 := BackendEquation.getList(elst1,eqns);
+        eqnlst := BackendEquation.getList(elst,eqns);
+        eqnlst := listAppend(eqnlst1,eqnlst);
+        result := listAppend(inAccum,{(eqnlst,varlst)});
+        result := getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (_::_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+    case _::_
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("XMLDump.getOrderedEqs2 failed!");
       then
         fail();
@@ -1250,28 +1240,23 @@ sudh as:
   input String Content;
   input Boolean addMathMLCode;
  algorithm
-   _:= matchcontinue(dae_var_attr,Content,addMathMLCode)
+   ():= matchcontinue(dae_var_attr, addMathMLCode)
      local
        Option<DAE.Exp> min, max;
-       Option<DAE.Exp> quant,unit,displayUnit,startOrigin;
+       Option<DAE.Exp> quant,unit,displayUnit;
        Option<DAE.Exp> Initial,nominal;
        Option<DAE.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
-       Option<DAE.Uncertainty> unc;
-       Option<DAE.Distribution> distrOpt;
        Boolean addMMLCode;
-       Option<DAE.Exp> equationBound;
-       Option<Boolean> isProtected;
-       Option<Boolean> finalPrefix;
 
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_)), _) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_,_)), _) then ();
+   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_,_)), _) then ();
+   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_,_)), _) then ();
+   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_)), _) then ();
    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,Initial,fixed,nominal,stateSel,_,_,
-                                _,_,_,_)),_,addMMLCode)
-      equation
+                                _,_,_,_)), addMMLCode)
+      algorithm
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(unit,VAR_ATTR_UNIT,addMMLCode);
@@ -1285,8 +1270,8 @@ sudh as:
         // adrpo: TODO! FIXME! add the new information about equationBound,isProtected,finalPrefix
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min,max,Initial,fixed,_,_,_,_,_,_)),_,addMMLCode)
-      equation
+    case (SOME(DAE.VAR_ATTR_INT(quant,min,max,Initial,fixed,_,_,_,_,_,_)), addMMLCode)
+      algorithm
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(min,VAR_ATTR_MINVALUE,addMMLCode);
@@ -1295,23 +1280,23 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,_,_,_,_)),_,addMMLCode)
-      equation
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,_,_,_,_)), addMMLCode)
+      algorithm
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_,_)),_,addMMLCode)
-      equation
+    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_,_)), addMMLCode)
+      algorithm
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,Initial,fixed,_,_,_,_)),_,addMMLCode)
-      equation
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,Initial,fixed,_,_,_,_)), addMMLCode)
+      algorithm
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(min,VAR_ATTR_MINVALUE,addMMLCode);
@@ -1320,9 +1305,9 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
         then();
-    case (NONE(),_,_) then ();
-    case (_,_,_)
-      equation
+    case (NONE(), _) then ();
+    case (_, _)
+      algorithm
         dumpComment("unknown VariableAttributes");
       then ();
    end matchcontinue;
@@ -1339,14 +1324,14 @@ This function dumps the varDirection of a variable:
   output String outString;
 algorithm
   outString:=
-  match (inVarDirection)
+  match inVarDirection
     local String error_msg;
     case DAE.INPUT()  then VARDIR_INPUT;
     case DAE.OUTPUT() then VARDIR_OUTPUT;
     case DAE.BIDIR()  then VARDIR_NONE;
     else
-      equation
-        error_msg = "in XMLDump.dumpDirectionStr - Unknown var direction";
+      algorithm
+        error_msg := "in XMLDump.dumpDirectionStr - Unknown var direction";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -1369,21 +1354,20 @@ The output is:
   input Boolean dumpResiduals;
   input Boolean dumpSolved;
 algorithm
-  _:=
-  match (eqns,inCount,inContent,addMathMLCode,dumpResiduals,dumpSolved)
+  ():=
+  match (eqns, addMathMLCode)
     local
       Boolean addMMLCode;
-      Integer len;
       list<BackendDAE.Equation> eqnsLst;
       list<BackendDAE.Var> varLst;
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> rest;
-    case ({},_,_,_,_,_) then ();
-    case (({},_)::rest,_,_,_,_,_)
-      equation
+    case ({}, _) then ();
+    case (({},_)::rest, _)
+      algorithm
         dumpSolvedEqns(rest, inCount, inContent, addMathMLCode,dumpResiduals,dumpSolved);
       then();
-    case ((eqnsLst,varLst)::rest,_,_,addMMLCode,_,_)
-      equation
+    case ((eqnsLst,varLst)::rest, addMMLCode)
+      algorithm
         dumpEqns2(eqnsLst, varLst, inCount, addMMLCode,dumpResiduals,dumpSolved);
         dumpSolvedEqns(rest, inCount+1, inContent, addMathMLCode,dumpResiduals,dumpSolved);
       then ();
@@ -1404,15 +1388,15 @@ The output is:
   input Boolean dumpResiduals;
   input Boolean dumpSolved;
 algorithm
-  _:=
-  match(eqns,inContent,addMathMLCode,dumpResiduals,dumpSolved)
+  ():=
+  match(eqns, addMathMLCode)
     local
       Boolean addMMLCode;
       Integer len;
-    case ({},_,_,_,_) then ();
-    case (_,_,addMMLCode,_,_)
-      equation
-        len = listLength(eqns);
+    case ({}, _) then ();
+    case (_, addMMLCode)
+      algorithm
+        len := listLength(eqns);
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpEqns2(eqns, {}, 1,addMMLCode,dumpResiduals,dumpSolved);
         dumpStrCloseTag(inContent);
@@ -1431,7 +1415,7 @@ protected function dumpEqns2 "
   input Boolean dumpResiduals;
   input Boolean dumpSolved;
 algorithm
-  _:=
+  ():=
   matchcontinue (inEquationLst,inVarLst,inInteger,addMathMLCode,dumpResiduals,dumpSolved)
     local
       Integer index;
@@ -1444,12 +1428,12 @@ algorithm
       DAE.Exp varexp;
     case ({},_,_,_,_,_) then ();
     case ((eqn :: eqns),_,index,addMMLCode,false,false)
-      equation
+      algorithm
         dumpEquation(eqn, intString(index),addMMLCode);
         dumpEqns2(eqns, inVarLst, index+1,addMMLCode, false, false);
       then ();
     case ((eqn :: eqns),_,index,addMMLCode,true,false)
-      equation
+      algorithm
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         //This should be done as above. The problem is that the BackendEquation.equationToResidualForm(eqn) method
         //is not working as expected, probably due to the fact that considers only scalar right hand side
@@ -1467,16 +1451,16 @@ algorithm
         dumpEqns2(eqns, inVarLst, index+1,addMMLCode,true,false);
       then ();
     case ((eqn :: eqns),(var :: vars),index,addMMLCode,false,true)
-      equation
-        cref = BackendVariable.varCref(var);
-        varexp = Expression.crefExp(cref);
-        varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
-        eqn = BackendEquation.solveEquation(eqn, varexp, NONE());
+      algorithm
+        cref := BackendVariable.varCref(var);
+        varexp := Expression.crefExp(cref);
+        varexp := if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
+        eqn := BackendEquation.solveEquation(eqn, varexp, NONE());
         dumpEquation(eqn, intString(index),addMMLCode);
         dumpEqns2(eqns, vars, index+1, addMMLCode, false, true);
       then ();
     case ((eqn :: eqns),(_ :: vars),index,addMMLCode,false,true)
-      equation
+      algorithm
         dumpEquation(eqn, intString(index),addMMLCode);
         dumpEqns2(eqns, vars, index+1, addMMLCode, false, true);
       then ();
@@ -1518,22 +1502,21 @@ For example, if the element is an Array of Equations:
   input String inIndexNumber;
   input Boolean addMathMLCode;
 algorithm
-  _:=
+  ():=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
       String s,s1,s2,res,is,indexS;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef cr;
-      Boolean addMMLCode;
       list<DAE.Statement> stmts;
       DAE.ElementSource source;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1549,20 +1532,20 @@ algorithm
       then ();
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
 
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),_,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," = ",s2,"\n"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        s := stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -1577,20 +1560,20 @@ algorithm
       then ();
 
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
 
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),_,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," = ",s2,"\n"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        s := stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(COMPLEX_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -1605,20 +1588,20 @@ algorithm
       then ();
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,_)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," := ",s2});
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1634,18 +1617,18 @@ algorithm
       then ();
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," := ",s2});
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
     case (BackendDAE.WHEN_EQUATION(whenEquation =  BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst=whenStmtLst)),indexS,true)
-      equation
-        is = printExpStr(e1);
+      algorithm
+        is := printExpStr(e1);
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         dumpWhenOperatorLst(whenStmtLst, addMathMLCode);
 
@@ -1659,8 +1642,8 @@ algorithm
       then ();
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst=whenStmtLst)),indexS,false)
-      equation
-        is = printExpStr(e1);
+      algorithm
+        is := printExpStr(e1);
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         dumpWhenOperatorLst(whenStmtLst, addMathMLCode);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
@@ -1668,9 +1651,9 @@ algorithm
       then ();
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
-      equation
-        s1 = printExpStr(e);
-        res = stringAppendList({s1," = 0"});
+      algorithm
+        s1 := printExpStr(e);
+        res := stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1686,24 +1669,24 @@ algorithm
       then ();
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
-      equation
-        s1 = printExpStr(e);
-        res = stringAppendList({s1," = 0"});
+      algorithm
+        s1 := printExpStr(e);
+        res := stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
 
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
-      equation
+      algorithm
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
       then ();
 
     else
-      equation
-        res = "in XMLDump.dumpEquation - Unknown equation";
+      algorithm
+        res := "in XMLDump.dumpEquation - Unknown equation";
         Error.addMessage(Error.INTERNAL_ERROR, {res});
       then
         fail();
@@ -1723,12 +1706,12 @@ protected function dumpExp
   //output String s;
   input Boolean addMathMLCode;
 algorithm
-  _:=
+  ():=
   matchcontinue (e,addMathMLCode)
     local
       DAE.Exp inExp;
     case(inExp,true)
-      equation
+      algorithm
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
         dumpExp2(inExp);
@@ -1748,94 +1731,96 @@ protected function dumpExp2
   (MathML and MATH tags)."
   input DAE.Exp inExp;
 algorithm
-  _:=
-  matchcontinue (inExp)
+  ():=
+  matchcontinue inExp
     local
       DAE.Ident s,sym,res,str;
       DAE.Ident fs;
       Integer x,ival;
       Real rval;
       DAE.ComponentRef c;
-      DAE.Type t,tp;
-      DAE.Exp e1,e2,e,start,stop,step,cr,dim,cond,tb,fb;
+      DAE.Type tp;
+      DAE.Exp e1,e2,e,start,stop,step,cond,tb,fb;
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
       list<list<DAE.Exp>> ebs;
-    case (DAE.ICONST(integer = x))
-      equation
+      list<DAE.Subscript> subs;
+
+    case DAE.ICONST(integer = x)
+      algorithm
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
       then ();
-    case (DAE.RCONST(real = rval))
-      equation
+    case DAE.RCONST(real = rval)
+      algorithm
         dumpStrMathMLNumberAttr(realString(rval),MathMLType,MathMLReal);
       then ();
-    case (DAE.SCONST(string = s))
-      equation
+    case DAE.SCONST(string = s)
+      algorithm
         dumpStrMathMLNumberAttr(Util.xmlEscape(s),MathMLType,MathMLConstant);
       then ();
-    case (DAE.BCONST(bool = false))
-      equation
+    case DAE.BCONST(bool = false)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLFalse);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.BCONST(bool = true))
-      equation
+    case DAE.BCONST(bool = true)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTrue);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CREF(componentRef = c))
-      equation
-        s = ComponentReference.printComponentRefStr(c);
+    case DAE.CREF(componentRef = c)
+      algorithm
+        s := ComponentReferenceBasics.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
-    case (DAE.BINARY(e1,op,e2))
-      equation
-        sym = binopSymbol(op);
+    case DAE.BINARY(e1,op,e2)
+      algorithm
+        sym := binopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-     case ((DAE.UNARY(op,e1)))
-      equation
-        sym = unaryopSymbol(op);
+     case DAE.UNARY(op,e1)
+      algorithm
+        sym := unaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
         dumpStrCloseTag(MathMLApply);
       then ();
-   case ((DAE.LBINARY(e1,op,e2)))
-      equation
-        sym = lbinopSymbol(op);
+   case DAE.LBINARY(e1,op,e2)
+      algorithm
+        sym := lbinopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-   case ((DAE.LUNARY(op,e1)))
-      equation
-        sym = lunaryopSymbol(op);
+   case DAE.LUNARY(op,e1)
+      algorithm
+        sym := lunaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
         dumpStrCloseTag(MathMLApply);
       then();
-   case ((DAE.RELATION(exp1=e1,operator=op,exp2=e2)))
-      equation
-        sym = relopSymbol(op);
+   case DAE.RELATION(exp1=e1,operator=op,exp2=e2)
+      algorithm
+        sym := relopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case ((DAE.IFEXP(cond,tb,fb)))
-      equation
+    case DAE.IFEXP(cond,tb,fb)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLIfClause);
         dumpStrOpenTag(MathMLIfBranch);
@@ -1848,36 +1833,36 @@ algorithm
         dumpStrCloseTag(MathMLIfClause);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("diff");
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "acos"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "acos"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArccos);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "asin"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "asin"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArcsin);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "atan"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "atan"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArctan);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "atan2"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "atan2"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("atan2");
@@ -1892,15 +1877,15 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLn);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CALL(path = Absyn.IDENT(name = "log10"),expLst = args))
-      equation
+    case DAE.CALL(path = Absyn.IDENT(name = "log10"),expLst = args)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLog);
         dumpList(args,dumpExp2);
@@ -1908,7 +1893,7 @@ algorithm
       then ();
 /*
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
-      equation
+      algorithm
         fs = AbsynUtil.pathStringNoQual(fcn);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("selector");          ----THIS IS FOR ALGORITHM----
@@ -1917,17 +1902,17 @@ algorithm
         dumpStrCloseTag("apMathMLApply;
       then ();
 */
-    case (DAE.CALL(path = fcn,expLst = args))
-      equation
+    case DAE.CALL(path = fcn,expLst = args)
+      algorithm
         // Add the ref to path
-        fs = AbsynUtil.pathStringNoQual(fcn);
+        fs := AbsynUtil.pathStringNoQual(fcn);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(fs);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.ARRAY(array = es))//Array are dumped as vector
-      equation
+    case DAE.ARRAY(array = es)//Array are dumped as vector
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLVector);
@@ -1935,8 +1920,8 @@ algorithm
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.TUPLE(PR = es))//Tuple are dumped as vector
-      equation
+    case DAE.TUPLE(PR = es)//Tuple are dumped as vector
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLVector);
@@ -1944,16 +1929,16 @@ algorithm
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.MATRIX(matrix = ebs))
-      equation
+    case DAE.MATRIX(matrix = ebs)
+      algorithm
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
         dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">\n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
       then ();
-    case (DAE.RANGE(_,start,NONE(),stop))
-      equation
+    case DAE.RANGE(_,start,NONE(),stop)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLInterval);
         dumpExp2(start);
@@ -1961,8 +1946,8 @@ algorithm
         dumpStrCloseTag(MathMLInterval);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case ((DAE.RANGE(_,start,SOME(step),stop)))
-      equation
+    case DAE.RANGE(_,start,SOME(step),stop)
+      algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("{");
@@ -1982,39 +1967,39 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.ICONST(integer = ival)))
-      equation
-        false = Config.modelicaOutput();
-        rval = intReal(ival);
-        res = realString(rval);
+    case DAE.CAST(ty = DAE.T_REAL(),exp = DAE.ICONST(integer = ival))
+      algorithm
+        false := Config.modelicaOutput();
+        rval := intReal(ival);
+        res := realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival))))
-      equation
-        false = Config.modelicaOutput();
-        rval = intReal(ival);
-        res = realString(rval);
+    case DAE.CAST(ty = DAE.T_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival)))
+      algorithm
+        false := Config.modelicaOutput();
+        rval := intReal(ival);
+        res := realString(rval);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLMinus);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = e))
-      equation
-        false = Config.modelicaOutput();
+    case DAE.CAST(ty = DAE.T_REAL(),exp = e)
+      algorithm
+        false := Config.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLReal);
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(),exp = e))
-      equation
-        true = Config.modelicaOutput();
+    case DAE.CAST(ty = DAE.T_REAL(),exp = e)
+      algorithm
+        true := Config.modelicaOutput();
         dumpExp2(e);
       then ();
-    case (DAE.CAST(ty = tp,exp = e))
-      equation
-        str = Types.unparseType(tp);
+    case DAE.CAST(ty = tp,exp = e)
+      algorithm
+        str := TypesDump.unparseType(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("(");
@@ -2029,43 +2014,44 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.ASUB(exp = e1,sub = args))
-      equation
+    case DAE.ASUB(exp = e1,sub = subs)
+      algorithm
+        args := list(Expression.getSubscriptExp(sub) for sub in subs);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.ENUM_LITERAL(name = fcn))
-      equation
+    case DAE.ENUM_LITERAL(name = fcn)
+      algorithm
         dumpStrMathMLVariable(AbsynUtil.pathStringNoQual(fcn));
       then ();
-    case (DAE.SIZE(sz = SOME(_)))
-      equation
+    case DAE.SIZE(sz = SOME(_))
+      algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.SIZE(sz = NONE()))
-      equation
+    case DAE.SIZE(sz = NONE())
+      algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.REDUCTION())
-      equation
+    case DAE.REDUCTION()
+      algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then  ();
       // MetaModelica list
-    case (DAE.LIST())
-      equation
+    case DAE.LIST()
+      algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
         // MetaModelica list cons
-    case (DAE.CONS())
-      equation
+    case DAE.CONS()
+      algorithm
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (_)
-      equation
-        dumpComment("UNKNOWN EXPRESSION: " + ExpressionDump.printExpStr(inExp));
+    case _
+      algorithm
+        dumpComment("UNKNOWN EXPRESSION: " + ExpressionBasics.printExpStr(inExp));
       then ();
   end matchcontinue;
 end dumpExp2;
@@ -2079,14 +2065,14 @@ xml Modelica classes.
 input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
-  _ := match(cls,Content)
+  () := match cls
    local
      Integer len;
      BackendDAE.ExternalObjectClasses xs;
-    case ({},_) then ();
-    case (xs,_)
-      equation
-        len = listLength(xs);
+    case {} then ();
+    case xs
+      algorithm
+        len := listLength(xs);
         dumpStrOpenTagAttr(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_),DIMENSION,intString(len));
         dumpExtObjCls2(xs,stringAppend(EXTERNAL,CLASS_));
         dumpStrCloseTag(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_));
@@ -2109,16 +2095,15 @@ end ...
 input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
-  _ := match(cls,Content)
+  () := match(cls,Content)
    local
      BackendDAE.ExternalObjectClasses xs;
      Absyn.Path path;
      String c;
-     DAE.ElementSource source "the origin of the element";
 
     case ({},_) then ();
     case (BackendDAE.EXTOBJCLASS(path,_)::xs,c)
-      equation
+      algorithm
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(AbsynUtil.pathStringNoQual(path));Print.printBuf("\n  extends ExternalObject");
         Print.printBuf("end");Print.printBuf(AbsynUtil.pathStringNoQual(path));
@@ -2141,7 +2126,7 @@ It could be:
   output String outString;
 algorithm
   outString:=
-  match (inVarFlow)
+  match inVarFlow
     case DAE.FLOW()          then VAR_FLOW_FLOW;
     case DAE.POTENTIAL()     then VAR_FLOW_NONFLOW;
     case DAE.STREAM()        then VAR_FLOW_NONFLOW;
@@ -2155,16 +2140,16 @@ This function dumps a list of functions
 "
   input list<DAE.Function> funcelems;
 algorithm
-  _ := matchcontinue (funcelems)
+  () := match funcelems
     local
-    case ({}) then();
+    case {} then();
     case _
-      equation
+      algorithm
         dumpStrOpenTag(FUNCTIONS);
         dumpFunctions2(funcelems);
         dumpStrCloseTag(FUNCTIONS);
       then();
-  end matchcontinue;
+  end match;
 end dumpFunctions;
 
 
@@ -2173,13 +2158,13 @@ Help function for dumpFunctions
 "
   input list<DAE.Function> funcelems;
 algorithm
-  _ := match (funcelems)
+  () := match funcelems
     local
       DAE.Function fun;
       list<DAE.Function> rem_fun;
     case {} then();
-    case (fun :: rem_fun)
-      equation
+    case fun :: rem_fun
+      algorithm
         dumpFunctions3(fun);
         dumpFunctions2(rem_fun);
       then();
@@ -2192,17 +2177,17 @@ Help function to dumpFunctions2
 "
   input DAE.Function fun;
 algorithm
-  _:= matchcontinue (fun)
+  ():= matchcontinue fun
     case DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_)))) then ();
     case _
-      equation
+      algorithm
         dumpStrOpenTagAttr(FUNCTION, FUNCTION_NAME, Util.xmlEscape(AbsynUtil.pathStringNoQual(DAEUtil.functionName(fun))));
         dumpStrOpenTag(MODELICA_IMPLEMENTATION);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpFunctionStr(fun)));
         dumpStrCloseTag(MODELICA_IMPLEMENTATION);
         dumpStrCloseTag(FUNCTION);
       then();
-    case (_) then();
+    case _ then();
 /*
         dumpStrOpenTag(Function)
         dumpAttribute(name= AbsynUtil.pathStringNoQual(name));
@@ -2229,7 +2214,7 @@ algorithm
   dumpStrOpenTag(MathML);
   dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
   dumpStrOpenTag(MathMLMatrix);
-  _ := BackendDAEUtil.foldEqSystem(dae,dumpAdjacencyMatrixWork,0);
+  BackendDAEUtil.foldEqSystem(dae,dumpAdjacencyMatrixWork,0);
   dumpStrCloseTag(MathMLMatrix);
   dumpStrCloseTag(MATH);
   dumpStrCloseTag(MathML);
@@ -2244,11 +2229,11 @@ protected function dumpAdjacencyMatrixWork
   output Integer outOffset;
 protected
  BackendDAE.AdjacencyMatrix m;
- DAE.FunctionTree funcs;
+ AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
   (_,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
-  _ := Array.fold(m,dumpAdjacencyMatrix2,(inOffset,1));
+  Array.fold(m,dumpAdjacencyMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
 end dumpAdjacencyMatrixWork;
 
@@ -2303,7 +2288,7 @@ the kind of a variable, that could be:
   output String outString;
 algorithm
   outString :=
-  match (inVarKind)
+  match inVarKind
     local Absyn.Path path; String error_msg;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
     case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
@@ -2315,8 +2300,8 @@ algorithm
     case BackendDAE.EXTOBJ(path)
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",AbsynUtil.pathStringNoQual(path))));
     else
-      equation
-        error_msg = "in XMLDump.dumpKind - Unknown kind";
+      algorithm
+        error_msg := "in XMLDump.dumpKind - Unknown kind";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -2334,16 +2319,16 @@ protected function dumpList
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:=
+  ():=
   matchcontinue (inTypeALst,inFuncTypeTypeATo)
     local
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
     case ({},_)  then ();
-    case ({h},r) equation  r(h);  then  ();
+    case ({h},r) algorithm  r(h);  then  ();
     case ((h :: t),r)
-      equation
+      algorithm
         r(h);
         dumpList(t, r);
       then ();
@@ -2362,7 +2347,7 @@ protected function dumpListSeparator
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:=
+  ():=
   matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
       Type_a h;
@@ -2370,9 +2355,9 @@ algorithm
       list<Type_a> t;
       DAE.Ident sep;
     case ({},_,_)  then ();
-    case ({h},r,_) equation  r(h);  then  ();
+    case ({h},r,_) algorithm  r(h);  then  ();
     case ((h :: t),r,sep)
-      equation
+      algorithm
         r(h);
         Print.printBuf(sep);
         dumpListSeparator(t, r, sep);
@@ -2384,7 +2369,7 @@ protected function printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Util.xmlEscape(ExpressionDump.printExpStr(e));
+  s := Util.xmlEscape(ExpressionBasics.printExpStr(e));
 end printExpStr;
 
 protected function dumpLstInt "
@@ -2402,7 +2387,7 @@ The output is:
   input list<Integer> inLstStr;
   input String inElementName;
 algorithm
-  _:=
+  ():=
   matchcontinue(inLstStr,inElementName)
       local
         Integer h;
@@ -2410,11 +2395,11 @@ algorithm
     case ({},_) then ();
     case ({_},"") then ();
     case ({h},_)
-      equation
+      algorithm
         dumpStrTagContent(inElementName,intString(h));
     then  ();
     case ((h :: t),_)
-      equation
+      algorithm
         dumpStrTagContent(inElementName,intString(h));
         dumpLstInt(t,inElementName);
     then();
@@ -2430,18 +2415,18 @@ the XML delimiters tag of the list.
   input String inContent;
   input String inElementContent;
 algorithm
-  _:= matchcontinue (lst,inContent,inElementContent)
+  ():= match (lst,inContent,inElementContent)
   local
     list<Integer> l;
     String inLst,inEl;
     case ({},_,_) then ();
     case (l,inLst,inEl)
-      equation
+      algorithm
         dumpStrOpenTag(inLst);
         dumpLstInt(l,inEl);
         dumpStrCloseTag(inLst);
       then();
-  end matchcontinue;
+  end match;
 end dumpLstIntAttr;
 
 protected function dumpMatching
@@ -2450,7 +2435,7 @@ protected function dumpMatching
   input BackendDAE.BackendDAE dae;
 algorithm
   dumpStrOpenTag(MATCHING_ALGORITHM);
-  _ := BackendDAEUtil.foldEqSystem(dae,dumpMatchingWork,(0,0));
+  BackendDAEUtil.foldEqSystem(dae,dumpMatchingWork,(0,0));
   dumpStrCloseTag(MATCHING_ALGORITHM);
 end dumpMatching;
 
@@ -2478,16 +2463,16 @@ protected function dumpMatching1
   input Integer voffset;
   input Integer eoffset;
 algorithm
-   _:=
-  matchcontinue(v,voffset,eoffset)
-  case(_,_,_)
-    equation
-      false = intGt(arrayLength(v),0);
+   ():=
+  matchcontinue eoffset
+  case _
+    algorithm
+      false := intGt(arrayLength(v),0);
     then();
-  case(_,_,_)
-    equation
-      true = intGt(arrayLength(v),0);
-      _ = Array.fold(v,dumpMatching2,(1,voffset,eoffset));
+  case _
+    algorithm
+      true := intGt(arrayLength(v),0);
+      Array.fold(v,dumpMatching2,(1,voffset,eoffset));
   then();
     end matchcontinue;
 end dumpMatching1;
@@ -2513,7 +2498,7 @@ end dumpMatching2;
 protected function dumpOptExp "
 This function print to a new line the content of
 a Optional<DAE.Exp> in a XML element like:
-<Content =ExpressionDump.printExpStr(e)/>. It also print
+<Content =ExpressionBasics.printExpStr(e)/>. It also print
 the content of the expression as MathML like:
 <MathML><MATH xmlns=...>DAE.Exp</MATH></MathML>.
 See dumpExp function for more details.
@@ -2522,13 +2507,13 @@ See dumpExp function for more details.
   input String Content;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match (inExpExpOption,Content,addMathMLCode)
+  ():=
+  match inExpExpOption
     local
       DAE.Exp e;
-    case (NONE(),_,_) then ();
-    case (SOME(e),_,_)
-      equation
+    case NONE() then ();
+    case SOME(e)
+      algorithm
         dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(Content);
@@ -2545,15 +2530,15 @@ a Optional<Integer> in a XML element like:
   input String Content;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match (inOption,Content,addMathMLCode)
+  ():=
+  match inOption
     local
       Integer i;
 
-    case (NONE(),_,_) then ();
+    case NONE() then ();
 
-    case (SOME(i),_,_)
-      equation
+    case SOME(i)
+      algorithm
         dumpStrOpenTagAttr(Content,INDEX,intString(i));
         dumpStrCloseTag(Content);
       then ();
@@ -2572,22 +2557,22 @@ element is something like:
   input Option<DAE.StateSelect> ss;
   input String Content;
 algorithm
-  _ :=
-  match (ss,Content)
-    case (NONE(),_)
-      equation
+  () :=
+  match ss
+    case NONE()
+      algorithm
         Print.printBuf("");
       then ();
-    case (SOME(DAE.NEVER()),_)
-      equation dumpStrTagContent(Content, STATE_SELECT_NEVER);   then ();
-    case (SOME(DAE.AVOID()),_)
-      equation dumpStrTagContent(Content, STATE_SELECT_AVOID);   then ();
-    case (SOME(DAE.DEFAULT()),_)
-      equation dumpStrTagContent(Content, STATE_SELECT_DEFAULT); then ();
-    case (SOME(DAE.PREFER()),_)
-      equation dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
-    case (SOME(DAE.ALWAYS()),_)
-      equation dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
+    case SOME(DAE.NEVER())
+      algorithm dumpStrTagContent(Content, STATE_SELECT_NEVER);   then ();
+    case SOME(DAE.AVOID())
+      algorithm dumpStrTagContent(Content, STATE_SELECT_AVOID);   then ();
+    case SOME(DAE.DEFAULT())
+      algorithm dumpStrTagContent(Content, STATE_SELECT_DEFAULT); then ();
+    case SOME(DAE.PREFER())
+      algorithm dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
+    case SOME(DAE.ALWAYS())
+      algorithm dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
   end match;
 end dumpOptionDAEStateSelect;
 
@@ -2628,14 +2613,14 @@ protected function dumpSolvingInfo "
   input Boolean addSolvingInfo;
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
-  _:=
-  match (addOriginalAdjacencyMatrix,addSolvingInfo,inBackendDAE)
+  ():=
+  match (addOriginalAdjacencyMatrix, addSolvingInfo)
     local
       BackendDAE.BackendDAE dlow;
-  case (false,false,_) then ();
-  case (true,true,_)
-    equation
-      dlow = BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
+  case (false, false) then ();
+  case (true, true)
+    algorithm
+      dlow := BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_ADJACENCY_MATRIX);
       dumpAdjacencyMatrix(dlow);
@@ -2646,17 +2631,17 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (true,false,_)
-    equation
+  case (true, false)
+    algorithm
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_ADJACENCY_MATRIX);
       dumpAdjacencyMatrix(inBackendDAE);
       dumpStrCloseTag(ORIGINAL_ADJACENCY_MATRIX);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (false,true,_)
-    equation
-      dlow = BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
+  case (false, true)
+    algorithm
+      dlow := BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(dlow);
@@ -2693,17 +2678,17 @@ protected function dumpStrCloseTag "
   "
   input String inContent;
 algorithm
-  _:=
-  matchcontinue (inContent)
+  ():=
+  match inContent
       local String inString;
-  case ("")
-    equation
+  case ""
+    algorithm
     then ();
-  case (inString)
-    equation
+  case inString
+    algorithm
       Print.printBuf("\n</");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(">");
     then ();
-  end matchcontinue;
+  end match;
 end dumpStrCloseTag;
 
 protected function dumpStreamStr "
@@ -2718,7 +2703,7 @@ It could be:
   output String outString;
 algorithm
   outString:=
-  match (inVarStream)
+  match inVarStream
     case DAE.STREAM()               then VAR_STREAM_STREAM;
     case DAE.POTENTIAL()            then VAR_STREAM_NONSTREAM;
     case DAE.FLOW()                 then VAR_STREAM_NONSTREAM;
@@ -2780,15 +2765,15 @@ protected function dumpStrOpenTag "
   "
   input String inContent;
 algorithm
-  _:=
-  matchcontinue (inContent)
+  ():=
+  matchcontinue inContent
       local String inString;
-  case ("")
-    equation
+  case ""
+    algorithm
       Print.printBuf("");
     then ();
-  case (inString)
-    equation
+  case inString
+    algorithm
       Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(">");
     then ();
   end matchcontinue;
@@ -2808,16 +2793,16 @@ protected function dumpStrOpenTagAttr "
   input String Attribute;
   input String AttributeContent;
 algorithm
-  _:=
+  ():=
   matchcontinue (inContent,Attribute,AttributeContent)
-      local String inString,inAttribute,inAttributeContent;
-  case ("",_,_)  equation  Print.printBuf("");  then();
-  case (_,"",_)  equation  Print.printBuf("");  then();
-  case (_,_,"")  equation  Print.printBuf("");  then();
-  case (inString,"",_)  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
-  case (inString,_,"")  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+      local String inString,inAttributeContent;
+  case ("",_,_)  algorithm  Print.printBuf("");  then();
+  case (_,"",_)  algorithm  Print.printBuf("");  then();
+  case (_,_,"")  algorithm  Print.printBuf("");  then();
+  case (inString,"",_)  algorithm dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+  case (inString,_,"")  algorithm dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
   case (inString,_,inAttributeContent)
-    equation
+    algorithm
       Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\">");
     then();
   end matchcontinue;
@@ -2837,16 +2822,16 @@ protected function dumpStrTagAttrNoChild "
   input String Attribute;
   input String AttributeContent;
 algorithm
-  _:=
+  ():=
   matchcontinue (inContent,Attribute,AttributeContent)
-      local String inString,inAttribute,inAttributeContent;
-  case ("",_,_)  equation  Print.printBuf("");  then();
-  case (_,"",_)  equation  Print.printBuf("");  then();
-  case (_,_,"")  equation  Print.printBuf("");  then();
-  case (inString,"",_)  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
-  case (inString,_,"")  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+      local String inString,inAttributeContent;
+  case ("",_,_)  algorithm  Print.printBuf("");  then();
+  case (_,"",_)  algorithm  Print.printBuf("");  then();
+  case (_,_,"")  algorithm  Print.printBuf("");  then();
+  case (inString,"",_)  algorithm dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+  case (inString,_,"")  algorithm dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
   case (inString,_,inAttributeContent)
-    equation
+    algorithm
       Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\" />");
     then();
   end matchcontinue;
@@ -2864,18 +2849,18 @@ protected function dumpStrTagContent "
   input String inElementName;
   input String inContent;
 algorithm
-  _:=
-  matchcontinue (inElementName,inContent)
+  ():=
+  match (inElementName,inContent)
       local String inTagString,inTagContent;
   case ("",_)  then ();
   case (_,"")  then ();
   case (inTagString,inTagContent)
-    equation
+    algorithm
       dumpStrOpenTag(inTagString);
       Print.printBuf("\n");Print.printBuf(inTagContent);
       dumpStrCloseTag(inTagString);
     then ();
-  end matchcontinue;
+  end match;
 end dumpStrTagContent;
 
 
@@ -2888,45 +2873,45 @@ print on a new line an XML code like:
 "
   input String inElementName;
 algorithm
-  _:=matchcontinue(inElementName)
+  ():=match inElementName
   local String ElementName;
-    case("") then();
-    case(ElementName)
-      equation
+    case "" then();
+    case ElementName
+      algorithm
          Print.printBuf("\n<");
          Print.printBuf(transformModelicaIdentifierToXMLElementTag(ElementName));
          Print.printBuf("/>");
       then();
-  end matchcontinue;
+  end match;
 end dumpStrVoidTag;
 
 protected function dumpDimension "
 This function print an DAE.Dimension eventually
-using the ExpressionDump.printExpStr function.
+using the ExpressionBasics.printExpStr function.
 "
   input DAE.Dimension inDimension;
 algorithm
-  _:=
-  match (inDimension)
+  ():=
+  match inDimension
     local DAE.Exp e1;
       Integer i;
     case DAE.DIM_INTEGER(i)
-      equation
+      algorithm
         Print.printBuf(intString(i));
       then
         ();
     case DAE.DIM_ENUM(_,_,_)
-      equation
+      algorithm
         Print.printBuf("Dim Enum");
       then
         ();
     case DAE.DIM_EXP(e1)
-      equation
+      algorithm
         Print.printBuf(printExpStr(e1));
       then
         ();
     case DAE.DIM_UNKNOWN()
-      equation
+      algorithm
         Print.printBuf(":");
       then
         ();
@@ -2946,7 +2931,7 @@ This function output the Type of a variable, it could be:
   output String outString;
 algorithm
   outString:=
-  match (inType)
+  match inType
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
@@ -2955,10 +2940,10 @@ algorithm
     case DAE.T_BOOL()    then VARTYPE_BOOLEAN;
     case DAE.T_STRING()  then VARTYPE_STRING;
     case DAE.T_ENUMERATION(names = l)
-      equation
-        s1 = stringDelimitList(l, ", ");
-        s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
-        str = stringAppend(s2, ")");
+      algorithm
+        s1 := stringDelimitList(l, ", ");
+        s2 := stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
+        str := stringAppend(s2, ")");
       then
         str;
     case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))
@@ -2988,11 +2973,11 @@ Please note that all the inputs must be passed as String variables.
 "
   input String varno,cr,kind,dir,var_type,indx,derName,varFixed,flowPrefix,streamPrefix,comment;
 algorithm
-  _:=
-  matchcontinue (varno,cr,kind,dir,var_type,indx,derName,varFixed,flowPrefix,streamPrefix,comment)
+  ():=
+  matchcontinue comment
       //local String str;
-    case (_,_,_,_,_,_,_,_,_,_,"")
-    equation
+    case ""
+    algorithm
     /*
       str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" derName=derName,origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
@@ -3009,8 +2994,8 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (_,_,_,_,_,_,_,_,_,_,_)
-    equation
+    case _
+    algorithm
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
       Print.printBuf("\" ");Print.printBuf(VAR_VARIABILITY);Print.printBuf("=\"");Print.printBuf(kind);
@@ -3035,20 +3020,20 @@ protected function printIndexAndDerName
   input String indx;
   input String derName;
 algorithm
-  _ := match(indx, derName)
+  () := match(indx, derName)
     case ("", "") then ();
     case (_, "")
-      equation
+      algorithm
         Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
       then
         ();
     case ("", _)
-      equation
+      algorithm
         Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
       then
         ();
     case (_, _)
-      equation
+      algorithm
         Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
         Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
       then
@@ -3073,19 +3058,19 @@ The output is very simple and is like:
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
   input Integer i;
 algorithm
-    _ := matchcontinue (crefIdxLstArr,i)
+    () := matchcontinue i
     local String error_msg;
-    case (_,_) guard listEmpty(crefIdxLstArr[1])
+    case _ guard listEmpty(crefIdxLstArr[1])
       then ();
-    case (_,_)
-      equation
+    case _
+      algorithm
         dumpStrOpenTag(ADDITIONAL_INFO);
         dumpCrefIdxLstArr(crefIdxLstArr,HASH_TB_CREFS_LIST,i);
         dumpStrCloseTag(ADDITIONAL_INFO);
       then ();
     else
-      equation
-        error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
+      algorithm
+        error_msg := "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then ();
   end matchcontinue;
@@ -3107,15 +3092,15 @@ is:
   input String Content;
   input Boolean addMathMLCode;
 algorithm
-  _ := matchcontinue (vars,crefIdxLstArr,Content,addMathMLCode)
+  () := matchcontinue (vars, addMathMLCode)
     local
       Integer len;
       Boolean addMMLCode;
-    case ({},_,_,_)
+    case ({}, _)
       then();
-    case (_,_,_,addMMLCode) guard not listEmpty(crefIdxLstArr[1])
-      equation
-        len = listLength(vars);
+    case (_, addMMLCode) guard not listEmpty(crefIdxLstArr[1])
+      algorithm
+        len := listLength(vars);
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
         // uncomment because it is not correct implemented,crefIdxLstArr and strIdxLstArr
@@ -3125,9 +3110,9 @@ algorithm
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then();
-    case (_,_,_,addMMLCode)
-      equation
-        len = listLength(vars);
+    case (_, addMMLCode)
+      algorithm
+        len := listLength(vars);
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
         dumpVars2(vars,1,addMMLCode);
@@ -3141,9 +3126,9 @@ protected function getIndex
   input BackendDAE.VarKind kind;
   output String diffIndex;
 algorithm
-  diffIndex := match(kind)
+  diffIndex := match kind
     local Integer di;
-    case (BackendDAE.STATE(index=di)) then intString(di);
+    case BackendDAE.STATE(index=di) then intString(di);
     else "";
   end match;
 end getIndex;
@@ -3152,11 +3137,11 @@ protected function getDerName
   input BackendDAE.VarKind kind;
   output String derName;
 algorithm
-  derName := match(kind)
+  derName := match kind
     local String dn; DAE.ComponentRef cr;
-    case (BackendDAE.STATE(derName=SOME(cr)))
-      equation
-        dn = ComponentReference.printComponentRefStr(cr);
+    case BackendDAE.STATE(derName=SOME(cr))
+      algorithm
+        dn := ComponentReferenceBasics.printComponentRefStr(cr);
       then dn;
     else "";
   end match;
@@ -3173,7 +3158,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input Boolean addMathMLCode;
 algorithm
-  _ := match (inVarLst,inInteger,addMathMLCode)
+  () := match (inVarLst,inInteger,addMathMLCode)
     local
       Integer varno;
       BackendDAE.Var v;
@@ -3187,8 +3172,6 @@ algorithm
       DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
-      DAE.InstDims arry_Dim;
-      Option<Values.Value> b;
       Integer var_1;
       Boolean addMMLCode;
       DAE.ElementSource source "the origin of the element";
@@ -3218,19 +3201,19 @@ algorithm
                             values = dae_var_attr,
                             comment = comment,
                             connectorType = ct)) :: xs),varno,addMMLCode)
-      equation
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+      algorithm
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = ElementSource.getElementSourceTypes(source);
+        paths := ElementSource.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpStrCloseTag(VARIABLE);
-        var_1=varno+1;
+        var_1:=varno+1;
         dumpVars2(xs,var_1,addMMLCode);
       then ();
   end match;
@@ -3249,7 +3232,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input Boolean addMMLCode;
 algorithm
-  _ := match (inVarLst,crefIdxLstArr,inInteger,addMMLCode)
+  () := match (inVarLst, inInteger)
     local
       Integer varno;
       BackendDAE.Var v;
@@ -3263,13 +3246,11 @@ algorithm
       DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
-      DAE.InstDims arry_Dim;
-      Option<Values.Value> b;
       Integer var_1;
       DAE.ElementSource source;
       String error_msg;
 
-    case ({},_,_,_) then ();
+    case ({}, _) then ();
 
     case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
@@ -3279,30 +3260,30 @@ algorithm
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
-                            connectorType = ct)) :: xs),_,varno,_)
-      equation
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+                            connectorType = ct)) :: xs), varno)
+      algorithm
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                         getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
-                        DAEDump.dumpCommentAnnotationStr(comment));
+                        DAEDumpTypes.dumpCommentAnnotationStr(comment));
         dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = ElementSource.getElementSourceTypes(source);
+        paths := ElementSource.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpVarsAdditionalInfo(crefIdxLstArr,varno);
         dumpStrCloseTag(VARIABLE);
-        var_1 = varno+1;
+        var_1 := varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then ();
 
-    case (_::xs,_,varno,_)
-      equation
-        error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
-        error_msg = error_msg + intString(varno);
+    case (_::xs, varno)
+      algorithm
+        error_msg := "in XMLDump.dumpVarsAdds2 - Unknown var: ";
+        error_msg := error_msg + intString(varno);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
-        var_1 = varno+1;
+        var_1 := varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then
         ();
@@ -3323,19 +3304,17 @@ the zero crossing list. The output is:
   input String inContent;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match(inWhenOperators,inContent,addMathMLCode)
+  ():=
+  match inWhenOperators
     local
       Integer len;
-      DAE.Exp condition;
       list<BackendDAE.WhenOperator> lst;
-      Option<Integer> elseClause;
 
-    case ({},_,_) then ();
+    case {} then ();
 
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
+    case lst
+      algorithm
+        len := listLength(lst);
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpWhenOperatorLst(lst, addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -3350,23 +3329,21 @@ This function prints the content of a when clause
   input list<BackendDAE.WhenOperator> inWhenOperators;
   input Boolean addMathMLCode;
 algorithm
-  _:=
+  ():=
   match (inWhenOperators,addMathMLCode)
     local
       DAE.ComponentRef stateVar;
       DAE.Exp cond, msg, level, left, e, value, call;
-      list<DAE.Exp> exps;
       list<BackendDAE.WhenOperator> lst;
       String str, s1, s2;
-      Absyn.Path fn;
 
     case ({}, _) then ();
 
     case (BackendDAE.ASSIGN(left, value, _) :: lst, true)
-      equation
-        s1 = printExpStr(left);
-        s2 = printExpStr(value);
-        str = stringAppendList({s1," := ",s2});
+      algorithm
+        s1 := printExpStr(left);
+        s2 := printExpStr(value);
+        str := stringAppendList({s1," := ",s2});
 
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
@@ -3390,10 +3367,10 @@ algorithm
 
 
     case (BackendDAE.ASSIGN(left, value, _) :: lst, false)
-      equation
-        s1 = printExpStr(left);
-        s2 = printExpStr(value);
-        str = stringAppendList({s1," := ",s2});
+      algorithm
+        s1 := printExpStr(left);
+        s2 := printExpStr(value);
+        str := stringAppendList({s1," := ",s2});
 
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
@@ -3406,12 +3383,12 @@ algorithm
         ();
 
     case (BackendDAE.REINIT(stateVar, value, _) :: lst, _)
-      equation
-        e = Expression.makeCrefExp(stateVar, DAE.T_UNKNOWN_DEFAULT);
-        call = DAE.CALL(
+      algorithm
+        e := Expression.makeCrefExp(stateVar, DAE.T_UNKNOWN_DEFAULT);
+        call := DAE.CALL(
           Absyn.IDENT(REINIT), {e, value},
           DAE.callAttrBuiltinOther);
-        str = printExpStr(call);
+        str := printExpStr(call);
 
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
@@ -3425,11 +3402,11 @@ algorithm
         ();
 
     case (BackendDAE.ASSERT(cond, msg, level, _) :: lst, _)
-      equation
-        call = DAE.CALL(
+      algorithm
+        call := DAE.CALL(
           Absyn.IDENT(ASSERT), {cond, msg, level},
           DAE.callAttrBuiltinOther);
-        str = printExpStr(call);
+        str := printExpStr(call);
 
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
@@ -3443,11 +3420,11 @@ algorithm
         ();
 
     case (BackendDAE.TERMINATE(msg, _) :: lst, _)
-      equation
-        call = DAE.CALL(
+      algorithm
+        call := DAE.CALL(
           Absyn.IDENT(TERMINATE), {msg},
           DAE.callAttrBuiltinOther);
-        str = printExpStr(call);
+        str := printExpStr(call);
 
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
@@ -3461,8 +3438,8 @@ algorithm
         ();
 
     case (BackendDAE.NORETCALL(exp=call) :: lst, _)
-      equation
-        str = printExpStr(call);
+      algorithm
+        str := printExpStr(call);
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
         Print.printBuf(str);
@@ -3490,18 +3467,17 @@ the zero crossing list. The output is:
   input String inContent;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match(inTimeEvents,inContent,addMathMLCode)
+  ():=
+  match inTimeEvents
     local
       Integer len;
-      list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
 
 
-    case ({},_,_) then ();
+    case {} then ();
 
-    case (_,_,_)
-      equation
-        len = listLength(inTimeEvents);
+    case _
+      algorithm
+        len := listLength(inTimeEvents);
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpSampleLst(inTimeEvents, addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -3522,7 +3498,7 @@ protected function dumpSampleLst "
   input list<BackendDAE.TimeEvent> inSamples;
   input Boolean addMathMLCode;
 algorithm
-  _ := match (inSamples, addMathMLCode)
+  () := match (inSamples, addMathMLCode)
     local
       DAE.Exp e1, e2;
       Integer i;
@@ -3532,14 +3508,14 @@ algorithm
     case ({}, _) then ();
 
     case (BackendDAE.SIMPLE_TIME_EVENT()::lst, addMMLCode)
-      equation
+      algorithm
         /* TODO */
 
         dumpSampleLst(lst,addMMLCode);
       then ();
 
     case (BackendDAE.SAMPLE_TIME_EVENT(i, e1, e2)::lst, addMMLCode)
-      equation
+      algorithm
         dumpStrOpenTag(stringAppend(SAMPLES, ELEMENT_));
 
         dumpStrOpenTagAttr(INDEX, VALUE, intString(i));
@@ -3572,14 +3548,14 @@ protected function dumpZeroCrossing "
   input String inContent;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match(zeroCross,inContent,addMathMLCode)
+  ():=
+  match zeroCross
     local
       Integer len;
-    case ({},_,_) then ();
-    case (_,_,_)
-      equation
-        len = listLength(zeroCross);
+    case {} then ();
+    case _
+      algorithm
+        len := listLength(zeroCross);
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpZcLst(zeroCross,addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -3612,18 +3588,18 @@ of the zero crossing elements in XML format. The output is:
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
   input Boolean addMathMLCode;
 algorithm
-  _:=
+  ():=
   match (inZeroCrossingLst,addMathMLCode)
     local
       DAE.Exp e;
       Boolean addMMLCode;
-      list<Integer> eq,wc;
+      list<Integer> eq;
       list<BackendDAE.ZeroCrossing> zcLst;
 
     case ({},_) then ();
 
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq) :: zcLst,addMMLCode)
-      equation
+      algorithm
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
@@ -3643,14 +3619,14 @@ function: lbinopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
+  match inOperator
     local String error_msg;
-    case (DAE.AND()) then MathMLAnd;
-    case (DAE.OR()) then MathMLOr;
+    case DAE.AND() then MathMLAnd;
+    case DAE.OR() then MathMLOr;
     else
-      equation
-        error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.lbinopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3666,13 +3642,13 @@ function: lunaryopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
+  match inOperator
     local String error_msg;
-    case (DAE.NOT()) then MathMLNot;
+    case DAE.NOT() then MathMLNot;
     else
-      equation
-        error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.lunaryopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3688,18 +3664,18 @@ function: relopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
+  match inOperator
     local String error_msg;
-    case (DAE.LESS()) then MathMLLessThan;
-    case (DAE.LESSEQ()) then MathMLLessEqualThan;
-    case (DAE.GREATER()) then MathMLGreaterThan;
-    case (DAE.GREATEREQ()) then MathMLGreaterEqualThan;
-    case (DAE.EQUAL()) then MathMLEquivalent;
-    case (DAE.NEQUAL()) then MathMLNotEqual;
+    case DAE.LESS() then MathMLLessThan;
+    case DAE.LESSEQ() then MathMLLessEqualThan;
+    case DAE.GREATER() then MathMLGreaterThan;
+    case DAE.GREATEREQ() then MathMLGreaterEqualThan;
+    case DAE.EQUAL() then MathMLEquivalent;
+    case DAE.NEQUAL() then MathMLNotEqual;
     else
-      equation
-        error_msg = "in XMLDump.relopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.relopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3741,7 +3717,7 @@ For example, if the element is an Array of Equations:
   input String inIndexNumber;
   input Boolean addMathMLCode;
 algorithm
-  _:=
+  ():=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
       String s,s1,s2,res,is,indexS;
@@ -3751,10 +3727,10 @@ algorithm
       DAE.ElementSource source;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," ( ",s2,") = 0"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3774,20 +3750,20 @@ algorithm
       then ();
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
 
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),_,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," - (",s2,") = 0\n"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        s := stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -3806,19 +3782,19 @@ algorithm
       then ();
 
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),_,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," - (",s2,") = 0\n"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        s := stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(COMPLEX_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -3837,20 +3813,20 @@ algorithm
       then ();
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
+      algorithm
+        s1 := printExpStr(e1);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," - ( ",s2," ) := 0"});
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3870,21 +3846,21 @@ algorithm
       then ();
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = printExpStr(e2);
-        res = stringAppendList({s1," - (",s2,") := 0"});
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := printExpStr(e2);
+        res := stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = e,right = e2)})),indexS,true)
-      equation
-        s1 = printExpStr(e);
-        s2 = printExpStr(e2);
-        is = printExpStr(e1);
-        res = stringAppendList({s1," - (",s2,") := 0"});
+      algorithm
+        s1 := printExpStr(e);
+        s2 := printExpStr(e2);
+        is := printExpStr(e1);
+        res := stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3911,11 +3887,11 @@ algorithm
       then ();
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition = e1,whenStmtLst={BackendDAE.ASSIGN(left = e,right = e2)})),indexS,false)
-      equation
-        s1 = printExpStr(e);
-        s2 = printExpStr(e2);
-        is = printExpStr(e1);
-        res = stringAppendList({s1," - (",s2,") := 0"});
+      algorithm
+        s1 := printExpStr(e);
+        s2 := printExpStr(e2);
+        is := printExpStr(e1);
+        res := stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
@@ -3923,9 +3899,9 @@ algorithm
       then ();
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
-      equation
-        s1 = printExpStr(e);
-        res = stringAppendList({s1," = 0"});
+      algorithm
+        s1 := printExpStr(e);
+        res := stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3941,16 +3917,16 @@ algorithm
       then ();
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
-      equation
-        s1 = printExpStr(e);
-        res = stringAppendList({s1," = 0"});
+      algorithm
+        s1 := printExpStr(e);
+        res := stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
 
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
-      equation
+      algorithm
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
@@ -3968,9 +3944,9 @@ function: unaryopSymbol
   output String outString;
 algorithm
   outString:=
-  match (inOperator)
-    case (DAE.UMINUS()) then MathMLMinus;
-    case (DAE.UMINUS_ARR()) then MathMLMinus;
+  match inOperator
+    case DAE.UMINUS() then MathMLMinus;
+    case DAE.UMINUS_ARR() then MathMLMinus;
   end match;
 end unaryopSymbol;
 
@@ -3984,16 +3960,16 @@ function: unparseCommentOptionNoAnnotation
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAbsynCommentOption)
+  match inAbsynCommentOption
     local String str,cmt;
-    case (SOME(SCode.COMMENT(_,SOME(cmt))))
-      equation
+    case SOME(SCode.COMMENT(_,SOME(cmt)))
+      algorithm
         //str = stringAppendList({" \"",cmt,"\""});
-        str = cmt;
+        str := cmt;
       then
         str;
-    case (_) then "";
-  end matchcontinue;
+    case _ then "";
+  end match;
 end unparseCommentOptionNoAnnotation;
 
 annotation(__OpenModelica_Interface="backend");

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -82,43 +86,43 @@ public function singularSystemCheck
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem outSyst;
 algorithm
-  outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
+  outSyst := matchcontinue inMatchingOptions
     local
       String esize_str,vsize_str;
 
-    case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
+    case (_,BackendDAE.ALLOW_UNDERCONSTRAINED())
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
-      equation
-        true = intEq(nvars,neqns);
+    case (_,BackendDAE.EXACT())
+      algorithm
+        true := intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
-      equation
-        true = intGt(nvars,neqns);
-        esize_str = intString(neqns);
-        vsize_str = intString(nvars);
+    case (_,BackendDAE.EXACT())
+      algorithm
+        true := intGt(nvars,neqns);
+        esize_str := intString(neqns);
+        vsize_str := intString(nvars);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
         BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
-    case (_,_,_,_,_,_,_)
-      equation
-        true = intLt(nvars,neqns);
-        esize_str = intString(neqns) ;
-        vsize_str = intString(nvars);
+    case _
+      algorithm
+        true := intLt(nvars,neqns);
+        esize_str := intString(neqns) ;
+        vsize_str := intString(nvars);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
         BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Causalize.singularSystemCheck failed\n");
       then
         fail();
@@ -142,7 +146,6 @@ protected function singularSystemCheck1
 protected
   BackendDAE.AdjacencyMatrix m;
   BackendDAE.AdjacencyMatrixT mT;
-  list<list<Integer>> comps;
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
   BackendDAE.EqSystem syst;
@@ -171,7 +174,7 @@ algorithm
     DumpGraphML.dumpSystem(outSyst,iShared,NONE(),"SingularSystemCheck" + intString(nVars) + ".graphml",false);
   */
   // free states matching information because there it is unkown if the state or the state derivative was matched
-  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(outSyst.orderedVars, freeStateAssignments, (1,ass1,ass2));
+  (_,ass1,ass2) := BackendVariable.traverseBackendDAEVars(outSyst.orderedVars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
 
 protected function freeStateAssignments "unset assignments of statevariables."
@@ -186,10 +189,10 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.Var var;
     case (var as BackendDAE.VAR(varKind=BackendDAE.STATE()),(index,ass1,ass2))
-      equation
-        e = ass1[index];
-        ass1 = arrayUpdate(ass1,index,-1);
-        ass2 = arrayUpdate(ass2,e,-1);
+      algorithm
+        e := ass1[index];
+        ass1 := arrayUpdate(ass1,index,-1);
+        ass2 := arrayUpdate(ass2,e,-1);
       then (var,(index+1,ass1,ass2));
     case (var,(index,ass1,ass2)) then (var,(index+1,ass1,ass2));
   end match;
@@ -206,7 +209,6 @@ protected function foundSingularSystem "print error message if the system contai
   input output BackendDAE.StructurallySingularSystemHandlerArg inArg;
 protected
   array<Integer> mapIncRowEqn;
-  BackendDAE.EqSystem syst;
   DAE.ElementSource source;
   Integer n;
   list<Integer> unmatched, unmatched1, vars;

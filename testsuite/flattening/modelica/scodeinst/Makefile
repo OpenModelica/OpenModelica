@@ -93,6 +93,7 @@ BuiltinAttribute23.mo \
 BuiltinAttribute24.mo \
 BuiltinAttribute25.mo \
 BuiltinAttribute26.mo \
+BuiltinAttribute27.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -119,6 +120,7 @@ CevalArrayConstant2.mo \
 CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
+CevalArrayConstructor3.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -131,6 +133,7 @@ CevalBinding6.mo \
 CevalBinding7.mo \
 CevalBinding8.mo \
 CevalBinding9.mo \
+CevalBinding10.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -168,6 +171,7 @@ CevalFuncWhile1.mo \
 CevalFuncWhile2.mo \
 CevalIdentity1.mo \
 CevalIf1.mo \
+CevalIf2.mo \
 CevalInteger1.mo \
 CevalIntegerEnum1.mo \
 CevalLinspace1.mo \
@@ -198,6 +202,7 @@ CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
+CevalRecord8.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
@@ -282,6 +287,10 @@ Condition8.mo \
 Condition9.mo \
 Condition10.mo \
 ConditionInvalid1.mo \
+ConditionInvalidContext1.mo \
+ConditionInvalidContext2.mo \
+ConditionInvalidContext3.mo \
+ConditionInvalidContext4.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
 ConditionInvalidType1.mo \
@@ -375,6 +384,8 @@ DimUnknown14.mo \
 DimUnknown15.mo \
 DimUnknown16.mo \
 DimUnknown17.mo \
+DimUnknown18.mo \
+DimUnknown19.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -699,6 +710,7 @@ FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
+FunctionMultiOutput6.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
 FunctionParamVariability.mo \
@@ -711,6 +723,7 @@ FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
 FunctionRecordArg6.mo \
+FunctionRecordArg7.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -757,6 +770,11 @@ IfExpression14.mo \
 IfExpression15.mo \
 IfExpression16.mo \
 IfExpression17.mo \
+IfExpression18.mo \
+IfExpression19.mo \
+IfExpression20.mo \
+IfExpression21.mo \
+IfExpression22.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -773,6 +791,9 @@ ImplicitRangeInvalid1.mo \
 ImplicitRangeInvalid2.mo \
 ImplicitRangeType1.mo \
 ImplicitRangeType2.mo \
+ImplicitTrailingSubscript1.mo \
+ImplicitTrailingSubscript2.mo \
+ImplicitTrailingSubscript3.mo \
 ImportComponent1.mo \
 ImportConflict1.mo \
 ImportConflict2.mo \
@@ -810,6 +831,7 @@ InnerOuter9.mo \
 InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
+InnerOuter13.mo \
 InnerOuterClass1.mo \
 InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \
@@ -911,6 +933,7 @@ NoScalarize1.mo \
 NoScalarize2.mo \
 NoScalarizeConnect1.mo \
 NoScalarizeConnect2.mo \
+NoScalarizeConnect3.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -1124,6 +1147,8 @@ SizeInvalidType3.mo \
 SlicedCref1.mo \
 SlicedCref2.mo \
 SlicedCref3.mo \
+SlicedCref4.mo \
+SlicedCref5.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
@@ -1231,6 +1256,7 @@ WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
+WhenIllegalContext5.mo \
 WhenInitial1.mo \
 WhenInitial2.mo \
 WhenInitial3.mo \
@@ -1341,4 +1367,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

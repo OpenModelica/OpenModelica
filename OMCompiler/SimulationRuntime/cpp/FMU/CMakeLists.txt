@@ -2,7 +2,7 @@ if(OPENMODELICA_NEW_CMAKE_BUILD)
   include(cmake_3.14.cmake)
 else(OPENMODELICA_NEW_CMAKE_BUILD)
 
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${FMUName})
 
@@ -15,7 +15,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
 add_precompiled_header(${FMUName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${FMUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

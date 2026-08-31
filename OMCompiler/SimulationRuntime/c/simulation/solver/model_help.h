@@ -1,34 +1,33 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 #ifndef MODEL_HELP_H
 #define MODEL_HELP_H
+
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +65,28 @@ extern double homTauMin;
 extern double homTauStart;
 extern int homBacktraceStrategy;
 
+/**
+ * @brief Unsigned finite-difference step for one column of a numerical Jacobian.
+ *
+ * DASKR's DMATD and IDA's ida_ls difference over `delta_h*max(|y|,|h*y'|)`,
+ * floored at the unknown's error weight `1/wt = rtol*|y| + atol`. The floor is
+ * a tolerance, not a differencing step: an unknown below it is zero as far as
+ * the error control is concerned and its magnitude is no scale to difference
+ * over, but `1/wt` is `tolerance` times the nominal where the step wants
+ * `delta_h` times it. So take the nominal there instead.
+ *
+ * @param y         Value of the unknown.
+ * @param hyprime   Step size times its derivative.
+ * @param ewtInv    Its error weight inverted, `rtol*|y| + atol`.
+ * @param nominal   Its nominal value, scaled by -jacobianNominalFactor.
+ * @return double   The step, unsigned.
+ */
+static inline double numericalJacobianStep(double y, double hyprime, double ewtInv, double nominal)
+{
+  const double scale = fmax(fabs(y), fabs(hyprime));
+  return numericalDifferentiationDeltaXsolver * (scale > ewtInv ? scale : fmax(ewtInv, nominal));
+}
+
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
 
 void freeModelDataVars(MODEL_DATA* modelData);
@@ -84,15 +105,6 @@ void saveZeroCrossings(DATA *data, threadData_t *threadData);
 
 void copyStartValuestoInitValues(DATA *data);
 
-/* functions that are only used in USE_DEBUG_OUTPUT mode */
-#ifdef USE_DEBUG_OUTPUT
-  void printAllVarsDebug(DATA *data, int ringSegment, int stream);
-  void printRelationsDebug(DATA *data, int stream);
-#else
-  #define printAllVarsDebug(data, ringSegment, stream) {}
-  #define printRelationsDebug(data, stream) {}
-#endif
-
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
@@ -101,13 +113,14 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
 modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize, int stream);
 
 void overwriteOldSimulationData(DATA *data);
+void continueSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing);
 void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
 void restoreExtrapolationDataOld(DATA *data);
 
-void setAllVarsToStart(DATA* data);
-void setAllParamsToStart(DATA *data);
+void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
+void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
 
 void restoreOldValues(DATA *data);
 

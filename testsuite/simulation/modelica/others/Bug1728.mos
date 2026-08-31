@@ -1,7 +1,6 @@
 // name: Bug1728.mos
 // keywords: mixed system
 // status: correct
-// cflags: -d=-newInst
 //
 // test for #1728
 //

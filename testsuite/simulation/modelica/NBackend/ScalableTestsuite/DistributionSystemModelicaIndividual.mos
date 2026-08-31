@@ -12,6 +12,9 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Electr
   "ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_diff.csv",0.01,0.0001,
   {"secondary_2_2.LossPower"});
 
+// The solver NB picks for this system's torn loop is checked in
+// DistributionSystemModelicaIndividualSparse.mos, which reads the generated C.
+
 // Result:
 // true
 // ""

@@ -1,0 +1,50 @@
+[package]
+name = "openmodelica_wasm_jit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Frontend-free wasm-signature types (sig module), all targets.
+arcstr.workspace = true
+wasm-encoder.workspace = true
+openmodelica_sim_meta.workspace = true
+# host builtins: Result, cancel::check_cancel.
+metamodelica.workspace = true
+# The engine + model modules (sim_driver, sim_runtime, wasi_shim, model).
+openmodelica_util.workspace = true
+openmodelica_error.workspace = true
+openmodelica_wasi.workspace = true
+# The PIC wasi-libc a model's own external "C" library is loaded on top of.
+openmodelica_wasi_libc.workspace = true
+# Native DAE solver for the DASSL driver; only with the engine (jit).
+daskr = { path = "../daskr", optional = true }
+
+[features]
+# Host-side wasm execution engine. Default on (native wasmtime).
+default = ["jit"]
+jit = ["dep:wasmtime", "dep:daskr"]
+# Select wasmer instead of wasmtime (native benchmarking; mandatory on wasm32).
+engine-wasmer = ["jit", "dep:wasmer"]
+# Build the native interactive runtime with the in-wasm driver + solver (instead
+# of the lean host-delegating default), so OMC_WASM_INWASM_DRIVER=1 can run the
+# in-wasm session driver natively for benchmarking. Read by build.rs only.
+inwasm_driver = []
+
+# wasmtime is native-only; the wasm target uses wasmer-js.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wasmtime = { workspace = true, optional = true }
+wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
+# getrlimit(RLIMIT_AS) for engine_config.
+libc.workspace = true
+# Native external "C" calls from the wasmtime sim host (libffi trampolines) and
+# our arena-backed ModelicaAllocateString.
+libffi.workspace = true
+openmodelica_modelica_utilities.workspace = true
+openmodelica_ext_native = { path = "../openmodelica_ext_native" }
+# Native sparse direct solver (CSparse port, AMD ordering) for the host-side
+# linear-system solve the interactive runtime delegates via `rt_host_lin_solve`.
+# Same crate/version as the in-wasm runtime, so the two paths match numerically.
+rsparse = "1.2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasmer = { workspace = true, features = ["js", "wasm-types-polyfill"], optional = true }

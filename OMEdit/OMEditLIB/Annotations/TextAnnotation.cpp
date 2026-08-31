@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -554,10 +559,8 @@ ModelInstance::Extend *TextAnnotation::getExtend() const
 
 void TextAnnotation::initUpdateTextString()
 {
-  if (mpElement) {
-    if (mOriginalTextString.contains("%")) {
-      updateTextString();
-    }
+  if (mOriginalTextString.contains("%")) {
+    updateTextString();
   }
 }
 
@@ -578,13 +581,28 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         /* Ticket:4204
          * If we have extend element then call Element::getParameterDisplayString from root element.
          */
-        QPair<QString, bool> parameterValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
+        QPair<QString, bool> parameterValue;
+        if (mpElement) {
+          parameterValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
+        } else if (mpGraphicsView && mpGraphicsView->getModelWidget()) {
+          parameterValue = mpGraphicsView->getModelWidget()->getParameterDisplayString(variable);
+        }
         if (parameterValue.second || !parameterValue.first.isEmpty()) {
           QString textValue = parameterValue.first;
-          QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
-          QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+          QPair<QString, bool> unit;
+          QPair<QString, bool> displayUnit;
           // Look for unit and displayUnit in the variable element.
-          auto pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          ModelInstance::Element *pElement = nullptr;
+          if (mpElement) {
+            unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
+            displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+            pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          } else if (mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->getModelInstance()) {
+            unit = mpGraphicsView->getModelWidget()->getParameterModifierValue(variable, "unit");
+            displayUnit = mpGraphicsView->getModelWidget()->getParameterModifierValue(variable, "displayUnit");
+            pElement = mpGraphicsView->getModelWidget()->getModelInstance()->lookupElement(variable);
+          }
+
           if (pElement) {
             if (!displayUnit.second) {
               displayUnit = pElement->getModifierValueFromType(QStringList() << "displayUnit");
@@ -622,7 +640,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       } else { /* if there is just alone % then remove it. Because if you want to print % then use %%. */
         mTextString.replace(pos, 1, "");
       }
-    } else if (variable.compare("%%") == 0) { /* if string is %% then just move over it. We replace it with % in TextAnnotation::updateTextString(). */
+    } else {
       pos += regExp.matchedLength();
     }
   }
@@ -664,20 +682,29 @@ void TextAnnotation::updateTextString(const QString &textString)
         mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
       }
     }
-  } else if (mpElement) {
+  } else {
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mTextString.toLower().contains("%name")) {
-      QString name = mpElement->getName();
-      if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
-        name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
+
+    // %name is only for text annotations inside the element.
+    if (mpElement) {
+      if (mTextString.toLower().contains("%name")) {
+        QString name = mpElement->getName();
+        if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
+          name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
+        }
+        mTextString.replace(QRegExp("%name"), name);
       }
-      mTextString.replace(QRegExp("%name"), name);
+      if (mTextString.toLower().contains("%class")) {
+        mTextString.replace(QRegExp("%class"), mpElement->getClassName());
+      }
+    } else {
+      if (mTextString.toLower().contains("%class")) {
+        mTextString.replace(QRegExp("%class"), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName());
+      }
     }
-    if (mTextString.toLower().contains("%class")) {
-      mTextString.replace(QRegExp("%class"), mpElement->getClassName());
-    }
+
     if (!mTextString.contains("%")) {
       return;
     }

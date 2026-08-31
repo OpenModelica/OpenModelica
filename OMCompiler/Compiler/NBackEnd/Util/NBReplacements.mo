@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NBReplacements
 "file:        NBReplacements.mo
  package:     NBReplacements
@@ -55,7 +60,6 @@ protected
   import NFInstNode.InstNode;
   import InstContext = NFInstContext;
   import NFFunction.Function;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -67,6 +71,7 @@ protected
   import BVariable = NBVariable;
   import NBEquation.{EqData, Equation, EquationPointers};
   import Inline = NBInline;
+  import Slice = NBSlice;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
@@ -121,10 +126,27 @@ public
       case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
-          replace_exp := Equation.getRHS(solvedEq);
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
+          replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
+          replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
+          // add the new replacement rule
+          addInputArgTpl((varName, replace_exp) , replacements, true);
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
+          fail();
+        end if;
+      then ();
+
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        // solve the equation for the variable
+        varName := BVariable.getVarName(Slice.getT(comp.var));
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(Slice.getT(comp.eqn)), varName);
+        if status == NBSolve.Status.EXPLICIT then
+          // apply all previous replacements on the RHS
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule
@@ -158,7 +180,7 @@ public
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements));
+    eqData := EqData.mapExp(eqData, function applySimpleExp(replacements = replacements), SOME(function applySimpleCref(replacements = replacements)));
 
     // apply on bindings (is this necessary?)
     varData := match varData
@@ -204,8 +226,7 @@ public
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
-            subs  := ComponentRef.subscriptsAllFlat(exp.cref);
-            subs  := list(s for s guard(not Subscript.isWhole(s)) in subs);
+            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
             res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res, true);
           else
@@ -217,6 +238,23 @@ public
       else exp;
     end match;
   end applySimpleExp;
+
+  function applySimpleCref
+    "Needs to be used as funcCref in Equation.map() to replace crefs that appear
+    as direct ComponentRef arguments (e.g. the state variable of a reinit statement)."
+    input output ComponentRef cref;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    Expression replacement;
+  algorithm
+    if UnorderedMap.contains(cref, replacements) then
+      replacement := UnorderedMap.getOrFail(cref, replacements);
+      cref := match replacement
+        case Expression.CREF() then replacement.cref;
+        else cref;
+      end match;
+    end if;
+  end applySimpleCref;
 
   function applySimpleVar
     "applys replacement on the variable binding expression"
@@ -242,7 +280,7 @@ public
     Option<ComponentRef> cref;
   algorithm
     cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
-    if Util.isSome(cref) then
+    if isSome(cref) then
       var_ptr := BVariable.getVarPointer(Util.getOption(cref), sourceInfo());
     end if;
   end replaceVarPtr;
@@ -285,16 +323,19 @@ public
     input output EqData eqData;
     input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
+  protected
+    UnorderedMap<Expression, Expression> prev_replacements = UnorderedMap.new<Expression>(Expression.hash, Expression.isEqual);
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
+    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, prev_replacements = prev_replacements, variables = variables));
   end replaceFunctions;
 
   function applyFuncExp
     "Needs to be mapped with Expression.map()"
-    input output Expression exp                               "Replacement happens inside this expression";
-    input UnorderedMap<Absyn.Path, Function> replacements     "rules for replacements are stored inside here";
+    input output Expression exp                                   "Replacement happens inside this expression";
+    input UnorderedMap<Absyn.Path, Function> replacements         "rules for replacements are stored inside here";
+    input UnorderedMap<Expression, Expression> prev_replacements  "previously found replacements that need not be done again";
     input VariablePointers variables;
   algorithm
     exp := match exp
@@ -305,50 +346,69 @@ public
         list<ComponentRef> input_crefs;
         ComponentRef local_cref;
         Option<Expression> binding_exp_opt;
-        Expression binding_exp, body_exp;
+        Expression binding_exp, body_exp, res_exp;
 
       case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
-        // use the function from the tree, in case it was changed
-        fn := UnorderedMap.getOrFail(fn.path, replacements);
+        // check if the function was previously replaced
+        res_exp := match UnorderedMap.get(exp, prev_replacements)
+          case SOME(res_exp) then res_exp;
+          else algorithm
+            // use the function from the tree, in case it was changed
+            fn := UnorderedMap.getOrFail(fn.path, replacements);
 
-        // map all the inputs to the arguments and add to local replacement map
-        local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-        input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
-        // ToDo: rather use the function slots for this?
-        for tpl in List.zip(input_crefs, call.arguments) loop
-          addInputArgTpl(tpl, local_replacements, false);
-        end for;
+            // map all the inputs to the arguments and add to local replacement map
+            local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
+            // ToDo: rather use the function slots for this?
+            for tpl in List.zip(input_crefs, call.arguments) loop
+              addInputArgTpl(tpl, local_replacements, false);
+            end for;
 
-        // add replacement rules for local (protected) variables
-        for local_node in fn.locals loop
-          local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
-          binding_exp_opt := InstNode.getBindingExpOpt(local_node);
-          if Util.isSome(binding_exp_opt) then
-            // replace binding expression with already gathered input replacements
-            binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
-          else
-            // add a "wild" binding. This will result in unused outputs being ignored.
-            binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
-          end if;
-          addInputArgTpl((local_cref, binding_exp), local_replacements, false);
-        end for;
+            // add replacement rules for local (protected) variables
+            for local_node in fn.locals loop
+              local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+              binding_exp_opt := InstNode.getBindingExpOpt(local_node);
+              if isSome(binding_exp_opt) then
+                // replace binding expression with already gathered input replacements
+                binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
+              else
+                // add a "wild" binding. This will result in unused outputs being ignored.
+                binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
+              end if;
+              addInputArgTpl((local_cref, binding_exp), local_replacements, false);
+            end for;
 
-        // get the expression from function body (fails if its not a single replacable assignment)
-        body_exp := getFunctionBody(fn);
-        // replace input withs arguments in expression
-        body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
-        // if any of the inputs had an undetermined size, retype the new body
-        if not List.all(input_crefs, ComponentRef.sizeKnown) then
-          body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
-        end if;
-        body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+            // get the expression from function body (fails if its not a single replacable assignment)
+            body_exp := Function.getSingleBodyExp(fn);
+            // replace input withs arguments in expression
+            body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+            // if any of the inputs had an undetermined size, retype the new body
+            if not List.all(input_crefs, ComponentRef.sizeKnown) then
+              body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
+            end if;
 
-        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-          print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
-          print("-- Result: " + Expression.toString(body_exp) + "\n\n");
-        end if;
-      then body_exp;
+            // combine binaries and simplify
+            body_exp := SimplifyExp.combineBinaries(body_exp);
+            body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+
+            // replace body with possible nested functions
+            res_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, prev_replacements = prev_replacements, variables = variables));
+
+            // wrap all event triggering expressions in noEvent() if the function is not supposed to trigger events
+            if not fn.attributes.generateEvents then
+              res_exp := Expression.fakeMap(res_exp, wrapEvents);
+            end if;
+
+            // add the new replacement to the map
+            UnorderedMap.add(exp, res_exp, prev_replacements);
+
+            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+              print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
+              print("-- Result: " + Expression.toString(body_exp) + "\n\n");
+            end if;
+          then res_exp;
+        end match;
+      then res_exp;
 
       else exp;
     end match;
@@ -411,27 +471,51 @@ public
     end if;
   end addInputArgTpl;
 
-  function getFunctionBody
-    "returns the rhs of the function body if its a single assignment, fails otherwise"
-    input Function fn;
-    output Expression exp;
-  protected
-    list<Statement> body;
+  function wrapEvents
+    input output Expression exp;
   algorithm
-    body := Function.getBody(fn);
-    exp := match body
-      local
-        Statement stmt;
+    exp := match exp
+      case Expression.IF() algorithm
+        // wrap the condition in noEvent() if it does not have a noEvent() yet
+        exp.condition := match exp.condition
+          case Expression.CALL() guard(Expression.isCallNamed(exp.condition, "noEvent")) then exp.condition;
+          else Expression.CALL(Call.makeTypedCall(
+            fn          = NFBuiltinFuncs.NO_EVENT,
+            args        = {exp.condition},
+            variability = Expression.variability(exp.condition),
+            purity      = NFPrefixes.Purity.PURE));
+        end match;
+        exp.trueBranch  := Expression.mapShallow(exp.trueBranch, wrapEvents);
+        exp.falseBranch := Expression.mapShallow(exp.falseBranch, wrapEvents);
+      then exp;
 
-      case {stmt as Statement.ASSIGNMENT()} then stmt.rhs;
+      // wrap all relations in noEvent()
+      case Expression.RELATION() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
-      then fail();
+      // wrap all logical binaries in noEvent()
+      case Expression.LBINARY() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
+
+      // wrap all logical unaries in noEvent()
+      case Expression.LUNARY() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
+
+      else Expression.mapShallow(exp, wrapEvents);
     end match;
-  end getFunctionBody;
+  end wrapEvents;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBReplacements;

@@ -1,7 +1,6 @@
 // name: ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 
 loadModel(ThermoPower);getErrorString();
 simulate(ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator);getErrorString();

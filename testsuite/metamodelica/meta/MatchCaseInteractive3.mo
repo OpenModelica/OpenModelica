@@ -43,6 +43,7 @@ algorithm
   _ := matchcontinue(selectVar)
     local
       String cmp1,cmp2;
+      Select c1, c2;
     case (FirstAlternative(cmp1, cmp2))
       equation
         print("FirstAlternative(");
@@ -56,8 +57,6 @@ algorithm
         print(")");
       then ();
     case (SecondAlternative(c1, c2))
-      local
-        Select c1, c2;
       equation
         print("SecondAlternative(");
         printSelect(c1);
@@ -66,8 +65,6 @@ algorithm
         print(")");
       then ();
     case ThirdAlternative(c1)
-      local
-        Select c1;
       equation
         print("ThirdAlternative(");
         printSelect(c1);

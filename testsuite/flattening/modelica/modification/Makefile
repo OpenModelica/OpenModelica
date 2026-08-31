@@ -4,7 +4,37 @@ TESTFILES=\
 ArrayModif.mo \
 ArrayModTypeError.mo \
 ArrayModTypeError2.mo \
+BreakComponent1.mo \
+BreakComponent2.mo \
+BreakComponent3.mo \
+BreakComponent4.mo \
+BreakComponent5.mo \
+BreakComponent6.mo \
+BreakComponentConnect1.mo \
+BreakComponentConnect2.mo \
+BreakComponentConnect3.mo \
+BreakComponentInvalid1.mo \
+BreakComponentInvalid2.mo \
+BreakComponentInvalid3.mo \
+BreakComponentInvalid4.mo \
+BreakComponentInvalid5.mo \
+BreakComponentInvalid6.mo \
+BreakComponentInvalid7.mo \
+BreakComponentMod1.mo \
+BreakComponentMod2.mo \
+BreakComponentMod3.mo \
+BreakComponentMod4.mo \
+BreakConnect1.mo \
+BreakConnect2.mo \
+BreakConnect3.mo \
+BreakConnect4.mo \
+BreakConnectInvalid1.mo \
+BreakConnectInvalid2.mo \
+BreakConnectInvalid2.mo \
 Bug3817.mos \
+Confidence1.mo \
+Confidence2.mo \
+Confidence3.mo \
 DisturbedResistance1.mo \
 DisturbedResistance3.mo \
 DisturbedResistance4.mo \
@@ -119,7 +149,7 @@ failingtest :
 	@echo
 	@echo Running failing tests:
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 keywords :
 	$(TEST) -l $(TESTFILES)

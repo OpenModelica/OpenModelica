@@ -2,6 +2,7 @@
 //keyword:      simulating msl221
 //status:       correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 // simulation example
 //

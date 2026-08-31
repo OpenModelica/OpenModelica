@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -32,6 +29,7 @@
 #include "util/omc_file.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/solver/external_input.h"
 #include "simulation/options.h"
 #include "simulation/solver/model_help.h"
@@ -115,8 +113,6 @@ extern "C" {
 
 int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, double *dy, double *dz)
 {
-    TRACE_PUSH
-
     long i;
 
     /* debug */
@@ -152,7 +148,6 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
         }
     }
 
-    TRACE_POP
     return 0;
 }
 
@@ -202,16 +197,18 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
     x = data->localData[0]->realVars;
 
     /* use actually value for xScaling */
-    for (i=0;i<size_A;i++){
-        xScaling[i] = fmax(data->modelData->realVarsData[i].attribute.nominal,fabs(x[i]));
+    for (i = 0; i < size_A; i++) {
+        modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+        xScaling[i] = fmax(nominal, fabs(x[i]));
     }
 
     /* solverData->f1 must be set outside this function based on x */
     for(i = 0; i < size_A; i++) {
         xsave = x[i];
         delta_hh = delta_h * (fabs(xsave) + 1.0);
-        if ((xsave + delta_hh >=  data->modelData->realVarsData[i].attribute.max))
-            delta_hh *= -1;
+        if (xsave + delta_hh >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i)) {
+          delta_hh *= -1;
+        }
         x[i] += delta_hh / xScaling[i];
         /* Calculate scaled difference quotient */
         delta_hh = 1. / delta_hh * xScaling[i];
@@ -513,7 +510,6 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
 int linearize(DATA* data, threadData_t *threadData)
 {
-    TRACE_PUSH
     /* Check if data recovery is requested */
     int do_data_recovery = omc_flag[FLAG_L_DATA_RECOVERY] ? 1 : 0;
 
@@ -557,13 +553,11 @@ int linearize(DATA* data, threadData_t *threadData)
         if(functionJacAC_num(data, threadData, matrixA, matrixC, matrixCz))
         {
             throwStreamPrint(threadData, "Error, can not get Matrix A or C ");
-            TRACE_POP
             return 1;
         }
         if(functionJacBD_num(data, threadData, matrixB, matrixD, matrixDz))
         {
             throwStreamPrint(threadData, "Error, can not get Matrix B or D ");
-            TRACE_POP
             return 1;
         }
     }
@@ -678,39 +672,51 @@ int linearize(DATA* data, threadData_t *threadData)
       case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON:    ext = ".py";  break;
     }
     /* ticket #5927: Don't use the model name to prevent bad names for certain languages. */
-    filename = "linearized_model" + string(ext);
+    if (omc_flag[FLAG_OUTPUT_PATH]) {
+      filename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "linearized_model" + string(ext);
+    } else {
+      filename = "linearized_model" + string(ext);
+    }
 
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
 
+    const char* frame = NULL;
     if(do_data_recovery > 0){
-        fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
+        frame = data->callback->linear_model_datarecovery_frame();
+        fprintf(fout, frame, strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
     }else{
-        fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
-    }
-    if(OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
-      infoStreamPrint(OMC_LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
+        frame = data->callback->linear_model_frame();
+        fprintf(fout, frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
 
     fflush(fout);
     fclose(fout);
 
-    if (data->modelData->runTestsuite) {
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
-    }
-    else {
-        char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
-        if(!cwd) {
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+    if (0 == strcmp(frame, "")) {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linear model could not be created.");
+    } else {
+        if (data->modelData->runTestsuite) {
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
         }
         else {
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
-          free(cwd);
+          if (omc_flag[FLAG_OUTPUT_PATH]) {
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s", filename.c_str());
+          } else {
+            char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
+            if(!cwd) {
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+            }
+            else {
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
+              free(cwd);
+            }
+          }
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "In OMEdit Simulation Setup->Linearize->Target language for linearized model.");
         }
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
-    }
-    TRACE_POP
+      }
     return 0;
   }
 

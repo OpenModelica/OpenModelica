@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -353,12 +357,10 @@ function lookupLocalCref
   output InstNode foundScope "The scope where the first part of the cref was found.";
   output LookupState state;
 protected
-  MatchType match_ty;
   InstNode node;
 algorithm
   (foundCref, foundScope, state) := matchcontinue cref
     local
-      InstNode found_scope;
 
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
@@ -436,6 +438,7 @@ function lookupSimpleName
   input InstNode scope;
   input InstContext.Type context;
   output InstNode node;
+  output Boolean selfReference = false;
 protected
   InstNode cur_scope = scope;
   Boolean require_builtin = false;
@@ -468,9 +471,11 @@ algorithm
         // Do parentScope first to avoid an infinite loop if we're already in the top scope.
         cur_scope := InstNode.topScope(InstNode.parentScope(cur_scope));
         require_builtin := true;
-      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
+      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) or
+             name == InstNode.name(InstNode.classScope(cur_scope)) then
         // If the scope has the same name as we're looking for we can just return it.
-        node := cur_scope;
+        node := InstNode.classScope(cur_scope);
+        selfReference := true;
         return;
       else
         if InstNode.isTopScope(cur_scope) and not loaded and not require_builtin then
@@ -506,7 +511,7 @@ protected
 algorithm
   if InstContext.inAnnotation(context) then
     try
-      _ := lookupLocalSimpleName(name, InstNode.annotationScope(scope));
+      lookupLocalSimpleName(name, InstNode.annotationScope(scope));
       // Name refers to builtin annotation that shouldn't be qualified.
       path := Absyn.Path.IDENT(name);
       return;
@@ -584,19 +589,24 @@ function lookupName
   input Boolean checkAccessViolations;
   output InstNode node;
   output LookupState state;
+protected
+  Boolean self_reference;
 algorithm
   (node, state) := match name
     // Simple name, look it up in the given scope.
     case Absyn.Path.IDENT()
-      then lookupFirstIdent(name.name, scope, context);
+      algorithm
+        (node, state, _) := lookupFirstIdent(name.name, scope, context);
+      then
+        (node, state);
 
     // Qualified name, look up first part in the given scope and look up the
     // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, state) := lookupFirstIdent(name.name, scope, context);
+        (node, state, self_reference) := lookupFirstIdent(name.name, scope, context);
       then
-        lookupLocalName(name.path, node, state, context, checkAccessViolations, isSelfReference(node, scope));
+        lookupLocalName(name.path, node, state, context, checkAccessViolations, self_reference);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -605,31 +615,14 @@ algorithm
   end match;
 end lookupName;
 
-function isSelfReference
-  input InstNode node;
-  input InstNode scope;
-  output Boolean res;
-protected
-  InstNode parent = scope;
-algorithm
-  while not InstNode.isEmpty(parent) loop
-    if InstNode.refEqual(node, parent) then
-      res := true;
-      return;
-    end if;
-
-    parent := InstNode.instanceParent(parent);
-  end while;
-
-  res := false;
-end isSelfReference;
-
 function lookupNames
   input Absyn.Path name;
   input InstNode scope;
   input InstContext.Type context;
   output list<InstNode> nodes;
   output LookupState state;
+protected
+  Boolean self_reference;
 algorithm
   (nodes, state) := match name
     local
@@ -646,9 +639,9 @@ algorithm
     // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, state) := lookupFirstIdent(name.name, scope, context);
+        (node, state, self_reference) := lookupFirstIdent(name.name, scope, context);
       then
-        lookupLocalNames(name.path, node, {node}, state, context, isSelfReference(node, scope));
+        lookupLocalNames(name.path, node, {node}, state, context, self_reference);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -664,14 +657,16 @@ function lookupFirstIdent
   input InstContext.Type context;
   output InstNode node;
   output LookupState state;
+  output Boolean selfReference;
 algorithm
   try
     // Check if the name refers to a reserved builtin name.
     node := lookupSimpleBuiltinName(name);
     state := LookupState.PREDEF_CLASS();
+    selfReference := false;
   else
     // Otherwise, check each scope until the name is found.
-    node := lookupSimpleName(name, scope, context);
+    (node, selfReference) := lookupSimpleName(name, scope, context);
     state := LookupState.nodeState(node);
   end try;
 end lookupFirstIdent;
@@ -735,7 +730,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
+        Error.terminate(getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -794,7 +789,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
+        Error.terminate(getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -849,7 +844,6 @@ function lookupSimpleCref
 protected
   Boolean require_builtin = false;
   Boolean loaded = false;
-  Boolean is_enclosing = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -966,7 +960,7 @@ protected
   Class cls;
   Boolean is_import, scope_is_class;
 algorithm
-  if LookupState.isError(state) then
+  if LookupState.isError(state) or (InstContext.inConnect(context) and InstNode.isEmpty(node)) then
     return;
   end if;
 
@@ -1042,7 +1036,7 @@ function resolveInnerCref
   input output ComponentRef cref;
   input output InstNode foundScope;
 protected
-  InstNode prev_node, scope;
+  InstNode scope;
 algorithm
   if InstNode.isInnerOuterNode(node) then
     // Resolve the outer node to its inner.
@@ -1079,7 +1073,6 @@ protected
   InstNodeType node_ty;
   String name;
   Option<InstNode> inner_node_opt;
-  InstNode inner_node, parent_node;
 algorithm
   node_ty := InstNode.nodeType(topScope);
 
@@ -1103,7 +1096,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid top node", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid top node", sourceInfo());
       then
         fail();
 
@@ -1133,18 +1126,18 @@ algorithm
         algorithm
           comp := InstNode.component(node);
 
-          comp := match comp
+          (comp, def) := match comp
             case Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(prefixes = prefs))
               algorithm
                 prefs.innerOuter := Absyn.INNER();
                 def.prefixes := prefs;
                 comp.definition := def;
               then
-                comp;
+                (comp, def);
 
             else
               algorithm
-                Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+                Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
               then
                 fail();
           end match;
@@ -1153,7 +1146,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown node", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown node", sourceInfo());
         then
           fail();
   end match;
@@ -1184,7 +1177,7 @@ function loadLibrary_work
   input InstNode scope;
   output String version = "(default)";
 protected
-  String modelica_path, cls_name;
+  String modelica_path;
   Absyn.Program aprog;
   SCode.Element scls;
   Class cls;
@@ -1223,5 +1216,5 @@ algorithm
   InstNode.updateClass(cls, scope);
 end loadLibrary_work;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFLookup;

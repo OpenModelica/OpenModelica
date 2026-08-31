@@ -13,7 +13,6 @@ equation
   a + b + c = der(a);
   a + b*2 + c = 5;
   a + b + c*2 = 7;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

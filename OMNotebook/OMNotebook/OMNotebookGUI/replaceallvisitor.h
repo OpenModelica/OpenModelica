@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -63,27 +66,25 @@ namespace IAEX
     ReplaceAllVisitor( QString findText, QString replaceText, bool matchCase = false, bool matchWord = false, int* count = 0 )
       : findText_( findText ), replaceText_( replaceText ), matchCase_( matchCase ), matchWord_( matchWord ), count_( count )
     {}
-    ~ReplaceAllVisitor(){}
 
     // Visitor function - CELL
-    void visitCellNodeBefore( Cell *node ){}
-    void visitCellNodeAfter( Cell *node ){}
+    void visitCellNodeBefore( Cell * ) override {}
+    void visitCellNodeAfter( Cell * ) override {}
 
     // Visitor function - GROUPCELL
-    void visitCellGroupNodeBefore( CellGroup *node ){}
-    void visitCellGroupNodeAfter( CellGroup *node ){}
+    void visitCellGroupNodeBefore( CellGroup * ) override {}
+    void visitCellGroupNodeAfter( CellGroup * ) override {}
 
     // Visitor function - TEXTCELL
-    void visitTextCellNodeBefore( TextCell *node )
+    void visitTextCellNodeBefore( TextCell *node ) override
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -94,27 +95,25 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
       }
     }
-    void visitTextCellNodeAfter( TextCell *node ){}
+    void visitTextCellNodeAfter( TextCell * ) override {}
 
     // Visitor function - INPUTCELL
-    void visitInputCellNodeBefore( InputCell *node )
+    void visitInputCellNodeBefore( InputCell *node ) override
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -125,28 +124,26 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
       }
     }
-    void visitInputCellNodeAfter( InputCell *node ){}
+    void visitInputCellNodeAfter( InputCell * ) override {}
 
 
     // Visitor function - GRAPHCELL
-    void visitGraphCellNodeBefore( GraphCell *node )
+    void visitGraphCellNodeBefore( GraphCell *node ) override
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -157,26 +154,24 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
       }
     }
-    void visitGraphCellNodeAfter( GraphCell *node ){}
+    void visitGraphCellNodeAfter( GraphCell * ) override {}
 
-    void visitLatexCellNodeBefore( LatexCell *node )
+    void visitLatexCellNodeBefore( LatexCell *node ) override
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -187,20 +182,19 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
       }
     }
 
-    void visitLatexCellNodeAfter( LatexCell *node ){}
+    void visitLatexCellNodeAfter( LatexCell * ) override {}
 
     // Visitor function - CURSORCELL
-    void visitCellCursorNodeBefore( CellCursor *cursor ){}
-    void visitCellCursorNodeAfter( CellCursor *cursor ){}
+    void visitCellCursorNodeBefore( CellCursor * ) override {}
+    void visitCellCursorNodeAfter( CellCursor * ) override {}
 
 
   private:

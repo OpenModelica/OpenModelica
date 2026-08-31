@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -82,12 +86,12 @@ public function merge
   output Graph outGraph;
   output Ref outMergedModRef;
 algorithm
-  (outGraph, outMergedModRef) := match(inParentRef, inOuterModRef, inInnerModRef, inGraph)
+  (outGraph, outMergedModRef) := match(inParentRef, inGraph)
     local
       Ref r;
       Graph g;
-    case (r, _, _, g)
-      equation
+    case (r, g)
+      algorithm
       then
         (g, r);
   end match;
@@ -102,12 +106,12 @@ public function apply
   output Graph outGraph;
   output Ref outNodeRef;
 algorithm
-  (outGraph, outNodeRef) := match(inTargetRef, inModRef, inGraph)
+  (outGraph, outNodeRef) := match(inTargetRef, inGraph)
     local
       Ref r;
       Graph g;
-    case (r, _, g)
-      equation
+    case (r, g)
+      algorithm
       then
         (g, r);
   end match;
@@ -161,20 +165,20 @@ protected function compactSubMod2
   output SCode.SubMod outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod, inModScope, inName)
+  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod)
     local
       String name1, name2;
       SCode.SubMod submod;
 
-    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2), _, _)
-      equation
-        false = stringEqual(name1, name2);
+    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2))
+      algorithm
+        false := stringEqual(name1, name2);
       then
         (inExistingMod, false);
 
-    case (SCode.NAMEMOD(ident = name1), _, _, _)
-      equation
-        submod = mergeSubModsInSameScope(inExistingMod, inNewMod, name1 :: inName, inModScope);
+    case (SCode.NAMEMOD(ident = name1), _)
+      algorithm
+        submod := mergeSubModsInSameScope(inExistingMod, inNewMod, name1 :: inName, inModScope);
       then
         (submod, true);
 
@@ -198,27 +202,27 @@ algorithm
   outMod := match(mod1, mod2)
     // The second modifier has no binding, use the binding from the first.
     case (SCode.MOD(), SCode.MOD(binding = NONE()))
-      equation
-        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
+      algorithm
+        submods := List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
         SCode.NAMEMOD(inMod1.ident, SCode.MOD(mod1.finalPrefix, mod1.eachPrefix,
           submods, mod1.binding, mod1.comment, mod1.info));
 
     // The first modifier has no binding, use the binding from the second.
     case (SCode.MOD(binding = NONE()), SCode.MOD())
-      equation
-        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
+      algorithm
+        submods := List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
         SCode.NAMEMOD(inMod2.ident, SCode.MOD(mod2.finalPrefix, mod2.eachPrefix,
           submods, mod2.binding, mod2.comment, mod2.info));
 
     // Both modifiers have a binding.
     else
-      equation
-        info1 = SCodeUtil.getModifierInfo(mod1);
-        info2 = SCodeUtil.getModifierInfo(mod2);
-        scope = printModScope(inModScope);
-        name = stringDelimitList(listReverse(inElementName), ".");
+      algorithm
+        info1 := SCodeUtil.getModifierInfo(mod1);
+        info2 := SCodeUtil.getModifierInfo(mod2);
+        scope := printModScope(inModScope);
+        name := stringDelimitList(listReverse(inElementName), ".");
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {name, scope}, {info2, info1});
       then
@@ -231,7 +235,7 @@ protected function printModScope
   input ModScope inModScope;
   output String outString;
 algorithm
-  outString := match(inModScope)
+  outString := match inModScope
     local
       String name;
       Absyn.Path path;

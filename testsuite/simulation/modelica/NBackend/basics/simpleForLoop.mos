@@ -2,10 +2,12 @@
 // keywords: NewBackend
 // status: correct
 
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
 loadString("
 model simpleForLoop
-  parameter Integer N=100;
-  Real[N] x (each start=1, each fixed = true);
+  parameter Integer N=100 \"Size of array x.\";
+  Real[N] x (each start=1, each fixed = true) \"Array with states\";
 equation
   for i in 1:N loop
     der(x[i]) = 1/i * x[i];
@@ -13,9 +15,20 @@ equation
 end simpleForLoop;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend"); getErrorString();
-
+// TODO: these reference results seem to be wrong!
+// x[100] at time = 1 => should be e, but it yields values a lot bigger
 simulate(simpleForLoop); getErrorString();
+
+val(x[1], 0.0);
+val(x[100], 0.0);
+val(der(x[1]), 0.0);
+val(der(x[100]), 0.0);
+
+val(x[1], 1.0);
+val(x[100], 1.0);
+val(der(x[1]), 1.0);
+val(der(x[100]), 1.0);
+
 
 // Result:
 // true
@@ -24,10 +37,18 @@ simulate(simpleForLoop); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "simpleForLoop_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simpleForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
+// 1.0
+// 1.0
+// 1.0
+// 0.01
+// 2.7183953285030427
+// 1.010050167087634
+// 2.7183953285030427
+// 0.01010050167087634
 // endResult

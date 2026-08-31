@@ -1,89 +1,372 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
 #include "ModelInstanceTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include "Modeling/Model.h"
+#include "OMC/OMCProxy.h"
 
 OMEDITTEST_MAIN(ModelInstanceTest)
 
 void ModelInstanceTest::initTestCase()
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(QFINDTESTDATA(mFileName));
-  if (!MainWindow::instance()->getOMCProxy()->existClass(mPackageName)) {
-    QFAIL(QString("Failed to load file %1").arg(mFileName).toStdString().c_str());
+  // load ModelInstanceTest.mo
+  const QString modelInstanceTestFileName = QFINDTESTDATA("ModelInstanceTest.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modelInstanceTestFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("P")) {
+    QFAIL(QString("Failed to load file %1").arg(modelInstanceTestFileName).toStdString().c_str());
   }
 
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mModelName));
+  // load RestrictedVariabilityParamDialog.mo
+  const QString restrictedVariabilityParamDialogFileName = QFINDTESTDATA("RestrictedVariabilityParamDialog.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(restrictedVariabilityParamDialogFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("RestrictedVariabilityParamDialog")) {
+    QFAIL(QString("Failed to load file %1").arg(restrictedVariabilityParamDialogFileName).toStdString().c_str());
+  }
+
+  // load ModifierDisplayUnit.mo
+  const QString modifierDisplayUnitFileName = QFINDTESTDATA("ModifierDisplayUnit.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modifierDisplayUnitFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("ModifierDisplayUnit")) {
+    QFAIL(QString("Failed to load file %1").arg(modifierDisplayUnitFileName).toStdString().c_str());
+  }
+
+  // load Modifiers.mo
+  const QString modifiersFileName = QFINDTESTDATA("Modifiers.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modifiersFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("Modifiers")) {
+    QFAIL(QString("Failed to load file %1").arg(modifiersFileName).toStdString().c_str());
+  }
 }
 
 void ModelInstanceTest::classAnnotations()
 {
-  if (mpModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class icon annotation.");
   }
 
-  if (mpModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
+  if (pModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class diagram annotation.");
   }
+
+  delete pModelInstance;
 }
 
 void ModelInstanceTest::classElements()
 {
-  if (mpModelInstance->getElements().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getElements().isEmpty()) {
     QFAIL("Failed to read the class elements.");
   }
+
+  delete pModelInstance;
 }
 
 void ModelInstanceTest::classConnections()
 {
-  if (mpModelInstance->getConnections().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getConnections().isEmpty()) {
     QFAIL("Failed to read the class connections.");
   }
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isParameter()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(bool, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pElement->isParameter(), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isParameter_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Parameter in prefix")
+      << "RestrictedVariabilityParamDialog.Volume"
+      << "V"
+      << false;
+
+  QTest::newRow("Parameter in extends modifiers")
+      << "RestrictedVariabilityParamDialog.RestrictByRedeclare"
+      << "V"
+      << true;
+}
+
+void ModelInstanceTest::isInput()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(bool, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pElement->isInput(), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isInput_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Input in prefix")
+      << "RestrictedVariabilityParamDialog.Volume"
+      << "X"
+      << false;
+
+  QTest::newRow("Input in extends modifiers")
+      << "RestrictedVariabilityParamDialog.InputByRedeclare"
+      << "X"
+      << true;
+}
+
+void ModelInstanceTest::referencePathEquivalence()
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
+  const bool savedFlag = pMainWindow->isNewApiNoJson();
+
+  QStringList classes;
+  classes << "P.M"
+          << "RestrictedVariabilityParamDialog.Volume"
+          << "RestrictedVariabilityParamDialog.RestrictByRedeclare";
+
+  for (const QString &className : classes) {
+    // Diagram/model path (icon = false).
+    pMainWindow->setNewApiNoJson(false);
+    const QJsonObject jsonObject = pOMCProxy->getModelInstance(className, "", "", false, false);
+    pMainWindow->setNewApiNoJson(true);
+    const QJsonObject referenceObject = pOMCProxy->getModelInstance(className, "", "", false, false);
+    if (jsonObject != referenceObject) {
+      QFAIL(QString("Model instance for %1 differs between the JSON path and the reference path.").arg(className).toStdString().c_str());
+    }
+
+    // Annotation/icon path (icon = true).
+    pMainWindow->setNewApiNoJson(false);
+    const QJsonObject jsonIcon = pOMCProxy->getModelInstance(className, "", "", false, true);
+    pMainWindow->setNewApiNoJson(true);
+    const QJsonObject referenceIcon = pOMCProxy->getModelInstance(className, "", "", false, true);
+    if (jsonIcon != referenceIcon) {
+      QFAIL(QString("Annotation instance for %1 differs between the JSON path and the reference path.").arg(className).toStdString().c_str());
+    }
+  }
+
+  pMainWindow->setNewApiNoJson(savedFlag);
+}
+
+void ModelInstanceTest::modifiertoString()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  auto *pModifier = pElement->getModifier();
+  if (!pModifier) {
+    QFAIL(QString("Failed to find element %1 modifier.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pModifier->toString(true, true), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::modifiertoString_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Element modifier toString 1")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "(c = 35, f(displayUnit = \"kN\"), s_rel(displayUnit = \"cm\"))";
+
+  QTest::newRow("Element modifier toString 2")
+      << "Modifiers.M"
+      << "a"
+      << "(R = 1, V(start = 2), X = sin(time), Y(min = 2) = if time < 1 then 0 else 1)";
+}
+
+void ModelInstanceTest::subModifiertoString()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, modifier);
+  QFETCH(QString, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  auto *pModifier = pElement->getModifier();
+  if (!pModifier) {
+    QFAIL(QString("Failed to find element %1 modifier.").arg(element).toStdString().c_str());
+  }
+
+  bool found = false;
+  foreach (auto *pSubModifier, pModifier->getModifiers()) {
+    if (pSubModifier->getName() == modifier) {
+      found = true;
+      QCOMPARE(pSubModifier->toString(true, true), result);
+      break;
+    }
+  }
+
+  if (!found) {
+    QFAIL(QString("Failed to find sub-modifier %1.").arg(modifier).toStdString().c_str());
+  }
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::subModifiertoString_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("modifier");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Sub modifier toString 1")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "c"
+      << "35";
+
+  QTest::newRow("Sub modifier toString 2")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "f"
+      << "(displayUnit = \"kN\")";
+
+  QTest::newRow("Sub modifier toString 3")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "s_rel"
+      << "(displayUnit = \"cm\")";
+
+  QTest::newRow("Sub modifier toString 4")
+      << "Modifiers.M"
+      << "a"
+      << "R"
+      << "1";
+
+  QTest::newRow("Sub modifier toString 5")
+      << "Modifiers.M"
+      << "a"
+      << "V"
+      << "(start = 2)";
+
+  QTest::newRow("Sub modifier toString 6")
+      << "Modifiers.M"
+      << "a"
+      << "X"
+      << "sin(time)";
+
+  QTest::newRow("Sub modifier toString 7")
+      << "Modifiers.M"
+      << "a"
+      << "Y"
+      << "(min = 2) = if time < 1 then 0 else 1";
 }
 
 void ModelInstanceTest::cleanupTestCase()
 {
-  if (mpModelInstance) {
-    delete mpModelInstance;
-  }
   MainWindow::instance()->close();
 }

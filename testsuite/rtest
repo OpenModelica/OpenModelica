@@ -50,6 +50,11 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
   $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
   $ENV{'OMCOMPILERSOURCES'} = "$1OMCompiler/Compiler";
+  # Where the Template/*.mo generated from the *.tpl live. They are build
+  # artifacts and a CMake build keeps them in its build tree (--tplOutputDir),
+  # so honour an OMCOMPILERGENERATEDSOURCES set by the caller; default to the
+  # source tree, which is where a build without that flag leaves them.
+  $ENV{'OMCOMPILERGENERATEDSOURCES'} ||= "$1OMCompiler/Compiler";
   $ENV{'OPENMODELICALIBRARY'} = "$1/libraries/.openmodelica/libraries";
   # In WSL, we need to mark the environment variable as one we pass from WSL to WIN32
   if (defined $ENV{'WSLENV'}) {
@@ -59,6 +64,8 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   print "You must run rtest from the testsuite (was run from $cwd)\n";
   exit 0;
 }
+
+setup_command_toolchain();
 
 system "$OPENMODELICAHOME/bin/omc-diff -v1.4";
 if ($?) {
@@ -75,6 +82,12 @@ $ENV{'PRINTF_EXPONENT_DIGITS'} = 2;
 
 $successes=0;
 $total=0;
+$skipped=0;
+# Tests tagged '// suite: disabled' are not part of the testsuite: they fail, hang
+# or need a setup nobody has. They are only run when asked for, with -disabled or
+# RTEST_RUN_DISABLED=1 (which is what partest's disabled suite and the makefiles'
+# failingtest targets set).
+$run_disabled=($ENV{'RTEST_RUN_DISABLED'} ? 1 : 0);
 $setbaseline=0;
 $verbose="yes";
 $returnwitherror=0;
@@ -106,6 +119,117 @@ $eps_mo = 1.0e-7;
 $eps_mos = 5e-3;
 $set_modelica_lib = 1;
 $nodelete = 0;
+
+# The simulation code generator under test.
+sub sim_code_target
+{
+  return $ENV{'OPENMODELICA_TEST_SIMCODETARGET'} if $ENV{'OPENMODELICA_TEST_SIMCODETARGET'};
+  return $1 if $omcflags =~ /--simCodeTarget=(\S+)/;
+  return "";
+}
+
+# The wasm32 compiler-rt builtins. The shipped sysroot carries a copy; otherwise
+# probe clang, whose 21 driver looks under a per-triple directory while the Debian
+# libclang-rt-*-dev-wasm32 packages still use the old lib/wasi layout.
+sub wasm_builtins
+{
+  my $sysroot = shift;
+  return $ENV{'OMC_WASM_BUILTINS'} if $ENV{'OMC_WASM_BUILTINS'};
+  my $shipped = "$sysroot/lib/wasm32-wasip1/libclang_rt.builtins-wasm32.a";
+  return $shipped if -e $shipped;
+  my $res = `clang -print-resource-dir 2>/dev/null`;
+  chomp $res;
+  return "" if !$res;
+  for my $p ("$res/lib/wasm32-unknown-wasip1/libclang_rt.builtins.a",
+             "$res/lib/wasi/libclang_rt.builtins-wasm32.a") {
+    return $p if -e $p;
+  }
+  return "";
+}
+
+# The toolchain a `setup_command` builds an external "C" library with, so a test
+# spells it $OMC_CC/$OMC_CFLAGS/... instead of hardcoding gcc. Anything already set
+# in the environment wins.
+#
+# wasm-jit needs a PIC dylink module rather than a host object file: omc has no
+# linker, so the Library annotation must name the finished, loadable artifact.
+# The host toolchain stays reachable as $OMC_NATIVE_CC/... whatever the target
+# under test is: a `Library` may exist for the platform alone, which is the case
+# an external served from the host is about.
+sub setup_command_toolchain
+{
+  my $wasm = sim_code_target() =~ /^wasm/;
+  my $sysroot = $ENV{'OMC_WASI_SYSROOT'} || "$OPENMODELICAHOME/lib/wasm32-wasi/omc";
+  my %native = (
+    CC           => "gcc",
+    CFLAGS       => "-fPIC",
+    EXTLIB_FLAGS => "-c",
+    EXTLIB_LIBS  => "",
+    EXTLIB_EXT   => ".o",
+    AR           => "ar",
+  );
+  my %wasm_tc = (
+    CC           => "clang --target=wasm32-wasip1 --sysroot=$sysroot",
+    CFLAGS       => "-fPIC",
+    # --allow-undefined: ModelicaUtilities and libc are bound when omc loads it.
+    EXTLIB_FLAGS => "-shared -nodefaultlibs -Wl,--export-all -Wl,--allow-undefined",
+    EXTLIB_LIBS  => wasm_builtins($sysroot),
+    EXTLIB_EXT   => ".wasm",
+    # A dylink module is already linked.
+    AR           => "true",
+  );
+  my %tc = map { ("OMC_NATIVE_$_" => $native{$_}) } keys %native;
+  my $target = $wasm ? \%wasm_tc : \%native;
+  $tc{"OMC_$_"} = $target->{$_} for keys %$target;
+  for my $k (keys %tc) {
+    $ENV{$k} = $tc{$k} unless defined $ENV{$k};
+  }
+  # The FMU round-trip tests drive FMPy through simulate_fmu_fmpy.py, and which
+  # interpreter can import fmpy is a property of the machine rather than of the
+  # test: on Windows OMDev's python cannot install it, while a native Python
+  # often already has it. Let the tests ask for the interpreter instead of
+  # hardcoding python3, so a node only has to set FMPY_TOOL.
+  $ENV{'FMPY_TOOL'} = 'python3' unless defined $ENV{'FMPY_TOOL'};
+  if ($wasm && !$ENV{'OMC_EXTLIB_LIBS'}) {
+    print "Warning: no libclang_rt.builtins-wasm32.a found; external \"C\" setup_commands may fail to link.\n";
+  }
+}
+
+# A setup_command/teardown_command is a POSIX shell line, and it spells the
+# toolchain as $OMC_CC/$OMC_CFLAGS/... so a test does not hardcode gcc. Perl's
+# system() on Win32 hands such a line to cmd.exe, which does not expand $VAR: the
+# command then ran with the names taken literally and the compiler was never
+# invoked, leaving "'$OMC_CC' is not recognized as an internal or external
+# command" in the log. Run it under sh instead, the shell these commands are
+# written for and the one the Windows testsuite already runs under.
+#
+# The log is redirected from Perl rather than by appending ">>$log 2>&1" to the
+# command, because $log is a native Windows path and sh would eat its backslashes
+# as escapes (C:\OMDev\tools -> C:OMDevtools). Other platforms keep the plain
+# shell redirection they always had.
+sub run_test_command
+{
+  my $cmd = shift;
+  my $logfile = shift;
+
+  if ($^O ne 'MSWin32') {
+    $cmd = "$cmd >>$logfile 2>&1" if defined $logfile;
+    return system($cmd);
+  }
+
+  return system('sh', '-c', $cmd) unless defined $logfile;
+
+  open(my $saved_out, '>&', \*STDOUT) or die "cannot save STDOUT: $!";
+  open(my $saved_err, '>&', \*STDERR) or die "cannot save STDERR: $!";
+  my $rc = 1;
+  if (open(STDOUT, '>>', $logfile)) {
+    open(STDERR, '>&', \*STDOUT);
+    $rc = system('sh', '-c', $cmd);
+  }
+  open(STDOUT, '>&', $saved_out);
+  open(STDERR, '>&', $saved_err);
+  return $rc;
+}
 
 sub isMinGW_UCRT {
   my $temp = $ENV{'MSYSTEM'};
@@ -153,7 +277,7 @@ sub setbaselineone
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
-      if ( system "$setup_command" ) {
+      if ( run_test_command($setup_command) ) {
         my $end_t = time-$start_t;
         print "== Failed to set baseline for $f (system $setup_command failed)";
         print " [time: $end_t]\n";
@@ -179,7 +303,7 @@ sub setbaselineone
     }
     unlink "$testTempFile$f";
     if ($teardown_command) {
-      system $teardown_command;
+      run_test_command($teardown_command);
     }
 
     open(RES,">$baseline");
@@ -248,7 +372,7 @@ sub runone
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
-      if ( system "$setup_command >>$log 2>&1" ) {
+      if ( run_test_command($setup_command, $log) ) {
         print " setup_command failed";
         return 1;
       }
@@ -273,7 +397,7 @@ sub runone
     }
     unlink "$testTempFile$f";
     if ($teardown_command) {
-      system "$teardown_command >>$log 2>&1";
+      run_test_command($teardown_command, $log);
     }
     my $end_t = time-$start_t;
 
@@ -308,6 +432,8 @@ sub runone
         # Ignore; sometimes comes from libhwloc when running docker
       } elsif ($str =~ /^GC Warning:/) {
         # Ignore; comes from libgc
+      } elsif ($str =~ /^wasm-ld[\d.-]*: warning: creating shared libraries, with -shared, is not yet stable/) {
+        # Ignore; comes from a setup_command building a wasm external "C" library
       } else {
         print RES $str;
       }
@@ -351,8 +477,12 @@ sub dofile
         "setup_command" => "",
         "cflags" => "",
         "env" => "",
+        "suite" => "",
         "teardown_command" => "",
         "stack_size" => "");
+    # The suites a test belongs to are only read from the header, i.e. before the
+    # first line of code, the same as partest does.
+    my $in_header = 1;
     $log = "$tmpdir/log-$f";
     $tc_err = 1;
     # Find the expected result
@@ -363,6 +493,7 @@ sub dofile
     while(<IN>) {
     # @adrpo - uncomment for debugging
     # print ($_);
+    $in_header = 0 if $in_header and !/^\s*$|^\s*\/\//;
     if (/^\/\/ Result:/../^\/\/ endResult/) {
         s/^[ \t]*//;
         s/^\/\/ Result://;
@@ -382,7 +513,10 @@ sub dofile
         # @adrpo - uncomment for debugging
         # print "Noticed: $1 = $2\n";
         # $info{$1} = $value;
-        if($1 ne "env" or $set_modelica_lib) {
+        if($1 eq "suite") {
+          # A test may name its suites on more than one line.
+          $info{"suite"} .= " $2" if $in_header;
+        } elsif($1 ne "env" or $set_modelica_lib) {
           $info{$1} = $2;
         }
     }
@@ -428,6 +562,13 @@ sub dofile
         }
     }
     return 0;
+    }
+
+    # A disabled test is neither run nor counted, it is only reported as skipped.
+    if (!$run_disabled and grep { $_ eq "disabled" } split(/[,\s]+/, $info{"suite"})) {
+      printf(" %s %-82s... disabled\n", '.', $info{'name'});
+      $skipped = $skipped + 1;
+      return 0;
     }
 
     if (!$setbaseline) {
@@ -479,6 +620,8 @@ while ($#ARGV >= 0) {
       $diffcmd = $dwdiffcmd
     } elsif ($arg eq "-nodelete") {
       $nodelete = 1;
+    } elsif ($arg eq "-disabled") {
+      $run_disabled = 1;
     } elsif ($arg eq "-p") {
       if ($ENV{"PAGER"} eq "") {
         $pager="more";
@@ -575,6 +718,11 @@ if ($collectkeys || $collectcases) {
   printf "\n== set new baseline for %d tests\n",$total;
 } else {
     printf "\n== %d out of %d tests failed [%s, time: %d]\n", $total-$successes, $total, $dirname, $end_t;
+}
+
+if ($skipped) {
+  printf "== %d disabled test%s skipped, run them with rtest -disabled\n",
+         $skipped, $skipped == 1 ? "" : "s";
 }
 
 if ($returnwitherror && $total!=$successes) {

@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
@@ -160,15 +163,13 @@ namespace IAEX
     textelement.appendChild( textnode );
     textcell.appendChild( textelement );
 
-    // Creates ruleelemetns
-    Cell::rules_t r = node->rules();
-    Cell::rules_t::const_iterator r_iter = r.begin();
-    for( ; r_iter != r.end(); ++r_iter )
+    // Creates ruleelements
+    for (const auto &rule: node->rules())
     {
       QDomElement ruleelement = domdoc_.createElement( XML_RULE );
-      ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+      ruleelement.setAttribute( XML_NAME, rule.attribute() );
 
-      QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+      QDomText rulenode = domdoc_.createTextNode( rule.value() );
       ruleelement.appendChild( rulenode );
 
       textcell.appendChild( ruleelement );
@@ -217,15 +218,13 @@ namespace IAEX
     outputelement.appendChild( outputnode );
     inputcell.appendChild( outputelement );
 
-    // Creates ruleelemetns
-    Cell::rules_t r = node->rules();
-    Cell::rules_t::const_iterator r_iter = r.begin();
-    for( ; r_iter != r.end(); ++r_iter )
+    // Creates ruleelements
+    for (const auto &rule: node->rules())
     {
       QDomElement ruleelement = domdoc_.createElement( XML_RULE );
-      ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+      ruleelement.setAttribute( XML_NAME, rule.attribute() );
 
-      QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+      QDomText rulenode = domdoc_.createTextNode( rule.value() );
       ruleelement.appendChild( rulenode );
 
       inputcell.appendChild( ruleelement );
@@ -328,15 +327,13 @@ namespace IAEX
     outputelement.appendChild( outputnode );
     graphcell.appendChild( outputelement );
 */
-    // Creates ruleelemetns
-    Cell::rules_t r = node->rules();
-    Cell::rules_t::const_iterator r_iter = r.begin();
-    for( ; r_iter != r.end(); ++r_iter )
+    // Creates ruleelements
+    for (const auto &rule: node->rules())
     {
       QDomElement ruleelement = domdoc_.createElement( XML_RULE );
-      ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+      ruleelement.setAttribute( XML_NAME, rule.attribute() );
 
-      QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+      QDomText rulenode = domdoc_.createTextNode( rule.value() );
       ruleelement.appendChild( rulenode );
 
       graphcell.appendChild( ruleelement );
@@ -386,15 +383,13 @@ namespace IAEX
     outputelement.appendChild( outputnode );
     latexcell.appendChild( outputelement );
 
-    // Creates ruleelemetns
-    Cell::rules_t r = node->rules();
-    Cell::rules_t::const_iterator r_iter = r.begin();
-    for( ; r_iter != r.end(); ++r_iter )
+    // Creates ruleelements
+    for (const auto &rule: node->rules())
     {
       QDomElement ruleelement = domdoc_.createElement( XML_RULE );
-      ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+      ruleelement.setAttribute( XML_NAME, rule.attribute() );
 
-      QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+      QDomText rulenode = domdoc_.createTextNode( rule.value() );
       ruleelement.appendChild( rulenode );
 
       latexcell.appendChild( ruleelement );
@@ -449,20 +444,20 @@ namespace IAEX
         // get the image name
         QString imagename = text.mid( start, end - start );
         CellDocument *doc = dynamic_cast<CellDocument*>(doc_);
-        QImage *image = doc->getImage( imagename );
+        QImage image = doc->getImage( imagename );
 
         // 2005-12-12 AF, Added support of pasting images from clipboard
-        if( image->isNull() )
+        if( image.isNull() )
         {
           // found image that isn't part of the document,
           // probably images that have been pasted into the text or
           // from copied cell
           QString tmpImagename = imagename;
           tmpImagename.remove( "file:///" );
-          image = new QImage( tmpImagename );
+          image = QImage( tmpImagename );
         }
 
-        if( !image->isNull() )
+        if( !image.isNull() )
         {
           // create element and save the image to file
           QDomElement imageelement = domdoc_.createElement( XML_IMAGE );
@@ -471,7 +466,7 @@ namespace IAEX
           QBuffer buffer;
           buffer.open( QBuffer::WriteOnly );
           QDataStream out( &buffer );
-          out << *image;
+          out << image;
           buffer.close();
 
           QDomText imagedata = domdoc_.createTextNode( buffer.buffer().toBase64() );

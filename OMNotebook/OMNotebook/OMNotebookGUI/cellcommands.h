@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -59,8 +62,8 @@ namespace IAEX
   public:
     AddCellCommand(){}
     virtual ~AddCellCommand(){}
-    virtual QString commandName(){ return QString("AddCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("AddCellCommand");}
+    void execute() override;
   };
 
 
@@ -69,8 +72,8 @@ namespace IAEX
   public:
     CreateNewCellCommand(const QString &style) : style_(style){}
     virtual ~CreateNewCellCommand(){}
-    virtual QString commandName(){ return QString("CreateNewCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("CreateNewCellCommand");}
+    void execute() override;
   private:
     QString style_;
   };
@@ -82,8 +85,8 @@ namespace IAEX
   public:
     DeleteCurrentCellCommand(){}
     virtual ~DeleteCurrentCellCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("DeleteCurrentCellCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("DeleteCurrentCellCommand");}
   };
 
 
@@ -92,8 +95,8 @@ namespace IAEX
   public:
     PasteCellsCommand(){}
     virtual ~PasteCellsCommand(){}
-    void execute();
-    QString commandName(){return QString("PasteCellsCommand");}
+    void execute() override;
+    QString commandName() override {return QString("PasteCellsCommand");}
   private:
     void pasteCell( Cell *cell, CellGroup *groupcell = 0 );
   };
@@ -104,8 +107,8 @@ namespace IAEX
   public:
     CopySelectedCellsCommand(){}
     virtual ~CopySelectedCellsCommand(){}
-    void execute();
-    QString commandName(){return QString("CopySelectedCellsCommand");}
+    void execute() override;
+    QString commandName() override {return QString("CopySelectedCellsCommand");}
   private:
   };
 
@@ -115,8 +118,8 @@ namespace IAEX
   public:
     DeleteSelectedCellsCommand(){}
     virtual ~DeleteSelectedCellsCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("DeleteSelectedCellsCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("DeleteSelectedCellsCommand");}
   };
 
 
@@ -126,8 +129,8 @@ namespace IAEX
   public:
     ChangeStyleOnSelectedCellsCommand(CellStyle style):style_(style){}
     virtual ~ChangeStyleOnSelectedCellsCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("ChangeStyleOnSelectedCellsCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("ChangeStyleOnSelectedCellsCommand");}
   private:
     CellStyle style_;
   };
@@ -137,8 +140,8 @@ namespace IAEX
   public:
     ChangeStyleOnCurrentCellCommand(const QString &style):style_(style){}
     virtual ~ChangeStyleOnCurrentCellCommand(){}
-    void execute();
-    virtual QString commandName(){ return QString("ChangeStyleOnCurrentCellCommand");}
+    void execute() override;
+    virtual QString commandName() override { return QString("ChangeStyleOnCurrentCellCommand");}
   private:
     QString style_;
   };
@@ -157,7 +160,7 @@ namespace IAEX
   public:
     MakeGroupCellCommand(){}
     virtual ~MakeGroupCellCommand(){}
-    void execute();
+    void execute() override;
   };
 
   // 2006-04-26 AF, UNGROUP
@@ -166,8 +169,8 @@ namespace IAEX
   public:
     UngroupCellCommand(){}
     virtual ~UngroupCellCommand(){}
-    virtual QString commandName(){ return QString("UngroupCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("UngroupCellCommand");}
+    void execute() override;
   };
 
   // 2006-04-26 AF, SPLIT CELL
@@ -176,8 +179,8 @@ namespace IAEX
   public:
     SplitCellCommand(){}
     virtual ~SplitCellCommand(){}
-    virtual QString commandName(){ return QString("SplitCellCommand");}
-    void execute();
+    virtual QString commandName() override { return QString("SplitCellCommand");}
+    void execute() override;
   };
 
 };

@@ -99,7 +99,7 @@ getModelInstance(HierarchicalEditingGUI.Main.NestModel, prettyPrint = true); get
 //             \"$kind\": \"component\",
 //             \"name\": \"nested2\",
 //             \"type\": {
-//               \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
+//               \"name\": \"HierarchicalEditingGUI.Nested1.InnerNestedModel\",
 //               \"restriction\": \"model\",
 //               \"prefixes\": {
 //                 \"replaceable\": true

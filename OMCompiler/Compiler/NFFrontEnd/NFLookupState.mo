@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,7 +46,6 @@ protected
 import Dump;
 import Error;
 import SCodeUtil;
-import System;
 import Class = NFClass;
 import Component = NFComponent;
 import Inst = NFInst;
@@ -382,17 +385,17 @@ uniontype LookupState
     input LookupState state;
     output String str;
   algorithm
-    str := match(state)
+    str := match state
       case BEGIN() then "<begin>";
-      case COMP() then System.gettext("component");
-      case CLASS_COMP() then System.gettext("component");
-      case COMP_CLASS() then System.gettext("class");
-      case COMP_FUNC() then System.gettext("function");
-      case PACKAGE() then System.gettext("package");
-      case CLASS() then System.gettext("class");
-      case FUNC() then System.gettext("function");
-      case PREDEF_COMP() then System.gettext("component");
-      case PREDEF_CLASS() then System.gettext("class");
+      case COMP() then "component";
+      case CLASS_COMP() then "component";
+      case COMP_CLASS() then "class";
+      case COMP_FUNC() then "function";
+      case PACKAGE() then "package";
+      case CLASS() then "class";
+      case FUNC() then "function";
+      case PREDEF_COMP() then "component";
+      case PREDEF_CLASS() then "class";
     end match;
   end lookupStateString;
 
@@ -424,7 +427,6 @@ uniontype LookupState
     output LookupState nextState;
   protected
     LookupState entry_ty;
-    SCode.Element el;
   algorithm
     if checkAccessViolations and not InstContext.inInstanceAPI(context) then
       // Check that the element is allowed to be accessed given its visibility.
@@ -470,7 +472,7 @@ uniontype LookupState
     input InstNode node;
     output LookupState state;
   algorithm
-    if InstNode.isComponent(node) or InstNode.isName(node) then
+    if InstNode.isComponent(node) or InstNode.isName(node) or InstNode.isEmpty(node) then
       state := COMP();
     else
       state := elementState(InstNode.definition(node));
@@ -488,7 +490,7 @@ uniontype LookupState
       case SCode.CLASS() then CLASS();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown element.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown element.", sourceInfo());
         then
           fail();
     end match;
@@ -526,7 +528,6 @@ uniontype LookupState
   algorithm
     nextState := match (elementState, currentState)
       local
-        String str;
 
       // Transitions from BEGIN.
       case (_,         BEGIN())      then elementState;
@@ -574,7 +575,7 @@ uniontype LookupState
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown transition for element " + InstNode.name(node), sourceInfo());
+          Error.terminate(getInstanceName() + " failed on unknown transition for element " + InstNode.name(node), sourceInfo());
         then
           fail();
 
@@ -672,5 +673,5 @@ uniontype LookupState
   end isNonConstantComponent;
 end LookupState;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFLookupState;

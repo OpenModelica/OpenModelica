@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 // FILE/CLASS ADDED 2005-12-12 /AF
@@ -78,15 +81,8 @@ namespace IAEX
    * \param filename The file that will be read.
    */
   CommandCompletion::CommandCompletion( const QString filename )
-    : currentCommand_( -1 ),
-    currentField_( -1 ),
-    currentList_( 0 ),
-    commandStartPos_( 0 ),
-    commandEndPos_( 0 )
+    : doc_{"OMCComment"} // read a command file.
   {
-    //read a command file.
-    doc_ = new QDomDocument( "OMCCommand" );
-
     QFile file( filename );
     if(!file.open(QIODevice::ReadOnly))
     {
@@ -94,7 +90,7 @@ namespace IAEX
       throw std::runtime_error( tmp.c_str() );
     }
 
-    if( !doc_->setContent(&file) )
+    if( !doc_.setContent(&file) )
     {
       file.close();
       std::string tmp = "Could not read content from file: " +
@@ -108,7 +104,7 @@ namespace IAEX
     initializeCommands();
   }
 
-  CommandCompletion *CommandCompletion::instance_ = 0;
+  std::unique_ptr<CommandCompletion> CommandCompletion::instance_ = 0;
 
   /*
    * \author Anders Fernström
@@ -122,9 +118,9 @@ namespace IAEX
   CommandCompletion *CommandCompletion::instance( const QString filename )
   {
     if( !instance_ )
-      instance_ = new CommandCompletion( filename );
+      instance_ = std::unique_ptr<CommandCompletion>(new CommandCompletion{filename});
 
-    return instance_;
+    return instance_.get();
   }
 
   /*
@@ -142,15 +138,11 @@ namespace IAEX
    */
   bool CommandCompletion::insertCommand( QTextCursor &cursor )
   {
-    // check if cursor is okej
+    // check if cursor is okay
     if( !cursor.isNull() )
     {
-      // first remove any old currentList_
-      if( currentList_ )
-      {
-        delete currentList_;
-        currentList_ = 0;
-      }
+      // first clear the current commands
+      currentList_.clear();
 
       // reset currentCommand_ && currentField_
       currentCommand_ = -1;
@@ -175,11 +167,10 @@ namespace IAEX
           }
         }
         // check if any command matches the current word in the text
-        currentList_ = new QStringList();
         for( int i = 0; i < commandList.size(); ++i )
         {
           if( 0 == commandList.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
-            currentList_->append( commandList.at(i) );
+            currentList_.append( commandList.at(i) );
         }
 
         //std::cout << "Found commands (" << command.toStdString() << "):" << std::endl;
@@ -187,23 +178,18 @@ namespace IAEX
         //  std::cout << " >" << currentList_->at(i).toStdString() << std::endl;
 
         // found one or more commands that match the word
-        if( currentList_->size() > 0 )
+        if( !currentList_.isEmpty() )
         {
           currentCommand_ = 0;
 
           commandStartPos_ = cursor.position();
-          cursor.insertText( currentList_->at( currentCommand_ ));
+          cursor.insertText( currentList_.at( currentCommand_ ));
           commandEndPos_ = cursor.position();
 
           // select first field, if any
           nextField( cursor );
 
           return true;
-        }
-        else
-        {
-          delete currentList_;
-          currentList_ = 0;
         }
       }
     }
@@ -224,14 +210,14 @@ namespace IAEX
    */
   bool CommandCompletion::nextCommand( QTextCursor &cursor )
   {
-    // check if cursor is okej
+    // check if cursor is okay
     if( !cursor.isNull() )
     {
       // check if currentList_ exists
-      if( currentCommand_ >= 0 && currentList_ )
+      if( currentCommand_ >= 0 && !currentList_.isEmpty() )
       {
-        // if no more commands existes, restart
-        if( currentCommand_ >= (currentList_->size()-1) )
+        // if no more commands exists, restart
+        if( currentCommand_ >= (currentList_.size()-1) )
           currentCommand_ = -1;
 
         // reset currentField_
@@ -241,7 +227,7 @@ namespace IAEX
         currentCommand_++;
         cursor.setPosition( commandStartPos_ );
         cursor.setPosition( commandEndPos_, QTextCursor::KeepAnchor );
-        cursor.insertText( currentList_->at( currentCommand_ ));
+        cursor.insertText( currentList_.at( currentCommand_ ));
         commandEndPos_ = cursor.position();
 
         // select first field, if any
@@ -266,11 +252,11 @@ namespace IAEX
   {
     if( currentCommand_ >= 0 )
     {
-      if( currentList_->size() > currentCommand_ )
+      if( currentList_.size() > currentCommand_ )
       {
-        QString command = currentList_->at( currentCommand_ );
-        if( cmds_->contains( command ))
-          return (*cmds_)[command]->helptext();
+        QString command = currentList_.at( currentCommand_ );
+        auto it = cmds_->find(command);
+        if (it != cmds_->end()) return it->helptext();
       }
     }
 
@@ -286,27 +272,28 @@ namespace IAEX
    *
    * 2005-12-15 AF, implemented function
    *
-   * \return TURE if a field is selected
+   * \return TRUE if a field is selected
    */
   bool CommandCompletion::nextField( QTextCursor &cursor )
   {
-    // check if cursor is okej
+    // check if cursor is okay
     if( !cursor.isNull() )
     {
-      if( currentCommand_ >= 0 && currentCommand_ < currentList_->size() )
+      if( currentCommand_ >= 0 && currentCommand_ < currentList_.size() )
       {
-        QString command = currentList_->at( currentCommand_ );
+        QString command = currentList_.at( currentCommand_ );
+        auto it = cmds_->find(command);
 
-        if( cmds_->contains( command ))
+        if (it != cmds_->end())
         {
-          if( currentField_ < ((*cmds_)[command]->numbersField() - 1) )
+          if( currentField_ < (it->numbersField() - 1) )
           {
             //next field
             currentField_++;
             QString fieldID;
             fieldID.setNum( currentField_ );
             fieldID = "$" + fieldID;
-            QString field = (*cmds_)[command]->datafield( fieldID );
+            QString field = it->datafield( fieldID );
 
             if( !field.isNull() )
             {
@@ -354,7 +341,7 @@ namespace IAEX
    */
   void CommandCompletion::initializeCommands()
   {
-    QDomElement root = doc_->documentElement();
+    QDomElement root = doc_.documentElement();
     QDomNode node = root.firstChild();
 
     // loop through the DOM tree
@@ -365,20 +352,20 @@ namespace IAEX
       {
         if( element.tagName() == "command" )
         {
-          CommandUnit *unit = new CommandUnit( element.attribute( "name" ));
+          auto unit = CommandUnit{element.attribute("name")};
           QDomNode n = element.firstChild();
           parseCommand( n, unit );
 
-          commands_.insert( unit->fullName(), unit );
-          commandList_.append( unit->fullName() );
+          commands_.insert( unit.fullName(), std::move(unit) );
+          commandList_.append( unit.fullName() );
         } else if( element.tagName() == "element" )
         {
-          CommandUnit *unit = new CommandUnit( element.attribute( "name" ));
+          auto unit = CommandUnit{element.attribute("name")};
           QDomNode n = element.firstChild();
           parseCommand( n, unit );
 
-          elements_.insert( unit->fullName(), unit );
-          elementList_.append( unit->fullName() );
+          elements_.insert( unit.fullName(), std::move(unit) );
+          elementList_.append( unit.fullName() );
         } else if( element.tagName() == "keyword" )
         {
           keywords_.append(QRegularExpression(element.attribute( "name")));
@@ -394,19 +381,16 @@ namespace IAEX
    *
    * \brief parse through a command tag in the DOM tree
    */
-  void CommandCompletion::parseCommand( QDomNode node, CommandUnit *item ) const
+  void CommandCompletion::parseCommand( QDomNode node, CommandUnit &item ) const
   {
-    if( !item )
-      throw std::runtime_error( "ParseCommand... No ITEM set" );
-
     while( !node.isNull() )
     {
       QDomElement element = node.toElement();
 
       if( element.tagName() == "field" )
-        item->addDataField( element.attribute( "name" ), element.text() );
+        item.addDataField( element.attribute( "name" ), element.text() );
       else if( element.tagName() == "helptext" )
-        item->setHelptext( element.text() );
+        item.setHelptext( element.text() );
       else
         std::cout << "Tag not known" << element.tagName().toStdString();
 

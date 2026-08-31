@@ -1,0 +1,40 @@
+// name: FlowAlias1
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(TestAliasStream.Test1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test1'
+//   model 'Test1'
+//     Real 'pump.outlet.p';
+//     Real 'pump.outlet.h';
+//     parameter Real 'pump.T' = 20.0;
+//     Real 'pump.P';
+//     Real 'tank.port.p';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'pump.w' = sin(time);
+//     Real 'tank.port.w' = 'pump.w' \"Alias variable\";
+//     Real 'pump.outlet.w' = -'pump.w' \"Alias variable\";
+//   equation
+//     'pump.outlet.p' = 'tank.port.p';
+//     'pump.outlet.h' = 4200.0 * 'pump.T';
+//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     1000.0 * 'tank.A' * der('tank.y') = 'pump.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = 'pump.w' * (if 'pump.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h');
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//   end 'Test1';
+// end 'Test1';
+// "
+// ""
+// endResult

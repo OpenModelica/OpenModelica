@@ -6,6 +6,7 @@
 - [3. Usage](#3-usage)
   - [3.1. General Notes](#31-general-notes)
   - [3.2. Linux](#32-linux)
+    - [3.2.1 QtWebKit](#321-qtwebkit)
   - [3.3. macOS](#33-macos)
     - [3.3.1 Setup](#331-setup)
       - [3.3.1.1 MacPorts](#3311-macports)
@@ -94,6 +95,15 @@ dependencies (If you need help, follow the instructions
 **excluding** the configuration steps, `autoconf`, ...), you can follow the instruction in
 [quick start](#1-quick-start) section above or choose your own combination of
 [configuration options](#4-configuration-options) (e.g. build type, generator, install dir ...).
+
+### 3.2.1 QTWebKit
+
+Note that most of the latest Linux releases do not support Qt5 QTWebKit anymore so one needs to configure with Qt6
+
+  ```
+  cmake -S . -B build_cmake -DOM_QT_MAJOR_VERSION=6
+  ```
+
 
 ## 3.3. macOS
 

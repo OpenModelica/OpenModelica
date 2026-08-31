@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -67,16 +64,13 @@ DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
-void initDumpSystem();
-void deactivateLogging();
-void reactivateLogging();
+void initDumpSystem(void);
+void deactivateLogging(void);
+void reactivateLogging(void);
 void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
-
-/* #define USE_DEBUG_OUTPUT */
-/* #define USE_DEBUG_TRACE */
 
 enum OMC_LOG_STREAM
 {
@@ -137,9 +131,6 @@ enum OMC_LOG_STREAM
   OMC_LOG_STATS_V,
   OMC_LOG_SUCCESS,
   OMC_LOG_SYNCHRONOUS,
-#ifdef USE_DEBUG_TRACE
-  OMC_LOG_TRACE,
-#endif
   OMC_LOG_ZEROCROSSINGS,
 
   OMC_SIM_LOG_MAX
@@ -167,22 +158,6 @@ extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
-
-#ifdef USE_DEBUG_OUTPUT
-  #define OMC_DEBUG_STREAM(stream)    (omc_useStream[stream])
-#else
-  #define OMC_DEBUG_STREAM(stream)    (0)
-#endif
-
-#ifdef USE_DEBUG_TRACE
-  extern int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln);
-  extern int DEBUG_TRACE_POP_HELPER(int traceID);
-  #define TRACE_PUSH int __DEBUG_TRACE_HANDLE = DEBUG_TRACE_PUSH_HELPER(__FUNCTION__, __FILE__, __LINE__);
-  #define TRACE_POP DEBUG_TRACE_POP_HELPER(__DEBUG_TRACE_HANDLE);
-#else
-  #define TRACE_PUSH
-  #define TRACE_POP
-#endif
 
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
 extern void (*messageClose)(int stream);
@@ -231,29 +206,11 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 }
 #endif
 
-#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-#define OMC_FUNCTION __func__
-#elif __STDC_VERSION__ < 199901L && __GNUC__ >= 2
-#define OMC_FUNCTION __FUNCTION__
-#else
-#define OMC_FUNCTION "(null)"
-#endif
-
 #define omc_assert_macro(expr) \
   if (!(expr)) {                \
-    throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, OMC_FUNCTION, #expr); \
+    throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, __func__, #expr); \
     exit(1); \
   }
-
-#ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int stream, FILE_INFO info, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
-void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
-#else
-static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 3, 4)));
-static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) {/* Do nothing */}
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream __attribute__((unused)), FILE_INFO info, int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 5, 6)));
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), FILE_INFO info __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
-#endif
 
 #ifdef __cplusplus
 }

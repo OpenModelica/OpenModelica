@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBBindings
 " file:         NBBindings.mo
   package:      NBBindings
@@ -51,6 +56,7 @@ public
   algorithm
     bdae := match bdae
       local
+        Pointer<Equation> bind_eqn                  "binding equation";
         VarData varData                             "Data containing variable pointers";
         EqData eqData                               "Data containing equation pointers";
         list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
@@ -76,10 +82,11 @@ public
           end match;
 
           if not skip_record_element then
+            bind_eqn := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters);
             if BVariable.isContinuous(var, false) then
-              binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_cont;
+              binding_cont := bind_eqn :: binding_cont;
             else
-              binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_disc;
+              binding_disc := bind_eqn :: binding_disc;
             end if;
           end if;
         end for;
@@ -123,17 +130,17 @@ public
           Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
             intString(EqData.scalarSize(eqData)) + " (" + intString(EqData.size(eqData)) + ")",
             intString(VarData.scalarSize(varData)) + " (" + intString(VarData.size(varData)) + ")"},
-            AbsynUtil.dummyInfo);
+            Absyn.dummyInfo);
         end if;
 
         if Flags.isSet(Flags.DUMP_BINDINGS) then
-          print(List.toString(binding_cont, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_cont, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Continuous Binding Equations (" + intString(listLength(binding_cont)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_clck, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_clck, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_clck)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_disc, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_disc, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Discrete Binding Equations (" + intString(listLength(binding_disc)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_rec, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_rec, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Record Binding Equations (" + intString(listLength(binding_rec)) + "):"), "", "\n", "", false) + "\n\n");
         end if;
 
@@ -145,7 +152,7 @@ public
     end match;
   end main;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBBindings;
 
 

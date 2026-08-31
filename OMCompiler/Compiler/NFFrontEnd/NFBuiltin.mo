@@ -1,34 +1,37 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 
 encapsulated package NFBuiltin
 " file:        NFBuiltin.mo
@@ -42,7 +45,6 @@ encapsulated package NFBuiltin
 
 public
 import Absyn;
-import AbsynUtil;
 import Attributes = NFAttributes;
 import SCode;
 import NFBinding;
@@ -52,6 +54,7 @@ import Component = NFComponent;
 import NFComponent.ComponentState;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import NFInstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import Type = NFType;
@@ -72,7 +75,6 @@ public
 encapsulated package Elements
   import SCode;
   import Absyn;
-  import AbsynUtil;
 
   // Default parts of the declarations for builtin elements and types:
   public constant Absyn.TypeSpec ENUMTYPE_SPEC =
@@ -82,37 +84,37 @@ encapsulated package Elements
   constant SCode.Element REAL = SCode.CLASS("Real",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element INTEGER = SCode.CLASS("Integer",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element STRING = SCode.CLASS("String",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element ENUMERATION = SCode.CLASS("enumeration",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element ANY = SCode.CLASS("polymorphic",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element CLOCK = SCode.CLASS("Clock",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_PREDEFINED_CLOCK(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo) "the Clock type";
+    SCode.noComment, Absyn.dummyInfo) "the Clock type";
 
 end Elements;
 
@@ -417,7 +419,7 @@ constant InstNode TIME =
       NFAttributes.INPUT_ATTR,
       SCode.noComment,
       ComponentState.TypeChecked,
-      AbsynUtil.dummyInfo)),
+      Absyn.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 
@@ -433,7 +435,7 @@ constant InstNode SUBST_NODE =
       NFAttributes.DEFAULT_ATTR,
       SCode.noComment,
       ComponentState.TypeChecked,
-      AbsynUtil.dummyInfo)),
+      Absyn.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 
@@ -467,5 +469,5 @@ algorithm
   print("\n");
 end makeBuiltinLookupTree;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBuiltin;

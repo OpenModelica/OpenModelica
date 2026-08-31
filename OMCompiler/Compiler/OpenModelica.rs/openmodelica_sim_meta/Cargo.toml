@@ -1,0 +1,40 @@
+# Per-model simulation metadata AND the single engine-independent simulation
+# driver, shared between the wasm-jit codegen (host, native + wasmer) and the
+# in-wasm runtime (compiled into `runtime.wasm` so the model's functionODE etc.
+# are called wasm->wasm). `no_std` + `alloc` by default (`std` feature, default
+# on, adds the host conveniences: `Instant` clock fallback, env knobs, thread-
+# local overrides) — one definition of the format and the driver, no drift.
+[package]
+name = "openmodelica_sim_meta"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+# Host builds enable `std` (native + the wasm32 web omc, both have std). The
+# in-wasm runtime builds `no_std` (`default-features = false`), where the solver
+# math routes through `libm` and daskr is `no_std` too.
+std = ["daskr/std", "openmodelica_solvers/std", "dep:openmodelica_lapack"]
+# Compile the CVODE/IDA driver paths without linking an archive: the symbols stay
+# undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
+sundials_extern = ["openmodelica_solvers/sundials_extern"]
+
+[dependencies]
+# The engine-independent solvers (gbode, the fixed-step ones, SUNDIALS), driven
+# through `openmodelica_solvers::Ode`, which `driver::EngineOde` implements over
+# a model in wasm linear memory. Their modules are re-exported from this crate's
+# root, so `sim_meta::gbode` and friends still name them.
+openmodelica_solvers = { path = "../openmodelica_solvers", default-features = false }
+# The DAE solver for the DASSL driver. no_std-capable; the host pulls its `std`
+# feature via this crate's `std`.
+daskr = { path = "../daskr", default-features = false }
+# no_std `sqrt` for the colored-FD Jacobian; unused under `std` (inherent method).
+libm = "0.2"
+# The `.mat` serializer `MetaKind` projects onto (`MetaKind::mat`).
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_plt_writer = { path = "../openmodelica_plt_writer" }
+# `dgesv` for `-reconcile`'s covariance solves — the same LAPACK the C runtime
+# calls, so the pivot order and `INFO` match. `std`-only, like `datarecon` itself.
+openmodelica_lapack = { path = "../openmodelica_lapack", optional = true }
+
+[lib]

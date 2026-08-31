@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -31,6 +35,7 @@
 
 encapsulated package InstHashTable "hash table implementation for cashing instantiation results"
 
+import Absyn;
 import DAE.Connect;
 import ConnectionGraph;
 import ClassInf;
@@ -115,69 +120,68 @@ function addToInstCache
   input Option<CachedInstItem> fullInstOpt;
   input Option<CachedInstItem> partialInstOpt;
 algorithm
-  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
+  () := matchcontinue(fullInstOpt, partialInstOpt)
     local
-      CachedInstItem fullInst, partialInst;
       HashTable instHash;
       Option<CachedInstItem> opt;
       list<Option<CachedInstItem>> lst;
 
     // nothing is we have -d=noCache
-    case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.CACHE);
+    case (_, _)
+      algorithm
+        false := Flags.isSet(Flags.CACHE);
        then
          ();
 
     // we have them both
-    case (_, SOME(_), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
+    case (SOME(_), SOME(_))
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full in the cache
-    case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+    case (NONE(), SOME(_))
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
-        {opt,_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
+        {opt,_} := BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full is NOT in the cache
-    case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+    case (NONE(), SOME(_))
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
         // failed above {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial in the cache
-    case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+    case (SOME(_), NONE())
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
-        (_::(lst as {SOME(_)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
+        _::(lst as {SOME(_)}) := BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial is NOT in the cache
-    case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+    case (SOME(_), NONE())
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
         // failed above {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();

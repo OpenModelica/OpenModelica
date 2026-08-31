@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 package CodegenCppCommon
 import interface SimCodeTV;
 import CodegenUtil.*;
@@ -233,10 +268,12 @@ template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFun
   else
     let representation = cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
     match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
     case STATE() then
       '__z[<%i%>]'
     case STATE_DER() then
       '__zDot[<%i%>]'
+*/
     case DAE_RESIDUAL_VAR() then
       '__daeResidual[<%i%>]'
     case JAC_VAR() then
@@ -428,8 +465,10 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
   else
     let box = cref2simvar(cr, simCode) |> var as SIMVAR(index=i, matrixName=matrixName) =>
       match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
         case STATE()
         case STATE_DER()
+*/
         case DAE_RESIDUAL_VAR() then
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
           daeExpCrefRhsArrayBox2(arrdata, ty, false, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
@@ -495,7 +534,7 @@ match ty
 case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
              ;separator=", "
-  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
+  let record_type_name = underscorePath(ClassInfUtil.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%contextFunName(record_type_name, context)%>(<%vars%>,<%ret_var%>);<%\n%>'
@@ -675,7 +714,7 @@ template expTypeShort(DAE.Type type)
   case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "void*"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__)
   case T_METABOXED(__)   then "metatype"
   case T_FUNCTION(__)
@@ -698,7 +737,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
       '<%underscorePath(rname)%>Type'
     else match ty case T_COMPLEX(__) then
-      '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+      '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>'
      else
       '<%expTypeShort(ty)%>'
   case 3 then
@@ -751,7 +790,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
       'const <%underscorePath(rname)%>Type&'
     else match ty case T_COMPLEX(__) then
-      'const <%underscorePath(ClassInf.getStateName(complexClassType))%>&'
+      'const <%underscorePath(ClassInfUtil.getStateName(complexClassType))%>&'
     else
       '<%expTypeShort(ty)%>'
 
@@ -799,7 +838,7 @@ template expTypeShortSPS(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "type not supported"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
@@ -821,7 +860,7 @@ template expTypeShortMLPI(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "type not supported"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
@@ -1116,7 +1155,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
           '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
         else
           '<%loopVar%>( <%firstIndex%>++)'
@@ -1525,6 +1564,15 @@ let &preExp +=
 params
 end daeExpArray2;
 
+template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                    Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  match sub
+  case sub as INDEX() then daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
+  end match
+end daeSubscript;
+
 template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for an asub expression."
@@ -1534,7 +1582,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      let idx1 = daeExp(idx, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let idx1 = daeSubscript(idx, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -1546,7 +1594,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -1570,7 +1618,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
    '<%res%>'
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    let arrName =  daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arrName =  daeExpCrefRhs(buildCrefExpFromSubs(ecr, subs), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match context case FUNCTION_CONTEXT(__)  then
       arrName
     else
@@ -1579,7 +1627,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     // let typeShort = expTypeFromExpShort(e)
-    let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=",")
+    let expIndexes = (indexes |> index => '<%daeSubscriptASubIndex(index, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=",")
     //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
     '(<%exp%>)(<%expIndexes%>)'
 
@@ -1587,6 +1635,13 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
     error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpAsub;
 
+template daeSubscriptASubIndex(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+match sub
+  case INDEX(__) then daeExpASubIndex(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else daeSubscript(sub, context, &preExp, &varDecls, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+end daeSubscriptASubIndex;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1598,7 +1653,7 @@ match exp
 end daeExpASubIndex;
 
 
-template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhs(Type ty, list<Subscript> subs, String arrName, Context context,
                Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to daeExpAsub."
 ::=
@@ -1606,8 +1661,8 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
    case ASUB(exp=ecr as CREF(__)) then*/
   let arrayType = expTypeShort(ty)
   let dimsLenStr = listLength(subs)
-  let dimsValuesStr = (subs |> exp =>
-      daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
+  let dimsValuesStr = (subs |> sub =>
+      daeSubscript(sub, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
     //previous multi_array ;separator="][")
 
 
@@ -3074,5 +3129,5 @@ template timeEventLength(SimCode simCode)
       >>
 end timeEventLength;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_cpp_common");
 end CodegenCppCommon;

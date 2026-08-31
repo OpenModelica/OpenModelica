@@ -1,7 +1,6 @@
 // name:     Modelica.ComplexBlocks.Examples.TestConversionBlock
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

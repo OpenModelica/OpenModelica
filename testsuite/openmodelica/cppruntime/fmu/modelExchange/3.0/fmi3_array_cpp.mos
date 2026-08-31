@@ -1,0 +1,50 @@
+// name: fmi3_array_cpp
+// keywords: FMI 3.0 export array Cpp
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml fmi3_array_cpp.fmu fmi3_array_cpp.fmutmp fmi3_array_cpp.log fmi3_array_cpp_info.json output.log index.html
+// cflags: -d=-newInst
+//
+// #15926, FMI 3.0 export with the C++ (Cpp) simulation runtime and an array
+// variable carrying a parameter-bound nominal attribute. The FMU must build and
+// the array's typed Float64 elements appear in the modelDescription.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi3_array_cpp
+  parameter Real x_nom[3] = {10.0, 20.0, 30.0};
+  Real x[3](nominal = x_nom, start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y = sum(x);
+equation
+  der(x) = -x;
+end fmi3_array_cpp;
+"); getErrorString();
+
+buildModelFMU(fmi3_array_cpp, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_array_cpp.fmu modelDescription.xml | grep -E \"<Float64 name\" > modelDescription.tmp.xml"); getErrorString();
+readFile("modelDescription.tmp.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_array_cpp.fmu"
+// ""
+// 0
+// ""
+// " <Float64 name=\"time\" valueReference=\"11\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+// <Float64 name=\"x[1]\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
+// <Float64 name=\"x[2]\" valueReference=\"1\" initial=\"exact\"  start=\"2.0\"/>
+// <Float64 name=\"x[3]\" valueReference=\"2\" initial=\"exact\"  start=\"3.0\"/>
+// <Float64 name=\"der(x[1])\" valueReference=\"3\"  derivative=\"0\"/>
+// <Float64 name=\"der(x[2])\" valueReference=\"4\"  derivative=\"1\"/>
+// <Float64 name=\"der(x[3])\" valueReference=\"5\"  derivative=\"2\"/>
+// <Float64 name=\"y\" valueReference=\"6\" causality=\"output\" />
+// <Float64 name=\"x_nom[1]\" valueReference=\"7\" causality=\"parameter\" variability=\"fixed\"  start=\"10.0\"/>
+// <Float64 name=\"x_nom[2]\" valueReference=\"8\" causality=\"parameter\" variability=\"fixed\"  start=\"20.0\"/>
+// <Float64 name=\"x_nom[3]\" valueReference=\"9\" causality=\"parameter\" variability=\"fixed\"  start=\"30.0\"/>
+// "
+// ""
+// endResult

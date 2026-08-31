@@ -1,6 +1,10 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+FMI1MEfmpy.mos \
+FMI1MEcvodeFlag.mos \
+FMI1MEInputOutput.mos \
+fmi1_import_boolean.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -29,6 +33,7 @@ StringParameters.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.c \
 Makefile \
 
 
@@ -43,6 +48,13 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+baseline:
+	@echo
+	@echo Updating badelines...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean :
@@ -65,4 +77,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

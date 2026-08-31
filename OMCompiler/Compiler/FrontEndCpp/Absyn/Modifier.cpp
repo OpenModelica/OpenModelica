@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include <stdexcept>
 #include <ostream>
 
@@ -12,11 +47,11 @@ constexpr int MOD = 0;
 constexpr int REDECL = 1;
 constexpr int NOMOD = 2;
 
-extern record_description SCode_Mod_MOD__desc;
-extern record_description SCode_Mod_REDECL__desc;
-extern record_description SCode_Mod_NOMOD__desc;
+extern "C" record_description SCode_Mod_MOD__desc;
+extern "C" record_description SCode_Mod_REDECL__desc;
+extern "C" record_description SCode_Mod_NOMOD__desc;
 
-extern record_description SCode_SubMod_NAMEMOD__desc;
+extern "C" record_description SCode_SubMod_NAMEMOD__desc;
 
 std::unique_ptr<Modifier::Base> fromMM(OpenModelica::MetaModelica::Record value)
 {
@@ -62,7 +97,7 @@ Modifier& Modifier::operator= (const Modifier &other) noexcept
 MetaModelica::Value Modifier::toSCode() const noexcept
 {
   if (_value) return _value->toSCode();
-  return MetaModelica::Record(NOMOD, SCode_Mod_NOMOD__desc);
+  return MetaModelica::Record{NOMOD, SCode_Mod_NOMOD__desc};
 }
 
 bool Modifier::isEmpty() const noexcept
@@ -124,19 +159,19 @@ BindingModifier::BindingModifier(Final finalPrefix, Each eachPrefix, std::vector
 
 MetaModelica::Value BindingModifier::toSCode() const noexcept
 {
-  return MetaModelica::Record(MOD, SCode_Mod_MOD__desc, {
+  return MetaModelica::Record{MOD, SCode_Mod_MOD__desc, {
     _final.toSCode(),
     _each.toSCode(),
-    MetaModelica::List(_subMods, [](const auto &m) {
-      return MetaModelica::Record(0, SCode_SubMod_NAMEMOD__desc, {
-        MetaModelica::Value(m.first),
+    MetaModelica::List{_subMods, [](const auto &m) {
+      return MetaModelica::Record{0, SCode_SubMod_NAMEMOD__desc, {
+        MetaModelica::Value{m.first},
         m.second.toSCode()
-      });
-    }),
-    MetaModelica::Option(_binding, [](const auto &b) { return b.toAbsyn(); }),
-    MetaModelica::Option(_comment),
+      }};
+    }},
+    MetaModelica::Option{_binding, [](const auto &b) { return b.toAbsyn(); }},
+    MetaModelica::Option{_comment},
     _info
-  });
+  }};
 }
 
 const Modifier::SubMod* BindingModifier::lookupSubMod(std::string_view name) const noexcept
@@ -200,11 +235,11 @@ RedeclareModifier::RedeclareModifier(const RedeclareModifier &other) noexcept
 
 MetaModelica::Value RedeclareModifier::toSCode() const noexcept
 {
-  return MetaModelica::Record(REDECL, SCode_Mod_REDECL__desc, {
+  return MetaModelica::Record{REDECL, SCode_Mod_REDECL__desc, {
     _final.toSCode(),
     _each.toSCode(),
     _element->toSCode()
-  });
+  }};
 }
 
 std::unique_ptr<Modifier::Base> RedeclareModifier::clone() const noexcept

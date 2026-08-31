@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,16 +46,21 @@ encapsulated package VisualXML
 protected
 
 import Absyn;
+import Array;
+import Error;
+import ExpressionBasics;
+import ProgramUtil;
 import AbsynUtil;
 import BackendDAE;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
-import CevalScript;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE;
 import DAEUtil;
 import ElementSource;
+import Expression;
 import ExpressionDump;
 import ExpressionSolve;
 import List;
@@ -123,7 +132,7 @@ author:Waurich TUD 2015-04"
 protected
   BackendDAE.EqSystems eqs, eqs0;
   BackendDAE.Shared shared;
-  BackendDAE.Variables globalKnownVars, aliasVars;
+  BackendDAE.Variables globalKnownVars, aliasVars, constVars;
   list<BackendDAE.Var> globalKnownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
   list<tuple<DAE.ComponentRef, String>> allVisuals;
@@ -143,7 +152,7 @@ algorithm
   (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVarFold,({},{}));
   (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVarFold,({},allVisuals));
   (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVarFold,({},allVisuals));
-    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
+    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReferenceBasics.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
@@ -151,6 +160,10 @@ algorithm
   //some expressions refer to other known parameters, get them
   visuals := List.map2(visuals,replaceVisualBinding,globalKnownVars,program);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
+
+  // Inline constant attributes so the xml survives an FMU export folding them away.
+  constVars := BackendVariable.mergeVariables(globalKnownVars, aliasVars);
+  visuals := List.map1(visuals, inlineConstVisAttributes, constVars);
 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
@@ -190,6 +203,85 @@ algorithm
   end matchcontinue;
 end replaceVisualBinding;
 
+function inlineConstVisAttributes
+  "Inline attributes that resolve to a genuine constant, so the _visual.xml is
+   self-contained for constants an FMU export folds away (e.g. axis-label frames)."
+  input output Visualization vis;
+  input BackendDAE.Variables vars;
+algorithm
+  () := match vis
+    case SHAPE()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r := Array.map1(vis.r, inlineConstExp, vars);
+        vis.r_shape := Array.map1(vis.r_shape, inlineConstExp, vars);
+        vis.lengthDir := Array.map1(vis.lengthDir, inlineConstExp, vars);
+        vis.widthDir := Array.map1(vis.widthDir, inlineConstExp, vars);
+        vis.length := inlineConstExp(vis.length, vars);
+        vis.width := inlineConstExp(vis.width, vars);
+        vis.height := inlineConstExp(vis.height, vars);
+        vis.extra := inlineConstExp(vis.extra, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+        vis.specularCoeff := inlineConstExp(vis.specularCoeff, vars);
+      then ();
+
+    case VECTOR()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r := Array.map1(vis.r, inlineConstExp, vars);
+        vis.coordinates := Array.map1(vis.coordinates, inlineConstExp, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+      then ();
+
+    case SURFACE()
+      algorithm
+        vis.T := Array.map1(vis.T, inlineConstExpList, vars);
+        vis.r_0 := Array.map1(vis.r_0, inlineConstExp, vars);
+        vis.color := Array.map1(vis.color, inlineConstExp, vars);
+      then ();
+
+    else ();
+  end match;
+end inlineConstVisAttributes;
+
+function inlineConstExpList
+  input output list<DAE.Exp> exps;
+  input BackendDAE.Variables vars;
+algorithm
+  exps := List.map1(exps, inlineConstExp, vars);
+end inlineConstExpList;
+
+function inlineConstExp
+  input output DAE.Exp exp;
+  input BackendDAE.Variables vars;
+algorithm
+  exp := matchcontinue exp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CREF(componentRef = cr) then tryConstCrefValue(cr, vars);
+    else exp;
+  end matchcontinue;
+end inlineConstExp;
+
+function tryConstCrefValue
+  "`cr`'s value when it resolves through alias bindings to a literal, never via a
+   parameter (settable in an FMU, so must stay a cref). Fails otherwise."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output DAE.Exp exp;
+protected
+  BackendDAE.Var var;
+  DAE.Exp bind;
+algorithm
+  ({var}, _) := BackendVariable.getVar(cr, vars);   // only known/alias vars; dynamic ones fail
+  false := BackendVariable.isParam(var);            // parameter: keep the cref
+  bind := BackendVariable.varBindExp(var);          // fails when there is no binding
+  exp := match bind
+    case _ guard Expression.isConst(bind) then bind;
+    case DAE.CREF() then tryConstCrefValue(Expression.expCref(bind), vars);
+  end match;
+end tryConstCrefValue;
+
 function getConstCrefBinding
   "Get the const binding for the cref. It has to be somewhere in the vars.
    author: vwaurich 2016-10"
@@ -197,7 +289,6 @@ function getConstCrefBinding
   input BackendDAE.Variables vars;
   output DAE.Exp eOut;
 protected
-  String s;
   DAE.Exp e;
   BackendDAE.Var var;
 algorithm
@@ -209,16 +300,17 @@ algorithm
       case DAE.CREF(_) then getConstCrefBinding(Expression.expCref(e),vars);
           /*
       case(DAE.CALL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Files",Absyn.IDENT("fullPathName"))))),{DAE.SCONST(s)},_))
-        equation
+        algorithm
         then System.realpath(s);
         */
       else
-        equation
-          Error.addCompilerWarning("The binding expression "+ExpressionDump.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
+        algorithm
+          Error.addCompilerWarning("The binding expression "+ExpressionBasics.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
         then e;
     end matchcontinue;
   else
     Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ComponentReference.crefStr(cr)+"\n", sourceInfo());
+    fail();
   end try;
 end getConstCrefBinding;
 
@@ -277,7 +369,7 @@ function setBindingForProtectedVars1
 algorithm
   (varOut, tplOut) := matchcontinue (varIn, tplIn)
     local
-      Integer idx, eqIdx;
+      Integer idx;
       array<Integer> ass1;
       BackendDAE.EquationArray eqs;
       BackendDAE.Equation eq;
@@ -296,11 +388,11 @@ algorithm
       (var, (idx+1, ass1, eqs));
 
   case (_, (idx, ass1, eqs))
-    equation
+    algorithm
       if (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)) then
-        var = makeVarPublicHideResultFalse(varIn);
+        var := makeVarPublicHideResultFalse(varIn);
       else
-        var = varIn;
+        var := varIn;
       end if;
     then (var, (idx+1, ass1, eqs));
   end matchcontinue;
@@ -317,10 +409,8 @@ function fillVisualizationObjects
   output Absyn.Program programOut = programIn;
 protected
   DAE.ComponentRef cref;
-  String name, vis_name;
-  list<String> nameChars,prefix;
+  String vis_name;
   Visualization vis;
-  list<BackendDAE.Var> allVars;
 algorithm
   try
     //nameChars := stringListStringChar(nameIn);
@@ -328,7 +418,7 @@ algorithm
     //name := stringCharListString(nameChars);
     //name := Util.stringReplaceChar(name,"$",".");
     //true := stringEqual(stringCharListString(prefix),"Shape$");
-    //name := ComponentReference.printComponentRefStr(crefIn);
+    //name := ComponentReferenceBasics.printComponentRefStr(crefIn);
     (cref, vis_name) := visVar;
     vis := newVisualizer(cref, vis_name);
     (_, visOut) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
@@ -403,7 +493,7 @@ protected
   list<DAE.ComponentRef> crefs;
 algorithm
   sLst := Util.stringSplitAtChar(s,".");
-  crefs := List.map2(sLst,ComponentReference.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
+  crefs := List.map2(sLst,ComponentReferenceBasics.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
   cref::crefs := crefs;
   crefOut := List.foldr(crefs,ComponentReference.joinCrefs,cref);
 end makeCrefQualFromString;
@@ -423,28 +513,28 @@ algorithm
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
       algorithm
         // the crefs are not equal, check the next cref in crefIn
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut);
 */
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
       algorithm
         // the crefs are equal, continue checking
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut1);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // the cref has to be cut after this step
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, true);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // there is no identical cref
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, false);
 
@@ -463,9 +553,8 @@ function fillVisualizationObjects1
 algorithm
    tplOut := matchcontinue(varIn, tplIn)
     local
-      String compIdent;
       list<BackendDAE.Var> vars;
-      DAE.ComponentRef cref,crefIdent,cref1,ident;
+      DAE.ComponentRef cref,cref1,ident;
       Visualization vis, filled_vis;
 
     case (BackendDAE.VAR(varName=cref), (vars, vis as SHAPE(ident=ident)))
@@ -511,12 +600,11 @@ function getFullCADFilePath
   input Absyn.Program program;
   output String sOut = sIn;
 protected
-  String head,packName,file, path;
-  list<String> hierarchy, chars;
+  list<String> chars;
 algorithm
   chars := stringListStringChar(sIn);
   if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
-    sOut := "file://"+CevalScript.getFullPathFromUri(program,sIn,true);
+    sOut := "file://"+ProgramUtil.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;
 
@@ -635,7 +723,6 @@ function fillVectorObject
 algorithm
   () := matchcontinue (cref, vis)
     local
-      Option<DAE.Exp> bind;
       DAE.Exp exp;
       Integer pos, pos1;
       list<DAE.Exp> T0;
@@ -709,7 +796,6 @@ function fillSurfaceObject
 algorithm
   () := matchcontinue (cref, vis)
     local
-      Option<DAE.Exp> bind;
       DAE.Exp exp;
       Integer pos, pos1;
       list<DAE.Exp> T0;
@@ -809,17 +895,17 @@ function printVisualization
   input Visualization vis;
   output String s;
 algorithm
-  s := match(vis)
+  s := match vis
     local
       DAE.ComponentRef ident;
       DAE.Exp length, width, height, extra, shapeType;
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
-  case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
-        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionDump.printExpStr),",")+"}"+
-        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
-        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}"+"\nextra{"+ExpressionDump.printExpStr(extra)+"}");
+  case SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra)
+  then ("SHAPE "+ComponentReferenceBasics.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
+        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionBasics.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionBasics.printExpStr),",")+"}"+
+        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionBasics.printExpStr),",")+")"+" w: "+ExpressionBasics.printExpStr(width)+" h: "+ExpressionBasics.printExpStr(height)+" l: "+ExpressionBasics.printExpStr(length) +
+        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionBasics.printExpStr),", ")+"}"+"\nextra{"+ExpressionBasics.printExpStr(extra)+"}");
   else
     then "-";
   end match;
@@ -831,13 +917,11 @@ function isVisualizationVar
   input BackendDAE.Var var;
   output Boolean isVisVar;
 algorithm
-  isVisVar := matchcontinue var
+  isVisVar := match var
     local
-      Boolean b;
       DAE.ElementSource source;
       String obj;
       list<Absyn.Path> paths;
-      list<String> paths_lst;
 
     case BackendDAE.VAR(source=source)
       algorithm
@@ -849,7 +933,7 @@ algorithm
         Util.stringNotEqual(obj, "");
 
     else false;
-  end matchcontinue;
+  end match;
 end isVisualizationVar;
 
 function isVisualizationVarFold
@@ -872,11 +956,11 @@ algorithm
     case (BackendDAE.VAR(varName=varName, source=source), (varLst,crefs))
       algorithm
         paths := ElementSource.getElementSourceTypes(source);
-        //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
+        //print("Component " + ComponentReferenceBasics.printComponentRefStr(varName) + ":\n");
         //print(List.toString(paths, AbsynUtil.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
         (obj, idx) := hasVisPath(paths, 1);
         true := Util.stringNotEqual(obj, "");
-        //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
+        //print("ComponentRef "+ComponentReferenceBasics.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
         cref := ComponentReference.firstNCrefs(varName, idx-1);
         crefs := List.unique((cref, obj)::crefs);
       then
@@ -887,19 +971,20 @@ algorithm
 end isVisualizationVarFold;
 
 function hasVisPath
-  "checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and
-   outputs * if true. outputs which path is the vis path
+  "checks if the path is a known visualization type and outputs its name if true.
+   These are Modelica.Mechanics.MultiBody.Visualizers.Advanced.{Shape,Vector,Surface}
+   and the underlying ModelicaServices.Animation.{Shape,Vector,Surface} they extend,
+   so that shapes instantiated directly from ModelicaServices are visualized as well.
+   outputs which path is the vis path
    author:Waurich TUD 2015-04"
   input  list<Absyn.Path> pathsIn;
   input Integer numIn;
   output String visPath;
   output Integer numOut;
 algorithm
-  (visPath, numOut) := matchcontinue pathsIn
+  (visPath, numOut) := match pathsIn
     local
-      String name, shapeIdent;
-      Integer num;
-      Boolean b;
+      String name;
       Absyn.Path path;
       list<Absyn.Path> rest;
 
@@ -912,18 +997,33 @@ algorithm
             path=Absyn.QUALIFIED(name="Visualizers",
               path=Absyn.QUALIFIED(name="Advanced",
                 path=Absyn.IDENT(name=name))))))::_
-        guard match name
-          case "Shape" then true;
-          case "Vector" then true;
-          case "Surface" then true;
-          else false;
-        end match
+        guard isVisualizerName(name)
+      then
+        (name, numIn);
+
+    case Absyn.QUALIFIED(name="ModelicaServices",
+        path=Absyn.QUALIFIED(name="Animation",
+          path=Absyn.IDENT(name=name)))::_
+        guard isVisualizerName(name)
       then
         (name, numIn);
 
     case _::rest then hasVisPath(rest,numIn+1);
-  end matchcontinue;
+  end match;
 end hasVisPath;
+
+function isVisualizerName
+  "true if the name is one of the supported visualization types"
+  input String name;
+  output Boolean isVisualizer;
+algorithm
+  isVisualizer := match name
+    case "Shape" then true;
+    case "Vector" then true;
+    case "Surface" then true;
+    else false;
+  end match;
+end isVisualizerName;
 
 function dumpVis
   "author: waurich TUD

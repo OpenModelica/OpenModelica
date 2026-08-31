@@ -19,12 +19,24 @@ set(Boost_INCLUDE_ ".")
 # This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
 # The actual boost libraries needed to be linked.
-set(Boost_LIBRARIES_ "-lboost_program_options -lboost_filesystem")
+if (NOT Boost_LIBRARIES_)
+set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
+endif()
 
 # Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
 if(UNIX)
-  set(LAPACK_LIBRARIES_ "-llapack -lblas")
+  # Alpine/musl only packages OpenBLAS, which does not provide an unversioned
+  # libblas.so (only libopenblas.so, which bundles both BLAS and LAPACK), so
+  # -lblas fails to link there. Fall back to -lopenblas when a standalone
+  # libblas.so isn't available (see rt_ldflags_generated_code.cmake for the
+  # same logic used by the C runtime).
+  find_library(OMC_SYSTEM_LIBBLAS_FOUND NAMES blas)
+  if(OMC_SYSTEM_LIBBLAS_FOUND)
+    set(LAPACK_LIBRARIES_ "-llapack -lblas")
+  else()
+    set(LAPACK_LIBRARIES_ "-lopenblas")
+  endif()
   set(LINUX_LIB_DL "-ldl")
 endif()
 
@@ -35,6 +47,15 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 # by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
 # library's thread library (instead of something like boost threads).
 set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
+
+# Compile the generated model code with -DUSE_LOGGER, like the runtime libraries
+# themselves (see cmake_3.14.cmake). The generated makefile turns this into that
+# flag itself, so it must not also be listed in SYSTEM_CFLAGS above.
+set(USE_LOGGER_ "ON")
+
+message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRuntime/cpp with:")
+message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
+message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
 
 # Configure the files.
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
@@ -59,6 +80,7 @@ add_library(omc::simrt::cpp::core::dataexchange ALIAS OMCppDataExchange)
 target_sources(OMCppDataExchange PRIVATE ${OMC_SIMRT_CPP_CORE_DATAEXCHANGE_SOURCES})
 
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppDataExchange)
 
@@ -104,6 +126,7 @@ add_library(omc::simrt::cpp::core::math ALIAS OMCppMath)
 target_sources(OMCppMath PRIVATE ${OMC_SIMRT_CPP_CORE_MATH_SOURCES})
 
 target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppMath)
 
@@ -143,6 +166,7 @@ target_sources(OMCppSolver PRIVATE ${OMC_SIMRT_CPP_CORE_SOLVER_SOURCES})
 
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::math)
+target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppSolver)
 

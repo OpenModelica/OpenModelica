@@ -147,6 +147,7 @@ Compiler/OpenModelicaSetup
 Compiler/Makefile
 Compiler/OpenModelicaBootstrappingHeader.h
 Compiler/OpenModelicaBootstrappingHeader.h.log
+Compiler/OpenModelicaBootstrappingHeader.h.new
 Compiler/Script/Makefile
 Compiler/Script/OpenModelicaScriptingAPI.mo
 Compiler/Script/OpenModelicaScriptingAPIQt.cpp
@@ -165,7 +166,6 @@ Compiler/Template/MMToJulia.mo
 Compiler/Template/NFInstDumpTpl.mo
 Compiler/Template/SCodeDumpTpl.mo
 Compiler/Template/SimCodeDump.mo
-Compiler/Template/TplCodegen.mo
 Compiler/Template/Unparsing.mo
 Compiler/Template/VisualXMLTpl.mo
 Compiler/Template/*.err.mo
@@ -220,4 +220,3 @@ tags
 *clang_output*
 
 Compiler/Util/Autoconf.mo
-Compiler/boot/bomc/

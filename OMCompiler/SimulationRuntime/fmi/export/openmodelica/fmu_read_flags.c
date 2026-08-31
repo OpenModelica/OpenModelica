@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -62,14 +59,14 @@ static inline const char* skipTo(const char *str, char c)
  */
 static inline char* quote(const char *str)
 {
-  char* tmp;
-  const char* quot = "\"";
-  tmp = (char*) malloc(sizeof(char) * 200);
-  strcpy(tmp, quot);
-  strcat(tmp, str);
-  strcat(tmp, quot);
+  size_t len = strlen(str) + 3; // +2 for quotes, +1 for null terminator
+  char* tmp = (char*) malloc(len);
+  if (tmp == NULL) {
+    return NULL;
+  }
+  snprintf(tmp, len, "\"%s\"", str);
   return tmp;
-}
+ }
 
 /**
  * @brief Parse and sets the solver method string
@@ -82,16 +79,20 @@ static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *s
 {
   /* Variables */
   int i;
-  int len;
   char* value;
   for(i=1; i<S_MAX; i++)
   {
     value = quote(SOLVER_METHOD_NAME[i]);
+    if (value == NULL) {
+      continue;
+    }
     if (strncmp(str, value, strlen(SOLVER_METHOD_NAME[i]) + 2) == 0)
     {
       solverInfo->solverMethod = i;
+      free(value);
       break;
     }
+    free(value);
   }
   return skipTo(str, '\n');
 }
@@ -118,6 +119,11 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
     {
       // map the fmu flags to regular flags
       value = quote(FLAG_NAME[FMU_FLAG_MAP[i]]);
+      if (value == NULL) {
+        /* If allocation failed, skip this entry */
+        continue;
+      }
+
       if (strncmp(str, value, strlen(FLAG_NAME[FMU_FLAG_MAP[i]]) + 2) == 0)
       {
         str = skipTo(str, ':');
@@ -128,6 +134,8 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
           default: str = skipTo(str, '\n'); break;
         }
       }
+
+      free(value);
     }
     str = skipTo(str, '\"');
    }
@@ -173,17 +181,16 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->sampleEvents = 0;
 
   /* read fmu flags from flags.json */
-  char* flags_filename = functions->allocateMemory(strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 20, sizeof(char));
-  flags_filename[0] = 0;
-  strcat(flags_filename, comp->fmuData->modelData->resourcesDir);
-  strcat(flags_filename, "/");
-  strcat(flags_filename, comp->fmuData->modelData->modelFilePrefix);
-  strcat(flags_filename, "_flags.json");
-  filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename);
+  size_t filename_len = strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 13;
+  char* flags_filename = functions->allocateMemory(filename_len, sizeof(char));
+  snprintf(flags_filename, filename_len, "%s/%s_flags.json",
+           comp->fmuData->modelData->resourcesDir,
+           comp->fmuData->modelData->modelFilePrefix);
+  FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename)
 
   if( omc_file_exists( flags_filename) )
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename);
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename)
     omc_mmap_read mmap_reader = {0};
     mmap_reader = omc_mmap_open_read(flags_filename);
     parseFlags(solverInfo, mmap_reader.data);
@@ -191,14 +198,14 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   }
   else
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Using default simulation settings.");
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Using default simulation settings.")
     solverInfo->solverMethod = S_EULER;
   }
 
   /* If no states are present, we can use Euler's method since it is doing nothing. */
   if (data->modelData->nStates < 1)
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: No states present, continuing without ODE solver.");
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: No states present, continuing without ODE solver.")
     solverInfo->solverMethod = S_EULER;
   }
 
@@ -212,24 +219,26 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
 #ifdef WITH_SUNDIALS
       omc_useStream[OMC_LOG_SOLVER] = 1;
       CVODE_SOLVER* cvodeData = NULL;
-      filteredLog(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver");
+      FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
-        filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.");
-        retValue = -1;
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
+        functions->freeMemory(solverInfo);
+        return -1;
       } else {
+        cvodeData->freeSolverMemory = functions->freeMemory;
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       }
       solverInfo->solverData = cvodeData;
       omc_useStream[OMC_LOG_SOLVER] = 0;
 #else
       solverInfo->solverData = NULL;
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
 #endif /* WITH_SUNDIALS */
       break;
     default:
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.")
       retValue = -1;
   }
 
@@ -264,7 +273,7 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
   solverInfo = comp->solverInfo;
 
   /* Log function call */
-  filteredLog(comp, fmi2OK, LOG_ALL, "fmi2FreeInstance: Freeing solver data.");
+  FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2FreeInstance: Freeing solver data.")
 
   switch (solverInfo->solverMethod)
   {
@@ -277,12 +286,12 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
 #else
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
       break;
 #endif /* WITH_SUNDIALS */
     default:
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;
   }
 

@@ -20,4 +20,7 @@ equation
     reinit(v, v_new);
   end when;
 
+  annotation(Documentation(figures = {
+    Figure(title = "Bouncing ball", identifier = "height", preferred = true,
+      plots = {Plot(curves = {Curve(y = h, legend = "Height of ball")})})}));
 end BouncingBall;

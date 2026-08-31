@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -74,17 +78,17 @@ function modelicaStringToCStr " this replaces symbols that are illegal in C to l
   input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
   output String res_str;
 algorithm
-  res_str := matchcontinue(str,changeDerCall)
+  res_str := match(str,changeDerCall)
     local String s;
     case(_,false)
-      equation
-        res_str = "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
+      algorithm
+        res_str := "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
         // debug_print("prefix$", res_str);
       then res_str;
-    case(s,true) equation
-      s = modelicaStringToCStr2(s);
+    case(s,true) algorithm
+      s := modelicaStringToCStr2(s);
     then s;
-  end matchcontinue;
+  end match;
 end modelicaStringToCStr;
 
 protected
@@ -101,13 +105,13 @@ algorithm
       list<ReplacePattern> res;
     case (str,{}) then str;
     case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = modelicaStringToCStr1(str, res);
-        res_str = System.stringReplace(str_1, from, to);
+      algorithm
+        str_1 := modelicaStringToCStr1(str, res);
+        res_str := System.stringReplace(str_1, from, to);
       then
         res_str;
     else
-      equation
+      algorithm
         print(getInstanceName() + " failed for str:"+inString+"\n");
       then
         fail();
@@ -119,27 +123,27 @@ first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with appli
   input String inDerName;
   output String outDerName;
 algorithm
-  outDerName := matchcontinue(inDerName)
+  outDerName := matchcontinue inDerName
     local
       String name, derName;
       list<String> names;
 
-    case(derName) equation
-      0 = System.strncmp(derName,"der(",4);
+    case derName algorithm
+      0 := System.strncmp(derName,"der(",4);
       // adrpo: 2009-09-08
       // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
       // is wrong as der(der(x)) ends up beeing translated to $der$der instead
       // of $der$der$x. Changed to the following 2 lines below!
-      _::names = (System.strtok(derName,"()"));
-      names = List.map1(names, modelicaStringToCStr, false);
-      name = DAE.derivativeNamePrefix + stringAppendList(names);
+      _::names := (System.strtok(derName,"()"));
+      names := List.map1(names, modelicaStringToCStr, false);
+      name := DAE.derivativeNamePrefix + stringAppendList(names);
     then name;
-    case(derName) equation
-      0 = System.strncmp(derName,"pre(",4);
-      _::name::_= System.strtok(derName,"()");
-      name = "pre(" + modelicaStringToCStr(name,false) + ")";
+    case derName algorithm
+      0 := System.strncmp(derName,"pre(",4);
+      _::name::_:= System.strtok(derName,"()");
+      name := "pre(" + modelicaStringToCStr(name,false) + ")";
     then name;
-    case(derName) then modelicaStringToCStr(derName,false);
+    case derName then modelicaStringToCStr(derName,false);
   end matchcontinue;
 end modelicaStringToCStr2;
 

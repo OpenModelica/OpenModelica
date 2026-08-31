@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ModelicaUtilitiesName})
 
@@ -11,7 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries (${ModelicaUtilitiesName} ${Boost_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${ModelicaUtilitiesName} Core/Modelica.h )
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${ModelicaUtilitiesName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${ModelicaUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

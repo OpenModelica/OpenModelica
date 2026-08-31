@@ -1,53 +1,71 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Volker Waurich <volker.waurich@tu-dresden.de>
  */
 
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 #include <QOpenGLContext> // must be included before OSG headers
 
 #include <osg/MatrixTransform>
 #include <osg/Vec3>
 #include <osgDB/ReadFile>
+#endif
 
 #include "AbstractAnimationWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
+#if defined(OMEDIT_ANIMATION_QUICK3D)
+#include "Quick3D/Quick3DViewerWidget.h"
+#else
 #include "ViewerWidget.h"
+#endif
 #include "Visualization.h"
 #include "VisualizationMAT.h"
 #include "VisualizationCSV.h"
 
 #include <QDockWidget>
+#include <QGridLayout>
+#include <QFrame>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 
 /*!
  * \class AbstractAnimationWindow
@@ -85,7 +103,11 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
   // to distinguish this widget as a subwindow among the plotwindows
   setObjectName(QString("animationWindow"));
   //the viewer widget
+#if defined(OMEDIT_ANIMATION_QUICK3D)
+  mpViewerWidget = new Quick3DViewerWidget(this);
+#else
   mpViewerWidget = new ViewerWidget(this);
+#endif
   // we need to set the minimum height so that visualization window is still shown when we cascade windows.
   mpViewerWidget->setMinimumHeight(100);
   // toolbar icon size
@@ -240,12 +262,14 @@ void AbstractAnimationWindow::createActions()
  */
 void AbstractAnimationWindow::updateControlPanelValues()
 {
+#if !defined(__EMSCRIPTEN__)
   if (getVisualization()) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     for (int stateIdx = 0; stateIdx < mSpinBoxVector.size(); stateIdx++) {
       mStateLabels.at(stateIdx)->setText(QString::number(FMUvis->getFMU()->getFMUData()->_states[stateIdx]));
     }
   }
+#endif
 }
 
 /*!
@@ -253,6 +277,7 @@ void AbstractAnimationWindow::updateControlPanelValues()
  */
 void AbstractAnimationWindow::initInteractiveControlPanel()
 {
+#if !defined(__EMSCRIPTEN__)
   if (getVisualization()) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     QWidget *widget = new QWidget(this);
@@ -327,6 +352,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
                                                           Helper::scriptingKind, Helper::errorLevel));
     mpAnimationParameterDockerWidget->hide();
   }
+#endif
 }
 
 /*!
@@ -336,6 +362,7 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
  */
 void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
 {
+#if !defined(__EMSCRIPTEN__)
   if (idx>=0) {
     VisualizationFMU* FMUvis = dynamic_cast<VisualizationFMU*>(mpVisualization);
     if (FMUvis) {
@@ -344,6 +371,9 @@ void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
     FMUvis->updateSystem();
     mpViewerWidget->update();
   }
+#else
+  Q_UNUSED(val); Q_UNUSED(idx);
+#endif
 }
 
 
@@ -353,23 +383,29 @@ void AbstractAnimationWindow::setStateSolveSystem(double val, int idx)
 void AbstractAnimationWindow::clearView()
 {
   if (mpViewerWidget) {
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
     mpViewerWidget->getSceneView()->setSceneData(0);
     popView();
+#endif
     mpViewerWidget->update();
   }
 }
 
 void AbstractAnimationWindow::stashView()
 {
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   if(!mCameraInitialized) return;
   mStashedViewMatrix = mpViewerWidget->getSceneView()->getCameraManipulator()->getMatrix();
+#endif
 }
 
 void AbstractAnimationWindow::popView()
 {
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
   if(!mCameraInitialized) return;
   mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mStashedViewMatrix);
   mpViewerWidget->update();
+#endif
 }
 
 /*!
@@ -398,6 +434,17 @@ bool AbstractAnimationWindow::loadVisualization()
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
+#if defined(__EMSCRIPTEN__)
+    // Dump the worker store to the JS console so we can see whether/where omc
+    // wrote the file (printf/stdout does not reach the browser console here).
+    extern QStringList omcWorkerListDir(const char *path);
+    QString dir = QString::fromStdString(mPathName.empty() ? std::string("/") : mPathName);
+    QString trace = QStringLiteral("[OMEDIT_TRACE] visual.xml missing. Worker VFS '%1': %2 | '/': %3")
+                      .arg(dir,
+                           omcWorkerListDir(dir.toUtf8().constData()).join(QStringLiteral(", ")),
+                           omcWorkerListDir("/").join(QStringLiteral(", ")));
+    EM_ASM({ console.log(UTF8ToString($0)); }, trace.toUtf8().constData());
+#endif
     return false;
   } else {
     //init visualization
@@ -405,32 +452,49 @@ bool AbstractAnimationWindow::loadVisualization()
       mpVisualization = new VisualizationMAT(mFileName, mPathName);
     } else if (visType == VisType::CSV) {
       mpVisualization = new VisualizationCSV(mFileName, mPathName);
+#if !defined(__EMSCRIPTEN__)
     } else if (visType == VisType::FMU) {
       mpVisualization = new VisualizationFMU(mFileName, mPathName);
+#endif
     } else {
       QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;
     }
+#if defined(OMEDIT_ANIMATION_QUICK3D)
+    // The Qt Quick 3D scene lives in the viewer widget; the data classes drive it.
+    mpVisualization->setScene(mpViewerWidget->getScene());
+#endif
     connect(mpVisualization->getTimeManager()->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(updateScene()));
     mpVisualization->initData();
     mpVisualization->setUpScene();
     mpVisualization->initVisualization();
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
     //add scene for the chosen visualization
     mpViewerWidget->getSceneView()->setSceneData(mpVisualization->getOMVisScene()->getScene().getRootNode().get());
     //choose suitable scales for the vector visualizers so that they fit well in the scene
     mpVisualization->getBaseData()->chooseVectorScales(mpViewerWidget->getSceneView(), mpViewerWidget->getFrameMutex(), std::bind(&ViewerWidget::frame, mpViewerWidget));
+#else
+    // Choose suitable scales for the vector visualizers (data-only on Quick 3D).
+    mpVisualization->getBaseData()->chooseVectorScales();
+    // Frame the camera on the now-populated scene (shapes have their real size/pose
+    // after initVisualization evaluated the dimensions; arrows now sized too).
+    mpViewerWidget->fitToScene();
+#endif
   }
   //add window title
   setWindowTitle(QString::fromStdString(mFileName));
   //open settings dialog for FMU simulation
+#if !defined(__EMSCRIPTEN__)
   if (visType == VisType::FMU) {
     openFMUSettingsDialog(dynamic_cast<VisualizationFMU*>(mpVisualization));
     mpInteractiveControlAction->setEnabled(true);
     initInteractiveControlPanel();
   }
-  else {
+  else
+#endif
+  {
     mpInteractiveControlAction->setEnabled(false);
     mpAnimationParameterDockerWidget->hide();
   }
@@ -442,6 +506,7 @@ bool AbstractAnimationWindow::loadVisualization()
  * \brief AbstractAnimationWindow::resetCamera
  * resets the camera position
  */
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 void AbstractAnimationWindow::resetCamera()
 {
   mpViewerWidget->getSceneView()->home();
@@ -530,20 +595,30 @@ double AbstractAnimationWindow::computeDistanceToOrigin()
 
   return d;
 }
+#else // OMEDIT_ANIMATION_QUICK3D
+void AbstractAnimationWindow::resetCamera() { if (mpViewerWidget) mpViewerWidget->fitToScene(); }
+void AbstractAnimationWindow::cameraPositionIsometric() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Isometric); }
+void AbstractAnimationWindow::cameraPositionSide() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Side); }
+void AbstractAnimationWindow::cameraPositionFront() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Front); }
+void AbstractAnimationWindow::cameraPositionTop() { if (mpViewerWidget) mpViewerWidget->setCameraView(Quick3DViewerWidget::Top); }
+double AbstractAnimationWindow::computeDistanceToOrigin() { return 1.0; }
+#endif // OMEDIT_ANIMATION_QUICK3D
 
 /*!
  * \brief AbstractAnimationWindow::openFMUSettingsDialog
  * Opens a dialog to set the settings for the FMU visualization
  * \param pVisualizationFMU
  */
+#if !defined(__EMSCRIPTEN__)
 void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualizationFMU)
 {
   FMUSettingsDialog *pFMUSettingsDialog = new FMUSettingsDialog(this, pVisualizationFMU);
   pFMUSettingsDialog->exec();
 }
+#endif
 
 /*!
- * \brief AbstractAnimationWindow::updateSceneFunction
+ * \brief AbstractAnimationWindow::updateScene
  * updates the visualization objects
  */
 void AbstractAnimationWindow::updateScene()
@@ -724,6 +799,7 @@ void AbstractAnimationWindow::setPerspective(int value)
  * \brief AbstractAnimationWindow::rotateCameraLeft
  * rotates the camera 90 degress left about the line of sight
  */
+#if !defined(OMEDIT_ANIMATION_QUICK3D)
 void AbstractAnimationWindow::rotateCameraLeft()
 {
   osg::ref_ptr<osgGA::CameraManipulator> manipulator = mpViewerWidget->getSceneView()->getCameraManipulator();
@@ -761,6 +837,10 @@ void AbstractAnimationWindow::rotateCameraRight()
   mpViewerWidget->getSceneView()->getCameraManipulator()->setByMatrix(mat*rotMatrix);
   mpViewerWidget->update();
 }
+#else // OMEDIT_ANIMATION_QUICK3D
+void AbstractAnimationWindow::rotateCameraLeft() { if (mpViewerWidget) mpViewerWidget->orbitCamera(-15.0f, 0.0f); }
+void AbstractAnimationWindow::rotateCameraRight() { if (mpViewerWidget) mpViewerWidget->orbitCamera(15.0f, 0.0f); }
+#endif // OMEDIT_ANIMATION_QUICK3D
 
 /*!
  * \brief DoubleSpinBoxIndexed::DoubleSpinBoxIndexed

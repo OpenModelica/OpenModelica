@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -66,7 +70,6 @@ then
   // should we echo?
   shouldEcho := false;
 else
-  loadModel(Modelica); getErrorString();
   writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
 end if;
 getErrorString();
@@ -195,6 +198,7 @@ record Item
   String comment;
   String interface;
   String short;
+  String version;
 end Item;
 
 function itemString
@@ -209,7 +213,7 @@ algorithm
     then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
     else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", toHtml(item.docInfo[1]), \"</pre>\");
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
-  res := item.head + docDesc + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
+  res := item.head + docDesc + docInfo + item.interface + item.short + item.version + item.contents + revision + version + \"</body>\";
 end itemString;
 
 function itemFile
@@ -250,7 +254,8 @@ for c in allClassNames loop
       ),
     toHtml(OpenModelica.Scripting.getClassComment(c)),
     preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
-    preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
+    preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>"),
+    preSuffixIfNotEmpty("\n<h4>Version: ",OpenModelica.Scripting.getVersion(c),"</h4>")
   )};
 
   writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
@@ -274,7 +279,6 @@ for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
   if base <> "ModelicaBuiltin.mo" and base <> "MetaModelicaBuiltin.mo" then
-    base := basename(file);
     modelVersion := getVersion(cl);
     contentStr := typeNameString(cl);
     if base == "package.mo" then
@@ -319,7 +323,7 @@ import glob
 import sys
 
 repls = ["+replaceCommands+"
- (re.compile(r'.*/omlibrary/'), ''),
+ (re.compile(r'.*/.openmodelica/libraries/'), ''),
  (re.compile(r' '), r'%20'),
  (re.compile(r'\\''), r'%27'),
  (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %]*)#'), r'\\1.html#'),
@@ -348,7 +352,7 @@ for filepath in sorted(glob.glob('*.html')):
   pid = sub.call(['tidy', '-utf8', '-modify', '-asxhtml', '--add-xml-decl', 'yes', '-quiet', filepath])
   if pid != 2:
     with open(filepath,'r') as html_file:
-      soup = BeautifulSoup(html_file, fromEncoding='utf-8')
+      soup = BeautifulSoup(html_file, from_encoding='utf-8', features='lxml')
       for a in soup.findAll('a'):
         try:
           a['href'] = linkreplace(a['href'],filepath)
@@ -373,10 +377,10 @@ for filepath in sorted(glob.glob('*.html')):
 writeFile("FindFiles.sh","#!/usr/bin/env bash
 rm -f *.png *.pdf FindFiles.log*
 touch FindFiles.log.tmp
-OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
+OMLIBRARY=\""+getModelicaPath()+"\"
 for f in `sort -u tidy.links`; do
   link=`echo $f | cut '-d!' -f2-`
-  link=`python -c \"import sys, urllib as ul; print ul.unquote(sys.argv[1])\" \"$link\"`
+  link=$(python -c \"import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))\" \"$link\")
   if test -f \"$OMLIBRARY/$link\"; then
     d=`dirname \"$link\"`
     mkdir -p \"$d\"
@@ -538,7 +542,7 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links tidy.err -T -";
 system(cmd);
 getErrorString();
 
@@ -546,6 +550,6 @@ getErrorString();
 system("python ./fix-case-sensitive.py");
 system("rm -f ModelicaDocumentation.zip");
 "zip";
-cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links  tidy.err";
 system(cmd);
 getErrorString();

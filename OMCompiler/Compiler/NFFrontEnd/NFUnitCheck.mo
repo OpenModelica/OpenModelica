@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NFUnitCheck
 " file:        NFUnitCheck.mo
   package:     UnitCheck
@@ -19,7 +54,6 @@ import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
-import ExpressionDump;
 import Expression = NFExpression;
 import Binding = NFBinding;
 import Call = NFCall;
@@ -161,18 +195,18 @@ protected function notification2 "help-function"
   output String outS;
 protected
   ComponentRef cr1 = ComponentRef.EMPTY();
-  Real factor1=0;
-  Integer i1=0, i2=0, i3=0, i4=0, i5=0, i6=0, i7=0;
+  Real factor=0;
+  Integer s=0, m=0, g=0, A=0, K=0, mol=0, cd=0;
 algorithm
   outS := stringAppendList(list(
   // We already assigned the variables before
-  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"\n"
+  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor), inHtU2S) + "\"\n"
   // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
   // And we only use a try-block for MASTER nodes
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) :=
+      Unit.UNIT(s, m, g, A, K, mol, cd, factor) :=
         UnorderedMap.getOrFail(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else
@@ -223,7 +257,7 @@ algorithm
   if Type.isReal(var.ty) and Binding.isBound(var.binding) then
     binding_exp := Binding.getTypedExp(var.binding);
     eq := Equation.makeEquality(Expression.fromCref(var.name), binding_exp, var.ty,
-      InstNode.EMPTY_NODE(), ElementSource.createElementSource(var.info));
+      ElementSource.createElementSource(var.info));
     foldEquation(eq, htCr2U, htS2U, htU2S, fnCache, dumpEqInitStruct);
   end if;
 end foldBindingExp;
@@ -303,23 +337,11 @@ algorithm
         temp := Expression.BINARY(eq.rhs, Operator.makeSub(Type.REAL()), eq.lhs);
 
         if dumpEqInitStruct then
-          ExpressionDump.dumpExp(Expression.toDAE(temp));
+          print(Expression.toString(temp));
+          print("--------------------\n");
         end if;
 
         (_, inconsistentUnits) := insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
-      then
-        inconsistentUnits;
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        temp := Expression.BINARY(eq.rhs, Operator.makeSub(Type.REAL()), eq.lhs);
-
-        if dumpEqInitStruct then
-          ExpressionDump.dumpExp(Expression.toDAE(temp));
-        end if;
-
-        (_, inconsistentUnits) :=
-          insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
       then
         inconsistentUnits;
 
@@ -460,8 +482,8 @@ algorithm
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.MUL), exp2)
       guard Unit.isMaster(unit)
       algorithm
-        (unit1 as Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
-        (unit2 as Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
       then
         (Unit.MASTER({}), List.append_reverse(icu1, icu2));
 
@@ -629,7 +651,7 @@ algorithm
     case Expression.CREF()
       guard ComponentRef.isTime(eq.cref)
       algorithm
-        op_unit := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
+        op_unit := NFUnit.SECOND;
         addUnit2HtS2U("time", op_unit, htS2U);
         addUnit2HtU2S("time", op_unit, htU2S);
       then
@@ -676,11 +698,11 @@ algorithm
           insertUnitInEquation(listHead(call_args), Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
 
         if Unit.isUnit(op_unit) then
-          op_unit := Unit.unitDiv(op_unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitDiv(op_unit, NFUnit.SECOND);
           insertUnitString(op_unit, htS2U, htU2S);
         elseif Unit.isUnit(unit) then
           Unit.MASTER(varList = vars) := op_unit;
-          op_unit := Unit.unitMul(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitMul(unit, NFUnit.SECOND);
           List.map2_0(vars, updateHtCr2U, op_unit, htCr2U);
           insertUnitString(op_unit, htS2U, htU2S);
         else
@@ -769,7 +791,6 @@ function parseFunctionUnits
   input Function func;
   output Functionargs outArgs;
 protected
-  String fn_name;
   list<String> in_units, out_units, in_args, out_args;
 algorithm
   in_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.inputs);
@@ -789,29 +810,12 @@ function unitTypesEqual
 algorithm
   (isEqual, outUnit) := match (unit1, unit2)
     local
-      Real r;
       list<ComponentRef> vars1, vars2;
       String s1, s2;
 
     case (Unit.UNIT(), Unit.UNIT())
-      algorithm
-        isEqual := realEq(unit1.factor, unit2.factor);
-
-        if not isEqual then
-          r := realMax(realAbs(unit1.factor), realAbs(unit2.factor));
-          isEqual := realLe(realDiv(realAbs(realSub(unit1.factor, unit2.factor)), r), 1e-3);
-        end if;
-
-        isEqual := isEqual and
-                   unit1.mol == unit2.mol and
-                   unit1.cd  == unit2.cd  and
-                   unit1.m   == unit2.m   and
-                   unit1.s   == unit2.s   and
-                   unit1.A   == unit2.A   and
-                   unit1.K   == unit2.K   and
-                   unit1.g   == unit2.g;
       then
-        (isEqual, unit1);
+        (Unit.isEqual(unit1, unit2), unit1);
 
     case (Unit.UNIT(), Unit.MASTER(varList = vars2))
       algorithm
@@ -826,10 +830,8 @@ algorithm
         (true, unit2);
 
     case (Unit.MASTER(varList = vars1), Unit.MASTER(varList = vars2))
-      algorithm
-        vars2 := List.append_reverse(vars1, vars2);
       then
-        (true, Unit.MASTER(vars2));
+        (true, Unit.MASTER(List.append_reverse(vars1, vars2)));
 
     case (Unit.UNKNOWN(unit = s1), Unit.UNKNOWN(unit = s2))
       then (s1 == s2, unit1);
@@ -854,19 +856,17 @@ protected function Errorfunction "returns the inconsistent Equation with sub-exp
   input Equation inEq;
   input Unit.UnitToStringTable inHtU2S;
 algorithm
-  _ := match(inexpList, inEq, inHtU2S)
+  () := match inexpList
     local
-      String s, s1, s2, s3, s4;
+      String s, s1, s2;
       list<tuple<Expression, Unit.Unit>> expList;
-      Expression exp1, exp2;
-      Integer i;
       SourceInfo info;
-    case (expList, _, _)
-      equation
-        info=Equation.info(inEq);
-        s = Equation.toString(inEq);
-        s1 = Errorfunction2(expList, inHtU2S);
-        s2="The following equation is INCONSISTENT due to specified unit information: " + s +"\n";
+    case expList
+      algorithm
+        info:=Equation.info(inEq);
+        s := Equation.toString(inEq);
+        s1 := Errorfunction2(expList, inHtU2S);
+        s2:="The following equation is INCONSISTENT due to specified unit information: " + s +"\n";
         Error.addSourceMessage(Error.COMPILER_WARNING,{s2},info);
         Error.addCompilerWarning("The units of following sub-expressions need to be equal:\n" + s1);
 
@@ -882,24 +882,24 @@ protected function Errorfunction2 "help-function"
   input Unit.UnitToStringTable inHtU2S;
   output String outS;
 algorithm
-  outS := match(inexpList, inHtU2S)
+  outS := match inexpList
     local
       list<tuple<Expression, Unit.Unit>> expList;
       Expression exp;
       Unit.Unit ut;
       String s, s1, s2;
 
-    case ((exp, ut)::{}, _) equation
-      s = Expression.toString(exp);
-      s1 = Unit.unitString(ut, inHtU2S);
-      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
+    case (exp, ut)::{} algorithm
+      s := Expression.toString(exp);
+      s1 := Unit.unitString(ut, inHtU2S);
+      s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
-    case ((exp, ut)::expList, _) equation
-      s = Expression.toString(exp);
-      s1 = Unit.unitString(ut, inHtU2S);
-      s2 = Errorfunction2(expList, inHtU2S);
-      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
+    case (exp, ut)::expList algorithm
+      s := Expression.toString(exp);
+      s1 := Unit.unitString(ut, inHtU2S);
+      s2 := Errorfunction2(expList, inHtU2S);
+      s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
     then s;
   end match;
 end Errorfunction2;
@@ -1070,5 +1070,5 @@ algorithm
   end try;
 end parse;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFUnitCheck;

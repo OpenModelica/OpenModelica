@@ -16,7 +16,6 @@ model ABCDsystem
 equation
   der(x) = A*x + B*u;             // This will disappear since x is empty
   y = C*x + D*u;                  // Which is: y = D*u
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ABCDsystem;
 
 // class ABCDsystem

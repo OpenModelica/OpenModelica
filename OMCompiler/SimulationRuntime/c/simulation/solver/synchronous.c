@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -49,7 +46,6 @@ void printSyncTimer(void* data, int stream, void* elemPointer);
  */
 void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime)
 {
-  TRACE_PUSH
   int i,j;
   BASECLOCK_DATA* baseClock;
 
@@ -89,8 +85,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
 
   /* Debug print */
   printClocks(data->simulationInfo->baseClocks, data->modelData->nBaseClocks);
-
-  TRACE_POP
 }
 
 /**
@@ -103,8 +97,6 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
  */
 static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
-  TRACE_PUSH
-
   LIST_NODE *it, *prevNode = NULL;
   for(it = listFirstNode(list); it; it = listNextNode(it))
   {
@@ -115,8 +107,6 @@ static void insertTimer(LIST* list, SYNC_TIMER* timer)
   }
   if (prevNode) listInsert(list, prevNode, timer);
   else listPushFront(list, timer);
-
-  TRACE_POP
 }
 
 
@@ -131,7 +121,6 @@ static void insertTimer(LIST* list, SYNC_TIMER* timer)
  */
 void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   if (data->simulationInfo->intvlTimers != NULL && listLen(data->simulationInfo->intvlTimers) > 0)
   {
     SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
@@ -142,7 +131,6 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
       solverInfo->currentStepSize = nextTimer->activationTime - solverInfo->currentTime;
     }
   }
-  TRACE_POP
 }
 
 
@@ -156,7 +144,6 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
  */
 modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
-  TRACE_PUSH
   modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
 
   /* Special case for event-clocks activated at initialization */
@@ -239,7 +226,6 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
     }
   }
 
-  TRACE_POP
   return frstSubClockIsBaseClock;
 }
 
@@ -259,7 +245,6 @@ modelica_boolean handleBaseClock(DATA* data, threadData_t *threadData, long idx,
  */
 fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   int base_idx, sub_idx;
   double activationTime;
   modelica_boolean frstSubClockIsBaseClock = 0 /* false */;
@@ -269,7 +254,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
   SUBCLOCK_DATA* subClock;
 
   if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
-    TRACE_POP
     return ret;
   }
 
@@ -316,8 +300,6 @@ fire_timer_t handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* sol
     }
     nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
   }
-
-  TRACE_POP
   return ret;
 }
 #endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
@@ -352,7 +334,6 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
   *nextTimerDefined = FALSE;
 
   if (data->simulationInfo->intvlTimers == NULL || listLen(data->simulationInfo->intvlTimers) <= 0) {
-    TRACE_POP
     return (int) ret;
   }
 
@@ -400,8 +381,6 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, mo
     *nextTimerActivationTime = nextTimer->activationTime;
     *nextTimerDefined = TRUE;
   }
-
-  TRACE_POP
   return (int) ret;
 }
 

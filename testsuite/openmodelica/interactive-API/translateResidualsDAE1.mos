@@ -1,0 +1,65 @@
+// name: translateResidualsDAE1
+// keywords:
+// status: correct
+// cflags: -d=newInst --dumpFlatModel=translateResidualsDAE
+//
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+translateResidualsDAE(Modelica.Electrical.Analog.Basic.Resistor);
+getErrorString();
+
+// Result:
+// true
+// ""
+// ########################################
+// translateResidualsDAE
+// ########################################
+//
+// function f1
+//   input Real 'p.v';
+//   input Real 'p.i';
+//   input Real 'n.v';
+//   input Real 'n.i';
+//   output Real dummy = 0.0;
+// end f1;
+//
+// function f2
+//   input Real 'p.v';
+//   input Real 'p.i';
+//   input Real 'n.v';
+//   input Real 'n.i';
+//   output Real dummy = 0.0;
+// end f2;
+//
+// class Resistor
+//   parameter Real R(start = 1.0, unit = "Ohm", quantity = "Resistance") = 1.0;
+//   parameter Real T_ref(nominal = 300.0, start = 288.15, min = 0.0, displayUnit = "degC", unit = "K", quantity = "ThermodynamicTemperature") = 300.15;
+//   parameter Real alpha(unit = "1/K", quantity = "LinearTemperatureCoefficient") = 0.0;
+//   Real v(unit = "V", quantity = "ElectricPotential");
+//   Real p.v(unit = "V", quantity = "ElectricPotential");
+//   flow Real p.i(unit = "A", quantity = "ElectricCurrent");
+//   Real n.v(unit = "V", quantity = "ElectricPotential");
+//   flow Real n.i(unit = "A", quantity = "ElectricCurrent");
+//   Real i(unit = "A", quantity = "ElectricCurrent");
+//   final parameter Boolean useHeatPort = false;
+//   parameter Real T(nominal = 300.0, start = 288.15, min = 0.0, displayUnit = "degC", unit = "K", quantity = "ThermodynamicTemperature") = T_ref;
+//   Real LossPower(unit = "W", quantity = "Power");
+//   Real T_heatPort(nominal = 300.0, start = 288.15, min = 0.0, displayUnit = "degC", unit = "K", quantity = "ThermodynamicTemperature");
+//   Real R_actual(unit = "Ohm", quantity = "Resistance");
+// equation
+//   assert(1.0 + alpha * (T_heatPort - T_ref) >= 1e-15, "Temperature outside scope of model!", AssertionLevel.error);
+//   R_actual = R * (1.0 + alpha * (T_heatPort - T_ref));
+//   v = R_actual * i;
+//   LossPower = v * i;
+//   T_heatPort = T;
+//   0.0 = p.i + n.i;
+//   i = p.i;
+//   v = p.v - n.v;
+//   0.0 = f1(p.v, p.i, n.v, n.i);
+//   0.0 = f2(p.v, p.i, n.v, n.i);
+// end Resistor;
+//
+// true
+// "[Modelica 4.0.0+maint.om/Electrical/Analog/Basic/Resistor.mo:3:3-4:38:writable] Warning: Parameter R has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// "
+// endResult

@@ -7,6 +7,7 @@ SIunits
 MetaModelica
 MSL
 OpenModelica
+OPENMODELICALIBRARY
 lookup
 redeclared
 elsewhen
@@ -81,3 +82,4 @@ noneFromVersion
 allowNonStandardModelica
 reinitInAlgorithms
 hideResult
+ModelicaServices

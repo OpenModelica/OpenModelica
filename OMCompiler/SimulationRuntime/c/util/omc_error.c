@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -103,9 +100,6 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_STATS_V",
   "LOG_SUCCESS",
   "LOG_SYNCHRONOUS",
-#ifdef USE_DEBUG_TRACE
-  "LOG_TRACE",
-#endif
   "LOG_ZEROCROSSINGS",
 };
 
@@ -167,9 +161,6 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "additional statistics for OMC_LOG_STATS",                                    /* OMC_LOG_STATS_V */
   "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* OMC_LOG_SUCCESS */
   "log clocks and sub-clocks for synchronous features",                         /* OMC_LOG_SYNCHRONOUS */
-#ifdef USE_DEBUG_TRACE
-  "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
-#endif
   "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
 };
 
@@ -190,12 +181,7 @@ static int omc_lastStream = OMC_LOG_UNKNOWN;
 int omc_showAllWarnings = 0;
 static int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
 
-#ifdef USE_DEBUG_TRACE
-  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
-  int DEBUG_TRACE_POP_HELPER(int traceID){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: pop\n"); return 0;}
-#endif
-
-void initDumpSystem()
+void initDumpSystem(void)
 {
   int i;
 
@@ -212,7 +198,7 @@ void initDumpSystem()
 }
 
 /* Deactivates streams for logging except for stdout, assert and success. */
-void deactivateLogging()
+void deactivateLogging(void)
 {
   int i;
 
@@ -244,7 +230,7 @@ void deactivateLogging()
 }
 
 /* Resets streams to backup after deactivateLogging() was used. */
-void reactivateLogging()
+void reactivateLogging(void)
 {
   int i;
 
@@ -490,7 +476,6 @@ void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisp
     infoStreamPrint(stream, indentNext, "Too many warnings, reached display limit of %lu. "
                                         "Suppressing further warning messages of the same type.", maxWarnDisplays);
     infoStreamPrint(stream, indentNext, "Change limit with simulation flag -%s=<newLimit>", FLAG_NAME[FLAG_LV_MAX_WARN]);
-    messageClose(stream);
   }
 }
 
@@ -562,29 +547,19 @@ void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inde
 }
 #endif
 
-#ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int stream, int indentNext, const char *format, ...)
+#if !defined(OMC_MINIMAL_LOGGING)
+/* A throw inside the nonlinear solver is a trial point it steps away from, so
+ * the message goes on OMC_LOG_NLS, as in omc_assert_simulation(). Not the
+ * integrator region: the failed-algebraic-solve throw is raised there. */
+static inline int throwPrintsMessage(threadData_t *threadData)
 {
-  if (omc_useStream[stream]) {
-    char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    va_end(args);
-    messageFunction(OMC_LOG_TYPE_DEBUG, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+  if (!omc_useStream[OMC_LOG_ASSERT]) {
+    return 0;
   }
-}
-
-void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
-{
-  if (omc_useStream[stream]) {
-    char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    va_end(args);
-    messageFunction(OMC_LOG_TYPE_DEBUG, stream, info, indentNext, logBuffer, 0, indexes);
+  if (threadData->currentErrorStage == ERROR_NONLINEARSOLVER) {
+    return OMC_ACTIVE_STREAM(OMC_LOG_NLS);
   }
+  return 1;
 }
 #endif
 
@@ -600,7 +575,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
     if (threadData->simulationJumpBuffer) {
       return threadData->simulationJumpBuffer;
     }
-    fprintf(stderr, "getBestJumpBuffer got simulationJumpBuffer=%p\n", threadData->simulationJumpBuffer);
+    fprintf(stderr, "getBestJumpBuffer got simulationJumpBuffer=%p\n", (void*)threadData->simulationJumpBuffer);
     abort();
 #endif
   case ERROR_EVENTHANDLING:
@@ -611,7 +586,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
     if (threadData->mmc_jumper) {
       return threadData->mmc_jumper;
     }
-    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", threadData->globalJumpBuffer, threadData->mmc_jumper);
+    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", (void*)threadData->mmc_jumper, (void*)threadData->globalJumpBuffer);
     abort();
   }
 }
@@ -627,14 +602,14 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
  */
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (omc_useStream[OMC_LOG_ASSERT]) {
+  if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
   }
 #endif
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }
 
@@ -669,8 +644,9 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
  */
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (omc_useStream[OMC_LOG_ASSERT]) {
+  if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
@@ -679,6 +655,5 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
   }
 #endif
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }

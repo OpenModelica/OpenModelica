@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -37,7 +34,9 @@
 #include "../gc/omc_gc.h"
 #include <errno.h>
 #include "omc_error.h"
+#ifndef NSEC_PER_SEC
 #define NSEC_PER_SEC 1000000000L
+#endif
 
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
@@ -158,9 +157,9 @@ double rt_total(int ix) {
 static enum omc_rt_clock_t selectedClock = OMC_CLOCK_REALTIME;
 
 #if !defined(_MSC_VER)
-static long long RDTSC() {
-   register long long TSC asm("eax");
-   asm volatile (".byte 15, 49" : : : "eax", "edx");
+static long long RDTSC(void) {
+   register long long TSC __asm__("eax");
+   __asm__ volatile (".byte 15, 49" : : : "eax", "edx");
    return TSC;
 //    unsigned int hi, lo;
 //    asm volatile("rdtscp" : "=a"(lo), "=d"(hi));
@@ -183,7 +182,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return selectedClock;
 }
 
@@ -208,7 +207,14 @@ double rt_tock(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
+#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
   diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -235,7 +241,14 @@ double rt_accumulate(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
+#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
   diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
   acc_tp[ix].QuadPart += diff_tp.QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
@@ -278,7 +291,14 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
   rtclock_t diff_tp;
   rtclock_t tock_tp;
   QueryPerformanceCounter(&tock_tp);
+#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
   diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -289,7 +309,14 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
     rtclock_t diff_tp;
     rtclock_t tock_tp;
     tock_tp.QuadPart = RDTSC();
+#if defined(__MINGW32__) // error: ISO C forbids casts to union type [-Wpedantic]
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
     diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
     return rtclock_compensated_value(diff_tp);
   }
 }
@@ -391,7 +418,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
 int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
 {
   int64_t res = 0;
-  throwStreamPrint(NULL, "%s not implemented for OSX", __FUNCTION__);
+  throwStreamPrint(NULL, "%s not implemented for OSX", __func__);
   return res;
 }
 
@@ -414,7 +441,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return omc_clock==OMC_CLOCK_MONOTONIC ? OMC_CLOCK_REALTIME : OMC_CLOCK_CPUTIME;
 }
 
@@ -455,7 +482,7 @@ double rt_tock(int ix) {
   rtclock_t diff_tp;
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    diff_tp = (rtclock_t)(cycles - tick_tp[ix].cycles);
+    diff_tp = (rtclock_t){ .cycles = cycles - tick_tp[ix].cycles };
   } else {
     struct timespec tock_tp = {0,0};
     clock_gettime(omc_clock, &tock_tp);
@@ -552,7 +579,7 @@ double rt_accumulate(int ix) {
   rtclock_t diff_tp;
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    diff_tp = (rtclock_t)(cycles - tick_tp[ix].cycles);
+    diff_tp = (rtclock_t){ .cycles = cycles - tick_tp[ix].cycles };
     acc_tp[ix].cycles += diff_tp.cycles;
   } else {
     struct timespec tock_tp = {0,0};
@@ -627,7 +654,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
 double rt_ext_tp_tock(rtclock_t* tick_tp) {
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    return rtclock_compensated_value((rtclock_t)(cycles - tick_tp->cycles));
+    return rtclock_compensated_value((rtclock_t){ .cycles = cycles - tick_tp->cycles });
   } else {
     return rt_ext_tp_tock_common(omc_clock, tick_tp);
   }

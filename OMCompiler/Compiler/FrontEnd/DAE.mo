@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,8 +46,6 @@ encapsulated package DAE
 
 // public imports
 import Absyn;
-import AbsynUtil;
-import BaseAvlTree;
 import ClassInf;
 import SCode;
 import Values;
@@ -117,7 +119,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{},NOCOMPPRE(),{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},NOCOMPPRE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"
@@ -556,8 +558,12 @@ uniontype VariableAttributes
   end VAR_ATTR_ENUMERATION;
 end VariableAttributes;
 
-public constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-public constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrReal   = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrInt    = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrBool   = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrClock  = VAR_ATTR_CLOCK(NONE(),NONE());
+public constant VariableAttributes emptyVarAttrString = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrEnum   = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
 public uniontype StateSelect
   record NEVER end NEVER;
@@ -620,36 +626,6 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
     list<Element> elementLst;
   end DAE;
 end DAElist;
-
-/* AVLTree for functions */
-public type FunctionTree = AvlTreePathFunction.Tree;
-
-package AvlTreePathFunction "AvlTree for Path to Function"
-  extends BaseAvlTree;
-  redeclare type Key = Absyn.Path;
-  redeclare type Value = Option<Function>;
-  redeclare function extends keyStr
-  algorithm
-    outString := AbsynUtil.pathString(inKey);
-  end keyStr;
-  redeclare function extends valueStr
-  algorithm
-    outString := match inValue
-      local
-        Absyn.Path path;
-      case SOME(FUNCTION(path=path)) then AbsynUtil.pathString(path);
-      case SOME(RECORD_CONSTRUCTOR(path=path)) then AbsynUtil.pathString(path);
-      case SOME(RECORD_CONSTRUCTOR(path=path)) then "<SOME_FUNCTION>";
-      else "<NO_FUNCTION>";
-    end match;
-  end valueStr;
-  redeclare function extends keyCompare
-  algorithm
-    outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
-  end keyCompare;
-
-  redeclare function addConflictDefault = addConflictReplace;
-end AvlTreePathFunction;
 
 /* -- Algorithm.mo -- */
 public
@@ -726,6 +702,7 @@ uniontype Statement "There are four kinds of statements:
     Exp range "range for the loop";
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm" ;
+    list<tuple<ComponentRef, array<Exp>>> sub_iters "sub-iterators for ARRAY iterator case (NBackEnd only)";
   end STMT_FOR;
 
   record STMT_PARFOR
@@ -1098,20 +1075,33 @@ partial function EvaluateSingletonTypeFunction
   output Type ty;
 end EvaluateSingletonTypeFunction;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),false,Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL(),NoReturn.RETURNS);
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL(),NoReturn.RETURNS);
+
+public type Purity = enumeration(
+  PURE,      // Function with pure prefix
+  IMPURE,    // Function with impure prefix
+  UNDEFINED, // Function with neither pure nor impure prefix
+  OM_IMPURE  // Function with __OpenModelica_Impure=true annotation (only used by the OF)
+);
+
+public type NoReturn = enumeration(
+  RETURNS,  // The function may return normally to its caller
+  NORETURN  // The function never returns normally (always fails, e.g. via fail(), assert(false) or terminate)
+);
 
 public
 uniontype FunctionAttributes
   record FUNCTION_ATTRIBUTES
     InlineType inline;
-    Boolean isOpenModelicaPure "if the function has __OpenModelica_Impure";
-    Boolean isImpure "if the function has prefix *impure* is true, else false";
+    Boolean generateEvents;
+    Purity purity;
     Boolean isFunctionPointer "if the function is a local variable";
     FunctionBuiltin isBuiltin;
     FunctionParallelism functionParallelism;
+    NoReturn noReturn "whether the function ever returns normally";
   end FUNCTION_ATTRIBUTES;
 end FunctionAttributes;
 
@@ -1332,7 +1322,7 @@ uniontype Exp "Expressions
   * Expression.traverseExp
   * Expression.traverseExpTopDown
   * Expression.traverseExpBiDir
-  * ExpressionDump.printExpStr"
+  * ExpressionBasics.printExpStr"
 
   record ICONST
     Integer integer "Integer constants" ;
@@ -1454,7 +1444,7 @@ uniontype Exp "Expressions
 
   record ASUB "Array subscripts"
     Exp exp;
-    list<Exp> sub;
+    list<Subscript> sub;
   end ASUB;
 
   record TSUB "Tuple 'subscript' (accessing only single values in calls)"
@@ -1575,16 +1565,16 @@ public uniontype TailCall
   end TAIL;
 end TailCall;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(T_REAL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinImpureString = CALL_ATTR(T_STRING_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,false,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(T_REAL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrBuiltinImpureString = CALL_ATTR(T_STRING_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
+public constant CallAttributes callAttrOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,false,false,false,NO_INLINE(),NO_TAIL(),NoReturn.RETURNS);
 
 public
 uniontype CallAttributes
@@ -1596,6 +1586,7 @@ uniontype CallAttributes
     Boolean isFunctionPointerCall;
     InlineType inlineType;
     TailCall tailCall "Input variables of the function if the call is tail-recursive";
+    NoReturn noReturn "whether the called function ever returns normally";
   end CALL_ATTR;
 end CallAttributes;
 
@@ -2042,5 +2033,5 @@ public constant Sets emptySet = SETS(SET_TRIE_NODE("", WILD(), {}, 0), 0, {}, {}
 
 end Connect;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end DAE;

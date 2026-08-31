@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBCausalize
 "file:        NBCausalize.mo
  package:     NBCausalize
@@ -38,15 +43,19 @@ public
   import Module = NBModule;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import TypeCheck = NFTypeCheck;
   import Variable = NFVariable;
   import NFArrayConnections.NameVertexTable;
 
@@ -70,7 +79,6 @@ protected
   import Error;
   import List;
   import StringUtil;
-  import UnorderedSet;
 
   // ############################################################
   //                      Main Functions
@@ -87,42 +95,38 @@ public
         list<Partition> partitions, clocked;
         VarData varData;
         EqData eqData;
-        FunctionTree funcTree;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData))
         algorithm
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
-          (clocked, varData, eqData, funcTree) := applyModule(clocked, kind, varData, eqData, funcTree, func);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
+          (clocked, varData, eqData) := applyModule(clocked, kind, varData, eqData, bdae.funcMap, func);
           bdae.ode := partitions;
           bdae.clocked := clocked;
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (_, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData)) guard(Partition.kindIsInitial(kind))
         algorithm
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
           bdae.init := partitions;
-          if Util.isSome(bdae.init_0) then
-            (partitions, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, funcTree, func);
+          if isSome(bdae.init_0) then
+            (partitions, varData, eqData) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, bdae.funcMap, func);
             bdae.init_0 := SOME(partitions);
           end if;
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), varData = varData, eqData = eqData))
         algorithm
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, causalizeDAEMode);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, causalizeDAEMode);
           bdae.dae := SOME(partitions);
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
       else algorithm
@@ -137,19 +141,19 @@ public
     output list<Partition> new_partitions = {};
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Module.causalizeInterface func;
   protected
     Partition new_partition;
     Boolean violated = false "true if any partition violated variability consistency";
   algorithm
     for partition in partitions loop
-      (new_partition, varData, eqData, funcTree) := func(partition, varData, eqData, funcTree);
-      new_partitions := new_partition :: new_partitions;
+      (new_partition, varData, eqData) := func(partition, varData, eqData, funcMap);
+      new_partitions := if Partition.isEmpty(new_partition) then new_partitions else new_partition :: new_partitions;
     end for;
     new_partitions := listReverse(new_partitions);
 
-    if kind <> NBPartition.Kind.INI then
+    if not Partition.kindIsInitial(kind) then
       for partition in new_partitions loop
         violated := checkSystemVariabilities(partition) or violated;
       end for;
@@ -169,10 +173,14 @@ public
         () := match scc
           local
             Type ty1, ty2;
+            TypeCheck.MatchKind kind;
+
           case StrongComponent.SINGLE_COMPONENT() algorithm
             ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
             ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
-            if not Type.isEqual(ty1, ty2) then
+            (_, _, kind) := TypeCheck.matchTypes(ty1, ty2, Expression.fromCref(BVariable.getVarName(scc.var)));
+
+            if kind <> NFTypeCheck.MatchKind.EXACT then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
               err := getInstanceName() + " failed. The following strong component has conflicting types: "
@@ -194,6 +202,7 @@ public
   function simple
     input VariablePointers vars;
     input EquationPointers eqns;
+    input BPartition.Kind kind;
     input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
     input Iterator iter = Iterator.EMPTY();
     output Matching matching;
@@ -202,10 +211,10 @@ public
     Adjacency.Matrix full, adj;
   algorithm
     // create full matrix
-    full := Adjacency.Matrix.createFull(vars, eqns);
+    full := Adjacency.Matrix.createFull(vars, eqns, kind);
 
     // create solvable adjacency matrix for matching
-    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st, iter);
+    adj := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, st, iter);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
 
     // create all occurence adjacency matrix for sorting, upgrading the matching matrix
@@ -219,7 +228,7 @@ public
   protected
     String flag = Flags.getConfigString(Flags.MATCHING_ALGORITHM);
   algorithm
-    (func) := match flag
+    func := match flag
       case "PFPlusExt"  then causalizePseudoArray;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
@@ -249,7 +258,7 @@ protected
         list<Pointer<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
-      case kind as NBPartition.Kind.INI algorithm
+      case kind guard(Partition.kindIsInitial(kind)) algorithm
         // compress the arrays to remove gaps
         partition.unknowns   := VariablePointers.compress(partition.unknowns);
         partition.equations  := EquationPointers.compress(partition.equations);
@@ -259,7 +268,7 @@ protected
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(partition.equations), Equation.isInitial);
 
         // create full matrix
-        full := Adjacency.Matrix.createFull(partition.unknowns, partition.equations);
+        full := Adjacency.Matrix.createFull(partition.unknowns, partition.equations, kind);
 
         // do not resolve potential singular partitions in Phase I or II! -> regular matching
         // #################################################
@@ -267,7 +276,7 @@ protected
         // #################################################
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
         en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
-        adj_matching := Adjacency.Matrix.fromFull(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
+        adj_matching := Adjacency.Matrix.fullToFinal(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
         matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
         // #################################################
@@ -277,7 +286,7 @@ protected
         eo := en;
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
-        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
         matching := Matching.regular(matching, adj_matching, true, true);
 
         // #################################################
@@ -287,8 +296,8 @@ protected
         eo := UnorderedMap.merge(eo, en, sourceInfo());
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcTree, varData, eqData, kind, false, false);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
+        (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcMap, varData, eqData, kind, false, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
@@ -301,16 +310,16 @@ protected
         equations := EquationPointers.compress(partition.equations);
 
         // perform ASSC on the system
-        ASSC.main(equations, variables);
+        //ASSC.main(equations, variables);
 
         // create full matrix
-        full := Adjacency.Matrix.createFull(variables, equations);
+        full := Adjacency.Matrix.createFull(variables, equations, kind);
 
         // create solvable adjacency matrix for matching
-        adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+        adj_matching := Adjacency.Matrix.fullToFinal(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
 
         // perform matching
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
+        (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcMap, varData, eqData, kind, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
@@ -330,5 +339,5 @@ protected
     // nothing to do?
   end causalizeDAEMode;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBCausalize;

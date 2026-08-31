@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2018, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -43,6 +47,7 @@ algorithm
 end DAEFunctionsToMid;
 
 protected
+import Absyn;
 import DAE;
 import DAEDump;
 import MidToMid;
@@ -50,6 +55,7 @@ import SimCode;
 import Expression;
 import ExpressionDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import System;
 import DoubleEnded;
 import Mutable;
@@ -57,6 +63,7 @@ import BaseHashTable;
 import HashTableMidVar;
 import List;
 import Error;
+import Types;
 
 uniontype State
   record STATE
@@ -269,7 +276,6 @@ protected
   State state;
   DoubleEnded.MutableList<MidCode.Var> inputs;
   DoubleEnded.MutableList<MidCode.Var> outputs;
-  MidCode.Block block_;
   Absyn.Path path;
   Integer labelFirst;
 
@@ -285,8 +291,6 @@ algorithm
     list<SimCodeFunction.Variable> functionArguments;
     list<SimCodeFunction.Variable> variableDeclarations;
     list<DAE.Statement> body;
-    SCode.Visibility visibility;
-    SourceInfo info;
 
   case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, _, _)
   algorithm
@@ -344,47 +348,33 @@ algorithm
   local
     DAE.Statement stmt;
     list<DAE.Statement> tail;
-  case ({}) then ();
-  case (stmt::tail)
+  case {} then ();
+  case stmt::tail
     algorithm
       () := match stmt
       local
-        DAE.Type ty;
         DAE.Exp exp1;
         DAE.Exp exp;
         DAE.ComponentRef cref;
         DAE.Pattern pattern;
-        list<DAE.Statement> daestmtLst;
         list<DAE.Exp> expLst;
-        list<MidCode.Var> indexesLst;
         MidCode.Var varCref;
         MidCode.Var varArray;
         MidCode.Var varIndex;
         MidCode.Var varValue;
         MidCode.Var varCondition;
-        MidCode.Var varIter;
-        MidCode.Var varLast;
-        MidCode.Var varStep;
         MidCode.Var varMessage;
         MidCode.Var varLevel;
         MidCode.Var varRHS;
-        MidCode.OutVar outvar;
-        MidCode.Block block_;
         Integer labelBody;
         Integer labelNext;
         Integer labelCondition;
-        Integer labelStep;
         DAE.Else else_;
         DoubleEnded.MutableList<MidCode.OutVar> outvars;
         String iter;
-        Integer index;
-        list<DAE.Subscript> subscripts;
-        MidCode.Stmt midstmt;
-        MidCode.RValue rvalue;
-        array<list<MidCode.Stmt>> assignBlock;
       case DAE.STMT_ASSIGN(_, exp1 as DAE.CREF(__), exp, _)
       algorithm
-        cref := ComponentReference.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
+        cref := ComponentReferenceBasics.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
         varCref := CrefToMidVar(cref,state);
 
         stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(exp, state)), state);
@@ -395,7 +385,7 @@ algorithm
         varIndex := match exp1.sub
           local
             DAE.Exp indexexp;
-          case {indexexp} then RValueToVar(ExpToMid(indexexp, state), state);
+          case {DAE.INDEX(indexexp)} then RValueToVar(ExpToMid(indexexp, state), state);
         end match;
         varValue := RValueToVar(ExpToMid(exp, state), state);
 
@@ -554,15 +544,11 @@ algorithm
     Integer labelElse;
     Integer labelNext;
     Integer index;
-    Integer length;
     Integer numTailTypes;
-    MidCode.Block block_;
     MidCode.Terminator terminator;
-    Absyn.Path path;
     list<DAE.Exp> expLst;
     DoubleEnded.MutableList<MidCode.Var> values;
     list<MidCode.OutVar> outvars;
-    Option<DAE.Exp> option;
     DAE.CallAttributes callattrs;
     list<DAE.Subscript> subscripts;
     MidCode.RValue rvalue;
@@ -640,8 +626,9 @@ algorithm
       then MidCode.VARIABLE(varTmp);
     end match;
   then rvalue;
-  case DAE.ASUB(exp1, expLst)
+  case DAE.ASUB(exp1, subscripts)
   algorithm
+    expLst := list(Expression.getSubscriptExp(sub) for sub in subscripts);
     varExp := RValueToVar(ExpToMid(exp1, state), state);
     varExp2 := match expLst
       local
@@ -808,7 +795,6 @@ algorithm
     Integer labelNext;
     DoubleEnded.MutableList<MidCode.Var> inputs;
     MidCode.Var var1;
-    MidCode.Block block_;
   case DAE.CALL(path, expLst, callattr)
   algorithm
     labelNext := GenBlockId();
@@ -981,7 +967,6 @@ protected
   Integer labelElse;
   Integer labelNext;
   MidCode.Var var1;
-  MidCode.Block block_;
 algorithm
   labelBody := GenBlockId();
   labelElse := GenBlockId();
@@ -1086,7 +1071,7 @@ protected
   Integer labelFin, labelMux, labelInit, labelFail, labelFin2, labelOut, caseLabel;
   list<Integer> caseLabels;
   MidCode.Var muxState, one, midvar,midvar2;
-  MidCode.VarBufPtr muxOldBuf;
+  MidCode.VarBufPtr muxOldBuf = MidCode.VARBUFPTR("");
   MidCode.VarBuf muxNewBuf;
   MidCode.OutVar outvar;
   Boolean matchContinue;
@@ -1097,7 +1082,6 @@ protected
   MidCode.Var srcVar, aliasVar;
   list<String> aliasList;
   DAE.Type ty;
-  DAE.ComponentRef cref;
   list<MidCode.Var> inputsMidVar;
   DAE.Exp daeExp;
   list<Integer> caseLabelIterator;
@@ -1240,7 +1224,7 @@ algorithm
         algorithm
           // No more cases.
         then ();
-        case (DAE.CASE(patterns=patterns,body=daeBody,patternGuard=patternGuard,result=caseResult)::cases) // note: modifies cases
+        case DAE.CASE(patterns=patterns,body=daeBody,patternGuard=patternGuard,result=caseResult)::cases // note: modifies cases
         algorithm
           // first do checks and assignments
           // NOTE: If the guard fails we will have made pattern assignments for a failing case. This is how it was done before as far as I can tell.
@@ -1253,11 +1237,11 @@ algorithm
           end if;
           // then guard
           () := match patternGuard
-            case (NONE())
+            case NONE()
             algorithm
               // No guard.
             then ();
-            case (SOME(daeExp))
+            case SOME(daeExp)
             algorithm
               midvar := RValueToVar(ExpToMid(daeExp,state),state);
               if matchContinue
@@ -1382,11 +1366,9 @@ function patternToMidCode2
   input Integer labelNoMatch; /* where to go on a failed match*/
   input array<list<MidCode.Stmt>> assignBlock; /* A block of assignments to perform for a pattern. */
 protected
-    Absyn.Path name;
     Integer index;
     list<DAE.Pattern> morePatterns, iterator;
     list<DAE.Var> fields;
-    list<DAE.Type> typeVars;
     Boolean knownSingleton;
     Integer fieldNr;
 algorithm
@@ -1588,7 +1570,7 @@ algorithm
 
     then ();
 
-    case (scrutinee,DAE.PAT_CALL(name,index,morePatterns,fields,typeVars,knownSingleton)) :: restMatches
+    case (scrutinee,DAE.PAT_CALL(_,index,morePatterns,fields,_,knownSingleton)) :: restMatches
     algorithm
       // TODO: Is this correct usage of knownSingleton?
 
@@ -1637,6 +1619,6 @@ algorithm
   end match;
 end patternToMidCode2;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 end DAEToMid;

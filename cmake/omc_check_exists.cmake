@@ -30,7 +30,6 @@ macro(omc_check_header_exists_and_define header_name)
   string(REPLACE "." "_" DEFINE_SUFFIX ${DEFINE_SUFFIX})
   string(REPLACE "/" "_" DEFINE_SUFFIX ${DEFINE_SUFFIX})
   check_include_file(${header_name} HAVE_${DEFINE_SUFFIX})
-  # message(STATUS "************* ${header_name} ${HAVE_${DEFINE_SUFFIX}} ")
 endmacro(omc_check_header_exists_and_define)
 
 

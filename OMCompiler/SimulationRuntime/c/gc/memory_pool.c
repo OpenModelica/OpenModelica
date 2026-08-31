@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -38,6 +35,7 @@
 #include <pthread.h>
 #endif
 #include "../util/omc_error.h"
+#include "../util/omc_strdup.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -89,15 +87,24 @@ static inline void pool_expand(size_t len)
 {
   OMCMemPoolBlock *newBlock = NULL;
 
-  // The new block will be 1.5x the current block's size. More if we request a very large array.
+  // The new block will be 1.5x the current block's size.
   size_t new_size = 3*memory_pools->size / 2;
   // Align the new size to the initial block size (2MB right now) for easier debugging.
   new_size = round_up(new_size, OMC_INITIAL_BLOCK_SIZE);
 
   // Report an error if the size is too big. This will error out before the size request is
-  // able to overflow the the size_t size (at 4GB)
+  // able to overflow the the size_t size (at 4GB).
+  // Only the geometric growth is checked here: a single allocation that is legitimately larger
+  // than the limit is not a sign of broken memory management and is served below.
   if (new_size >= OMC_ERROR_AT_EXPAND_REQUEST) {
     omc_assert_macro(0 && "Attempt to allocate an unusually large memory. The memory management does not seem to be working as intended. Please create an issue on https://github.com/OpenModelica/OpenModelica/issues.");
+  }
+
+  // The caller writes len bytes into this block unconditionally and never checks again, so the
+  // block has to be able to hold the request that triggered the expansion. Growing by 1.5x alone
+  // does not guarantee that for a single large allocation.
+  if (new_size < len) {
+    new_size = round_up(len, OMC_INITIAL_BLOCK_SIZE);
   }
 
   newBlock = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));
@@ -138,18 +145,18 @@ static void* pool_malloc(size_t requested_size)
   return res;
 }
 
-static int pool_collect_a_little()
+static int pool_collect_a_little(void)
 {
   return 0;
 }
 
 static void print_mem_pool(OMCMemPoolBlock* chunk) {
   printf("----------------------------\n");
-  printf("%p, %ld, %ld, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
+  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, (void*)chunk->previous);
   printf("----------------------------\n");
 }
 
-MemPoolState omc_util_get_pool_state() {
+MemPoolState omc_util_get_pool_state(void) {
   MemPoolState state;
   /// If we forgot to explicitly initialize the pool, initialize it now.
   pool_init();
@@ -190,7 +197,7 @@ void omc_util_restore_pool_state(MemPoolState in_state) {
   // print_mem_pool(memory_pools);
 }
 
-void free_memory_pool()
+void free_memory_pool(void)
 {
   OMCMemPoolBlock* currentBlock = memory_pools;
 
@@ -232,7 +239,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero,
   free,
@@ -299,7 +306,7 @@ omc_alloc_interface_t omc_alloc_interface = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero /* calloc, but with malloc interface */,
   free,

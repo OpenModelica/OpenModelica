@@ -1,0 +1,35 @@
+// name: ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10); getErrorString();
+
+diffSimulationResults("ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10_res.mat", "ReferenceFiles/ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10_res.mat", "ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10.csv", 1e-8);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | info    | Breaker 10 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 9 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 8 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 7 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 6 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 5 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 4 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 3 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 2 opens at time = 0.405465
+// LOG_STDOUT        | info    | Breaker 1 opens at time = 0.405465
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

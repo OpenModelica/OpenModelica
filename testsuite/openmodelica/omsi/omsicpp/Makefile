@@ -9,7 +9,8 @@ else
 endif
 
 TESTFILES = \
-helloWorld.mos 
+helloWorld.mos \
+PID_Controller.mos
 
 
 # test that currently fail. Move up when fixed.
@@ -39,6 +40,12 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
+baseline:
+	@echo
+	@echo Updating badelines...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean:
@@ -56,4 +63,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

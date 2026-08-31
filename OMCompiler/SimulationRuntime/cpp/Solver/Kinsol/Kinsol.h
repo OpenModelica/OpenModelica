@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #pragma once
 /** @addtogroup solverKinsol
  *
@@ -7,6 +34,8 @@
 #include "FactoryExport.h"
 #include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
+#include <sundials/sundials_context.h>
+#include <sundials/sundials_logger.h>
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -39,7 +68,7 @@ public:
 
  /*will be used with new sundials version
   int kin_JacSparse(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
- int kin_JacDense(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_data,N_Vector tmp1, N_Vector tmp2);
+ int kin_JacDense(long int N, N_Vector u, N_Vector fu,SUNMatrix J, void *user_data,N_Vector tmp1, N_Vector tmp2);
  */
 private:
   /// Encapsulation of determination of residuals to given unknowns
@@ -96,6 +125,9 @@ private:
   SUNMatrix
       _Kin_J;             ///< Temp       - Matrix template for cloning matrices needed within linear solver
 
+  /* SUNDIALS simulation context. Owned by this solver instance. */
+  SUNContext _sunctx;
+
   void
     *_kinMem,            ///< Temp   - Memory for the solver
     *_data;              ///< Temp   - User data. Contains pointer to Kinsol
@@ -110,7 +142,7 @@ private:
     _solverErrorNotificationGiven;
 
 
-  realtype _fnorm,
+  sunrealtype _fnorm,
     _currentIterateNorm;
 
    int _counter;

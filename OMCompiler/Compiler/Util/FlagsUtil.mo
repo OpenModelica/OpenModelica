@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -44,6 +48,7 @@ import Corba;
 import Error;
 import ErrorExt;
 import Global;
+import IOStream;
 import List;
 import Print;
 import Settings;
@@ -252,7 +257,13 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_EVENTS,
   Flags.DUMP_RESIZABLE,
   Flags.DUMP_SOLVE,
-  Flags.FORCE_SCALARIZE
+  Flags.FORCE_SCALARIZE,
+  Flags.DEBUG_ADJOINT,
+  Flags.FLOW_ALIAS_ELIMINATION,
+  Flags.DUMP_CHECK_MODEL,
+  Flags.CHECK_DEF_USE,
+  Flags.TEARING_COST,
+  Flags.OMEDIT
 };
 
 protected
@@ -420,7 +431,19 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EVALUATE_STRUCTURAL_PARAMETERS,
   Flags.LOAD_MISSING_LIBRARIES,
   Flags.CAUSALIZE_DAE_MODE,
-  Flags.SIM_CODE_SCALARIZE
+  Flags.SIM_CODE_SCALARIZE,
+  Flags.EXECUTE_COMMAND,
+  Flags.MOO_DYNAMIC_OPTIMIZATION,
+  Flags.FMI_EXTRA_ANNOTATIONS,
+  Flags.INTERACTIVE_DUMP_FORMAT,
+  Flags.EXPORT_FMU,
+  Flags.FMU_TYPE,
+  Flags.FMU_PLATFORMS,
+  Flags.FMU_VERSION,
+  Flags.TEARING_COST_MARGIN,
+  Flags.FMU_NATIVE_PLATFORMS,
+  Flags.TPL_OUTPUT_DIR,
+  Flags.FMU_DIRECTORY
 };
 
 public function new
@@ -428,7 +451,7 @@ public function new
   input list<String> inArgs;
   output list<String> outArgs;
 algorithm
-  _ := loadFlags();
+  loadFlags();
   outArgs := readArgs(inArgs);
 end new;
 
@@ -439,13 +462,13 @@ algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
 
-protected function createConfigFlags
+public function createConfigFlags
   output array<Flags.FlagData> configFlags;
 algorithm
   configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
 end createConfigFlags;
 
-protected function createDebugFlags
+public function createDebugFlags
   output array<Boolean> debugFlags;
 algorithm
   debugFlags := listArray(list(flag.default for flag in allDebugFlags));
@@ -582,10 +605,10 @@ function getConfigOptionsStringList
 algorithm
   (outOptions,outComments) := match inFlag
     local
-      list<tuple<String, Gettext.TranslatableContent>> options;
+      list<tuple<String, String>> options;
       list<String> flags;
     case Flags.CONFIG_FLAG(validOptions=SOME(Flags.STRING_DESC_OPTION(options)))
-      then (List.map(options,Util.tuple21),List.mapMap(options, Util.tuple22, Gettext.translateContent));
+      then (List.map(options,Util.tuple21),List.map(options, Util.tuple22));
     case Flags.CONFIG_FLAG(validOptions=SOME(Flags.STRING_OPTION(flags)))
       then (flags,List.fill("",listLength(flags)));
   end match;
@@ -642,14 +665,12 @@ algorithm
       // Stop parsing arguments if -- is encountered.
       break;
     else
-      if not readArg(arg, flags) then
-        outArgs := arg :: outArgs;
-      end if;
+      (rest_args, outArgs) := readArg(arg, flags, rest_args, outArgs);
     end if;
   end while;
 
   outArgs := List.append_reverse(outArgs, rest_args);
-  _ := List.map2(outArgs, System.iconv, "UTF-8", "UTF-8");
+  List.map2(outArgs, System.iconv, "UTF-8", "UTF-8");
   Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Util.dummyInfo);
   saveFlags(flags);
 
@@ -662,7 +683,8 @@ protected function readArg
   consumed, otherwise false."
   input String inArg;
   input Flags.Flag inFlags;
-  output Boolean outConsumed;
+  input output list<String> restArgs;
+  input output list<String> nonFlags;
 protected
   String flagtype;
   Integer len;
@@ -674,40 +696,38 @@ algorithm
   if flagtype == "+" then
     if len == 1 then
       // + alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     else
-      parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+      restArgs := parseFlag(substring(inArg, 2, len), inFlags, restArgs, flagtype);
     end if;
-    outConsumed := true;
   // Flags beginning with - must have another - for long flags, i.e. -h or --help.
   elseif flagtype == "-" then
     if len == 1 then
       // - alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     elseif len == 2 then
       // Short flag without argument, i.e. -h.
-      parseFlag(System.substring(inArg, 2, 2), inFlags, flagtype);
+      restArgs := parseFlag(substring(inArg, 2, 2), inFlags, restArgs, flagtype);
     elseif stringGetStringChar(inArg, 2) == "-" then
       if len < 4 or stringGetStringChar(inArg, 4) == "=" then
         // Short flags may not be used with --, i.e. --h or --h=debug.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
       else
         // Long flag, i.e. --help or --help=debug.
-        parseFlag(System.substring(inArg, 3, len), inFlags, "--");
+        restArgs := parseFlag(substring(inArg, 3, len), inFlags, restArgs, "--");
       end if;
     else
       if stringGetStringChar(inArg, 3) == "=" then
         // Short flag with argument, i.e. -h=debug.
-        parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+        restArgs := parseFlag(substring(inArg, 2, len), inFlags, restArgs, flagtype);
       else
         // Long flag used with -, i.e. -help, which is not allowed.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
       end if;
     end if;
-    outConsumed := true;
   else
     // Arguments that don't begin with + or - are not flags, ignore them.
-    outConsumed := false;
+    nonFlags := inArg :: nonFlags;
   end if;
 end readArg;
 
@@ -715,27 +735,46 @@ protected function parseFlag
   "Parses a single flag."
   input String inFlag;
   input Flags.Flag inFlags;
+  input output list<String> restArgs;
   input String inFlagPrefix = "";
 protected
   String flag;
   list<String> values;
+  String value;
+  Boolean missing_value;
 algorithm
   flag :: values := System.strtok(inFlag, "=");
-  values := List.flatten(List.map1(values, System.strtok, ","));
-  parseConfigFlag(flag, values, inFlags, inFlagPrefix);
+  value := stringAppendList(values);
+  missing_value := stringEmpty(value) and not StringUtil.endsWith(inFlag, "=");
+  restArgs := parseConfigFlag(flag, value, inFlags, restArgs, inFlagPrefix, missing_value);
 end parseFlag;
 
 protected function parseConfigFlag
   "Tries to look up the flag with the given name, and set it to the given value."
   input String inFlag;
-  input list<String> inValues;
+  input String inValue;
   input Flags.Flag inFlags;
+  input output list<String> restArgs;
   input String inFlagPrefix;
+  input Boolean missingValue;
 protected
   Flags.ConfigFlag config_flag;
+  String value;
 algorithm
   config_flag := lookupConfigFlag(inFlag, inFlagPrefix);
-  evaluateConfigFlag(config_flag, inValues, inFlags);
+
+  if missingValue and flagRequiresValue(config_flag) and not listEmpty(restArgs)
+     and not StringUtil.startsWith(listHead(restArgs), "-") then
+    // If no value was given using = and the flag requires a value,
+    // use the next argument as the value unless the next argument is another
+    // flag (starts with -).
+    value := listHead(restArgs);
+    restArgs := listRest(restArgs);
+  else
+    value := inValue;
+  end if;
+
+  evaluateConfigFlag(config_flag, value, inFlags);
 end parseConfigFlag;
 
 protected function lookupConfigFlag
@@ -765,6 +804,16 @@ algorithm
   end match;
 end configFlagEq;
 
+protected function flagRequiresValue
+  input Flags.ConfigFlag flag;
+  output Boolean requiresValue;
+algorithm
+  requiresValue := match flag
+    case Flags.CONFIG_FLAG(defaultValue = Flags.BOOL_FLAG()) then false;
+    else true;
+  end match;
+end flagRequiresValue;
+
 protected function setAdditionalOptModules
   input Flags.ConfigFlag inFlag;
   input Flags.ConfigFlag inOppositeFlag;
@@ -788,10 +837,10 @@ end setAdditionalOptModules;
 protected function evaluateConfigFlag
   "Evaluates a given flag and it's arguments."
   input Flags.ConfigFlag inFlag;
-  input list<String> inValues;
+  input String inValue;
   input Flags.Flag inFlags;
 algorithm
-  _ := match(inFlag, inFlags)
+  () := match(inFlag, inFlags)
     local
       array<Boolean> debug_flags;
       array<Flags.FlagData> config_flags;
@@ -799,16 +848,15 @@ algorithm
 
     // Special case for +d, +debug, set the given debug flags.
     case (Flags.CONFIG_FLAG(index = 1), Flags.FLAGS(debugFlags = debug_flags))
-      equation
-        List.map1_0(inValues, setDebugFlag, debug_flags);
+      algorithm
+        List.map1_0(splitCSV(inValue), setDebugFlag, debug_flags);
       then
         ();
 
     // Special case for +h, +help, show help text.
     case (Flags.CONFIG_FLAG(index = 2), _)
-      equation
-        values = List.map(inValues, System.tolower);
-        System.gettextInit(if Flags.getConfigString(Flags.RUNNING_TESTSUITE) == "" then Flags.getConfigString(Flags.LOCALE_FLAG) else "C");
+      algorithm
+        values := splitCSV(System.tolower(inValue));
         print(printHelp(values));
         setConfigString(Flags.HELP, "omc");
       then
@@ -816,50 +864,50 @@ algorithm
 
     // Special case for --preOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --preOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_ADD))
-      equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_SUB))
-      equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, inValues);
+      algorithm
+        setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // All other configuration flags, set the flag to the given values.
     case (_, Flags.FLAGS(configFlags = config_flags))
-      equation
-        setConfigFlag(inFlag, config_flags, inValues);
+      algorithm
+        setConfigFlag(inFlag, config_flags, inValue);
       then
         ();
 
@@ -887,19 +935,19 @@ protected function setDebugFlag2
   input Boolean inValue;
   input array<Boolean> inFlags;
 algorithm
-  _ := matchcontinue(inFlag, inValue, inFlags)
+  () := matchcontinue inFlags
     local
       Flags.DebugFlag flag;
 
-    case (_, _, _)
-      equation
-        flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-        (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
+    case _
+      algorithm
+        flag := List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
+        updateDebugFlagArray(inFlags, inValue, flag);
       then
         ();
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
       then
         fail();
@@ -940,97 +988,101 @@ protected function setConfigFlag
   strings."
   input Flags.ConfigFlag inFlag;
   input array<Flags.FlagData> inConfigData;
-  input list<String> inValues;
+  input String inValue;
 protected
   Flags.FlagData data, default_value;
   String name;
   Option<Flags.ValidOptions> validOptions;
 algorithm
   Flags.CONFIG_FLAG(name = name, defaultValue = default_value, validOptions = validOptions) := inFlag;
-  data := stringFlagData(inValues, default_value, validOptions, name);
-  _ := updateConfigFlagArray(inConfigData, data, inFlag);
+  data := stringFlagData(inValue, default_value, validOptions, name);
+  updateConfigFlagArray(inConfigData, data, inFlag);
 end setConfigFlag;
 
 protected function stringFlagData
   "Converts a list of strings into a FlagData value. The expected type is also
    given so that the value can be typechecked."
-  input list<String> inValues;
+  input String inValue;
   input Flags.FlagData inExpectedType;
   input Option<Flags.ValidOptions> validOptions;
   input String inName;
   output Flags.FlagData outValue;
 algorithm
-  outValue := matchcontinue(inValues, inExpectedType, validOptions, inName)
+  outValue := matchcontinue(inValue, inExpectedType, validOptions)
     local
       Boolean b;
       Integer i;
       list<Integer> ilst;
-      String s, et, at;
+      String et, at;
       list<tuple<String, Integer>> enums;
-      list<String> flags, slst;
+      list<String> flags;
       Flags.ValidOptions options;
 
+    // No value, but a boolean flag => enable the flag.
+    case ("", Flags.BOOL_FLAG(), _) then Flags.BOOL_FLAG(true);
+
     // A boolean value.
-    case ({s}, Flags.BOOL_FLAG(), _, _)
-      equation
-        b = Util.stringBool(s);
+    case (_, Flags.BOOL_FLAG(), _)
+      algorithm
+        b := Util.stringBool(inValue);
       then
         Flags.BOOL_FLAG(b);
 
-    // No value, but a boolean flag => enable the flag.
-    case ({}, Flags.BOOL_FLAG(), _, _) then Flags.BOOL_FLAG(true);
-
     // An integer value.
-    case ({s}, Flags.INT_FLAG(), _, _)
-      equation
-        i = stringInt(s);
-        true = stringEq(intString(i), s);
+    case (_, Flags.INT_FLAG(), _)
+      algorithm
+        i := stringInt(inValue);
+        true := stringEq(intString(i), inValue);
       then
         Flags.INT_FLAG(i);
 
     // integer list.
-    case (slst, Flags.INT_LIST_FLAG(), _, _)
-      equation
-        ilst = List.map(slst,stringInt);
+    case (_, Flags.INT_LIST_FLAG(), _)
+      algorithm
+        ilst := list(stringInt(v) for v in splitCSV(inValue));
       then
         Flags.INT_LIST_FLAG(ilst);
 
     // A real value.
-    case ({s}, Flags.REAL_FLAG(), _, _)
-      then Flags.REAL_FLAG(System.stringReal(s));
+    case (_, Flags.REAL_FLAG(), _)
+      then Flags.REAL_FLAG(stringReal(inValue));
 
-    // A string value.
-    case ({s}, Flags.STRING_FLAG(), SOME(options), _)
-      equation
-        flags = getValidStringOptions(options);
-        true = listMember(s,flags);
-      then Flags.STRING_FLAG(s);
-    case ({s}, Flags.STRING_FLAG(), NONE(), _) then Flags.STRING_FLAG(s);
+    // A string value with valid options specified.
+    case (_, Flags.STRING_FLAG(), SOME(options))
+      algorithm
+        flags := getValidStringOptions(options);
+        true := listMember(inValue,flags);
+      then Flags.STRING_FLAG(inValue);
+
+    // A string value without valid options specified.
+    case (_, Flags.STRING_FLAG(), NONE())
+      guard not stringEmpty(inValue)
+      then Flags.STRING_FLAG(inValue);
 
     // A multiple-string value.
-    case (_, Flags.STRING_LIST_FLAG(), _, _) then Flags.STRING_LIST_FLAG(inValues);
+    case (_, Flags.STRING_LIST_FLAG(), _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
     // An enumeration value.
-    case ({s}, Flags.ENUM_FLAG(validValues = enums), _, _)
-      equation
-        i = Util.assoc(s, enums);
+    case (_, Flags.ENUM_FLAG(validValues = enums), _)
+      algorithm
+        i := Util.assoc(inValue, enums);
       then
         Flags.ENUM_FLAG(i, enums);
 
     // Type mismatch, print error.
-    case (_, _, NONE(), _)
-      equation
-        et = printExpectedTypeStr(inExpectedType);
-        at = printActualTypeStr(inValues);
+    case (_, _, NONE())
+      algorithm
+        et := printExpectedTypeStr(inExpectedType);
+        at := printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
       then
         fail();
 
-    case (_, _, SOME(options), _)
-      equation
-        flags = getValidStringOptions(options);
-        et = stringDelimitList(flags, ", ");
-        at = printActualTypeStr(inValues);
+    case (_, _, SOME(options))
+      algorithm
+        flags := getValidStringOptions(options);
+        et := stringDelimitList(flags, ", ");
+        at := printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE_STRINGS, {inName, et, at});
       then
         fail();
@@ -1043,7 +1095,7 @@ protected function printExpectedTypeStr
   input Flags.FlagData inType;
   output String outTypeStr;
 algorithm
-  outTypeStr := match(inType)
+  outTypeStr := match inType
     local
       list<tuple<String, Integer>> enums;
       list<String> enum_strs;
@@ -1054,8 +1106,8 @@ algorithm
     case Flags.STRING_FLAG() then "a string";
     case Flags.STRING_LIST_FLAG() then "a comma-separated list of strings";
     case Flags.ENUM_FLAG(validValues = enums)
-      equation
-        enum_strs = List.map(enums, Util.tuple21);
+      algorithm
+        enum_strs := List.map(enums, Util.tuple21);
       then
         "one of the values {" + stringDelimitList(enum_strs, ", ") + "}";
   end match;
@@ -1063,31 +1115,29 @@ end printExpectedTypeStr;
 
 protected function printActualTypeStr
   "Prints the actual type as a string."
-  input list<String> inType;
+  input String inType;
   output String outTypeStr;
 algorithm
-  outTypeStr := matchcontinue(inType)
+  outTypeStr := matchcontinue inType
     local
-      String s;
       Integer i;
 
-    case {} then "nothing";
-    case {s} equation Util.stringBool(s); then "the boolean value " + s;
-    case {s}
-      equation
-        i = stringInt(s);
+    case "" then "nothing";
+    case _ algorithm Util.stringBool(inType); then "the boolean value " + inType;
+    case _
+      algorithm
+        i := stringInt(inType);
         // intString returns 0 on failure, so this is to make sure that it
         // actually succeeded.
-        true = stringEq(intString(i), s);
+        true := stringEq(intString(i), inType);
       then
         "the number " + intString(i);
     //case {s}
     //  equation
-    //    System.stringReal(s);
+    //    stringReal(s);
     //  then
     //    "the number " + intString(i);
-    case {s} then "the string \"" + s + "\"";
-    else "a list of values.";
+    else "the string \"" + inType + "\"";
   end matchcontinue;
 end printActualTypeStr;
 
@@ -1177,34 +1227,34 @@ protected function applySideEffects
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
 algorithm
-  _ := matchcontinue(inFlag, inValue)
+  () := matchcontinue inValue
     local
       Boolean value;
-      String corba_name, corba_objid_path, zeroMQFileSuffix;
+      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
-        Flags.BOOL_FLAG(data = value) = inValue;
+    case _
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
+        Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
       then
         ();
 
     // The corba object reference file path needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) = inValue;
+    case _
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
+        Flags.STRING_FLAG(data = corba_objid_path) := inValue;
         Corba.setObjectReferenceFilePath(corba_objid_path);
       then
         ();
 
     // The corba session name needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) = inValue;
+    case _
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
+        Flags.STRING_FLAG(data = corba_name) := inValue;
         Corba.setSessionName(corba_name);
       then
         ();
@@ -1268,6 +1318,20 @@ algorithm
   setConfigValue(inFlag, Flags.STRING_LIST_FLAG(inValue));
 end setConfigStringList;
 
+public function appendConfigStringList
+  "Appends a value to a multiple-string configuration flag if the flag doesn't
+   already contain it, and returns the old values of the flag."
+  input Flags.ConfigFlag flag;
+  input String value;
+  output list<String> oldValues;
+algorithm
+  oldValues := Flags.getConfigStringList(flag);
+
+  if not listMember(value, oldValues) then
+    setConfigStringList(flag, value :: oldValues);
+  end if;
+end appendConfigStringList;
+
 public function setConfigEnum
   "Sets the value of an enumeration configuration flag."
   input Flags.ConfigFlag inFlag;
@@ -1286,14 +1350,17 @@ public function printHelp
   "Prints out help for the given list of topics."
   input list<String> inTopics;
   output String help;
+protected
+  IOStream.IOStream s;
 algorithm
-  help := matchcontinue (inTopics)
+  help := matchcontinue inTopics
     local
-      Gettext.TranslatableContent desc;
-      list<String> rest_topics, strs, data;
-      String str,name,str1,str1a,str1b,str2,str3,str3a,str3b,str4,str5,str5a,str5b,str6,str7,str7a,str7b,str8,str9,str9a,str9b,str10;
+      String desc;
+      list<String> rest_topics, data;
+      String str, name;
       Flags.ConfigFlag config_flag;
       list<tuple<String,String>> topics;
+      Option<String> short_name;
 
     case {} then printUsage();
 
@@ -1301,103 +1368,117 @@ algorithm
 
     case {"omcall-sphinxoutput"} then printUsageSphinxAll();
 
-    //case {"mos"} then System.gettext("TODO: Write help-text");
+    //case {"mos"} then "TODO: Write help-text";
 
     case {"topics"}
-      equation
-        topics = {
-          //("mos",System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.")),
-          ("omc",System.gettext("The command-line options available for omc.")),
-          ("debug",System.gettext("Flags that enable debugging, diagnostics, and research prototypes.")),
-          ("optmodules",System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.")),
-          ("simulation",System.gettext("The command-line options available for simulation executables generated by OpenModelica.")),
-          ("<flagname>",System.gettext("Displays option descriptions for multi-option flag <flagname>.")),
-          ("topics",System.gettext("This help-text."))
+      algorithm
+        s := IOStream.create("topics");
+        s := IOStream.append(s, "The available topics (help(\"topics\")) are as follows:\n");
+
+        topics := {
+          //("mos","Help on the command-line and scripting environments, including OMShell and OMNotebook."),
+          ("omc","The command-line options available for omc."),
+          ("debug","Flags that enable debugging, diagnostics, and research prototypes."),
+          ("optmodules","Flags that determine which symbolic methods are used to produce the causalized equation system."),
+          ("simulation","The command-line options available for simulation executables generated by OpenModelica."),
+          ("<flagname>","Displays option descriptions for flag <flagname>."),
+          ("topics","This help-text.")
         };
-        str = System.gettext("The available topics (help(\"topics\")) are as follows:\n");
-        strs = List.map(topics,makeTopicString);
-        help = str + stringDelimitList(strs,"\n") + "\n";
-      then help;
+
+        s := IOStream.append(s, stringDelimitList(list(makeTopicString(t) for t in topics), "\n"));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {"simulation"}
-      equation
-        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true);
-      then help;
+      then "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true);
 
     case {"simulation-sphinxoutput"}
-      equation
-        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true,sphinx=true);
-      then help;
+      then "The simulation executable takes the following flags:\n\n" + System.getSimulationHelpText(true,sphinx=true);
 
     case {"debug"}
-      equation
-        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
-        str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
-        strs = list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags));
-        help = stringAppendList(str1 :: str2 :: strs);
-      then help;
+      algorithm
+        s := IOStream.create("debug");
+        s := IOStream.append(s, "The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
+        s := IOStream.append(s, "The available flags are (+ are enabled by default, - are disabled):\n\n");
+        s := IOStream.appendList(s, list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags)));
+      then
+        IOStream.string(s);
 
     case {"optmodules"}
-      equation
+      algorithm
+        s := IOStream.create("optmodules");
         // pre-optimization
-        str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
-        str1 = stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.PRE_OPT_MODULES;
-        str1a = System.gettext("The modules used by default are:") + "\n--preOptModules=" + stringDelimitList(data, ",");
-        str1b = System.gettext("The valid modules are:");
-        str2 = printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES);
+        s := IOStream.append(s, wrapToTerminal("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.PRE_OPT_MODULES;
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--preOptModules=");
+        s := IOStream.append(s, stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES));
+        s := IOStream.append(s, "\n");
 
         // matching
-        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.");
-        str3 = stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str3a)) = Flags.MATCHING_ALGORITHM;
-        str3a = System.gettext("The method used by default is:") + "\n--matchingAlgorithm=" + str3a;
-        str3b = System.gettext("The valid methods are:");
-        str4 = printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM);
+        s := IOStream.append(s, wrapToTerminal("\nThe --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str)) := Flags.MATCHING_ALGORITHM;
+        s := IOStream.append(s, "\n\nThe method used by default is:\n--matchingAlgorithm=");
+        s := IOStream.append(s, str);
+        s := IOStream.append(s, "\n\nThe valid methods are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM));
+        s := IOStream.append(s, "\n");
 
         // index reduction
-        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.");
-        str5 = stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str5a)) = Flags.INDEX_REDUCTION_METHOD;
-        str5a = System.gettext("The method used by default is:") + "\n--indexReductionMethod=" + str5a;
-        str5b = System.gettext("The valid methods are:");
-        str6 = printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD);
+        s := IOStream.append(s, wrapToTerminal("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str)) := Flags.INDEX_REDUCTION_METHOD;
+        s := IOStream.append(s, "\n\nThe method used by default is:\n--indexReductionMethod=");
+        s := IOStream.append(s, str);
+        s := IOStream.append(s, "\n\nThe valid methods are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD));
+        s := IOStream.append(s, "\n");
 
         // post-optimization (initialization)
-        str7 = System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
-        str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.INIT_OPT_MODULES;
-        str7a = System.gettext("The modules used by default are:") + "\n--initOptModules=" + stringDelimitList(data, ",");
-        str7b = System.gettext("The valid modules are:");
-        str8 = printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES);
+        s := IOStream.append(s, wrapToTerminal("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.INIT_OPT_MODULES;
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--initOptModules=" + stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES));
+        s := IOStream.append(s, "\n");
 
         // post-optimization (simulation)
-        str9 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
-        str9 = stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.POST_OPT_MODULES;
-        str9a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
-        str9b = System.gettext("The valid modules are:");
-        str10 = printFlagValidOptionsDesc(Flags.POST_OPT_MODULES);
-
-        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
-      then help;
+        s := IOStream.append(s, wrapToTerminal("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list."));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.POST_OPT_MODULES;
+        s := IOStream.append(s, "\n\nThe modules used by default are:\n--postOptModules=" + stringDelimitList(data, ","));
+        s := IOStream.append(s, "\n\nThe valid modules are:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(Flags.POST_OPT_MODULES));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {str}
-      equation
-        (config_flag as Flags.CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str1 = "-" + name;
-        str2 = stringAppendList(StringUtil.wordWrap(Gettext.translateContent(desc), System.getTerminalWidth(), "\n"));
-        str = printFlagValidOptionsDesc(config_flag);
-        help = stringAppendList({str1,"\n",str2,"\n",str});
-      then help;
+      algorithm
+        s := IOStream.create("flag");
+        config_flag as Flags.CONFIG_FLAG(name=name, shortname=short_name, description=desc) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+
+        if isSome(short_name) then
+          s := IOStream.append(s, "-" + Util.getOption(short_name) + ", ");
+        end if;
+
+        s := IOStream.append(s, "--" + name);
+        s := IOStream.append(s, "\n");
+        s := IOStream.append(s, wrapToTerminal(desc));
+        s := IOStream.append(s, "\n\n");
+        s := IOStream.append(s, "Valid arguments:\n");
+        s := IOStream.append(s, printFlagValidOptionsDesc(config_flag));
+        s := IOStream.append(s, "\n");
+      then
+        IOStream.string(s);
 
     case {str}
       then "I'm sorry, I don't know what " + str + " is.\n";
 
-    case (str :: (rest_topics as _::_))
-      equation
-        str = printHelp({str}) + "\n";
-        help = printHelp(rest_topics);
+    case str :: (rest_topics as _::_)
+      algorithm
+        str := printHelp({str}) + "\n";
+        help := printHelp(rest_topics);
       then str + help;
 
   end matchcontinue;
@@ -1410,10 +1491,10 @@ public function getValidOptionsAndDescription
   output list<String> descriptions;
 protected
   Flags.ValidOptions validOptions;
-  Gettext.TranslatableContent mainDescription;
+  String mainDescription;
 algorithm
   Flags.CONFIG_FLAG(description=mainDescription,validOptions=SOME(validOptions)) := List.getMemberOnTrue(flagName, allConfigFlags, matchConfigFlag);
-  mainDescriptionStr := Gettext.translateContent(mainDescription);
+  mainDescriptionStr := mainDescription;
   (validStrings,descriptions) := getValidOptionsAndDescription2(validOptions);
 end getValidOptionsAndDescription;
 
@@ -1424,12 +1505,12 @@ protected function getValidOptionsAndDescription2
 algorithm
   (validStrings,descriptions) := match validOptions
     local
-      list<tuple<String,Gettext.TranslatableContent>> options;
+      list<tuple<String,String>> options;
     case Flags.STRING_OPTION(validStrings) then (validStrings,{});
     case Flags.STRING_DESC_OPTION(options)
-      equation
-        validStrings = List.map(options,Util.tuple21);
-        descriptions = List.mapMap(options,Util.tuple22,Gettext.translateContent);
+      algorithm
+        validStrings := List.map(options,Util.tuple21);
+        descriptions := List.map(options,Util.tuple22);
       then (validStrings,descriptions);
   end match;
 end getValidOptionsAndDescription2;
@@ -1463,29 +1544,31 @@ public function printUsage
 algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
-  Print.printBuf(System.gettext("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n"));
-  Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
+  Print.printBuf("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n");
+  Print.printBuf("Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\n");
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
-  Print.printBuf(System.gettext("\n* Options:\n"));
+  Print.printBuf("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
+  Print.printBuf("\n* Options:\n");
   Print.printBuf(printAllConfigFlags());
-  Print.printBuf(System.gettext("\nFor more details on a specific topic, use --help=topics or help(\"topics\")\n\n"));
-  Print.printBuf(System.gettext("* Examples:\n"));
-  Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output.\n"));
-  Print.printBuf(System.gettext("  omc -s Model.mo          will produce simulation code for the model:\n"));
-  Print.printBuf(System.gettext("                            * Model.c           The model C code.\n"));
-  Print.printBuf(System.gettext("                            * Model_functions.c The model functions C code.\n"));
-  Print.printBuf(System.gettext("                            * Model.makefile    The makefile to compile the model.\n"));
-  Print.printBuf(System.gettext("                            * Model_init.xml    The initial values.\n"));
+  Print.printBuf("\nFor more details on a specific topic, use --help=topics or help(\"topics\")\n\n");
+  Print.printBuf("* Examples:\n");
+  Print.printBuf("  omc Model.mo             will produce flattened Model on standard output.\n");
+  Print.printBuf("  omc -s Model.mo          will produce simulation code for the model:\n");
+  Print.printBuf("                            * Model.c           The model C code.\n");
+  Print.printBuf("                            * Model_functions.c The model functions C code.\n");
+  Print.printBuf("                            * Model.makefile    The makefile to compile the model.\n");
+  Print.printBuf("                            * Model_init.xml    The initial values.\n");
   //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
-  Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos.\n"));
-  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n"));
-  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n"));
-  Print.printBuf(System.gettext("  *.mo (Modelica files)\n"));
+  Print.printBuf("  omc Script.mos           will run the commands from Script.mos.\n");
+  Print.printBuf("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n");
+  Print.printBuf("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n");
+  Print.printBuf("  omc --export-fmu -i MyPackage.Examples.Hello --fmiVersion=2.0\n                           ./MyPackage/package.mo\n                           will load the local package and export the model as an FMU.\n");
+  Print.printBuf("  omc --export-fmu -i MyModel --fmiVersion=2.0 MyModel.mo Modelica\n                           will load MyModel.mo and the Modelica Standard Library,\n                           then export MyModel as an FMU.\n");
+  Print.printBuf("  *.mo (Modelica files)\n");
   //Print.printBuf("\t*.mof (Flat Modelica files)\n");
-  Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
-  Print.printBuf(System.gettext("For available simulation flags, use --help=simulation.\n\n"));
-  Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"));
+  Print.printBuf("  *.mos (Modelica Script files)\n\n");
+  Print.printBuf("For available simulation flags, use --help=simulation.\n\n");
+  Print.printBuf("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n");
   usage := Print.getString();
   Print.clearBuf();
 end printUsage;
@@ -1503,9 +1586,9 @@ algorithm
   Print.printBuf("\n");
   Print.printBuf(sum("=" for e in 1:stringLength(s)));
   Print.printBuf("\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n\n"));
+  Print.printBuf("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n\n");
   Print.printBuf("\n.. _omcflags-options :\n\n");
-  s := System.gettext("Options");
+  s := "Options";
   Print.printBuf(s);
   Print.printBuf("\n");
   Print.printBuf(sum("-" for e in 1:stringLength(s)));
@@ -1515,19 +1598,19 @@ algorithm
   end for;
 
   Print.printBuf("\n.. _omcflag-debug-section:\n\n");
-  s := System.gettext("Debug flags");
+  s := "Debug flags";
   Print.printBuf(s);
   Print.printBuf("\n");
   Print.printBuf(sum("-" for e in 1:stringLength(s)));
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n"));
-  Print.printBuf(System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n"));
+  Print.printBuf("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
+  Print.printBuf("The available flags are (+ are enabled by default, - are disabled):\n\n");
   for flag in List.sort(allDebugFlags,compareDebugFlags) loop
     Print.printBuf(printDebugFlag(flag, sphinx=true));
   end for;
 
   Print.printBuf("\n.. _omcflag-optmodules-section:\n\n");
-  s := System.gettext("Flags for Optimization Modules");
+  s := "Flags for Optimization Modules";
   Print.printBuf(s);
   Print.printBuf("\n");
   Print.printBuf(sum("-" for e in 1:stringLength(s)));
@@ -1535,15 +1618,15 @@ algorithm
 
   Print.printBuf("Flags that determine which symbolic methods are used to produce the causalized equation system.\n\n");
 
-  Print.printBuf(System.gettext("The :ref:`--preOptModules <omcflag-preOptModules>` flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list."));
+  Print.printBuf("The :ref:`--preOptModules <omcflag-preOptModules>` flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--matchingAlgorithm <omcflag-matchingAlgorithm>` sets the method that is used for the matching algorithm, after the pre optimization modules."));
+  Print.printBuf("The :ref:`--matchingAlgorithm <omcflag-matchingAlgorithm>` sets the method that is used for the matching algorithm, after the pre optimization modules.");
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the method that is used for the index reduction, after the pre optimization modules."));
+  Print.printBuf("The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the method that is used for the index reduction, after the pre optimization modules.");
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--initOptModules <omcflag-initOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list."));
+  Print.printBuf("The :ref:`--initOptModules <omcflag-initOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
   Print.printBuf("\n\n");
-  Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list."));
+  Print.printBuf("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
   Print.printBuf("\n\n");
 
   usage := Print.getString();
@@ -1562,23 +1645,23 @@ protected function printConfigFlag
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
-      Gettext.TranslatableContent desc;
+      String desc;
       String name, desc_str, flag_str, delim_str, opt_str;
       list<String> wrapped_str;
 
     case Flags.CONFIG_FLAG(visibility = Flags.INTERNAL()) then "";
 
     case Flags.CONFIG_FLAG(description = desc)
-      equation
-        desc_str = Gettext.translateContent(desc);
-        name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
-        flag_str = stringAppendList({name, " ", desc_str});
-        delim_str = descriptionIndent + "  ";
-        wrapped_str = StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str);
-        opt_str = printValidOptions(inFlag);
-        flag_str = stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
+      algorithm
+        desc_str := desc;
+        name := Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
+        flag_str := stringAppendList({name, " ", desc_str});
+        delim_str := descriptionIndent + "  ";
+        wrapped_str := StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str);
+        opt_str := printValidOptions(inFlag);
+        flag_str := stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
       then
         flag_str;
 
@@ -1590,22 +1673,21 @@ protected function printConfigFlagSphinx
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
-      Gettext.TranslatableContent desc;
-      String name, longName, desc_str, flag_str, delim_str, opt_str;
-      list<String> wrapped_str;
+      String desc;
+      String name, longName, desc_str, flag_str, opt_str;
 
     case Flags.CONFIG_FLAG(visibility = Flags.INTERNAL()) then "";
 
     case Flags.CONFIG_FLAG(description = desc)
-      equation
-        desc_str = Gettext.translateContent(desc);
-        desc_str = System.stringReplace(desc_str, "--help=debug", ":ref:`--help=debug <omcflag-debug-section>`");
-        desc_str = System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`");
-        (name,longName) = printConfigFlagName(inFlag,sphinx=true);
-        opt_str = printValidOptionsSphinx(inFlag);
-        flag_str = stringAppendList({".. _omcflag-", longName, ":\n\n:ref:`", name, "<omcflag-",longName,">`\n\n", desc_str, "\n", opt_str + "\n"});
+      algorithm
+        desc_str := desc;
+        desc_str := System.stringReplace(desc_str, "--help=debug", ":ref:`--help=debug <omcflag-debug-section>`");
+        desc_str := System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`");
+        (name,longName) := printConfigFlagName(inFlag,sphinx=true);
+        opt_str := printValidOptionsSphinx(inFlag);
+        flag_str := stringAppendList({".. _omcflag-", longName, ":\n\n:ref:`", name, "<omcflag-",longName,">`\n\n", desc_str, "\n", opt_str + "\n"});
       then flag_str;
 
   end match;
@@ -1619,13 +1701,13 @@ protected function printConfigFlagName
   output String outString;
   output String longName;
 algorithm
-  (outString,longName) := match(inFlag)
+  (outString,longName) := match inFlag
     local
       String name, shortname;
 
     case Flags.CONFIG_FLAG(name = name, shortname = SOME(shortname))
-      equation
-        shortname = if sphinx then "-" + shortname else Util.stringPadLeft("-" + shortname, 4, " ");
+      algorithm
+        shortname := if sphinx then "-" + shortname else Util.stringPadLeft("-" + shortname, 4, " ");
       then (stringAppendList({shortname, ", --", name}), name);
 
     case Flags.CONFIG_FLAG(name = name, shortname = NONE())
@@ -1639,25 +1721,25 @@ protected function printValidOptions
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       list<String> strl;
       String opt_str;
-      list<tuple<String, Gettext.TranslatableContent>> descl;
+      list<tuple<String, String>> descl;
 
     case Flags.CONFIG_FLAG(validOptions = NONE()) then "";
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = strl)))
-      equation
-        opt_str = descriptionIndent + "   " + System.gettext("Valid options:") + " " +
+      algorithm
+        opt_str := descriptionIndent + "   " + "Valid options:" + " " +
           stringDelimitList(strl, ", ");
-        strl = StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
-        opt_str = stringDelimitList(strl, "\n");
-        opt_str = "\n" + opt_str;
+        strl := StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
+        opt_str := stringDelimitList(strl, "\n");
+        opt_str := "\n" + opt_str;
       then
         opt_str;
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = descl)))
-      equation
-        opt_str = "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + "\n" +
+      algorithm
+        opt_str := "\n" + descriptionIndent + "   " + "Valid options:" + "\n" +
           stringAppendList(list(printFlagOptionDescShort(d) for d in descl));
       then
         opt_str;
@@ -1669,21 +1751,21 @@ protected function printValidOptionsSphinx
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       list<String> strl;
       String opt_str;
-      list<tuple<String, Gettext.TranslatableContent>> descl;
+      list<tuple<String, String>> descl;
 
     case Flags.CONFIG_FLAG(validOptions = NONE()) then "\n" + defaultFlagSphinx(inFlag.defaultValue) + "\n";
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = strl)))
-      equation
-        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
+      algorithm
+        opt_str := "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + "Valid options" + ":\n\n" +
           sum("* " + s + "\n" for s in strl);
       then opt_str;
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = descl)))
-      equation
-        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
+      algorithm
+        opt_str := "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + "Valid options" + ":\n\n" +
           sum(printFlagOptionDesc(s, sphinx=true) for s in descl);
       then
         opt_str;
@@ -1697,19 +1779,19 @@ algorithm
   str := match flag
     local
       Integer i;
-    case Flags.BOOL_FLAG() then System.gettext("Boolean (default")+" ``" + boolString(flag.data) + "``).";
-    case Flags.INT_FLAG() then System.gettext("Integer (default")+" ``" + intString(flag.data) + "``).";
-    case Flags.REAL_FLAG() then System.gettext("Real (default")+" ``" + realString(flag.data) + "``).";
-    case Flags.STRING_FLAG("") then System.gettext("String (default *empty*).");
-    case Flags.STRING_FLAG() then System.gettext("String (default")+" " + flag.data + ").";
-    case Flags.STRING_LIST_FLAG(data={}) then System.gettext("String list (default *empty*).");
-    case Flags.STRING_LIST_FLAG() then System.gettext("String list (default")+" " + stringDelimitList(flag.data, ",") + ").";
+    case Flags.BOOL_FLAG() then "Boolean (default"+" ``" + boolString(flag.data) + "``).";
+    case Flags.INT_FLAG() then "Integer (default"+" ``" + intString(flag.data) + "``).";
+    case Flags.REAL_FLAG() then "Real (default"+" ``" + realString(flag.data) + "``).";
+    case Flags.STRING_FLAG("") then "String (default *empty*).";
+    case Flags.STRING_FLAG() then "String (default"+" " + flag.data + ").";
+    case Flags.STRING_LIST_FLAG(data={}) then "String list (default *empty*).";
+    case Flags.STRING_LIST_FLAG() then "String list (default"+" " + stringDelimitList(flag.data, ",") + ").";
     case Flags.ENUM_FLAG()
       algorithm
         for f in flag.validValues loop
           (str,i) := f;
           if i==flag.data then
-            str := System.gettext("String (default ")+" " + str + ").";
+            str := "String (default "+" " + str + ").";
             return;
           end if;
         end for;
@@ -1720,7 +1802,7 @@ end defaultFlagSphinx;
 
 protected function printFlagOptionDescShort
   "Prints out the name of a flag option."
-  input tuple<String, Gettext.TranslatableContent> inOption;
+  input tuple<String, String> inOption;
   input Boolean sphinx=false;
   output String outString;
 protected
@@ -1736,10 +1818,35 @@ protected function printFlagValidOptionsDesc
   input Flags.ConfigFlag inFlag;
   output String outString;
 protected
-  list<tuple<String, Gettext.TranslatableContent>> options;
+  list<tuple<String, String>> desc_options;
+  list<String> str_options;
+  list<tuple<String, Integer>> enum_options;
 algorithm
-  Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = options))) := inFlag;
-  outString := sum(printFlagOptionDesc(o) for o in options);
+  outString := match inFlag
+    // String flag with a description for each valid option.
+    case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = desc_options)))
+      then stringAppendList(list(printFlagOptionDesc(o) for o in desc_options));
+
+    // String flag with valid options but no descriptions.
+    case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = str_options)))
+      then stringDelimitList(str_options, ", ");
+
+    // Enum flag.
+    case Flags.CONFIG_FLAG(defaultValue = Flags.FlagData.ENUM_FLAG(validValues = enum_options))
+      then stringDelimitList(list(Util.tuple21(v) for v in enum_options), ", ");
+
+    // For other flags, give a generic description of the type of value they expect.
+    else
+      match inFlag.defaultValue
+        case Flags.FlagData.BOOL_FLAG()        then "false, true";
+        case Flags.FlagData.INT_FLAG()         then "An Integer value.";
+        case Flags.FlagData.INT_LIST_FLAG()    then "A comma-separated list of Integer values.";
+        case Flags.FlagData.REAL_FLAG()        then "A Real value.";
+        case Flags.FlagData.STRING_FLAG()      then "A String value";
+        case Flags.FlagData.STRING_LIST_FLAG() then "A comma-separated list of String values.";
+        else "Unknown";
+      end match;
+  end match;
 end printFlagValidOptionsDesc;
 
 protected function sphinxMathMode
@@ -1763,7 +1870,6 @@ protected function removeSphinxMathMode
 protected
   Integer i;
   list<String> strs;
-  String s1,s2,s3;
 algorithm
   (i,strs) := System.regex(o, "^(.*):math:`([^`]*)[`](.*)$", 4, extended=true);
   if i==4 then
@@ -1773,15 +1879,15 @@ end removeSphinxMathMode;
 
 protected function printFlagOptionDesc
   "Helper function to printFlagValidOptionsDesc."
-  input tuple<String, Gettext.TranslatableContent> inOption;
+  input tuple<String, String> inOption;
   input Boolean sphinx=false;
   output String outString;
 protected
-  Gettext.TranslatableContent desc;
+  String desc;
   String name, desc_str, str;
 algorithm
   (name, desc) := inOption;
-  desc_str := Gettext.translateContent(desc);
+  desc_str := desc;
   if sphinx then
     desc_str := sum(System.trim(s) for s in System.strtok(desc_str, "\n"));
     outString := "* " + name + " (" + desc_str + ")\n";
@@ -1798,12 +1904,12 @@ protected function printDebugFlag
   input Boolean sphinx=false;
   output String outString;
 protected
-  Gettext.TranslatableContent desc;
+  String desc;
   String name, desc_str;
   Boolean default;
 algorithm
   Flags.DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
-  desc_str := Gettext.translateContent(desc);
+  desc_str := desc;
   if sphinx then
     desc_str := stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\n")), "\n  ");
     outString := "\n.. _omcflag-debug-"+name+":\n\n" +
@@ -1838,7 +1944,7 @@ protected function getValidStringOptions
 algorithm
   validOptions := match inOptions
     local
-      list<tuple<String, Gettext.TranslatableContent>> options;
+      list<tuple<String, String>> options;
     case Flags.STRING_OPTION(validOptions) then validOptions;
     case Flags.STRING_DESC_OPTION(options) then List.map(options,Util.tuple21);
   end match;
@@ -1878,7 +1984,7 @@ algorithm
     case Flags.BOOL_FLAG() then boolString(flagData.data);
     case Flags.INT_FLAG() then intString(flagData.data);
     case Flags.INT_LIST_FLAG()
-      then List.toString(flagData.data, intString, "", "", ",", "", false);
+      then List.toStringCustom(flagData.data, intString, "", "", ",", "", false);
 
     case Flags.REAL_FLAG() then realString(flagData.data);
     case Flags.STRING_FLAG() then flagData.data;
@@ -1903,7 +2009,6 @@ function unparseFlags
    values that differ from the default. The format of each string is flag=value."
   output list<String> flagStrings = {};
 protected
-  Flags.Flag flags;
   array<Boolean> debug_flags;
   array<Flags.FlagData> config_flags;
   String name;
@@ -1939,6 +2044,16 @@ algorithm
     flagStrings := "-d=" + stringDelimitList(strl, ",") :: flagStrings;
   end if;
 end unparseFlags;
+
+function splitCSV
+  input String value;
+  output list<String> outValues = System.strtok(value, ",");
+end splitCSV;
+
+function wrapToTerminal
+  input String str;
+  output String outStr = stringAppendList(StringUtil.wordWrap(str, System.getTerminalWidth(), "\n"));
+end wrapToTerminal;
 
 annotation(__OpenModelica_Interface="util");
 end FlagsUtil;

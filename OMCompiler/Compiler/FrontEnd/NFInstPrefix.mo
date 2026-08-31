@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -97,12 +101,12 @@ public function addOptPath
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inOptPath, inPrefix)
+  outPrefix := match inOptPath
     local
       Absyn.Path p;
 
-    case (NONE(), _) then inPrefix;
-    case (SOME(p), _) then addPath(p, inPrefix);
+    case NONE() then inPrefix;
+    case SOME(p) then addPath(p, inPrefix);
 
   end match;
 end addOptPath;
@@ -139,11 +143,9 @@ public function firstName
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
-      String name, str;
-      Prefix rest_prefix;
-      Absyn.Path path;
+      String name;
 
     case EMPTY_PREFIX() then "";
     case PREFIX(name = name) then name;
@@ -157,17 +159,17 @@ public function prefixCref
   input Prefix inPrefix;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inPrefix)
+  outCref := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (_, EMPTY_PREFIX()) then inCref;
+    case EMPTY_PREFIX() then inCref;
 
-    case (_, PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+    case PREFIX(name = name, restPrefix = rest_prefix)
+      algorithm
+        cref := DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
       then
         prefixCref(cref, rest_prefix);
 
@@ -180,17 +182,17 @@ public function prefixPath
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath, inPrefix)
+  outPath := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case (_, EMPTY_PREFIX()) then inPath;
+    case EMPTY_PREFIX() then inPath;
 
-    case (_, PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        path = Absyn.QUALIFIED(name, inPath);
+    case PREFIX(name = name, restPrefix = rest_prefix)
+      algorithm
+        path := Absyn.QUALIFIED(name, inPath);
       then
         prefixPath(path, rest_prefix);
 
@@ -203,16 +205,16 @@ public function prefixStr
   input Prefix inPrefix;
   output String outString;
 algorithm
-  outString := match(inString, inPrefix)
+  outString := match inPrefix
     local
       String str;
 
-    case (_, EMPTY_PREFIX()) then inString;
+    case EMPTY_PREFIX() then inString;
 
     else
-      equation
-        str = toStr(inPrefix);
-        str = str + "." + inString;
+      algorithm
+        str := toStr(inPrefix);
+        str := str + "." + inString;
       then
         str;
 
@@ -224,19 +226,19 @@ public function toCref
   input Prefix inPrefix;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inPrefix)
+  outCref := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (PREFIX(name = name, restPrefix = EMPTY_PREFIX()))
+    case PREFIX(name = name, restPrefix = EMPTY_PREFIX())
       then
         DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
-    case (PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+    case PREFIX(name = name, restPrefix = rest_prefix)
+      algorithm
+        cref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
       then
         prefixCref(cref, rest_prefix);
 
@@ -248,7 +250,7 @@ public function toPath
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPrefix)
+  outPath := match inPrefix
     local
       String name;
       Prefix rest_prefix;
@@ -258,8 +260,8 @@ algorithm
       then Absyn.IDENT(name);
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        path = Absyn.IDENT(name);
+      algorithm
+        path := Absyn.IDENT(name);
       then
         prefixPath(path, rest_prefix);
 
@@ -280,18 +282,18 @@ protected function fromPath2
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inPath, inPrefix)
+  outPrefix := match inPath
     local
       Absyn.Path path;
       String name;
 
-    case (Absyn.QUALIFIED(name, path), _)
+    case Absyn.QUALIFIED(name, path)
       then fromPath2(path, PREFIX(name, {}, inPrefix));
 
-    case (Absyn.IDENT(name), _)
+    case Absyn.IDENT(name)
       then PREFIX(name, {}, inPrefix);
 
-    case (Absyn.FULLYQUALIFIED(path), _)
+    case Absyn.FULLYQUALIFIED(path)
       then fromPath2(path, inPrefix);
 
   end match;
@@ -311,12 +313,12 @@ protected function fromStringList2
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inStrings, inPrefix)
+  outPrefix := match inStrings
     local
       list<String> strl;
       String str;
 
-    case (str :: strl, _) then fromStringList2(strl, PREFIX(str, {}, inPrefix));
+    case str :: strl then fromStringList2(strl, PREFIX(str, {}, inPrefix));
     else inPrefix;
 
   end match;
@@ -327,7 +329,7 @@ public function toStr
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
       String name, str;
       Prefix rest_prefix;
@@ -338,8 +340,8 @@ algorithm
       then name;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = toStr(rest_prefix) + "." + name;
+      algorithm
+        str := toStr(rest_prefix) + "." + name;
       then
         str;
 
@@ -352,7 +354,7 @@ public function toStrWithEmpty
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
       String name, str;
       Prefix rest_prefix;
@@ -361,14 +363,14 @@ algorithm
     case EMPTY_PREFIX(classPath = NONE()) then "E()";
 
     case EMPTY_PREFIX(classPath = SOME(path))
-      equation
-        str = "E(" + AbsynUtil.pathLastIdent(path) + ")";
+      algorithm
+        str := "E(" + AbsynUtil.pathLastIdent(path) + ")";
       then
         str;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = toStrWithEmpty(rest_prefix) + "." + name;
+      algorithm
+        str := toStrWithEmpty(rest_prefix) + "." + name;
       then
         str;
 
@@ -381,7 +383,7 @@ public function isPackagePrefix
   input Prefix inPrefix;
   output Boolean outIsPackagePrefix;
 algorithm
-  outIsPackagePrefix := match(inPrefix)
+  outIsPackagePrefix := match inPrefix
     local
       Prefix prefix;
 
@@ -396,15 +398,15 @@ public function toPackagePrefix
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inPrefix)
+  outPrefix := match inPrefix
     local
       String name;
       DAE.Dimensions dims;
       Prefix rest_prefix;
 
     case PREFIX(name, dims, rest_prefix)
-      equation
-        rest_prefix = toPackagePrefix(rest_prefix);
+      algorithm
+        rest_prefix := toPackagePrefix(rest_prefix);
       then
         PREFIX(name, dims, rest_prefix);
 
@@ -413,5 +415,5 @@ algorithm
   end match;
 end toPackagePrefix;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_inst");
 end NFInstPrefix;

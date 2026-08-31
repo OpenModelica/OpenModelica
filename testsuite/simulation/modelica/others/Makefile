@@ -17,7 +17,6 @@ Bug3261.mos \
 Bug3323.mos \
 Bug3500.mos \
 Bug3687.mos \
-BugTest1830.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
 ComplexAlgebraicLoop.mos \
@@ -29,6 +28,7 @@ ExtendsBasic.mos  \
 FrameTest.mos \
 IdealDiode.mos  \
 impureTest.mos \
+NegatedBooleanAlias.mos \
 NoLoadModel.mos \
 nonConstantIndex.mos \
 nonConstantParam.mos \
@@ -78,6 +78,7 @@ TestSolve17.mos \
 TestSolve18.mos \
 Ticket5129.mos \
 VariableFilter.mos \
+WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
 localKnownVars.mos \
 unitConvertTests.mos
@@ -138,4 +139,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

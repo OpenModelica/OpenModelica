@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -48,6 +52,7 @@ protected
   import Call = NFCall;
   import Ceval = NFCeval;
   import Component = NFComponent;
+  import DAE;
   import Dimension = NFDimension;
   import ElementSource;
   import MetaModelica.Dangerous.*;
@@ -235,7 +240,7 @@ protected
 
         else
           algorithm
-            Error.assertion(false, getInstanceName() + " got unknown equation " +
+            Error.terminate(getInstanceName() + " got unknown equation " +
                                    Equation.toString(eq) + "\n", sourceInfo());
           then
             fail();
@@ -256,7 +261,6 @@ protected
     list<Subscript> lhs_subs, rhs_subs;
     SBMultiInterval mi1, mi2;
     VertexDescriptor d1, d2;
-    list<Connector> lhs_conns, rhs_conns;
     Connector lhs_conn, rhs_conn;
   algorithm
     (lhs_cr, lhs_subs) := separate(Expression.toCref(lhs));
@@ -356,7 +360,7 @@ protected
   algorithm
     (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
     se := SET_EDGE(name, pw1, pw2);
-    _ := IncidenceList.addEdge(graph, d1, d2, se);
+    IncidenceList.addEdge(graph, d1, d2, se);
   end updateGraph;
 
   function createMaps
@@ -457,13 +461,13 @@ protected
     input NameVertexTable nmvTable;
     input output list<Equation> equations;
   protected
-    SBSet aux_s, sauxi, vc_domi, vc_domi_aux;
+    SBSet sauxi;
     SBMultiInterval mi, mi_range, aux_mi;
     array<SBInterval> inters;
     array<Expression> ranges;
-    list<ComponentRef> vars1, vars2;
+    list<ComponentRef> vars1;
     list<Equation> eql;
-    list<Expression> inds, iter_expl;
+    list<Expression> inds;
   algorithm
     for auxi in UnorderedSet.toArray(SBSet.asets(dom)) loop
       mi := SBAtomicSet.aset(auxi);
@@ -494,7 +498,6 @@ protected
     Expression l, r;
     Type ty;
     Equation eq;
-    DAE.ElementSource src;
   algorithm
     for var1 in vars1 loop
       for var2 in vars2 loop
@@ -502,13 +505,7 @@ protected
           l := generateConnector(var1, inds1);
           r := generateConnector(var2, inds2);
           ty := Expression.typeOf(l);
-
-          if Type.isArray(ty) then
-            eq := Equation.ARRAY_EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
-          else
-            eq := Equation.EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
-          end if;
-
+          eq := Equation.makeEquality(l, r, ty, scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
           equations := eq :: equations;
         end if;
       end for;
@@ -573,7 +570,7 @@ protected
       end while;
 
       ty := Expression.typeOf(sum_exp);
-      eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      eq := Equation.makeEquality(sum_exp, Expression.makeZero(ty), ty);
       equations := generateForLoop({eq}, iterators, ranges, equations);
     end if;
   end generateFlowEquation;
@@ -711,7 +708,7 @@ protected
   protected
     array<SBInterval> ints1, ints2;
     SBInterval i1, i2;
-    Integer i1_sz, i2_sz, m_int, h_int;
+    Integer i1_sz, i2_sz, m_int;
     Expression x, m, h, e;
   algorithm
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) then
@@ -750,12 +747,12 @@ protected
         outExpl := e :: outExpl;
         flowRange := true;
       else
-        Error.assertion(false, getInstanceName() + " got invalid intervals.", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid intervals.", sourceInfo());
       end if;
     end for;
 
     outExpl := listReverseInPlace(outExpl);
   end transMulti;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFArrayConnections;

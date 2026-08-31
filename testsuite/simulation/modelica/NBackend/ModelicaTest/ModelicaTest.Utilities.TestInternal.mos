@@ -1,0 +1,27 @@
+// name: ModelicaTest.Utilities.TestInternal
+// keywords: NewBackend
+// status: correct
+
+loadModel(ModelicaTest, {"4.1.0"});getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(ModelicaTest.Utilities.TestInternal); getErrorString();
+diffSimulationResults("ModelicaTest.Utilities.TestInternal_res.mat", "ReferenceFiles/ModelicaTest.Utilities.TestInternal_res.mat", "ModelicaTest.Utilities.TestInternal_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaTest.Utilities.TestInternal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Utilities.TestInternal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    | ... Test of Modelica.Utilities.Internal.FileSystem and .System
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ModelicaTest 4.1.0+maint.om/Utilities.mo:398:3-453:15:writable] Warning: Pure function 'ModelicaTest.Utilities.Internal' contains a call to impure function 'Modelica.Utilities.Streams.print'.
+// "
+// (true, {})
+// endResult

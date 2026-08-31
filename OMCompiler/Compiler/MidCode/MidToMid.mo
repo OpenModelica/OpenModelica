@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2018, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -105,16 +109,16 @@ algorithm
   tasks := {({},oldFunction.entryId)};
 
   while not listEmpty(tasks) loop
-    ((jumps,node) :: tasks) := tasks; // pop
+    (jumps,node) :: tasks := tasks; // pop
     oldBlock := lookupId(oldBody,node); // O(length(oldBody))
     newBlock := oldBlock; // don't change the block by defualt
     if isPushJmp(oldBlock.terminator) then
       jumps := (listHead(getSuccessors(oldBlock)) :: jumps); // push
     elseif isLongJmp(oldBlock.terminator) and not listEmpty(jumps) then
-      (jump :: _) := jumps; // peek
+      jump :: _ := jumps; // peek
       newBlock := MidCode.BLOCK(id=oldBlock.id,stmts=oldBlock.stmts, terminator=MidCode.GOTO(jump));
     elseif isPopJmp(oldBlock.terminator) then
-      (_ :: jumps) := jumps; // pop
+      _ :: jumps := jumps; // pop
     end if;
     newBody := newBlock :: newBody;
 
@@ -147,8 +151,8 @@ protected
   MidCode.Block block_local;
 algorithm
   block_ := match blocks
-    case (block_local :: _) guard (block_local.id == id) then block_local;
-    case (_ :: blocks_local) then lookupId(blocks_local, id);
+    case block_local :: _ guard (block_local.id == id) then block_local;
+    case _ :: blocks_local then lookupId(blocks_local, id);
     //else listHead(blocks);
   end match;
 end lookupId;
@@ -212,6 +216,6 @@ algorithm
   end match;
 end isPopJmp;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 end MidToMid;

@@ -1,27 +1,31 @@
- /*
+/*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -149,7 +153,7 @@ public
       case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, context, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call type", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call type", sourceInfo());
         then
           fail();
     end match;
@@ -232,7 +236,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
+          Error.terminate(getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
         then fail();
     end match;
   end typeCall;
@@ -278,8 +282,6 @@ public
   algorithm
     call := match call
       local
-        list<Function> fnl;
-        Boolean is_external;
         InstContext.Type fn_context;
 
       case UNTYPED_CALL()
@@ -291,13 +293,13 @@ public
             fn_context := NFInstContext.FUNCTION;
           end if;
 
-          fnl := Function.typeRefCache(call.ref, fn_context);
+          Function.typeRefCache(call.ref, fn_context);
         then
           typeArgs(call, context, info);
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -383,7 +385,7 @@ public
 
     args := {};
     var := Variability.CONSTANT;
-    pur := if Function.isImpure(func) or Function.isOMImpure(func) then Purity.IMPURE else Purity.PURE;
+    pur := if Function.isImpure(func) then Purity.IMPURE else Purity.PURE;
 
     for a in typed_args loop
       TypedArg.TYPED_ARG(value = arg_exp, var = arg_var, purity = arg_pur) := a;
@@ -453,7 +455,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -484,7 +486,7 @@ public
 
   function variability
     input NFCall call;
-    output Variability var;
+    output Variability var = Variability.CONTINUOUS;
   algorithm
     var := match call
       local
@@ -503,6 +505,8 @@ public
               case "cardinality" then Variability.PARAMETER;
               else algorithm var_set := false; then Variability.CONTINUOUS;
             end match;
+          else
+            var_set := false;
           end if;
 
           if not var_set then
@@ -521,7 +525,7 @@ public
       case TYPED_ARRAY_CONSTRUCTOR() then call.var;
       case TYPED_REDUCTION() then call.var;
       else algorithm
-        Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then fail();
     end match;
   end variability;
@@ -589,7 +593,7 @@ public
   algorithm
     isImpure := match call
       case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
-      case TYPED_CALL(purity = Purity.IMPURE) then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
+      case TYPED_CALL(purity = Purity.IMPURE) then Function.isImpure(call.fn);
       else false;
     end match;
   end isImpure;
@@ -601,7 +605,7 @@ public
     isConstructor := match call
       case UNTYPED_CALL()
         then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
-      case TYPED_CALL()
+      case TYPED_CALL() guard(not InstNode.isEmpty(call.fn.node))
         then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
       else false;
     end match;
@@ -676,6 +680,78 @@ public
     end match;
   end isReduction;
 
+  function isPositive
+    "True if the return value of the function is known to be > 0, otherwise false."
+    input Call call;
+    output Boolean positive;
+  algorithm
+    positive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "max" then List.any(call.arguments, Expression.isPositive);
+          case "min" then List.all(call.arguments, Expression.isPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isPositive;
+
+  function isNegative
+    "True if the return value of the function is known to be < 0, otherwise false."
+    input Call call;
+    output Boolean negative;
+  algorithm
+    negative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then false;
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "max" then List.all(call.arguments, Expression.isNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNegative;
+
+  function isNonPositive
+    "True if the return value of the function is known to be <= 0, otherwise false."
+    input Call call;
+    output Boolean nonPositive;
+  algorithm
+    nonPositive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isZero(listHead(call.arguments));
+          case "max" then List.all(call.arguments, Expression.isNonPositive);
+          case "min" then List.any(call.arguments, Expression.isNonPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonPositive;
+
+  function isNonNegative
+    "True if the return value of the function is known to be >= 0, otherwise false."
+    input Call call;
+    output Boolean nonNegative;
+  algorithm
+    nonNegative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then true;
+          case "max" then List.any(call.arguments, Expression.isNonNegative);
+          case "min" then List.all(call.arguments, Expression.isNonNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonNegative;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;
@@ -697,7 +773,7 @@ public
       case TYPED_REDUCTION() then call.fn;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped function", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped function", sourceInfo());
         then
           fail();
     end match;
@@ -791,7 +867,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
 
@@ -803,7 +879,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
     list<InstNode> iters;
   algorithm
     str := match call
@@ -878,7 +953,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
     list<InstNode> iters;
   algorithm
     str := match call
@@ -976,7 +1050,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
   algorithm
     str := match call
       case ARG_TYPED_CALL()
@@ -1030,8 +1103,13 @@ public
           path := Function.nameConsiderBuiltin(call.fn);
           json := JSON.addPair("$kind", JSON.makeString("call"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
-          json := JSON.addPair("arguments", JSON.makeArray(
-            list(Expression.toJSON(a) for a in call.arguments)), json);
+
+          if isNamed(call, "String") then
+            json := toJSONStringArgs(call.arguments, json);
+          else
+            json := JSON.addPair("arguments", JSON.makeArray(
+              list(Expression.toJSON(a) for a in call.arguments)), json);
+          end if;
         then
           ();
 
@@ -1062,6 +1140,53 @@ public
 
     end match;
   end toJSON;
+
+  function toJSONStringArgs
+    input list<Expression> args;
+    input output JSON json;
+  protected
+    Integer arg_count;
+    Expression value, arg;
+    list<Expression> rest_args;
+    list<JSON> json_args;
+
+    function make_arg
+      input String name;
+      input Expression value;
+      output JSON json = JSON.emptyListObject();
+    algorithm
+      json := JSON.addPair("$kind", JSON.makeString("named_arg"), json);
+      json := JSON.addPair(name, Expression.toJSON(value), json);
+    end make_arg;
+  algorithm
+    value :: rest_args := args;
+    arg_count := listLength(rest_args);
+    json_args := {Expression.toJSON(value)};
+
+    if arg_count == 1 then
+      arg :: _ := rest_args;
+      json_args := make_arg("format", arg) :: json_args;
+    else
+      if arg_count == 3 then
+        arg :: rest_args := rest_args;
+        if not Expression.isIntegerValue(arg, 6) then
+          json_args := make_arg("significantDigits", arg) :: json_args;
+        end if;
+      end if;
+
+      arg :: rest_args := rest_args;
+      if not Expression.isZero(arg) then
+        json_args := make_arg("minimumLength", arg) :: json_args;
+      end if;
+
+      arg :: rest_args := rest_args;
+      if not Expression.isTrue(arg) then
+        json_args := make_arg("leftJustified", arg) :: json_args;
+      end if;
+    end if;
+
+    json := JSON.addPair("arguments", JSON.makeList(listReverseInPlace(json_args)), json);
+  end toJSONStringArgs;
 
   function toAbsyn
     input Call call;
@@ -1108,7 +1233,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown call", sourceInfo());
         then
           fail();
     end match;
@@ -1184,13 +1309,13 @@ public
               Util.applyOption(call.defaultExp, Expression.toDAEValue),
               fold_id,
               res_id,
-              Util.applyOption(fold_exp, Expression.toDAE)),
+              Util.applyOption(fold_exp, function Expression.toDAE(allowEmpty = false))),
             Expression.toDAE(call.exp),
             list(iteratorToDAE(iter) for iter in call.iters));
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped call", sourceInfo());
         then
           fail();
     end match;
@@ -1228,11 +1353,11 @@ public
         algorithm
           iter :: iters := iters;
           outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-            call.exp, {iter}, AbsynUtil.dummyInfo);
+            call.exp, {iter}, Absyn.dummyInfo);
 
           for i in iters loop
             outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-              Expression.CALL(outCall), {i}, AbsynUtil.dummyInfo);
+              Expression.CALL(outCall), {i}, Absyn.dummyInfo);
           end for;
         then
           outCall;
@@ -1329,7 +1454,7 @@ public
             else Expression.CAST(cast_ty, callExp);
           end match;
 
-      else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
+      else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
 
@@ -2304,7 +2429,8 @@ protected
       (args, named_args) := instArgs(functionArgs, scope, context, info);
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
-      if InstContext.inAnnotation(context) and stringEq(name, "DynamicSelect") then
+      if InstContext.inAnnotation(context) and not InstContext.inInstanceAPI(context) and
+         stringEq(name, "DynamicSelect") then
         // return just the first part of DynamicSelect
         callExp := match functionArgs
            case Absyn.FUNCTIONARGS() then
@@ -2364,7 +2490,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown function args", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown function args", sourceInfo());
         then
           fail();
     end match;
@@ -2396,7 +2522,6 @@ protected
     ComponentRef fn_ref;
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
-    Boolean is_array;
   algorithm
     // The parser turns {exp for i in ...} into $array(exp for i in ...), but we
     // change it to just array here so we can handle array constructors uniformly.
@@ -2423,7 +2548,7 @@ protected
     output Expression exp;
     output list<tuple<InstNode, Expression>> iters;
   algorithm
-    _ := match args
+    () := match args
       local
         InstNode for_scope;
 
@@ -2535,7 +2660,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call expression", sourceInfo());
         then
           fail();
     end match;
@@ -2550,15 +2675,12 @@ protected
           output Purity purity;
   protected
     Expression range, arg;
-    Option<Expression> default_exp, fold_exp;
     InstNode iter;
     Variability iter_var, exp_var;
     Purity iter_pur, exp_pur;
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
     Function fn;
-    String fold_id, res_id;
-    tuple<Option<Expression>, String, String> fold_tuple;
   algorithm
     (call, ty, variability, purity) := match call
       case UNTYPED_REDUCTION()
@@ -2592,7 +2714,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid reduction call", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid reduction call", sourceInfo());
         then
           fail();
     end match;
@@ -2657,7 +2779,6 @@ protected
     input SourceInfo info;
     output Option<Expression> foldExp;
   protected
-    Type ty;
     InstNode op_node;
     Function fn;
   algorithm
@@ -2765,7 +2886,6 @@ protected
     list<Function> allfuncs;
     InstNode fn_node;
     Integer numerr = Error.getNumErrorMessages();
-    list<Integer> errors;
   algorithm
     ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
 
@@ -2840,8 +2960,6 @@ protected
   protected
     InstNode iter_node;
     Expression iter_range;
-    Component c;
-    Binding b;
   algorithm
     (iter_node, iter_range) := iter;
     diter := DAE.REDUCTIONITER(InstNode.name(iter_node), Expression.toDAE(iter_range), NONE(),
@@ -3054,20 +3172,25 @@ protected
     input Expression exp;
     input ParameterTree ptree;
     output Expression outExp;
+  protected
+    list<ComponentRef> cref_parts;
+    ComponentRef cref;
+    Option<Expression> oexp;
   algorithm
     outExp := match exp
-      local
-        InstNode node;
-        Option<Expression> oexp;
-        Expression e;
-
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, restCref = ComponentRef.EMPTY()))
+      case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
-          oexp := ParameterTree.getOpt(ptree, InstNode.name(node));
+          cref :: cref_parts := ComponentRef.toListReverse(exp.cref);
+          oexp := ParameterTree.getOpt(ptree, InstNode.name(ComponentRef.node(cref)));
 
           if isSome(oexp) then
             SOME(outExp) := oexp;
-            // TODO: Apply subscripts.
+            outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), outExp);
+
+            for cr in cref_parts loop
+              outExp := Expression.recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
+            end for;
           else
             outExp := exp;
           end if;
@@ -3131,5 +3254,5 @@ protected
     end match;
   end resolvePolymorphicReturnType;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFCall;

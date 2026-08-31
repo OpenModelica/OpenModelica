@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 #ifndef _CELLAPPLICATION_H
@@ -35,7 +38,6 @@
 
 // QT Headers
 #include <QtGlobal>
-#include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QTextCodec>
@@ -51,11 +53,23 @@
 #include "documentview.h"
 #include "xmlnodename.h"
 
+#include <vector>
+#include <memory>
+
+#if defined(__EMSCRIPTEN__)
+#include "omc_wasm_compat.h"
+#elif defined(OMC_RUST_ABI)
+#include "omc_rust_embedding.h"
+extern "C" {
+#include "omc_config.h"
+}
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 #include "omc_config.h"
 #include "gc.h"
 }
+#endif
 
 namespace IAEX
 {
@@ -67,38 +81,35 @@ namespace IAEX
     CellApplication(int &argc, char *argv[], threadData_t *threadData);
     virtual ~CellApplication();
 
-    virtual CommandCenter *commandCenter();
-    virtual void setCommandCenter(CommandCenter *c);
+    virtual CommandCenter& commandCenter() override;
 
-    virtual void addToPasteboard(Cell *c);
-    virtual void clearPasteboard();
-    std::vector<Cell *> pasteboard();
+    virtual void addToPasteboard(Cell *c) override;
+    virtual void clearPasteboard() override;
+    std::vector<Cell *> pasteboard() override;
 
     int exec();
-    void add(Document *doc);
     void add(DocumentView *view);
 
-    void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0);
-    void removeTempFiles(QString filename);      // Added 2006-01-16 AF
-    std::vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
-    void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
+    void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0) override;
+    void removeTempFiles(QString filename) override;
+    std::vector<DocumentView *> documentViewList() override;
+    void removeDocumentView( DocumentView *view ) override;
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
     bool FileOpenEventTriggered = false;  // for startup only
 
   private:
-    void convertDrModelica();            // Added 2006-03-21 AF
+    void convertDrModelica();
     QTranslator translator;
     QTranslator qtTranslator;
 
   private:
     QApplication *app_;
     QWidget* mainWindow;
-    std::vector<Document *> documents_;
-    std::vector<DocumentView *> views_;
-    CommandCenter *cmdCenter_;
+    std::vector<DocumentView*> views_;
+    std::unique_ptr<CommandCenter> cmdCenter_;
     std::vector<Cell *> pasteboard_;
-    QStringList removeList_;    // Added 2006-01-16 AF
+    QStringList removeList_;
   };
 }
 

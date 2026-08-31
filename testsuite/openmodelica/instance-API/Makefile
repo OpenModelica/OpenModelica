@@ -16,6 +16,7 @@ GetModelInstanceAnnotation11.mos \
 GetModelInstanceAnnotation12.mos \
 GetModelInstanceAnnotation13.mos \
 GetModelInstanceAnnotation14.mos \
+GetModelInstanceAnnotation15.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
@@ -41,17 +42,21 @@ GetModelInstanceConnection3.mos \
 GetModelInstanceConnection4.mos \
 GetModelInstanceConnection5.mos \
 GetModelInstanceConnection6.mos \
+GetModelInstanceContext1.mos \
+GetModelInstanceContext2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
 GetModelInstanceDerived4.mos \
 GetModelInstanceDerived5.mos \
+GetModelInstanceDerived6.mos \
 GetModelInstanceDim1.mos \
 GetModelInstanceDim2.mos \
 GetModelInstanceDim3.mos \
 GetModelInstanceDuplicate1.mos \
 GetModelInstanceEnum1.mos \
 GetModelInstanceEnum2.mos \
+GetModelInstanceEnum3.mos \
 GetModelInstanceEvaluate1.mos \
 GetModelInstanceExp1.mos \
 GetModelInstanceExp2.mos \
@@ -63,6 +68,8 @@ GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
+GetModelInstanceIcon5.mos \
+GetModelInstanceIcon6.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \
@@ -70,6 +77,8 @@ GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
 GetModelInstanceInnerOuter4.mos \
 GetModelInstanceInnerOuter5.mos \
+GetModelInstanceInnerOuter6.mos \
+GetModelInstanceInnerOuter7.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMissingClass3.mos \
@@ -88,6 +97,7 @@ GetModelInstanceReplaceable5.mos \
 GetModelInstanceReplaceable6.mos \
 GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
+GetModelInstanceString1.mos \
 ModifierToJSON1.mos \
 QualifyPath1.mos \
 
@@ -136,4 +146,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

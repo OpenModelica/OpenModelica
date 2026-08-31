@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 encapsulated package HpcOmBenchmark
 " file:        HpcOmBenchmark.mo
   package:     HpcOmBenchmark
@@ -74,24 +79,24 @@ protected
   String fullFileName;
   list<tuple<Integer,Integer,Real>> tmpCalcTimes;
 algorithm
-  calcTimes := matchcontinue(iFileNamePrefix)
-    case(_)
-      equation
-        fullFileName = iFileNamePrefix + ".json";
-        SOME(_) = System.getFileModificationTime(fullFileName);
+  calcTimes := matchcontinue iFileNamePrefix
+    case _
+      algorithm
+        fullFileName := iFileNamePrefix + ".json";
+        SOME(_) := System.getFileModificationTime(fullFileName);
         //json-file does exist
         print("Using json-file\n");
-        tmpCalcTimes = readCalcTimesFromJson(fullFileName);
+        tmpCalcTimes := readCalcTimesFromJson(fullFileName);
       then tmpCalcTimes;
-    case(_)
-      equation
-        fullFileName = iFileNamePrefix + ".xml";
-        SOME(_) = System.getFileModificationTime(fullFileName);
+    case _
+      algorithm
+        fullFileName := iFileNamePrefix + ".xml";
+        SOME(_) := System.getFileModificationTime(fullFileName);
         //xml-file does exist
-        tmpCalcTimes = readCalcTimesFromXml(fullFileName);
+        tmpCalcTimes := readCalcTimesFromXml(fullFileName);
       then tmpCalcTimes;
     else
-      equation
+      algorithm
         print("readCalcTimesFromFile: No valid profiling-file found.\n");
       then fail();
   end matchcontinue;
@@ -133,18 +138,18 @@ protected
   list<Real> rest;
   list<tuple<Integer,Integer,Real>> tmpTuples;
 algorithm
-  oTuples := matchcontinue(iList, iTuples)
-  case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
-    equation
+  oTuples := matchcontinue iList
+  case numOfCalcs::calcTimeSum::eqIdx::rest
+    algorithm
       //print("readCalcTimesFromXml1 eqIdx: " + intString(realInt(eqIdx)) + " numOfCalcs: " + intString(realInt(numOfCalcs)) + " calcTime: " + realString(calcTimeSum) + " \n");
-      intNumOfCalcs = realInt(numOfCalcs);
-      intEqIdx = realInt(eqIdx);
-      tmpTuples = expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
+      intNumOfCalcs := realInt(numOfCalcs);
+      intEqIdx := realInt(eqIdx);
+      tmpTuples := expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
     then tmpTuples;
-  case ({},_)
+  case {}
     then iTuples;
   else
-    equation
+    algorithm
       print("expandCalcTimes: Invalid number of list-entries\n");
     then fail();
   end matchcontinue;

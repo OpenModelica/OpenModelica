@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -72,29 +76,33 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
       "algSystFunction"
     else
         "eqFunction"
- 
+
     )
 
   let funcArguments = (match eq
     case SES_RESIDUAL(__) then
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data"
     case SES_ALGEBRAIC_SYSTEM(__) then
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params"
     else
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params"
   )
 
-  let &functionPrototypes +=  
+  let dataCast = match eq
+    case SES_RESIDUAL(__) then
+    "omsi_real* res = (omsi_real*) data;"
+    else ""
+
+  let &functionPrototypes +=
        'void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>);<%\n%>'
-   
 
   <<
   /*
   <%equationInfos%>
   */
    void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>){
+    <%dataCast%>
 
-  
     <%if not stringEq(varDecls, "") then
       <<
       /* Variables */
@@ -147,11 +155,11 @@ template equationCall(SimEqSystem eq, String modelNamePrefixStr,String modelFunc
   case SES_SIMPLE_ASSIGN(__)
   case SES_WHEN(__) then
     let i = index
-   
+
       <<
       <%CodegenUtil.symbolName(modelNamePrefixStr,"eqFunction")%>_<%i%>(<%input%>);
       >>
-   
+
   case SES_RESIDUAL(__) then
     <<
     <%CodegenUtil.symbolName(modelNamePrefixStr,"resFunction")%>_<%index%>(<%input%>);
@@ -267,13 +275,13 @@ template generateDereivativeMatrixColumnCall(OMSIFunction column, String modelNa
       >>
     ;separator="\n")
 
-  let &functionPrototypes += <<omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);<%\n%>>>
+  let &functionPrototypes += <<omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);<%\n%>>>
 
   <<
   /*
   Description something
   */
-  omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data){
+  omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data){
 
     <%bodyBuffer%>
 
@@ -342,5 +350,5 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 end equationWhen;
 
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_fmu_omsi");
 end CodegenOMSIC_Equations;

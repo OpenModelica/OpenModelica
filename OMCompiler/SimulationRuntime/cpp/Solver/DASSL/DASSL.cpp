@@ -1,36 +1,36 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 /** @addtogroup solverDASSL
  *
  *  @{
  */
 
-/*
- * This file is part of OpenModelica.
- *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
- *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
- *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
- */
+
 
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
@@ -163,6 +163,7 @@ DASSL::~DASSL()
     delete solveFunctionStartValues;
   if (solveFunctionEndValues)
     delete solveFunctionEndValues;
+  /* solverValues is owned by (*measureTimeFunctionsArray)[6] and freed by ~MeasureTimeData() */
 #endif
 }
 
@@ -370,16 +371,13 @@ void DASSL::solve(const SOLVERCALL action)
   {
     MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, (*measureTimeFunctionsArray)[1], dasslSolveFunctionHandler);
 
-    long int nst, nfe, nsetups, netf, nni, ncfn;
-    int qlast, qcur;
-    realtype h0u, hlast, hcur, tcur;
+    // DASKR reports its statistics in the integer work array, see writeSimulationInfo().
+    // _iworkAcc holds the counts accumulated over previous restarts, _iwork those of the current one.
+    unsigned long long nst  = _iworkAcc[10] + _iwork[10];   // steps taken
+    unsigned long long nre  = _iworkAcc[11] + _iwork[11];   // residual evaluations
+    unsigned long long netf = _iworkAcc[13] + _iwork[13];   // error test failures
 
-    int flag;
-
-    flag = DASSLGetIntegratorStats(_dasslMem, &nst, &nfe, &nsetups, &netf, &qlast, &qcur, &h0u, &hlast, &hcur, &tcur);
-    flag = DASSLGetNonlinSolvStats(_dasslMem, &nni, &ncfn);
-
-    MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
+    MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nre, netf);
     (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->_numCalcs += nst;
     (*measureTimeFunctionsArray)[6]->_sumMeasuredValues->add(&solverVals);
   }

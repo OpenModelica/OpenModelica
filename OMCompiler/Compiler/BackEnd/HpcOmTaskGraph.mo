@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -48,15 +52,18 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
-import DAEDump;
+protected import ComponentReferenceBasics;
+import DAEDumpTypes;
 import Error;
 import ExpandableArray;
 import Expression;
 import Flags;
 import HpcOmBenchmark;
 import HpcOmScheduler;
+import HpcOmSimCode;
 import List;
 import SCode;
+import SimCode;
 import SimCodeUtil;
 import SimCodeVar;
 import System;
@@ -133,7 +140,7 @@ algorithm
   //Iterate over each system
   BackendDAE.DAE(systs,shared) := iDAE;
   (graph,graphData) := getEmptyTaskGraph(0,0,0);
-  ((oGraph,oGraphData,_)) := List.fold(systs, function createTaskGraph0(iShared=shared, iAnalyzeParameters=iAnalyzeParameters), (graph,graphData,1));
+  (oGraph,oGraphData,_) := List.fold(systs, function createTaskGraph0(iShared=shared, iAnalyzeParameters=iAnalyzeParameters), (graph,graphData,1));
 end createTaskGraph;
 
 public function createTaskGraph0 "author: marcusw, waurich
@@ -147,7 +154,7 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray orderedEqs;
-  DAE.FunctionTree sharedFuncs;
+  AvlTreePathFunction.Tree sharedFuncs;
   TaskGraphMeta iGraphData;
   TaskGraphMeta tmpGraphData;
   TaskGraph iGraph;
@@ -161,14 +168,11 @@ protected
   array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
   array<String> compNames;
   array<String> compDescs;
-  list<Integer> eventEqLst, eventVarLst, rootVars;
   Integer numberOfVars;
   array<ComponentInfo> compInformations;
 
   Integer eqSysIdx;
-  tuple<TaskGraph,TaskGraphMeta,Integer> tplOut;
 
-  BackendDAE.EqSystem syst;
   BackendDAE.Matching matching;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
 algorithm
@@ -185,7 +189,7 @@ algorithm
   (varCompMapping,eqCompMapping) := getVarEqCompMapping(comps, eqSysIdx, 0, 0, varCompMapping, eqCompMapping);
   //print("createTaskGraph0 varCompMapping created\n");
   compDescs := getEquationStrings(comps,iSyst);  //gets the description i.e. the whole equation, for every component
-  ((tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_)) := List.fold(comps, function createTaskGraph1(iSystInfo=(adjacencyMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
+  (tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_) := List.fold(comps, function createTaskGraph1(iSystInfo=(adjacencyMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
   tmpGraph := Array.mapNoCopy(tmpGraph, function List.sort(inCompFunc = intGt));
   // gather the metadata
   tmpGraphData := TASKGRAPHMETA(inComps, varCompMapping, eqCompMapping, compParamMapping, compNames, compDescs, exeCosts, commCosts, nodeMark, compInformations);
@@ -205,10 +209,10 @@ protected
   List<tuple<BackendDAE.EqSystem,Integer>> tmpSystems;
   BackendDAE.StrongComponents tmpComps;
 algorithm
-  (oComps,oMapping) := match(iDae)
-    case(BackendDAE.DAE(eqs=systs))
-      equation
-        ((tmpComps, tmpSystems,_)) = List.fold(systs,getSystemComponents0,({},{},1));
+  (oComps,oMapping) := match iDae
+    case BackendDAE.DAE(eqs=systs)
+      algorithm
+        (tmpComps, tmpSystems,_) := List.fold(systs,getSystemComponents0,({},{},1));
       then (tmpComps,listArray(tmpSystems));
     else fail();
   end match;
@@ -227,16 +231,16 @@ protected
 algorithm
   oSystMapping := match(iSyst, iSystMapping)
     case(BackendDAE.EQSYSTEM(matching=matching), (tmpComps,tmpSystMapping,currentIdx))
-      equation
-        comps = BackendDAEUtil.getCompsOfMatching(matching);
+      algorithm
+        comps := BackendDAEUtil.getCompsOfMatching(matching);
         //print("--getSystemComponents0 begin\n");
-        tmpSystMapping = List.fold2(comps, getSystemComponents1, iSyst, currentIdx, tmpSystMapping);
+        tmpSystMapping := List.fold2(comps, getSystemComponents1, iSyst, currentIdx, tmpSystMapping);
         //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
-        comps = listAppend(tmpComps,comps);
+        comps := listAppend(tmpComps,comps);
         //print("--getSystemComponents0 end (found " + intString(listLength(comps)) + " components in system " + intString(currentIdx) + ")\n");
       then ((comps, tmpSystMapping, currentIdx+1));
     else
-      equation
+      algorithm
         print("getSystemComponents0 failed\n");
       then fail();
   end match;
@@ -460,7 +464,6 @@ protected
   array<tuple<Integer,Integer,Integer>>  varCompMapping; //<sccIdx, eqSysIdx, offset>
   array<tuple<Integer,Integer,Integer>> eqCompMapping; //<sccIdx, eqSysIdx, offset>
   array<String> compNames;
-  array<String> compDescs;
   array<Communications> commCosts;
   Communications commCostsOfNode;
   array<Integer> nodeMark;
@@ -481,7 +484,7 @@ algorithm
   inComps := arrayUpdate(inComps,componentIndex,{componentIndex});
   compName := BackendDump.strongComponentString(iComponent);
   compNames := arrayUpdate(compNames,componentIndex,compName);
-  _ := HpcOmBenchmark.benchSystem();
+  HpcOmBenchmark.benchSystem();
 
   // The known vars are only used if iAnalyzeParameters is true, skip this
   // potentially very expensive operation otherwise.
@@ -589,22 +592,22 @@ protected function fillAdjacencyList "author: waurich TUD 2013-06
   input Integer Idx; //current parent, starting with 1
   output array<list<Integer>> adjLstOut;
 algorithm
-  adjLstOut := matchcontinue(adjLstIn,childNode,parentLst,Idx)
+  adjLstOut := matchcontinue Idx
     local
       Communication parentNode;
       list<Integer> parentRow;
       array<list<Integer>> adjLst;
       Integer parentNodeIdx;
-    case(_,_,_,_)
-      equation
-        true = listLength(parentLst) >= Idx;
-        parentNode = listGet(parentLst,Idx);
-        COMMUNICATION(childNode=parentNodeIdx) = parentNode;
-        parentRow = arrayGet(adjLstIn,parentNodeIdx);
-        parentRow = childNode::parentRow;
-        parentRow = List.removeOnTrue(parentNodeIdx,intEq,parentRow);  // deletes the self-loops
-        adjLst = arrayUpdate(adjLstIn,parentNodeIdx,parentRow);
-        adjLst = fillAdjacencyList(adjLst,childNode,parentLst,Idx+1);
+    case _
+      algorithm
+        true := listLength(parentLst) >= Idx;
+        parentNode := listGet(parentLst,Idx);
+        COMMUNICATION(childNode=parentNodeIdx) := parentNode;
+        parentRow := arrayGet(adjLstIn,parentNodeIdx);
+        parentRow := childNode::parentRow;
+        parentRow := List.removeOnTrue(parentNodeIdx,intEq,parentRow);  // deletes the self-loops
+        adjLst := arrayUpdate(adjLstIn,parentNodeIdx,parentRow);
+        adjLst := fillAdjacencyList(adjLst,childNode,parentLst,Idx+1);
       then
         adjLst;
     else adjLstIn;
@@ -631,125 +634,120 @@ protected function getEquationStrings2 "author: Waurich TUD 2013-06
   input List<String> iEqDesc;
   output List<String> oEqDesc;
 algorithm
-  oEqDesc := matchcontinue(comp,iEqSystem,iEqDesc)
+  oEqDesc := matchcontinue(comp, iEqSystem)
     local
       Integer i;
       Integer v;
       List<BackendDAE.Var> varLst;
-      array<Integer> ass2;
-      List<Integer> es;
       List<Integer> vs;
       List<String> descLst;
-      List<String> eqDescLst;
-      List<String> varDescLst;
       String eqString;
       String varString;
       String desc;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      BackendDAE.JacobianType jacT;
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.Variables orderedVars;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
-    case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
-      equation
+    case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars))
+      algorithm
        //get the equation string
-       eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+       eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
        //get the variable string
-       varString = getVarString(BackendVariable.getVarAt(orderedVars, v));
-       desc = (eqString + " FOR " + varString);
-       descLst = desc::iEqDesc;
+       varString := getVarString(BackendVariable.getVarAt(orderedVars, v));
+       desc := (eqString + " FOR " + varString);
+       descLst := desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
-     equation
-       desc = ("Equation System");
-       descLst = desc::iEqDesc;
+  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM())
+     algorithm
+       desc := ("Equation System");
+       descLst := desc::iEqDesc;
      then
        descLst;
-   case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
-     equation
+   case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+      eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
-      varLst = BackendVariable.varList(orderedVars);
+      varLst := BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
       //varString = getVarString(var);
       //desc = ("ARRAY:"+eqString + " FOR " + varString);
-      desc = ("ARRAY:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
-      descLst = desc::iEqDesc;
+      desc := ("ARRAY:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
+      descLst := desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
-     equation
+   case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+      eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
-      varLst = BackendVariable.varList(orderedVars);
+      varLst := BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
       //varString = getVarString(var);
       //desc = ("ALGO:"+eqString + " FOR " + varString);
-      desc = ("ALGO: "+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
-      descLst = desc::iEqDesc;
+      desc := ("ALGO: "+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
+      descLst := desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
-     equation
+   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+      eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
-      varLst = BackendVariable.varList(orderedVars);
+      varLst := BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
       //varString = getVarString(var);
       //desc = ("COMPLEX:"+eqString + " FOR " + varString);
-      desc = ("COMPLEX: "+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
-      descLst = desc::iEqDesc;
+      desc := ("COMPLEX: "+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
+      descLst := desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
-     equation
+   case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+      eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
-      varLst = BackendVariable.varList(orderedVars);
+      varLst := BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
       //varString = getVarString(var);
       //desc = ("WHEN:"+eqString + " FOR " + varString);
-      desc = ("WHEN:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
-      descLst = desc::iEqDesc;
+      desc := ("WHEN:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
+      descLst := desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
-     equation
+   case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
+      eqString := BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
-      varLst = BackendVariable.varList(orderedVars);
+      varLst := BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
       //varString = getVarString(var);
       //desc = ("IFEQ:"+eqString + " FOR " + varString);
-      desc = ("IFEQ:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
-      descLst = desc::iEqDesc;
+      desc := ("IFEQ:"+eqString + " FOR THE VARS: " + stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
+      descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
-     equation
+  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-       desc = ("Torn linear System");
-       descLst = desc::iEqDesc;
+       desc := ("Torn linear System");
+       descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
-     equation
+  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()))
+     algorithm
       //get the equation string
-       desc = ("Torn nonlinear System");
-       descLst = desc::iEqDesc;
+       desc := ("Torn nonlinear System");
+       descLst := desc::iEqDesc;
     then
       descLst;
   else
-    equation
-      desc = ("no singleEquation");
-      descLst = desc::iEqDesc;
+    algorithm
+      desc := ("no singleEquation");
+      descLst := desc::iEqDesc;
     then
       descLst;
   end matchcontinue;
@@ -760,27 +758,26 @@ public function getVarString "author: waurich TUD 2013-06
   input BackendDAE.Var inVar;
   output String varString;
 algorithm
-  varString := matchcontinue(inVar)
+  varString := matchcontinue inVar
   local
-    BackendDAE.VarKind kind;
     list<String> varDescLst;
-  case(_)
-    equation
-    true = BackendVariable.isNonStateVar(inVar);
-    varString = BackendDump.varString(inVar);
-    varDescLst = stringListStringChar(varString);
-    varDescLst = shortenVarString(varDescLst);
-    varString = stringCharListString(varDescLst);
+  case _
+    algorithm
+    true := BackendVariable.isNonStateVar(inVar);
+    varString := BackendDump.varString(inVar);
+    varDescLst := stringListStringChar(varString);
+    varDescLst := shortenVarString(varDescLst);
+    varString := stringCharListString(varDescLst);
   then
     varString;
-  case(_)
-    equation
-    false = BackendVariable.isNonStateVar(inVar);
-    varString = BackendDump.varString(inVar);
-    varDescLst = stringListStringChar(varString);
-    varDescLst = shortenVarString(varDescLst);
-    varString = stringCharListString(varDescLst);
-    varString = (" der(" + varString + ")");
+  case _
+    algorithm
+    false := BackendVariable.isNonStateVar(inVar);
+    varString := BackendDump.varString(inVar);
+    varDescLst := stringListStringChar(varString);
+    varDescLst := shortenVarString(varDescLst);
+    varString := stringCharListString(varDescLst);
+    varString := (" der(" + varString + ")");
     then
       varString;
   end matchcontinue;
@@ -804,11 +801,10 @@ protected function getEventNodes "author: Waurich TUD 2013-06
   output list<Integer> eventNodes;
 protected
   list<Integer> eqLst;
-  list<tuple<Integer,Integer,Integer>> tplLst;
   BackendDAE.EqSystems systemsIn;
 algorithm
   BackendDAE.DAE(eqs=systemsIn) := systIn;
-  ((eqLst,_)) := List.fold(systemsIn, getEventNodeEqs,({},0));
+  (eqLst,_) := List.fold(systemsIn, getEventNodeEqs,({},0));
   eventNodes := getArrayTuple31(eqLst,eqCompMapping);
 end getEventNodes;
 
@@ -840,29 +836,27 @@ protected function getEventNodeEqs1 "author: Waurich TUD 2013-06
   input list<Integer> eventEqsIn;
   output list<Integer> eventEqsOut;
 algorithm
-  eventEqsOut := matchcontinue(comps,offset,eventEqsIn)
+  eventEqsOut := matchcontinue comps
     local
       Integer eqn;
-      Integer sysCount;
       list<Integer> eventEqs;
-      list<Integer> condVars;
       BackendDAE.StrongComponents rest;
       BackendDAE.StrongComponent head;
-    case((head::rest),_,_)
-      equation
-        true = isWhenEquation(head);
-        BackendDAE.SINGLEWHENEQUATION(eqn = eqn) = head;
-        eqn = eqn+offset;
-        eventEqs = getEventNodeEqs1(rest,offset,eqn::eventEqsIn);
+    case head::rest
+      algorithm
+        true := isWhenEquation(head);
+        BackendDAE.SINGLEWHENEQUATION(eqn = eqn) := head;
+        eqn := eqn+offset;
+        eventEqs := getEventNodeEqs1(rest,offset,eqn::eventEqsIn);
       then
         eventEqs;
-    case((head::rest),_,_)
-      equation
-        false = isWhenEquation(head);
-        eventEqs = getEventNodeEqs1(rest,offset,eventEqsIn);
+    case head::rest
+      algorithm
+        false := isWhenEquation(head);
+        eventEqs := getEventNodeEqs1(rest,offset,eventEqsIn);
       then
         eventEqs;
-    case({},_,_)
+    case {}
       then
         eventEqsIn;
   end matchcontinue;
@@ -885,13 +879,12 @@ protected function isWhenEquation "author: Waurich TUD 2013-06
   input BackendDAE.StrongComponent inComp;
   output Boolean isWhenEq;
 algorithm
-  isWhenEq := matchcontinue(inComp)
-  local Integer eqn;
-    case(BackendDAE.SINGLEWHENEQUATION())
+  isWhenEq := match inComp
+  local    case BackendDAE.SINGLEWHENEQUATION()
     then
       true;
   else false;
-  end matchcontinue;
+  end match;
 end isWhenEquation;
 
 protected function fillRequiredSccs
@@ -933,52 +926,52 @@ protected function getUnsolvedVarsBySCC "author: marcusw, waurich
   output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> oUnsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc, stringVarIdc>
   output list<Integer> oParamVars; //indices related to iKnownVars-object
 algorithm
-  (oUnsolvedVars, oParamVars) := matchcontinue(iComponent, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iEventVarLst, iAnalyzeParameters)
+  (oUnsolvedVars, oParamVars) := matchcontinue iComponent
     local
       Integer varIdx;
       list<Integer> varIdc;
       tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> tmpVars;
       list<Integer> paramVars;
-    case(BackendDAE.SINGLEEQUATION(var=varIdx),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,{varIdx},iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLEEQUATION(var=varIdx)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,{varIdx},iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.EQUATIONSYSTEM(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.EQUATIONSYSTEM(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.SINGLEARRAY(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLEARRAY(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.SINGLEALGORITHM(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLEALGORITHM(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.SINGLECOMPLEXEQUATION(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLECOMPLEXEQUATION(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then (tmpVars, paramVars);
-    case(BackendDAE.SINGLEWHENEQUATION(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLEWHENEQUATION(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then (tmpVars, paramVars);
-    case(BackendDAE.SINGLEIFEQUATION(vars=varIdc),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.SINGLEIFEQUATION(vars=varIdc)
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdc)),_,_,_,_,_,_)
-      equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdc))
+      algorithm
+        (tmpVars, paramVars) := getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     else
-      equation
+      algorithm
         print("getUnsolvedVarsBySCC failed\n");
         then fail();
    end matchcontinue;
@@ -1034,29 +1027,29 @@ protected
 algorithm
   oUnsolvedVars := match(iVarType, iVarIdx, iUnsolvedVars)
     case(DAE.T_INTEGER(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
-      equation
-        intVarIdc = varIdx::intVarIdc;
+      algorithm
+        intVarIdc := varIdx::intVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     case(DAE.T_REAL(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
-      equation
-        realVarIdc = (varIdx,derived)::realVarIdc;
+      algorithm
+        realVarIdc := (varIdx,derived)::realVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     case(DAE.T_BOOL(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
-      equation
-        boolVarIdc = varIdx::boolVarIdc;
+      algorithm
+        boolVarIdc := varIdx::boolVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     case(DAE.T_ARRAY(ty=ty),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
       then getUnsolvedVarsBySCC2(ty,iVarIdx,iUnsolvedVars);
     case(DAE.T_ENUMERATION(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
-      equation
-        stringVarIdc = varIdx::stringVarIdc;
+      algorithm
+        stringVarIdc := varIdx::stringVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     case(DAE.T_STRING(),(varIdx,derived),(intVarIdc,realVarIdc,boolVarIdc,stringVarIdc))
-      equation
-        stringVarIdc = varIdx::stringVarIdc;
+      algorithm
+        stringVarIdc := varIdx::stringVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     else
-      equation
+      algorithm
         print("getUnsolvedVarsBySCC2: Warning, unknown varType for variable " + intString(Util.tuple21(iVarIdx)) +" !\n");
      then iUnsolvedVars;
   end match;
@@ -1069,29 +1062,28 @@ protected function removeEventVars "author: Waurich TUD 2013-06
   input Integer varIdx;
   output list<tuple<Integer,Integer>> varLstOut;
 algorithm
-  varLstOut := matchcontinue(eventVarLst,varLstIn,varIdx)
+  varLstOut := matchcontinue varIdx
     local
       tuple<Integer,Integer> varTpl;
-      list<tuple<Integer,Integer>> rest;
       list<tuple<Integer,Integer>> varLst;
       Integer var;
-    case(_,_,_)
-      equation
-        true = intLe(varIdx,listLength(varLstIn));
-        varTpl = listGet(varLstIn,varIdx);
-        (var,_) = varTpl;
-        true = List.isMemberOnTrue(var,eventVarLst,intEq);
-        varLst = listDelete(varLstIn,varIdx);
-        varLst = removeEventVars(eventVarLst,varLst,varIdx);
+    case _
+      algorithm
+        true := intLe(varIdx,listLength(varLstIn));
+        varTpl := listGet(varLstIn,varIdx);
+        (var,_) := varTpl;
+        true := List.isMemberOnTrue(var,eventVarLst,intEq);
+        varLst := listDelete(varLstIn,varIdx);
+        varLst := removeEventVars(eventVarLst,varLst,varIdx);
       then
         varLst;
-    case(_,_,_)
-      equation
-        true = intLe(varIdx,listLength(varLstIn));
-        varTpl = listGet(varLstIn,varIdx);
-        (var,_) = varTpl;
-        false = List.isMemberOnTrue(var,eventVarLst,intEq);
-        varLst = removeEventVars(eventVarLst,varLstIn,varIdx+1);
+    case _
+      algorithm
+        true := intLe(varIdx,listLength(varLstIn));
+        varTpl := listGet(varLstIn,varIdx);
+        (var,_) := varTpl;
+        false := List.isMemberOnTrue(var,eventVarLst,intEq);
+        varLst := removeEventVars(eventVarLst,varLstIn,varIdx+1);
       then
         varLst;
     else varLstIn;
@@ -1108,12 +1100,12 @@ protected
   Integer varIdx, varState;
   Boolean returnValue;
 algorithm
-  isNotMember := matchcontinue(inTuple, varIdc)
-    case((varIdx,varState), _)
-      equation
-        true = intGt(varIdx,0);
-        true = intEq(varState,1);
-        returnValue = List.isMemberOnTrue(varIdx, varIdc, intEq);
+  isNotMember := matchcontinue inTuple
+    case (varIdx,varState)
+      algorithm
+        true := intGt(varIdx,0);
+        true := intEq(varState,1);
+        returnValue := List.isMemberOnTrue(varIdx, varIdc, intEq);
       then not returnValue;
     else true;
   end matchcontinue;
@@ -1163,66 +1155,57 @@ protected function getVarsBySCC "author: marcusw, waurich
   output list<tuple<Integer,Integer>> oVars; //common variables
   output list<Integer> oParamVars; //parameters (index related to iKnownVars)
 algorithm
-  (oVars,oParamVars) := match(iComponent, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters)
+  (oVars,oParamVars) := match iComponent
     local
       Integer eqnIdx; //For SINGLEEQUATION
       list<Integer> eqns; //For EQUATIONSYSTEM
       list<Integer> resEqns;
       list<tuple<Integer,Integer>> eqnVars;
       list<Integer> paramVars;
-      list<tuple<Integer,Integer>> eqnVarsCond;
       BackendDAE.InnerEquations innerEquations;
-      String dumpStr;
-      BackendDAE.StrongComponent condSys;
-    case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLEEQUATION(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns(eqns, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+    case BackendDAE.EQUATIONSYSTEM(eqns=eqns)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns(eqns, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLEARRAY(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLEALGORITHM(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx),_,_,_,_,_)
-      equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+    case BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx)
+      algorithm
+        (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations)),_,_,_,_,_)
-      equation
-        (eqns,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        (eqnVars, paramVars) = getVarsByEqns(listAppend(resEqns,eqns), iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations))
+      algorithm
+        (eqns,_,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        (eqnVars, paramVars) := getVarsByEqns(listAppend(resEqns,eqns), iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
     else
-      equation
+      algorithm
         print("Error in getVarsBySCC! Unsupported component-type \n");
       then fail();
   end match;
@@ -1233,10 +1216,10 @@ protected function tupleToString "author: marcusw
   input tuple<Integer,Integer> inTuple;
   output String result;
 algorithm
-  result := match(inTuple)
+  result := match inTuple
     local
       Integer int1,int2;
-    case((int1,int2))
+    case (int1,int2)
     then ("(" + intString(int1) + "," + intString(int2) + ")");
   end match;
 end tupleToString;
@@ -1246,10 +1229,10 @@ protected function tuple3ToString "author: marcusw
   input tuple<Integer,Integer,Integer> inTuple;
   output String result;
 algorithm
-  result := match(inTuple)
+  result := match inTuple
     local
       Integer int1,int2,int3;
-    case((int1,int2,int3))
+    case (int1,int2,int3)
     then ("(" + intString(int1) + "," + intString(int2) + "," + intString(int3) + ")");
   end match;
 end tuple3ToString;
@@ -1292,13 +1275,7 @@ protected function getVarTuple "author: marcusw
   input Integer varIdx;
   output tuple<Integer,Integer> outIdx; //variable index and variable state
 algorithm
-  outIdx := matchcontinue(varIdx)
-    case(_)
-      equation
-        true = intLe(0,varIdx);
-      then ((varIdx, 1));
-    else ((-varIdx,0));
-   end matchcontinue;
+  outIdx := if intLe(0,varIdx) then (varIdx, 1) else (-varIdx, 0);
 end getVarTuple;
 
 protected function compareIntTuple2 "author: marcusw
@@ -1307,16 +1284,13 @@ protected function compareIntTuple2 "author: marcusw
   input tuple<Integer,Integer> tuple2;
   output Boolean equals;
 algorithm
-  equals := matchcontinue(tuple1,tuple2)
+  equals := match (tuple1,tuple2)
     local
       Integer int1,int2,int3,int4;
-    case((int1,int2),(int3,int4))
-      equation
-        equality(int1 = int3);
-        equality(int2 = int4);
+    case((int1,int2),(int3,int4)) guard int1==int3 and int2==int4
       then true;
     else false;
- end matchcontinue;
+ end match;
 end compareIntTuple2;
 
 protected function getVarEqCompMapping "author: marcusw
@@ -1331,7 +1305,7 @@ protected function getVarEqCompMapping "author: marcusw
   output array<tuple<Integer,Integer,Integer>> ovarCompMapping;
   output array<tuple<Integer,Integer,Integer>> oeqCompMapping;
 algorithm
-  _ := List.fold4(components, getVarEqCompMapping0, ivarCompMapping, ieqCompMapping, iEqSysIdx, (iVarIdxOffset,iEqIdxOffset), 1);
+  List.fold4(components, getVarEqCompMapping0, ivarCompMapping, ieqCompMapping, iEqSysIdx, (iVarIdxOffset,iEqIdxOffset), 1);
   ovarCompMapping := ivarCompMapping;
   oeqCompMapping := ieqCompMapping;
 end getVarEqCompMapping;
@@ -1346,71 +1320,69 @@ protected function getVarEqCompMapping0 "author: marcusw, waurich
   input Integer iSccIdx;
   output Integer oSccIdx;
 algorithm
-  oSccIdx := matchcontinue(component, varCompMapping, eqCompMapping, iEqSysIdx, iVarEqOffset, iSccIdx)
+  oSccIdx := matchcontinue(component, iVarEqOffset)
     local
       Integer compVarIdx, iVarOffset, iEqOffset, eq;
       list<Integer> compVarIdc,eqns,residuals,othereqs,othervars;
       list<list<Integer>> othervarsLst;
-      array<tuple<Integer,Integer,Integer>> tmpvarCompMapping,tmpeqCompMapping;
       BackendDAE.InnerEquations innerEquations;
-      BackendDAE.StrongComponent condSys;
       String helperStr;
-    case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
+    case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
         //print("HpcOmTaskGraph.getvarCompMapping0 for singleEquation varCompMapping-length:" + intString(arrayLength(varCompMapping)) + " varIdx: " + intString(compVarIdx) + " varOffset: " + intString(iVarOffset) + "\n");
         //print("HpcOmTaskGraph.getvarCompMapping0 for singleEquation eqCompMapping-length:" + intString(arrayLength(eqCompMapping)) + " eqIdx: " + intString(eq) + " eqOffset: " + intString(iEqOffset) + "\n");
         arrayUpdate(varCompMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then iSccIdx+1;
-    case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
+    case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+        List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
       then
         iSccIdx+1;
-    case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+    case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
-    case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+    case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
-    case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
-        then
-          iSccIdx+1;
-    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+    case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
-    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = compVarIdc,residualequations = residuals, innerEquations = innerEquations)),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-      (othereqs,othervarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-      othervars = List.flatten(othervarsLst);
-      compVarIdc = listAppend(othervars,compVarIdc);
-      eqns = listAppend(othereqs,residuals);
-      _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-      _ = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
+    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        then
+          iSccIdx+1;
+    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = compVarIdc,residualequations = residuals, innerEquations = innerEquations)), (iVarOffset,iEqOffset))
+      algorithm
+      (othereqs,othervarsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      othervars := List.flatten(othervarsLst);
+      compVarIdc := listAppend(othervars,compVarIdc);
+      eqns := listAppend(othereqs,residuals);
+      List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+      List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqCompMapping);
       then
         iSccIdx+1;
-    case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
-      equation
-        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
+    case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq), (iVarOffset,iEqOffset))
+      algorithm
+        List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     else
-      equation
-        helperStr = BackendDump.strongComponentString(component);
+      algorithm
+        helperStr := BackendDump.strongComponentString(component);
         print("getVarEqCompMapping0 - Unsupported component-type:\n" + helperStr + "\n");
       then fail();
   end matchcontinue;
@@ -1441,7 +1413,7 @@ protected
   array<Integer> tmpMappingArray;
   Integer nodeIdx;
 algorithm
-  ((tmpMappingArray,nodeIdx)) := List.fold1(iCompsOfNode, getSccNodeMapping1, iNodeMarks, iArrayNodeIdx);
+  (tmpMappingArray,nodeIdx) := List.fold1(iCompsOfNode, getSccNodeMapping1, iNodeMarks, iArrayNodeIdx);
   oArrayNodeIdx := (tmpMappingArray,nodeIdx+1);
 end getSccNodeMapping0;
 
@@ -1453,18 +1425,17 @@ protected function getSccNodeMapping1 "author: marcusw
   output tuple<array<Integer>, Integer> oArrayNodeIdx;
 protected
   Integer iNodeIdx;
-  Integer offset;
   Integer nodeMark;
   array<Integer> iMappingArray;
 algorithm
-  oArrayNodeIdx := matchcontinue(iCompIdx,iNodeMark,iArrayNodeIdx)
-    case(_,_,(iMappingArray,iNodeIdx))
-      equation
-        nodeMark = arrayGet(iNodeMark,iCompIdx);
-        true = intNe(-1,nodeMark);
-        iMappingArray = arrayUpdate(iMappingArray, iCompIdx, iNodeIdx);
+  oArrayNodeIdx := matchcontinue iArrayNodeIdx
+    case (iMappingArray,iNodeIdx)
+      algorithm
+        nodeMark := arrayGet(iNodeMark,iCompIdx);
+        true := intNe(-1,nodeMark);
+        iMappingArray := arrayUpdate(iMappingArray, iCompIdx, iNodeIdx);
       then ((iMappingArray,iNodeIdx));
-    case(_,_,(iMappingArray,iNodeIdx))
+    case (iMappingArray,iNodeIdx)
       then ((iMappingArray,iNodeIdx));
   end matchcontinue;
 end getSccNodeMapping1;
@@ -1476,24 +1447,23 @@ protected function othersInTearComp "author: Waurich TUD 2013-06
   input tuple<list<Integer>,list<Integer>> othersIn;
   output tuple<list<Integer>,list<Integer>> othersOut;
 algorithm
-  othersOut := matchcontinue(otherEqnVarTpl,othersIn)
+  othersOut := matchcontinue othersIn
     local
       Integer eq;
-      Integer var;
       list<Integer> eqLst;
       list<Integer> varTplLst;
       list<Integer> varLst;
-    case(_,_)
-      equation
-      (eq,varTplLst)=otherEqnVarTpl;
-      _ = listGet(varTplLst,1);
-      (eqLst,varLst) = othersIn;
-      varLst = listAppend(varTplLst,varLst);
-      eqLst = eq::eqLst;
+    case _
+      algorithm
+      (eq,varTplLst):=otherEqnVarTpl;
+      listGet(varTplLst,1);
+      (eqLst,varLst) := othersIn;
+      varLst := listAppend(varTplLst,varLst);
+      eqLst := eq::eqLst;
       then
         ((eqLst,varLst));
     else
-      equation
+      algorithm
       print("check number of vars in relation to number of eqs in otherEqnVarTpl in the torn system\n");
       then
         fail();
@@ -1541,11 +1511,10 @@ protected
   array<list<Integer>> inComps;
   BackendDAE.EqSystems systs;
   TaskGraph graphTmp;
-  TaskGraphMeta graphDataTmp;
 algorithm
   TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, inComps=inComps) := graphDataIn;
   BackendDAE.DAE(systs,_) := systIn;
-  ((stateNodes,_)) := List.fold2(systs,getAllStateNodes,varCompMapping,inComps,({},0));
+  (stateNodes,_) := List.fold2(systs,getAllStateNodes,varCompMapping,inComps,({},0));
   whenNodes := getEventNodes(systIn,eqCompMapping);
   graphTmp := arrayCopy(graphIn);
   (graphOdeOut,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes);
@@ -1562,42 +1531,42 @@ protected function getAllStateNodes "author: Waurich TUD 2013-07
   input tuple<list<Integer>,Integer> stateInfoIn;
   output tuple<list<Integer>,Integer> stateInfoOut;
 algorithm
-  stateInfoOut := matchcontinue(systIn,varCompMapping,inComps,stateInfoIn)
+  stateInfoOut := matchcontinue stateInfoIn
     local
       list<Integer> stateNodes, stateNodesIn, stateVars;
       Integer varOffset, varOffsetNew;
       BackendDAE.Variables orderedVars;
       list<BackendDAE.Var> varLst;
-  case(_,_,_,((stateNodesIn,varOffset)))
-    equation
-      BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
-      varLst = BackendVariable.varList(orderedVars);
-      stateVars = getStates(varLst,{},1);
+  case (stateNodesIn,varOffset)
+    algorithm
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars) := systIn;
+      varLst := BackendVariable.varList(orderedVars);
+      stateVars := getStates(varLst,{},1);
       //print("stateVars: " + stringDelimitList(List.map(stateVars,intString),",") + " varOffset: " + intString(varOffset) + "\n");
       //print("varCompMapping: " + stringDelimitList(List.mapArray(varCompMapping, tuple3ToString),",") + "\n");
-      false = listEmpty(stateVars);
-      stateVars = List.map1(stateVars,intAdd,varOffset);
-      stateNodes = getArrayTuple31(stateVars,varCompMapping);
+      false := listEmpty(stateVars);
+      stateVars := List.map1(stateVars,intAdd,varOffset);
+      stateNodes := getArrayTuple31(stateVars,varCompMapping);
       //print("stateNodes: " + stringDelimitList(List.map(stateNodes,intString),",") + "\n");
-      stateNodes = List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
-      stateNodes = listAppend(stateNodesIn,stateNodes);
-      varOffsetNew = listLength(varLst)+varOffset;
+      stateNodes := List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
+      stateNodes := listAppend(stateNodesIn,stateNodes);
+      varOffsetNew := listLength(varLst)+varOffset;
     then
       ((stateNodes,varOffsetNew));
-  case(_,_,_,(stateNodesIn,varOffset))
-    equation
-      BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
-      varLst = BackendVariable.varList(orderedVars);
-      stateVars = getStates(varLst,{},1);
-      true = listEmpty(stateVars);
-      varOffsetNew = listLength(varLst)+varOffset;
+  case (stateNodesIn,varOffset)
+    algorithm
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars) := systIn;
+      varLst := BackendVariable.varList(orderedVars);
+      stateVars := getStates(varLst,{},1);
+      true := listEmpty(stateVars);
+      varOffsetNew := listLength(varLst)+varOffset;
       then
         ((stateNodesIn,varOffsetNew));
-  case(_,_,_,(_,_))
-    equation
-      BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
-      varLst = BackendVariable.varList(orderedVars);
-      stateVars = getStates(varLst,{},1);
+  case (_,_)
+    algorithm
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars) := systIn;
+      varLst := BackendVariable.varList(orderedVars);
+      stateVars := getStates(varLst,{},1);
       print("getAllStateNodes failed! StateVars-Count: " + intString(listLength(stateVars)) + "\n");
      then fail();
   end matchcontinue;
@@ -1610,22 +1579,22 @@ protected function getStates "author: Waurich TUD 2013-06
   input Integer Idx;
   output list<Integer> stateVarsOut;
 algorithm
-  stateVarsOut := matchcontinue(inVarLst,stateVarsIn,Idx)
+  stateVarsOut := matchcontinue inVarLst
     local
       BackendDAE.Var head;
       list<BackendDAE.Var> rest;
       list<Integer> stateVars;
-    case((head::rest),_,_)
-      equation
-        false = BackendVariable.isStateVar(head);
-        stateVars = getStates(rest,stateVarsIn,Idx+1);
+    case head::rest
+      algorithm
+        false := BackendVariable.isStateVar(head);
+        stateVars := getStates(rest,stateVarsIn,Idx+1);
       then stateVars;
-    case((head::rest),_,_)
-      equation
-        true = BackendVariable.isStateVar(head);
-        stateVars = getStates(rest,Idx::stateVarsIn,Idx+1);
+    case head::rest
+      algorithm
+        true := BackendVariable.isStateVar(head);
+        stateVars := getStates(rest,Idx::stateVarsIn,Idx+1);
       then stateVars;
-    case({},_,_)
+    case {}
       then stateVarsIn;
    end matchcontinue;
  end getStates;
@@ -1638,34 +1607,33 @@ protected function cutTaskGraph "author: Waurich TUD 2013-06
   output TaskGraph graphOut;
   output list<Integer> cutNodesOut;
 algorithm
-  (graphOut,cutNodesOut) := matchcontinue(graphIn,exceptNodes,whenNodes)
+  (graphOut,cutNodesOut) := matchcontinue exceptNodes
     local
       Integer sizeDAE,sizeODE;
       TaskGraph graphT, graphODE;
       list<Integer> cutNodes,odeNodes;
       array<Integer> odeMap;
-      list<list<Integer>> graphTmpLst;
-    case(_,{-1},_)
-      equation
+    case {-1}
+      algorithm
       then (graphIn,{});
-    case(_,_,_)
-      equation
+    case _
+      algorithm
         // remove the algebraic branches
-        sizeDAE = arrayLength(graphIn);
-        graphT = AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,sizeDAE);
-        odeNodes = listAppend(exceptNodes,getAllSuccessors(exceptNodes,graphT));//the ODE-System
-        (_,odeNodes,_) = List.intersection1OnTrue(odeNodes,whenNodes,intEq);
-        (odeNodes,_,_) = List.intersection1OnTrue(List.intRange(sizeDAE),odeNodes,intEq);
+        sizeDAE := arrayLength(graphIn);
+        graphT := AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,sizeDAE);
+        odeNodes := listAppend(exceptNodes,getAllSuccessors(exceptNodes,graphT));//the ODE-System
+        (_,odeNodes,_) := List.intersection1OnTrue(odeNodes,whenNodes,intEq);
+        (odeNodes,_,_) := List.intersection1OnTrue(List.intRange(sizeDAE),odeNodes,intEq);
 
-        odeNodes = List.sort(odeNodes,intGt);
-        sizeODE = listLength(odeNodes);
-        odeMap = arrayCreate(sizeDAE,-1);
+        odeNodes := List.sort(odeNodes,intGt);
+        sizeODE := listLength(odeNodes);
+        odeMap := arrayCreate(sizeDAE,-1);
         List.threadMap1_0(odeNodes,List.intRange(sizeODE),Array.updateIndexFirst,odeMap);
-        graphODE = arrayCreate(sizeODE,{});
-        (graphODE,cutNodes) = cutTaskGraph2(List.intRange(sizeDAE),graphODE,{},graphIn,odeMap);
+        graphODE := arrayCreate(sizeODE,{});
+        (graphODE,cutNodes) := cutTaskGraph2(List.intRange(sizeDAE),graphODE,{},graphIn,odeMap);
       then (graphODE,cutNodes);
     else
-      equation
+      algorithm
         print("cutTaskGraph failed\n");
       then fail();
   end matchcontinue;
@@ -1682,28 +1650,27 @@ protected function cutTaskGraph2 "author: Waurich TUD 2013-04
   output TaskGraph graphOut;
   output list<Integer> cutNodesOut;
 algorithm
-  (graphOut,cutNodesOut) := matchcontinue(daeNodes,graphODE,cutNodesIn,graphDAE,odeMap)
+  (graphOut,cutNodesOut) := matchcontinue daeNodes
     local
       Integer daeIdx,odeIdx;
       list<Integer> rest,row,cutNodes;
-      TaskGraph graphTmp;
-    case(daeIdx::rest,_,_,_,_)
-      equation
-        odeIdx = arrayGet(odeMap,daeIdx);
-        true = intGt(odeIdx,0);  // this node is still in the ODE system
-        row = arrayGet(graphDAE,daeIdx);
-        row = List.map1(row,Array.getIndexFirst,odeMap);
-        row = List.filter1OnTrue(row,intGt,0);
+    case daeIdx::rest
+      algorithm
+        odeIdx := arrayGet(odeMap,daeIdx);
+        true := intGt(odeIdx,0);  // this node is still in the ODE system
+        row := arrayGet(graphDAE,daeIdx);
+        row := List.map1(row,Array.getIndexFirst,odeMap);
+        row := List.filter1OnTrue(row,intGt,0);
         arrayUpdate(graphODE,odeIdx,row);
-        (_,cutNodes) = cutTaskGraph2(rest,graphODE,cutNodesIn,graphDAE,odeMap);
+        (_,cutNodes) := cutTaskGraph2(rest,graphODE,cutNodesIn,graphDAE,odeMap);
       then (graphODE,cutNodes);
-    case(daeIdx::rest,_,_,_,_)
-      equation
-        odeIdx = arrayGet(odeMap,daeIdx);
-        true = intEq(odeIdx,-1);  // this node ist not in the ODE system
-        (_,cutNodes) = cutTaskGraph2(rest,graphODE,daeIdx::cutNodesIn,graphDAE,odeMap);
+    case daeIdx::rest
+      algorithm
+        odeIdx := arrayGet(odeMap,daeIdx);
+        true := intEq(odeIdx,-1);  // this node ist not in the ODE system
+        (_,cutNodes) := cutTaskGraph2(rest,graphODE,daeIdx::cutNodesIn,graphDAE,odeMap);
       then (graphODE,cutNodes);
-    case({},_,_,_,_)
+    case {}
       then (graphODE,cutNodesIn);
   end matchcontinue;
 end cutTaskGraph2;
@@ -1728,7 +1695,7 @@ protected
   array<ComponentInfo> compInformations;
 algorithm
   TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := graphDataIn;
-  inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
+  inComps := listArray(List.deletePositions(arrayList(inComps),cutNodes));
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
   graphDataOut :=TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
@@ -1741,22 +1708,22 @@ protected function markRemovedNodes "author: Waurich TUD 2013-07
   input array<Integer> nodeMarkIn;
   output array<Integer> nodeMarkOut;
 algorithm
-  nodeMarkOut := matchcontinue(nodeMarkIdx,removedNodes,nodeMarkIn)
+  nodeMarkOut := matchcontinue nodeMarkIn
     local
       array<Integer> nodeMarkTmp;
-  case(_,_,_)
-    equation
-      true = intEq(-2, arrayGet(nodeMarkIn,nodeMarkIdx));
+  case _
+    algorithm
+      true := intEq(-2, arrayGet(nodeMarkIn,nodeMarkIdx));
   then nodeMarkIn;
-  case(_,_,_)
-    equation
-      false = List.isMemberOnTrue(nodeMarkIdx,removedNodes,intEq);
+  case _
+    algorithm
+      false := List.isMemberOnTrue(nodeMarkIdx,removedNodes,intEq);
     then
       nodeMarkIn;
-  case(_,_,_)
-    equation
-      true = List.isMemberOnTrue(nodeMarkIdx,removedNodes,intEq);
-      nodeMarkTmp = Array.replaceAtWithFill(nodeMarkIdx,-1,999,nodeMarkIn);
+  case _
+    algorithm
+      true := List.isMemberOnTrue(nodeMarkIdx,removedNodes,intEq);
+      nodeMarkTmp := Array.replaceAtWithFill(nodeMarkIdx,-1,999,nodeMarkIn);
     then
       nodeMarkTmp;
   end matchcontinue;
@@ -1771,36 +1738,36 @@ public function getCompInComps "author: Waurich TUD 2013-07
   input array<Integer> nodeMark;
   output Integer compOut;
 algorithm
-  compOut := matchcontinue(compIn,compIdx,inComps, nodeMark)
+  compOut := matchcontinue nodeMark
     local
       list<Integer> mergedComp;
       Integer compTmp;
       Integer nodeMarkEntry;
-    case(_,_,_,_)
-      equation
-        true = arrayLength(inComps) >= compIdx;
-        mergedComp = arrayGet(inComps,compIdx);
+    case _
+      algorithm
+        true := arrayLength(inComps) >= compIdx;
+        mergedComp := arrayGet(inComps,compIdx);
         //print("get comp for compIn "+intString(compIn)+" in the merged Comp "+ stringDelimitList(List.map(mergedComp,intString),",")+"\n");
-        false = List.isMemberOnTrue(compIn,mergedComp,intEq);
-        compTmp = getCompInComps(compIn,compIdx+1,inComps,nodeMark);
+        false := List.isMemberOnTrue(compIn,mergedComp,intEq);
+        compTmp := getCompInComps(compIn,compIdx+1,inComps,nodeMark);
       then
         compTmp;
-    case(_,_,_,_)
-      equation
-        true = arrayLength(inComps) >= compIdx;
-        mergedComp = arrayGet(inComps,compIdx);
+    case _
+      algorithm
+        true := arrayLength(inComps) >= compIdx;
+        mergedComp := arrayGet(inComps,compIdx);
         //print("get comp for compIn "+intString(compIn)+" in the merged Comp "+ stringDelimitList(List.map(mergedComp,intString),",")+"\n");
-        true = List.isMemberOnTrue(compIn,mergedComp,intEq);
+        true := List.isMemberOnTrue(compIn,mergedComp,intEq);
       then
         compIdx;
-    case(_,_,_,_)
-      equation
-        nodeMarkEntry = arrayGet(nodeMark,compIn);
-        true = intLt(nodeMarkEntry,0);
+    case _
+      algorithm
+        nodeMarkEntry := arrayGet(nodeMark,compIn);
+        true := intLt(nodeMarkEntry,0);
       then
         -1;
     else
-      equation
+      algorithm
         print("getCompInComps failed! CompIn idx: " + intString(compIn) + " | Component array-size: " + intString(arrayLength(inComps)) + "\n");
       then
         fail();
@@ -1813,22 +1780,22 @@ public function getAllSuccessors "author: Waurich TUD 2014-09
   input TaskGraph graph;
   output list<Integer> successors;
 algorithm
-  successors := matchcontinue(nodes,graph)
+  successors := matchcontinue graph
     local
       array<Boolean> alreadyVisited;
       list<Boolean> check;
-      list<Integer> successors1, successors2;
-    case(_,_)
-      equation
-        alreadyVisited = arrayCreate(arrayLength(graph),false);
+      list<Integer> successors1;
+    case _
+      algorithm
+        alreadyVisited := arrayCreate(arrayLength(graph),false);
         List.map2_0(nodes,Array.updateIndexFirst,true,alreadyVisited); // dont use the except nodes
-        successors1 = List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
-        check = List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
-        (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
-        successors1 = List.unique(successors1);
+        successors1 := List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
+        check := List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
+        (_,successors1) := List.filterOnTrueSync(check,boolNot,successors1);
+        successors1 := List.unique(successors1);
       then getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
     else
-      equation
+      algorithm
         print("getAllSuccessors failed!\n");
       then fail();
   end matchcontinue;
@@ -1842,18 +1809,18 @@ protected function getAllSuccessors2 "author: Waurich TUD 2014-09
   input list<Integer> successorsIn;
   output list<Integer> successorsOut;
 algorithm
-  successorsOut := match(nodes,graph,alreadyVisited,successorsIn)
+  successorsOut := match nodes
     local
       list<Boolean> check;
       list<Integer> successors1;
-    case({},_,_,_)
+    case {}
       then List.unique(successorsIn);
-    case(_,_,_,_)
-      equation
-        successors1 = List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
-        check = List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
-        (_,successors1) = List.filterOnTrueSync(check,boolNot,successors1);
-        successors1 = List.unique(successors1);
+    case _
+      algorithm
+        successors1 := List.flatten(List.map1(nodes,Array.getIndexFirst,graph));
+        check := List.map1(successors1,Array.getIndexFirst,alreadyVisited);  //check if it was already visited?
+        (_,successors1) := List.filterOnTrueSync(check,boolNot,successors1);
+        successors1 := List.unique(successors1);
         //print("successors1: "+intLstString(successors1)+"\n");
         List.map2_0(successors1,Array.updateIndexFirst,true,alreadyVisited);
     then getAllSuccessors2(successors1,graph,alreadyVisited,listAppend(successors1,successorsIn));
@@ -1868,18 +1835,18 @@ protected function getChildNodes "author: waurich TUD 2013-06
   input Integer Idx;
   output list<Integer> childLsts;
 algorithm
-  childLsts := matchcontinue(adjacencyLstIn,parents,childLstTmp,Idx)
+  childLsts := matchcontinue Idx
     local
       Integer parent;
       list<Integer> row;
       list<Integer> childLst;
-    case(_,_,_,_)
-      equation
-        true = listLength(parents) >= Idx;
-        parent = listGet(parents,Idx);
-        row = arrayGet(adjacencyLstIn,parent);
-        childLst = listAppend(childLstTmp,row);
-        childLst = getChildNodes(adjacencyLstIn,parents,childLst,Idx+1);
+    case _
+      algorithm
+        true := listLength(parents) >= Idx;
+        parent := listGet(parents,Idx);
+        row := arrayGet(adjacencyLstIn,parent);
+        childLst := listAppend(childLstTmp,row);
+        childLst := getChildNodes(adjacencyLstIn,parents,childLst,Idx+1);
       then
         childLst;
     else childLstTmp;
@@ -1907,11 +1874,11 @@ algorithm
    case(_,{})
      then lstIn;
    case(start::rest,_)
-     equation
-        deleteArr = arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
+     algorithm
+        deleteArr := arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
         List.map2_0(deleteEntriesIn,Array.updateIndexFirst,1,deleteArr);
-        (deleteArr,_) = Array.mapFold(deleteArr,setDeleteArr,0);
-        lstTmp = List.map1(lstIn,removeContinuousEntries1,deleteArr);
+        (deleteArr,_) := Array.mapFold(deleteArr,setDeleteArr,0);
+        lstTmp := List.map1(lstIn,removeContinuousEntries1,deleteArr);
      then lstTmp;
     end match;
 end updateContinuousEntriesInList;
@@ -1922,10 +1889,10 @@ protected function setDeleteArr
   output Integer entryOut;
   output Integer offsetOut;
 algorithm
-  (entryOut,offsetOut) := match(entryIn,offsetIn)
-  case(0,_)
+  (entryOut,offsetOut) := match entryIn
+  case 0
       then (offsetIn,offsetIn);
-  case(1,_)
+  case 1
       then (offsetIn+1,offsetIn+1);
   end match;
 end setDeleteArr;
@@ -1935,18 +1902,16 @@ protected function removeContinuousEntries1 "author: Waurich TUD 2013-07
   input Integer entryIn;
   input array<Integer> deleteEntriesIn;
   output Integer entryOut;
-protected
-  Integer eqSysIdx, entryOffset;
 algorithm
-  entryOut := matchcontinue(entryIn,deleteEntriesIn)
+  entryOut := matchcontinue deleteEntriesIn
   local
     Integer offset;
-  case(_,_)
-    equation
-      offset = arrayGet(deleteEntriesIn,entryIn);
+  case _
+    algorithm
+      offset := arrayGet(deleteEntriesIn,entryIn);
     then entryIn-offset;
   else
-    equation
+    algorithm
       print("removeContinuousEntries1 failed!\n");
     then entryIn;
   end matchcontinue;
@@ -1961,14 +1926,12 @@ protected function deleteRowInAdjLst "author: waurich TUD 2013-06
 protected
   array<list<Integer>> adjLst;
   list<Integer> copiedRows;
-  list<Integer> rowsDel1;
   Integer size;
 algorithm
   size := arrayLength(adjacencyLstIn)-listLength(rowsDel);
   adjLst := arrayCreate(size,{});
   copiedRows := List.intRange(arrayLength(adjacencyLstIn));
-  rowsDel1 := List.map1(rowsDel,intSub,1);
-  copiedRows := List.deletePositions(copiedRows,rowsDel1);
+  copiedRows := List.deletePositions(copiedRows,rowsDel);
   adjacencyLstOut := arrayCopyRows(adjacencyLstIn,adjLst,copiedRows,1);
   odeMapping := copiedRows;
 end deleteRowInAdjLst;
@@ -1981,24 +1944,22 @@ protected function arrayCopyRows "
   input Integer Idx;
   output array<list<Integer>> outArray;
 algorithm
-  outArray := matchcontinue(inArray,newArray,copiedRows,Idx)
+  outArray := matchcontinue Idx
     local
-      Integer head;
       Integer copyRow;
-      list<Integer> rest;
       list<Integer> row;
       array<list<Integer>> arrayTmp;
-    case(_,_,_,_)
-      equation
-        true = listLength(copiedRows) >= Idx;
-        copyRow = listGet(copiedRows,Idx);
-        row = arrayGet(inArray,copyRow);
-        arrayTmp = Array.replaceAtWithFill(Idx, row, {111,222}, newArray);
-        arrayTmp = arrayCopyRows(inArray,arrayTmp,copiedRows,Idx+1);
+    case _
+      algorithm
+        true := listLength(copiedRows) >= Idx;
+        copyRow := listGet(copiedRows,Idx);
+        row := arrayGet(inArray,copyRow);
+        arrayTmp := Array.replaceAtWithFill(Idx, row, {111,222}, newArray);
+        arrayTmp := arrayCopyRows(inArray,arrayTmp,copiedRows,Idx+1);
       then
         arrayTmp;
     else
-      equation
+      algorithm
       then
         newArray;
   end matchcontinue;
@@ -2060,17 +2021,17 @@ protected
   list<list<Integer>> tmpLevelNodes;
   list<Integer> zeroRefNodes;
 algorithm
-  oLevelNodes := match(iTaskGraph,iRefCounter, iNodesWithRefZero, iLevelNodes)
-    case(_,_,{},_)
-      equation //no nodes with refCount = 0 -> all nodes handled
-        tmpLevelNodes = listReverse(iLevelNodes);
+  oLevelNodes := match iNodesWithRefZero
+    case {}
+      algorithm //no nodes with refCount = 0 -> all nodes handled
+        tmpLevelNodes := listReverse(iLevelNodes);
       then tmpLevelNodes;
-    case(_,_,zeroRefNodes,_)
-      equation
+    case zeroRefNodes
+      algorithm
         //append all nodes with refCount = zero as new level
-        tmpLevelNodes = zeroRefNodes :: iLevelNodes;
-        zeroRefNodes = List.fold2(zeroRefNodes, getLevelNodes1, iTaskGraph, iRefCounter, {});
-        tmpLevelNodes = getLevelNodes0(iTaskGraph, iRefCounter, zeroRefNodes, tmpLevelNodes);
+        tmpLevelNodes := zeroRefNodes :: iLevelNodes;
+        zeroRefNodes := List.fold2(zeroRefNodes, getLevelNodes1, iTaskGraph, iRefCounter, {});
+        tmpLevelNodes := getLevelNodes0(iTaskGraph, iRefCounter, zeroRefNodes, tmpLevelNodes);
       then tmpLevelNodes;
   end match;
 end getLevelNodes0;
@@ -2101,13 +2062,13 @@ protected
   list<Integer> tmpNodesWithRefZero;
   Integer refCounter;
 algorithm
-  oNodesWithRefZero := matchcontinue(iNodeIdx, iRefCounter, iNodesWithRefZero)
-    case(_,_,tmpNodesWithRefZero)
-      equation
-        refCounter = arrayGet(iRefCounter, iNodeIdx) - 1;
+  oNodesWithRefZero := matchcontinue iNodesWithRefZero
+    case tmpNodesWithRefZero
+      algorithm
+        refCounter := arrayGet(iRefCounter, iNodeIdx) - 1;
         arrayUpdate(iRefCounter, iNodeIdx, refCounter);
-        true = intEq(refCounter, 0);
-        tmpNodesWithRefZero = iNodeIdx::tmpNodesWithRefZero;
+        true := intEq(refCounter, 0);
+        tmpNodesWithRefZero := iNodeIdx::tmpNodesWithRefZero;
       then tmpNodesWithRefZero;
     else iNodesWithRefZero;
   end matchcontinue;
@@ -2135,13 +2096,13 @@ protected
   Integer counter, head;
   list<Integer> tail;
 algorithm
-  oRefCounter := match(iChildNodes, iRefCounter)
-    case({},_) then iRefCounter;
-    case(head::tail,_)
-      equation
-        counter = arrayGet(iRefCounter,head) + 1;
-        tmpRefCounter = arrayUpdate(iRefCounter,head,counter);
-        tmpRefCounter = createRefCounter0(tail,tmpRefCounter);
+  oRefCounter := match iChildNodes
+    case {} then iRefCounter;
+    case head::tail
+      algorithm
+        counter := arrayGet(iRefCounter,head) + 1;
+        tmpRefCounter := arrayUpdate(iRefCounter,head,counter);
+        tmpRefCounter := createRefCounter0(tail,tmpRefCounter);
       then tmpRefCounter;
   end match;
 end createRefCounter0;
@@ -2151,7 +2112,7 @@ protected function getNodesWithRefCountZero "author: marcusw
   input array<Integer> iRefCounter;
   output list<Integer> oZeroIdc; //list of all indices with reference counter == zero
 algorithm
-  ((oZeroIdc,_)) := Array.fold(iRefCounter, getNodesWithRefCountZero0, ({},1));
+  (oZeroIdc,_) := Array.fold(iRefCounter, getNodesWithRefCountZero0, ({},1));
 end getNodesWithRefCountZero;
 
 protected function getNodesWithRefCountZero0 "author: marcusw
@@ -2165,8 +2126,8 @@ protected
 algorithm
   oZeroIdc := match(iRefCount, iZeroIdc)
     case(0,(resultList,currentNodeIdx))
-      equation
-        resultList = currentNodeIdx :: resultList;
+      algorithm
+        resultList := currentNodeIdx :: resultList;
       then ((resultList, currentNodeIdx+1));
     case(_,(resultList,currentNodeIdx))
       then ((resultList, currentNodeIdx+1));
@@ -2190,7 +2151,7 @@ public function getZeroFuncsSystem "author: marcusw
   output TaskGraph oTaskGraph;
   output TaskGraphMeta oTaskGraphMeta;
 protected
-  list<Integer> zeroCrossingNodes, nodeList, newNodeList, predecessors, successors, successorsTmp, predecessorsTmp;
+  list<Integer> nodeList, newNodeList, predecessors, successors, successorsTmp, predecessorsTmp;
   array<Integer> zeroFuncNodeMarks; //value < 0 : All successors are not part of the zero funcs system ; value > 0 : Node is part of zero funcs system
   array<Integer> sccNodeMapping;
   array<Boolean> handledNodes, whenNodeMarks;
@@ -2198,7 +2159,6 @@ protected
   TaskGraph zeroFuncTaskGraph;
   TaskGraphMeta zeroFuncTaskGraphMeta;
   list<Integer> whenNodes;
-  Integer inCompsEntry;
   array<list<Integer>> zeroFuncInComps, inComps;
   array<tuple<Integer, Integer, Integer>> eqCompMapping;
   Integer eqIdx, compIdx, nodeIdx, successor, predecessor, zeroFuncNodeMark, successorMark, zeroFuncNodeCount, zeroFuncNodeIdx;
@@ -2390,7 +2350,6 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   TaskGraph graphTmp;
-  TaskGraphMeta graphDataTmp;
 algorithm
   TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, inComps=inComps) := iTaskGraphMeta;
   BackendDAE.DAE(systs,shared) := iSyst;
@@ -2417,13 +2376,13 @@ protected function getComponentsOfZeroCrossing "author: marcusw
 protected
   list<Integer> occurEquLst, tmpCompIdc;
 algorithm
-  oCompIdc := matchcontinue(iZeroCrossing, iSimCodeEqCompMapping)
-    case(BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst), _)
-      equation
-        occurEquLst = List.filter1OnTrue(occurEquLst, intGt, 0);
+  oCompIdc := matchcontinue iZeroCrossing
+    case BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst)
+      algorithm
+        occurEquLst := List.filter1OnTrue(occurEquLst, intGt, 0);
         print("getComponentsOfZeroCrossing: simEqs: " + stringDelimitList(List.map(occurEquLst, intString), ",") + "\n");
-        tmpCompIdc = List.map1(occurEquLst, Array.getIndexFirst, iSimCodeEqCompMapping);
-        tmpCompIdc = List.filter1OnTrue(tmpCompIdc, intGt, 0);
+        tmpCompIdc := List.map1(occurEquLst, Array.getIndexFirst, iSimCodeEqCompMapping);
+        tmpCompIdc := List.filter1OnTrue(tmpCompIdc, intGt, 0);
         print("getComponentsOfZeroCrossing: components: " + stringDelimitList(List.map(tmpCompIdc, intString), ",") + "\n");
       then tmpCompIdc;
     else {};
@@ -2443,7 +2402,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := iSystem;
   (offset, resultList) := iOffsetResList;
-  ((offset, resultList, _, _)) := BackendEquation.traverseEquationArray(orderedEqs, getComponentsIncludingTime0, (offset, resultList, iEqCompMapping, 1));
+  (offset, resultList, _, _) := BackendEquation.traverseEquationArray(orderedEqs, getComponentsIncludingTime0, (offset, resultList, iEqCompMapping, 1));
   oOffsetResList := (offset, resultList);
 end getComponentsIncludingTime;
 
@@ -2458,15 +2417,14 @@ protected
   Integer offset, eqIdx, sccIdx;
   list<Integer> resultList;
   array<tuple<Integer, Integer, Integer>> eqCompMapping;
-  Boolean timeIsPartOfEquation;
 algorithm
   (outEq,oOffsetResList) := matchcontinue(inEq,iOffsetResList)
     case (eq, (offset,resultList,eqCompMapping,eqIdx))
-      equation
-        ((sccIdx,_,_)) = arrayGet(eqCompMapping, eqIdx+offset);
+      algorithm
+        (sccIdx,_,_) := arrayGet(eqCompMapping, eqIdx+offset);
         //print("Component " + intString(sccIdx) + "\n");
-        true = BackendDAEUtil.traverseBackendDAEExpsOptEqn(SOME(eq), getComponentsIncludingTime1, false);
-        resultList = sccIdx::resultList;
+        true := BackendDAEUtil.traverseBackendDAEExpsOptEqn(SOME(eq), getComponentsIncludingTime1, false);
+        resultList := sccIdx::resultList;
       then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
     case (eq, (offset,resultList,eqCompMapping,eqIdx))
       then (eq, (offset,resultList,eqCompMapping,eqIdx+1));
@@ -2481,8 +2439,8 @@ protected function getComponentsIncludingTime1
 algorithm
   (e,res) := match (inExp,inB)
     case (e,false)
-      equation
-        res = Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
+      algorithm
+        res := Expression.traverseCrefsFromExp(e, getComponentsIncludingTime2, false);
       then (e,res);
     else (inExp,inB);
   end match;
@@ -2493,13 +2451,13 @@ protected function getComponentsIncludingTime2
   input Boolean iIncludingTime;
   output Boolean oIncludingTime;
 algorithm
-  oIncludingTime := match(iRef, iIncludingTime)
-    case (DAE.CREF_IDENT(ident="time"),_)
-      equation
+  oIncludingTime := match iRef
+    case DAE.CREF_IDENT(ident="time")
+      algorithm
         //BackendDump.debugCrefStr((iRef, "\n"));
       then true;
     else
-      equation
+      algorithm
         //BackendDump.debugCrefStr((iRef, "\n"));
       then (false or iIncludingTime);
   end match;
@@ -2512,11 +2470,10 @@ protected function getDiscreteNodes "author: marcusw
   output list<Integer> eventNodes;
 protected
   list<Integer> eqLst;
-  list<tuple<Integer,Integer,Integer>> tplLst;
   BackendDAE.EqSystems systemsIn;
 algorithm
   BackendDAE.DAE(eqs=systemsIn) := systIn;
-  ((eqLst,_)) := List.fold(systemsIn, getDiscreteNodesEqs,({},0));
+  (eqLst,_) := List.fold(systemsIn, getDiscreteNodesEqs,({},0));
   eventNodes := getArrayTuple31(eqLst,eqCompMapping);
 end getDiscreteNodes;
 
@@ -2531,7 +2488,6 @@ protected
   BackendDAE.EquationArray orderedEqs;
   list<Integer> eventEqs;
   list<Integer> eventEqsIn;
-  Integer numOfEqs;
   Integer offset;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs,orderedVars=orderedVars,matching=matching) := systIn;
@@ -2549,27 +2505,25 @@ protected function getDiscreteNodesEqs1
   input list<Integer> discreteEqsIn;
   output list<Integer> discreteEqsOut;
 algorithm
-  discreteEqsOut := matchcontinue(comps,offset,iOrderedVars,discreteEqsIn)
+  discreteEqsOut := matchcontinue comps
     local
       Integer eqn;
-      Integer sysCount;
       list<Integer> eventEqs;
-      list<Integer> condVars;
       BackendDAE.StrongComponents rest;
       BackendDAE.StrongComponent head;
-    case((head::rest),_,_,_)
-      equation
-        (true,eqn) = solvesDiscreteValue(head, iOrderedVars);
-        eqn = eqn+offset;
-        eventEqs = getDiscreteNodesEqs1(rest,offset,iOrderedVars,eqn::discreteEqsIn);
+    case head::rest
+      algorithm
+        (true,eqn) := solvesDiscreteValue(head, iOrderedVars);
+        eqn := eqn+offset;
+        eventEqs := getDiscreteNodesEqs1(rest,offset,iOrderedVars,eqn::discreteEqsIn);
       then
         eventEqs;
-    case((_::rest),_,_,_)
-      equation
-        eventEqs = getDiscreteNodesEqs1(rest,offset,iOrderedVars,discreteEqsIn);
+    case _::rest
+      algorithm
+        eventEqs := getDiscreteNodesEqs1(rest,offset,iOrderedVars,discreteEqsIn);
       then
         eventEqs;
-    case({},_,_,_)
+    case {}
       then
         discreteEqsIn;
   end matchcontinue;
@@ -2581,55 +2535,55 @@ protected function solvesDiscreteValue
   output Boolean oSolvesDiscreteValue;
   output Integer oFirstEqIdx;
 algorithm
-  (oSolvesDiscreteValue,oFirstEqIdx) := matchcontinue(inComp,iOrderedVars)
+  (oSolvesDiscreteValue,oFirstEqIdx) := matchcontinue inComp
     local
       Integer eqn, var;
       list<Integer> vars, eqns;
       list<BackendDAE.Var> backendVars;
       BackendDAE.Var backendVar;
       Boolean solvesDiscreteValue;
-    case(BackendDAE.SINGLEEQUATION(var=var,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLEEQUATION(var=var,eqn=eqn)
+      algorithm
         //print("Var of single equation: " + intString(var) + "\n");
-        backendVar = BackendVariable.getVarAt(iOrderedVars, var);
-        solvesDiscreteValue = BackendVariable.isVarDiscrete(backendVar);
+        backendVar := BackendVariable.getVarAt(iOrderedVars, var);
+        solvesDiscreteValue := BackendVariable.isVarDiscrete(backendVar);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.EQUATIONSYSTEM(vars=vars,eqns=eqns),_)
-      equation
+    case BackendDAE.EQUATIONSYSTEM(vars=vars,eqns=eqns)
+      algorithm
         //print("Vars of single equation system: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
-        eqn = listHead(eqns);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
+        eqn := listHead(eqns);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.SINGLEARRAY(vars=vars,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLEARRAY(vars=vars,eqn=eqn)
+      algorithm
         //print("Vars of single array: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.SINGLEWHENEQUATION(vars=vars,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLEWHENEQUATION(vars=vars,eqn=eqn)
+      algorithm
         //print("Vars of single when equation: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.SINGLECOMPLEXEQUATION(vars=vars,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLECOMPLEXEQUATION(vars=vars,eqn=eqn)
+      algorithm
         //print("Vars of single complex equation: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.SINGLEALGORITHM(vars=vars,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLEALGORITHM(vars=vars,eqn=eqn)
+      algorithm
         //print("Vars of single algorithm: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
-    case(BackendDAE.SINGLEIFEQUATION(vars=vars,eqn=eqn),_)
-      equation
+    case BackendDAE.SINGLEIFEQUATION(vars=vars,eqn=eqn)
+      algorithm
         //print("Vars of single if equation: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
-        backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
-        solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
+        backendVars := List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
+        solvesDiscreteValue := BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
   else (false,-1);
   end matchcontinue;
@@ -2727,31 +2681,31 @@ protected
           simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx, compsIdAttIdx, partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx;
   list<Integer> nodeIdc;
 algorithm
-  oGraphInfo := match(iGraph, iGraphData, iCriticalPathInfo, iCriticalPath, iCriticalPathWoC, iSccSimEqMapping, iSchedulerInfo, iAnnotationInfo, iGraphIdx, iGraphDumpOptions, iGraphInfo)
-    case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), iGraphInfo);
-        (graphInfo,(_,opCountAttIdx)) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,calcTimeAttIdx)) = GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_DOUBLE(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,taskIdAttIdx)) = GraphML.addAttribute("", "TaskID", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,compsIdAttIdx)) = GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,yCoordAttIdx)) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,simCodeEqAttIdx)) = GraphML.addAttribute("", "SimCodeEqs", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,threadIdAttIdx)) = GraphML.addAttribute("", "ThreadId", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,taskNumberAttIdx)) = GraphML.addAttribute("-1", "TaskNumber", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,commCostAttIdx)) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_DOUBLE(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,commVarsAttIdx)) = GraphML.addAttribute("-1", "CommVars", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,commVarsIntAttIdx)) = GraphML.addAttribute("-1", "CommVarsInt", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,commVarsFloatAttIdx)) = GraphML.addAttribute("-1", "CommVarsFloat", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,commVarsBoolAttIdx)) = GraphML.addAttribute("-1", "CommVarsBool", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,annotAttIdx)) = GraphML.addAttribute("annotation", "Annotations", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
-        (graphInfo,(_,partOfEventAttIdx)) = GraphML.addAttribute("false", "isPartOfZeroFuncSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,partOfOdeAttIdx)) = GraphML.addAttribute("false", "IsPartOfOdeSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,removedCompAttIdx)) = GraphML.addAttribute("false", "IsRemovedComponent", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
-        graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, iCriticalPathInfo), iGraphIdx, graphInfo);
-        nodeIdc = List.intRange(arrayLength(iGraph));
-        ((graphInfo,_)) = List.fold(nodeIdc, function addNodeToGraphML(
+  oGraphInfo := match iGraphInfo
+    case _
+      algorithm
+        (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), iGraphInfo);
+        (graphInfo,(_,opCountAttIdx)) := GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,calcTimeAttIdx)) := GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_DOUBLE(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,taskIdAttIdx)) := GraphML.addAttribute("", "TaskID", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,compsIdAttIdx)) := GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,yCoordAttIdx)) := GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,simCodeEqAttIdx)) := GraphML.addAttribute("", "SimCodeEqs", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,threadIdAttIdx)) := GraphML.addAttribute("", "ThreadId", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,taskNumberAttIdx)) := GraphML.addAttribute("-1", "TaskNumber", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,commCostAttIdx)) := GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_DOUBLE(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,commVarsAttIdx)) := GraphML.addAttribute("-1", "CommVars", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,commVarsIntAttIdx)) := GraphML.addAttribute("-1", "CommVarsInt", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,commVarsFloatAttIdx)) := GraphML.addAttribute("-1", "CommVarsFloat", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,commVarsBoolAttIdx)) := GraphML.addAttribute("-1", "CommVarsBool", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,annotAttIdx)) := GraphML.addAttribute("annotation", "Annotations", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,critPathAttIdx)) := GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
+        (graphInfo,(_,partOfEventAttIdx)) := GraphML.addAttribute("false", "isPartOfZeroFuncSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,partOfOdeAttIdx)) := GraphML.addAttribute("false", "IsPartOfOdeSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,removedCompAttIdx)) := GraphML.addAttribute("false", "IsRemovedComponent", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
+        graphInfo := GraphML.addGraphAttributeValue((critPathAttIdx, iCriticalPathInfo), iGraphIdx, graphInfo);
+        nodeIdc := List.intRange(arrayLength(iGraph));
+        (graphInfo,_) := List.fold(nodeIdc, function addNodeToGraphML(
                                      tGraphDataTuple=(iGraph, iGraphData),
                                      attIdc=(nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,compsIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
                                       commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx,
@@ -2789,18 +2743,15 @@ protected
   list<Integer> childNodes;
   list<Integer> components;
   list<Integer> simCodeEqs;
-  array<tuple<Integer,Integer,Integer>>  eqCompMapping;
   array<tuple<Integer,Real>> exeCosts;
   array<Integer> nodeMark;
   array<list<Integer>> inComps;
   array<String> compNames;
   array<String> compDescs;
   array<String> annotationInfo;
-  array<Communications> commCosts;
   String calcTimeString, opCountString, yCoordString, taskFinishTimeString, taskStartTimeString;
   String compText;
   String compsText;
-  String description;
   String nodeDesc;
   String componentsString;
   String simCodeEqString;
@@ -2823,19 +2774,19 @@ algorithm
     (criticalPath,criticalPathWoC,schedulerInfo,annotationInfo) := iSchedulerInfoCritPath;
     GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime, visualizeTaskCalcTime=visualizeTaskCalcTime) := iGraphDumpOptions;
     components := arrayGet(inComps,nodeIdx);
-    ((isPartOfODESystem, isPartOfZeroFuncSystem, isRemovedComponent)) := getNodeMembershipByComponents(components, compInformations);
+    (isPartOfODESystem, isPartOfZeroFuncSystem, isRemovedComponent) := getNodeMembershipByComponents(components, compInformations);
 
     if(intNe(listLength(components), 1)) then
       primalComp := List.last(components);
       simCodeEqs := List.flatten(List.map1(components, Array.getIndexFirst, sccSimEqMapping));
       nodeDesc := stringDelimitList(List.map1(components, Array.getIndexFirst, compDescs), "\n");// arrayGet(compDescs,primalComp);
-      ((opCount,calcTime)) := List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
+      (opCount,calcTime) := List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
     else
       primalComp := listGet(components,1);
       simCodeEqs := arrayGet(sccSimEqMapping,primalComp);
       nodeDesc := arrayGet(compDescs,primalComp);
-      ((_,calcTime)) := arrayGet(exeCosts,primalComp);
-      ((opCount,calcTime)) := arrayGet(exeCosts,primalComp);
+      (_,calcTime) := arrayGet(exeCosts,primalComp);
+      (opCount,calcTime) := arrayGet(exeCosts,primalComp);
     end if;
 
     compText := arrayGet(compNames,primalComp);
@@ -2849,7 +2800,7 @@ algorithm
     simCodeEqString := stringDelimitList(List.map(simCodeEqs,intString),", ");
     //componentsString := List.fold(components, addNodeToGraphML2, " ");
     componentsString := (" "+intString(nodeIdx)+" ");
-    ((schedulerThreadId,schedulerTaskNumber,taskFinishTime)) := arrayGet(schedulerInfo,nodeIdx);
+    (schedulerThreadId,schedulerTaskNumber,taskFinishTime) := arrayGet(schedulerInfo,nodeIdx);
     taskStartTime := realSub(taskFinishTime,calcTime);
     threadIdxString := "Th " + intString(schedulerThreadId);
     taskNumberString := intString(schedulerTaskNumber);
@@ -2859,7 +2810,7 @@ algorithm
     nodeLabels := {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
     nodeLabels := if visualizeTaskCalcTime then GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels else nodeLabels;
     nodeLabels := if visualizeTaskStartAndFinishTime then listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}) else nodeLabels;
-    (tmpGraph,(_,_)) := GraphML.addNode("Node" + intString(nodeIdx),
+    (tmpGraph,_) := GraphML.addNode("Node" + intString(nodeIdx),
                                       GraphML.COLOR_ORANGE,
                                       GraphML.BORDERWIDTH_STANDARD,
                                       nodeLabels,
@@ -2896,7 +2847,7 @@ protected
   Real exeTimeIn, exeTime;
 algorithm
   (opCountIn,exeTimeIn) := exeCostsIn;
-  ((opCount,exeTime)) := arrayGet(exeCosts,compIdx);
+  (opCount,exeTime) := arrayGet(exeCosts,compIdx);
   exeCostsOut := ((opCountIn+opCount,realAdd(exeTimeIn,exeTime)));
 end addNodeToGraphML1;
 
@@ -2914,12 +2865,11 @@ protected
   array<Communications> commCosts;
   list<Integer> integerVars,floatVars,booleanVars;
   Integer commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx;
-  Integer numOfCommVars, numOfCommVarsInt, numOfCommVarsFloat, numOfCommVarsBool, primalCompParent, primalCompChild;
+  Integer numOfCommVars;
   Real commCost;
-  String refSccCountStr, commCostString, numOfCommVarsString, numOfCommVarsIntString, numOfCommVarsFloatString, numOfCommVarsBoolString;
+  String commCostString, numOfCommVarsString, numOfCommVarsIntString, numOfCommVarsFloatString, numOfCommVarsBoolString;
   array<list<Integer>> inComps;
   array<Integer> nodeMark;
-  list<Integer> components;
   GraphML.GraphInfo tmpGraph;
   list<tuple<Integer,Integer>> criticalPathEdges, criticalPathEdgesWoC;
   String edgeColor = GraphML.COLOR_BLACK;
@@ -2947,7 +2897,7 @@ algorithm
   numOfCommVarsBoolString := intString(listLength(booleanVars));
   commCostString := System.snprintff("%.0f", 25, commCost);
   edgeLabels := if visualizeCommTime then {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)} else {};
-  (tmpGraph,(_,_)) := GraphML.addEdge("Edge" + intString(parentIdx) + intString(childIdx),
+  (tmpGraph,_) := GraphML.addEdge("Edge" + intString(parentIdx) + intString(childIdx),
                                          "Node" + intString(childIdx), "Node" + intString(parentIdx),
                                           edgeColor,
                                           GraphML.LINE(),
@@ -3003,13 +2953,13 @@ protected function dumpAdjacencyLst "author: Waurich TUD 2013-07
   input list<list<Integer>> inIntegerLstLst;
   input Integer rowIndex;
 algorithm
-  _ := match (inIntegerLstLst,rowIndex)
+  () := match inIntegerLstLst
     local
       list<Integer> row;
       list<list<Integer>> rows;
-    case ({},_) then ();
-    case ((row :: rows),_)
-      equation
+    case {} then ();
+    case row :: rows
+      algorithm
         print(intString(rowIndex));print(":");
         dumpAdjacencyRow(row);
         dumpAdjacencyLst(rows,rowIndex+1);
@@ -3022,19 +2972,19 @@ protected function dumpAdjacencyRow "author: PA
   Helper function to dumpAdjacencyMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
-  _ := match (inIntegerLst)
+  () := match inIntegerLst
     local
       String s;
       Integer x;
       list<Integer> xs;
-    case ({})
-      equation
+    case {}
+      algorithm
         print("\n");
       then
         ();
-    case ((x :: xs))
-      equation
-        s = intString(x);
+    case x :: xs
+      algorithm
+        s := intString(x);
         print(s);
         print(" ");
         dumpAdjacencyRow(xs);
@@ -3107,7 +3057,7 @@ protected
   Integer varIdx, comp, eqSysIdx, varOffset;
 algorithm
   for varIdx in 1:arrayLength(iVarCompMapping) loop
-    ((comp,eqSysIdx,varOffset)) := arrayGet(iVarCompMapping,varIdx);
+    (comp,eqSysIdx,varOffset) := arrayGet(iVarCompMapping,varIdx);
     print("variable " + intString(varIdx-varOffset) + " (offset: " + intString(varOffset) + ") of equation system "
           + intString(eqSysIdx) + " is solved in component: " + intString(comp) + "\n");
   end for;
@@ -3121,7 +3071,7 @@ protected
   Integer eqIdx, comp, eqSysIdx, eqOffset;
 algorithm
   for eqIdx in 1:arrayLength(iEqCompMapping) loop
-    ((comp,eqSysIdx,eqOffset)) := arrayGet(iEqCompMapping,eqIdx);
+    (comp,eqSysIdx,eqOffset) := arrayGet(iEqCompMapping,eqIdx);
     print("equation " + intString(eqIdx) + " (offset: " + intString(eqOffset) + ") of equation system "
           + intString(eqSysIdx) + " is computed in component: " + intString(comp) + "\n");
   end for;
@@ -3268,20 +3218,20 @@ protected
   list<list<Integer>> critPath, critPathWoC;
   Real costPath, costPathWoC;
 algorithm
-  oString := matchcontinue(iCriticalPaths,iCriticalPathsWoC)
+  oString := match(iCriticalPaths,iCriticalPathsWoC)
   case(({},_),_)
-    equation
+    algorithm
     then
       "";
   case((critPath,costPath),(critPathWoC,costPathWoC))
-    equation
-      tmpString = "critical path with costs of "+realString(costPath)+" cycles -- ";
-      tmpString = tmpString + dumpCriticalPathInfo1(critPath,1);
-      tmpString = " ;; " + tmpString + "critical path' with costs of "+realString(costPathWoC)+" cycles -- ";
-      tmpString = tmpString + dumpCriticalPathInfo1(critPathWoC,1);
+    algorithm
+      tmpString := "critical path with costs of "+realString(costPath)+" cycles -- ";
+      tmpString := tmpString + dumpCriticalPathInfo1(critPath,1);
+      tmpString := " ;; " + tmpString + "critical path' with costs of "+realString(costPathWoC)+" cycles -- ";
+      tmpString := tmpString + dumpCriticalPathInfo1(critPathWoC,1);
   then
     tmpString;
-  end matchcontinue;
+  end match;
 end dumpCriticalPathInfo;
 
 protected function dumpCriticalPathInfo1 "author: marcusw
@@ -3298,13 +3248,13 @@ protected function printCriticalPathInfo "author: Waurich TUD 2013-07
   input list<list<Integer>> criticalPathsIn;
   input Real cpCosts;
 algorithm
-  _ := matchcontinue(criticalPathsIn,cpCosts)
-  case({},_)
-    equation
+  () := match criticalPathsIn
+  case {}
+    algorithm
     then
       ();
   else
-    equation
+    algorithm
     print("--------------------------------\n");
     print(" CRITICAL PATH INFO\n");
     print("--------------------------------\n");
@@ -3312,7 +3262,7 @@ algorithm
     printCriticalPathInfo1(criticalPathsIn,1);
   then
     ();
-  end matchcontinue;
+  end match;
 end printCriticalPathInfo;
 
 protected function printCriticalPathInfo1 "author: Waurich TUD 2013-07
@@ -3337,36 +3287,33 @@ protected function mergeSingleNodes "
   output TaskGraphMeta oTaskGraphMeta;
   output Boolean changed;
 algorithm
-  (oTaskGraph,oTaskGraphMeta,changed) := matchcontinue(iTaskGraph,iTaskGraphMeta,doNotMergeIn)
+  (oTaskGraph,oTaskGraphMeta,changed) := matchcontinue doNotMergeIn
     local
       Integer numProc;
-      list<Integer> singleNodes,singleNodes1,pos,doNotMerge;
-      list<list<Integer>> clusterLst;
+      list<Integer> singleNodes,singleNodes1,pos;
       list<Real> exeCosts;
-      array<Real> costs;
-      array<list<Integer>> cluster;
       TaskGraph taskGraphT;
-    case(_,_,_)
-      equation
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
+    case _
+      algorithm
+        numProc := Flags.getConfigInt(Flags.NUM_PROC);
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         //get the single nodes, sort them according to their exeCosts in decreasing order
-        (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),listEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
-        (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),listEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
-        (singleNodes,_,_) = List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
-        (_,singleNodes,_) = List.intersection1OnTrue(singleNodes,doNotMergeIn,intEq);
-        exeCosts = List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
-        (exeCosts,pos) = HpcOmScheduler.quicksortWithOrder(exeCosts);
-        singleNodes = List.map1(pos,List.getIndexFirst,singleNodes);
-        singleNodes = listReverse(singleNodes);
+        (_,singleNodes) := List.filterOnTrueSync(arrayList(iTaskGraph),listEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
+        (_,singleNodes1) := List.filterOnTrueSync(arrayList(taskGraphT),listEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
+        (singleNodes,_,_) := List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
+        (_,singleNodes,_) := List.intersection1OnTrue(singleNodes,doNotMergeIn,intEq);
+        exeCosts := List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
+        (exeCosts,pos) := HpcOmScheduler.quicksortWithOrder(exeCosts);
+        singleNodes := List.map1(pos,List.getIndexFirst,singleNodes);
+        singleNodes := listReverse(singleNodes);
         //print("singleNodes "+stringDelimitList(List.map(singleNodes,intString),"\n")+"\n");
-        exeCosts = listReverse(exeCosts);
+        exeCosts := listReverse(exeCosts);
         // cluster these singleNodes
-        (cluster,_) = distributeToClusters(singleNodes,exeCosts,numProc);
+        distributeToClusters(singleNodes,exeCosts,numProc);
         //print("cluster "+stringDelimitList(List.mapArray(cluster, intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
-        changed = intGt(listLength(singleNodes),numProc);
+        changed := intGt(listLength(singleNodes),numProc);
   then (iTaskGraph,iTaskGraphMeta,changed);
   else (iTaskGraph,iTaskGraphMeta,false);
   end matchcontinue;
@@ -3408,67 +3355,67 @@ protected function distributeToClusters1
   output array<list<Integer>> clustersOut;
   output array<Real> clusterValuesOut;
 algorithm
-  (clustersOut,clusterValuesOut) := matchcontinue(tplIn,tplFold,numClusters)
+  (clustersOut,clusterValuesOut) := matchcontinue(tplIn, tplFold)
     local
       Integer numCl, diff;
-      list<Integer> itemsIn,lst1,lst1_1,lst1_2,idcsLst1_2,idcsLst2,idcsLst1;
+      list<Integer> itemsIn,lst1,idcsLst1_2,idcsLst2,idcsLst1;
       list<list<Integer>> entries,entries2;
       list<Real> valuesIn,values,addValues;
       array<list<Integer>> clusters, clustersFinal;
       array<Real> clusterValues, clusterValuesFinal;
-  case((itemsIn,_),(clusters,clusterValues),_)
-    equation
-      true = listLength(itemsIn) <= numClusters;
-      idcsLst1 = List.intRange(numClusters);
-      clustersFinal = Array.select(clusters,idcsLst1);
-      clusterValuesFinal = Array.select(clusterValues,idcsLst1);
+  case((itemsIn,_), (clusters,clusterValues))
+    algorithm
+      true := listLength(itemsIn) <= numClusters;
+      idcsLst1 := List.intRange(numClusters);
+      clustersFinal := Array.select(clusters,idcsLst1);
+      clusterValuesFinal := Array.select(clusterValues,idcsLst1);
     then (clustersFinal,clusterValuesFinal);
-  case((itemsIn,valuesIn),(clusters,clusterValues),_)
-    equation
-      true = listLength(itemsIn) > numClusters;
-      true = listLength(itemsIn)/2 < numClusters;
-      (lst1,_) = List.split(itemsIn,numClusters);  // split the list of items+dummies in the middle
-      diff = listLength(itemsIn) - numClusters;
-      idcsLst1 = List.intRange2(numClusters-diff+1,numClusters);
-      idcsLst2 = List.intRange2(numClusters+1,listLength(itemsIn));
+  case((itemsIn,valuesIn), (clusters,clusterValues))
+    algorithm
+      true := listLength(itemsIn) > numClusters;
+      true := listLength(itemsIn)/2 < numClusters;
+      (lst1,_) := List.split(itemsIn,numClusters);  // split the list of items+dummies in the middle
+      diff := listLength(itemsIn) - numClusters;
+      idcsLst1 := List.intRange2(numClusters-diff+1,numClusters);
+      idcsLst2 := List.intRange2(numClusters+1,listLength(itemsIn));
       // update the clusters array
-      entries = List.map1(idcsLst2,Array.getIndexFirst,clusters);
-      entries = listReverse(entries);
-      entries2 = List.map1(idcsLst1,Array.getIndexFirst,clusters);
-      entries = List.threadMap(entries,entries2,listAppend);
+      entries := List.map1(idcsLst2,Array.getIndexFirst,clusters);
+      entries := listReverse(entries);
+      entries2 := List.map1(idcsLst1,Array.getIndexFirst,clusters);
+      entries := List.threadMap(entries,entries2,listAppend);
       List.threadMap1_0(idcsLst1,entries,Array.updateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(idcsLst1,Array.getIndexFirst,clusterValues);
-      addValues = List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
-      values = List.threadMap(values,addValues,realAdd);
+      values := List.map1(idcsLst1,Array.getIndexFirst,clusterValues);
+      addValues := List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
+      values := List.threadMap(values,addValues,realAdd);
       List.threadMap1_0(idcsLst1,values,Array.updateIndexFirst,clusterValues);
       // finish
-      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
+      (clusters,clusterValues) := distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
-  case((itemsIn,valuesIn),(clusters,clusterValues),_)
-    equation
-      true = listLength(itemsIn) > numClusters;
-      true = listLength(itemsIn)/2 >= numClusters;
-      numCl = nextGreaterPowerOf2(intReal(listLength(itemsIn)));
-      (lst1,_) = List.split(itemsIn,intDiv(numCl,2));  // split the list of items+dummies in the middle
+  case((itemsIn,valuesIn), (clusters,clusterValues))
+    algorithm
+      true := listLength(itemsIn) > numClusters;
+      true := listLength(itemsIn)/2 >= numClusters;
+      numCl := nextGreaterPowerOf2(intReal(listLength(itemsIn)));
+      (lst1,_) := List.split(itemsIn,intDiv(numCl,2));  // split the list of items+dummies in the middle
       // update the clusters array
-      idcsLst2 = List.intRange2(intDiv(numCl,2)+1,listLength(itemsIn));
-      idcsLst1_2 = List.intRange2(intDiv(numCl,2)-listLength(idcsLst2)+1, intDiv(numCl,2));
-      entries = List.map1(idcsLst2,Array.getIndexFirst,clusters);  // the clustered task from  the second list
-      entries = listReverse(entries);
-      entries2 = List.map1(idcsLst1_2,Array.getIndexFirst,clusters);
-      entries = List.threadMap(entries,entries2,listAppend);
+      idcsLst2 := List.intRange2(intDiv(numCl,2)+1,listLength(itemsIn));
+      idcsLst1_2 := List.intRange2(intDiv(numCl,2)-listLength(idcsLst2)+1, intDiv(numCl,2));
+      entries := List.map1(idcsLst2,Array.getIndexFirst,clusters);  // the clustered task from  the second list
+      entries := listReverse(entries);
+      entries2 := List.map1(idcsLst1_2,Array.getIndexFirst,clusters);
+      entries := List.threadMap(entries,entries2,listAppend);
       List.threadMap1_0(idcsLst1_2,entries,Array.updateIndexFirst,clusters);
       // update the clusterValues array
-      values = List.map1(idcsLst1_2,Array.getIndexFirst,clusterValues);
-      addValues = List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
-      values = List.threadMap(values,addValues,realAdd);
+      values := List.map1(idcsLst1_2,Array.getIndexFirst,clusterValues);
+      addValues := List.map1(idcsLst2,Array.getIndexFirst,clusterValues);
+      values := List.threadMap(values,addValues,realAdd);
       List.threadMap1_0(idcsLst1_2,values,Array.updateIndexFirst,clusterValues);
       // again
-      (clusters,clusterValues) = distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
+      (clusters,clusterValues) := distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   else
-    equation
+    algorithm
       print("distributeToClusters failed!\n");
     then fail();
   end matchcontinue;
@@ -3487,17 +3434,17 @@ protected function nextGreaterPowerOf2_impl
   input Integer pow;
   output Integer powOf2;
 algorithm
-  powOf2 := matchcontinue(n,pow)
+  powOf2 := matchcontinue pow
   local
     Integer n2;
-  case(_,_)
-    equation
-      true = n <=. realPow(2.0,intReal(pow));
+  case _
+    algorithm
+      true := n <=. realPow(2.0,intReal(pow));
     then realInt(realPow(2.0,intReal(pow)));
-  case(_,_)
-    equation
-      true = n >. realPow(2.0,intReal(pow));
-      n2 = nextGreaterPowerOf2_impl(n,pow+1);
+  case _
+    algorithm
+      true := n >. realPow(2.0,intReal(pow));
+      n2 := nextGreaterPowerOf2_impl(n,pow+1);
     then n2;
   end matchcontinue;
 end nextGreaterPowerOf2_impl;
@@ -3514,7 +3461,7 @@ public function mergeSimpleNodes "author: Waurich TUD 2013-07
   output array<Integer> contractedTasksOut; //removed task has value -1; not touched task has value 0
   output Boolean changed;
 protected
-  list<Integer> allNodes, child;
+  list<Integer> allNodes;
   list<list<Integer>> oneChildren;
 algorithm
   allNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
@@ -3563,9 +3510,6 @@ protected function mergeParentNodes0
   input list<list<Integer>> iMergedNodes;
   output list<list<Integer>> oMergedNodes;
 protected
-  TaskGraph tmpGraph;
-  TaskGraphMeta tmpGraphData;
-  Boolean tmpChanged;
   Real highestParentExeCost, sumParentExeCosts;
   list<Integer> parentNodes, mergeNodeList;
   Real highestCommCost;
@@ -3576,37 +3520,37 @@ protected
   list<list<Integer>> parentChilds;
   list<list<Integer>> tmpMergedNodes;
 algorithm
-  oMergedNodes := matchcontinue(iGraph, iGraphT, iGraphData, contractedTasksIn, alreadyMerged,  iNodeIdx, iMergedNodes)
-    case(_,_,TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts),_,_,_,_)
-      equation
-        true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
-        true = intNe(arrayGet(contractedTasksIn,iNodeIdx),-1);
-        true = intNe(arrayGet(alreadyMerged,iNodeIdx),-1);  // is not already in a merged task group
+  oMergedNodes := matchcontinue iGraphData
+    case TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts)
+      algorithm
+        true := intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
+        true := intNe(arrayGet(contractedTasksIn,iNodeIdx),-1);
+        true := intNe(arrayGet(alreadyMerged,iNodeIdx),-1);  // is not already in a merged task group
         //print("HpcOmTaskGraph.mergeParentNodes0: looking at node " + intString(iNodeIdx) + "\n");
-        parentNodes = arrayGet(iGraphT, iNodeIdx);
-        parentNodes = filterContractedNodes(parentNodes,contractedTasksIn);
-        false = List.exist1(parentNodes,isNodeContracted,alreadyMerged);// dont consider nodes that are already merged in this iteration
+        parentNodes := arrayGet(iGraphT, iNodeIdx);
+        parentNodes := filterContractedNodes(parentNodes,contractedTasksIn);
+        false := List.exist1(parentNodes,isNodeContracted,alreadyMerged);// dont consider nodes that are already merged in this iteration
         //print("with the parents "+stringDelimitList(List.map(parentNodes,intString),", ")+"\n");
-        parentCommCosts = List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
-        COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
-        parentExeCosts = List.map1(parentNodes, getExeCost, iGraphData);
-        ((_,sumParentExeCosts)) = List.fold(parentExeCosts, addUpExeCosts, (0,0.0));
-        ((_,highestParentExeCost)) = getHighestExecCost(parentExeCosts, (0,0.0));
-        true = realGt(realAdd(highestCommCost, highestParentExeCost), sumParentExeCosts);
+        parentCommCosts := List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
+        COMMUNICATION(requiredTime=highestCommCost) := getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
+        parentExeCosts := List.map1(parentNodes, getExeCost, iGraphData);
+        (_,sumParentExeCosts) := List.fold(parentExeCosts, addUpExeCosts, (0,0.0));
+        (_,highestParentExeCost) := getHighestExecCost(parentExeCosts, (0,0.0));
+        true := realGt(realAdd(highestCommCost, highestParentExeCost), sumParentExeCosts);
         //We can only merge the parents if they have no other child-nodes -> check this
-        parentChilds = List.map1(parentNodes, Array.getIndexFirst, iGraph);
-        true = listEmpty(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength)));
-        mergeNodeList = iNodeIdx :: parentNodes;
+        parentChilds := List.map1(parentNodes, Array.getIndexFirst, iGraph);
+        true := listEmpty(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength)));
+        mergeNodeList := iNodeIdx :: parentNodes;
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " + stringDelimitList(List.map(mergeNodeList,intString), ", ") + "\n");
         //print("HpcOmTaskGraph.mergeParentNodes0: Merging " + intString(iNodeIdx) + " with " + stringDelimitList(List.map(parentNodes,intString), ", ") + "\n");
-        tmpMergedNodes = mergeNodeList :: iMergedNodes;
+        tmpMergedNodes := mergeNodeList :: iMergedNodes;
         List.map_0(mergeNodeList,function Array.updateIndexFirst(inValue=-1,inArray=alreadyMerged));
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,tmpMergedNodes);
+        tmpMergedNodes := mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,tmpMergedNodes);
       then tmpMergedNodes;
-    case(_,_,_,_,_,_,_)
-      equation
-        true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,iMergedNodes);
+    case _
+      algorithm
+        true := intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
+        tmpMergedNodes := mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,iMergedNodes);
       then tmpMergedNodes;
     else iMergedNodes;
   end matchcontinue;
@@ -3726,7 +3670,7 @@ algorithm
   opCount := 0;
   comps := arrayGet(inComps, iNodeIdx);
   for comp in comps loop
-    ((opCount1,exeCost1)) := arrayGet(exeCosts, comp);
+    (opCount1,exeCost1) := arrayGet(exeCosts, comp);
     opCount := intAdd(opCount, opCount1);
     exeCost := realAdd(exeCost, exeCost1);
   end for;
@@ -3745,12 +3689,12 @@ protected
 algorithm
   oHighestTuple := matchcontinue(iExecCosts, iHighestTuple)
     case((head as (_,currentCost))::rest, (_,highestCost))
-      equation
-        true = realGt(currentCost, highestCost);
+      algorithm
+        true := realGt(currentCost, highestCost);
       then getHighestExecCost(rest, head);
     case((head as (_,currentCost))::rest, (_,highestCost))
-      equation
-        true = realGt(currentCost, highestCost);
+      algorithm
+        true := realGt(currentCost, highestCost);
       then getHighestExecCost(rest, iHighestTuple);
     else iHighestTuple;
   end matchcontinue;
@@ -3773,7 +3717,7 @@ public function contractNodesInGraph "author: marcusw
   TaskGraph tmpTaskGraph = iTaskGraph;
   TaskGraph tmpTaskGraphT = iTaskGraphT;
   array<Integer> tmpContractedTasks = iContractedTasks;
-  Integer nodeListHeadIdx, negNodeListHeadIdx, nodeIdx, nodeContractionValue, parentChild, parentChildContractionValue;
+  Integer nodeListHeadIdx, negNodeListHeadIdx, nodeIdx, parentChild, parentChildContractionValue;
   list<Integer> nodeListRestIdc, nodeCompIdc, headCompIdc;
   list<Integer> parentNodeChildList, parentNodeChildListNew; //all children of a parent node
   list<Integer> outgoingEdges, incomingEdges; //edges from 'nodeListHeadIdx' to all nodes that are not part of the merging cluster
@@ -3882,7 +3826,7 @@ algorithm
           //print("contractNodesInGraph: Node '" + intString(nodeIdx) + "' has mark '" + intString(arrayGet(nodeMarksT, nodeIdx)) + "'\n");
           if(intNe(arrayGet(nodeMarksT, parentChild), nodeIdx)) then //Check if edge from 'nodeListHeadIdx' to 'nodeIdx' was already added
             parentNodeChildListNew := nodeListHeadIdx::parentNodeChildListNew;
-            _ := arrayUpdate(nodeMarksT, parentChild, nodeIdx);
+            arrayUpdate(nodeMarksT, parentChild, nodeIdx);
           end if;
         else
           parentNodeChildListNew := parentChild::parentNodeChildListNew;
@@ -3910,7 +3854,7 @@ algorithm
           //print("contractNodesInGraph: Node '" + intString(nodeIdx) + "' has mark '" + intString(arrayGet(nodeMarks, nodeIdx)) + "'\n");
           if(intNe(arrayGet(nodeMarks, parentChild), nodeIdx)) then //Check if edge from 'nodeListHeadIdx' to 'nodeIdx' was already added
             parentNodeChildListNew := nodeListHeadIdx::parentNodeChildListNew;
-            _ := arrayUpdate(nodeMarks, parentChild, nodeIdx);
+            arrayUpdate(nodeMarks, parentChild, nodeIdx);
           end if;
         else
           parentNodeChildListNew := parentChild::parentNodeChildListNew;
@@ -3949,7 +3893,7 @@ protected function getContractedNodeChildren "author: marcusw
   input array<Integer> iNodeMarks;
   output list<Integer> oChildTasks;
 protected
-  Integer task, taskMark, contractedValue;
+  Integer task, taskMark;
   list<Integer> childTasks;
   list<Integer> resultTasks = {};
 algorithm
@@ -3961,7 +3905,7 @@ algorithm
     taskMark := arrayGet(iNodeMarks, task);
     if(boolAnd(intNe(taskMark, iRefValue), intNe(task, iRefValue))) then
       resultTasks:=task::resultTasks;
-      _ := arrayUpdate(iNodeMarks, task, iRefValue);
+      arrayUpdate(iNodeMarks, task, iRefValue);
     else
       //print("getContractedNodeChildren: Skipping task " + intString(task) + " with taskMark " + intString(taskMark) + " and reference value " + intString(iRefValue) + "\n");
     end if;
@@ -4118,10 +4062,10 @@ protected function compareListLengthOnTrue "author: Waurich TUD 2013-07
   input list<Integer> inLst;
   output Boolean equalLength;
 algorithm
-  equalLength := matchcontinue(inValue,inLst)
-    case(_,_)
-      equation
-        true = intEq(inValue,listLength(inLst));
+  equalLength := matchcontinue inLst
+    case _
+      algorithm
+        true := intEq(inValue,listLength(inLst));
       then
         true;
     else false;
@@ -4143,7 +4087,6 @@ protected
   array<tuple<Integer,Real>> exeCosts;
   array<Communications> commCosts;
   array<Integer> nodeMark;
-  list<list<Integer>> inCompsLst;
   array<ComponentInfo> compInformations;
 algorithm
   TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := graphDataIn;
@@ -4160,41 +4103,41 @@ protected function updateCompNamesForMerging "author: Waurich TUD 2013-07
   input array<String> compNamesIn;
   output array<String> compNamesOut;
 algorithm
-  compNamesOut := matchcontinue(compIdx,inComps,nodeMark,compNamesIn)
+  compNamesOut := matchcontinue compNamesIn
     local
       Integer unionNode;
       list<Integer> mergedComps;
       array<String> compNamesTmp;
       String compName;
-    case(_,_,_,_)
-      equation
-        true = compIdx <= arrayLength(compNamesIn);
-        unionNode = getCompInComps(compIdx,1,inComps,nodeMark); //TODO: that seems to be expensive, can we iterate over the nodes instead of the components?
-        true = unionNode <> -1;
-        mergedComps = arrayGet(inComps,unionNode);
-        true = listLength(mergedComps) == 1;
+    case _
+      algorithm
+        true := compIdx <= arrayLength(compNamesIn);
+        unionNode := getCompInComps(compIdx,1,inComps,nodeMark); //TODO: that seems to be expensive, can we iterate over the nodes instead of the components?
+        true := unionNode <> -1;
+        mergedComps := arrayGet(inComps,unionNode);
+        true := listLength(mergedComps) == 1;
       then
         compNamesIn;
-    case(_,_,_,_)
-      equation
-       true = compIdx <= arrayLength(compNamesIn);
-       unionNode = getCompInComps(compIdx,1,inComps,nodeMark);
-       true = unionNode <> -1;
-       mergedComps = arrayGet(inComps,unionNode);
-       false = listLength(mergedComps) == 1;
-       compName = "contracted comps "+stringDelimitList(List.map(mergedComps,intString),",");
-       compNamesTmp = arrayUpdate(compNamesIn,compIdx,compName);
+    case _
+      algorithm
+       true := compIdx <= arrayLength(compNamesIn);
+       unionNode := getCompInComps(compIdx,1,inComps,nodeMark);
+       true := unionNode <> -1;
+       mergedComps := arrayGet(inComps,unionNode);
+       false := listLength(mergedComps) == 1;
+       compName := "contracted comps "+stringDelimitList(List.map(mergedComps,intString),",");
+       compNamesTmp := arrayUpdate(compNamesIn,compIdx,compName);
      then
        compNamesTmp;
-     case(_,_,_,_)
-      equation
-       true = compIdx <= arrayLength(compNamesIn);
-       unionNode = getCompInComps(compIdx,1,inComps,nodeMark);
-       true = unionNode == -1;
+     case _
+      algorithm
+       true := compIdx <= arrayLength(compNamesIn);
+       unionNode := getCompInComps(compIdx,1,inComps,nodeMark);
+       true := unionNode == -1;
      then
        compNamesIn;
      else
-      equation
+      algorithm
         print("updateCompNamesForMerging failed!\n");
       then fail();
    end matchcontinue;
@@ -4206,7 +4149,6 @@ protected function updateInCompsForMerging "author: waurich TUD 2013-07
   input list<list<Integer>> mergedPaths; //nodes to contract
   output array<list<Integer>> inCompsOut;
 protected
-  array<list<Integer>> inCompsTmp;
   list<list<Integer>> inCompsLst;
   list<Integer> deleteNodes;
   list<Integer> startNodes;
@@ -4231,36 +4173,34 @@ protected function updateInComps1 "author: waurich TUD 2013-07
   input list<list<Integer>> inCompLstIn;
   output list<list<Integer>> inCompLstOut;
 algorithm
-  inCompLstOut := matchcontinue(nodeIdx,mergeInfo,primInComps,inCompLstIn)
+  inCompLstOut := matchcontinue inCompLstIn
     local
       Integer mergeGroupIdx;
       list<Integer> inComps;
-      Integer inComp;
       list<Integer> mergedSet, mergedNodes;
       list<Integer> startNodes;
-      list<Integer> deleteNodes;
       list<list<Integer>> mergedPaths;
       list<list<Integer>> inCompLstTmp;
-    case(_,_,_,_)
+    case _
       // the given node is a startNode
-      equation
-        (startNodes,_,mergedPaths) = mergeInfo;
+      algorithm
+        (startNodes,_,mergedPaths) := mergeInfo;
         //print("updateInComps1 startNodes:" + stringDelimitList(List.map(startNodes,intString),",") + "\n");
         //print("updateInComps1 deleteNodes:" + stringDelimitList(List.map(deleteNodes,intString),",") + "\n");
         //print("updateInComps1 first mergedPath:" + stringDelimitList(List.map(listHead(mergedPaths),intString),",") + "\n");
-        inComps = listGet(inCompLstIn,nodeIdx);
+        inComps := listGet(inCompLstIn,nodeIdx);
         //print("updateInComps1 inComps:" + stringDelimitList(List.map(inComps,intString),",") + "\n");
         //true = listLength(inComps) == 1;
-        _ = listGet(inComps,1);
+        listGet(inComps,1);
         //print("updateInComps1 inComp:" + intString(inComp) + "\n");
-        true = List.isMemberOnTrue(nodeIdx,startNodes,intEq);
-        mergeGroupIdx = List.position(nodeIdx,startNodes);
-        mergedNodes = listGet(mergedPaths,mergeGroupIdx);
+        true := List.isMemberOnTrue(nodeIdx,startNodes,intEq);
+        mergeGroupIdx := List.position(nodeIdx,startNodes);
+        mergedNodes := listGet(mergedPaths,mergeGroupIdx);
         //print("updateInComps1 mergedNodes:" + stringDelimitList(List.map(mergedNodes,intString),",") + "\n");
-        mergedSet = List.flatten(List.map1(mergedNodes,Array.getIndexFirst,primInComps));
+        mergedSet := List.flatten(List.map1(mergedNodes,Array.getIndexFirst,primInComps));
         //print("updateInComps1 mergedSet:" + stringDelimitList(List.map(mergedSet,intString),",") + "\n");
-        inCompLstTmp = List.fold(mergedNodes, updateInComps2, inCompLstIn);
-        inCompLstTmp = List.replaceAt(mergedSet, nodeIdx, inCompLstTmp);
+        inCompLstTmp := List.fold(mergedNodes, updateInComps2, inCompLstIn);
+        inCompLstTmp := List.replaceAt(mergedSet, nodeIdx, inCompLstTmp);
       then
         inCompLstTmp;
     else inCompLstIn;
@@ -4308,7 +4248,7 @@ protected function findOneChildParents "author: Waurich TUD 2013-07
   input array<Integer> contrNodes;
   output list<list<Integer>> lstOut;
 algorithm
-  lstOut := matchcontinue(allNodes,graphIn,doNotMerge,lstIn,inPath,contrNodes)
+  lstOut := matchcontinue allNodes
     local
       Integer child;
       Integer head;
@@ -4317,112 +4257,112 @@ algorithm
       list<Integer> pathLst;
       list<Integer> rest;
       list<list<Integer>> lstTmp;
-    case({},_,_,_,_,_)
+    case {}
       //checked all nodes
-      equation
+      algorithm
         then
           lstIn;
-    case((head::rest),_,_,_,_,_)
+    case head::rest
       //check new node that has several children
-      equation
-        true = intEq(inPath,0);
-        nodeChildren = arrayGet(graphIn,head);
-        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
+      algorithm
+        true := intEq(inPath,0);
+        nodeChildren := arrayGet(graphIn,head);
+        nodeChildren := filterContractedNodes(nodeChildren,contrNodes);
         //print("findOneChildParents: " + stringDelimitList(List.map(nodeChildren, intString), ",") + "\n");
-        false = listLength(nodeChildren) == 1;
+        false := listLength(nodeChildren) == 1;
         //print("findOneChildParents case 1 for task " + intString(head) + ". Node children: " + stringDelimitList(List.map(nodeChildren, intString), ",") + "\n");
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case head::rest
       //check new node that is excluded
-      equation
-        true = intEq(inPath,0);
-        true = listMember(head,doNotMerge);
+      algorithm
+        true := intEq(inPath,0);
+        true := listMember(head,doNotMerge);
         //print("findOneChildParents case 2 for task " + intString(head) + "\n");
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case head::rest
       // check new node that has only one child but this is excluded
-      equation
-        true = intEq(inPath,0);
-        nodeChildren = arrayGet(graphIn,head);
-        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
-        true = listLength(nodeChildren) == 1;
-        child = listGet(nodeChildren,1);
-        true = listMember(child,doNotMerge);
+      algorithm
+        true := intEq(inPath,0);
+        nodeChildren := arrayGet(graphIn,head);
+        nodeChildren := filterContractedNodes(nodeChildren,contrNodes);
+        true := listLength(nodeChildren) == 1;
+        child := listGet(nodeChildren,1);
+        true := listMember(child,doNotMerge);
         //print("findOneChildParents case 3 for task " + intString(head) + "\n");
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,child,contrNodes);
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstIn,child,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case head::rest
       // check new node that has only one child , follow the path
-      equation
-        true = intEq(inPath,0);
-        nodeChildren = arrayGet(graphIn,head);
-        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
-        true = listLength(nodeChildren) == 1;
-        child = listGet(nodeChildren,1);
-        lstTmp = {head}::lstIn;
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
+      algorithm
+        true := intEq(inPath,0);
+        nodeChildren := arrayGet(graphIn,head);
+        nodeChildren := filterContractedNodes(nodeChildren,contrNodes);
+        true := listLength(nodeChildren) == 1;
+        child := listGet(nodeChildren,1);
+        lstTmp := {head}::lstIn;
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
         //print("findOneChildParents case 4 for task " + intString(head) + ". Node children: " + stringDelimitList(List.map(nodeChildren, intString), ",") + "\n");
       then
         lstTmp;
-    case((_::_),_,_,_,_,_)
+    case _::_
       // dont follow because the path contains excluded nodes
-      equation
-        false = intEq(inPath,0);
-        true = listMember(inPath,doNotMerge);
+      algorithm
+        false := intEq(inPath,0);
+        true := listMember(inPath,doNotMerge);
         //print("findOneChildParents case 5 for task " + intString(head) + "\n");
-        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
+        lstTmp := findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((_::rest),_,_,_,_,_)
+    case _::rest
       // follow path and check that there is still only one child with just one parent
-      equation
-        false = intEq(inPath,0);
-        nodeChildren = arrayGet(graphIn,inPath);
-        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
-        parents = getParentNodes(inPath,graphIn);
-        parents = filterContractedNodes(parents,contrNodes);
-        true = listLength(nodeChildren) == 1 and not listEmpty(nodeChildren) and listLength(parents) == 1;
+      algorithm
+        false := intEq(inPath,0);
+        nodeChildren := arrayGet(graphIn,inPath);
+        nodeChildren := filterContractedNodes(nodeChildren,contrNodes);
+        parents := getParentNodes(inPath,graphIn);
+        parents := filterContractedNodes(parents,contrNodes);
+        true := listLength(nodeChildren) == 1 and not listEmpty(nodeChildren) and listLength(parents) == 1;
         //print("findOneChildParents case 6 for task " + intString(head) + "\n");
-        child = listGet(nodeChildren,1);
-        pathLst = listHead(lstIn);
-        pathLst = inPath::pathLst;
-        lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
+        child := listGet(nodeChildren,1);
+        pathLst := listHead(lstIn);
+        pathLst := inPath::pathLst;
+        lstTmp := List.replaceAt(pathLst, 1, lstIn);
+        rest := List.deleteMemberOnTrue(inPath,allNodes,intEq);
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
-    case((_::rest),_,_,_,_,_)
+    case _::rest
       // follow path and check that there is an endnode without successor that will be added to the path
-      equation
-        false = intEq(inPath,0);
-        nodeChildren = arrayGet(graphIn,inPath);
-        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
-        parents = getParentNodes(inPath,graphIn);
-        parents = filterContractedNodes(parents,contrNodes);
+      algorithm
+        false := intEq(inPath,0);
+        nodeChildren := arrayGet(graphIn,inPath);
+        nodeChildren := filterContractedNodes(nodeChildren,contrNodes);
+        parents := getParentNodes(inPath,graphIn);
+        parents := filterContractedNodes(parents,contrNodes);
         //true = listEmpty(nodeChildren) and listLength(parents) == 1;
         //print("findOneChildParents case 7 for task " + intString(head) + "\n");
-        pathLst = listHead(lstIn);
-        pathLst = inPath::pathLst;
-        lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0,contrNodes);
+        pathLst := listHead(lstIn);
+        pathLst := inPath::pathLst;
+        lstTmp := List.replaceAt(pathLst, 1, lstIn);
+        rest := List.deleteMemberOnTrue(inPath,allNodes,intEq);
+        lstTmp := findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0,contrNodes);
       then
         lstTmp;
     /* case((head::rest),_,_,_,_,_)
       // follow path and check that there are more children or a child with more parents. end path before this node
-      equation
+      algorithm
         false = intEq(inPath,0);
         print("findOneChildParents case 8 for task " + intString(head) + "\n");
         lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp; */
     else
-      equation
+      algorithm
         print("findOneChildParents failed\n");
       then
         fail();
@@ -4449,32 +4389,32 @@ protected function checkParentNode "author: Waurich TUD 2013-06
   input list<list<Integer>> lstIn;
   output list<list<Integer>> lstOut;
 algorithm
-  lstOut := matchcontinue(lstIdx,graphIn,lstIn)
+  lstOut := matchcontinue lstIn
     local
       list<Integer> childLst;
       Integer child;
       Integer parent;
       list<Integer> parents;
       list<list<Integer>> lstTmp;
-  case(_,_,_)
-    equation
-      childLst = listGet(lstIn,lstIdx);
-      child = List.last(childLst);
-      parents = getParentNodes(child,graphIn);
-      true = intEq(listLength(parents),1);
-      parent = listGet(parents,1);
-      childLst = listReverse(childLst);
-      childLst = parent :: childLst;
-      childLst = listReverse(childLst);
-      lstTmp = List.replaceAt(childLst, lstIdx, lstIn);
+  case _
+    algorithm
+      childLst := listGet(lstIn,lstIdx);
+      child := List.last(childLst);
+      parents := getParentNodes(child,graphIn);
+      true := intEq(listLength(parents),1);
+      parent := listGet(parents,1);
+      childLst := listReverse(childLst);
+      childLst := parent :: childLst;
+      childLst := listReverse(childLst);
+      lstTmp := List.replaceAt(childLst, lstIdx, lstIn);
       then
         lstTmp;
-  case(_,_,_)
-    equation
-      childLst = listGet(lstIn,lstIdx);
-      child = List.last(childLst);
-      parents = getParentNodes(child,graphIn);
-      false = intEq(listLength(parents),1);
+  case _
+    algorithm
+      childLst := listGet(lstIn,lstIdx);
+      child := List.last(childLst);
+      parents := getParentNodes(child,graphIn);
+      false := intEq(listLength(parents),1);
       then
         lstIn;
   end matchcontinue;
@@ -4506,27 +4446,27 @@ protected
   array<list<Integer>> inComps;
   array<Communications> commCosts;
 algorithm
-  oTaskGraphMeta := matchcontinue(iDae,iBenchFilePrefix,iSimEqCompMapping,iTaskGraphMeta)
-    case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
-      equation
-        (comps,compMapping_withIdx) = getSystemComponents(iDae);
-        compMapping = Array.map(compMapping_withIdx, Util.tuple21);
-        ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
-        reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromFile(iBenchFilePrefix);
+  oTaskGraphMeta := matchcontinue(iDae, iTaskGraphMeta)
+    case(BackendDAE.DAE(shared=shared), TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
+      algorithm
+        (comps,compMapping_withIdx) := getSystemComponents(iDae);
+        compMapping := Array.map(compMapping_withIdx, Util.tuple21);
+        (_,reqTimeCom) := HpcOmBenchmark.benchSystem();
+        reqTimeOpLstSimCode := HpcOmBenchmark.readCalcTimesFromFile(iBenchFilePrefix);
         //print("createCosts: read files\n");
         //print("createCosts: read values: " + stringDelimitList(List.map(List.map(reqTimeOpLstSimCode, Util.tuple33), realString), ",") + "\n");
-        reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
-        reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
+        reqTimeOpSimCode := arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
+        reqTimeOpSimCode := List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
         //print("createCosts: reqTimeOpSimCode created\n");
-        reqTimeOp = arrayCreate(listLength(comps),-1.0);
-        reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, iSimEqCompMapping, reqTimeOp);
+        reqTimeOp := arrayCreate(listLength(comps),-1.0);
+        reqTimeOp := convertSimEqToSccCosts(reqTimeOpSimCode, iSimEqCompMapping, reqTimeOp);
         //print("createCosts: scc costs converted\n");
-        commCosts = createCommCosts(commCosts,1,reqTimeCom);
-        (_, tmpTaskGraphMeta) = Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
+        commCosts := createCommCosts(commCosts,1,reqTimeCom);
+        (_, tmpTaskGraphMeta) := Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
-      equation
-        tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
+      algorithm
+        tmpTaskGraphMeta := estimateCosts(iDae,iTaskGraphMeta);
         print("Warning: The costs have been estimated. Maybe " + iBenchFilePrefix + "-file is missing.\n");
       then tmpTaskGraphMeta;
   end matchcontinue;
@@ -4597,48 +4537,48 @@ public function calculateCosts "author: Waurich TUD 2014-12
   input BackendDAE.CompInfo compInfo;
   output tuple<Integer,Real> exeCost;
 algorithm
-  exeCost := matchcontinue(compInfo)
+  exeCost := match compInfo
     local
       Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
       Real allOpCosts,tornCosts,otherCosts,dens;
       BackendDAE.StrongComponent comp;
-      BackendDAE.CompInfo allOps, torn, other;
+      BackendDAE.CompInfo torn, other;
 
-    case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
-      equation
-        ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
-        if BackendDAEUtil.isSingleEquationComp(comp) then offset=35;
-        elseif BackendDAEUtil.isWhenComp(comp) then offset=113;
-        elseif BackendDAEUtil.isArrayComp(comp) then offset=100;
-        else offset = 0;
+    case BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs)
+      algorithm
+        ops := numAdds+numMul+numOth+numTrig+numRel+numLog;
+        if BackendDAEUtil.isSingleEquationComp(comp) then offset:=35;
+        elseif BackendDAEUtil.isWhenComp(comp) then offset:=113;
+        elseif BackendDAEUtil.isArrayComp(comp) then offset:=100;
+        else offset := 0;
         end if;
-        costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
+        costs := offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
-    case(BackendDAE.SYSTEM(size=size,density=dens))// density is in procent
-      equation
-        allOpCosts = realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
+    case BackendDAE.SYSTEM(size=size,density=dens)// density is in procent
+      algorithm
+        allOpCosts := realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
       then (1, allOpCosts);
 
-    case(BackendDAE.TORN_ANALYSE(tornEqs=torn,otherEqs=other,tornSize=size))
-      equation
-        (ops,tornCosts) = calculateCosts(torn);
-        (ops1,otherCosts) = calculateCosts(other);
-        allOpCosts = realAdd(realAdd(3000.0,realMul(7.62,realPow(intReal(size),3.0))),realAdd(realMul(2.0,tornCosts),realMul(1.4,otherCosts)));
+    case BackendDAE.TORN_ANALYSE(tornEqs=torn,otherEqs=other,tornSize=size)
+      algorithm
+        (ops,tornCosts) := calculateCosts(torn);
+        (ops1,otherCosts) := calculateCosts(other);
+        allOpCosts := realAdd(realAdd(3000.0,realMul(7.62,realPow(intReal(size),3.0))),realAdd(realMul(2.0,tornCosts),realMul(1.4,otherCosts)));
       then (ops+ops1,allOpCosts);
 
-    case(BackendDAE.NO_COMP(numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
-      equation
-        ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
-        offset = 50;  // this was just estimated, not benchmarked
-        costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
+    case BackendDAE.NO_COMP(numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs)
+      algorithm
+        ops := numAdds+numMul+numOth+numTrig+numRel+numLog;
+        offset := 50;  // this was just estimated, not benchmarked
+        costs := offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
       else
-        equation
+        algorithm
           print("calculate costs failed!\n");
         then (-1,-1.0);
-  end matchcontinue;
+  end match;
 end calculateCosts;
 
 public function copyCosts "author: marcusw
@@ -4649,7 +4589,7 @@ public function copyCosts "author: marcusw
 protected
   array<list<Integer>> inCompsSource, inCompsTarget;
   array<tuple<Integer, Real>> exeCostsSource, exeCostsTarget;
-  Integer compIdx, childIdx;
+  Integer compIdx;
   array<Communications> commCostsTarget;
   tuple<Integer, Integer> reqTimeCom;
 algorithm
@@ -4662,7 +4602,7 @@ algorithm
     compIdx := compIdx - 1;
   end while;
 
-  ((_,reqTimeCom)) := HpcOmBenchmark.benchSystem();
+  (_,reqTimeCom) := HpcOmBenchmark.benchSystem();
   commCostsTarget := createCommCosts(commCostsTarget,1,reqTimeCom);
   oTaskGraphData := iTargetTaskGraphData;
 end copyCosts;
@@ -4674,7 +4614,7 @@ protected function getCommCostsOnly "author: Waurich TUD 2013-09
 protected
   tuple<Integer,Integer> reqTimeCom;
 algorithm
-  ((_,reqTimeCom)) := HpcOmBenchmark.benchSystem();
+  (_,reqTimeCom) := HpcOmBenchmark.benchSystem();
   commCostsOut := createCommCosts(commCostsIn,1,reqTimeCom);
 end getCommCostsOnly;
 
@@ -4700,28 +4640,26 @@ protected function checkForExecutionCosts1 "author: Waurich TUD 2013-09
   input Integer nodeIdx;
   output Boolean bOut;
 algorithm
-  bOut := matchcontinue(exeCosts,inComps,nodeIdx)
+  bOut := matchcontinue nodeIdx
     local
       Boolean b, isZero;
       list<Integer> comps;
-      Real value;
-      tuple<Integer,Real> tpl;
-    case(_,_,_)
-      equation
-        true = arrayLength(inComps) >= nodeIdx;
-        comps = arrayGet(inComps,nodeIdx);
-        isZero = List.fold1(comps,checkTpl2ForZero,exeCosts,false);
-        false = isZero;
-        b = checkForExecutionCosts1(exeCosts,inComps,nodeIdx+1);
+    case _
+      algorithm
+        true := arrayLength(inComps) >= nodeIdx;
+        comps := arrayGet(inComps,nodeIdx);
+        isZero := List.fold1(comps,checkTpl2ForZero,exeCosts,false);
+        false := isZero;
+        b := checkForExecutionCosts1(exeCosts,inComps,nodeIdx+1);
       then
         b;
-    case(_,_,_)
-      equation
-        true = arrayLength(inComps) < nodeIdx;
+    case _
+      algorithm
+        true := arrayLength(inComps) < nodeIdx;
         then
           true;
     else
-      equation
+      algorithm
       then
         false;
   end matchcontinue;
@@ -4762,14 +4700,14 @@ protected
   list<tuple<Integer,Integer>> tmpEdgeList;
   Integer elem, preElem;
 algorithm
-  oEdgeList := matchcontinue(iNodeList,iNodeIdx,iEdgeList)
-    case(_,_,tmpEdgeList)
-      equation
-        true = intGt(iNodeIdx, 1);
-        elem = listGet(iNodeList, iNodeIdx);
-        preElem = listGet(iNodeList, iNodeIdx-1);
-        tmpEdgeList = (preElem,elem)::tmpEdgeList;
-        tmpEdgeList = convertNodeListToEdgeTuples0(iNodeList, iNodeIdx-1,tmpEdgeList);
+  oEdgeList := matchcontinue iEdgeList
+    case tmpEdgeList
+      algorithm
+        true := intGt(iNodeIdx, 1);
+        elem := listGet(iNodeList, iNodeIdx);
+        preElem := listGet(iNodeList, iNodeIdx-1);
+        tmpEdgeList := (preElem,elem)::tmpEdgeList;
+        tmpEdgeList := convertNodeListToEdgeTuples0(iNodeList, iNodeIdx-1,tmpEdgeList);
       then tmpEdgeList;
     else iEdgeList;
   end matchcontinue;
@@ -4794,20 +4732,20 @@ protected
   Real simEqCalcTime, realSimEqCalcCount;
   array<Real> reqTime;
 algorithm
-  oReqTimeOp := matchcontinue(iReqTimeOpSimCode,iSimeqCompMapping,iReqTimeOp)
-    case((simEqCalcCount, simEqCalcTime),_,(simEqIdx,reqTime))
-      equation
-        realSimEqCalcCount = intReal(simEqCalcCount);
-        true = realNe(realSimEqCalcCount,0.0);
-        reqTime = convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimeqCompMapping);
+  oReqTimeOp := matchcontinue(iReqTimeOpSimCode, iReqTimeOp)
+    case((simEqCalcCount, simEqCalcTime), (simEqIdx,reqTime))
+      algorithm
+        realSimEqCalcCount := intReal(simEqCalcCount);
+        true := realNe(realSimEqCalcCount,0.0);
+        reqTime := convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimeqCompMapping);
       then ((simEqIdx+1,reqTime));
-    case((simEqCalcCount, simEqCalcTime),_,(simEqIdx,reqTime))
-      equation
-        realSimEqCalcCount = intReal(simEqCalcCount);
-        reqTime = convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimeqCompMapping);
+    case((simEqCalcCount, simEqCalcTime), (simEqIdx,reqTime))
+      algorithm
+        realSimEqCalcCount := intReal(simEqCalcCount);
+        reqTime := convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimeqCompMapping);
       then ((simEqIdx+1,reqTime));
     else
-      equation
+      algorithm
         print("convertSimEqToSccCosts1 failed!\n");
       then fail();
   end matchcontinue;
@@ -4823,13 +4761,13 @@ protected
   array<Real> reqTime;
   Integer sccIdx;
 algorithm
-  oReqTime := matchcontinue(iReqTime,iSimEqCalcTime, iSimEqIdx, iSimeqCompMapping)
-    case(reqTime,_,_,_)
-      equation
-        true = intGe(arrayLength(iSimeqCompMapping),iSimEqIdx);
-        sccIdx = arrayGet(iSimeqCompMapping, iSimEqIdx);
-        true = intGt(sccIdx,0);
-        reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
+  oReqTime := matchcontinue iReqTime
+    case reqTime
+      algorithm
+        true := intGe(arrayLength(iSimeqCompMapping),iSimEqIdx);
+        sccIdx := arrayGet(iSimeqCompMapping, iSimEqIdx);
+        true := intGt(sccIdx,0);
+        reqTime := arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
         //print("convertSimEqToSccCosts2 sccIdx: " + intString(sccIdx) + " simEqIdx: " + intString(iSimEqIdx) + " reqTime: " + realString(iSimEqCalcTime) + "\n");
       then
         reqTime;
@@ -4852,7 +4790,6 @@ protected
   array<list<Integer>> compParamMapping;
   array<Integer> nodeRefCount;
   array<tuple<Integer,Real>> execCosts;
-  BackendDAE.EqSystem comp;
   array<String> compNames, compDescs;
   array<list<Integer>> inComps;
   array<Communications> commCosts;
@@ -4880,9 +4817,9 @@ algorithm
     case((0,calcTimeCount,calcTime),_)
       then iReqTime;
     case((simEqIdx,calcTimeCount,calcTime),tmpArray)
-      equation
+      algorithm
         //print("createCosts1: simEqIdx: " + intString(simEqIdx) + " calc-time: " + realString(calcTime) + " array-length: " + intString(arrayLength(iReqTime)) + "\n");
-        tmpArray = arrayUpdate(iReqTime, simEqIdx,(calcTimeCount,calcTime));
+        tmpArray := arrayUpdate(iReqTime, simEqIdx,(calcTimeCount,calcTime));
       then tmpArray;
   end match;
 end createCosts1;
@@ -4896,13 +4833,13 @@ protected function createExecCost "author: marcusw
   input array<BackendDAE.EqSystem> compMapping;
   input Integer iNodeIdx;
 algorithm
-  _ :=  matchcontinue(iNodeSccs,icomps_shared,iRequiredTime,iExecCosts,compMapping,iNodeIdx)
+  () :=  matchcontinue iNodeIdx
     local
       tuple<Integer,Real> execCost;
-    case(_,_,_,_,_,_)
-      equation
+    case _
+      algorithm
         //print("\tcreateExecCost: sccs: " + stringDelimitList(List.map(iNodeSccs, intString), ",") + "\n");
-        execCost = List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
+        execCost := List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
         arrayUpdate(iExecCosts,iNodeIdx,execCost);
       then ();
     else ();
@@ -4918,7 +4855,6 @@ protected function createExecCost0 "author: marcusw
   input tuple<Integer,Real> iCosts; //<numberOfOperations, requiredCycles>
   output tuple<Integer,Real> oCosts; //<numberOfOperations, requiredCycles>
 protected
-  Integer costAdd,costMul,costTrig;
   Integer iCosts_op;
   Real iCosts_cyc;
   BackendDAE.StrongComponent comp;
@@ -4947,14 +4883,14 @@ protected
   array<Communications> tmpCosts;
   Communications currentCom;
 algorithm
-  oCosts := matchcontinue(iCosts, iCurrentIndex, iReqTimeCom)
-    case(tmpCosts,_,_)
-      equation
-        true = intLe(iCurrentIndex, arrayLength(iCosts));
-        currentCom = arrayGet(tmpCosts,iCurrentIndex);
-        currentCom = List.map1(currentCom,createCommCosts0,iReqTimeCom);
-        tmpCosts = arrayUpdate(tmpCosts,iCurrentIndex,currentCom);
-        tmpCosts = createCommCosts(tmpCosts, iCurrentIndex+1,iReqTimeCom);
+  oCosts := matchcontinue iCosts
+    case tmpCosts
+      algorithm
+        true := intLe(iCurrentIndex, arrayLength(iCosts));
+        currentCom := arrayGet(tmpCosts,iCurrentIndex);
+        currentCom := List.map1(currentCom,createCommCosts0,iReqTimeCom);
+        tmpCosts := arrayUpdate(tmpCosts,iCurrentIndex,currentCom);
+        tmpCosts := createCommCosts(tmpCosts, iCurrentIndex+1,iReqTimeCom);
       then tmpCosts;
     else iCosts;
   end matchcontinue;
@@ -4988,27 +4924,27 @@ public function validateTaskGraphMeta "author: marcusw
   input BackendDAE.BackendDAE iDae;
   output Boolean valid;
 algorithm
-  valid := matchcontinue(iMeta, iDae)
+  valid := matchcontinue iDae
     local
       BackendDAE.StrongComponents systComps, graphComps;
       array<BackendDAE.StrongComponent> systCompsArray;
       array<tuple<BackendDAE.EqSystem,Integer>> systCompEqSysMapping, graphCompEqSysMapping; //Map each component to the EqSystem
       list<tuple<BackendDAE.StrongComponent,Integer>> systCompEqSysMappingIdx, graphCompEqSysMappingIdx;
-    case(_,_)
-      equation
+    case _
+      algorithm
         //Check if all StrongComponents are in the graph
-        (systComps,systCompEqSysMapping) = getSystemComponents(iDae);
-        systCompsArray = listArray(systComps);
-        (graphComps,graphCompEqSysMapping) = getGraphComponents(iMeta,systCompsArray,systCompEqSysMapping);
+        (systComps,systCompEqSysMapping) := getSystemComponents(iDae);
+        systCompsArray := listArray(systComps);
+        (graphComps,graphCompEqSysMapping) := getGraphComponents(iMeta,systCompsArray,systCompEqSysMapping);
         //print("validateTaskGraphMeta: graph components are " + stringDelimitList(List.map(graphComps, BackendDump.printComponent), ",") + "\n");
         //print("validateTaskGraphMeta: system components are " + stringDelimitList(List.map(systComps, BackendDump.printComponent), ",") + "\n");
-        ((_,_,systCompEqSysMappingIdx)) = validateTaskGraphMeta0(systCompEqSysMapping,(1,systComps,{}));
-        ((_,_,graphCompEqSysMappingIdx)) = validateTaskGraphMeta0(graphCompEqSysMapping,(1,graphComps,{}));
-        true = validateComponents(graphCompEqSysMappingIdx,systCompEqSysMappingIdx);
+        (_,_,systCompEqSysMappingIdx) := validateTaskGraphMeta0(systCompEqSysMapping,(1,systComps,{}));
+        (_,_,graphCompEqSysMappingIdx) := validateTaskGraphMeta0(graphCompEqSysMapping,(1,graphComps,{}));
+        true := validateComponents(graphCompEqSysMappingIdx,systCompEqSysMappingIdx);
         //Check if no component was connected twice
-        true = checkForDuplicates(graphCompEqSysMappingIdx);
+        true := checkForDuplicates(graphCompEqSysMappingIdx);
         //Check if compNames,compDescs and exeCosts-array have the right size
-        true = checkForExecutionCosts(iMeta);
+        true := checkForExecutionCosts(iMeta);
         // Check if every node has an execution cost > 0.
       then true;
     else false;
@@ -5022,18 +4958,18 @@ protected function validateTaskGraphMeta0 "author: marcusw
   output tuple<Integer,BackendDAE.StrongComponents,list<tuple<BackendDAE.StrongComponent,Integer>>> oCompsTpl;
 protected
   Integer currentIdx, eqSysIdx;
-  BackendDAE.StrongComponents iComps, rest;
+  BackendDAE.StrongComponents rest;
   BackendDAE.StrongComponent head;
   list<tuple<BackendDAE.StrongComponent,Integer>> iCompEqSysMapping, oCompEqSysMapping;
   tuple<Integer,BackendDAE.StrongComponents,list<tuple<BackendDAE.StrongComponent,Integer>>> tmpCompsTpl;
 algorithm
-  oCompsTpl := match(iEqSysMapping,iCompsTpl)
-    case(_,(currentIdx,(head::rest),iCompEqSysMapping))
-      equation
-        ((_,eqSysIdx)) = arrayGet(iEqSysMapping,currentIdx);
-        oCompEqSysMapping = (head,eqSysIdx)::iCompEqSysMapping;
+  oCompsTpl := match iCompsTpl
+    case (currentIdx,(head::rest),iCompEqSysMapping)
+      algorithm
+        (_,eqSysIdx) := arrayGet(iEqSysMapping,currentIdx);
+        oCompEqSysMapping := (head,eqSysIdx)::iCompEqSysMapping;
         //print("validateTaskGraphMeta0: Adding head " + BackendDump.printComponent(head) + " with equation system index " + intString(eqSysIdx) + "\n");
-        tmpCompsTpl = validateTaskGraphMeta0(iEqSysMapping,(currentIdx+1,rest,oCompEqSysMapping));
+        tmpCompsTpl := validateTaskGraphMeta0(iEqSysMapping,(currentIdx+1,rest,oCompEqSysMapping));
       then tmpCompsTpl;
     else iCompsTpl;
   end match;
@@ -5051,8 +4987,8 @@ protected
   tuple<BackendDAE.StrongComponent,Integer> tpl1,tpl2;
   list<tuple<BackendDAE.StrongComponent,Integer>> sortedGraphComps, sortedSystComps;
 algorithm
-  res := matchcontinue(graphComps,systComps)
-    case(_,_)
+  res := matchcontinue systComps
+    case _
       algorithm
         sortedGraphComps := List.sort(graphComps,compareComponents);
         sortedSystComps := List.sort(systComps,compareComponents);
@@ -5076,7 +5012,7 @@ algorithm
         end while;
       then true;
     else
-      equation
+      algorithm
         print("Different components in graph and system\n");
       then false;
   end matchcontinue;
@@ -5091,7 +5027,7 @@ protected
 algorithm
   sortedComps := List.sort(iComps,compareComponents);
   //print("checkForDuplicates Components: " + stringDelimitList(List.map(sortedComps,BackendDump.printComponent), ";") + "\n");
-  ((res,_)) := List.fold(sortedComps,checkForDuplicates0,(true,NONE()));
+  (res,_) := List.fold(sortedComps,checkForDuplicates0,(true,NONE()));
 end checkForDuplicates;
 
 protected function checkForDuplicates0 "author: marcusw
@@ -5108,8 +5044,8 @@ algorithm
     case(_,(false,_)) then ((false,SOME(currentComp_idx)));
     case(_,(_,NONE())) then ((true,SOME(currentComp_idx)));
     case((currentComp,idxCurrent),(_,SOME(lastComp_idx as (lastComp, idxLast))))
-      equation
-        true = componentsEqual(currentComp_idx,lastComp_idx);
+      algorithm
+        true := componentsEqual(currentComp_idx,lastComp_idx);
         print("Component duplicate detected: current: " + BackendDump.printComponent(currentComp) + " (eqSystem "
               + intString(idxCurrent) + ") last " + BackendDump.printComponent(lastComp) + " (eqSystem " + intString(idxLast) + ").\n");
       then ((false,SOME(currentComp_idx)));
@@ -5133,8 +5069,8 @@ algorithm
   tmpComps := {};
   tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Array.fold(inComps, function getGraphComponents0(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping),(tmpComps,tmpMapping));
-  ((_,(tmpComps,tmpMapping))) := Array.fold(nodeMarks, function getGraphComponents2(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping), (1,(tmpComps,tmpMapping)));
+  (tmpComps,tmpMapping) := Array.fold(inComps, function getGraphComponents0(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping),(tmpComps,tmpMapping));
+  (_,(tmpComps,tmpMapping)) := Array.fold(nodeMarks, function getGraphComponents2(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping), (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
@@ -5151,7 +5087,7 @@ protected
   list<tuple<BackendDAE.EqSystem,Integer>> iCompsMapping, tmpCompsMapping;
 algorithm
   (iNodeComps,iCompsMapping) := iNodeComps_Mapping;
-  ((tmpNodeComps,tmpCompsMapping)) := List.fold2(inComp, getGraphComponents1, systComps, iCompEqSysMapping, ({},{}));
+  (tmpNodeComps,tmpCompsMapping) := List.fold2(inComp, getGraphComponents1, systComps, iCompEqSysMapping, ({},{}));
   tmpNodeComps := listAppend(iNodeComps,tmpNodeComps);
   tmpCompsMapping := listAppend(iCompsMapping,tmpCompsMapping);
   oNodeComps_Mapping := (tmpNodeComps,tmpCompsMapping);
@@ -5191,21 +5127,21 @@ protected
   BackendDAE.StrongComponents comps;
   list<tuple<BackendDAE.EqSystem,Integer>> eqSysts;
 algorithm
-  oNodeComps_Mapping := matchcontinue(nodeMark, systComps, iCompEqSysMapping, iNodeComps_Mapping)
-    case(_,_,_,(nodeIdx,(comps,eqSysts)))
-      equation
-        true = intGe(nodeMark,0);
+  oNodeComps_Mapping := matchcontinue iNodeComps_Mapping
+    case (nodeIdx,(comps,eqSysts))
+      algorithm
+        true := intGe(nodeMark,0);
       then ((nodeIdx+1,(comps,eqSysts)));
-    case(_,_,_,(nodeIdx,(comps,eqSysts)))
-      equation
-        true = intEq(nodeMark,-2);
+    case (nodeIdx,(comps,eqSysts))
+      algorithm
+        true := intEq(nodeMark,-2);
       then ((nodeIdx+1,(comps,eqSysts)));
-    case(_,_,_,(nodeIdx,(comps,eqSysts)))
-      equation
-        comp = arrayGet(systComps,nodeIdx);
-        eqSyst = arrayGet(iCompEqSysMapping,nodeIdx);
-        comps = comp :: comps;
-        eqSysts = eqSyst :: eqSysts;
+    case (nodeIdx,(comps,eqSysts))
+      algorithm
+        comp := arrayGet(systComps,nodeIdx);
+        eqSyst := arrayGet(iCompEqSysMapping,nodeIdx);
+        comps := comp :: comps;
+        eqSysts := eqSyst :: eqSysts;
       then ((nodeIdx+1,(comps,eqSysts)));
   end matchcontinue;
 end getGraphComponents2;
@@ -5270,30 +5206,29 @@ public function getCriticalPaths "author: Waurich TUD 2013-07
   output tuple<list<list<Integer>>,Real> criticalPathOut; //criticalPath with communication costs <%paths, opCost%>
   output tuple<list<list<Integer>>,Real> criticalPathOutWoC; //criticalPath without communication costs <%paths, opCost%>
 algorithm
-  (criticalPathOut,criticalPathOutWoC) := matchcontinue(graphIn,graphDataIn)
+  (criticalPathOut,criticalPathOutWoC) := matchcontinue graphDataIn
     local
       list<Integer> rootNodes;
-      list<list<Integer>> cpWCpaths,CpWoCpaths, level;
+      list<list<Integer>> cpWCpaths,CpWoCpaths;
       Real cpWCcosts,cpWoCcosts;
-      array<Integer> nodeMark;
-    case(_,TASKGRAPHMETA())
-      equation
-        true = arrayLength(graphIn) <> 0;
-        rootNodes = getRootNodes(graphIn);
+    case TASKGRAPHMETA()
+      algorithm
+        true := arrayLength(graphIn) <> 0;
+        rootNodes := getRootNodes(graphIn);
 
-        (cpWCpaths,cpWCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,true);
-        (CpWoCpaths,cpWoCcosts) = getCriticalPath(graphIn,graphDataIn,rootNodes,false);
-        cpWCcosts = roundReal(cpWCcosts,2);
-        cpWoCcosts = roundReal(cpWoCcosts,2);
+        (cpWCpaths,cpWCcosts) := getCriticalPath(graphIn,graphDataIn,rootNodes,true);
+        (CpWoCpaths,cpWoCcosts) := getCriticalPath(graphIn,graphDataIn,rootNodes,false);
+        cpWCcosts := roundReal(cpWCcosts,2);
+        cpWoCcosts := roundReal(cpWoCcosts,2);
       then
         ((cpWCpaths,cpWCcosts),(CpWoCpaths,cpWoCcosts));
-    case(_,_)
-      equation
-        true = arrayLength(graphIn) == 0;
+    case _
+      algorithm
+        true := arrayLength(graphIn) == 0;
       then
         (({{}},0.0),({{}},0.0));
     else
-      equation
+      algorithm
         print("getCriticalPaths failed!\n");
       then
         (({{}},0.0),({{}},0.0));
@@ -5317,7 +5252,7 @@ algorithm
   nodeCriticalPaths := arrayCreate(arrayLength(iGraph), (-1.0,{}));
   criticalPaths := List.map4(iRootNodes, getCriticalPath1, iGraph, iGraphData, iHandleCommCosts, nodeCriticalPaths);
   criticalPathIdx := getCriticalPath2(criticalPaths, 1, -1.0, -1);
-  ((oCpCosts, criticalPath)) := listGet(criticalPaths, criticalPathIdx);
+  (oCpCosts, criticalPath) := listGet(criticalPaths, criticalPathIdx);
   //print("getCriticalPath: critical path " + stringDelimitList(List.map(criticalPath, intString), ",") + " with cost of: " + realString(oCpCosts) + ". Including communication costs: " + boolString(iHandleCommCosts) + "\n");
   oCriticalPathsOut := {criticalPath};
 end getCriticalPath;
@@ -5340,42 +5275,42 @@ protected
   array<tuple<Integer,Real>> exeCosts;
   array<list<Integer>> inComps;
 algorithm
-  criticalPathOut := matchcontinue(iNode, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths)
-    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
-      equation //In this case, the node was already visited
-        ((cpCalcTime,criticalPath)) = arrayGet(iNodeCriticalPaths, iNode);
-        true = realGe(cpCalcTime, 0.0);
+  criticalPathOut := matchcontinue iGraphData
+    case TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts)
+      algorithm //In this case, the node was already visited
+        (cpCalcTime,criticalPath) := arrayGet(iNodeCriticalPaths, iNode);
+        true := realGe(cpCalcTime, 0.0);
       then ((cpCalcTime, criticalPath));
-    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
-      equation //critical path of node is currently unknown -> calculate it
-        childNodes = arrayGet(iGraph, iNode);
-        false = listEmpty(childNodes); //has children
-        criticalPaths = List.map4(childNodes, getCriticalPath1, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths);
-        criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
-        ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
-        criticalPath = iNode :: criticalPathChild;
-        commCost = if iHandleCommCosts then getCommCostBetweenNodes(iNode, listHead(criticalPathChild), iGraphData) else COMMUNICATION(0,{},{},{},{},-1,0.0);
+    case TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts)
+      algorithm //critical path of node is currently unknown -> calculate it
+        childNodes := arrayGet(iGraph, iNode);
+        false := listEmpty(childNodes); //has children
+        criticalPaths := List.map4(childNodes, getCriticalPath1, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths);
+        criticalPathIdx := getCriticalPath2(criticalPaths, 1, -1.0, -1);
+        (cpCalcTime, criticalPathChild) := listGet(criticalPaths, criticalPathIdx);
+        criticalPath := iNode :: criticalPathChild;
+        commCost := if iHandleCommCosts then getCommCostBetweenNodes(iNode, listHead(criticalPathChild), iGraphData) else COMMUNICATION(0,{},{},{},{},-1,0.0);
         //print("Comm cost from node " + intString(iNode) + " to " + intString(listHead(criticalPathChild)) + " with costs " + intString(Util.tuple33(commCost)) + "\n");
-        nodeComps = arrayGet(inComps, iNode);
-        calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
-        calcTime = realAdd(cpCalcTime,calcTime);
-        COMMUNICATION(requiredTime=commTime) = commCost;
+        nodeComps := arrayGet(inComps, iNode);
+        calcTime := addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
+        calcTime := realAdd(cpCalcTime,calcTime);
+        COMMUNICATION(requiredTime=commTime) := commCost;
         //print("getCriticalPath1: " + " (" + realString(calcTime) + "+" + realString(commTime) + ")\n");
-        calcTime = realAdd(calcTime, commTime);
+        calcTime := realAdd(calcTime, commTime);
         arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
         //print("getCriticalPath1: Critical path of node " + intString(iNode) + " is " + realString(calcTime) + "\n");
       then ((calcTime, criticalPath));
-    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
-      equation //critical path of node is currently unknown -> calculate it
-        childNodes = arrayGet(iGraph, iNode);
-        true = listEmpty(childNodes); //has no children
-        criticalPath = iNode :: {};
-        nodeComps = arrayGet(inComps, iNode);
-        calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
+    case TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts)
+      algorithm //critical path of node is currently unknown -> calculate it
+        childNodes := arrayGet(iGraph, iNode);
+        true := listEmpty(childNodes); //has no children
+        criticalPath := iNode :: {};
+        nodeComps := arrayGet(inComps, iNode);
+        calcTime := addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
         arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
       then ((calcTime, criticalPath));
     else
-      equation
+      algorithm
         print("HpcOmTaskGraph.getCriticalPath_1 failed\n");
       then fail();
   end matchcontinue;
@@ -5393,12 +5328,12 @@ protected
   list<Integer> criticalPath;
   list<tuple<Real,list<Integer>>> rest;
 algorithm
-  oLongestPathIndex := matchcontinue(iCriticalPaths, iListIdx, iLongestPath, iLongestPathIndex)
-    case((cpCost, criticalPath)::rest,_,_,_)
-      equation
-        true = realGt(cpCost, iLongestPath);
+  oLongestPathIndex := matchcontinue iCriticalPaths
+    case (cpCost, criticalPath)::rest
+      algorithm
+        true := realGt(cpCost, iLongestPath);
       then getCriticalPath2(rest, iListIdx+1, cpCost, iListIdx);
-    case((cpCost, criticalPath)::rest,_,_,_)
+    case (cpCost, criticalPath)::rest
       then getCriticalPath2(rest, iListIdx+1, iLongestPath, iLongestPathIndex);
     else iLongestPathIndex;
   end matchcontinue;
@@ -5415,12 +5350,12 @@ protected
   list<Integer> rest;
   Real cost;
 algorithm
-  oExeCost := match(iNodeComps, iExeCosts, iExeCost)
-    case(head::rest,_,_)
-      equation
-        ((_,cost)) = arrayGet(iExeCosts, head);
-        cost = realAdd(cost, iExeCost);
-        cost = addUpExeCostsForNode(rest, iExeCosts, cost);
+  oExeCost := match iNodeComps
+    case head::rest
+      algorithm
+        (_,cost) := arrayGet(iExeCosts, head);
+        cost := realAdd(cost, iExeCost);
+        cost := addUpExeCostsForNode(rest, iExeCosts, cost);
       then cost;
     else iExeCost;
   end match;
@@ -5459,7 +5394,7 @@ protected
   Integer level;
   list<Integer> pSet;
 algorithm
-  ((level,_,_)) := arrayGet(nodeInfo,idx);
+  (level,_,_) := arrayGet(nodeInfo,idx);
   pSet := listGet(parallelSetIn,level);
   pSet := idx :: pSet;
   parallelSetOut := List.replaceAt(pSet, level, parallelSetIn);
@@ -5475,7 +5410,7 @@ protected function getCostsForNode "author: Waurich TUD 2013-07
   input array<Communications> commCosts;
   output Real costsOut;
 algorithm
-  costsOut := matchcontinue(parentNode,childNode,inComps,exeCosts,commCosts)
+  costsOut := matchcontinue parentNode
     local
       Real costs;
       Real commCost;
@@ -5483,49 +5418,48 @@ algorithm
       Integer primalParent;
       list<Integer> primalChildLst;
       list<Integer> primalParentLst;
-      list<tuple<Integer,Integer,Integer>> edgeCostLst;
-    case(0,_,_,_,_)
-      equation
+    case 0
+      algorithm
         // the root node is not contracted
-        primalChildLst = arrayGet(inComps,childNode);
-        true = listLength(primalChildLst) == 1;
-        primalChild = listGet(primalChildLst,1);
-        ((_,costs)) = arrayGet(exeCosts,primalChild);
+        primalChildLst := arrayGet(inComps,childNode);
+        true := listLength(primalChildLst) == 1;
+        primalChild := listGet(primalChildLst,1);
+        (_,costs) := arrayGet(exeCosts,primalChild);
       then
         costs;
-    case(0,_,_,_,_)
-      equation
+    case 0
+      algorithm
         // the root node is contracted
-        primalChildLst = arrayGet(inComps,childNode);
-        true = listLength(primalChildLst) > 1;
-        _ = listGet(primalChildLst,1);
-        costs = getCostsForContractedNodes(primalChildLst,exeCosts);
+        primalChildLst := arrayGet(inComps,childNode);
+        true := listLength(primalChildLst) > 1;
+        listGet(primalChildLst,1);
+        costs := getCostsForContractedNodes(primalChildLst,exeCosts);
       then
         costs;
-    case(_,_,_,_,_)
-      equation
+    case _
+      algorithm
         // the childNode is not contracted
-        primalChildLst = arrayGet(inComps,childNode);
-        primalParentLst = arrayGet(inComps,parentNode);
-        true = listLength(primalChildLst) == 1;
-        primalChild = listGet(primalChildLst,1);
-        primalParent = listGet(primalParentLst,1);
-        ((_,costs)) = arrayGet(exeCosts,primalChild);
-        COMMUNICATION(requiredTime=commCost) = getCommunicationCost(primalChild, primalParent ,commCosts);
-        costs = costs + commCost;
+        primalChildLst := arrayGet(inComps,childNode);
+        primalParentLst := arrayGet(inComps,parentNode);
+        true := listLength(primalChildLst) == 1;
+        primalChild := listGet(primalChildLst,1);
+        primalParent := listGet(primalParentLst,1);
+        (_,costs) := arrayGet(exeCosts,primalChild);
+        COMMUNICATION(requiredTime=commCost) := getCommunicationCost(primalChild, primalParent ,commCosts);
+        costs := costs + commCost;
       then
         costs;
-    case(_,_,_,_,_)
-      equation
+    case _
+      algorithm
         // the childNode is contracted
-        primalChildLst = arrayGet(inComps,childNode);
-        _ = arrayGet(inComps,parentNode);
-        true = listLength(primalChildLst) > 1;
-        costs = getCostsForContractedNodes(primalChildLst,exeCosts);
+        primalChildLst := arrayGet(inComps,childNode);
+        arrayGet(inComps,parentNode);
+        true := listLength(primalChildLst) > 1;
+        costs := getCostsForContractedNodes(primalChildLst,exeCosts);
       then
         costs;
     else
-      equation
+      algorithm
         print("getCostsForNode failed! \n");
       then
         fail();
@@ -5550,7 +5484,7 @@ protected function getCostsForContractedNodes1 "author:Waurich TUD 2013-10
 protected
   Real exeCost;
 algorithm
-  ((_,exeCost)) := arrayGet(exeCosts,node);
+  (_,exeCost) := arrayGet(exeCosts,node);
   costsOut := realAdd(costsIn,exeCost);
 end getCostsForContractedNodes1;
 
@@ -5580,12 +5514,11 @@ protected
   Integer parallelSetIdx;
   Integer xCoord;
   Integer yCoord;
-  Integer levelInterval;
   tuple<Integer,Integer> coords;
 algorithm
   //levelInterval := 80;
   parallelSetIdx := getParallelSetForComp(compIdx,1,parallelSets);
-  ((xCoord,yCoord)) := arrayGet(nodeCoordsIn,compIdx);
+  (xCoord,yCoord) := arrayGet(nodeCoordsIn,compIdx);
   //coords := ((xCoord,parallelSetIdx*levelInterval));
   coords := ((xCoord,parallelSetIdx));
   nodeCoordsOut := arrayUpdate(nodeCoordsIn,compIdx,coords);
@@ -5598,31 +5531,31 @@ protected function getParallelSetForComp "author: Waurich TUD 2013-07
   input list<list<Integer>> parallelSets;
   output Integer parallelSetOut;
 algorithm
-  parallelSetOut := matchcontinue(compIn,setIdx,parallelSets)
+  parallelSetOut := matchcontinue parallelSets
     local
       list<Integer> parallelSet;
       Integer parallelSetTmp;
-    case(_,_,_)
-      equation
-        true = setIdx <= listLength(parallelSets);
-        parallelSet = listGet(parallelSets,setIdx);
+    case _
+      algorithm
+        true := setIdx <= listLength(parallelSets);
+        parallelSet := listGet(parallelSets,setIdx);
         //print("is "+intString(compIn)+" member of set "+intString(setIdx)+" with the nodes "+stringDelimitList(List.map(parallelSet,intString),",")+"\n");
-        true = List.isMemberOnTrue(compIn,parallelSet,intEq);
+        true := List.isMemberOnTrue(compIn,parallelSet,intEq);
         //print("true \n");
       then
         setIdx;
-    case(_,_,_)
-      equation
-        true = setIdx <= listLength(parallelSets);
-        parallelSet = listGet(parallelSets,setIdx);
+    case _
+      algorithm
+        true := setIdx <= listLength(parallelSets);
+        parallelSet := listGet(parallelSets,setIdx);
         //print("is "+intString(compIn)+" member of set "+intString(setIdx)+" with the nodes "+stringDelimitList(List.map(parallelSet,intString),",")+"\n");
-        false = List.isMemberOnTrue(compIn,parallelSet,intEq);
+        false := List.isMemberOnTrue(compIn,parallelSet,intEq);
         //print("false \n");
-        parallelSetTmp = getParallelSetForComp(compIn,setIdx+1,parallelSets);
+        parallelSetTmp := getParallelSetForComp(compIn,setIdx+1,parallelSets);
       then
         parallelSetTmp;
     else
-      equation
+      algorithm
         print("getParallelSetForComp failed!\n");
       then
         fail();
@@ -5637,31 +5570,31 @@ protected function setLevelInNodeMark "author: wauricht TUD 2013-07
   input array<Integer> nodeMarkIn;
   output array<Integer> nodeMarkOut;
 algorithm
-  nodeMarkOut := matchcontinue(nodeIdx,inComps,nodeCoords,nodeMarkIn)
+  nodeMarkOut := matchcontinue nodeMarkIn
     local
       array<Integer> nodeMarkTmp;
       list<Integer> components;
       Integer primalComp;
       Integer nodeMarkEntry;
       Integer yCoord;
-    case(_,_,_,_)
-      equation
-        nodeMarkEntry = arrayGet(nodeMarkIn,nodeIdx);
-        components = arrayGet(inComps,nodeIdx);
-        primalComp = List.last(components);
-        nodeMarkEntry = arrayGet(nodeMarkIn,primalComp);
-        true = intEq(-1,nodeMarkEntry);
+    case _
+      algorithm
+        nodeMarkEntry := arrayGet(nodeMarkIn,nodeIdx);
+        components := arrayGet(inComps,nodeIdx);
+        primalComp := List.last(components);
+        nodeMarkEntry := arrayGet(nodeMarkIn,primalComp);
+        true := intEq(-1,nodeMarkEntry);
       then
         nodeMarkIn;
-    case(_,_,_,_)
-      equation
-        nodeMarkEntry = arrayGet(nodeMarkIn,nodeIdx);
-        components = arrayGet(inComps,nodeIdx);
-        primalComp = List.last(components);
-        nodeMarkEntry = arrayGet(nodeMarkIn,primalComp);
-        false = intEq(-1,nodeMarkEntry);
-        ((_,yCoord)) = arrayGet(nodeCoords,nodeIdx);
-        nodeMarkTmp = arrayUpdate(nodeMarkIn,primalComp,yCoord);
+    case _
+      algorithm
+        nodeMarkEntry := arrayGet(nodeMarkIn,nodeIdx);
+        components := arrayGet(inComps,nodeIdx);
+        primalComp := List.last(components);
+        nodeMarkEntry := arrayGet(nodeMarkIn,primalComp);
+        false := intEq(-1,nodeMarkEntry);
+        (_,yCoord) := arrayGet(nodeCoords,nodeIdx);
+        nodeMarkTmp := arrayUpdate(nodeMarkIn,primalComp,yCoord);
       then
         nodeMarkTmp;
   end matchcontinue;
@@ -5672,11 +5605,11 @@ protected function tupleToStringIntRealInt "author: Waurich TUD 2013-07
   input tuple<Integer,Real,Integer> inTuple;
   output String result;
 algorithm
-  result := match(inTuple)
+  result := match inTuple
     local
       Integer int1,int2;
       Real real1;
-    case((int1,real1,int2))
+    case (int1,real1,int2)
     then ("(" + intString(int1) + "," + realString(real1) +" , "+ intString(int2) + ")");
   end match;
 end tupleToStringIntRealInt;
@@ -5689,7 +5622,7 @@ protected
   array<Communications> tmpCommCosts;
 algorithm
   tmpCommCosts := arrayCreate(arrayLength(iCommCosts), {});
-  ((_,tmpCommCosts)) := Array.fold(iCommCosts, transposeCommCosts0, (1,tmpCommCosts));
+  (_,tmpCommCosts) := Array.fold(iCommCosts, transposeCommCosts0, (1,tmpCommCosts));
   oCommCosts := tmpCommCosts;
 end transposeCommCosts;
 
@@ -5720,13 +5653,13 @@ protected
   list<Integer> integerVars,floatVars,booleanVars,stringVars;
   Real requiredTime;
 algorithm
-  oCommCosts := matchcontinue(iCost, iParentCompIdx, iCommCosts)
-    case(COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=nodeIdx,requiredTime=requiredTime),_,_)
-      equation
-        true = intLe(nodeIdx, arrayLength(iCommCosts));
-        costs = arrayGet(iCommCosts, nodeIdx);
-        costs = COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,iParentCompIdx,requiredTime) :: costs;
-        tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
+  oCommCosts := matchcontinue iCost
+    case COMMUNICATION(numberOfVars=numberOfVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,stringVars=stringVars,childNode=nodeIdx,requiredTime=requiredTime)
+      algorithm
+        true := intLe(nodeIdx, arrayLength(iCommCosts));
+        costs := arrayGet(iCommCosts, nodeIdx);
+        costs := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,iParentCompIdx,requiredTime) :: costs;
+        tmpCommCosts := arrayUpdate(iCommCosts, nodeIdx, costs);
       then tmpCommCosts;
     else iCommCosts;
   end matchcontinue;
@@ -5757,22 +5690,22 @@ protected function getCommunicationByChildIdx "author: marcusw
   input Integer iChildIdx;
   output Communication oComm;
 algorithm
-  oComm := matchcontinue(iComms,iChildIdx)
+  oComm := matchcontinue iComms
     local
       Integer currentCommChild;
       Communication head, tmpComm;
       Communications rest;
-    case(COMMUNICATION(childNode=currentCommChild)::rest,_)
-      equation
-        false = intEq(currentCommChild,iChildIdx);
-        tmpComm = getCommunicationByChildIdx(rest,iChildIdx);
+    case COMMUNICATION(childNode=currentCommChild)::rest
+      algorithm
+        false := intEq(currentCommChild,iChildIdx);
+        tmpComm := getCommunicationByChildIdx(rest,iChildIdx);
       then tmpComm;
-    case((head as COMMUNICATION(childNode=currentCommChild))::_,_)
-      equation
-        true = intEq(currentCommChild,iChildIdx);
+    case (head as COMMUNICATION(childNode=currentCommChild))::_
+      algorithm
+        true := intEq(currentCommChild,iChildIdx);
       then head;
-    case({},_)
-      equation
+    case {}
+      algorithm
         print("getCommunicationByChildIdx failed! - the child idx "+intString(iChildIdx)+" can not be found in the list of edges\n");
       then
         fail();
@@ -5822,13 +5755,13 @@ protected
   Communications commCosts, filteredCommCosts;
   Communication highestCommCost;
 algorithm
-  oHighestComm := matchcontinue(iParentComp, iChildComps, iCommCosts)
-    case(_,_,_)
-      equation
-        commCosts = arrayGet(iCommCosts, iParentComp);
-        filteredCommCosts = List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
-        false = listEmpty(filteredCommCosts);
-        highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
+  oHighestComm := matchcontinue iCommCosts
+    case _
+      algorithm
+        commCosts := arrayGet(iCommCosts, iParentComp);
+        filteredCommCosts := List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
+        false := listEmpty(filteredCommCosts);
+        highestCommCost := getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
       then SOME(highestCommCost);
     else NONE();
   end matchcontinue;
@@ -5858,8 +5791,8 @@ protected
 algorithm
   oHighestTuple := matchcontinue(iCommCosts, iHighestTuple)
     case((head as COMMUNICATION(requiredTime=currentCost))::rest, COMMUNICATION(requiredTime=highestCost))
-      equation
-        true = realGt(currentCost, highestCost);
+      algorithm
+        true := realGt(currentCost, highestCost);
       then getHighestCommCost(rest, head);
     case(head::rest,_)
       then getHighestCommCost(rest, iHighestTuple);
@@ -5877,17 +5810,16 @@ protected
   Real cost2;
   list<Integer> comps;
   array<list<Integer>> inComps;
-  tuple<Integer,Real> costs;
   array<tuple<Integer,Real>> exeCosts;
   list<tuple<Integer,Real>> exeCostLst;
 algorithm
-  execCosts := match(iGraph,iMeta)
-    case(_,TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts))
-      equation
-        comps = List.flatten(List.map1(List.intRange(arrayLength(iGraph)),Array.getIndexFirst,inComps));
-        exeCostLst = List.map1(comps,Array.getIndexFirst,exeCosts);
-        cost1 = List.fold(List.map(exeCostLst,Util.tuple21),intAdd,0);
-        cost2 = List.fold(List.map(exeCostLst,Util.tuple22),realAdd,0.0);
+  execCosts := match iMeta
+    case TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts)
+      algorithm
+        comps := List.flatten(List.map1(List.intRange(arrayLength(iGraph)),Array.getIndexFirst,inComps));
+        exeCostLst := List.map1(comps,Array.getIndexFirst,exeCosts);
+        cost1 := List.fold(List.map(exeCostLst,Util.tuple21),intAdd,0);
+        cost2 := List.fold(List.map(exeCostLst,Util.tuple22),realAdd,0.0);
       then ((cost1,cost2));
     else ((0,0.0));
   end match;
@@ -5898,7 +5830,7 @@ public function getAllSCCsOfGraph "author: marcusw
   input TaskGraphMeta iTaskGraphMeta;
   output list<Integer> oSccs;
 protected
-  Integer taskIdx, mark;
+  Integer taskIdx;
   array<list<Integer>> inComps;
   list<Integer> comps;
   array<Integer> nodeMark;
@@ -5926,7 +5858,6 @@ public function roundReal "author: Waurich TUD 2014-01
   input Integer nIn;
   output Real outReal;
 protected
-  Integer int;
   Real real;
 algorithm
   real := inReal * (10.0 ^ nIn);
@@ -5949,7 +5880,7 @@ protected
   BackendDAE.EqSystems systs;
 algorithm
   BackendDAE.DAE(eqs=systs) := backendDAE;
-  ((_,annotInfoOut)) := List.fold1(systs,setAnnotationsForTasks1,taskGraphInfo,(0,annotInfoIn));
+  (_,annotInfoOut) := List.fold1(systs,setAnnotationsForTasks1,taskGraphInfo,(0,annotInfoIn));
 end setAnnotationsForTasks;
 
 protected function setAnnotationsForTasks1 "author: Waurich TUD 2014-05
@@ -5980,7 +5911,7 @@ protected function setAnnotationsForVar "
   input array<String> annotInfoIn;
   output array<String> annotInfoOut;
 algorithm
-  annotInfoOut := matchcontinue(backendVarIdx,vars,taskGraphInfo,eqSysOffset,annotInfoIn)
+  annotInfoOut := matchcontinue taskGraphInfo
     local
       Integer compIdx, taskIdx;
       String annotString;
@@ -5989,19 +5920,18 @@ algorithm
       Option<SCode.Comment> annot;
       array<list<Integer>> inComps;
       array<tuple<Integer,Integer,Integer>> varCompMapping;
-      array<tuple<Integer,Integer,Integer>> eqCompMapping;
       array<Integer> nodeMark;
-    case(_,_,TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, nodeMark=nodeMark),_,_)
-      equation
-        var = BackendVariable.getVarAt(vars,backendVarIdx);
+    case TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, nodeMark=nodeMark)
+      algorithm
+        var := BackendVariable.getVarAt(vars,backendVarIdx);
         BackendDump.printVar(var);
-        true = BackendVariable.hasAnnotation(var);
-        ((compIdx,_,_)) = arrayGet(varCompMapping,backendVarIdx+eqSysOffset);
-        taskIdx = getCompInComps(compIdx,1,inComps,nodeMark);
-        annot = BackendVariable.getAnnotationComment(var);
-        annotString = arrayGet(annotInfoIn,taskIdx);
-        cr = BackendVariable.varCref(var);
-        annotString = annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDump.dumpCommentAnnotationStr(annot)+") ";
+        true := BackendVariable.hasAnnotation(var);
+        (compIdx,_,_) := arrayGet(varCompMapping,backendVarIdx+eqSysOffset);
+        taskIdx := getCompInComps(compIdx,1,inComps,nodeMark);
+        annot := BackendVariable.getAnnotationComment(var);
+        annotString := arrayGet(annotInfoIn,taskIdx);
+        cr := BackendVariable.varCref(var);
+        annotString := annotString + "("+ComponentReferenceBasics.printComponentRefStr(cr)+": "+DAEDumpTypes.dumpCommentAnnotationStr(annot)+") ";
         arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;
@@ -6022,21 +5952,18 @@ public function appendRemovedEquations "author: Waurich TUD 2014-07
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
 algorithm
-  (graphOut,graphDataOut) := matchcontinue(dae,graphIn,graphDataIn)
+  (graphOut,graphDataOut) := matchcontinue graphDataIn
     local
       Integer numNewComps;
       list<Integer> newComps;
-      list<list<Integer>> nodeLst;
       list<list<tuple<Integer,Integer>>> nodeVarLst;
       array<tuple<Integer,Integer,Integer>> varCompMap;
       TaskGraph graph;
       TaskGraphMeta graphData;
-      BackendDAE.EqSystems systs;
       BackendDAE.EquationArray remEqs;
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqLst;
       list<list<DAE.ComponentRef>> crefsLst;
-      list<tuple<Integer,Integer>> tplLst;
       array<list<Integer>> inComps1,inComps2;
       array<tuple<Integer,Integer,Integer>> varCompMapping1;
       array<tuple<Integer,Integer,Integer>> eqCompMapping1;
@@ -6047,39 +5974,39 @@ algorithm
       array<Communications> commCosts1;
       array<Integer> nodeMark1,nodeMark2;
       array<ComponentInfo> compInformations1, compInformations2;
-  case(_,_,_)
-    equation
-      BackendDAE.DAE(shared = shared) = dae;
-      remEqs = BackendDAEUtil.collapseRemovedEqs(dae);
-      TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
-      eqLst = BackendEquation.equationList(remEqs);
-      numNewComps = listLength(eqLst);
-      true = intNe(numNewComps,0);
-      crefsLst = List.map(eqLst,BackendEquation.equationCrefs);
+  case _
+    algorithm
+      BackendDAE.DAE(shared = shared) := dae;
+      remEqs := BackendDAEUtil.collapseRemovedEqs(dae);
+      TASKGRAPHMETA(varCompMapping=varCompMap) := graphDataIn;
+      eqLst := BackendEquation.equationList(remEqs);
+      numNewComps := listLength(eqLst);
+      true := intNe(numNewComps,0);
+      crefsLst := List.map(eqLst,BackendEquation.equationCrefs);
       //print("crefs \n");List.map_0(crefsLst,ComponentReference.printComponentRefList);
-      nodeVarLst = List.map2(crefsLst,getNodeForCrefLst,dae,varCompMap);
+      nodeVarLst := List.map2(crefsLst,getNodeForCrefLst,dae,varCompMap);
       //print("nodeVarLst"+stringDelimitList(List.map(nodeVarLst,printNodeVars),"\n")+"\n");
 
-      TASKGRAPHMETA(inComps=inComps1, varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, compParamMapping=compParamMapping1, compNames=compNames1, compDescs=compDescs1, exeCosts=exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1, compInformations=compInformations1) = graphDataIn;
-      graph = arrayAppend(graphIn,arrayCreate(numNewComps,{}));
-      newComps = List.intRange2(arrayLength(graphIn)+1,arrayLength(graphIn)+numNewComps);
+      TASKGRAPHMETA(inComps=inComps1, varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, compParamMapping=compParamMapping1, compNames=compNames1, compDescs=compDescs1, exeCosts=exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1, compInformations=compInformations1) := graphDataIn;
+      graph := arrayAppend(graphIn,arrayCreate(numNewComps,{}));
+      newComps := List.intRange2(arrayLength(graphIn)+1,arrayLength(graphIn)+numNewComps);
       //print("newComps: "+stringDelimitList(List.map(newComps,intString)," | ")+"\n");
-      graph =  List.threadFold(nodeVarLst,newComps,addEdgesToGraph,graph);
+      graph :=  List.threadFold(nodeVarLst,newComps,addEdgesToGraph,graph);
 
-      inComps2 = listArray(List.map(newComps,List.create));
-      compNames2 = arrayCreate(numNewComps,"assert");
-      compDescs2 = listArray(List.map(eqLst,BackendDump.equationString));
-      nodeMark2 = arrayCreate(numNewComps,-2);
-      exeCosts2 = listArray(List.map1(eqLst,estimateEquationCosts,shared));
-      compInformations2 = arrayCreate(numNewComps, COMPONENTINFO(false, false, true));
-      inComps1 = arrayAppend(inComps1,inComps2);
-      compNames1 = arrayAppend(compNames1,compNames2);
-      compDescs1 = arrayAppend(compDescs1,compDescs2);
-      nodeMark1 = arrayAppend(nodeMark1,nodeMark2);
-      exeCosts1 = arrayAppend(exeCosts1,exeCosts2);
-      compInformations1 = arrayAppend(compInformations1, compInformations2);
-      commCosts1 = List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
-      graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,compParamMapping1,compNames1,compDescs1,exeCosts1,commCosts1,nodeMark1,compInformations1);
+      inComps2 := listArray(List.map(newComps,List.create));
+      compNames2 := arrayCreate(numNewComps,"assert");
+      compDescs2 := listArray(List.map(eqLst,BackendDump.equationString));
+      nodeMark2 := arrayCreate(numNewComps,-2);
+      exeCosts2 := listArray(List.map1(eqLst,estimateEquationCosts,shared));
+      compInformations2 := arrayCreate(numNewComps, COMPONENTINFO(false, false, true));
+      inComps1 := arrayAppend(inComps1,inComps2);
+      compNames1 := arrayAppend(compNames1,compNames2);
+      compDescs1 := arrayAppend(compDescs1,compDescs2);
+      nodeMark1 := arrayAppend(nodeMark1,nodeMark2);
+      exeCosts1 := arrayAppend(exeCosts1,exeCosts2);
+      compInformations1 := arrayAppend(compInformations1, compInformations2);
+      commCosts1 := List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
+      graphData := TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,compParamMapping1,compNames1,compDescs1,exeCosts1,commCosts1,nodeMark1,compInformations1);
     then (graph,graphData);
   else (graphIn,graphDataIn);
   end matchcontinue;
@@ -6230,33 +6157,32 @@ protected function getNodeForCref1
   output Integer varIdx;
   output Boolean found;
 algorithm
-  (eqSysIdx,varIdx,found) := matchcontinue(eqSystems,cref,eqSysIdxIn)
+  (eqSysIdx,varIdx,found) := matchcontinue eqSystems
     local
       Boolean b;
-      Integer var,esIdx,vIdx;
+      Integer esIdx,vIdx;
       list<Integer> lst;
-      BackendDAE.EqSystems eqSys;
       BackendDAE.EqSystems rest;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> varLst;
-   case(BackendDAE.EQSYSTEM(orderedVars = vars)::_,_,_)
-      equation
-        //print("check cref: "+ComponentReference.printComponentRefStr(cref)+"\n");
-        (varLst,lst) = BackendVariable.getVar(cref,vars);
+   case BackendDAE.EQSYSTEM(orderedVars = vars)::_
+      algorithm
+        //print("check cref: "+ComponentReferenceBasics.printComponentRefStr(cref)+"\n");
+        (varLst,lst) := BackendVariable.getVar(cref,vars);
         if intNe(listLength(lst),1) then
           print("Check if there is a assert or something that is dependent of arrayEquations");
         end if;
         if BackendVariable.isStateVar(listHead(varLst)) then // if its dependent on a state --> no edge in the task graph
-          (esIdx,vIdx,b) = (-1,-1,false);
+          (esIdx,vIdx,b) := (-1,-1,false);
         else
-          (esIdx,vIdx,b) = (eqSysIdxIn,listHead(lst),true);
+          (esIdx,vIdx,b) := (eqSysIdxIn,listHead(lst),true);
         end if;
       then (esIdx,vIdx,b);
-    case(BackendDAE.EQSYSTEM()::rest,_,_)
-      equation
-        (esIdx,vIdx,b) = getNodeForCref1(rest,cref,eqSysIdxIn+1);
+    case BackendDAE.EQSYSTEM()::rest
+      algorithm
+        (esIdx,vIdx,b) := getNodeForCref1(rest,cref,eqSysIdxIn+1);
       then (esIdx,vIdx,b);
-    case({},_,_)
+    case {}
       then (-1,-1,false);
   end matchcontinue;
 end getNodeForCref1;
@@ -6269,12 +6195,11 @@ protected function getNodeForVarIdx"traverse the whole varCompMapping from eqSys
   output Integer node;
 protected
   Integer offset,eqSys,tryThisIndex=inTryThisIndex,n=0,arrayLengthVarCompMapping;
-  Boolean eqSysNeq;
 algorithm
   arrayLengthVarCompMapping := arrayLength(varCompMapping);
   while true loop
     if tryThisIndex >= 1 and tryThisIndex <= arrayLengthVarCompMapping then
-      ((node,eqSys,offset)) := arrayGet(varCompMapping,tryThisIndex);
+      (node,eqSys,offset) := arrayGet(varCompMapping,tryThisIndex);
       if eqSys == eqSysIdx then
         node := node+varIdx-1;
       return;
@@ -6309,7 +6234,6 @@ author: Waurich TUD 2016-01"
   input array<list<Integer>> sccSimEqMapping;
   output SimCode.PartitionData partitionDataOut;
 protected
-  array<Integer> stateTasksArray;
   array<list<Integer>> stateTaskAssign;
   list<Integer> stateTasks;
   list<list<Integer>> tasksPerLevel, partitions;
@@ -6360,7 +6284,6 @@ The order in the state-vector in simcode has to be the same as in the taskgraph"
 protected
   Integer state,compIdx,eqSysIdx,offset,varIdx,simVarIdx;
   list<Integer> simVarIdxs, order;
-  tuple<Integer,Integer,Integer> varMapTpl;
   array<tuple<Integer,Integer,Integer>> varCompMapping;
   BackendDAE.Var var;
   BackendDAE.EqSystem eqSys;
@@ -6421,8 +6344,8 @@ author: Waurich TUD 2016-01"
   input TaskGraph odeGraphT;
   output list<list<Integer>> partitions = {};
 protected
-  Integer task, numStates, numAssigns;
-  list<Integer> leaveNodes, predecessors, samePartTasks, partition, otherPartTasks, stateAss;
+  Integer numStates, numAssigns;
+  list<Integer> leaveNodes, samePartTasks, partition, otherPartTasks, stateAss;
   array<Integer> visitedTasks;
   array<list<Integer>> leaveNodesWithNassigns;
 algorithm
@@ -6475,7 +6398,7 @@ algorithm
     numAss := listLength(stateAss);
     leaveNodes := arrayGet(leaveNodesWithNassigns, numAss);
     leaveNodes := task::leaveNodes;
-    _ := arrayUpdate(leaveNodesWithNassigns,numAss,leaveNodes);
+    arrayUpdate(leaveNodesWithNassigns,numAss,leaveNodes);
   end for;
 end multirate_dispatchLeaveNodes;
 
@@ -6514,7 +6437,7 @@ algorithm
     otherLeaveNodes := listAppend(otherLeaves,otherLeaveNodes);
 
     // update the visitedTasks
-    _ := arrayUpdate(visitedTasks,task,0);
+    arrayUpdate(visitedTasks,task,0);
     List.map2_0(samePartTasks, Array.updateIndexFirst, 0, visitedTasks);
     List.map2_0(otherLeaves, Array.updateIndexFirst, 0, visitedTasks);
 
@@ -6655,12 +6578,12 @@ protected
   Integer eqIdx, sccIdx;
   list<tuple<Integer,Integer>> rest;
 algorithm
-  oIndex := matchcontinue(iEquationSccMapping,iHighestIndex)
-    case((eqIdx,sccIdx)::rest,_)
-      equation
-        true = intGt(sccIdx,iHighestIndex);
+  oIndex := matchcontinue iEquationSccMapping
+    case (eqIdx,sccIdx)::rest
+      algorithm
+        true := intGt(sccIdx,iHighestIndex);
       then findHighestSccIdxInMapping(rest,sccIdx);
-    case((eqIdx,sccIdx)::rest,_)
+    case (eqIdx,sccIdx)::rest
       then findHighestSccIdxInMapping(rest,iHighestIndex);
     else iHighestIndex;
   end matchcontinue;
@@ -6683,17 +6606,17 @@ protected
   Integer eqIdx,sccIdx;
   tuple<Integer,Integer> newElem;
 algorithm
-  oNewList := matchcontinue(iTuple,iNewList)
-    case((eqIdx,sccIdx),_)
-      equation
-        true = intEq(sccIdx,1);
+  oNewList := matchcontinue iTuple
+    case (eqIdx,sccIdx)
+      algorithm
+        true := intEq(sccIdx,1);
       then iNewList;
-    case((eqIdx,sccIdx),_)
-      equation
-        newElem = (eqIdx,sccIdx-1);
+    case (eqIdx,sccIdx)
+      algorithm
+        newElem := (eqIdx,sccIdx-1);
       then newElem::iNewList;
     else
-      equation
+      algorithm
         print("removeDummyStateFromMapping1 failed\n");
     then iNewList;
   end matchcontinue;
@@ -6709,7 +6632,7 @@ protected
 algorithm
   tmpMapping := arrayCreate(numOfSccs,{});
   //print("convertToSccSimEqMapping with " + intString(numOfSccs) + " sccs.\n");
-  _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
+  List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
   oMapping := tmpMapping;
 end convertToSccSimEqMapping;
 
@@ -6775,15 +6698,15 @@ protected
   Integer simEqIdx;
   array<Option<SimCode.SimEqSystem>> tmpMapping;
 algorithm
-  oMapping := matchcontinue(iEquation, iMapping)
-    case(_,_)
-      equation
-        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
-        tmpMapping = arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
+  oMapping := matchcontinue iMapping
+    case _
+      algorithm
+        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
+        tmpMapping := arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
     else
-      equation
-        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
+      algorithm
+        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
@@ -6809,11 +6732,11 @@ protected function getSimCodeEqByIndexAndMapping1 "author: marcusw
 protected
   SimCode.SimEqSystem tmpSys;
 algorithm
-  oSimEqSystem := match(iSimEqSystem,iIdx)
-    case(SOME(tmpSys),_)
+  oSimEqSystem := match iSimEqSystem
+    case SOME(tmpSys)
       then tmpSys;
     else
-      equation
+      algorithm
         print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " + intString(iIdx) + "\n");
         //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();
@@ -6830,16 +6753,16 @@ protected
   SimCode.SimEqSystem head;
   Integer headIdx,headIdx2;
 algorithm
-  oEq := matchcontinue(iEqs,iIdx)
-    case(head::rest,_)
-      equation
-        (headIdx,headIdx2) = getIndexBySimCodeEq(head);
+  oEq := matchcontinue iEqs
+    case head::rest
+      algorithm
+        (headIdx,headIdx2) := getIndexBySimCodeEq(head);
         //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
-        true = intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
+        true := intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
       then head;
-    case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
+    case head::rest then getSimCodeEqByIndex(rest,iIdx);
     else
-      equation
+      algorithm
         print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
         //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();
@@ -6854,22 +6777,22 @@ protected function getIndexBySimCodeEq "author: marcusw
 protected
   Integer index,index2;
 algorithm
-  (oIdx,oIdx2) := match(iEq)
-    case(SimCode.SES_RESIDUAL(index=index)) then (index,0);
-    case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then (index,0);
-    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index)) then (index,0);
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then (index,0);
-    case(SimCode.SES_IFEQUATION(index=index)) then (index,0);
-    case(SimCode.SES_ALGORITHM(index=index)) then (index,0);
+  (oIdx,oIdx2) := match iEq
+    case SimCode.SES_RESIDUAL(index=index) then (index,0);
+    case SimCode.SES_SIMPLE_ASSIGN(index=index) then (index,0);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then (index,0);
+    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then (index,0);
+    case SimCode.SES_IFEQUATION(index=index) then (index,0);
+    case SimCode.SES_ALGORITHM(index=index) then (index,0);
     // no dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE())) then (index,0);
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE())) then (index,0);
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE()) then (index,0);
+    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE()) then (index,0);
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2)))) then (index,index2);
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2)))) then (index,index2);
-    case(SimCode.SES_MIXED(index=index)) then (index,0);
-    case(SimCode.SES_WHEN(index=index)) then (index,0);
-    case(SimCode.SES_ALIAS(aliasOf=index)) then (index,0);
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2))) then (index,index2);
+    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2))) then (index,index2);
+    case SimCode.SES_MIXED(index=index) then (index,0);
+    case SimCode.SES_WHEN(index=index) then (index,0);
+    case SimCode.SES_ALIAS(aliasOf=index) then (index,0);
     else
       algorithm
         Error.addInternalError(getInstanceName()+" failed", sourceInfo());
@@ -6898,14 +6821,14 @@ protected
   list<Integer> eqIdc;
   list<SimCode.SimEqSystem> tmpSimEqs;
 algorithm
-  oSimEqs := match(iTask, iSimEqIdxSimEqMapping)
-    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdc),_)
-      equation
-        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
+  oSimEqs := match iTask
+    case HpcOmSimCode.CALCTASK(eqIdc=eqIdc)
+      algorithm
+        tmpSimEqs := List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
       then tmpSimEqs;
-    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc),_)
-      equation
-        tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
+    case HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc)
+      algorithm
+        tmpSimEqs := List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
       then tmpSimEqs;
     else {};
   end match;
@@ -6918,7 +6841,7 @@ protected
   String text;
 algorithm
   text := "SimEqToSCCMapping";
-  ((_,text)) := Array.fold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
+  (_,text) := Array.fold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
   print(text + "\n");
 end dumpSimEqSCCMapping;
 
@@ -6944,7 +6867,7 @@ protected
   String text;
 algorithm
   text := "SccToSimEqMapping";
-  ((_,text)) := Array.fold(iSccMapping, dumpSccSimEqMapping1, (1,text));
+  (_,text) := Array.fold(iSccMapping, dumpSccSimEqMapping1, (1,text));
   print(text + "\n");
 end dumpSccSimEqMapping;
 

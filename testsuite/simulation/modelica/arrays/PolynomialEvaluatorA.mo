@@ -26,7 +26,6 @@ class PolyEvaluate1
 equation
   polyeval.x = time;
   p = polyeval.y;              // p gets the result
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate1;
 
 // class PolyEvaluate1

@@ -1,35 +1,37 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
-
 
 /*!
  * \file otherdlg.h
@@ -46,6 +48,9 @@
 
 // STD Headers
 #include <iostream>
+
+// QT Headers
+#include <QTimer>
 
 //OMS Headers
 #include "oms.h"
@@ -247,25 +252,17 @@ OMS::OMS( QWidget* parent )
 
   // set start message
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
-  copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to " + omc_version_;
+  copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\nConnected to " + omc_version_;
   cursor_.insertText( copyright_info_, textFormat_ );
   cursor_.insertText( tr("\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n"), textFormat_ );
 
   delegate_ = IAEX::OmcInteractiveEnvironment::getInstance();
-  // create command compleation instance
-  QString openmodelica( delegate_->OpenModelicaHome() );
-  if( openmodelica.isEmpty() )
-    QMessageBox::critical(nullptr, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
-
+  // create command completion instance from the bundled command file (see
+  // oms.qrc), so completion works regardless of the installation layout and on
+  // the web build where there is no installation directory on disk.
   try
   {
-    QString commandfile;
-    if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-      commandfile = openmodelica + "share/omshell/commands.xml";
-    else
-      commandfile = openmodelica + "/share/omshell/commands.xml";
-
-    commandcompletion_ = IAEX::CommandCompletion::instance( commandfile );
+    commandcompletion_ = IAEX::CommandCompletion::instance( ":/commands.xml" );
   }
   catch( std::exception &e )
   {
@@ -285,7 +282,32 @@ OMS::OMS( QWidget* parent )
 
   commands_ = new QStringList();
   currentCommand_ = -1;
+  busy_ = false;
   addCommandLine();
+
+#ifdef __EMSCRIPTEN__
+  // The browser omc starts with no library installed. The worker init skips the
+  // MSL install so this window appears first; queue it now (non-blocking, so it
+  // does not freeze the Qt thread during startup), with the GUI visible.
+  QTimer::singleShot(0, this, [this]() {
+    if( delegate_ )
+      delegate_->startBackgroundCommand( "installPackage(Modelica)" );
+  });
+
+  // Reflect activity in the status bar: download progress while a file is being
+  // fetched, otherwise "Evaluating..." while a command runs.
+  QTimer *statusTimer = new QTimer(this);
+  connect(statusTimer, &QTimer::timeout, this, [this]() {
+    QString p = delegate_ ? delegate_->progressText() : QString();
+    if( !p.isEmpty() )
+      statusBar()->showMessage( p );
+    else if( busy_ )
+      statusBar()->showMessage( tr("Evaluating...") );
+    else
+      statusBar()->clearMessage();
+  });
+  statusTimer->start( 150 );
+#endif
 }
 
 OMS::~OMS()
@@ -458,6 +480,10 @@ void OMS::addCommandLine()
 
 void OMS::returnPressed()
 {
+  // ignore new input while a command is still running
+  if( busy_ )
+    return;
+
   // find the last command sign
   cursor_.movePosition( QTextCursor::End, QTextCursor::MoveAnchor );
   QTextBlock block = moshEdit_->document()->findBlock( cursor_.position() );
@@ -505,6 +531,11 @@ void OMS::returnPressed()
   // send command to OMC
   if( delegate_ )
   {
+    // block further input until the command (which may keep the event loop
+    // running on the web build) completes
+    busy_ = true;
+    moshEdit_->setReadOnly( true );
+
     // 2006-02-02 AF, Added try-catch
     try
     {
@@ -512,6 +543,8 @@ void OMS::returnPressed()
     }
     catch( std::exception &e )
     {
+      busy_ = false;
+      moshEdit_->setReadOnly( false );
       exceptionInEval(e);
       return;
     }
@@ -530,6 +563,9 @@ void OMS::returnPressed()
     {
       cursor_.insertText(error);
     }
+
+    busy_ = false;
+    moshEdit_->setReadOnly( false );
   }
   else
   {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${CppDASSLName})
 
@@ -26,7 +26,9 @@ set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLA
 
 add_precompiled_header(${CppDASSLName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${CppDASSLName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${CppDASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

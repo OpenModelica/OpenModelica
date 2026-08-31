@@ -23,12 +23,13 @@ int main(void)
   const char *expected_print = "{1, 1e+11, -2, -1.23457e-07}";
 
   // Test
-  const char *actual_print = real_vector_to_string(&test_array, TRUE);
+  char buffer[2048];
+  real_vector_to_string(&test_array, TRUE, buffer, sizeof(buffer));
 
   // Validate
-  if (test_success && strcmp(actual_print, expected_print))
+  if (test_success && strcmp(buffer, expected_print) != 0)
   {
-    fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected_print, actual_print);
+    fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected_print, buffer);
     test_success = 0;
   }
 

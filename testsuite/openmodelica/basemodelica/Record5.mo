@@ -32,7 +32,7 @@ end Record5;
 //   record 'P.ThermodynamicState'
 //     Real 'p';
 //     Real 'T';
-//     Real[2] 'X'(start = {1.0, 2.0}) = {1.0, 2.0};
+//     Real 'X'[2](start = {1.0, 2.0}) = {1.0, 2.0};
 //   end 'P.ThermodynamicState';
 //
 //   model 'Record5'

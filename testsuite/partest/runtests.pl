@@ -10,7 +10,8 @@
 #
 # Usage: Run without any arguments to run the whole testsuite, or with -f to
 #        run a fast test, i.e. skipping the libraries directory. Or with
-#        -nocpp to only skip those parts.
+#        -nocpp to only skip those parts. -suites=[+-]name,... turns individual
+#        test suites on and off; see %suite_enabled below.
 #
 # NOTE: This is the official OpenModelica way of running the testsuite, so
 #       you should run this before committing any changes.
@@ -47,8 +48,6 @@ my $count_tests = 0;
 my $print_tests = 0;
 my $veryfew = 0;
 my $run_failing = 0;
-my $cppruntime = 0;
-my $nocpp = 0;
 my $file;
 my $slowest:shared = 0;
 my $slowest_name:shared = "";
@@ -81,6 +80,87 @@ my $osname = $^O;
 }
 
 
+# Every test belongs to exactly one category suite, decided by the directory it
+# lives in, plus any number of tag suites, which the test file names itself with
+# a '// suite: <name>' line in its header. A test runs only if all of the suites
+# it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
+# part of the testsuite at all, see %suite_enabled.
+my @category_suites = qw(default cpp cppmsl tearing hpcom);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm disabled);
+my %suite_enabled = (
+  default      => 1,  # Everything not claimed by another category.
+  cpp          => 1,  # */cppruntime/*
+  cppmsl       => 0,  # simulation/libraries/msl32_cpp; slow, so opt-in.
+  tearing      => 1,  # */tearing/*
+  hpcom        => 1,  # */hpcom/*
+  metamodelica => 1,  # Needs MetaModelica code generation, i.e. the C runtime.
+  '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
+  antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
+  cSources     => 1,  # Inspects the generated C files and the init XML beside them,
+                      # which only the C target writes.
+  fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
+  stackoverflow => 1, # Recurses until the stack runs out; needs MMC's SEGV-handler
+                      # recovery, which the Rust port has no equivalent of.
+  wasm         => 0,  # Selects the wasm-jit/wasm target itself, so it only runs
+                      # where that target exists: the Rust omc, which JIT-compiles
+                      # the model in-process. The C omc's CodegenWasmJit is a stub
+                      # that fails, so the suite is opt-in rather than off-by-build.
+  # Not part of the testsuite: the tests a makefile lists as failing, not
+  # compiling, not simulating or needing a manual setup. They are the tests that
+  # fail, hang or eat the machine, so they are opt-in and rtest skips them too
+  # unless RTEST_RUN_DISABLED is set below.
+  disabled     => 0,
+);
+
+sub set_suites {
+  for my $spec (split(/[,\s]+/, shift)) {
+    next if $spec eq "";
+    my ($sign, $name) = $spec =~ /^([-+]?)(.*)$/;
+
+    if (!exists $suite_enabled{$name}) {
+      print STDERR "Unknown test suite '$name'. Known suites: " .
+                   join(" ", sort keys %suite_enabled) . "\n";
+      exit 1;
+    }
+
+    $suite_enabled{$name} = $sign eq "-" ? 0 : 1;
+  }
+}
+
+# The category suite a test directory belongs to.
+sub dir_suite {
+  my $dir = shift;
+
+  return "cppmsl"  if $dir =~ m"/simulation/libraries/msl32_cpp\b";
+  return "cpp"     if $dir =~ m"/cppruntime\b";
+  return "hpcom"   if $dir =~ m"/hpcom\b";
+  return "tearing" if $dir =~ m"/tearing\b";
+  return "default";
+}
+
+# The '// suite: a, b' tags a test names in its header. rtest parses such lines
+# as ordinary test metadata and ignores all of them but 'disabled'.
+sub test_suites {
+  my $test = shift;
+  my @suites;
+
+  open(my $in, "<", $test) or return @suites;
+  while(my $line = <$in>) {
+    last unless $line =~ /^\s*$|^\s*\/\//; # Header only: stop at the first code line.
+    push @suites, split(/[,\s]+/, $1) if $line =~ /^\/\/[ \\|]*suite:[ \\|]*(.*?)\s*$/;
+  }
+  close($in);
+
+  for my $suite (@suites) {
+    if (!exists $suite_enabled{$suite}) {
+      print STDERR "$test: unknown test suite '$suite'\n";
+      exit 1;
+    }
+  }
+
+  return @suites;
+}
+
 # Check the flags.
 for(@ARGV){
   if(/^-h|--help$/) {
@@ -88,6 +168,10 @@ for(@ARGV){
     print("\nOptions are:\n");
     print("  -cppruntime    Run ONLY the slow cppruntime tests.\n");
     print("  -nocpp         Do not run any cppruntime tests.\n");
+    print("  -suites=LIST   Comma-separated [+-]suite list turning suites on/off.\n");
+    print("                 Defaults: " .
+          join(" ", map { "$_=" . ($suite_enabled{$_} ? "on" : "off") }
+                        (@category_suites, @tag_suites)) . "\n");
     print("  -f             Only run fast tests.\n");
     print("  -file=file     Reads testcases from the given file instead of from a makefile.\n");
     print("  -jN            Use N threads.\n");
@@ -95,11 +179,13 @@ for(@ARGV){
     print("  -nosavedb      Don't overwrite stored timing data.\n");
     print("  -nocolour      Don't use colours in output.\n");
     print("  -counttests    Don't run the test; only count them.\n");
+    print("  -omcflags=F    Extra flags passed to omc for every test (via RTEST_OMCFLAGS).\n");
+    print("  -simCodeTarget=T Override simCodeTarget for every simulation test, e.g. wasm-jit.\n");
     print("  -partition=M/N M=1..N, partition the tests into N equal shares and run only the Mth partition.\n");
     print("  -printtests    Don't run the test; only print them.\n");
     print("  -with-xml      Output XML log.\n");
     print("  -with-txt      Output TXT log.\n");
-    print("  -failing       Run failing tests instead of working.\n");
+    print("  -failing       Run failing tests instead of working (implies -suites=+disabled).\n");
     print("  -veryfew       Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs       If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
     print("  -parmodexp     Run the OpenCL ParModelica tests.\n");
@@ -108,12 +194,16 @@ for(@ARGV){
   }
   if(/^-f$/) {
     $fast = 1;
+    set_suites("-cpp,-cppmsl,-tearing,-hpcom");
   }
   elsif(/^-cppruntime$/) {
-    $cppruntime = 1;
+    set_suites("-default,-cpp,-tearing,-hpcom,+cppmsl");
   }
   elsif(/^-nocpp$/) {
-    $nocpp = 1;
+    set_suites("-cpp,-cppmsl");
+  }
+  elsif(/^-suites=(.*)$/) {
+    set_suites($1);
   }
   elsif(/^-j([0-9]+)$/) {
     $check_proc_cpu = 0;
@@ -130,6 +220,15 @@ for(@ARGV){
   }
   elsif(/^-counttests$/) {
     $count_tests = 1;
+  }
+  elsif(/^-omcflags=(.*)$/) {
+    $ENV{RTEST_OMCFLAGS} = (defined $ENV{RTEST_OMCFLAGS} ? $ENV{RTEST_OMCFLAGS} . " " : "") . $1;
+  }
+  elsif(/^-simCodeTarget=(.*)$/) {
+    $ENV{OPENMODELICA_TEST_SIMCODETARGET} = $1;
+    # Library sim tests read the env var (ModelTesting.mos); the standalone .mos
+    # tests only honour the omc flag, so pass it through RTEST_OMCFLAGS too.
+    $ENV{RTEST_OMCFLAGS} = (defined $ENV{RTEST_OMCFLAGS} ? $ENV{RTEST_OMCFLAGS} . " " : "") . "--simCodeTarget=$1";
   }
   elsif(/^-printtests$/) {
     $print_tests = 1;
@@ -153,6 +252,7 @@ for(@ARGV){
   }
   elsif(/^-failing$/) {
     $run_failing = 1;
+    set_suites("+disabled"); # The failing tests are exactly the disabled ones.
   }
   elsif(/^-veryfew$/) {
     $veryfew = 1;
@@ -175,6 +275,11 @@ for(@ARGV){
   }
 }
 
+# rtest skips a test tagged '// suite: disabled' on its own, so tell it when the
+# run does want them. Needed for -failing and for -file= lists of failing tests,
+# where the suite filtering below does not apply.
+$ENV{'RTEST_RUN_DISABLED'} = 1 if $suite_enabled{disabled};
+
 if ($use_db) {
   eval { require MLDBM; 1; };
 
@@ -191,6 +296,7 @@ my $test_queue = Thread::Queue->new();
 my $tests_failed :shared = 0;
 my @failed_tests :shared;
 my $testscript = cwd() . "/runtest.pl";
+-f $testscript or die "runtests.pl must be started from the partest directory; no runtest.pl in " . cwd() . "\n";
 if ( $osname eq 'MSWin32' ) {
   $testscript = "perl " . $testscript;
 }
@@ -213,12 +319,7 @@ sub read_makefile {
   return if($fast == 1 and $dir =~ m"/metamodelica"); # Skip libraries if -f is given.
   return if($fast == 1 and $dir =~ m"/3rdParty/"); # Skip libraries if -f is given.
   return if($fast == 1 and $dir =~ m"/openmodelica/fmi"); # Skip libraries if -f is given.
-  return if($nocpp == 1 and $dir =~ m"/cppruntime"); # Skip cppruntime if -nocpp is given.
-  return if($fast == 1 and $dir =~ m"/cppruntime"); # Skip libraries if -f is given.
-  return if($fast == 1 and $dir =~ m"/hpcom"); # Skip libraries if -f is given.
-  return if($fast == 1 and $dir =~ m"/tearing"); # Skip libraries if -f is given.
   return if($gitlibs == 0 and $dir =~ m"/GitLibraries"); # Skip libraries unless -gitlibs is given.
-  return if($cppruntime == 0 and $dir eq "./simulation/libraries/msl32_cpp");
 
   open(my $in, "<", "$dir/Makefile") or die "Couldn't open $dir/Makefile: $!";
 
@@ -247,7 +348,17 @@ sub read_file {
   open(my $in, "<", $file) or die "Couldn't open $file: $!";
 
   while(<$in>) {
-    push @test_list, trim($_);
+    my $test = trim($_);
+    push @test_list, $test if length($test);
+  }
+}
+
+sub check_file_tests {
+  my $file = shift;
+
+  for my $test (@test_list) {
+    $test =~ m{^\./} or die "$file: '$test' should be given as ./path/to/test.mos, relative to the testsuite root\n";
+    -f $test or die "$file: '$test' not found from " . cwd() . "\n";
   }
 }
 
@@ -266,6 +377,8 @@ sub parse_testfiles {
 sub add_tests {
   my @tests = split(/\s|=|\\/, shift);
   my $path = shift;
+
+  return unless $suite_enabled{dir_suite($path)};
 
   @tests = grep(/\.mo|\.mof|\.mos/, @tests);
   @tests = map { $_ = ("$path/$_" =~ s/\/\//\//rg) } @tests;
@@ -310,9 +423,7 @@ if (!defined($file)) {
   # parse the makefile there.
   chdir("..");
 
-  if ($cppruntime == 1) {
-    read_makefile("./simulation/libraries/msl32_cpp", "TESTFILES");
-  } elsif ($parmodexp == 1) {
+  if ($parmodexp == 1) {
     read_makefile("./parmodelica/explicit", "TESTFILES");
   } elsif($veryfew == 1) {
     read_makefile("./flattening/modelica/modification", "TESTFILES");
@@ -321,9 +432,33 @@ if (!defined($file)) {
   } else {
     read_makefile(".", "FAILINGTESTFILES|WRONGRESULTTEST|NOTCOMPILETEST|NOTSIMULATETEST");
   }
+  # Categories were filtered while parsing the makefiles; tags need the test
+  # files. Not done for -file=: an explicit list of tests is not a selection.
+  my @unmarked;
+  @test_list = grep {
+    my @suites = test_suites($_);
+    my $disabled = grep { $_ eq "disabled" } @suites;
+    if ($run_failing) {
+      # A test in one of the failing lists that forgot the tag; rtest would run
+      # it as an ordinary test, which is what the tag is there to prevent.
+      push @unmarked, $_ unless $disabled;
+    } elsif ($disabled) {
+      # The other way around: the test is in TESTFILES, so it is part of the
+      # testsuite, but the tag would silently deselect it from every run.
+      print STDERR "$_: listed in TESTFILES but marked '// suite: disabled'; " .
+                   "remove the marking or move the test to FAILINGTESTFILES\n";
+      exit 1;
+    }
+    !grep { !$suite_enabled{$_} } @suites;
+  } @test_list;
+  if (@unmarked) {
+    print STDERR "Warning: not marked '// suite: disabled' in their header:\n";
+    print STDERR "  $_\n" for @unmarked;
+  }
 } else {
   read_file($file);
   chdir("..");
+  check_file_tests($file);
 }
 
 my $test_count = @test_list;

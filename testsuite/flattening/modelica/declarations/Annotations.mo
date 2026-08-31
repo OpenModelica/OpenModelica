@@ -3,7 +3,7 @@
 // status:   correct
 //
 // Checks that annotations are output correctly on the flat code when
-// +showAnnotations is used.
+// --showAnnotations is used.
 //
 
 function f "Some comment"
@@ -14,12 +14,12 @@ algorithm
   annotation(key = value);
 end f;
 
-class c
+model c
   Real x "x" annotation(key = value);
 equation
   x = f(time);
   annotation(key = value);
-  annotation(__OpenModelica_commandLineOptions="+showAnnotations -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="--showAnnotations");
 end c;
 
 // Result:
@@ -35,6 +35,6 @@ end c;
 //   Real x "x" annotation(key = value);
 // equation
 //   x = f(time);
-//   annotation(key = value, __OpenModelica_commandLineOptions = "+showAnnotations -d=-newInst");
+//   annotation(key = value, __OpenModelica_commandLineOptions = "--showAnnotations");
 // end c;
 // endResult

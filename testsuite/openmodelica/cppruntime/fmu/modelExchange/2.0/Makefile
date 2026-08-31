@@ -2,11 +2,13 @@ TEST = ../../../../../rtest -v
 
 
 TESTFILES = \
+fmi2_array_cpp.mos \
 DIC_FMU2_CPP.mos \
 exposeLocalIOs.mos \
 exposeLocalIOsArray.mos \
 solveOneNonlinearEquationTest.mos \
 testArrayEquations.mos \
+testExtraAnnotations.mos \
 testFMU2MatrixIO.mos \
 testModelDescription.mos \
 testClockDescription.mos \
@@ -51,4 +53,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

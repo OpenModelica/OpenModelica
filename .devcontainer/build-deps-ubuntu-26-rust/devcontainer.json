@@ -1,0 +1,63 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+//
+// Reproduces the Jenkins `cmake-rust-clang` stage (see ../../Jenkinsfile and
+// common.buildRustOMC in ../../.CI/common.groovy). Run ./build-rust-clang.sh
+// inside the container to execute the same configure + build the stage does.
+{
+  "name": "build-deps:ubuntu-26.04-rust (cmake-rust-clang)",
+
+  // Thin wrapper over the image the cmake-rust-clang stage pulls, adding a
+  // non-root user so the build output stays yours on the host.
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+        // On Windows USERNAME is set, on Linux USER is set
+        // We hope only one is set
+        "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
+    }
+  },
+
+  // The same caches the stage mounts, so a rebuild reuses the cargo registry
+  // and the compiler cache instead of starting cold every time. CARGO_HOME is
+  // moved into the user's home by the Dockerfile, hence the paths below.
+  "mounts": [
+    "source=om-rust-cargo-registry,target=/home/${localEnv:USER}${localEnv:USERNAME}/.cargo/registry,type=volume",
+    "source=om-rust-sccache,target=/home/${localEnv:USER}${localEnv:USERNAME}/.cache/sccache,type=volume",
+    "source=om-omlibrary-cache,target=/cache/omlibrary,type=volume"
+  ],
+
+  "containerEnv": {
+    // CI points sccache at a shared S3 bucket guarded by the
+    // 'sccache-ci-secret-key' credential, which is not available outside
+    // Jenkins. Keep the same wiring (compiler launcher + RUSTC_WRAPPER) but
+    // back it with a plain on-disk cache in the mounted volume. To use the
+    // real bucket instead, set SCCACHE_BUCKET/SCCACHE_ENDPOINT/SCCACHE_REGION
+    // and the AWS credentials as described in sccacheEnv() in common.groovy.
+    "SCCACHE_DIR": "/home/${localEnv:USER}${localEnv:USERNAME}/.cache/sccache",
+    "RUSTC_WRAPPER": "sccache",
+    "CARGO_INCREMENTAL": "0"
+  },
+
+  // A named volume is created empty on first use and a UID remap may have
+  // happened after the image was built, so re-assert ownership of the caches.
+  "postCreateCommand": "sudo chown -R \"$(id -u):$(id -g)\" \"$HOME/.cargo\" \"$HOME/.cache\" /cache || true",
+
+  // Additional VSCode extensions
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "AnHeuermann.metamodelica",
+        "ms-vscode.cpptools-extension-pack",
+        "rust-lang.rust-analyzer",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  "remoteUser": "${localEnv:USER}${localEnv:USERNAME}"
+}

@@ -39,7 +39,10 @@ class Socket
 private:
   // Socket number (Socket-Descriptor)
   int m_sock;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#else
   int m_socket_type;
+#endif
   // struct sockaddr_in
   sockaddr_in m_addr;
 

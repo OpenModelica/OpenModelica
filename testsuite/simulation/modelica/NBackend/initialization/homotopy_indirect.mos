@@ -1,0 +1,31 @@
+// name: homotopy_indirect
+// keywords: initialization, homotopy
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model homotopy_indirect
+  Real x,y;
+equation
+  x = homotopy(1, 0);
+  0 = y + log(y-x + 1e-6);
+end homotopy_indirect;
+"); getErrorString();
+
+simulate(homotopy_indirect); getErrorString();
+
+val(y, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "homotopy_indirect_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'homotopy_indirect', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.2784637605728462
+// endResult

@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 #include <array>
 #include <ostream>
 
@@ -5,99 +40,100 @@
 
 using namespace OpenModelica;
 
-extern record_description SCode_Visibility_PUBLIC__desc;
-extern record_description SCode_Visibility_PROTECTED__desc;
+extern "C" record_description SCode_Visibility_PUBLIC__desc;
+extern "C" record_description SCode_Visibility_PROTECTED__desc;
 
 constexpr int VAR = 0;
 constexpr int DISCRETE = 1;
 constexpr int PARAM = 2;
 constexpr int CONST = 3;
 
-extern record_description SCode_Variability_VAR__desc;
-extern record_description SCode_Variability_DISCRETE__desc;
-extern record_description SCode_Variability_PARAM__desc;
-extern record_description SCode_Variability_CONST__desc;
+extern "C" record_description SCode_Variability_VAR__desc;
+extern "C" record_description SCode_Variability_DISCRETE__desc;
+extern "C" record_description SCode_Variability_PARAM__desc;
+extern "C" record_description SCode_Variability_CONST__desc;
 
 constexpr int FINAL = 0;
 constexpr int NOT_FINAL = 1;
 
-extern record_description SCode_Final_FINAL__desc;
-extern record_description SCode_Final_NOT__FINAL__desc;
+extern "C" record_description SCode_Final_FINAL__desc;
+extern "C" record_description SCode_Final_NOT__FINAL__desc;
 
 constexpr int EACH = 0;
 constexpr int NOT_EACH = 1;
 
-extern record_description SCode_Each_EACH__desc;
-extern record_description SCode_Each_NOT__EACH__desc;
+extern "C" record_description SCode_Each_EACH__desc;
+extern "C" record_description SCode_Each_NOT__EACH__desc;
 
 constexpr int INNER = 0;
 constexpr int OUTER = 1;
 constexpr int INNER_OUTER = 2;
 constexpr int NOT_INNER_OUTER = 3;
 
-extern record_description Absyn_InnerOuter_INNER__desc;
-extern record_description Absyn_InnerOuter_OUTER__desc;
-extern record_description Absyn_InnerOuter_INNER__OUTER__desc;
-extern record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_INNER__desc;
+extern "C" record_description Absyn_InnerOuter_OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_INNER__OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
 
 constexpr int REDECLARE = 0;
 constexpr int NOT_REDECLARE = 1;
 
-extern record_description SCode_Redeclare_REDECLARE__desc;
-extern record_description SCode_Redeclare_NOT__REDECLARE__desc;
+extern "C" record_description SCode_Redeclare_REDECLARE__desc;
+extern "C" record_description SCode_Redeclare_NOT__REDECLARE__desc;
 
 constexpr int ENCAPSULATED = 0;
 constexpr int NOT_ENCAPSULATED = 1;
 
-extern record_description SCode_Encapsulated_ENCAPSULATED__desc;
-extern record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
+extern "C" record_description SCode_Encapsulated_ENCAPSULATED__desc;
+extern "C" record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
 
 constexpr int PARTIAL = 0;
 constexpr int NOT_PARTIAL = 1;
 
-extern record_description SCode_Partial_PARTIAL__desc;
-extern record_description SCode_Partial_NOT__PARTIAL__desc;
+extern "C" record_description SCode_Partial_PARTIAL__desc;
+extern "C" record_description SCode_Partial_NOT__PARTIAL__desc;
 
 constexpr int PURE = 0;
 constexpr int IMPURE = 1;
 constexpr int NO_PURITY = 2;
 
-extern record_description Absyn_FunctionPurity_PURE__desc;
-extern record_description Absyn_FunctionPurity_IMPURE__desc;
-extern record_description Absyn_FunctionPurity_NO__PURITY__desc;
+extern "C" record_description Absyn_FunctionPurity_PURE__desc;
+extern "C" record_description Absyn_FunctionPurity_IMPURE__desc;
+extern "C" record_description Absyn_FunctionPurity_NO__PURITY__desc;
 
 constexpr int POTENTIAL = 0;
 constexpr int FLOW = 1;
 constexpr int STREAM = 2;
 
-extern record_description SCode_ConnectorType_POTENTIAL__desc;
-extern record_description SCode_ConnectorType_FLOW__desc;
-extern record_description SCode_ConnectorType_STREAM__desc;
+extern "C" record_description SCode_ConnectorType_POTENTIAL__desc;
+extern "C" record_description SCode_ConnectorType_FLOW__desc;
+extern "C" record_description SCode_ConnectorType_STREAM__desc;
 
 constexpr int PARGLOBAL = 0;
 constexpr int PARLOCAL = 1;
 constexpr int NON_PARALLEL = 2;
 
-extern record_description SCode_Parallelism_PARGLOBAL__desc;
-extern record_description SCode_Parallelism_PARLOCAL__desc;
-extern record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern "C" record_description SCode_Parallelism_PARGLOBAL__desc;
+extern "C" record_description SCode_Parallelism_PARLOCAL__desc;
+extern "C" record_description SCode_Parallelism_NON__PARALLEL__desc;
 
 constexpr int INPUT = 0;
 constexpr int OUTPUT = 1;
 constexpr int BIDIR = 2;
 
-extern record_description Absyn_Direction_INPUT__desc;
-extern record_description Absyn_Direction_OUTPUT__desc;
-extern record_description Absyn_Direction_BIDIR__desc;
+extern "C" record_description Absyn_Direction_INPUT__desc;
+extern "C" record_description Absyn_Direction_OUTPUT__desc;
+extern "C" record_description Absyn_Direction_BIDIR__desc;
 
 constexpr int NONFIELD = 0;
 constexpr int FIELD = 1;
 
-extern record_description Absyn_IsField_NONFIELD__desc;
-extern record_description Absyn_IsField_FIELD__desc;
+extern "C" record_description Absyn_IsField_NONFIELD__desc;
+extern "C" record_description Absyn_IsField_FIELD__desc;
 
-Visibility::Visibility(MetaModelica::Record value) noexcept
-  : _value{value.index() == 0 ? Value::Public : Value::Protected}
+Visibility::Visibility(MetaModelica::Value value) noexcept
+  : _value{value.isRecord() ? value.toRecord().index() == 0 ? Value::Public : Value::Protected :
+                              value.toInt() == 1 ? Value::Public : Value::Protected}
 {
 }
 
@@ -129,31 +165,41 @@ bool OpenModelica::operator!= (Visibility vis1, Visibility vis2)
   return vis1.value() != vis2.value();
 }
 
-std::ostream& OpenModelica::operator<< (std::ostream &os, Visibility visibility) noexcept
+std::ostream& OpenModelica::operator<< (std::ostream &os, Visibility visibility)
 {
   os << visibility.str();
   return os;
 }
 
-Variability::Variability(MetaModelica::Record value) noexcept
+Variability::Value variability_from_mm(MetaModelica::Record value)
 {
   switch (value.index()) {
-    case VAR:      _value = Value::Continuous; break;
-    case DISCRETE: _value = Value::Discrete;   break;
-    case PARAM:    _value = Value::Parameter;  break;
-    case CONST:    _value = Value::Constant;   break;
-    default:       _value = Value::Continuous; break;
+    case DISCRETE: return Variability::Discrete; break;
+    case PARAM:    return Variability::Parameter; break;
+    case CONST:    return Variability::Constant; break;
+    default:       return Variability::Continuous; break;
   }
+}
+
+Variability::Variability(MetaModelica::Value value) noexcept
+  : _value{value.isRecord() ? variability_from_mm(value) : value.toEnum<Value>()}
+{
+
 }
 
 MetaModelica::Value Variability::toSCode() const noexcept
 {
   switch (effective().value()) {
-    case Value::Constant:  return MetaModelica::Record(CONST, SCode_Variability_CONST__desc);
-    case Value::Parameter: return MetaModelica::Record(PARAM, SCode_Variability_PARAM__desc);
-    case Value::Discrete:  return MetaModelica::Record(DISCRETE, SCode_Variability_DISCRETE__desc);
-    default:               return MetaModelica::Record(VAR, SCode_Variability_VAR__desc);
+    case Value::Constant:  return MetaModelica::Record{CONST, SCode_Variability_CONST__desc};
+    case Value::Parameter: return MetaModelica::Record{PARAM, SCode_Variability_PARAM__desc};
+    case Value::Discrete:  return MetaModelica::Record{DISCRETE, SCode_Variability_DISCRETE__desc};
+    default:               return MetaModelica::Record{VAR, SCode_Variability_VAR__desc};
   }
+}
+
+MetaModelica::Value Variability::toNF() const noexcept
+{
+  return MetaModelica::Value{_value};
 }
 
 Variability Variability::effective() const noexcept
@@ -221,6 +267,12 @@ std::string_view Variability::unparse() const noexcept
   }
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Variability variability)
+{
+  os << variability.str();
+  return os;
+}
+
 Final::Final(MetaModelica::Record value)
   : _value{value.index() == 0}
 {
@@ -230,8 +282,8 @@ Final::Final(MetaModelica::Record value)
 MetaModelica::Value Final::toSCode() const noexcept
 {
   return isFinal() ?
-    MetaModelica::Record(FINAL, SCode_Final_FINAL__desc) :
-    MetaModelica::Record(NOT_FINAL, SCode_Final_NOT__FINAL__desc);
+    MetaModelica::Record{FINAL, SCode_Final_FINAL__desc} :
+    MetaModelica::Record{NOT_FINAL, SCode_Final_NOT__FINAL__desc};
 }
 
 std::string_view Final::str() const noexcept
@@ -244,6 +296,12 @@ std::string_view Final::unparse() const noexcept
   return _value ? "final " : "";
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Final fin)
+{
+  os << fin.str();
+  return os;
+}
+
 Each::Each(MetaModelica::Record value)
   : _value{value.index() == 0}
 {
@@ -253,8 +311,8 @@ Each::Each(MetaModelica::Record value)
 MetaModelica::Value Each::toSCode() const noexcept
 {
   return isEach() ?
-    MetaModelica::Record(EACH, SCode_Each_EACH__desc) :
-    MetaModelica::Record(NOT_EACH, SCode_Each_NOT__EACH__desc);
+    MetaModelica::Record{EACH, SCode_Each_EACH__desc} :
+    MetaModelica::Record{NOT_EACH, SCode_Each_NOT__EACH__desc};
 }
 
 std::string_view Each::str() const noexcept
@@ -267,34 +325,41 @@ std::string_view Each::unparse() const noexcept
   return _value ? "each " : "";
 }
 
-InnerOuter::InnerOuter(MetaModelica::Record value)
+std::ostream& OpenModelica::operator<< (std::ostream &os, Each each)
+{
+  os << each.str();
+  return os;
+}
+
+InnerOuter::Value inner_outer_from_mm(MetaModelica::Record value)
 {
   switch (value.index()) {
-    case INNER:       _value = Value::Inner; break;
-    case OUTER:       _value = Value::Outer; break;
-    case INNER_OUTER: _value = Value::Both;  break;
-    default:          _value = Value::None;  break;
+    case INNER:       return InnerOuter::Inner;
+    case OUTER:       return InnerOuter::Outer;
+    case INNER_OUTER: return InnerOuter::Both;
+    default:          return InnerOuter::None;
   }
+}
+
+InnerOuter::InnerOuter(MetaModelica::Value value)
+  : _value{value.isRecord() ? inner_outer_from_mm(value) : value.toEnum<Value>()}
+{
+
 }
 
 MetaModelica::Value InnerOuter::toAbsyn() const noexcept
 {
   switch (_value) {
-    case Inner: return MetaModelica::Record(INNER, Absyn_InnerOuter_INNER__desc);
-    case Outer: return MetaModelica::Record(OUTER, Absyn_InnerOuter_OUTER__desc);
-    case Both:  return MetaModelica::Record(INNER_OUTER, Absyn_InnerOuter_INNER__OUTER__desc);
-    default:    return MetaModelica::Record(NOT_INNER_OUTER, Absyn_InnerOuter_NOT__INNER__OUTER__desc);
+    case Inner: return MetaModelica::Record{INNER, Absyn_InnerOuter_INNER__desc};
+    case Outer: return MetaModelica::Record{OUTER, Absyn_InnerOuter_OUTER__desc};
+    case Both:  return MetaModelica::Record{INNER_OUTER, Absyn_InnerOuter_INNER__OUTER__desc};
+    default:    return MetaModelica::Record{NOT_INNER_OUTER, Absyn_InnerOuter_NOT__INNER__OUTER__desc};
   }
 }
 
-bool OpenModelica::operator== (InnerOuter io1, InnerOuter io2) noexcept
+MetaModelica::Value InnerOuter::toNF() const noexcept
 {
-  return io1._value == io2._value;
-}
-
-bool OpenModelica::operator!= (InnerOuter io1, InnerOuter io2) noexcept
-{
-  return io1._value != io2._value;
+  return MetaModelica::Value{_value};
 }
 
 std::string_view InnerOuter::str() const noexcept
@@ -317,6 +382,22 @@ std::string_view InnerOuter::unparse() const noexcept
   }
 }
 
+bool OpenModelica::operator== (InnerOuter io1, InnerOuter io2) noexcept
+{
+  return io1._value == io2._value;
+}
+
+bool OpenModelica::operator!= (InnerOuter io1, InnerOuter io2) noexcept
+{
+  return io1._value != io2._value;
+}
+
+std::ostream& OpenModelica::operator<< (std::ostream &os, InnerOuter io)
+{
+  os << io.str();
+  return os;
+}
+
 Redeclare::Redeclare(MetaModelica::Record value)
   : _value{value.index() == 0}
 {
@@ -326,8 +407,8 @@ Redeclare::Redeclare(MetaModelica::Record value)
 MetaModelica::Value Redeclare::toSCode() const noexcept
 {
   return isRedeclare() ?
-    MetaModelica::Record(REDECLARE, SCode_Redeclare_REDECLARE__desc) :
-    MetaModelica::Record(NOT_REDECLARE, SCode_Redeclare_NOT__REDECLARE__desc);
+    MetaModelica::Record{REDECLARE, SCode_Redeclare_REDECLARE__desc} :
+    MetaModelica::Record{NOT_REDECLARE, SCode_Redeclare_NOT__REDECLARE__desc};
 }
 
 std::string_view Redeclare::str() const noexcept
@@ -340,6 +421,12 @@ std::string_view Redeclare::unparse() const noexcept
   return _value ? "redeclare " : "";
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Redeclare redeclare)
+{
+  os << redeclare.str();
+  return os;
+}
+
 Encapsulated::Encapsulated(MetaModelica::Record value)
   : _value{value.index() == 0}
 {
@@ -349,8 +436,8 @@ Encapsulated::Encapsulated(MetaModelica::Record value)
 MetaModelica::Value Encapsulated::toSCode() const noexcept
 {
   return isEncapsulated() ?
-    MetaModelica::Record(ENCAPSULATED, SCode_Encapsulated_ENCAPSULATED__desc) :
-    MetaModelica::Record(NOT_ENCAPSULATED, SCode_Encapsulated_NOT__ENCAPSULATED__desc);
+    MetaModelica::Record{ENCAPSULATED, SCode_Encapsulated_ENCAPSULATED__desc} :
+    MetaModelica::Record{NOT_ENCAPSULATED, SCode_Encapsulated_NOT__ENCAPSULATED__desc};
 }
 
 std::string_view Encapsulated::str() const noexcept
@@ -363,6 +450,12 @@ std::string_view Encapsulated::unparse() const noexcept
   return _value ? "encapsulated " : "";
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Encapsulated encapsulated)
+{
+  os << encapsulated.str();
+  return os;
+}
+
 Partial::Partial(MetaModelica::Record value)
   : _value{value.index() == PARTIAL}
 {
@@ -372,8 +465,8 @@ Partial::Partial(MetaModelica::Record value)
 MetaModelica::Value Partial::toSCode() const noexcept
 {
   return isPartial() ?
-    MetaModelica::Record(PARTIAL, SCode_Partial_PARTIAL__desc) :
-    MetaModelica::Record(NOT_PARTIAL, SCode_Partial_NOT__PARTIAL__desc);
+    MetaModelica::Record{PARTIAL, SCode_Partial_PARTIAL__desc} :
+    MetaModelica::Record{NOT_PARTIAL, SCode_Partial_NOT__PARTIAL__desc};
 }
 
 std::string_view Partial::str() const noexcept
@@ -384,6 +477,12 @@ std::string_view Partial::str() const noexcept
 std::string_view Partial::unparse() const noexcept
 {
   return _value ? "partial " : "";
+}
+
+std::ostream& OpenModelica::operator<< (std::ostream &os, Partial partial)
+{
+  os << partial.str();
+  return os;
 }
 
 Purity::Value purity_from_mm(MetaModelica::Record value)
@@ -405,9 +504,9 @@ Purity::Purity(MetaModelica::Record value)
 MetaModelica::Value Purity::toAbsyn() const noexcept
 {
   switch (_value) {
-    case Value::Pure:   return MetaModelica::Record(PURE, Absyn_FunctionPurity_PURE__desc);
-    case Value::Impure: return MetaModelica::Record(IMPURE, Absyn_FunctionPurity_IMPURE__desc);
-    default:            return MetaModelica::Record(NO_PURITY, Absyn_FunctionPurity_NO__PURITY__desc);
+    case Value::Pure:   return MetaModelica::Record{PURE, Absyn_FunctionPurity_PURE__desc};
+    case Value::Impure: return MetaModelica::Record{IMPURE, Absyn_FunctionPurity_IMPURE__desc};
+    default:            return MetaModelica::Record{NO_PURITY, Absyn_FunctionPurity_NO__PURITY__desc};
   }
 }
 
@@ -444,7 +543,13 @@ bool OpenModelica::operator< (Purity pur1, Purity pur2) noexcept
   return pur1 == Purity::Impure && pur2 != Purity::Impure;
 }
 
-ConnectorType::Value connector_from_mm(MetaModelica::Record value)
+std::ostream& OpenModelica::operator<< (std::ostream &os, Purity purity)
+{
+  os << purity.str();
+  return os;
+}
+
+ConnectorType::Value connector_from_scode(MetaModelica::Record value)
 {
   switch (value.index()) {
     case FLOW:      return ConnectorType::Flow;
@@ -453,8 +558,10 @@ ConnectorType::Value connector_from_mm(MetaModelica::Record value)
   }
 }
 
-ConnectorType::ConnectorType(MetaModelica::Record value)
-  : _value{connector_from_mm(value)}
+// Value can be either a SCode.ConnectorType record or a ConnectorType.Type bitfield.
+ConnectorType::ConnectorType(MetaModelica::Value value)
+  : _value{value.isRecord() ? static_cast<int>(connector_from_scode(value)) :
+                              value.toInt()}
 {
 
 }
@@ -462,12 +569,17 @@ ConnectorType::ConnectorType(MetaModelica::Record value)
 MetaModelica::Value ConnectorType::toSCode() const noexcept
 {
   if (isFlow()) {
-    return MetaModelica::Record(FLOW, SCode_ConnectorType_FLOW__desc);
+    return MetaModelica::Record{FLOW, SCode_ConnectorType_FLOW__desc};
   } else if (isStream()) {
-    return MetaModelica::Record(STREAM, SCode_ConnectorType_STREAM__desc);
+    return MetaModelica::Record{STREAM, SCode_ConnectorType_STREAM__desc};
   }
 
-  return MetaModelica::Record(POTENTIAL, SCode_ConnectorType_POTENTIAL__desc);
+  return MetaModelica::Record{POTENTIAL, SCode_ConnectorType_POTENTIAL__desc};
+}
+
+MetaModelica::Value ConnectorType::toNF() const noexcept
+{
+  return MetaModelica::Value{_value};
 }
 
 bool ConnectorType::isPotential() const noexcept
@@ -585,6 +697,12 @@ std::string_view ConnectorType::unparse() const noexcept
   }
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, ConnectorType cty)
+{
+  os << cty.str();
+  return os;
+}
+
 Parallelism::Value parallelism_from_mm(MetaModelica::Record value)
 {
   switch (value.index()) {
@@ -594,8 +712,8 @@ Parallelism::Value parallelism_from_mm(MetaModelica::Record value)
   }
 }
 
-Parallelism::Parallelism(MetaModelica::Record value)
-  : _value{parallelism_from_mm(value)}
+Parallelism::Parallelism(MetaModelica::Value value)
+  : _value{value.isRecord() ? parallelism_from_mm(value) : value.toEnum<Value>()}
 {
 
 }
@@ -604,12 +722,17 @@ MetaModelica::Value Parallelism::toSCode() const noexcept
 {
   switch (_value) {
     case Value::Global:
-      return MetaModelica::Record(PARGLOBAL, SCode_Parallelism_PARGLOBAL__desc);
+      return MetaModelica::Record{PARGLOBAL, SCode_Parallelism_PARGLOBAL__desc};
     case Value::Local:
-      return MetaModelica::Record(PARLOCAL, SCode_Parallelism_PARLOCAL__desc);
+      return MetaModelica::Record{PARLOCAL, SCode_Parallelism_PARLOCAL__desc};
     default:
-      return MetaModelica::Record(NON_PARALLEL, SCode_Parallelism_NON__PARALLEL__desc);
+      return MetaModelica::Record{NON_PARALLEL, SCode_Parallelism_NON__PARALLEL__desc};
   }
+}
+
+MetaModelica::Value Parallelism::toNF() const noexcept
+{
+  return MetaModelica::Value{_value};
 }
 
 std::string_view Parallelism::str() const noexcept
@@ -640,6 +763,12 @@ bool OpenModelica::operator!= (Parallelism par1, Parallelism par2) noexcept
   return par1.value() != par2.value();
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Parallelism par)
+{
+  os << par.str();
+  return os;
+}
+
 Direction::Value direction_from_mm(MetaModelica::Record value)
 {
   switch (value.index()) {
@@ -649,8 +778,8 @@ Direction::Value direction_from_mm(MetaModelica::Record value)
   }
 }
 
-Direction::Direction(MetaModelica::Record value)
-  : _value{direction_from_mm(value)}
+Direction::Direction(MetaModelica::Value value)
+  : _value{value.isRecord() ? direction_from_mm(value) : value.toEnum<Value>()}
 {
 
 }
@@ -658,10 +787,15 @@ Direction::Direction(MetaModelica::Record value)
 MetaModelica::Value Direction::toAbsyn() const noexcept
 {
   switch (_value) {
-    case Value::Input:  return MetaModelica::Record(INPUT, Absyn_Direction_INPUT__desc);
-    case Value::Output: return MetaModelica::Record(OUTPUT, Absyn_Direction_OUTPUT__desc);
-    default:            return MetaModelica::Record(BIDIR, Absyn_Direction_BIDIR__desc);
+    case Value::Input:  return MetaModelica::Record{INPUT, Absyn_Direction_INPUT__desc};
+    case Value::Output: return MetaModelica::Record{OUTPUT, Absyn_Direction_OUTPUT__desc};
+    default:            return MetaModelica::Record{BIDIR, Absyn_Direction_BIDIR__desc};
   }
+}
+
+MetaModelica::Value Direction::toNF() const noexcept
+{
+  return MetaModelica::Value{_value};
 }
 
 std::string_view Direction::str() const noexcept
@@ -705,6 +839,12 @@ bool OpenModelica::operator!= (Direction dir1, Direction dir2) noexcept
   return dir1.value() != dir2.value();
 }
 
+std::ostream& OpenModelica::operator<< (std::ostream &os, Direction direction)
+{
+  os << direction.str();
+  return os;
+}
+
 Field::Field(MetaModelica::Record value)
   : _value{value.index() == FIELD}
 {
@@ -714,8 +854,8 @@ Field::Field(MetaModelica::Record value)
 MetaModelica::Value Field::toAbsyn() const noexcept
 {
   return _value ?
-    MetaModelica::Record(FIELD, Absyn_IsField_FIELD__desc) :
-    MetaModelica::Record(NONFIELD, Absyn_IsField_NONFIELD__desc);
+    MetaModelica::Record{FIELD, Absyn_IsField_FIELD__desc} :
+    MetaModelica::Record{NONFIELD, Absyn_IsField_NONFIELD__desc};
 }
 
 std::string_view Field::str() const noexcept
@@ -726,4 +866,10 @@ std::string_view Field::str() const noexcept
 std::string_view Field::unparse() const noexcept
 {
   return _value ? "field " : "";
+}
+
+std::ostream& OpenModelica::operator<< (std::ostream &os, Field field)
+{
+  os << field.str();
+  return os;
 }

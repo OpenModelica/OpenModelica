@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2017, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -112,7 +116,7 @@ protected function traverseAdjacencyMatrix2<T>
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := match (stop)
+  (outM, outTypeA) := match stop
     local
       BackendDAE.AdjacencyMatrix m1, m2;
       T extArg, extArg1, extArg2;
@@ -121,11 +125,11 @@ algorithm
     case true
     then (inM, inTypeA);
 
-    case false equation
-      (eqns, extArg) = func(inM[pos], pos, inTypeA);
-      eqns1 = List.removeOnTrue(pos, intLt, eqns);
-      (m1, extArg1) = traverseAdjacencyMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
-      (m2, extArg2) = traverseAdjacencyMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
+    case false algorithm
+      (eqns, extArg) := func(inM[pos], pos, inTypeA);
+      eqns1 := List.removeOnTrue(pos, intLt, eqns);
+      (m1, extArg1) := traverseAdjacencyMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
+      (m2, extArg2) := traverseAdjacencyMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
     then (m2, extArg2);
   end match;
 end traverseAdjacencyMatrix2;
@@ -147,35 +151,35 @@ protected function traverseAdjacencyMatrixList<T>
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := matchcontinue (inLst)
+  (outM, outTypeA) := matchcontinue inLst
     local
       BackendDAE.AdjacencyMatrix m;
       T extArg, extArg1;
       list<Integer> rest, eqns, eqns1, alleqns;
       Integer pos;
 
-    case ({})
+    case {}
     then (inM, inTypeA);
 
-    case (pos::rest) equation
+    case pos::rest algorithm
       // do not leave the list
-      true = intLt(pos, len+1);
+      true := intLt(pos, len+1);
       // do not more than necesary
-      true = intLt(pos, maxpos);
-      (eqns, extArg) = func(inM[pos], pos, inTypeA);
-      eqns1 = List.removeOnTrue(maxpos, intLt, eqns);
-      alleqns = List.unionOnTrueList({rest, eqns1}, intEq);
-      (m, extArg1) = traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
+      true := intLt(pos, maxpos);
+      (eqns, extArg) := func(inM[pos], pos, inTypeA);
+      eqns1 := List.removeOnTrue(maxpos, intLt, eqns);
+      alleqns := List.unionOnTrueList({rest, eqns1}, intEq);
+      (m, extArg1) := traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
     then (m, extArg1);
 
-    case (pos::rest) equation
+    case pos::rest algorithm
       // do not leave the list
-      true = intLt(pos, len+1);
-      (m, extArg) = traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
+      true := intLt(pos, len+1);
+      (m, extArg) := traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
     then (m, extArg);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.trace("- BackendDAEOptimize.traverseAdjacencyMatrixList failed\n");
     then fail();
   end matchcontinue;
@@ -191,20 +195,20 @@ public function getOtherEqSysAdjacencyMatrix
   input BackendDAE.AdjacencyMatrix mnew;
   output BackendDAE.AdjacencyMatrix outMNew;
 algorithm
-  outMNew := match (m)
+  outMNew := match m
     local
       list<Integer> row;
 
-    case (_) guard intGt(index, size)
+    case _ guard intGt(index, size)
     then mnew;
 
-    case (_) guard intGt(skip[index], 0)
-      equation
-      row = list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
+    case _ guard intGt(skip[index], 0)
+      algorithm
+      row := list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
       arrayUpdate(mnew, index, row);
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
 
-    case (_) equation
+    case _ algorithm
       arrayUpdate(mnew,index,{});
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
   end match;
@@ -244,7 +248,7 @@ protected function transposeRow "author: PA
   input output BackendDAE.AdjacencyMatrixT mt;
   input output Integer indx;
 algorithm
-  (mt, indx) := match (row)
+  (mt, indx) := match row
     local
       Integer i, indx1, iabs;
       list<Integer> res, col;
@@ -252,11 +256,11 @@ algorithm
     case {}
     then (mt, indx+1);
 
-    case i::res equation
-      iabs = intAbs(i);
-      mt = Array.expand(iabs - arrayLength(mt), mt, {});
-      col = mt[iabs];
-      indx1 = if intLt(i, 0) then -indx else indx;
+    case i::res algorithm
+      iabs := intAbs(i);
+      mt := Array.expand(iabs - arrayLength(mt), mt, {});
+      col := mt[iabs];
+      indx1 := if intLt(i, 0) then -indx else indx;
       arrayUpdate(mt, iabs, indx1::col);
     then transposeRow(res, mt, indx);
   end match;
@@ -268,7 +272,6 @@ public function absAdjacencyMatrix "author: PA
   input BackendDAE.AdjacencyMatrix m;
   output BackendDAE.AdjacencyMatrix res;
 protected
-  list<list<Integer>> lst, lst_1;
   Integer i = 1;
   Integer minn;
 algorithm

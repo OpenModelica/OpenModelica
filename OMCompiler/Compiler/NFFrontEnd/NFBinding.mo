@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,12 +46,17 @@ public
   import Subscript = NFSubscript;
 
 protected
+  import Absyn;
   import Binding = NFBinding;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
+  import DAE;
   import Dump;
   import Error;
 
 public
   constant Binding EMPTY_BINDING = UNBOUND();
+  constant Integer NO_CONFIDENCE = 99999; // Value has no significance other than being large, and visible when debugging.
 
   type EachType = enumeration(
     NOT_EACH,
@@ -76,6 +85,7 @@ public
     list<Subscript> subs;
     EachType eachType;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end RAW_BINDING;
 
@@ -85,6 +95,7 @@ public
     InstNode scope;
     EachType eachType;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end UNTYPED_BINDING;
 
@@ -97,6 +108,7 @@ public
     Mutable<EvalState> evalState;
     Boolean isFlattened;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end TYPED_BINDING;
 
@@ -104,6 +116,7 @@ public
     Expression bindingExp;
     Variability variability;
     Source source;
+    Integer confidence;
   end FLAT_BINDING;
 
   record CEVAL_BINDING
@@ -126,6 +139,7 @@ public
     input Boolean eachPrefix;
     input Boolean fromType;
     input InstNode scope;
+    input Integer instanceLevel;
     input SourceInfo info;
     output Binding binding;
   algorithm
@@ -140,7 +154,7 @@ public
           each_ty := if eachPrefix then EachType.EACH else EachType.NOT_EACH;
           source := if fromType then Source.TYPE else Source.BINDING;
         then
-          RAW_BINDING(exp, scope, {}, each_ty, source, info);
+          RAW_BINDING(exp, scope, {}, each_ty, source, instanceLevel, info);
 
       else EMPTY_BINDING;
     end match;
@@ -189,16 +203,6 @@ public
     end match;
   end isInvalid;
 
-  function untypedExp
-    input Binding binding;
-    output Option<Expression> exp;
-  algorithm
-    exp := match binding
-      case UNTYPED_BINDING() then SOME(binding.bindingExp);
-      else NONE();
-    end match;
-  end untypedExp;
-
   function typedExp
     input Binding binding;
     output Option<Expression> exp;
@@ -230,8 +234,6 @@ public
   function setTypedExp
     input Expression exp;
     input output Binding binding;
-  protected
-    Type ty1, ty2;
   algorithm
     () := match binding
       case TYPED_BINDING()
@@ -355,14 +357,14 @@ public
           var := Expression.variability(exp);
         then
           TYPED_BINDING(exp, ty, var, purity, fieldBinding.eachType, fieldBinding.evalState,
-                        fieldBinding.isFlattened, fieldBinding.source, fieldBinding.info);
+                        fieldBinding.isFlattened, fieldBinding.source, fieldBinding.confidence, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           var := Expression.variability(exp);
         then
-          FLAT_BINDING(exp, var, fieldBinding.source);
+          FLAT_BINDING(exp, var, fieldBinding.source, fieldBinding.confidence);
 
       case CEVAL_BINDING()
         algorithm
@@ -382,11 +384,22 @@ public
       case FLAT_BINDING() then binding.variability;
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown binding", sourceInfo());
         then
           fail();
     end match;
   end variability;
+
+  function setVariability
+    input Variability var;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case TYPED_BINDING() algorithm binding.variability := var; then ();
+      case FLAT_BINDING()  algorithm binding.variability := var; then ();
+      else ();
+    end match;
+  end setVariability;
 
   function purity
     input Binding binding;
@@ -406,7 +419,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end getInfo;
 
@@ -481,6 +494,10 @@ public
       case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
       else "";
     end match;
+
+    if format.showConfidence then
+      string := string + " /* confidence = " + String(actualConfidence(binding)) + "*/";
+    end if;
   end toFlatString;
 
   function toDebugString
@@ -539,7 +556,7 @@ public
           fail();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped binding", sourceInfo());
         then
           fail();
     end match;
@@ -569,11 +586,45 @@ public
       case CEVAL_BINDING() then NONE();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+          Error.terminate(getInstanceName() + " got untyped binding", sourceInfo());
         then
           fail();
     end match;
   end toDAEExp;
+
+  function applyExp
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case TYPED_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case FLAT_BINDING()    algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case CEVAL_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      else ();
+    end match;
+  end applyExp;
+
+  function applyExpShallow
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm fn(binding.bindingExp); then ();
+      case TYPED_BINDING()   algorithm fn(binding.bindingExp); then ();
+      case FLAT_BINDING()    algorithm fn(binding.bindingExp); then ();
+      case CEVAL_BINDING()   algorithm fn(binding.bindingExp); then ();
+      else ();
+    end match;
+  end applyExpShallow;
 
   function mapExp
     input output Binding binding;
@@ -729,6 +780,22 @@ public
   algorithm
     binding := match binding
 
+      case WILD()
+      then TYPED_BINDING(
+          bindingExp  = exp,
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          purity      = Expression.purity(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          source      = Source.BINDING,
+          confidence  = NO_CONFIDENCE,
+          info        = sourceInfo()
+        );
+
       case UNBOUND()
       then TYPED_BINDING(
           bindingExp  = exp,
@@ -741,6 +808,7 @@ public
                         else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
           source      = Source.BINDING,
+          confidence  = NO_CONFIDENCE,
           info        = sourceInfo()
         );
 
@@ -837,15 +905,29 @@ public
     end match;
   end source;
 
+  function setSource
+    input Source source;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case RAW_BINDING() algorithm binding.source := source; then ();
+      case UNTYPED_BINDING() algorithm binding.source := source; then ();
+      case TYPED_BINDING() algorithm binding.source := source; then ();
+      case FLAT_BINDING() algorithm binding.source := source; then ();
+      else ();
+    end match;
+  end setSource;
+
   function makeUntyped
     input Expression exp;
     input InstNode scope;
     input EachType eachType;
     input Source source;
     input SourceInfo info;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, info);
+    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, confidence, info);
   end makeUntyped;
 
   function makeTyped
@@ -854,20 +936,22 @@ public
     input Source source;
     input SourceInfo info;
     input EvalState state = EvalState.NOT_EVALUATED;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
     binding := TYPED_BINDING(exp, Expression.typeOf(exp),
       Expression.variability(exp), Expression.purity(exp),
-      eachType, Mutable.create(state), false, source, info);
+      eachType, Mutable.create(state), false, source, confidence, info);
   end makeTyped;
 
   function makeFlat
     input Expression exp;
     input Variability var;
     input Source source;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := FLAT_BINDING(exp, var, source);
+    binding := FLAT_BINDING(exp, var, source, confidence);
   end makeFlat;
 
   function isEvaluated
@@ -925,5 +1009,73 @@ public
     end match;
   end expandEach;
 
-annotation(__OpenModelica_Interface="frontend");
+  function isClockOrSampleFunction
+    input Binding binding;
+    output Boolean b;
+  algorithm
+    b := match getExpOpt(binding)
+      local
+        Expression exp;
+      case SOME(exp) then Expression.isClockOrSampleFunction(exp);
+      else false;
+    end match;
+  end isClockOrSampleFunction;
+
+  function confidence
+    "Returns the confidence of a binding, i.e. on what level of the instance
+     tree it was set."
+    input Binding binding;
+    output Integer confidence;
+  algorithm
+    confidence := match binding
+      case RAW_BINDING() then binding.confidence;
+      case UNTYPED_BINDING() then binding.confidence;
+      case TYPED_BINDING() then binding.confidence;
+      case FLAT_BINDING() then binding.confidence;
+      else NO_CONFIDENCE;
+    end match;
+  end confidence;
+
+  function actualConfidence
+    "Returns the actual confidence for a binding, which if the binding consists
+     of a single parameter is the highest confidence (lowest number) of the
+     binding itself and the actual confidence of the parameter's binding, as
+     per 8.6.2. For any other kind of binding the actual confidence is just the
+     confidence stored in the binding."
+    input Binding binding;
+    output Integer conf = NO_CONFIDENCE;
+  protected
+    Binding b = binding;
+    Expression exp;
+    ComponentRef cref;
+    InstNode node;
+    Component comp;
+  algorithm
+    while hasExp(b) loop
+      conf := min(conf, confidence(b));
+      exp := getExp(b);
+      b := NFBinding.EMPTY_BINDING;
+
+      () := match exp
+        case Expression.CREF()
+          guard ComponentRef.isCref(exp.cref)
+          algorithm
+            node := InstNode.resolveInner(ComponentRef.node(exp.cref));
+
+            if InstNode.isComponent(node) then
+              comp := InstNode.component(node);
+
+              if Component.variability(comp) < Variability.DISCRETE then
+                b := Component.getBinding(comp);
+              end if;
+            end if;
+          then
+            ();
+
+        else ();
+      end match;
+    end while;
+  end actualConfidence;
+
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBinding;

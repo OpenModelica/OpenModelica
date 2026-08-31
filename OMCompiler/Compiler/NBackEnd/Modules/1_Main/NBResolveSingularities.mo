@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBResolveSingularities
 "file:        NBResolveSingularities.mo
  package:     NBResolveSingularities
@@ -40,13 +45,14 @@ protected
   // NF imports
   import NFBackendExtension.{BackendInfo, VariableAttributes, StateSelect};
   import ComponentRef = NFComponentRef;
-  import NFFlatten.FunctionTree;
+  import Expression = NFExpression;
+  import Type = NFType;
 
   // NB imports
   import Adjacency = NBAdjacency;
+  import NBFunctionAlias.Call_Aux;
   import Differentiate = NBDifferentiate;
-  import BEquation = NBEquation;
-  import NBEquation.{Equation, EqData, EquationPointer, EquationPointers, SlicingStatus};
+  import NBEquation.{Equation, EqData, EquationPointer, EquationPointers, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
   import Variable = NFVariable;
@@ -101,16 +107,15 @@ public
   extends Module.resolveSingularitiesInterface;
   protected
     Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
+    array<Boolean> excluded_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
-    Adjacency.Matrix state_adj;
-    Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
-    list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states;
-    list<Pointer<Variable>> sliced_candidates, sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {};
+    Pointer<Equation> constraint, diffed_eqn;
+    list<Slice<VariablePointer>> states, dummy_states, sliced_dummies = {};
+    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
     list<Pointer<Variable>> current_candidates, rest_candidates;
-    list<Slice<EquationPointer>> constraint_eqns = {}, matched_eqns, unmatched_eqns;
-    list<Pointer<Equation>> sliced_constraints, new_eqns = {};
+    list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
+    list<Pointer<Equation>> new_eqns = {};
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
@@ -121,6 +126,12 @@ public
     list<tuple<String, BVariable.checkVar>> stages;
     BVariable.checkVar stageFunc;
     String stageStr;
+
+    // slice handling
+    type SliceSet = UnorderedSet<Integer>;
+    UnorderedMap<ComponentRef, SliceSet> slice_map = UnorderedMap.new<SliceSet>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> dummy_slice_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual) "dummy variables to fill unslicable equations";
+
     Boolean debug = false;
   algorithm
     // get the mapping and fail if there is none
@@ -131,13 +142,12 @@ public
       then fail();
     end match;
 
-    // mark the discrete equations
-    discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-    discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
+    // mark the forbidden equations (discrete and already differentiated in previous index reduction steps)
+    excluded_eqns := listArray(list(Equation.isDiscrete(eqn) or Equation.hasDerivative(eqn) for eqn in EquationPointers.toList(equations)));
 
     // get the minimally structurally singular subset
     msss := match adj
-      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, excluded_eqns, mapping);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
           + Adjacency.Matrix.toString(adj)});
@@ -158,7 +168,11 @@ public
       // slice them before matching
       (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
 
-      if VariablePointers.scalarSize(candidate_ptrs) < EquationPointers.scalarSize(constraint_ptrs) then
+      for eq in constraint_eqns loop
+        UnorderedMap.add(Equation.getEqnName(Slice.getT(eq)), UnorderedSet.fromList(eq.indices, Util.id, intEq), slice_map);
+      end for;
+
+      if VariablePointers.scalarSize(candidate_ptrs) < sum(Slice.size(eq, function Equation.size(resize = true)) for eq in constraint_eqns) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
           + EquationPointers.toString(constraint_ptrs, "Constraint") + "\n" + VariablePointers.toString(candidate_ptrs, "State Candidate")});
        fail();
@@ -171,31 +185,11 @@ public
             + EquationPointers.toString(constraint_ptrs, "Constraint"));
       end if;
 
-      // Build differentiation argument structure
-      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcTree);
-      diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
-      diffArguments_ptr := Pointer.create(diffArguments);
-
-      if Flags.isSet(Flags.DUMMY_SELECT) then
-        print(StringUtil.headline_3("[dummyselect] 1. Differentiate the constraint equations"));
-      end if;
-
-      // differentiate all eqns
-      for constraint in EquationPointers.toList(constraint_ptrs) loop
-        diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
-        new_eqns := diffed_eqn :: new_eqns;
-        if Flags.isSet(Flags.DUMMY_SELECT) then
-          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
-          print("[dummyselect] differentiated eqn:\t" + Equation.toString(Pointer.access(diffed_eqn)) + "\n\n");
-        end if;
-      end for;
-      diffArguments := Pointer.access(diffArguments_ptr);
-
       // --------------------------------------------------------
       //  2. DUMMY DERIVATIVE
       // --------------------------------------------------------
       // create full adjacency matrix and prepare data
-      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs, kind);
       set_adj         := Adjacency.Matrix.EMPTY(NBAdjacency.MatrixStrictness.LINEAR);
       rest_candidates := VariablePointers.toList(candidate_ptrs);
       eo              := constraint_ptrs.map;
@@ -218,7 +212,7 @@ public
         // split the candidates to get all currently relevant ones
         (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, stageFunc);
 
-        if listEmpty(current_candidates) or (not Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching)) then
+        if listEmpty(current_candidates) then
           // nothing to do, no candidates for this stage or matching is already perfect
           if debug then
             print(StringUtil.headline_2("Nothing done for (" + stageStr + ") Index Reduction") + "\n");
@@ -228,7 +222,7 @@ public
           vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
           vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
           // expand the adjacency matrix
-          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs);
+          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs, kind);
           // continue matching
           set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
 
@@ -236,11 +230,40 @@ public
             print(Adjacency.Matrix.toString(set_adj, "(" + stageStr + ") Index Reduction"));
             print(Matching.toString(set_matching, "(" + stageStr + ") Index Reduction"));
           end if;
+
+          if Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching) then
+            if debug then
+              print(StringUtil.headline_2("Finished with perfect matching in stage " + stageStr + ".") + "\n");
+            end if;
+            break;
+          end if;
         end if;
       end for;
 
       // parse the result of the matching
       (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
+      unmatched_eqns := resolveSlicedUnmatched(unmatched_eqns, slice_map);
+
+      // Build differentiation argument structure
+      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcMap);
+      diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
+      diffArguments_ptr       := Pointer.create(diffArguments);
+
+      if Flags.isSet(Flags.DUMMY_SELECT) then
+        print(StringUtil.headline_3("[dummyselect] 1. Differentiate the constraint equations"));
+      end if;
+
+      // differentiate all eqns
+      for constraint in EquationPointers.toList(constraint_ptrs) loop
+        diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
+        diffed_eqn := removeSlicedDerivatives(diffed_eqn, UnorderedMap.getSafe(Equation.getEqnName(constraint), slice_map, sourceInfo()), dummy_slice_set, VarData.getUniqueIndex(varData));
+        new_eqns := diffed_eqn :: new_eqns;
+        if Flags.isSet(Flags.DUMMY_SELECT) then
+          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
+          print("[dummyselect] differentiated eqn:\t" + Equation.toString(Pointer.access(diffed_eqn)) + "\n\n");
+        end if;
+      end for;
+      diffArguments := Pointer.access(diffArguments_ptr);
 
       // --------------------------------------------------------
       //  3. STATIC AND DYNAMIC STATE SELECTION
@@ -250,11 +273,23 @@ public
         if listEmpty(dummy.indices) then
           dummy_derivatives := BVariable.makeDummyState(Slice.getT(dummy)) :: dummy_derivatives;
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
-            + "  needed sliced dummy:\t\t" + Slice.toString(dummy, BVariable.pointerToString) + "\n"});
-          fail();
+          sliced_dummies := dummy :: sliced_dummies;
         end if;
       end for;
+
+      if not listEmpty(sliced_dummies) then
+        // ToDo: instead do state replacements (FunctionAlias)
+        // shift the order to first get dummy derivatives then differentiate
+
+        // find the state indices (all indices without the dummy indices)
+        // make an iterator that iterates over these (local indices to frame locations)
+        // introduceAlias for this iterator and the sliced state
+        // create equations for the introduced alias
+
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
+          + List.toStringCustom(sliced_dummies, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "Sliced Dummies:", "\n  ", "\n  ", "\n")});
+        fail();
+      end if;
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
         print(StringUtil.headline_4("[dummyselect] (" + intString(listLength(states)) + ") Selected States"));
@@ -262,7 +297,7 @@ public
       end if;
       if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(diffArguments.new_vars)) + ") State Derivatives Created by Differentiation"));
-        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, "", "\t", "\n\t", "") + "\n\n");
+        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(dummy_states)) + ") Selected Dummy States"));
         print(Slice.lstToString(dummy_states, BVariable.pointerToString) + "\n\n");
       end if;
@@ -281,7 +316,7 @@ public
         if Flags.isSet(Flags.DUMMY_SELECT) then
           print(toStringDynamicSelect(dummy_states, unmatched_eqns));
         end if;
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dynamic index reduction is not yet supported."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dynamic state selection is not yet supported."});
         fail();
       end if;
 
@@ -310,72 +345,19 @@ public
       variables := VariablePointers.addList(diffArguments.new_vars, variables);
       // add all dummy states
       variables := VariablePointers.addList(sliced_dummy_states, variables);
+      // remove all states
+      variables := VariablePointers.removeList(sliced_states, variables);
       // add new equations (after cleanup because equation names are added there)
       equations := EquationPointers.addList(new_eqns, equations);
+
+      // add all slice dummies that were added to fill equations which cannot be split
+      dummy_slice_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedSet.toList(dummy_slice_set));
+      varData := VarData.addTypedList(varData, dummy_slice_vars, NBVariable.VarData.VarType.ALGEBRAIC);
+      variables := VariablePointers.addList(dummy_slice_vars, variables);
     else
       changed := false;
     end if;
   end indexReduction;
-
-  function noIndexReduction
-    "fails if the system has unmatched variables"
-    extends Module.resolveSingularitiesInterface;
-  protected
-    Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
-    list<Slice<VariablePointer>> unmatched_vars, matched_vars;
-    list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
-    String err_str;
-    array<list<Integer>> msss;
-    VariablePointers candidates;
-    EquationPointers constraints;
-    Integer msss_idx = 1;
-  algorithm
-    // get the mapping and fail if there is none
-    mapping := match mapping_opt
-      case SOME(mapping) then mapping;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
-      then fail();
-    end match;
-
-    (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
-    if not listEmpty(unmatched_vars) then
-      err_str := getInstanceName()
-        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
-        + intString(sum(Slice.size(v, function BVariable.size(resize = true)) for v in unmatched_vars)) + ") Unmatched Variables")
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
-        + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in unmatched_eqns)) + ") Unmatched Equations")
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
-
-      if Flags.isSet(Flags.BLT_DUMP) then
-        // mark the discrete equations
-        discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-        discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
-
-        // get the minimally structurally singular subset
-        msss := match adj
-          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
-              + Adjacency.Matrix.toString(adj)});
-          then fail();
-        end match;
-
-        for marked_eqns in msss loop
-          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
-          err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
-            + EquationPointers.toString(constraints, "Constraint")
-            + VariablePointers.toString(candidates, "State Candidate");
-          msss_idx := msss_idx + 1;
-        end for;
-      end if;
-      Error.addMessage(Error.INTERNAL_ERROR,{err_str});
-      fail();
-    end if;
-    changed := false;
-  end noIndexReduction;
 
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
@@ -386,7 +368,7 @@ public
     list<Pointer<Equation>> sliced_eqns, start_eqns;
     Pointer<Variable> var_ptr;
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
-    Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqns = Pointer.create({});
+    Pointer<list<Pointer<Equation>>> ptr_start_eqns = Pointer.create({});
     Pointer<Integer> idx;
     String error_msg;
     UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
@@ -427,7 +409,7 @@ public
         if BVariable.isFixable(var_ptr) then
           // var = $START.var ($PRE.d = $START.d for previous vars)
           // DO NOT SET VARIABLE TO FIXED! we might have to fix it again for Lambda=0 system
-          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx, true);
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
@@ -451,19 +433,19 @@ public
         // update adjacency matrices
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
-        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
+        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations, kind);
 
         if Flags.isSet(Flags.INITIALIZATION) then
-          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+          print(List.toStringCustom(start_eqns, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
         end if;
       else
         error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true);
+          + List.toString(failed_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n";
         if Flags.isSet(Flags.INITIALIZATION) then
           error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
-            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);
+            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), List.Style.NEWLINE_TAB) + "\n";
         else
           error_msg := error_msg + "\nUse -d=initialization for more debug output.";
         end if;
@@ -484,42 +466,49 @@ public
 
 protected
   function getMSSS
-    "finds the minimally structurally singular subsets"
+    "finds the minimal structurally singular subsets"
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
     input Matching matching;
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
+    input array<Boolean> excluded_eqns;
     input Adjacency.Mapping mapping;
     output array<list<Integer>> msss;
   protected
     list<Integer> eqn_candidates = {};
+    array<Integer> color_clustering;
     array<Integer> eqn_coloring = arrayCreate(arrayLength(m), -1);
     array<Integer> var_coloring = arrayCreate(arrayLength(mT), -1);
     Integer color = 0;
   algorithm
-    // find all unmatched variable and equation indices
+    // find all unmatched equation indices
     for eqn in 1:arrayLength(matching.eqn_to_var) loop
-      if matching.eqn_to_var[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+      if matching.eqn_to_var[eqn] == -1 then
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
+    color_clustering := listArray(list(i for i in 1:listLength(eqn_candidates)));
 
     // use a new color for each uncolored equation
     for eqn in eqn_candidates loop
       if eqn_coloring[eqn] == -1 then
         color := color + 1;
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
       end if;
     end for;
+
+    resolveClustering(color_clustering);
 
     // fill the msss array, sorting each equation to their respective color
     msss := arrayCreate(color, {});
     for eqn in 1:arrayLength(eqn_coloring) loop
-      if eqn_coloring[eqn] <> -1 then
-        msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
+      if eqn_coloring[eqn] <> -1 and not excluded_eqns[mapping.eqn_StA[eqn]] then
+        color := color_clustering[eqn_coloring[eqn]];
+        msss[color] := eqn :: msss[color];
       end if;
     end for;
+
+    // remove all empty colors (purely discrete)
+    msss := listArray(list(ms for ms guard(not listEmpty(ms)) in arrayList(msss)));
   end getMSSS;
 
   function fillColorEqn
@@ -529,17 +518,15 @@ protected
     input Integer color;
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
+    input array<Integer> color_clustering;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
+    input Matching matching;
     input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
     for var in m[eqn] loop
-      if var_coloring[var] == -1 and not discrete_vars[mapping.var_StA[var]] then
-        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
-      end if;
+      fillColorVar(var, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
     end for;
   end fillColorEqn;
 
@@ -550,19 +537,50 @@ protected
     input Integer color;
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
+    input array<Integer> color_clustering;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
+    input Matching matching;
     input Adjacency.Mapping mapping;
+  protected
+    Integer eqn = matching.var_to_eqn[var];
   algorithm
-    arrayUpdate(var_coloring, var, color);
-    for eqn in mT[var] loop
-      if eqn_coloring[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+    if var_coloring[var] == -1 then
+      arrayUpdate(var_coloring, var, color);
+      if eqn <> -1 then
+        if eqn_coloring[eqn] == -1 then
+          fillColorEqn(eqn, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+        end if;
       end if;
-    end for;
+    else
+      colorClustering(var_coloring[var], color, color_clustering);
+    end if;
   end fillColorVar;
+
+  function colorClustering
+    input Integer old_color;
+    input Integer new_color;
+    input array<Integer> color_clustering;
+  algorithm
+    if color_clustering[old_color] <> old_color then
+      colorClustering(color_clustering[old_color], new_color, color_clustering);
+    end if;
+    arrayUpdate(color_clustering, old_color, new_color);
+  end colorClustering;
+
+  function resolveClustering
+    input array<Integer> color_clustering;
+  protected
+    Integer color;
+  algorithm
+    for i in 1:arrayLength(color_clustering) loop
+      color := i;
+      while color_clustering[color] <> color loop
+        color := color_clustering[color];
+      end while;
+      arrayUpdate(color_clustering, i, color);
+    end for;
+  end resolveClustering;
 
   function getConstraintsAndCandidates
     input EquationPointers equations;
@@ -590,7 +608,7 @@ protected
       eqn_ptr := EquationPointers.getEqnAt(equations, eqn);
       constr  := EquationPointers.add(eqn_ptr, constr);
       sliced_constr := Slice.SLICE(eqn_ptr, eqn_slices[eqn]) :: sliced_constr;
-      for candidate in BEquation.Equation.collectCrefs(Pointer.access(eqn_ptr), getStateCandidate) loop
+      for candidate in Equation.collectCrefs(Pointer.access(eqn_ptr), getStateCandidate) loop
         UnorderedSet.add(candidate, state_candidates);
       end for;
     end for;
@@ -611,7 +629,7 @@ protected
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
     algorithm
-      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var))) then
+      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var) or BVariable.isDummyState(var) or (BVariable.isForcedState(var) and not BVariable.isStateSelect(var, StateSelect.PREFER)) )) then
         UnorderedSet.add(BVariable.getVarName(var), acc);
       end if;
     end getStateCandidateVar;
@@ -661,6 +679,93 @@ protected
     priorities := List.sort(priorities, BackendUtil.indexTplGt);
     candidates := List.unzipSecond(priorities);
   end sortCandidates;
+
+  function resolveSlicedUnmatched
+    "removes all the unmatched slices that are irrelevant"
+    input list<Slice<EquationPointer>> old_unmatched;
+    output list<Slice<EquationPointer>> filtered_unmatched = {};
+    input UnorderedMap<ComponentRef, UnorderedSet<Integer>> slice_map;
+    function resolveSlicedUnmatchedSingle
+      input Slice<EquationPointer> eq;
+      input output list<Slice<EquationPointer>> acc;
+      input UnorderedMap<ComponentRef, UnorderedSet<Integer>> slice_map;
+    protected
+      UnorderedSet<Integer> relevant_indices;
+    algorithm
+      relevant_indices := UnorderedMap.getSafe(Equation.getEqnName(Slice.getT(eq)), slice_map, sourceInfo());
+      // empty set indicates everything is relevant (just like slices without indices indicate everything)
+      if UnorderedSet.isEmpty(relevant_indices) then
+        // case 1.
+        acc := eq :: acc;
+      else
+        // case 2.
+        eq.indices := list(ind for ind guard(UnorderedSet.contains(ind, relevant_indices)) in eq.indices);
+        // if the list is empty, none are relevant. full relevance does not have to be considered here, would have been case 1.
+        if not listEmpty(eq.indices) then acc := eq :: acc; end if;
+      end if;
+    end resolveSlicedUnmatchedSingle;
+  algorithm
+    for eq in old_unmatched loop
+      filtered_unmatched := resolveSlicedUnmatchedSingle(eq, filtered_unmatched, slice_map);
+    end for;
+  end resolveSlicedUnmatched;
+
+  function removeSlicedDerivatives
+    input output Pointer<Equation> derivative;
+    input UnorderedSet<Integer> slice_set;
+    input UnorderedSet<ComponentRef> dummy_slice_set;
+    input Pointer<Integer> aux_index;
+  protected
+    Equation eqn;
+  algorithm
+    // only do something if the set is not empty implying full occurence
+    if not UnorderedSet.isEmpty(slice_set) then
+      eqn := removeSlicedDerivateEqn(Pointer.access(derivative), Iterator.EMPTY(), dummy_slice_set, aux_index);
+      Pointer.update(derivative, eqn);
+    end if;
+  end removeSlicedDerivatives;
+
+  function removeSlicedDerivateEqn
+    input output Equation eqn;
+    input Iterator iter;
+    input UnorderedSet<ComponentRef> dummy_slice_set;
+    input Pointer<Integer> aux_index;
+  protected
+    function replaceTupleLiterals
+      input output Expression exp;
+      input Iterator iter;
+      input UnorderedSet<ComponentRef> dummy_slice_set;
+      input Pointer<Integer> aux_index;
+    protected
+      ComponentRef aux;
+    algorithm
+      if Expression.isLiteral(exp) then
+        aux := Call_Aux.createName(Expression.typeOf(exp), iter, aux_index, NBVariable.DERIVATIVE_STR, false);
+        exp := Expression.CREF(ComponentRef.getSubscriptedType(aux), aux);
+        UnorderedSet.add(aux, dummy_slice_set);
+      end if;
+    end replaceTupleLiterals;
+  algorithm
+      eqn := match eqn
+        local
+          Expression lhs;
+
+        // apply to each body equation
+        case Equation.FOR_EQUATION() algorithm
+          eqn.body := list(removeSlicedDerivateEqn(b, eqn.iter, dummy_slice_set, aux_index) for b in eqn.body);
+        then eqn;
+
+        // replace everything that evaluated to a literal expression with wildcard outputs
+        case Equation.RECORD_EQUATION(lhs = lhs as Expression.TUPLE()) algorithm
+          lhs.elements := list(replaceTupleLiterals(e, iter, dummy_slice_set, aux_index) for e in lhs.elements);
+          eqn.lhs := lhs;
+        then eqn;
+
+        // ToDo: more cases and fail if not doable
+
+        else eqn;
+      end match;
+  end removeSlicedDerivateEqn;
 
   function toStringCandidatesConstraints
     input list<Slice<VariablePointer>> state_candidates;
@@ -712,5 +817,5 @@ protected
     str := s1 + s2 + s3 + s4 + "\n";
   end toStringUnmatched;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBResolveSingularities;

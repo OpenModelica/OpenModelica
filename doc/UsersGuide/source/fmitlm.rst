@@ -9,6 +9,134 @@ different Modelica or non-Modelica tools.
 
 See also :ref:`OMSimulator documentation<omsimulator-documentation>`.
 
+FMI Standards
+-------------
+
+.. list-table:: FMI standard versions
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Version
+     - Support in OpenModelica
+   * - `1.0.1 <https://fmi-standard.org/assets/releases/FMI_for_ModelExchange_v1.0.1.pdf>`_
+     - Deprecated
+   * - `2.0.5 <https://github.com/modelica/fmi-standard/releases/download/v2.0.5/FMI-Specification-2.0.5.pdf>`_
+     - Supported
+   * - `3.0.2 <https://fmi-standard.org/docs/3.0.2/>`_
+     - Experimental
+
+Layered Standards
+~~~~~~~~~~~~~~~~~~
+
+Layered standards extend FMI 3.0 with optional, separately versioned
+specifications.
+
+.. list-table:: FMI 3.0 layered standards
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Layered standard
+     - Support in OpenModelica
+   * - `FMI-LS-BUS <https://github.com/modelica/fmi-ls-bus>`_
+     - Not planned
+   * - `FMI-LS-XCP <https://github.com/modelica/fmi-ls-xcp>`_
+     - Not planned
+   * - `FMI-LS-STRUCT <https://github.com/modelica/fmi-ls-struct>`_
+     - Planned
+   * - `FMI-LS-REF <https://github.com/modelica/fmi-ls-ref>`_
+     - Planned
+   * - `FMI-LS-DAE <https://github.com/modelica/fmi-ls-dae>`_
+     - Planned (demonstrator in progress)
+
+Supported Capability Flags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The optional capabilities advertised in the ``modelDescription.xml`` of an
+exported FMU, per FMI version and interface type (Model Exchange, Co-Simulation
+and, for FMI 3.0, Scheduled Execution).
+
+.. list-table:: Exported capability flags
+   :header-rows: 1
+   :widths: 32 11 11 11 11 13
+
+   * - Capability
+     - 2.0 ME
+     - 2.0 CS
+     - 3.0 ME
+     - 3.0 CS
+     - 3.0 SE
+   * - Get and set FMU state
+     - yes
+     - yes
+     - yes
+     - yes
+     - yes
+   * - Serialize FMU state
+     - no
+     - no
+     - yes
+     - yes
+     - yes
+   * - Directional derivatives
+     - cond
+     - exp
+     - cond
+     - cond
+     - cond
+   * - Adjoint derivatives
+     - —
+     - —
+     - wip
+     - wip
+     - wip
+   * - Per-element dependencies
+     - —
+     - —
+     - no
+     - no
+     - no
+   * - Variable communication step size
+     - —
+     - yes
+     - —
+     - yes
+     - —
+   * - Interpolate inputs
+     - —
+     - yes
+     - —
+     - —
+     - —
+   * - Max output derivative order
+     - —
+     - 1
+     - —
+     - 1
+     - —
+   * - Event mode
+     - —
+     - —
+     - —
+     - yes
+     - —
+   * - Intermediate update
+     - —
+     - —
+     - —
+     - no
+     - —
+
+Legend:
+
+- ``yes`` / ``no`` — the capability flag is exported as ``true`` / ``false``.
+- ``cond`` — exported as ``true`` only when a symbolic directional-derivative
+  Jacobian is available, i.e. not disabled via
+  :ref:`-d=disableDirectionalDerivatives<omcflag-debug-disableDirectionalDerivatives>`.
+- ``exp`` — only enabled with the experimental flag ``-d=fmuExperimental``
+  (``false`` by default). In FMI 3.0 these state features are always enabled.
+- ``wip`` — in active development; currently exported as ``false``.
+- ``—`` — not applicable to this interface type or FMI version.
+
 FMI Export
 ----------
 
@@ -57,8 +185,8 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0.4 for Co-Simulation
-FMUs.
+We support FMI 1.0 (deprecated) and FMI 2.0 for Model Exchange and Co-Simulation FMUs,
+with experimental support for FMI 3.0 (see the version table above).
 
 For the Co-Simulation FMU two integrator methods are available:
 
@@ -112,7 +240,7 @@ Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
 Makefiles export.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
-re-compile the FMU for a different host and is also used to cross-compile for different
+re-compile the FMU for a different host and is also used to cross compile for different
 platforms.
 
 The CMake compilation accepts the following settings:
@@ -142,6 +270,11 @@ The CMake compilation accepts the following settings:
 
   * ``all``: Add system and Modelica runtime dependencies. Needs CMake version v3.21 or
     newer.
+
+  CMake install TARGETS RUNTIME_DEPENDENCIES is not supported when cross compiling.
+  When cross compiling the FMU CMake project therefore falls back to installing the
+  external libraries it linked against directly, which covers the Modelica libraries
+  a model depends on but not the system libraries of the target platform.
 
 * ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
@@ -191,17 +324,102 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
 
+* ``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+  Host triple with Docker image provided by OpenModelica:
+  OpenModelica will use Docker image
+  `ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+  to cross compile. The image provides compiler toolchain files to
+  cross compile with CMake for the following host triples:
+
+    * ``i686-linux-gnu``
+    * ``x86_64-linux-gnu``
+    * ``aarch64-linux-gnu``
+    * ``arm-linux-gnueabi``
+    * ``arm-linux-gnueabihf``
+    * ``i686-w64-mingw32``
+    * ``x86_64-w64-mingw32``
+
+  OpenModelica will add a matching ``CMAKE_TOOLCHAIN_FILE`` to the compilation
+  process.
+
+  If your model depends on external C libraries the library has to be available
+  for the target platform, e.g. in ``Resources/Library/win64`` when compiling for
+  ``x86_64-w64-mingw32``. OpenModelica searches the ``Resources/Library`` sub
+  directory matching the target platform and copies the library into the FMU next
+  to the model binary. If no binary for the target platform is shipped with the
+  Modelica library, providing a pre-compiled static library can be necessary.
+
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
-  OpenModelica will use the specified Docker image to cross-compile for given host triple.
+  OpenModelica will use the specified Docker image to cross compile for given host triple.
   Because privilege escalation is very easy to achieve with Docker OMEdit adds
   ``--pull=never`` to the Docker calls for the ``multiarch/crossbuild`` images. Only use
   this option if you understand the security risks associated with Docker images from
   unknown sources.
-  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross-compile
+  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross compile
   for a 64 bit Linux OS.
   Because system libraries can be different for different versions of the same operating
   system, it is advised to use :ref:`--fmuRuntimeDepends=all<omcflag-fmuRuntimeDepends>`.
 
+Cross Compilation
+~~~~~~~~~~~~~~~~~
+
+Cross compilation can be done by using platform
+``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+or done manually. Both can be difficult at times.
+
+To `cross compile with CMake <https://cmake.org/cmake/help/book/mastering-cmake/chapter/Cross%20Compiling%20With%20CMake.html>`_
+provide a toolchain file specifying the target system and where to find the
+compiler toolchain for the target system.
+
+For example the Docker image
+`ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+provided by OpenModelica is based on Linux (Ubuntu 24.04 at the time of writing)
+and has toolchains installed to cross compile together with matching
+`toolchain files <https://github.com/OpenModelica/openmodelica-crossbuild/tree/main/toolchain>`_.
+
+Manual Cross Compilation
+""""""""""""""""""""""""
+
+Let's have a look at example model ``BouncingBall``:
+
+First generate C sources for the FMU:
+
+.. omc-mos ::
+  :parsed:
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+  buildModelFMU(BouncingBall, platforms = {""})
+
+OpenModelica won't zip the FMU in this case.
+If you already have an existing FMU unzip it into some directory
+``<Model>.fmutmp``. Optionally delete existing binaries like
+``<Model>.fmutmp/binaries/linux64/``.
+
+Then cross compile the sources with a suitable toolchain file.
+
+.. code-block:: bash
+  # Optional: Work inside interactive Docker container
+  docker run --rm -it \
+    -v $PWD:/fmu \
+    -v /home/andreas/workdir/OM/OpenModelica/build_cmake/install_cmake/include/omc/FMI2:/fmiInclude \
+    -w/fmu \
+    ghcr.io/openmodelica/crossbuild:v1.27.0 bash
+
+  cd <Model>.fmutmp/sources
+  cmake -S . -B build \
+    -DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/x86_64-w64-mingw32.cmake \
+    -DRUNTIME_DEPENDENCIES_LEVEL=none \
+    -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmiInclude \
+    -G "Unix Makefiles"
+  cmake --build build --parallel --target install
+
+Now the FMU should contain ``binaries/win64/BouncingBall.dll``.
+Compile additional binaries in the same way and when done zip the FMU by running
+
+.. code-block:: bash
+  cmake --build build --parallel --target create_fmu
+
+Now there should be a FMU with ``win64`` binaries ``BouncingBall-fmu``.
 
 .. _fmi-import :
 

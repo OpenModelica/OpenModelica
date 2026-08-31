@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -40,28 +43,28 @@
 #define NOTEBOOK_WINDOW_H
 
 
-//STD Headers
+// STD Headers
 #include <map>
+#include <memory>
 
-//QT Headers
+// Qt headers
 #include <QtCore/QHash>
 
-//IAEX Headers
+#include <QAction>
+#include <QActionGroup>
+#include <QKeyEvent>
+#include <QMenu>
+#include <QMenuBar>
+#include <QWidget>
+#include <QLabel>
+
+// IAEX headers
 #include "application.h"
 #include "document.h"
 #include "documentview.h"
 #if USE_OMSKETCH
 #include "Tools.h"
 #endif
-//Forward declaration
-class QAction;
-class QActionGroup;
-class QKeyEvent;
-class QMenu;
-class QMenuBar;
-class QStatusbar;
-class QWidget;
-class QLabel;
 
 
 namespace IAEX
@@ -74,12 +77,12 @@ class NotebookWindow : public DocumentView
   Q_OBJECT
 
 public:
-  NotebookWindow(Document *subject, const QString filename=0, int isDrModelica=0,
+  NotebookWindow(std::unique_ptr<Document> subject, const QString filename=0, int isDrModelica=0,
                  QWidget *parent=0);
   virtual ~NotebookWindow();
 
-  virtual void update();
-  virtual Document* document();
+  virtual void update() override;
+  virtual Document* document() override;
   CellApplication *application();
 
 public slots:
@@ -97,7 +100,7 @@ public slots:
   void updateBorderMenu();
   void updateMarginMenu();
   void updatePaddingMenu();
-  void updateWindowMenu();
+  void updateWindowMenu() override;
   void updateWindowTitle();
   void updateChapterCounters();
   void setStatusMessage( QString msg );
@@ -106,18 +109,18 @@ public slots:
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
   void recentTriggered();
-  QVector<Cell*> SearchCells(Cell* current);  // Added 2015-07-14 To search the cells in a document and return the number of cells
+  QVector<Cell*> SearchCells(Cell* current);  // search the cells in a document and return the number of cells
 
 protected:
-  void keyPressEvent(QKeyEvent *event);
-  void keyReleaseEvent(QKeyEvent *event);
+  void keyPressEvent(QKeyEvent *event) override;
+  void keyReleaseEvent(QKeyEvent *event) override;
   void SearchCells(Cell* current, QVector<Cell*> * total);
 
 private slots:
   void newFile();
   void openFile(const QString filename="");
   void closeFile();
-  void closeEvent( QCloseEvent *event );
+  void closeEvent(QCloseEvent *event) override;
   void aboutQTNotebook();
   void aboutQT();
   void helpText();
@@ -196,21 +199,20 @@ private:
   bool cellEditable();
   void evalCells();
   //void createSavingTimer();
+#ifdef __EMSCRIPTEN__
+  // Build a menubar menu mirroring a staged example-notebook tree in MEMFS.
+  void addExampleMenu(const QString &root);
+  void populateExampleMenu(QMenu *menu, const QString &path);
+#endif
 
-  QVector<Cell*> cells,temp_cells; //Added by jhansi
+  QVector<Cell*> cells; //Added by jhansi
 
 private:
   QToolBar* toolBar;
-  QMenu *fileMenu;
-  QMenu *recentMenu;
-  QMenu *editMenu;
-  QMenu *cellMenu;
   QMenu *formatMenu;
-  QMenu *insertMenu;
   QMenu *windowMenu;
-  QMenu *aboutMenu;
 
-  // 2005-11-03/04/07 AF, Added some more for text setting changes
+  // Added some more for text setting changes
   QMenu *styleMenu;
   QMenu *fontMenu;
   QMenu *faceMenu;
@@ -222,41 +224,9 @@ private:
   QMenu *borderMenu;
   QMenu *marginMenu;
   QMenu *paddingMenu;
-  // 2005-12-01 AF, added for import old omnotebook file
-  QMenu *importMenu;
-  // 2005-11-21 AF, added for export pure text
-  QMenu *exportMenu;
 
-  QMenu *indentMenu;
-  // 2005-10-07 AF, Porting, Added this actions
-  // 2005-11-03/04/07 AF, Added some more for text setting changes
-  QActionGroup *stylesgroup;
-  QActionGroup *fontsgroup;
-  QActionGroup *sizesgroup;
-  QActionGroup *stretchsgroup;
-  QActionGroup *colorsgroup;
-  QActionGroup *alignmentsgroup;
-  QActionGroup *verticalAlignmentsgroup;
-  QActionGroup *bordersgroup;
-  QActionGroup *marginsgroup;
-  QActionGroup *paddingsgroup;
-
-  QAction *newAction;
-  QAction *openFileAction;
-  QAction *saveAsAction;
-  QAction *saveAction;
-  QAction *printAction;
-  QAction *pdfAction;
-  QAction *closeFileAction;
   QAction *quitWindowAction;
-  QAction *indentAction;
   QAction *autoIndentAction;
-  QAction *evalAction;
-  QAction *evalallAction;
-  QAction *evalLatexAction;
-  QAction *shiftcellsupAction;
-  QAction *shiftcellsdownAction;
-  QAction *shiftselectedcellsAction;
 
 public:
   QAction *undoAction;
@@ -265,86 +235,21 @@ public:
   QAction *copyAction;
   QAction *pasteAction;
 private:
-  QAction *findAction;
-  QAction *replaceAction;
   QAction *showExprAction;
 
-  //QAction *cutCellAction;
-  //QAction *copyCellAction;
-  //QAction *pasteCellAction;
-  QAction *addCellAction;
+  QAction *groupAction;
   QAction *ungroupCellAction;
   QAction *splitCellAction;
   QAction *deleteCellAction;
-  QAction *nextCellAction;
-  QAction *previousCellAction;
 
-  QAction *groupAction;
-  QAction *inputAction;
-  QAction *latexAction;
-  QAction *textAction;
-  QAction *evalCellAction;
-  QAction *evalAllCellsAction;
-  QAction *evalAllLatexCellsAction;
-
-  QAction *aboutAction;
-  QAction *helpAction;
-  QAction *aboutQtAction;
-
-  QAction *facePlain;
   QAction *faceBold;
   QAction *faceItalic;
   QAction *faceUnderline;
 
-  QAction *sizeSmaller;
-  QAction *sizeLarger;
-  QAction *size8pt;
-  QAction *size9pt;
-  QAction *size10pt;
-  QAction *size12pt;
-  QAction *size14pt;
-  QAction *size16pt;
-  QAction *size18pt;
-  QAction *size20pt;
-  QAction *size24pt;
-  QAction *size36pt;
-  QAction *size72pt;
   QAction *sizeOther;
-
-  QAction *stretchUltraCondensed;
-  QAction *stretchExtraCondensed;
-  QAction *stretchCondensed;
-  QAction *stretchSemiCondensed;
-  QAction *stretchUnstretched;
-  QAction *stretchSemiExpanded;
-  QAction *stretchExpanded;
-  QAction *stretchExtraExpanded;
-  QAction *stretchUltraExpanded;
-
-  QAction *colorBlack;
-  QAction *colorWhite;
-  QAction *color10Gray;
-  QAction *color33Gray;
-  QAction *color50Gray;
-  QAction *color66Gray;
-  QAction *color90Gray;
-  QAction *colorRed;
-  QAction *colorGreen;
-  QAction *colorBlue;
-  QAction *colorCyan;
-  QAction *colorMagenta;
-  QAction *colorYellow;
   QAction *colorOther;
 
   QAction *chooseFont;
-
-  QAction *alignmentLeft;
-  QAction *alignmentRight;
-  QAction *alignmentCenter;
-  QAction *alignmentJustify;
-  QAction *verticalNormal;
-  QAction *verticalSub;
-  QAction *verticalSuper;
 
   QAction *borderOther;
   QAction *marginOther;
@@ -352,25 +257,8 @@ private:
 
   QAction *insertImageAction;
   QAction *insertLinkAction;
-  QAction *importOldFile;
-  QAction *exportPureText;
 
 #if USE_OMSKETCH
-//Added by jhansi
-  QAction *insertSketch;
-  QAction *insertSketchImage;
-  QAction *editSketchImage;
-  QAction *editSketchAttributes;
-
-  QString imageFileName;
-
-  //vector to hold the stored image file names,position of in cell and text of the cell
-  QVector<QString> filenames;
-  QVector<QString> onbfilenames;
-  QVector<QString> positions;
-  QVector<QString> texts;
-  QVector<QString> cellIds;
-
   Tools *window;
   bool isShown;
 #endif
@@ -379,7 +267,7 @@ private:
   QHash<QString, QAction*> fonts_;
   QHash<QString, QAction*> sizes_;
   QHash<int, QAction*> stretchs_;
-  QHash<QAction*, QColor*> colors_;
+  QHash<QAction*, QColor> colors_;
   QHash<int, QAction*> alignments_;
   QHash<int, QAction*> verticals_;
   QHash<int, QAction*> borders_;
@@ -389,7 +277,7 @@ private:
 
   //Change to Document.
   CellApplication *app_;
-  Document *subject_;
+  std::unique_ptr<Document> subject_;
 
   //list<Document *> opendocs_;
   QString filename_;

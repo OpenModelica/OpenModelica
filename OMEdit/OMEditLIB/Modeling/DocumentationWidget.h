@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -39,14 +44,15 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+#include "Modeling/qtwebengine_compat.h" // QtWebEngine unavailable on wasm / stubbed on MSVC
+#else
 #include <QWebEngineView>
 #include <QWebEnginePage>
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-#include <QWebView>
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+#include <QWebEngineNewWindowRequest>
+#endif
+#endif
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -83,19 +89,14 @@ public:
     InfoHeader
   };
   DocumentationWidget(QWidget *pParent = 0);
-#ifndef OM_DISABLE_DOCUMENTATION
   ~DocumentationWidget();
   QAction* getPreviousAction() {return mpPreviousAction;}
   QAction* getNextAction() {return mpNextAction;}
   DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
-#ifndef OM_DISABLE_DOCUMENTATION
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QVariant runJavaScript(const QString &javaScript);
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
   void saveScrollPosition();
@@ -114,12 +115,8 @@ private:
   QAction *mpEditInfoHeaderAction;
   QAction *mpSaveAction;
   QAction *mpCancelAction;
-#else // #ifndef OM_DISABLE_DOCUMENTATION
-  bool isEditingDocumentation() const {return false;}
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   DocumentationViewer *mpDocumentationViewer;
   QFrame *mpDocumentationViewerFrame;
-#ifndef OM_DISABLE_DOCUMENTATION
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
@@ -192,11 +189,8 @@ public slots:
   void numberedList();
   void createLink();
   void removeLink();
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 class DocumentationPage : public QWebEnginePage
 {
   Q_OBJECT
@@ -213,22 +207,13 @@ private slots:
 };
 
 class DocumentationViewer : public QWebEngineView
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-class DocumentationViewer : public QWebView
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-#else // #ifndef OM_DISABLE_DOCUMENTATION
-class DocumentationViewer : public QWidget
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
 {
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   DocumentationPage *mpDocumentationPage;
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
-#ifndef OM_DISABLE_DOCUMENTATION
   void setFocusInternal();
 private:
   void createActions();
@@ -240,16 +225,13 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+  void newWindowRequested(QWebEngineNewWindowRequest &request);
+#endif
 protected:
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   bool mIsContentEditable;
 };
 

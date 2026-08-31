@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -237,9 +234,9 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
       for(i=0; i<solverData->n;i++)
       {
-        buffer[0] = 0;
+        char *p = buffer;
         for(j=0; j<solverData->n; j++)
-          sprintf(buffer, "%s%10g ", buffer, fjac[i*n+j]);
+          p += sprintf(p, "%10g ", fjac[i*n+j]);
         infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
       }
       messageClose(OMC_LOG_NLS_JAC);
@@ -478,8 +475,13 @@ void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
     jac_row_start = i*solverData->n;
     scalingVector[i] = _omc_gen_maximumVectorNorm(&(solverData->fjac[jac_row_start]), solverData->n);
     if(scalingVector[i] <= 0.0) {
-      warningStreamPrint(OMC_LOG_NLS_V, 1, "Jacobian matrix is singular.");
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Jacobian matrix is singular. Scaling of residual entry is set to 1e-16.");
       scalingVector[i] = 1e-16;
+    }
+    else if (!isfinite(scalingVector[i]))
+    {
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Jacobian entry is inf or nan. Scaling of residual entry will be set to 1.0.");
+      scalingVector[i] = 1.0;
     }
   }
 }
@@ -515,7 +517,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
                        double current_fvec_enorm, int n, double* fvec, double* lambda, int* k,
                        DATA_NEWTON* solverData, NLS_USERDATA* userData)
 {
-  int i,j=0;
+  int i;
   double enorm_new, treshold = 1e-2;
   modelica_boolean startDamping = FALSE; /* remember to close log message */
 
@@ -532,8 +534,6 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
   while (enorm_new >= current_fvec_enorm)
   {
-    j++;
-
     *lambda*=0.5;
 
 
@@ -589,7 +589,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
                         double current_fvec_enorm, int n, double* fvec, int* k,
                         DATA_NEWTON* solverData, NLS_USERDATA* userdata)
 {
-  int i,j=0;
+  int i;
   double enorm_new, treshold = 1e-4, lambda=1;
   modelica_boolean startDamping = FALSE; /* remember to close log message */
 
@@ -606,8 +606,6 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
   while (enorm_new >= current_fvec_enorm)
   {
-    j++;
-
     lambda*=damping_parameter;
 
     infoStreamPrint(OMC_LOG_NLS_V, 0, "lambda = %e, k = %d", lambda, *k);

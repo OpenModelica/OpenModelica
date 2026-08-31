@@ -23,8 +23,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 # Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
 # e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used for compilation
-# of simulationruntimemsvc by the Makefile.omdev.mingw makefiles.
+# included. The old (cmake 2.8) cmake source in there is used by the legacy
+# standalone Autoconf/Make build.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
@@ -35,10 +35,18 @@ include(cmake/omc_check_exists.cmake)
 ## Get the revision info. The version is saved in the variable SOURCE_REVISION
 include(cmake/omc_git_revision.cmake)
 
+# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W/OpenBLAS/Boost.
+# Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
+include(${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/Compiler/OpenModelica.rs/.cmake/windows-deps.cmake)
+
 # Include the small thread library setup we have. This provides the library
 # OMCPThreads::OMCPThreads which gives us a PThreads library on Windows as
 # well as linux. See the file for more info.
 include(cmake/OMCPThreads.cmake)
+
+if (MINGW)
+SET(IS_MINGW64 ON)
+endif(MINGW)
 
 omc_add_to_report(CMAKE_VERSION)
 # Add the compiler ids to the report for convenience.
@@ -49,9 +57,45 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 
 ## OPTIONS #################################################################################################
-omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+
+# Web (wasm) target: build the browser/Node WebAssembly bundle of omc. It is a
+# Rust-omc build (OM_OMC_ENABLE_RUST) compiled for wasm32-unknown-unknown, so the
+# C libraries and the *Qt* GUI clients are unused. We force Rust mode on and skip
+# the native runtime / 3rdParty / libraries / testsuite subdirectories. The Qt
+# clients (the OM_ENABLE_GUI_CLIENTS subdirs below) are guarded with NOT
+# OM_OMC_WASM rather than forcing the flag off, so OM_ENABLE_GUI_CLIENTS still
+# carries the user's intent into the wasm build — where it selects the OMShell
+# *web* pages (omshell_egui + omshell_dioxus; see omc_rust_setup_wasm). Mode/
+# profile is chosen with RUST_OMC_WASM_MODE.
+omc_option(OM_OMC_WASM "Build only the WebAssembly (browser/Node) omc bundle." OFF)
+if(OM_OMC_WASM)
+  set(OM_OMC_ENABLE_RUST ON CACHE BOOL "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." FORCE)
+endif()
+
+## On Conda-forge this should be disabled
+omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
+mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
+
+cmake_dependent_option(OM_ENABLE_OMSIMULATOR "Enable OMSimulator" ON "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSIMULATOR)
+
+# GUI options
+omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+# Qt version (5/6) used by the GUI clients.
+set(OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
+# The Qt clients are unused in the wasm build, so force them off when OM_OMC_WASM is set.
+cmake_dependent_option(OM_ENABLE_OMSHELL    "Enable OMShell gui client"    ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_ENABLE_OMSENS_QT  "Enable OMSens_Qt gui client"  ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+cmake_dependent_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_ENABLE_OMSHELL)
+omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
+omc_add_to_report(OM_ENABLE_OMEDIT)
+omc_add_to_report(OM_ENABLE_OMSENS_QT)
+omc_add_to_report(OM_OMOPTIM_ENABLE)
 
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
@@ -63,9 +107,9 @@ omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
 
 
 ### Standards ###############################################################################################
-## Set the C standard to use. Unfortunately, we can not enforce c90.
-## Our sources contain a lot of c99 and gnu extension code.
-# set(CMAKE_C_STANDARD 90)
+## Set the C standard to use. Unfortunately, we can not enforce C17.
+## Our sources contain a lot of gnu extension code / C23 features.
+# set(CMAKE_C_STANDARD 17)
 
 ## Set the C++ standard to use. We use C++17 for everything in OpenModelica now.
 ## Note that 3rdParty libraries might set their own standards.
@@ -108,6 +152,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Installation configurations ###############################################################################
 # Install following GNU conventions (i.e., bin, lib, include, share ...)
+# Force CMAKE_INSTALL_LIBDIR to "lib" instead of letting GNUInstallDirs default to "lib64" on
+# RHEL-based distros (Fedora, AlmaLinux, ...). The compiler hardcodes "<omhome>/lib/..." when
+# generating linker flags for simulated models (see Settings.getInstallationDirectoryPath() usage
+# in OMCompiler/Compiler/Script/CevalScriptBackend.mo), so the install layout must match.
+set(CMAKE_INSTALL_LIBDIR "lib")
 include(GNUInstallDirs)
 
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
@@ -160,9 +209,66 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 # issues after it.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
 
+## BLAS/LAPACK detection ###################################################################################
+## Detect BLAS and LAPACK once, here at the top level, before descending into the subprojects.
+##
+## When no BLA_VENDOR is pinned, CMake's stock FindBLAS/FindLAPACK modules sweep *every* known vendor
+## (Intel MKL, ACML, ARMPL, Apple, OpenBLAS, BLIS, ATLAS, Goto, Generic, ...), issuing hundreds of
+## find_library() calls. On a machine without a vendor BLAS this all-vendor sweep dominates the configure
+## (see issue #15904: ~200s of a ~285s configure). There are 18+ find_package(BLAS|LAPACK) call sites across
+## the tree (SimulationRuntime/c, Compiler/runtime, sundials, primme, CMinpack, Ipopt/MUMPS, OMSI, OMSICpp,
+## ...), and each one can re-trigger the full sweep, compounding the cost.
+##
+## FindBLAS/FindLAPACK clear the *normal* variables BLAS_LIBRARIES/LAPACK_LIBRARIES at entry, then guard
+## their all-vendor sweep with `if(NOT BLAS_LIBRARIES)` / `if(NOT LAPACK_LIBRARIES)`. A plain normal variable
+## inherited by a child scope is therefore wiped before the guard runs, so propagation alone does NOT prevent
+## a re-sweep. A *cache* entry of the same name, however, shows through `set(<var>)` (which only unsets the
+## normal variable) and trips the guard -- skipping the sweep entirely.
+##
+## So: detect once here, and (when found) publish the results as cache entries. Every subsequent
+## find_package(BLAS|LAPACK) anywhere in the tree -- including inside the OMCompiler/3rdParty and OMSimulator
+## submodules, which we cannot edit from this repository -- then short-circuits to the cached libraries. The
+## expensive vendor sweep runs at most once per configure instead of once per call site. Autodetection is
+## preserved (we don't pin BLA_VENDOR); if nothing is found here, the cache stays empty and a REQUIRED child
+## call still re-runs and errors exactly as before.
+## Detect and cache BLAS first: find_package(LAPACK) internally re-runs find_package(BLAS), so publishing
+## the BLAS cache up front lets LAPACK's own BLAS lookup short-circuit too -- otherwise the vendor sweep
+## would still run twice here.
+find_package(BLAS)
+if(BLAS_FOUND AND BLAS_LIBRARIES)
+  set(BLAS_LIBRARIES "${BLAS_LIBRARIES}" CACHE STRING "BLAS libraries (detected once at the top level)" FORCE)
+  set(BLAS_LINKER_FLAGS "${BLAS_LINKER_FLAGS}" CACHE STRING "BLAS linker flags (detected once at the top level)" FORCE)
+  mark_as_advanced(BLAS_LIBRARIES BLAS_LINKER_FLAGS)
+endif()
+find_package(LAPACK)
+if(LAPACK_FOUND AND LAPACK_LIBRARIES)
+  set(LAPACK_LIBRARIES "${LAPACK_LIBRARIES}" CACHE STRING "LAPACK libraries (detected once at the top level)" FORCE)
+  set(LAPACK_LINKER_FLAGS "${LAPACK_LINKER_FLAGS}" CACHE STRING "LAPACK linker flags (detected once at the top level)" FORCE)
+  mark_as_advanced(LAPACK_LIBRARIES LAPACK_LINKER_FLAGS)
+endif()
+
 ## Subdirectories ##########################################################################################
 # If asked for encryption support, add and configure the OMEncryption directory.
 if(OM_ENABLE_ENCRYPTION)
+  # OMEncryption builds OpenSSL, which is configured by a perl script that, for its MinGW
+  # targets, only accepts a perl reporting paths with forward slashes. In an MSYS2 shell the
+  # first perl in PATH is the MinGW one, which reports MSWin32 style paths and stops that
+  # configure step with "This perl implementation doesn't produce Unix like paths"; the MSYS
+  # perl, which sits in the same directory as cygpath, is the one that works. Point OMEncryption
+  # at it so the encryption build does not depend on the order of PATH. If it is not there we
+  # leave SEMLA_PERL unset and OMEncryption looks for a perl of its own. A perl given on the
+  # command line wins, and it has to be a path CMake can run, so -DSEMLA_PERL=C:/msys64/usr/bin/perl.exe
+  # rather than -DSEMLA_PERL=/usr/bin/perl.exe (an MSYS shell rewrites the latter for you).
+  if(WIN32 AND NOT MSVC AND NOT SEMLA_PERL)
+    find_program(OM_MSYS_CYGPATH NAMES cygpath)
+    mark_as_advanced(OM_MSYS_CYGPATH)
+    if(OM_MSYS_CYGPATH)
+      get_filename_component(om_msys_bin_dir "${OM_MSYS_CYGPATH}" DIRECTORY)
+      find_program(SEMLA_PERL NAMES perl HINTS "${om_msys_bin_dir}" NO_DEFAULT_PATH
+                   DOC "perl used to configure OpenSSL")
+    endif()
+  endif()
+
   omc_add_subdirectory(OMEncryption)
 endif()
 
@@ -173,21 +279,43 @@ enable_testing()
 
 omc_add_subdirectory(OMCompiler)
 
-if(OM_ENABLE_GUI_CLIENTS)
-  # select qt version 5/6
-  set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
-
-  omc_add_subdirectory(OMParser)
-  omc_add_subdirectory(OMPlot)
-  omc_add_subdirectory(OMShell)
-  omc_add_subdirectory(OMNotebook)
+if(OM_ENABLE_OMSIMULATOR)
   omc_add_subdirectory(OMSimulator)
+endif()
+
+# OMPlot provides OMPlotLib and the omqwt target, needed by OMEdit, OMNotebook
+# and OMOptim, so build it whenever any of those clients is enabled.
+if(OM_ENABLE_OMEDIT OR OM_ENABLE_OMNOTEBOOK OR OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMPlot)
+endif()
+
+if(OM_ENABLE_OMEDIT)
+  omc_add_subdirectory(OMParser)
   omc_add_subdirectory(OMEdit)
+endif()
+
+if(OM_ENABLE_OMSHELL)
+  omc_add_subdirectory(OMShell)
+endif()
+
+if(OM_ENABLE_OMNOTEBOOK)
+  omc_add_subdirectory(OMNotebook)
+endif()
+
+if(OM_ENABLE_OMSENS_QT)
   omc_add_subdirectory(OMSens_Qt)
 endif()
 
-omc_add_subdirectory(libraries)
-omc_add_subdirectory(testsuite)
+if(OM_OMOPTIM_ENABLE)
+  omc_add_subdirectory(OMOptim)
+endif()
+
+# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+# skip them so `make all` builds only the wasm target in that mode.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(libraries)
+  omc_add_subdirectory(testsuite)
+endif()
 
 ## Packaging ##########################################################################################
 # Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.

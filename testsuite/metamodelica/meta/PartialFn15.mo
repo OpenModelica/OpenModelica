@@ -2,6 +2,7 @@
 // keywords: PartialFn
 // status:  correct
 // cflags: -g=MetaModelica -d=noevalfunc,gen -d=-newInst
+// suite: metamodelica
 //
 // Using lists of function pointers
 //

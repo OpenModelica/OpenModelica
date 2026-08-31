@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -44,8 +41,8 @@
 #include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
-#include "util/parallel_helper.h"
 #include "util/varinfo.h"
+#include "util/omc_strdup.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
@@ -98,7 +95,6 @@ static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   int retVal;
 
   switch(solverInfo->solverMethod)
@@ -107,13 +103,11 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     retVal = euler_ex_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -121,7 +115,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     retVal = dassl_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
 #endif
 
@@ -135,7 +128,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
 #endif
 #ifdef WITH_SUNDIALS
@@ -143,13 +135,11 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
   case S_CVODE:
     retVal = cvode_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
     return retVal;
 #endif
   case S_SYM_SOLVER:
@@ -170,7 +160,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   default:
     throwStreamPrint(threadData, "Unhandled case in solver_main_step.");
   }
-  TRACE_POP
   return 1;
 }
 
@@ -183,7 +172,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
  */
 int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   int retValue = 0;
   int i;
 
@@ -287,12 +275,47 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 #endif
   default:
     errorStreamPrint(OMC_LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
-    TRACE_POP
     return 1;
   }
 
-  TRACE_POP
   return retValue;
+}
+
+/*! \fn updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [solverInfo]
+ *
+ *  Re-read the states' nominal (and, for gbode, min and max) attributes. A
+ *  nominal that is a parameter expression is only computed by
+ *  updateBoundVariableAttributes, inside initializeModel, which runs after
+ *  initializeSolverData because DAE mode needs the solver during initialization;
+ *  until then the solver holds the modelDescription default of 1.0.
+ */
+int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  switch (solverInfo->solverMethod)
+  {
+  case S_GBODE:
+    gbode_setVarAttributes(data, solverInfo->solverData);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case S_DASSL:
+    dassl_setNominals(data, solverInfo->solverData);
+    break;
+#endif
+#ifdef WITH_SUNDIALS
+  case S_IDA:
+    return ida_solver_setNominals(data, threadData, solverInfo->solverData);
+  case S_CVODE:
+    return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
+#endif
+  default:
+    break;
+  }
+
+  return 0;
 }
 
 /*! \fn freeSolver(DATA* data, SOLVER_INFO* solverInfo)
@@ -372,7 +395,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 int initializeModel(DATA* data, threadData_t *threadData, const char* init_initMethod,
     const char* init_file, double init_time)
 {
-  TRACE_PUSH
   int retValue = 0;
   int usedLocal = 0;
 
@@ -439,7 +461,6 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     rt_accumulate(SIM_TIMER_INIT);
   }
 
-  TRACE_POP
   return retValue;
 }
 
@@ -454,8 +475,6 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
  */
 int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd)
 {
-  TRACE_PUSH
-
   int retValue = 0;
   int ui;
   double t, total100;
@@ -487,7 +506,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   /* we have output variables in the command line -output a,b,c */
   if(outputVariablesAtEnd)
   {
-    writeOutputVars(strdup(outputVariablesAtEnd), data);
+    writeOutputVars(omc_strdup(outputVariablesAtEnd), data);
   }
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_STATS))
@@ -534,15 +553,8 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats.nCallsODE);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats.nCallsJacobian);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
-      infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenveTestFailures);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenceTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
-#ifdef USE_PARJAC
-      infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
-      int chunk_size;
-      omp_sched_t kind;
-      omp_get_schedule(&kind, &chunk_size);
-      infoStreamPrint(OMC_LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
-#endif
 
       messageClose(OMC_LOG_STATS);
     }
@@ -583,7 +595,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
     messageClose(OMC_LOG_STATS_V);
 
-    messageClose(OMC_LOG_STATS_V);
+    messageClose(OMC_LOG_STATS_V);  // closes section "function calls"
 
     infoStreamPrint(OMC_LOG_STATS_V, 1, "linear systems");
     for(ui=0; ui<data->modelData->nLinearSystems; ui++)
@@ -595,11 +607,10 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], OMC_LOG_STATS_V);
     messageClose(OMC_LOG_STATS_V);
 
-    messageClose(OMC_LOG_STATS);
+    messageClose(OMC_LOG_STATS);  // closes section "### STATISTICS ###"
     rt_tick(SIM_TIMER_TOTAL);
   }
 
-  TRACE_POP
   return retValue;
 }
 
@@ -618,8 +629,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
     double init_time, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
 {
-  TRACE_PUSH
-
   int i, retVal = 1, initSolverInfo = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
@@ -634,7 +643,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
 #ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Ipopt is needed but not available.");
-    TRACE_POP
     return 1;
 #endif
   default:
@@ -659,7 +667,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (!data->modelData->create_linearmodel && simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -682,6 +690,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (0 == retVal){
     retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
     omc_alloc_interface.collect_a_little();
+  }
+
+  /* the nominal values are only final now */
+  if (0 == retVal){
+    retVal = updateSolverNominals(data, threadData, &solverInfo);
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -786,7 +799,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (!retVal)
     infoStreamPrint(OMC_LOG_SUCCESS, 0, "The simulation finished successfully.");
 
-  TRACE_POP
   return retVal;
 }
 
@@ -821,7 +833,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
 /***************************************    SYM_SOLVER     *********************************/
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
-  int retVal,i,j;
+  int retVal = 0, i;
 
   modelica_integer nStates = data->modelData->nStates;
   SIMULATION_DATA *sData = data->localData[0];
@@ -849,7 +861,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 
     /* update der(x) */
-    for(i=0; i<nStates; ++i, ++j)
+    for(i=0; i<nStates; ++i)
     {
       stateDer[i] = (sData->realVars[i]-data->simulationInfo->inlineData->algOldVars[i])/solverInfo->currentStepSize;
     }
@@ -967,7 +979,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
     for(i = 0; i < data->modelData->nVariablesInteger; i++)
       if(!strcmp(p, data->modelData->integerVarsData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[i]);
     for(i = 0; i < data->modelData->nVariablesBoolean; i++)
       if(!strcmp(p, data->modelData->booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
@@ -987,9 +999,9 @@ static void writeOutputVars(char* names, DATA* data)
       if(!strcmp(p, data->modelData->integerAlias[i].info.name))
       {
         if(data->modelData->integerAlias[i].negate)
-          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData->nAliasBoolean; i++)
       if(!strcmp(p, data->modelData->booleanAlias[i].info.name))
@@ -1010,7 +1022,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData->nParametersInteger; i++)
       if(!strcmp(p, data->modelData->integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->simulationInfo->integerParameter[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, data->simulationInfo->integerParameter[i]);
 
     for(i = 0; i < data->modelData->nParametersBoolean; i++)
       if(!strcmp(p, data->modelData->booleanParameterData[i].info.name))
@@ -1036,7 +1048,7 @@ void resetSolverStats(SOLVERSTATS* stats) {
   stats->nCallsODE = 0;
   stats->nCallsJacobian = 0;
   stats->nErrorTestFailures = 0;
-  stats->nConvergenveTestFailures = 0;
+  stats->nConvergenceTestFailures = 0;
 }
 
 /**
@@ -1053,5 +1065,5 @@ void addSolverStats(SOLVERSTATS* destStats, SOLVERSTATS* addStats) {
   destStats->nCallsODE                += addStats->nCallsODE;
   destStats->nCallsJacobian           += addStats->nCallsJacobian;
   destStats->nErrorTestFailures       += addStats->nErrorTestFailures;
-  destStats->nConvergenveTestFailures += addStats->nConvergenveTestFailures;
+  destStats->nConvergenceTestFailures += addStats->nConvergenceTestFailures;
 }

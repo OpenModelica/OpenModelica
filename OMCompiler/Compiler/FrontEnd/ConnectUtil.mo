@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -60,11 +64,13 @@ import ConnectionGraph;
 // protected imports
 protected
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEUtil;
 import Debug;
 import ElementSource;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
@@ -75,6 +81,7 @@ import SCodeUtil;
 import System;
 import Types;
 import Util;
+import Values;
 import Global;
 
 // Import some types from Connect.
@@ -101,7 +108,7 @@ algorithm
 
   try
     cr := PrefixUtil.prefixFirstCref(prefix);
-    pstr := ComponentReference.printComponentRefStr(cr);
+    pstr := ComponentReferenceBasics.printComponentRefStr(cr);
   else
     cr := DAE.WILD();
     pstr := "";
@@ -139,7 +146,7 @@ algorithm
     case (Sets.SETS(sets = node as SetTrieNode.SET_TRIE_NODE()),
           Sets.SETS())
       algorithm
-        _ := setTrieGetNode(setTrieNodeName(childSets.sets), node.nodes);
+        setTrieGetNode(setTrieNodeName(childSets.sets), node.nodes);
       then
         parentSets;
 
@@ -162,7 +169,7 @@ protected function isEmptySet
   input Sets sets;
   output Boolean isEmpty;
 algorithm
-  isEmpty := match(sets)
+  isEmpty := match sets
     case Sets.SETS(sets = SetTrieNode.SET_TRIE_NODE(nodes = {}),
       connections = {}, outerConnects = {}) then true;
     else false;
@@ -237,7 +244,7 @@ protected function makeConnectorType
 protected
   Option<DAE.ComponentRef> flowName;
 algorithm
-  ty := match(connectorType)
+  ty := match connectorType
     case DAE.POTENTIAL() then ConnectorType.EQU();
     case DAE.FLOW() then ConnectorType.FLOW();
     case DAE.STREAM(flowName) then ConnectorType.STREAM(flowName);
@@ -305,7 +312,7 @@ public function isExpandable
   input DAE.ComponentRef name;
   output Boolean expandableConnector;
 algorithm
-  expandableConnector := match(name)
+  expandableConnector := match name
     case DAE.CREF_IDENT()
       then Types.isExpandableConnector(name.identType);
 
@@ -353,7 +360,7 @@ protected
   DAE.ComponentRef name;
 algorithm
   for var in variables loop
-    _ := match var
+    () := match var
       // do not return the ones that have a binding as they are used
       // TODO: actually only if their binding is not another expandable??!!
       case DAE.VAR(componentRef = name, binding = NONE())
@@ -377,7 +384,7 @@ protected function getStreamAndFlowVariables
   output list<DAE.Var> streams = {};
 algorithm
   for var in variables loop
-    _ := match var
+    () := match var
       case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = DAE.FLOW()))
         algorithm
           flows := var :: flows;
@@ -455,7 +462,7 @@ algorithm
     // Array
     case DAE.T_ARRAY()
       algorithm
-        dims := Types.getDimensions(ty);
+        dims := TypesDump.getDimensions(ty);
         cr := DAE.CREF_IDENT(name, ty, {});
       then
         expandArrayCref(cr, dims);
@@ -509,7 +516,7 @@ protected function reverseEnumType
   in the list instead of the last (more efficient)."
   input output DAE.Dimension dim;
 algorithm
-  _ := match dim
+  () := match dim
     case DAE.DIM_ENUM()
       algorithm
         dim.literals := listReverse(dim.literals);
@@ -588,7 +595,7 @@ protected function addStreamFlowAssociation2
   input DAE.ComponentRef flowCref;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm
         node.flowAssociation := SOME(flowCref);
@@ -640,8 +647,8 @@ protected function outerConnectionMatches
 algorithm
   matches := match oc
     case OuterConnect.OUTERCONNECT()
-      then ComponentReference.crefEqual(oc.cr1,cr1) and ComponentReference.crefEqual(oc.cr2,cr2) or
-           ComponentReference.crefEqual(oc.cr1,cr2) and ComponentReference.crefEqual(oc.cr2,cr1);
+      then ComponentReferenceBasics.crefEqual(oc.cr1,cr1) and ComponentReferenceBasics.crefEqual(oc.cr2,cr2) or
+           ComponentReferenceBasics.crefEqual(oc.cr1,cr2) and ComponentReferenceBasics.crefEqual(oc.cr2,cr1);
   end match;
 end outerConnectionMatches;
 
@@ -912,7 +919,7 @@ algorithm
     // A simple identifier, just create a new leaf.
     case DAE.CREF_IDENT()
       algorithm
-        id := ComponentReference.printComponentRefStr(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cref);
       then
         setTrieNewLeaf(id, setElementName(element, cref));
 
@@ -920,8 +927,8 @@ algorithm
     // I.e. a.b.c becomes NODE(a, {NODE(b, {NODE(c)})});
     case DAE.CREF_QUAL()
       algorithm
-        cr := ComponentReference.crefFirstCref(cref);
-        id := ComponentReference.printComponentRefStr(cr);
+        cr := ComponentReferenceBasics.crefFirstCref(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cr);
         node := setTrieNewNode(cref.componentRef, element);
       then
         SetTrieNode.SET_TRIE_NODE(id, cr, {node}, 0);
@@ -1046,10 +1053,10 @@ protected function setTrieAddLeafElement
   input ConnectorElement element;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm
-        _ := match element.face
+        () := match element.face
           case Face.INSIDE()
             algorithm
               node.insideElement := SOME(element);
@@ -1091,7 +1098,7 @@ protected
   ConnectorElement el;
 algorithm
   cref := getElementName(element);
-  el_cr := ComponentReference.crefLastCref(cref);
+  el_cr := ComponentReferenceBasics.crefLastCref(cref);
   el := setElementName(element, el_cr);
   trie := setTrieUpdate(cref, el, trie, setTrieAddLeafElement);
 end setTrieAdd;
@@ -1123,20 +1130,20 @@ protected function setTrieUpdate<Arg>
     input output SetTrieNode node;
   end UpdateFunc;
 algorithm
-  _ := match(cref, trie)
+  () := match(cref, trie)
     local
       String id;
 
     case (DAE.CREF_QUAL(), SetTrieNode.SET_TRIE_NODE())
       algorithm
-        id := ComponentReference.printComponentRef2Str(cref.ident, cref.subscriptLst);
+        id := ComponentReferenceBasics.printComponentRef2Str(cref.ident, cref.subscriptLst);
         trie.nodes := setTrieUpdateNode(id, cref, cref.componentRef, arg, updateFunc, trie.nodes);
       then
         ();
 
     case (DAE.CREF_IDENT(), SetTrieNode.SET_TRIE_NODE())
       algorithm
-        id := ComponentReference.printComponentRef2Str(cref.ident, cref.subscriptLst);
+        id := ComponentReferenceBasics.printComponentRef2Str(cref.ident, cref.subscriptLst);
         trie.nodes := setTrieUpdateLeaf(id, arg, trie.nodes, updateFunc);
       then
         ();
@@ -1189,13 +1196,13 @@ algorithm
   nodes := match cref
     local
       String id;
-      DAE.ComponentRef cr, rest_cr;
+      DAE.ComponentRef cr;
       SetTrieNode node;
       list<SetTrieNode> child_nodes;
 
     case DAE.CREF_IDENT()
       algorithm
-        id := ComponentReference.printComponentRefStr(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cref);
         node := SetTrieNode.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
         node := updateFunc(arg, node);
       then
@@ -1203,8 +1210,8 @@ algorithm
 
     case DAE.CREF_QUAL()
       algorithm
-        cr := ComponentReference.crefFirstCref(cref);
-        id := ComponentReference.printComponentRefStr(cr);
+        cr := ComponentReferenceBasics.crefFirstCref(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cr);
         child_nodes := setTrieUpdateNode2(cref.componentRef, arg, updateFunc, {});
       then
         SetTrieNode.SET_TRIE_NODE(id, cr, child_nodes, 0) :: nodes;
@@ -1268,7 +1275,7 @@ protected function setTrieTraverseLeaves<Arg>
     input output Arg arg;
   end UpdateFunc;
 algorithm
-  _ := match node
+  () := match node
     local
       list<SetTrieNode> nodes;
 
@@ -1298,13 +1305,12 @@ protected function setTrieGet
 protected
   list<SetTrieNode> nodes;
   String subs_str, id_subs, id_nosubs;
-  SetTrieNode node;
 algorithm
   SetTrieNode.SET_TRIE_NODE(nodes = nodes) := trie;
 
-  id_nosubs := ComponentReference.crefFirstIdent(cref);
-  subs_str := List.toString(ComponentReference.crefFirstSubs(cref),
-    ExpressionDump.printSubscriptStr, "", "[", ",", "]", false);
+  id_nosubs := ComponentReferenceBasics.crefFirstIdent(cref);
+  subs_str := List.toStringCustom(ComponentReference.crefFirstSubs(cref),
+    ExpressionBasics.printSubscriptStr, "", "[", ",", "]", false);
   id_subs := id_nosubs + subs_str;
 
   try
@@ -1399,7 +1405,6 @@ protected
   list<Set> set_list;
   array<Set> set_array;
   DAE.DAElist dae, dae2;
-  Boolean has_stream, has_expandable, has_cardinality;
   ConnectionGraph.DaeEdges broken, connected;
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
@@ -1442,7 +1447,7 @@ protected
   list<DAE.ComponentRef> cref_set;
 algorithm
   for set in sets loop
-    _ := match set
+    () := match set
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           cref_set := getAllEquCrefs({set});
@@ -1473,21 +1478,21 @@ protected
   list<DAE.ComponentRef> setCrefs, lst;
 algorithm
   setCrefs := getAllEquCrefs({set});
-  lst := List.intersectionOnTrue(setCrefs, nonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
+  lst := List.intersectionOnTrue(setCrefs, nonUsefulExpandable, ComponentReferenceBasics.crefEqualNoStringCompare);
   isInSet := listEmpty(lst);
 end removeCrefsFromSets2;
 
 function mergeEquSetsAsCrefs
   input output list<list<DAE.ComponentRef>> setsAsCrefs;
 algorithm
-  setsAsCrefs := match(setsAsCrefs)
+  setsAsCrefs := match setsAsCrefs
     local
       list<DAE.ComponentRef> set;
       list<list<DAE.ComponentRef>> rest, sets;
 
-    case ({}) then {};
-    case ({set}) then {set};
-    case (set::rest)
+    case {} then {};
+    case {set} then {set};
+    case set::rest
       algorithm
         (set, rest) := mergeWithRest(set, rest);
         sets := mergeEquSetsAsCrefs(rest);
@@ -1510,8 +1515,8 @@ algorithm
     case (set1, set2::rest)
       algorithm
          // Could be faster if we had a function for intersectionExist in a set
-         b := listEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
-         set := if not b then List.unionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare) else set1;
+         b := listEmpty(List.intersectionOnTrue(set1, set2, ComponentReferenceBasics.crefEqualNoStringCompare));
+         set := if not b then List.unionOnTrue(set1, set2, ComponentReferenceBasics.crefEqualNoStringCompare) else set1;
          (set, rest) := mergeWithRest(set, rest, List.consOnTrue(b, set2, acc));
       then (set, rest);
   end match;
@@ -1785,7 +1790,7 @@ protected function equSetElementLess
   input ConnectorElement element2;
   output Boolean isLess;
 algorithm
-  isLess := ComponentReference.crefSortFunc(element2.name, element1.name);
+  isLess := ComponentReferenceBasics.crefSortFunc(element2.name, element1.name);
 end equSetElementLess;
 
 protected function setArrayGet
@@ -1813,7 +1818,6 @@ protected
   list<ConnectorElement> eql;
   list<list<ConnectorElement>> eqll;
   Real flowThreshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-  DAE.DAElist dae;
 algorithm
   for set in sets loop
     DAE := match set
@@ -1867,7 +1871,7 @@ protected function generateEquEquations
 protected
   list<DAE.Element> eql = {};
   ConnectorElement e1;
-  DAE.ElementSource src, x_src, y_src;
+  DAE.ElementSource src;
   DAE.ComponentRef x, y;
 algorithm
   if listEmpty(elements) then
@@ -1910,7 +1914,7 @@ algorithm
       DAE.ComponentRef lhs;
 
     case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
-      then not ComponentReference.crefPrefixOf(lhs, lhsCref);
+      then not ComponentReferenceBasics.crefPrefixOf(lhs, lhsCref);
 
     else false;
   end match;
@@ -1980,7 +1984,7 @@ protected function increaseRefCount
   input Integer amount;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_NODE()
       algorithm
         node.connectCount := node.connectCount + amount;
@@ -2115,7 +2119,6 @@ protected
   list<ConnectorElement> outside;
   DAE.Exp cref_exp, res;
   DAE.ElementSource src;
-  DAE.DAElist dae;
   DAE.ComponentRef name;
   list<DAE.Element> eql = {};
 algorithm
@@ -2146,7 +2149,7 @@ protected function streamSumEquationExp
   input Real flowThreshold;
   output DAE.Exp sumExp;
 protected
-  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2;
 algorithm
   if listEmpty(outsideElements) then
     // No outside components.
@@ -2235,7 +2238,7 @@ protected function sumInside1
   output DAE.Exp exp;
 protected
   DAE.Exp stream_exp, flow_exp, flow_threshold;
-  DAE.Type flowTy, streamTy;
+  DAE.Type flowTy;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flowTy := Expression.typeof(flow_exp);
@@ -2301,7 +2304,6 @@ protected function makePositiveMaxCall
   annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.Type ty;
-  list<DAE.Var> attr;
   Option<DAE.Exp> nominal_oexp;
   DAE.Exp nominal_exp, flow_threshold;
 algorithm
@@ -2324,7 +2326,8 @@ algorithm
         false,
         false,
         DAE.NO_INLINE(),
-        DAE.NO_TAIL()));
+        DAE.NO_TAIL(),
+        DAE.NoReturn.RETURNS));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
@@ -2342,7 +2345,7 @@ algorithm
   // Only do this phase if we have any connection operators.
   if System.getHasStreamConnectors() or has_cardinality then
     flow_threshold := Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-    DAE := DAEUtil.traverseDAE(DAE, DAE.AvlTreePathFunction.Tree.EMPTY(),
+    DAE := DAEUtil.traverseDAE(DAE, AvlTreePathFunction.Tree.EMPTY(),
       function evaluateConnectionOperators2(
         hasCardinality = has_cardinality,
         setArray = setArray,
@@ -2422,7 +2425,7 @@ protected function mkArrayIfNeeded
   input DAE.Type ty;
   input output DAE.Exp exp;
 algorithm
-  exp := Expression.arrayFill(Types.getDimensions(ty), exp);
+  exp := Expression.arrayFill(TypesDump.getDimensions(ty), exp);
 end mkArrayIfNeeded;
 
 protected function evaluateInStream
@@ -2459,6 +2462,7 @@ algorithm
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
       ComponentReference.crefStr(streamCref) + "\n");
+    fail();
   end try;
 end evaluateInStream;
 
@@ -2538,7 +2542,7 @@ protected function evaluateActualStream
   output DAE.Exp exp;
 protected
   DAE.ComponentRef flow_cr;
-  DAE.Exp e, flow_exp, stream_exp, instream_exp, rel_exp;
+  DAE.Exp flow_exp, stream_exp, instream_exp, rel_exp;
   DAE.Type ety;
   Integer flow_dir;
 algorithm
@@ -2626,7 +2630,7 @@ protected function simplifyDAEElement
   input DAE.Element element;
   output list<DAE.Element> elements;
 algorithm
-  elements := matchcontinue(element)
+  elements := matchcontinue element
     local
       list<DAE.Exp> conds;
       list<list<DAE.Element>> branches;
@@ -2686,7 +2690,7 @@ protected function compareCrefStreamSet
   input ConnectorElement element;
   output Boolean matches;
 algorithm
-  matches := ComponentReference.crefEqualNoStringCompare(cref, element.name);
+  matches := ComponentReferenceBasics.crefEqualNoStringCompare(cref, element.name);
 end compareCrefStreamSet;
 
 public function componentFace
@@ -2719,7 +2723,7 @@ algorithm
       algorithm
        (_, _, DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
          := Lookup.lookupVar(FCore.emptyCache(), env,
-           ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT,{}));
+           ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT,{}));
       then Face.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
@@ -2745,15 +2749,15 @@ public function componentFaceType
   input DAE.ComponentRef inComponentRef;
   output Face outFace;
 algorithm
-  outFace := match (inComponentRef)
+  outFace := match inComponentRef
     // is a non-qualified cref => OUTSIDE
-    case (DAE.CREF_IDENT()) then Face.OUTSIDE();
+    case DAE.CREF_IDENT() then Face.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Face.OUTSIDE();
+    case DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))) then Face.OUTSIDE();
     // is a qualified cref and is an array of connectors => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))) then Face.OUTSIDE();
+    case DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Face.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
-    case (DAE.CREF_QUAL()) then Face.INSIDE();
+    case DAE.CREF_QUAL() then Face.INSIDE();
   end match;
 end componentFaceType;
 
@@ -2782,10 +2786,10 @@ protected function checkConnectorBalance2
   input SourceInfo info;
   output Boolean isBalanced = true;
 protected
-  String error_str, flow_str, potential_str, class_str;
+  String flow_str, potential_str, class_str;
 algorithm
   // Don't check connector balance for language version 2.x and earlier.
-  if Config.languageStandardAtMost(Config.LanguageStandard.'2.x') then
+  if Config.languageStandardAtMost(Config.LanguageStandard._2_x) then
     return;
   end if;
 
@@ -2846,7 +2850,7 @@ algorithm
       flowVars := flowVars + f * n;
       streamVars := streamVars + s * n;
     else
-      _ := match attr
+      () := match attr
         // A flow variable.
         case DAE.ATTR(connectorType = DAE.FLOW())
           algorithm
@@ -2920,7 +2924,7 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ConnectUtil.sizeOfType failed on " + Types.printTypeStr(ty));
+        Debug.traceln("- ConnectUtil.sizeOfType failed on " + TypesDump.printTypeStr(ty));
       then
         fail();
   end match;
@@ -2969,7 +2973,7 @@ public function isReferenceInConnects
   output Boolean isThere = false;
 algorithm
   for ce in connects loop
-    if ComponentReference.crefPrefixOf(cref, ce.name) then
+    if ComponentReferenceBasics.crefPrefixOf(cref, ce.name) then
       isThere := true;
       return;
     end if;
@@ -2993,7 +2997,7 @@ protected function removeReferenceFromConnects2
   input ConnectorElement element;
   output Boolean matches;
 algorithm
-  matches := ComponentReference.crefPrefixOf(cref, element.name);
+  matches := ComponentReferenceBasics.crefPrefixOf(cref, element.name);
 end removeReferenceFromConnects2;
 
 public function printSetsStr
@@ -3044,7 +3048,7 @@ protected function printLeafElementStr
   input Option<ConnectorElement> element;
   output String string;
 algorithm
-  string := match(element)
+  string := match element
     local
       ConnectorElement e;
       String res;
@@ -3066,7 +3070,7 @@ public function printElementStr
   input ConnectorElement element;
   output String string;
 algorithm
-  string := ComponentReference.printComponentRefStr(element.name) + " ";
+  string := ComponentReferenceBasics.printComponentRefStr(element.name) + " ";
   string := string + printFaceStr(element.face) + " ";
   string := string + printConnectorTypeStr(element.ty) + " [" + String(element.set) + "]";
 end printElementStr;
@@ -3108,7 +3112,7 @@ algorithm
       then "";
 
     case SOME(cr)
-      then " associated flow: " + ComponentReference.printComponentRefStr(cr);
+      then " associated flow: " + ComponentReferenceBasics.printComponentRefStr(cr);
 
   end match;
 end printOptFlowAssociation;
@@ -3153,7 +3157,7 @@ protected function getAllEquCrefs
   output list<DAE.ComponentRef> crefs = {};
 algorithm
   for set in sets loop
-    _ := match set
+    () := match set
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           for e in set.elements loop
@@ -3192,13 +3196,13 @@ algorithm
 
   // 1 - get all expandable crefs
   expandableVars := getExpandableVariablesWithNoBinding(elems);
-  // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 2 - remove all expandable without binding from the dae
   dae := DAEUtil.removeVariables(DAE, expandableVars);
   // 2 - get all expandable crefs used in the dae (without the expandable vars)
-  usedInDAE := DAEUtil.getAllExpandableCrefsFromDAE(dae);
-  // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  usedInDAE := getAllExpandableCrefsFromDAE(dae);
+  // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 3 - get all expandable crefs that are connected ONLY with expandable
   setsAsCrefs := getExpandableEquSetsAsCrefs(sets);
@@ -3206,11 +3210,11 @@ algorithm
   // TODO! FIXME! maybe we should do fixpoint here??
   setsAsCrefs := mergeEquSetsAsCrefs(setsAsCrefs);
   onlyExpandableConnected := getOnlyExpandableConnectedCrefs(setsAsCrefs);
-  // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 4 - subtract (2) from (3)
-  unnecessary := List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-  // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  unnecessary := List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReferenceBasics.crefEqualWithoutSubs);
+  // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 5 - remove unnecessary variables form the DAE
   DAE := DAEUtil.removeVariables(DAE, unnecessary);
@@ -3218,11 +3222,11 @@ algorithm
   sets := removeCrefsFromSets(sets, unnecessary);
 
   equVars := getAllEquCrefs(sets);
-  // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
-  expandableVars := List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-  // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
-  unnecessary := List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
-  // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
+  expandableVars := List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReferenceBasics.crefEqualWithoutSubs);
+  // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
+  unnecessary := List.setDifferenceOnTrue(expandableVars, equVars, ComponentReferenceBasics.crefEqualWithoutSubs);
+  // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
   DAE := DAEUtil.removeVariables(DAE, unnecessary);
 end removeUnusedExpandableVariablesAndConnections;
 
@@ -3235,6 +3239,70 @@ algorithm
     else false;
   end match;
 end isEquType;
+
+public function topLevelInput "author: PA
+  if variable is input declared at the top level of the model,
+  or if it is an input in a connector instance at top level return true."
+  input DAE.ComponentRef componentRef;
+  input DAE.VarDirection varDirection;
+  input DAE.ConnectorType connectorType;
+  input DAE.VarVisibility visibility = DAE.PUBLIC();
+  output Boolean isTopLevel;
+protected
+  // the new frontend only keeps top level inputs, obsoleting bogus check for DAE.CREF_IDENT
+  Boolean newInst = Flags.isSet(Flags.SCODE_INST);
+algorithm
+  isTopLevel := match (varDirection, componentRef, visibility, newInst)
+    case (          _,                _, DAE.PROTECTED(),    _) then false;
+    case (DAE.INPUT(),                _,               _, true) then true;
+    case (DAE.INPUT(), DAE.CREF_IDENT(),               _,    _) then true;
+    case (DAE.INPUT(),                _,               _,    _)
+      guard(faceEqual(componentFaceType(componentRef), Face.OUTSIDE()))
+      then topLevelConnectorType(connectorType);
+    else false;
+  end match;
+end topLevelInput;
+
+protected function topLevelConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output Boolean isTopLevel;
+algorithm
+  isTopLevel := match inConnectorType
+    case DAE.FLOW() then true;
+    case DAE.POTENTIAL() then true;
+    else false;
+  end match;
+end topLevelConnectorType;
+
+public function getAllExpandableCrefsFromDAE
+"@author: adrpo
+ collect all crefs from the DAE"
+  input DAE.DAElist inDAE;
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  list<DAE.Element> elts;
+algorithm
+  DAE.DAE(elts) := inDAE;
+  (_, (_, outCrefs)) := DAEUtil.traverseDAEElementList(elts, Expression.traverseSubexpressionsHelper, (collectAllExpandableCrefsInExp, {}));
+end getAllExpandableCrefsFromDAE;
+
+protected function collectAllExpandableCrefsInExp "collect all crefs from expression"
+  input DAE.Exp exp;
+  input list<DAE.ComponentRef> acc;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  (outExp,outCrefs) := match exp
+    local
+      DAE.ComponentRef cr;
+
+    case DAE.CREF(componentRef = cr)
+      then (exp,List.consOnTrue(isExpandable(cr),cr,acc));
+
+    else (exp,acc);
+
+  end match;
+end collectAllExpandableCrefsInExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end ConnectUtil;

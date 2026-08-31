@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -76,15 +80,15 @@ public function path
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef)  := match(inGraph, inPath)
+  (outGraph, outRef)  := match inGraph
     local
       Ref r, t;
       Graph g;
 
-    case (g, _)
-      equation
-        t = FGraph.top(g);
-        r = t;
+    case g
+      algorithm
+        t := FGraph.top(g);
+        r := t;
       then
         (g, r);
 
@@ -97,62 +101,62 @@ public function all
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph  := match(inGraph)
+  outGraph  := match inGraph
     local
       list<Real> lst;
       Graph g;
 
     case g
-      equation
-        lst = {};
+      algorithm
+        lst := {};
 
         System.startTimer();
         // resolve extends
-        g = FResolve.ext(FGraph.top(g), g);
+        g := FResolve.ext(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("Extends:        " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve derived
-        g = FResolve.derived(FGraph.top(g), g);
+        g := FResolve.derived(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("Derived:        " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve type paths for constrain classes
-        g = FResolve.cc(FGraph.top(g), g);
+        g := FResolve.cc(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("ConstrainedBy:  " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve class extends nodes
-        g = FResolve.clsext(FGraph.top(g), g);
+        g := FResolve.clsext(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("ClassExtends:   " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve type paths
-        g = FResolve.ty(FGraph.top(g), g);
+        g := FResolve.ty(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("ComponentTypes: " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve all component references
-        g = FResolve.cr(FGraph.top(g), g);
+        g := FResolve.cr(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("Comp Refs:      " + realString(listHead(lst)) + "\n");
 
         System.startTimer();
         // resolve all modifier lhs (thisOne = binding)
-        g = FResolve.mod(FGraph.top(g), g);
+        g := FResolve.mod(FGraph.top(g), g);
         System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
+        lst := List.consr(lst, System.getTimerIntervalTime());
         print("Modifiers:      " + realString(listHead(lst)) + "\n");
 
         print("FExpand.all:    " + realString(List.fold(lst, realAdd, 0.0)) + "\n");

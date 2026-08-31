@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -39,6 +44,9 @@
 #include "Utilities.h"
 #include "Util/ResourceCache.h"
 #include "om_format.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QtCore/qmath.h>
 #include <QDir>
@@ -880,18 +888,25 @@ QStringList StringHandler::getStrings(QString value)
  */
 static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
 {
-  if (value.isEmpty())
-  {
+  if (value.isEmpty()) {
     return "";
   }
   value = value.trimmed();
-  int pos;
+  int pos = -1;
+
   if (value.endsWith('\'')) {
-    int i = value.size()-2;
-    while (value[i] != '\'' && i>1 && value[i-1] != '\\') {
+    // Find the matching opening quote of the last quoted segment
+    // by scanning backwards from second-to-last character
+    int i = value.size() - 2;
+    while (i >= 0 && value[i] != '\'') {
       i--;
     }
-    pos = i-1;
+    // i is now at the opening '\'' of the last quoted segment (or -1 if not found)
+    // The dot separator, if any, is immediately before it
+    if (i > 0 && value[i - 1] == '.') {
+      pos = i - 1;
+    }
+    // else: the entire string is one quoted identifier, pos stays -1
   } else {
     pos = value.lastIndexOf('.');
   }
@@ -899,9 +914,9 @@ static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
   if (pos >= 0)
   {
     if (lastWord)
-      return value.mid((pos + 1), (value.length() - 1));
+      return value.mid(pos + 1);
     else
-      return value.mid(0, (pos));
+      return value.mid(0, pos);
   }
   else
   {
@@ -944,22 +959,30 @@ static QString wordsBeforeAfterFirstDot(QString value, bool firstWord)
     return "";
   }
   value = value.trimmed();
-  int pos;
+  int pos = -1;
+
   if (value.startsWith('\'')) {
+    // Find the closing quote of the first quoted segment
+    // by scanning forward from the second character
     int i = 1;
-    while (value[i] != '\'' && i<value.size()-1 && value[i+1] != '\\') {
+    while (i < value.size() && value[i] != '\'') {
       i++;
     }
-    pos = i+1;
+    // i is now at the closing '\'' of the first quoted segment
+    // The dot separator, if any, is immediately after it
+    if (i < value.size() - 1 && value[i + 1] == '.') {
+      pos = i + 1;
+    }
+    // else: the entire string is one quoted identifier, pos stays -1
   } else {
     pos = value.indexOf('.');
   }
 
   if (pos >= 0) {
     if (firstWord) {
-      return value.mid(0, (pos));
+      return value.mid(0, pos);
     } else {
-      return value.mid((pos + 1), (value.length() - 1));
+      return value.mid(pos + 1);
     }
   } else {
     return value;
@@ -978,14 +1001,46 @@ QString StringHandler::getFirstWordBeforeDot(QString value)
 }
 
 /*!
- * \brief StringHandler::removeFirstWordAfterDot
+ * \brief StringHandler::removeFirstWordBeforeDot
  * Removes the first word before dot and returns the remaining string.
  * \param value
  * \return
  */
-QString StringHandler::removeFirstWordAfterDot(QString value)
+QString StringHandler::removeFirstWordBeforeDot(QString value)
 {
   return wordsBeforeAfterFirstDot(value, false);
+}
+
+/*!
+ * \brief StringHandler::splitPath
+ * Splits the path into a list of paths.
+ * \param path
+ * \return
+ */
+QStringList StringHandler::splitPath(QString path)
+{
+  QStringList result;
+
+  path = path.trimmed();
+  if (path.isEmpty()) {
+    return result;
+  }
+
+  while (!path.isEmpty()) {
+    QString first = getFirstWordBeforeDot(path);
+    result.append(first);
+
+    QString remaining = removeFirstWordBeforeDot(path);
+
+    // If nothing changed, we reached the last element
+    if (remaining == path) {
+      break;
+    }
+
+    path = remaining.trimmed();
+  }
+
+  return result;
 }
 
 QString StringHandler::escapeString(QString value)
@@ -1210,11 +1265,17 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
     }
   }
 
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(filter)
+  Q_UNUSED(selectedFilter)
+  fileName = WasmLocalFiles::saveFileName(parent, caption, dir_str, proposedFileName);
+#else
   if (!proposedFileName.isEmpty()) {
     fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
   }
+#endif
 
   if (!fileName.isEmpty()) {
     QFileInfo fileInfo(fileName);
@@ -1235,11 +1296,18 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
   }
 
   QString proposedFileName = *proposedName;
+#if defined(__EMSCRIPTEN__)
+  // A browser cannot receive a directory, so each file written is downloaded alone.
+  Q_UNUSED(filter)
+  Q_UNUSED(selectedFilter)
+  folderName = WasmLocalFiles::saveFileName(parent, caption, dir_str, proposedFileName);
+#else
   if (!proposedFileName.isEmpty()) {
     folderName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     folderName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
   }
+#endif
   if (!folderName.isEmpty()) {
     StringHandler::setLastOpenDirectory(folderName);
   }
@@ -1257,7 +1325,14 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   }
 
   QString fileName = "";
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+  // The picker hands over bytes, not a path: they are staged and that path returned.
+  Q_UNUSED(dir_str)
+  Q_UNUSED(caption)
+  Q_UNUSED(parent)
+  Q_UNUSED(selectedFilter)
+  fileName = WasmLocalFiles::openFiles(filter, false).value(0);
+#elif defined(_WIN32)
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter)
@@ -1290,7 +1365,13 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   }
 
   QStringList fileNames;
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(dir_str)
+  Q_UNUSED(caption)
+  Q_UNUSED(parent)
+  Q_UNUSED(selectedFilter)
+  fileNames = WasmLocalFiles::openFiles(filter, true);
+#elif defined(_WIN32)
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter);
@@ -1478,7 +1559,7 @@ QStringList StringHandler::makeVariableParts(QString variable)
   /* Do not split quoted variable.
    * See https://github.com/OpenModelica/OpenModelica/issues/10599#issuecomment-2077331404
    */
-  QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
+  static const QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   return variable.split(re, Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
@@ -1490,12 +1571,13 @@ QStringList StringHandler::makeVariableParts(QString variable)
 
 QStringList StringHandler::makeVariablePartsWithInd(QString variable)
 {
+  static const QRegularExpression arrayRe(Helper::arrayIndexRegularExpression);
   QStringList varParts = makeVariableParts(variable);
   //if the last part is array with index, split it into the name and index parts:
 
   if (!varParts.isEmpty()) {
     QString* lastStr = &(varParts.last());
-    int i = lastStr->lastIndexOf(QRegularExpression(Helper::arrayIndexRegularExpression));
+    int i = lastStr->lastIndexOf(arrayRe);
     if(i>=0){
       QString indexPart = *lastStr;
       indexPart.remove(0,i);
@@ -1577,28 +1659,26 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 QProcessEnvironment StringHandler::modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg)
 {
   QProcessEnvironment environment = StringHandler::simulationProcessEnvironment();
-
   // Parse the fileName.bat file to get the necessary paths.
   // Return errorMsg if fails to parse the file as expected.
   QFile batFile(pathsFileName);
-  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+  if (batFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QString line;
+    // first line is supposed to be '@echo off'
+    line = batFile.readLine();
+    // Second line is where the PATH is set. We want that.
+    line = batFile.readLine();
 
-  QString line;
-  // first line is supposed to be '@echo off'
-  line = batFile.readLine();
-  // Second line is where the PATH is set. We want that.
-  line = batFile.readLine();
-
-  if (!line.toLower().startsWith("set path=")) {
-    *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
-                + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
-  } else {
-    // Strip the 'set PATH='
-    line.remove(0, 9);
-    environment.insert("PATH", line + ";" + environment.value("PATH"));
+    if (!line.toLower().startsWith("set path=")) {
+      *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
+                  + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+    } else {
+      // Strip the 'set PATH='
+      line.remove(0, 9);
+      environment.insert("PATH", line + ";" + environment.value("PATH"));
+    }
+    batFile.close();
   }
-  batFile.close();
-
   return environment;
 }
 #endif
@@ -1652,7 +1732,7 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
 QString makeClassNameRelativeHelper(QString draggedClassName, QString droppedClassName)
 {
   if (StringHandler::getFirstWordBeforeDot(draggedClassName).compare(StringHandler::getFirstWordBeforeDot(droppedClassName)) == 0) {
-    return makeClassNameRelativeHelper(StringHandler::removeFirstWordAfterDot(draggedClassName), StringHandler::removeFirstWordAfterDot(droppedClassName));
+    return makeClassNameRelativeHelper(StringHandler::removeFirstWordBeforeDot(draggedClassName), StringHandler::removeFirstWordBeforeDot(droppedClassName));
   } else {
     return draggedClassName;
   }
@@ -1922,4 +2002,18 @@ QString StringHandler::convertSemVertoReadableString(const QString &semver)
   }
 
   return version;
+}
+
+/*!
+ * \brief StringHandler::removeTypePrefix
+ * Removes the type prefix from the string if it starts with it. For example, if the string is "type1.var1" and the type is "type1" then it returns "var1".
+ * \param str
+ * \param type
+ */
+void StringHandler::removeTypePrefix(QString &str, const QString &type)
+{
+  const QString prefix = type + '.';
+  if (str.startsWith(prefix)) {
+    str.remove(0, prefix.length());
+  }
 }

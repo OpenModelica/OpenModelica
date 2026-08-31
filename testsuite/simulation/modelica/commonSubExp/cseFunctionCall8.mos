@@ -137,7 +137,7 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
-// 1: u:VARIABLE(fixed = true )  = 10.0  type: Real
+// 1: u:VARIABLE(fixed = true final = true )  = 10.0  type: Real
 // 2: C:PARAM()  = 1.0  type: Real
 //
 //
@@ -148,7 +148,7 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 3: $cse5 - CSE.FunctionCallTest8.f_der(time, $cse4, 1.0) - {}
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

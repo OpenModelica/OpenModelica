@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — Web</title>
+<link rel="stylesheet" href="theme.css" />
+<style>
+    :root { --rail: 84px; }
+  /* A sidebar rail beside the client stage, not theme.css's stacked column. */
+  body {
+    font-size: 14px;
+    display: grid; grid-template-columns: var(--rail) 1fr; grid-template-rows: 1fr;
+  }
+
+  /* --- Sidebar --------------------------------------------------------- */
+  aside {
+    background: var(--panel); border-right: 1px solid var(--border);
+    padding: 8px 6px; overflow-x: hidden; overflow-y: auto;
+  }
+  nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-btn {
+    width: 100%; box-sizing: border-box;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 9px 2px; border-radius: 8px;
+    background: none; border: 0; color: var(--muted); cursor: pointer;
+    font: inherit; position: relative; transition: background .12s, color .12s;
+  }
+  .nav-btn .ic { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+  .nav-btn .ic img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  /* The FMI logo is the Modelica Association's, dark artwork that may not be
+     recoloured; its usage terms ask for a white background, which also makes it
+     legible here. */
+  #nav-fmi .ic img { background: #fff; border-radius: 4px; padding: 2px 3px; }
+  .nav-btn .lbl {
+    font-size: 10px; line-height: 1.1; width: 100%; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nav-btn:hover { background: #2d2d30; color: var(--fg); }
+  .nav-btn.active { color: #fff; background: #37373d; }
+  .nav-btn.active::before {
+    content: ""; position: absolute; left: -6px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 3px; background: var(--accent);
+  }
+  .nav-btn.missing { opacity: .38; }
+
+  /* --- Main ------------------------------------------------------------ */
+  main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .topbar {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+    height: 46px; padding: 0 12px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; height: 100%; cursor: pointer; flex: 0 0 auto; }
+  .brand img { height: 20px; display: block; }
+  .brand img.narrow { display: none; height: 19px; }
+
+  /* Hamburger toggles the sidebar drawer on narrow screens. */
+  .hamburger {
+    display: none; align-items: center; justify-content: center;
+    width: 34px; height: 34px; padding: 0; flex: 0 0 auto;
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); cursor: pointer;
+  }
+  .hamburger:hover { background: #2d2d30; }
+  .hamburger svg { width: 18px; height: 18px; }
+  .nav-backdrop { display: none; }
+  .topbar .name { font-weight: 600; color: var(--teal); white-space: nowrap; }
+  .topbar .sep { width: 1px; height: 22px; background: var(--border); }
+  .variants { display: flex; gap: 4px; }
+  .pill {
+    padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; font: inherit;
+    font-size: 13px; transition: background .12s, color .12s, border-color .12s;
+  }
+  /* Only the outline lights up; the fill is reserved for the active variant. */
+  .pill:hover { background: transparent; color: var(--fg); border-color: #555; }
+  .pill.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+  .pill.missing { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+  .spacer { flex: 1; }
+  .tool {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--fg); cursor: pointer; font: inherit; font-size: 13px;
+    text-decoration: none;
+  }
+  .tool:hover { background: #2d2d30; border-color: #555; }
+  .tool svg { width: 15px; height: 15px; }
+
+  .stage { flex: 1 1 auto; position: relative; min-height: 0; background: var(--bg); }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+
+  .overlay {
+    position: absolute; inset: 0; display: none; place-items: center;
+    text-align: center; padding: 24px; color: var(--muted);
+  }
+  .overlay.show { display: grid; }
+  .overlay .box { max-width: 460px; }
+  .overlay h2 { color: var(--fg); margin: 0 0 8px; font-weight: 600; }
+  .overlay code { color: #ce9178; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  /* --- Mobile: sidebar becomes a slide-in drawer behind a hamburger ---- */
+  @media (max-width: 640px) {
+    body { grid-template-columns: 1fr; }
+    aside {
+      position: fixed; top: 0; bottom: 0; left: 0; width: 240px; z-index: 30;
+      padding: 8px; transform: translateX(-100%); transition: transform .2s ease;
+      box-shadow: 2px 0 14px #0007;
+    }
+    body.nav-open aside { transform: none; }
+    .nav-backdrop {
+      display: block; position: fixed; inset: 0; z-index: 20;
+      background: #0007; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+    /* Wider drawer → horizontal rows read better than the desktop rail. */
+    .nav-btn { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 12px; }
+    .nav-btn .ic { width: 24px; height: 24px; }
+    .nav-btn .lbl { font-size: 14px; width: auto; text-align: left; }
+    .nav-btn.active::before { left: 0; }
+
+    .hamburger { display: inline-flex; }
+    .brand img.wide { display: none; }
+    .brand img.narrow { display: block; }
+    .topbar { gap: 8px; padding: 0 8px; }
+    /* "Open in new tab" shrinks to just its icon. */
+    .tool .lbl { display: none; }
+    .tool { padding: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="nav-backdrop" id="navBackdrop"></div>
+<aside id="sidebar">
+  <nav id="nav"></nav>
+</aside>
+
+<main>
+  <div class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <a class="brand" href="#" title="OpenModelica — home" data-home>
+      <img class="wide" src="icons/openmodelica-logo.svg" alt="OpenModelica" />
+      <img class="narrow" src="icons/om.svg" alt="OpenModelica" />
+    </a>
+    <span class="sep"></span>
+    <span class="name" id="clientName"></span>
+    <div class="variants" id="variants"></div>
+    <span class="spacer"></span>
+    <a class="tool" id="openTab" target="_blank" rel="noopener" title="Open this client in a new tab" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      <span class="lbl">Open in new tab</span>
+    </a>
+  </div>
+
+  <div class="stage">
+    <iframe id="frame" title="client" allow="cross-origin-isolated; clipboard-read; clipboard-write; fullscreen" style="display:none"></iframe>
+    <div class="overlay" id="overlay">
+      <div class="box">
+        <h2 id="ovTitle">Not available</h2>
+        <p id="ovMsg"></p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+// --- Client model ----------------------------------------------------------
+const CLIENTS = [
+  { id: 'home', name: 'Home', icon: 'icons/om.svg',
+    src: 'home/index.html' },
+  { id: 'omshell', name: 'OMShell', icon: 'icons/omshell.svg',
+    variants: [
+      { id: 'terminal', name: 'Terminal', src: 'omc-terminal/index.html' },
+      { id: 'egui',     name: 'egui',     src: 'OMShell-egui.html' },
+      { id: 'dioxus',   name: 'dioxus',   src: 'OMShell-dioxus.html' },
+      { id: 'qt',       name: 'Qt',       src: 'OMShell-qt/OMShell-qt.html' },
+    ] },
+  { id: 'simulator', name: 'Simulator', icon: 'icons/simulator.svg',
+    src: 'simulator/index.html' },
+  { id: 'fmi', name: 'FMI', icon: 'icons/fmi.svg',
+    src: 'fmi-simulator/index.html' },
+  { id: 'omnotebook', name: 'OMNotebook', icon: 'icons/omnotebook.svg',
+    src: 'OMNotebook-qt/OMNotebook-qt.html' },
+  { id: 'omedit', name: 'OMEdit', icon: 'icons/omedit.png',
+    src: 'OMEdit-qt/OMEdit-qt.html' },
+];
+
+const variantsOf = (c) => c.variants || [{ id: '', name: c.name, src: c.src }];
+const srcFor = (c, vid) => variantsOf(c).find(v => v.id === vid)?.src ?? variantsOf(c)[0].src;
+
+// --- DOM refs --------------------------------------------------------------
+const nav = document.getElementById('nav');
+const frame = document.getElementById('frame');
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovMsg = document.getElementById('ovMsg');
+const variantsEl = document.getElementById('variants');
+const clientName = document.getElementById('clientName');
+const openTab = document.getElementById('openTab');
+
+// --- Availability probe (which pages this build actually shipped) ----------
+const availability = new Map(); // src -> bool
+async function probe(src) {
+  if (availability.has(src)) return availability.get(src);
+  let ok = false;
+  try { ok = (await fetch(src, { method: 'HEAD' })).ok; } catch { ok = false; }
+  availability.set(src, ok);
+  return ok;
+}
+
+// --- Build the sidebar -----------------------------------------------------
+for (const c of CLIENTS) {
+  const btn = document.createElement('button');
+  btn.className = 'nav-btn';
+  btn.id = 'nav-' + c.id;
+  btn.innerHTML = '<span class="ic"><img src="' + c.icon + '" alt=""></span><span class="lbl">' + c.name + '</span>';
+  btn.onclick = () => go(c.id);
+  nav.appendChild(btn);
+}
+
+// The default view (empty/unknown hash) is the Home client.
+const DEFAULT = 'home';
+
+// Grey out clients whose (only/default) page was not built.
+(async () => {
+  for (const c of CLIENTS) {
+    const anyOk = (await Promise.all(variantsOf(c).map(v => probe(v.src)))).some(Boolean);
+    if (!anyOk) document.getElementById('nav-' + c.id).classList.add('missing');
+  }
+})();
+
+// --- Routing: #<client>[/<variant>] ----------------------------------------
+function parseHash() {
+  const [id, variant = ''] = decodeURIComponent(location.hash.replace(/^#\/?/, '')).split('/');
+  return { id, variant };
+}
+
+function go(id, variant) {
+  closeNav();                                // collapse the mobile drawer on pick
+  let hash = '#' + id;
+  if (variant) hash += '/' + variant;
+  if (location.hash === hash) render();      // same link → just (re)render
+  else location.hash = hash;                 // triggers hashchange → render
+}
+
+// --- Mobile drawer ---------------------------------------------------------
+const closeNav = () => document.body.classList.remove('nav-open');
+document.getElementById('hamburger').onclick = () => document.body.classList.toggle('nav-open');
+document.getElementById('navBackdrop').onclick = closeNav;
+
+async function render() {
+  const { id, variant } = parseHash();
+  // Empty/unknown hash falls back to the default (Home) client.
+  const client = CLIENTS.find(c => c.id === id) || CLIENTS.find(c => c.id === DEFAULT);
+
+  // Sidebar active state.
+  for (const c of CLIENTS)
+    document.getElementById('nav-' + c.id).classList.toggle('active', c === client);
+
+  const variants = variantsOf(client);
+  const vid = variants.find(v => v.id === variant)?.id ?? variants[0].id;
+
+  // Variant pills (only shown when a client has more than one).
+  variantsEl.innerHTML = '';
+  if (variants.length > 1) {
+    for (const v of variants) {
+      const pill = document.createElement('button');
+      pill.className = 'pill' + (v.id === vid ? ' active' : '');
+      pill.textContent = v.name;
+      pill.onclick = () => go(client.id, v.id);
+      probe(v.src).then(ok => { if (!ok) { pill.classList.add('missing'); pill.title = 'Not included in this build'; } });
+      variantsEl.appendChild(pill);
+    }
+  }
+
+  clientName.textContent = client.name;
+  document.title = 'OpenModelica — ' + client.name;
+
+  const src = srcFor(client, vid);
+  openTab.href = src;
+  openTab.style.display = '';
+
+  // Load the client, or show an error if this build didn't ship it.
+  if (await probe(src)) {
+    overlay.classList.remove('show');
+    frame.style.display = '';
+    const abs = new URL(src, location.href).href;
+    if (frame.src !== abs) frame.src = abs;   // avoid needless reloads
+  } else {
+    frame.style.display = 'none';
+    frame.removeAttribute('src');
+    overlay.classList.add('show');
+    ovTitle.textContent = client.name + (variants.length > 1 ? ' · ' + (variants.find(v=>v.id===vid)?.name) : '');
+    ovMsg.innerHTML = 'This client was not included in this build. It is produced by the '
+      + '<code>web</code> target when its toolchain is available.';
+  }
+}
+
+// --- Wiring ----------------------------------------------------------------
+window.addEventListener('hashchange', render);
+document.querySelector('[data-home]').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (location.hash) location.hash = '';   // fires hashchange → render
+  else render();                           // already home
+});
+render();
+</script>
+</body>
+</html>

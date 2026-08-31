@@ -1,0 +1,57 @@
+// name: updateEquation1
+// keywords:
+// status: correct
+//
+// Tests the updateEquation API.
+//
+
+loadString("
+  model M
+    Real x;
+    Real y;
+  equation
+    y = 1;
+    x = 2 \"test\" annotation(__ann = 1);
+  end M;
+");
+getErrorString();
+
+updateEquation(M, "y = 1", "y = 2");
+list(M);
+
+updateEquation(M, "x = 2", "x = 3", mergeDescription = true);
+list(M);
+
+updateEquation(M, "x = 3", "x = 4");
+list(M);
+
+// Result:
+// true
+// ""
+// true
+// "model M
+//   Real x;
+//   Real y;
+// equation
+//   y = 2;
+//   x = 2 \"test\" annotation(
+//     __ann = 1);
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// equation
+//   y = 2;
+//   x = 3 \"test\" annotation(
+//     __ann = 1);
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// equation
+//   y = 2;
+//   x = 4;
+// end M;"
+// endResult

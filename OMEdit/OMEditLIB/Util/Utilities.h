@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -68,6 +73,24 @@
 
 class OMCProxy;
 
+#if defined(__EMSCRIPTEN__)
+// HTML splash overlay drawn straight into the DOM. Qt's QSplashScreen pumps the
+// Qt-for-WebAssembly event dispatcher during early startup, which traps, so on
+// wasm the splash and the startup passes are rendered outside Qt. See Utilities.cpp.
+namespace WasmSplash
+{
+  void show();
+  void setMessage(const QString &message);
+  void stepMessage(const QString &message);
+  void setProgress(int done, int total);
+  void finish();
+  bool isVisible();
+}
+#endif
+
+#if !defined(__EMSCRIPTEN__)
+// Omitted on wasm: showMessage()/repaint() pumps the Qt-for-WebAssembly event
+// dispatcher during early startup, which traps. Uses are guarded at the call sites.
 class SplashScreen : public QSplashScreen
 {
   Q_OBJECT
@@ -85,6 +108,7 @@ public slots:
     repaint();
   }
 };
+#endif
 
 class StatusBar : public QStatusBar
 {
@@ -95,6 +119,13 @@ public slots:
   void showMessage(const QString &message, int timeout = 0)
   {
     QStatusBar::showMessage(message, timeout);
+#if defined(__EMSCRIPTEN__)
+    // While the HTML splash is up (startup) the status bar is not yet on screen,
+    // so mirror its passes (loading libraries, …) onto the splash.
+    if (WasmSplash::isVisible()) {
+      WasmSplash::setMessage(message);
+    }
+#endif
     /* QStatusBar::showMessage calls update() which schedules a paint event for processing when Qt returns to the main event loop
      * so we call repaint() to get the immediate update. Calling repaint() is better than qApp->processEvents() which processes all pending events.
      */
@@ -115,22 +146,41 @@ protected:
   void run() {}
 };
 
+class LineEdit;
+class QRegExp;
+class QRegularExpression;
 class TreeSearchFilters : public QWidget
 {
   Q_OBJECT
 public:
+  /*!
+   * \brief The FilterSyntax enum
+   * The filter syntax used for the filter search. The values must stay in sync
+   * with QRegExp::PatternSyntax (RegExp=0, Wildcard=1, FixedString=2) so that
+   * the stored combo box data remains compatible between Qt5 and Qt6.
+   */
+  enum FilterSyntax {
+    Regexp = 0,
+    Wildcard = 1,
+    FixedString = 2
+  };
+
   TreeSearchFilters(QWidget *pParent = 0);
-  QLineEdit* getFilterTextBox() {return mpFilterTextBox;}
+  LineEdit* getFilterTextBox() {return mpFilterTextBox;}
   QTimer* getFilterTimer() {return mpFilterTimer;}
   QToolButton* getScrollToActiveButton() {return mpScrollToActiveButton;}
   QToolButton* getExpandAllButton() {return mpExpandAllButton;}
   QToolButton* getCollapseAllButton() {return mpCollapseAllButton;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
-
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
+  FilterSyntax getFilterSyntax() const {return FilterSyntax(mpSyntaxComboBox->itemData(mpSyntaxComboBox->currentIndex()).toInt());}
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  static QRegExp getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, FilterSyntax syntax);
+#else
+  static QRegularExpression getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, FilterSyntax syntax);
+#endif
 private:
-  QLineEdit *mpFilterTextBox;
+  LineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
   QToolButton *mpScrollToActiveButton;
   QToolButton *mpExpandAllButton;
@@ -185,6 +235,16 @@ protected:
   virtual void resizeEvent(QResizeEvent *event) override;
 };
 
+class LineEdit : public QLineEdit
+{
+  Q_OBJECT
+public:
+  LineEdit(QWidget *parent = 0);
+protected:
+  // QWidget interface
+  virtual void keyPressEvent(QKeyEvent *event) override;
+};
+
 /* ticket:10458 ticket:13591
  * Disable the wheel event of combobox, spinbox and doublespinbox
  * Set the focus to Qt::StrongFocus instead of Qt::WheelFocus
@@ -200,6 +260,7 @@ class ComboBox : public QComboBox
   Q_OBJECT
 public:
   ComboBox(QWidget *parent = nullptr);
+  void addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip);
 protected:
   virtual void wheelEvent(QWheelEvent *event) override;
 };
@@ -415,6 +476,10 @@ public:
   }
 };
 
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off), so this
+// subprocess wrapper is unavailable on the web build. omc/compile/simulate run
+// in the omc Web Worker instead.
+#if QT_CONFIG(process)
 class QDetachableProcess : public QProcess
 {
   Q_OBJECT
@@ -426,6 +491,7 @@ public:
   void start(const QString &command, OpenMode mode = ReadWrite);
 #endif
 };
+#endif
 
 class JsonDocument : public QObject
 {
@@ -524,6 +590,14 @@ namespace Utilities {
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
   QMap<QString, QLocale> supportedLanguages();
+  void buildVariableNodeTree(VariableNode *pRootNode,
+                             const QString &prefix,
+                             const QString &fullVariableName,
+                             const QStringList &parts,
+                             std::function<QVector<QVariant>(const QString &fullName,
+                                                             const QString &displayName,
+                                                             bool isMainArray)> makeData,
+                             std::function<void(VariableNode*)> postCreate = nullptr);
 } // namespace Utilities
 
 #endif // UTILITIES_H

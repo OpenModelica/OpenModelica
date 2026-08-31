@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -42,15 +46,16 @@ encapsulated package Main
 
 protected
 import Absyn;
+import ProgramUtil;
 import AbsynJLDumpTpl;
 import AbsynUtil;
 import Autoconf;
+import BackendInterfaceImplementation;
 import CevalScript;
 import CevalScriptBackend;
 import ClockIndexes;
 import Config;
 import Corba;
-import DAE;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -65,12 +70,10 @@ import GCExt;
 import Global;
 import GlobalScript;
 import Interactive;
-import InteractiveUtil;
 import List;
 import Parser;
 import Print;
 import Settings;
-import SimCode;
 import Socket;
 import StackOverflow;
 import SymbolTable;
@@ -85,14 +88,14 @@ protected function makeDebugResult
   input String res;
   output String res_1;
 algorithm
-  res_1 := matchcontinue (inFlag,res)
+  res_1 := matchcontinue inFlag
     local
       String debugstr,res_with_debug,flagstr;
-    case (Flags.DEBUG_FLAG(name = flagstr),_)
-      equation
-        true = Flags.isSet(inFlag);
-        debugstr = Print.getString();
-        res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+    case Flags.DEBUG_FLAG(name = flagstr)
+      algorithm
+        true := Flags.isSet(inFlag);
+        debugstr := Print.getString();
+        res_with_debug := stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     else res;
   end matchcontinue;
@@ -107,24 +110,23 @@ protected function parseCommand
   output Option<GlobalScript.Statements> outStatements;
   output Option<Absyn.Program> outProgram;
 algorithm
-  (outStatements, outProgram) := matchcontinue(inCommand)
+  (outStatements, outProgram) := matchcontinue inCommand
     local
       GlobalScript.Statements stmts;
       Absyn.Program prog;
-      String str;
 
-    case (_)
-      equation
+    case _
+      algorithm
         ErrorExt.setCheckpoint("parsestring");
-        stmts = Parser.parsestringexp(inCommand, "<interactive>");
+        stmts := Parser.parsestringexp(inCommand, "<interactive>");
         ErrorExt.delCheckpoint("parsestring");
       then
         (SOME(stmts), NONE());
 
-    case (_)
-      equation
+    case _
+      algorithm
         ErrorExt.rollBack("parsestring");
-        prog = Parser.parsestring(inCommand, "<interactive>");
+        prog := Parser.parsestring(inCommand, "<interactive>");
       then
         (NONE(), SOME(prog));
 
@@ -157,6 +159,8 @@ algorithm
     outResult := makeDebugResult(Flags.DUMP, outResult);
     outResult := makeDebugResult(Flags.DUMP_GRAPHVIZ, outResult);
   end if;
+
+  System.reportProgress(-1, 0) "PHASE_IDLE";
 end handleCommand;
 
 protected function handleCommand2
@@ -170,23 +174,23 @@ algorithm
       GlobalScript.Statements stmts;
       Absyn.Program prog, prog2, ast;
       String result;
-      list<GlobalScript.Variable> vars;
+      list<InteractiveTypes.Variable> vars;
       SymbolTable table;
 
     // Interactively evaluate an algorithm statement or expression.
     case (SOME(stmts), NONE())
-      equation
-        result = Interactive.evaluate(stmts, false);
+      algorithm
+        result := Interactive.evaluate(stmts, false);
       then result;
 
     // Add a class or function to the interactive symbol table.
     case (NONE(), SOME(prog))
-      equation
-        table = SymbolTable.get();
-        ast = table.ast;
-        vars = table.vars;
-        prog2 = Interactive.addScope(prog, vars);
-        prog2 = InteractiveUtil.updateProgram(prog2, ast);
+      algorithm
+        table := SymbolTable.get();
+        ast := table.ast;
+        vars := table.vars;
+        prog2 := Interactive.addScope(prog, vars);
+        prog2 := ProgramUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Print.printBuf(Dump.unparseStr(prog2));
@@ -194,7 +198,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
           DumpGraphviz.dump(prog2);
         end if;
-        result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
+        result := makeClassDefResult(prog) "Return vector of toplevel classnames.";
         SymbolTable.setAbsyn(prog2);
       then result;
 
@@ -202,23 +206,23 @@ algorithm
     // is handled here instead of in parseCommand, since parseCommand does not
     // return a result string.
     case (NONE(), NONE())
-      equation
+      algorithm
         Print.printBuf("Error occurred building AST\n");
-        result = Print.getString();
-        result = stringAppend(result, "Syntax Error\n");
-        result = stringAppend(result, Error.printMessagesStr(false));
+        result := Print.getString();
+        result := stringAppend(result, "Syntax Error\n");
+        result := stringAppend(result, Error.printMessagesStr(false));
       then result;
 
     // A non-parser error occured, display the error message.
     case (_, _)
-      equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        result = Error.printMessagesStr(false);
+      algorithm
+        true := isSome(inStatements) or isSome(inProgram);
+        result := Error.printMessagesStr(false);
       then result;
 
     else
-      equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
+      algorithm
+        true := isSome(inStatements) or isSome(inProgram);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
       then "";
 
@@ -230,23 +234,23 @@ protected function makeClassDefResult
   input Absyn.Program p;
   output String res;
 algorithm
-  res := match(p)
+  res := match p
     local
       list<Absyn.Path> names;
       Absyn.Path scope;
       list<Absyn.Class> cls;
 
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
-      equation
-        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
-        names = List.map1(names,AbsynUtil.joinPaths,scope);
-        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
+    case Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))
+      algorithm
+        names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
+        names := List.map1(names,AbsynUtil.joinPaths,scope);
+        res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
-      equation
-        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
-        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
+    case Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())
+      algorithm
+        names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
+        res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
   end match;
@@ -273,11 +277,11 @@ end isModelicaFile;
 protected function isEmptyOrFirstIsModelicaFile
   input list<String> libs;
 algorithm
-  _ := match libs
+  () := match libs
     local
       String f;
     case {} then ();
-    case f::_ equation true = isModelicaFile(f); then ();
+    case f::_ algorithm true := isModelicaFile(f); then ();
   end match;
 end isEmptyOrFirstIsModelicaFile;
 
@@ -343,40 +347,39 @@ protected
   Boolean is_modelica_file;
 algorithm
   is_modelica_file := isModelicaFile(inLib);
-  _ := matchcontinue(is_modelica_file)
+  () := matchcontinue is_modelica_file
     local
-      String lib, mp;
-      list<String> rest;
+      String mp;
       Absyn.Program pnew, p;
       Absyn.Path path;
 
     // A .mo-file.
     case true
-      equation
-        p = SymbolTable.getAbsyn();
-        pnew = CevalScript.loadFile(inLib, "UTF-8", p, true, true, false);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        pnew := CevalScript.loadFile(inLib, "UTF-8", p, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 
     // some libs present
     case false
-      equation
-        path = AbsynUtil.stringPath(inLib);
-        mp = Settings.getModelicaPath(Testsuite.isRunning());
-        p = SymbolTable.getAbsyn();
-        (pnew, true) = CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
+      algorithm
+        path := AbsynUtil.stringPath(inLib);
+        mp := Settings.getModelicaPath(Testsuite.isRunning());
+        p := SymbolTable.getAbsyn();
+        (pnew, true) := CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 
     // problem with the libs, ignore!
     case false
-      equation
+      algorithm
         Print.printErrorBuf("Failed to load library: " + inLib + "!\n");
       then
         fail();
 
     case true
-      equation
+      algorithm
         Print.printErrorBuf("Failed to parse file: " + inLib + "!\n");
       then
         fail();
@@ -385,29 +388,36 @@ algorithm
 end loadLib;
 
 protected function translateFile
-"This function invokes the translator on a source file.  The argument should be
-  a list with a single file name, with the rest of the list being an optional
-  list of libraries and .mo-files if the file is a .mo-file"
+  "This function invokes the translator on a source file.  The argument should be
+   a list with a single file name, with the rest of the list being an optional
+   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
+protected
+  String f;
+  list<String>  libs;
+  Absyn.Path cname;
+  Boolean runBackend, runSilent;
+  GlobalScript.Statements stmts;
+  String cls, fileNamePrefix, fmuVersion, fmuType, fmuPlatformsStr;
+  Integer fmuVersionInt;
+  list<String> fmuPlatforms, fmuTypeList;
 algorithm
-  _ := matchcontinue (inStringLst)
-    local
-      Absyn.Program p, pLibs;
-      DAE.DAElist d;
-      String flatString,str,f;
-      list<String>  libs;
-      Absyn.Path cname;
-      Boolean runBackend, runSilent;
-      GlobalScript.Statements stmts;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.FunctionTree funcs;
-      String cls, fileNamePrefix;
-      SimCode.SimulationSettings sim_settings;
+  // Execute the given script if --cmd is used.
+  if not stringEmpty(Flags.getConfigString(Flags.EXECUTE_COMMAND)) then
+    stmts := Parser.parsestringexp(Flags.getConfigString(Flags.EXECUTE_COMMAND));
+    showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+    Interactive.evaluateToStdOut(stmts, true);
 
+    // Return if there's nothing more to do to avoid showing the help message.
+    if listEmpty(inStringLst) and stringEmpty(Config.classToInstantiate()) then
+      return;
+    end if;
+  end if;
+
+  () := matchcontinue inStringLst
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
-    case (libs)
+    case libs
       algorithm
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
@@ -438,16 +448,34 @@ algorithm
         cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
         fileNamePrefix := Util.stringReplaceChar(AbsynUtil.pathString(cname), ".", "_");
 
-        runBackend := Config.simulationCg() or Config.simulation();
-        runSilent := Config.silent();
+        if Flags.getConfigBool(Flags.EXPORT_FMU) then
+          fmuVersionInt := Flags.getConfigEnum(Flags.FMU_VERSION);
+          fmuVersion := match fmuVersionInt
+            case 10 then "1.0";
+            case 20 then "2.0";
+            case 30 then "3.0";
+          end match;
+          FlagsUtil.setConfigString(Flags.FMI_VERSION, fmuVersion);
+          fmuTypeList := Flags.getConfigStringList(Flags.FMU_TYPE);
+          fmuType := stringDelimitList(fmuTypeList, "_");
+          fmuPlatformsStr := Flags.getConfigString(Flags.FMU_PLATFORMS);
+          fmuPlatforms := Util.stringSplitAtChar(fmuPlatformsStr, ",");
+          CevalScriptBackend.callBuildModelFMU(FCore.emptyCache(), FGraph.empty(), cname,
+            fmuVersion, fmuType, fileNamePrefix, true, fmuPlatforms, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          System.fflush();
+        else
+          runBackend := Config.simulationCg() or Config.simulation();
+          runSilent := Config.silent();
 
-        (_ , _, _, _, _) := CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
-                                                                                fileNamePrefix, runBackend, runSilent, NONE());
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+          CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+                                                                                  fileNamePrefix, runBackend, runSilent, NONE());
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+        end if;
       then ();
 
     /* Modelica script file .mos */
-    case (f::libs)
+    case f::libs
       algorithm
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
@@ -471,19 +499,19 @@ algorithm
         ();
 
     case {f} /* A template file .tpl (in the Susan language)*/
-      equation
+      algorithm
         isCodegenTemplateFile(f);
-        TplMain.main(f);
+        TplMain.main(f, Flags.getConfigString(Flags.TPL_OUTPUT_DIR));
       then
         ();
 
     // deal with problems
-    case (f::_)
+    case f::_
       algorithm
         if System.regularFileExists(f) then
           print("Error processing file: ");
         else
-          print(System.gettext("File does not exist: "));
+          print("File does not exist: ");
         end if;
 
         print(f); print("\n"); System.fflush();
@@ -606,7 +634,7 @@ protected
 algorithm
   if System.regularFileExists(filePath) then
     command := "runScript(\"" + filePath + "\")";
-    (_, _) := handleCommand(command);
+    handleCommand(command);
   end if;
 end readSettingsFile;
 
@@ -618,38 +646,38 @@ public function setWindowsPaths
               changes you will need to change here!"
   input String inOMHome;
 algorithm
-  _ := match(inOMHome)
+  () := match inOMHome
     local
       String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
-    case (omHome)
-      equation
+    case omHome
+      algorithm
         System.setEnv("OPENMODELICAHOME",omHome,true);
-        omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
+        omdevPath := Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         // if we don't have something in OMDEV use OMHOME
         if stringEq(omdevPath, "") then
-          omdevPath = omHome;
+          omdevPath := omHome;
         end if;
-        msysPath = omdevPath + "\\tools\\msys";
-        mingwDir = System.openModelicaPlatform();
-        msysBinDir = msysPath + "\\usr\\bin";
-        binDir = msysPath + "\\" + mingwDir + "\\bin";
+        msysPath := omdevPath + "\\tools\\msys";
+        mingwDir := System.openModelicaPlatform();
+        msysBinDir := msysPath + "\\usr\\bin";
+        binDir := msysPath + "\\" + mingwDir + "\\bin";
         // if compiler is gcc
         if System.getCCompiler() == "gcc" then
-          libBinDir = msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+          libBinDir := msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
-          libBinDir = binDir;
+          libBinDir := binDir;
         end if;
         // do we have bin and lib bin?
-        hasBinDir = System.directoryExists(binDir);
-        hasLibBinDir = System.directoryExists(libBinDir);
+        hasBinDir := System.directoryExists(binDir);
+        hasLibBinDir := System.directoryExists(libBinDir);
         if hasBinDir and hasLibBinDir
         then
-          oldPath = System.readEnv("PATH");
-          newPath = stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
-          newPath = System.stringReplace(newPath, "/", "\\") + oldPath;
+          oldPath := System.readEnv("PATH");
+          newPath := stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
           // print("Path set: " + newPath + "\n");
           System.setEnv("PATH",newPath,true);
         else
@@ -696,9 +724,9 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
-  System.gettextInit(if Testsuite.isRunning() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
   setDefaultCC();
   SymbolTable.reset();
+  BackendInterfaceImplementation.initializeBackendInterface();
 end init;
 
 public function main
@@ -707,7 +735,6 @@ public function main
   input list<String> args;
 protected
   list<String> args_1;
-  GCExt.ProfStats stats;
   Integer seconds;
 algorithm
   execStatReset();
@@ -724,7 +751,7 @@ algorithm
       main2(args_1);
     else
       ErrorExt.clearMessages();
-      failure(_ := FlagsUtil.new(args));
+      failure(FlagsUtil.new(args));
       print(ErrorExt.printMessagesStr(false)); print("\n");
       fail();
     end try;
@@ -806,5 +833,5 @@ algorithm
   end try;
 end main2;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end Main;

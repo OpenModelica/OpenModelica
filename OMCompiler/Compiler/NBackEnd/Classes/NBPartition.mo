@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBPartition
 "file:        NBPartition.mo
  package:     NBPartition
@@ -42,6 +47,8 @@ public
 
 protected
   // NF imports
+  import Call = NFCall;
+  import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;
@@ -50,7 +57,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.EquationArray;
+  import NBEquation.{Equation, EquationKind};
   import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
   import NBPartitioning.{BClock, ClockedInfo};
@@ -63,17 +70,22 @@ protected
   import StringUtil;
 
 public
-  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
+  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, INI_0, DAE, JAC, CLK);
 
   uniontype Association
-    type ClockTpl = tuple<ComponentRef, BClock>;
     record CONTINUOUS
       Kind kind;
-      Option<Jacobian> jacobian "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobian     "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
+      Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
+      Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";
+      Option<Jacobian> R0_jacobian  "Analytic jacobian of Initial Constraints (r0) for MOO";
     end CONTINUOUS;
+
     record CLOCKED
       BClock clock;
       Option<BClock> baseClock;
+      UnorderedSet<BClock> clock_deps "dependencies of this clocked partition";
       Boolean holdEvents;
     end CLOCKED;
 
@@ -94,51 +106,118 @@ public
     algorithm
       str := match association
         case CONTINUOUS() algorithm
-          if Util.isSome(association.jacobian) then
-            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
+          if isSome(association.jacobian) then
+            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
+            if (Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION)) then
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind));
+            end if;
+          else
+            str := StringUtil.headline_1("No Jacobian");
+          end if;
+          if isSome(association.jacobianAdjoint) then
+            str := BJacobian.toString(Util.getOption(association.jacobianAdjoint), Partition.kindToString(association.kind) + " Adjoint") + "\n";
           end if;
         then str;
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);
-          if Util.isSome(association.baseClock) then
-            str := "Sub clock: " + str + " of base clock  " + BClock.toString(Util.getOption(association.baseClock)) + "\n";
+          if isSome(association.baseClock) then
+            str := StringUtil.headline_1("Sub clock: " + str + " of base clock " + BClock.toString(Util.getOption(association.baseClock)));
           else
-            str := "Base clock: " + str + "\n";
+            str := StringUtil.headline_1("Base clock: " + str);
           end if;
         then str;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition association in match."});
-          then fail();
+        then fail();
       end match;
     end toString;
 
     function create
-      "create an associtation for a partition from the equation array and the clocked info
+      "create an association for a partition from the equation array and the clocked info
       holdEvents is updated later for clocked associations"
       input EquationPointers equations;
       input Kind kind;
       input ClockedInfo info;
+      input UnorderedSet<ComponentRef> infer_del;
       output Association association;
     protected
       Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
+      Pointer<Option<ComponentRef>> infer_ptr = Pointer.create(NONE());
+      UnorderedSet<ClockTpl> failed_set = UnorderedSet.new(hashClockTpl, isEqualClockTpl);
+      UnorderedSet<BClock> clock_deps = UnorderedSet.new(BClock.hash, BClock.isEqual);
       Option<ClockTpl> clock_tpl;
+      Option<ComponentRef> infer;
       ComponentRef name, base_name;
       BClock clock;
     algorithm
-      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr));
+      EquationPointers.mapExp(equations, function expClocked(
+        info = info, clock_ptr = clock_ptr, infer_ptr = infer_ptr, failed_set = failed_set, clock_deps = clock_deps, infer_del = infer_del), NONE(), Expression.fakeMap);
+
+      // get the clock tuple and the inferred reference
       clock_tpl := Pointer.access(clock_ptr);
-      if Util.isSome(clock_tpl) then
+      infer := Pointer.access(infer_ptr);
+
+      if isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
+
+        // throw an error if there are different clocks in this partition
+        if not UnorderedSet.isEmpty(failed_set) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there are non-identical clocks in the same partition:\n"
+            + "### First clock found:\n" + clockTplString((name, clock)) + "\n### Conflicting clocks:\n" + UnorderedSet.toString(failed_set, clockTplString) + "."});
+          fail();
+        end if;
+
         if BClock.isBaseClock(clock) then
-          association := CLOCKED(clock, NONE(), false);
+          // if the clock is still an inferred clock without reference, update it to the default base clock and add to the base clocks
+          if BClock.isInferredClock(clock) then
+            if isNone(infer) then
+              clock := NBPartitioning.DEFAULT_BASE_CLOCK;
+              UnorderedMap.add(name, clock, info.baseClocks);
+            else
+              clock := BClock.INFERRED_CLOCK(Util.getOption(infer));
+            end if;
+          end if;
+          association := CLOCKED(clock, NONE(), clock_deps, false);
         else
           base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
-          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), false);
+          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE());
+        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE(), NONE());
       end if;
     end create;
+
+    function merge
+      input output Association ass1;
+      input Association ass2;
+      input Boolean strict;
+    algorithm
+      ass1 := match (ass1, ass2)
+        local
+          BackendDAE jac1, jac2;
+
+        // merging jacobians
+        case (CONTINUOUS(jacobian = SOME(jac1 as BackendDAE.JACOBIAN())), CONTINUOUS(jacobian = SOME(jac2))) guard(ass1.kind == ass2.kind or not strict) algorithm
+          ass1.jacobian := SOME(BJacobian.combine({jac1, jac2}, jac1.name));
+        then ass1;
+
+        // no jacobians to merge
+        case (CONTINUOUS(), CONTINUOUS()) guard(ass1.kind == ass2.kind or not strict) then ass1;
+
+        // merging clocked partitions
+        case (CLOCKED(), CLOCKED()) guard(not strict or (BClock.isEqual(ass1.clock, ass2.clock) and Util.optionEqual(ass1.baseClock, ass2.baseClock, BClock.isEqual))) algorithm
+          ass1.clock_deps := UnorderedSet.union(ass1.clock_deps, ass2.clock_deps);
+          ass1.holdEvents := ass1.holdEvents or ass2.holdEvents;
+        then ass1;
+
+        // unmergable
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge\n" + toString(ass1) + " and\n" + toString(ass2) + "."});
+        then fail();
+      end match;
+    end merge;
 
     function isClocked
       input Association association;
@@ -147,29 +226,133 @@ public
      b := match association case CLOCKED() then true; else false; end match;
     end isClocked;
 
+    // clock tpl for collecting and comparing clocks in a partition
+    type ClockTpl = tuple<ComponentRef, BClock>;
+
+    function clockTplString
+      input ClockTpl tpl;
+      output String str = "(" + ComponentRef.toString(Util.tuple21(tpl)) + " = " + BClock.toString(Util.tuple22(tpl)) + ")";
+    end clockTplString;
+
+    function hashClockTpl
+      input ClockTpl tpl;
+      output Integer hash;
+    algorithm
+      hash := ComponentRef.hash(Util.tuple21(tpl));
+      hash := stringHashDjb2Continue(BClock.toString(Util.tuple22(tpl)), hash);
+    end hashClockTpl;
+
+    function isEqualClockTpl
+      input ClockTpl tpl1;
+      input ClockTpl tpl2;
+      output Boolean b =  ComponentRef.isEqual(Util.tuple21(tpl1), Util.tuple21(tpl2)) and
+                          BClock.isEqual(Util.tuple22(tpl1), Util.tuple22(tpl2));
+    end isEqualClockTpl;
+
   protected
     function expClocked
-      "checks if an expression is a clock. used in mapping functions"
-      input output Expression exp;
-      input ClockedInfo info;
-      input Pointer<Option<ClockTpl>> clock_ptr;
+      "checks if an expression is a clock and collects it. Also finds all other clock dependencies"
+      input output Expression exp                     "the examined expression";
+      input ClockedInfo info                          "contains all base- and sub-clocks";
+      input Pointer<Option<ClockTpl>> clock_ptr       "the first found clock";
+      input Pointer<Option<ComponentRef>> infer_ptr   "potential inferred clock dependency";
+      input UnorderedSet<ClockTpl> failed_set         "clocks that are not equal to the first found clock";
+      input UnorderedSet<BClock> clock_deps           "clock dependencies found in sub sampling functions";
+      input UnorderedSet<ComponentRef> infer_del      "inferred clocks that can be removed";
     algorithm
-      if not Util.isSome(Pointer.access(clock_ptr)) then
-        _ := match exp
-          case Expression.CREF() guard(Type.isClock(exp.ty)) algorithm
-            if UnorderedMap.contains(exp.cref, info.baseClocks) then
-              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()))));
-            elseif UnorderedMap.contains(exp.cref, info.subClocks) then
-              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()))));
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed becase of unhandled clock: " + Expression.toString(exp)});
-              fail();
-            end if;
-          then ();
-          else ();
-        end match;
-      end if;
+      exp := match exp
+        local
+          Option<BClock> clock_opt;
+          ComponentRef arg;
+
+        // check if its a variable that defines a clock
+        case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+          if UnorderedMap.contains(exp.cref, info.baseClocks) then
+            clock_opt := SOME(UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()));
+          elseif UnorderedMap.contains(exp.cref, info.subClocks) then
+            clock_opt := SOME( UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()));
+          else
+            clock_opt := NONE();
+          end if;
+
+          () := match (clock_opt, Pointer.access(clock_ptr))
+            local
+              BClock new, old;
+              ComponentRef name;
+
+            // old sub clock and new base clock -> potentially update inferred base clock
+            case (SOME(BClock.BASE_CLOCK()), SOME((name, BClock.SUB_CLOCK()))) algorithm
+              removeInferredClock(name, exp.cref, info, infer_del);
+            then ();
+
+            // old base clock getting updated to new sub clock
+            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, BClock.BASE_CLOCK()))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+
+            // old base clock is inferred --> always take new clock
+            case (SOME(new), SOME((_, BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+
+            // clocks -> equal: success / different: fail
+            case (SOME(new), SOME((_, old))) algorithm
+              // if the old clock is inferred just override it
+              if BClock.isInferredClock(old) then
+                Pointer.update(clock_ptr, SOME((exp.cref, new)));
+              elseif not (BClock.isInferredClock(new) or BClock.isEqual(new, old)) then
+                UnorderedSet.add((exp.cref, new), failed_set);
+              end if;
+            then ();
+
+            // new clock
+            case (SOME(new), NONE()) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+
+            else ();
+          end match;
+        then exp;
+
+        // only look for clock dependencies on sample functions
+        case Expression.CALL(call = Call.TYPED_CALL(arguments = Expression.CREF(cref = arg) :: _)) guard(Expression.isClockOrSampleFunction(exp)) algorithm
+          if UnorderedMap.contains(arg, info.subClocks) then
+            UnorderedSet.add(UnorderedMap.getSafe(arg, info.subClocks, sourceInfo()), clock_deps);
+            Pointer.update(infer_ptr, SOME(arg));
+          end if;
+        then exp;
+
+        // go deeper on everything else
+        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, infer_ptr = infer_ptr, failed_set = failed_set, clock_deps = clock_deps, infer_del = infer_del));
+      end match;
     end expClocked;
+
+  protected
+    function removeInferredClock
+      input ComponentRef name;
+      input ComponentRef new_name;
+      input ClockedInfo info;
+      input UnorderedSet<ComponentRef> infer_del;
+    protected
+      BClock base;
+      ComponentRef base_name;
+      list<ComponentRef> sub_clock_names1, sub_clock_names2;
+    algorithm
+      base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
+      base      := UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo());
+      if BClock.isInferredClock(base) then
+        // update the sub clock (and all other related ones) to the correct base clock
+        sub_clock_names1 := UnorderedMap.getSafe(base_name, info.baseToSub, sourceInfo());
+        for s_name in sub_clock_names1 loop
+          UnorderedMap.add(s_name, new_name, info.subToBase);
+        end for;
+        // add all the sub clocks to the correct base clock
+        sub_clock_names2 := UnorderedMap.getOrDefault(new_name, info.baseToSub, {});
+        UnorderedMap.add(new_name, listAppend(sub_clock_names1, sub_clock_names2), info.baseToSub);
+        // add the old inferred clock to clocks that can be removed
+        UnorderedSet.add(base_name, infer_del);
+      end if;
+    end removeInferredClock;
   end Association;
 
   uniontype Partition
@@ -194,17 +377,14 @@ public
         local
           array<StrongComponent> comps;
 
-        case SOME(comps)
-          algorithm
-            for i in 1:arrayLength(comps) loop
-              str := str + StrongComponent.toString(comps[i], i) + "\n";
-            end for;
+        case SOME(comps) algorithm
+          for i in 1:arrayLength(comps) loop
+            str := str + StrongComponent.toString(comps[i], i) + "\n";
+          end for;
         then str;
 
-        else
-          algorithm
-            str := str + VariablePointers.toString(partition.unknowns, "Unknown") + "\n" +
-                         EquationPointers.toString(partition.equations, "Equations") + "\n";
+        else algorithm
+          str := str + VariablePointers.toString(partition.unknowns, "Unknown") + "\n" + EquationPointers.toString(partition.equations, "") + "\n";
         then str;
       end match;
 
@@ -219,7 +399,7 @@ public
       end if;
 
       if level == 2 then
-        str := str + Association.toString(partition.association);
+        str := str + Association.toString(partition.association) + "\n";
       end if;
     end toString;
 
@@ -249,23 +429,34 @@ public
       "returns true if the partition is empty.
       maybe check more than only equations?"
       input Partition partition;
-      output Boolean b = EquationPointers.size(partition.equations) == 0;
+      output Boolean b = EquationPointers.size(partition.equations) == 0
+        or Util.applyOptionOrDefault(partition.strongComponents, isEmptyArr, false);
+    protected
+      function isEmptyArr = arrayEmpty; // FIXME MetaModelica bug with inlined functions?
     end isEmpty;
 
-    function isAlgebraicContinuous
+    function isODEorDAE
       input Partition part;
-      output Boolean alg = true;
-      output Boolean con = true;
+      output Boolean b;
     algorithm
-      for var in VariablePointers.toList(part.unknowns) loop
-        alg := if alg then not BVariable.isStateDerivative(var) else false;
-        con := if con then not BVariable.isDiscrete(var) else false;
-        // stop searching if both
-        if not (alg or con) then
-          break;
-        end if;
-      end for;
-    end isAlgebraicContinuous;
+      b := match part.association
+        local
+          Kind kind;
+        case Association.CONTINUOUS(kind = kind) then kind == Kind.ODE or kind == Kind.ODE_EVT or kind == Kind.DAE;
+        else false;
+      end match;
+    end isODEorDAE;
+
+    function isClocked
+      input Partition part;
+      output Boolean b;
+    algorithm
+      b := match part.association
+        local
+        case Association.CLOCKED() then true;
+        else false;
+      end match;
+    end isClocked;
 
     function categorize
       input Partition partition;
@@ -278,6 +469,20 @@ public
       Boolean algebraic, continuous;
       Kind kind;
       Association association;
+      function isAlgebraicContinuous
+        input Partition part;
+        output Boolean alg = true;
+        output Boolean con = true;
+      algorithm
+        for var in VariablePointers.toList(part.unknowns) loop
+          alg := if alg then not BVariable.isStateDerivative(var) else false;
+          con := if con then not BVariable.isDiscrete(var) else false;
+          // stop searching if both
+          if not (alg or con) then
+            break;
+          end if;
+        end for;
+      end isAlgebraicContinuous;
     algorithm
       (algebraic, continuous) := isAlgebraicContinuous(partition);
       kind  := match (algebraic, continuous)
@@ -293,23 +498,56 @@ public
         then partition.association;
         case (Kind.ALG, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(alg, partition);
         then association;
         case (Kind.ODE, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(ode, partition);
         then association;
         case (Kind.ALG_EVT, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(alg_evt, partition);
         then association;
         case (Kind.ODE_EVT, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(ode_evt, partition);
         then association;
         else fail();
       end match;
     end categorize;
+
+    function setIndex
+      input output Partition part;
+      input Pointer<Integer> index;
+    protected
+      Integer clock_idx = Pointer.access(index);
+    algorithm
+      part.index := clock_idx;
+      if isClocked(part) then
+        part.equations := EquationPointers.map(part.equations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
+      end if;
+      Pointer.update(index, clock_idx + 1);
+    end setIndex;
+
+    function setKind
+      input output Partition part;
+      input Kind kind;
+    algorithm
+      part.association := match part.association
+        local
+          Association ass;
+        case ass as Association.CONTINUOUS() algorithm
+          ass.kind := kind;
+        then ass;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot set kind for non-continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end setKind;
 
     function getJacobian
       input Partition part;
@@ -320,6 +558,46 @@ public
         else NONE();
       end match;
     end getJacobian;
+
+    function getJacobianAdjoint
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(jacobianAdjoint = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianAdjoint;
+
+    function getJacobianLfg
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(LFG_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianLfg;
+
+    function getJacobianMrf
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(MRF_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianMrf;
+
+    function getJacobianR0
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(R0_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianR0;
 
     function getKind
       input Partition part;
@@ -340,16 +618,47 @@ public
       (clock, baseClock, holdEvents) := match part.association
         case Association.CLOCKED(clock = clock, baseClock = baseClock, holdEvents = holdEvents) then (clock, baseClock, holdEvents);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. There is no clock in continuous partition:\n" + toString(part)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clocks for continuous partition:\n" + toString(part)});
         then fail();
       end match;
     end getClocks;
+
+    function setClocks
+      input output Partition part;
+      input BClock clock;
+      input Option<BClock> baseClock;
+    algorithm
+      part := match part.association
+        local
+          Association association;
+        case association as Association.CLOCKED() algorithm
+          association.clock := clock;
+          association.baseClock := baseClock;
+          part.association := association;
+        then part;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot set clocks for continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end setClocks;
+
+    function getClockDependencies
+      input Partition part;
+      output UnorderedSet<BClock> clock_deps;
+    algorithm
+      clock_deps := match part.association
+        case Association.CLOCKED(clock_deps = clock_deps) then clock_deps;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clock dependencies for continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end getClockDependencies;
 
     function getLoopResiduals
       input Partition part;
       output list<Pointer<Variable>> residuals = {};
     algorithm
-      if Util.isSome(part.strongComponents) then
+      if isSome(part.strongComponents) then
         for comp in Util.getOption(part.strongComponents) loop
           residuals := listAppend(StrongComponent.getLoopResiduals(comp), residuals);
         end for;
@@ -385,7 +694,7 @@ public
     protected
       array<StrongComponent> comps;
     algorithm
-      if Util.isSome(partition.strongComponents) then
+      if isSome(partition.strongComponents) then
         SOME(comps) := partition.strongComponents;
         for i in 1:arrayLength(comps) loop
           comps[i] := func(comps[i]);
@@ -404,6 +713,7 @@ public
         case Kind.ODE_EVT     then "ODE_EVT";
         case Kind.ALG_EVT     then "ALG_EVT";
         case Kind.INI         then "INI";
+        case Kind.INI_0       then "INI_0";
         case Kind.DAE         then "DAE";
         case Kind.JAC         then "JAC";
         case Kind.CLK         then "CLK";
@@ -423,9 +733,10 @@ public
         case Kind.ODE_EVT     then 2;
         case Kind.ALG_EVT     then 3;
         case Kind.INI         then 4;
-        case Kind.DAE         then 5;
-        case Kind.JAC         then 6;
-        case Kind.CLK         then 7;
+        case Kind.INI_0       then 5;
+        case Kind.DAE         then 6;
+        case Kind.JAC         then 7;
+        case Kind.CLK         then 8;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
         then fail();
@@ -461,7 +772,7 @@ public
     protected
       array<StrongComponent> comps;
     algorithm
-      if Util.isSome(par.strongComponents) then
+      if isSome(par.strongComponents) then
         // no need to override comps afterwards since arrays are mutable
         comps := Util.getOption(par.strongComponents);
         for i in 1:arrayLength(comps) loop
@@ -483,7 +794,34 @@ public
         else par.association;
       end match;
     end updateHeldVars;
+
+    function merge
+      input output Partition part1;
+      input Partition part2;
+      input Boolean strict;
+    algorithm
+      if isSome(part1.daeUnknowns) or isSome(part2.daeUnknowns) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge DAE-Mode partitions."}); fail();
+      elseif isSome(part1.strongComponents) or isSome(part2.strongComponents) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge sorted partitions."}); fail();
+      elseif isSome(part1.matching) or isSome(part2.matching) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge matched partitions."}); fail();
+      elseif isSome(part1.adjacencyMatrix) or isSome(part2.adjacencyMatrix) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge partitions with adjacency matrix."}); fail();
+      end if;
+
+      // index irrelevant, should be updated after use
+      part1.association := Association.merge(part1.association, part2.association, strict);
+      part1.unknowns    := VariablePointers.addList(VariablePointers.toList(part2.unknowns), part1.unknowns);
+      part1.equations   := EquationPointers.addList(EquationPointers.toList(part2.equations), part1.equations);
+    end merge;
   end Partition;
 
-  annotation(__OpenModelica_Interface="backend");
+
+  function kindIsInitial
+    input Kind kind;
+    output Boolean b = kind == Kind.INI or kind == Kind.INI_0;
+  end kindIsInitial;
+
+  annotation(__OpenModelica_Interface="nbackend");
 end NBPartition;

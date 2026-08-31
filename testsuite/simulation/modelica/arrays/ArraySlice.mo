@@ -13,7 +13,6 @@ equation
     temp[1]=100.0;
     temp[2:30]=T[2:30];
     der(T)=temp;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice;
 
 // Result:

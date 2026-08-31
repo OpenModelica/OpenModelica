@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Solver/IDA/IDA.h>
@@ -10,6 +37,7 @@ Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _idasettings(dynamic_cast<ISolverSettings*>(_settings)),
       _idaMem(NULL),
+      _sunctx(NULL),
       /*_z(NULL),
       _zInit(NULL),
       _zWrite(NULL),
@@ -130,6 +158,7 @@ Ida::~Ida()
         SUNMatDestroy(_ida_J);
         SUNLinSolFree(_ida_linSol);
         IDAFree(&_idaMem);
+    SUNContext_Free(&_sunctx);
     }
 
     if (_colorOfColumn)
@@ -249,7 +278,20 @@ void Ida::initialize()
         }
 
         // Allocate memory for the solver
-        _idaMem = IDACreate();
+        if (SUNContext_Create(SUN_COMM_NULL, &_sunctx) != SUN_SUCCESS)
+      throw ModelicaSimulationError(SOLVER,"SUNDIALS_ERROR: SUNContext_Create failed");
+    /* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
+    {
+      SUNLogger _sunlogger = NULL;
+      if (SUNContext_GetLogger(_sunctx, &_sunlogger) == SUN_SUCCESS && _sunlogger != NULL) {
+        SUNLogger_SetErrorFilename(_sunlogger, "");
+        SUNLogger_SetWarningFilename(_sunlogger, "");
+        SUNLogger_SetInfoFilename(_sunlogger, "");
+        SUNLogger_SetDebugFilename(_sunlogger, "");
+      }
+    }
+
+    _idaMem = IDACreate(_sunctx);
         if (check_flag((void*)_idaMem, "IDACreate", 0))
         {
             _idid = -5;
@@ -275,12 +317,13 @@ void Ida::initialize()
         for (int i = 0; i < _dimStates; i++)
             _absTol[i] = dynamic_cast<ISolverSettings*>(_idasettings)->getATol();
 
-        _CV_y0 = N_VMake_Serial(_dimSys, _yInit);
-        _CV_y = N_VMake_Serial(_dimSys, _y);
-        _CV_yp = N_VMake_Serial(_dimSys, _yp);
-        _CV_yWrite = N_VMake_Serial(_dimSys, _yWrite);
-        _CV_ypWrite = N_VMake_Serial(_dimSys, _ypWrite);
-        _CV_absTol = N_VMake_Serial(_dimSys, _absTol);
+        _CV_y0 = N_VMake_Serial(_dimSys, _yInit, _sunctx);
+        _CV_y = N_VMake_Serial(_dimSys, _y, _sunctx);
+        _CV_yp = N_VMake_Serial(_dimSys, _yp, _sunctx);
+        _CV_yWrite = N_VMake_Serial(_dimSys, _yWrite, _sunctx);
+        _CV_ypWrite = N_VMake_Serial(_dimSys, _ypWrite, _sunctx);
+        _CV_absTol = N_VMake_Serial(_dimSys, _absTol, _sunctx);
+        _ida_ySolver = N_VNew_Serial(_dimSys, _sunctx);
 
         if (check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
         {
@@ -297,7 +340,7 @@ void Ida::initialize()
             _idid = -5;
             throw std::invalid_argument("Ida::initialize()");
         }
-        _idid = IDASetErrHandlerFn(_idaMem, errOutputIDA, _data);
+        _idid = SUNContext_PushErrHandler(_sunctx, errOutputIDA, _data);
         if (_idid < 0)
             throw std::invalid_argument("IDA::initialize()");
         // Set Tolerances
@@ -332,8 +375,8 @@ void Ida::initialize()
             throw std::invalid_argument(/*_idid,_tCurrent,*/"IDA::initialize()");
 
         // Initialize dense linear solver
-        _ida_J = SUNDenseMatrix(_dimSys, _dimSys);
-        _ida_linSol = SUNLinSol_Dense(_ida_ySolver, _ida_J);
+        _ida_J = SUNDenseMatrix(_dimSys, _dimSys, _sunctx);
+        _ida_linSol = SUNLinSol_Dense(_ida_ySolver, _ida_J, _sunctx);
         _idid = IDASetLinearSolver(_idaMem, _ida_linSol, _ida_J);
         if (_idid < 0)
             throw std::invalid_argument("IDA::initialize()");
@@ -344,14 +387,16 @@ void Ida::initialize()
             double* tmp = new double[_dimSys];
             std::fill_n(tmp, _dimStates, 1.0);
             std::fill_n(tmp + _dimStates, _dimAE, 0.0);
-            _idid = IDASetId(_idaMem, N_VMake_Serial(_dimSys, tmp));
+            N_Vector id = N_VMake_Serial(_dimSys, tmp, _sunctx);
+            _idid = IDASetId(_idaMem, id);
+            N_VDestroy(id);   // IDA keeps its own copy of id
             delete [] tmp;
             if (_idid < 0)
                 throw std::invalid_argument("IDA::initialize()");
         }
 
         // Use own jacobian matrix
-        //_idid = CVDlsSetDenseJacFn(_idaMem, &jacobianFunctionCB);
+        //_idid = CVodeSetJacFn(_idaMem, &jacobianFunctionCB);
         //if (_idid < 0)
         //    throw std::invalid_argument("IDA::initialize()");
 
@@ -483,7 +528,7 @@ void Ida::solve(const SOLVERCALL action)
 
       long int nst, nfe, nsetups, netf, nni, ncfn;
       int qlast, qcur;
-      realtype h0u, hlast, hcur, tcur;
+      sunrealtype h0u, hlast, hcur, tcur;
 
       int flag;
 
@@ -919,7 +964,7 @@ int Ida::zeroFunctionCB(double t, N_Vector y, N_Vector yp, double* zeroval, void
     return (0);
 }
 
-int Ida::jacobianFunctionCB(long int N, double t, N_Vector y, N_Vector fy, DlsMat Jac, void* user_data, N_Vector tmp1,
+int Ida::jacobianFunctionCB(long int N, double t, N_Vector y, N_Vector fy, SUNMatrix Jac, void* user_data, N_Vector tmp1,
                             N_Vector tmp2, N_Vector tmp3)
 {
     return ((Ida*)user_data)->calcJacobian(t, N, tmp1, tmp2, tmp3, NV_DATA_S(y), fy, Jac);
@@ -927,7 +972,7 @@ int Ida::jacobianFunctionCB(long int N, double t, N_Vector y, N_Vector fy, DlsMa
 
 
 int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y,
-                      N_Vector fy, DlsMat Jac)
+                      N_Vector fy, SUNMatrix Jac)
 {
     try
     {
@@ -995,7 +1040,7 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
                         {
                             l = _jacobianAIndex[j];
                             g = l + startOfColumn;
-                            Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
+                            SM_DATA_D(Jac)[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
                         }
                     }
                 }
@@ -1023,7 +1068,7 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
           for(int i=0; i<_dimSys; ++i)
               {
-                  Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
+                  SM_DATA_D(Jac)[i+j*_dimSys] = NV_Ith_S(jthCol,i);
               }
 
           //DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
@@ -1072,7 +1117,7 @@ void Ida::writeSimulationInfo()
     long int nfQSe, netfQS;
 
     int qlast, qcur;
-    realtype h0u, hlast, hcur, tcur;
+    sunrealtype h0u, hlast, hcur, tcur;
 
     int flag;
 
@@ -1124,10 +1169,13 @@ int Ida::check_flag(void* flagvalue, const char* funcname, int opt)
 }
 
 
-void Ida::errOutputIDA(int error_code, const char* module, const char* function,
-                       char* msg, void* userData)
+void Ida::errOutputIDA(int line, const char* func, const char* file, const char* msg,
+                       SUNErrCode err_code, void* err_user_data, SUNContext sunctx)
 {
     cout << "#### IDA error message #####";
-    cout << " -> error code" << error_code << "in module" << module << " and function " << function;
-    cout << " Message: " << msg;
+    cout << " -> error code " << err_code
+         << " in function " << func << " at " << file << ":" << line;
+    /* Package level codes (IDA_* and friends) are not SUNErrCodes, so SUNGetErrMsg()
+       only makes sense when SUNDIALS did not supply a message. */
+    cout << " Message: " << (msg ? msg : SUNGetErrMsg(err_code));
 }

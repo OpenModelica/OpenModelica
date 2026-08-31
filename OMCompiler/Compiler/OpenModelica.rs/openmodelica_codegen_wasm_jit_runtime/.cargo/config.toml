@@ -1,0 +1,16 @@
+# Export the `__indirect_function_table` (growable) from the runtime so a
+# generated model module can import it — exactly as it imports `rt.memory` — and
+# append its per-system `residual`/`load` functions for `rt_solve_nls` to reach
+# via `call_indirect`. See `nls.rs` and CodegenWasmJit's NLS lowering.
+#
+# `+simd128`: faer's kernels are `#[target_feature(enable = "simd128")]`, so the
+# module carries them either way — without it pulp's dispatch takes the scalar
+# path and they are dead weight. `liblapack.wasm` is built the same way, and every
+# engine that runs a generated module has SIMD.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--export-table", "-C", "link-arg=--growable-table",
+             "-C", "target-feature=+simd128"]
+
+[target.wasm32-wasip1]
+rustflags = ["-C", "link-arg=--export-table", "-C", "link-arg=--growable-table",
+             "-C", "target-feature=+simd128"]

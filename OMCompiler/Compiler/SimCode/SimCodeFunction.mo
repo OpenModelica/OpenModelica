@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -33,15 +37,20 @@ encapsulated package SimCodeFunction
 "The entry points to this module is the translateFunctions function."
 
 // public imports
-public
-import Absyn;
-import AbsynUtil;
-import DAE;
-import HashTableCrefSimVar;
-import HashTableStringToPath;
-import Tpl;
+public import Absyn;
+public import AbsynUtil;
+public import DAE;
+public import HashTableCrefSimVar;
 
-uniontype FunctionCode
+// private imports
+protected import ComponentReferenceBasics;
+protected import ExpressionBasics;
+protected import Error;
+protected import List;
+protected import SCode;
+protected import TypesDump;
+
+public uniontype FunctionCode
   "Root data structure containing information required for templates to
   generate C functions for Modelica/MetaModelica functions."
   record FUNCTIONCODE
@@ -57,8 +66,8 @@ end FunctionCode;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
-uniontype Function
-  "Represents a Modelica or MetaModelica function."
+public uniontype Function
+  "Represents a Modelica, MetaModelica or external function."
   record FUNCTION
     Absyn.Path name;
     list<Variable> outVars;
@@ -111,9 +120,55 @@ uniontype Function
     SCode.Visibility visibility;
     SourceInfo info;
   end RECORD_CONSTRUCTOR;
+
+  function toString
+  "Print for debugging purpose"
+    input Function func;
+    output String str = "";
+  algorithm
+    str := match func
+      local
+        String tmp = "";
+        list<String> ls;
+      case FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "FUNCTION(" + tmp + ")";
+      case PARALLEL_FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "PARALLEL_FUNCTION(" + tmp + ")";
+      case KERNEL_FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "KERNEL_FUNCTION(" + tmp + ")";
+      case EXTERNAL_FUNCTION() algorithm
+        tmp := "\n";
+        tmp := tmp + "  name: " + AbsynUtil.pathString(func.name) + ",\n";
+        tmp := tmp + "  extName: " + func.extName + ",\n";
+        ls := List.map(func.funArgs, Variable.toString);
+        tmp := tmp + "  funArgs: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.extArgs, SimExtArg.toString);
+        tmp := tmp + "  extArgs: {" + stringDelimitList(ls, ", ") + "},\n";
+        tmp := tmp + "  extReturn: " + SimExtArg.toString(func.extReturn) + ",\n";
+        ls := List.map(func.inVars, Variable.toString);
+        tmp := tmp + "  inVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.outVars, Variable.toString);
+        tmp := tmp + "  outVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.biVars, Variable.toString);
+        tmp := tmp + "  biVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        tmp := tmp + "  includes: {" + stringDelimitList(func.includes, ", ") + "},\n";
+        tmp := tmp + "  libs: {" + stringDelimitList(func.libs, ", ") + "},\n";
+        tmp := tmp + "  language: " + func.language + "\n";
+      then "EXTERNAL_FUNCTION(" + tmp + ")";
+      case RECORD_CONSTRUCTOR() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "RECORD_CONSTRUCTOR(" + tmp + ")";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end Function;
 
-uniontype RecordDeclaration
+public uniontype RecordDeclaration
 
   record RECORD_DECL_FULL
     String name "struct (record) name ? encoded";
@@ -136,7 +191,7 @@ uniontype RecordDeclaration
 
 end RecordDeclaration;
 
-uniontype MakefileParams
+public uniontype MakefileParams
   "Platform specific parameters used when generating makefiles."
   record MAKEFILE_PARAMS
     String ccompiler;
@@ -156,7 +211,7 @@ uniontype MakefileParams
   end MAKEFILE_PARAMS;
 end MakefileParams;
 
-uniontype SimExtArg
+public uniontype SimExtArg
   "Information about an argument to an external function."
   record SIMEXTARG
     DAE.ComponentRef cref;
@@ -166,10 +221,12 @@ uniontype SimExtArg
     Boolean hasBinding "avoid double allocation";
     DAE.Type type_;
   end SIMEXTARG;
+
   record SIMEXTARGEXP
     DAE.Exp exp;
     DAE.Type type_;
   end SIMEXTARGEXP;
+
   record SIMEXTARGSIZE
     DAE.ComponentRef cref;
     Boolean isInput;
@@ -177,11 +234,50 @@ uniontype SimExtArg
     DAE.Type type_;
     DAE.Exp exp;
   end SIMEXTARGSIZE;
+
   record SIMNOEXTARG end SIMNOEXTARG;
+
+  function toString
+    input SimExtArg simExtArg;
+    output String str = "";
+  algorithm
+    str := match simExtArg
+      local
+        String tmp = "";
+      case SIMEXTARG() algorithm
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
+        tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
+        tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
+        tmp := if simExtArg.isArray then tmp + ", isArray: true" else tmp + ", isArray: false";
+        tmp := if simExtArg.hasBinding then tmp + ", hasBinding: true" else tmp + ", hasBinding: false";
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
+      then "SIMEXTARG(" + tmp + ")";
+
+      case SIMEXTARGEXP() algorithm
+        tmp := tmp + "exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
+      then "SIMEXTARGEXP(" + tmp + ")";
+
+      case SIMEXTARGSIZE() algorithm
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
+        tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
+        tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
+        tmp := tmp + ", exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
+      then "SIMEXTARGSIZE(" + tmp + ")";
+
+      case SIMNOEXTARG()
+      then "SIMNOEXTARG()";
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end SimExtArg;
 
-uniontype Variable
-  "a variable represents a name, a type and a possible default value"
+public uniontype Variable
+  "A variable represents a name, a type and a possible default value"
   record VARIABLE
     DAE.ComponentRef name;
     DAE.Type ty;
@@ -198,9 +294,29 @@ uniontype Variable
     list<Variable> args;
     Option<DAE.Exp> defaultValue "default value";
   end FUNCTION_PTR;
+
+  function toString
+    input Variable variable;
+    output String str = "";
+  algorithm
+    str := match variable
+      local
+        String tmp = "";
+      case VARIABLE() algorithm
+        tmp := tmp + "name: " + ComponentReferenceBasics.printComponentRefStr(variable.name);
+        tmp := tmp + ", type: " + TypesDump.unparseType(variable.ty);
+      then "VARIABLE(" + tmp + ")";
+      case FUNCTION_PTR() algorithm
+        tmp := tmp + "name: " + variable.name;
+      then "FUNCTION_PTR(" + tmp + ")";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end Variable;
 
-uniontype Context
+public uniontype Context
   "Constants of this type defined below are used by templates to be able to
   generate different code depending on the context it is generated in."
   record SIMULATION_CONTEXT
@@ -218,6 +334,7 @@ uniontype Context
   end ALGLOOP_CONTEXT;
 
   record JACOBIAN_CONTEXT
+    String name;
     Option<HashTableCrefSimVar.HashTable> jacHT;
   end JACOBIAN_CONTEXT;
 
@@ -244,7 +361,7 @@ end Context;
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
 public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
-public constant Context contextJacobian               = JACOBIAN_CONTEXT(NONE());
+public constant Context contextJacobian               = JACOBIAN_CONTEXT("", NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
@@ -259,164 +376,5 @@ public constant Context contextOMSI                   = OMSI_CONTEXT(NONE());
 constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE(), false)::{} "For CodegenC.tpl";
 
-// protected imports
-protected
-import BaseHashTable;
-import CodegenCFunctions;
-import CodegenMidToC;
-import Global;
-import SimCodeFunctionUtil;
-import MidCode;
-import DAEToMid;
-
-public function translateFunctions "
-  Entry point to translate Modelica/MetaModelica functions to C functions.
-  Called from other places in the compiler."
-  input Absyn.Program program;
-  input String name;
-  input Option<DAE.Function> optMainFunction;
-  input list<DAE.Function> idaeElements;
-  input list<DAE.Type> metarecordTypes;
-  input list<String> inIncludes;
-algorithm
-  setGlobalRoot(Global.optionSimCode, NONE());
-
-  _ := match (program, name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
-    local
-      DAE.Function daeMainFunction;
-      Function mainFunction;
-      list<Function> fns;
-      list<String> includes, libs, libPaths,includeDirs;
-      MakefileParams makefileParams;
-      FunctionCode fnCode;
-      list<RecordDeclaration> extraRecordDecls;
-      list<DAE.Exp> literals;
-      list<DAE.Function> daeElements;
-      Tpl.Text midCode;
-      list<MidCode.Function> midfuncs;
-    case (_, _, SOME(daeMainFunction), daeElements, _, includes)
-      equation
-        // Create FunctionCode
-        (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
-        fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
-        else
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
-      then
-        ();
-    case (_, _, NONE(), daeElements, _, includes)
-      equation
-        // Create FunctionCode
-        (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
-        // remove OpenModelica.threadData.ThreadData
-        fns = removeThreadDataFunction(fns, {});
-        extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});
-        fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
-        else
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
-      then
-        ();
-
-  end match;
-end translateFunctions;
-
-protected function removeThreadDataRecord
-"remove OpenModelica.threadData.ThreadData
- as is already defined in openmodelica.h"
-  input list<RecordDeclaration> inRecs;
-  input list<RecordDeclaration> inAcc;
-  output list<RecordDeclaration> outRecs;
-algorithm
-  outRecs := match(inRecs, inAcc)
-    local
-      Absyn.Path p;
-      list<RecordDeclaration> acc, rest;
-      RecordDeclaration r;
-
-    case ({}, _) then listReverse(inAcc);
-
-    case (RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, inAcc);
-     then
-       acc;
-
-    case (RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, inAcc);
-     then
-       acc;
-
-    case (r::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, r::inAcc);
-     then
-       acc;
-
-  end match;
-end removeThreadDataRecord;
-
-protected function removeThreadDataFunction
-"remove OpenModelica.threadData.ThreadData
- as is already defined in openmodelica.h"
-  input list<Function> inFuncs;
-  input list<Function> inAcc;
-  output list<Function> outFuncs;
-algorithm
-  outFuncs := match(inFuncs, inAcc)
-    local
-      Absyn.Path p;
-      list<Function> acc, rest;
-      Function f;
-
-    case ({}, _) then listReverse(inAcc);
-
-    case (RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest, _)
-     equation
-       acc = removeThreadDataFunction(rest, inAcc);
-     then
-       acc;
-
-    case (f::rest, _)
-     equation
-       acc = removeThreadDataFunction(rest, f::inAcc);
-     then
-       acc;
-
-  end match;
-end removeThreadDataFunction;
-
-public function getCalledFunctionsInFunction
-"Goes through the given DAE, finds the given function and collects
-  the names of the functions called from within those functions"
-  input Absyn.Path path;
-  input DAE.FunctionTree funcs;
-  output list<Absyn.Path> outPaths;
-protected
-  HashTableStringToPath.HashTable ht;
-algorithm
-  ht := HashTableStringToPath.emptyHashTable();
-  ht := SimCodeFunctionUtil.getCalledFunctionsInFunction2(path,AbsynUtil.pathStringNoQual(path),ht,funcs);
-  outPaths := BaseHashTable.hashTableValueList(ht);
-end getCalledFunctionsInFunction;
-
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCodeFunction;

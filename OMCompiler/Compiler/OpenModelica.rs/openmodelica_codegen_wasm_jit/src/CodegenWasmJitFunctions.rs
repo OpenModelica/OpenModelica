@@ -1,0 +1,11424 @@
+// Manually written file (the `CodegenWasmJitFunctions` MetaModelica package is a
+// placeholder; see HANDWRITTEN_TOP_PACKAGES in mmtorust/src/codegen.rs).
+//
+// The `wasm-jit` simCodeTarget, function half. Counterpart of
+// `CodegenCFunctions` for the C target and of `DynLoad`/`DynLoadExt` for the
+// execute side: instead of generating C, building a shared object and
+// `dlopen`ing it, the `-d=gen` functions are lowered to a WebAssembly module
+// that is JIT-compiled and run in-process with `wasmer`. This skips the
+// gcc/clang invocation, which dominates the latency of interactive function
+// evaluation.
+//
+// `translateFunctions` lowers the `SimCodeFunction.FunctionCode` to a `.wasm`
+// module (via the `wasm-encoder` crate) plus a small `.wasm.sig` sidecar that
+// records the input/output scalar types (the wasm value types alone cannot tell
+// Integer from Boolean). `loadAndExecute` reads them back, instantiates the
+// module and calls the exported entry `main`, marshalling `Values.Value`s in
+// and out.
+//
+// SCOPE: scalar functions over Integer / Real / Boolean / String (and
+// Enumeration literals, treated as their Integer index). Arithmetic,
+// comparisons, `if`/`while`/`for`, calls to other generated functions and a
+// curated set of math builtins are supported. Strings are reference-counted
+// values in the shared runtime's linear memory (see the `rt_*` imports and
+// `openmodelica_codegen_wasm_jit_runtime`): literals are materialized from
+// passive data segments with `memory.init`, retain/release is inserted by this
+// codegen (ownership-based ARC; see `release_heap_locals` / `str_binop`), and
+// the string builtins (`+`/concat, comparison, `substring`, `stringLength`,
+// `String`/`intString`/`boolString`) lower to runtime calls.
+//
+// When the `wasm-jit` target is selected it is authoritative: a construct this
+// codegen cannot lower is a hard, visible failure (a panic naming the reason),
+// NOT a silent degradation to the C target — see `translateFunctions`. Scalars,
+// arrays (element-wise/structural ops, slicing, reductions) and records (nested,
+// array-valued fields, value-semantic construction) are supported; default
+// variable bindings are initialized like the C target's `varInit`. Known gaps
+// that still panic today: `String(Real, significantDigits, …)` and any non-zero
+// `minimumLength` padding/justification (need printf-style formatting to stay
+// byte-identical to the C target), MetaModelica lists, external functions, and
+// the remaining items in `HANDOFF.md`.
+
+// The two entry points keep their MetaModelica camelCase names so the generated
+// `CevalScript` caller resolves them; the rest of the module is idiomatic Rust.
+#![allow(non_snake_case)]
+
+use std::collections::{HashMap, HashSet};
+// The record layout is shared with the host, which reads records this code built.
+use openmodelica_wasm_jit::sig::{record_layout, RecordLayout};
+use std::sync::Arc;
+
+use metamodelica::Result;
+use arcstr::ArcStr;
+use metamodelica::List;
+
+use openmodelica_ast::Absyn;
+use openmodelica_frontend_base::Expression;
+use openmodelica_frontend_base::Types;
+use openmodelica_frontend_dump::AbsynUtil;
+use openmodelica_frontend_dump::ExpressionDumpTpl;
+use openmodelica_tpl::Tpl;
+use openmodelica_frontend_types::{ClassInf, DAE, Values};
+use openmodelica_simcode_types::SimCode;
+use openmodelica_simcode_types::SimCodeFunction;
+
+use wasm_encoder as we;
+
+// On wasm32 wasmtime has no backend, so `engine-wasmer` is mandatory there.
+#[cfg(all(feature = "jit", target_arch = "wasm32", not(feature = "engine-wasmer")))]
+compile_error!("openmodelica_codegen_wasm_jit: the wasm32 target requires `engine-wasmer` (wasmtime has no wasm backend)");
+
+// The execution engine is selected at compile time: wasmtime natively (the
+// default/fast path), wasmer when `engine-wasmer` is set or on wasm32 (its `js`
+// backend), or a no-engine stub when the `jit` feature is off. Same module
+// interface across all three (see the parallel block in CodegenWasmJit.rs).
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+#[path = "CodegenWasmJitFunctions/runtime_wasmtime.rs"]
+pub(crate) mod runtime;
+#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
+#[path = "CodegenWasmJitFunctions/runtime_wasmer.rs"]
+pub(crate) mod runtime;
+#[cfg(not(feature = "jit"))]
+#[path = "CodegenWasmJitFunctions/runtime_stub.rs"]
+pub(crate) mod runtime;
+
+thread_local! {
+    /// What is being lowered, for the diagnostics below.
+    static CURRENT_FN: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    static CURRENT_PART: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+}
+
+fn fn_context() -> String {
+    let part = CURRENT_PART.with(|p| p.borrow().clone());
+    CURRENT_FN.with(|f| match (f.borrow().as_str(), part.as_str()) {
+        ("", "") => String::new(),
+        ("", p) => format!(" in {p}"),
+        (name, "") => format!(" in function `{name}`"),
+        (name, p) => format!(" in {p} in function `{name}`"),
+    })
+}
+
+/// Sets `CURRENT_PART` until it drops, restoring the previous value.
+struct PartGuard(String);
+
+impl PartGuard {
+    fn new(part: String) -> Self {
+        PartGuard(CURRENT_PART.with(|p| p.replace(part)))
+    }
+}
+
+impl Drop for PartGuard {
+    fn drop(&mut self) {
+        CURRENT_PART.with(|p| *p.borrow_mut() = std::mem::take(&mut self.0));
+    }
+}
+
+/// Record a message naming the unresolved variable (the `Result` error is a
+/// `&'static str`; `translateModel` surfaces the recorded message).
+fn unknown_variable(name: &str) -> &'static str {
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: reference to unknown variable `{name}`{}",
+        fn_context()
+    ));
+    "CodegenWasmJit: reference to unknown variable"
+}
+
+/// A wasm value type. MetaModelica `Integer` is the port's `i32`
+/// ([[funcbuiltin-i32-intmaxlit]]); `Boolean` and `Enumeration` indices also
+/// live in an `i32`; `Real` is an `f64`.
+// `WTy` is defined once in `openmodelica_sim_meta` (shared with the in-wasm sim
+// driver so the emitted layout and the driver's readback cannot drift). Its
+// wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
+// trait rather than an inherent method.
+pub(crate) use openmodelica_sim_meta::{Neg, WTy};
+use openmodelica_sim_meta::clock_field;
+pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, ExtLang, FnSig, SigTy, WTyVal};
+
+/// Parse one `.wasm.sig` line into a list of [`SigTy`]s (see [`SigTy::write_code`]
+/// for the encoding). Types are concatenated without separators; an `'['`
+/// consumes the following type as its array element.
+fn parse_sig_types(line: &str) -> Result<Vec<SigTy>> {
+    let mut chars = line.chars().peekable();
+    let mut out = Vec::new();
+    while chars.peek().is_some() {
+        out.push(parse_sig_type(&mut chars)?);
+    }
+    Ok(out)
+}
+
+fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<SigTy> {
+    match chars.next() {
+        Some('I') => Ok(SigTy::Int),
+        Some('R') => Ok(SigTy::Real),
+        Some('B') => Ok(SigTy::Bool),
+        Some('S') => Ok(SigTy::Str),
+        Some('P') => Ok(SigTy::Ptr),
+        Some('[') => {
+            // Consecutive `'['`s are the rank of one array (Modelica arrays are
+            // rectangular, so the element after them is a scalar, never another
+            // array).
+            let mut rank = 1u32;
+            while chars.peek() == Some(&'[') {
+                chars.next();
+                rank += 1;
+            }
+            Ok(SigTy::Array { elem: Arc::new(parse_sig_type(chars)?), rank })
+        }
+        // `{path;name:code;…}` — a record (see [`SigTy::write_code`]).
+        Some('{') => {
+            let mut path = String::new();
+            while let Some(&c) = chars.peek() {
+                if matches!(c, ';' | '}') {
+                    break;
+                }
+                chars.next();
+                path.push(c);
+            }
+            let mut fields = Vec::new();
+            while chars.peek() == Some(&';') {
+                chars.next(); // ';'
+                let mut name = String::new();
+                loop {
+                    match chars.next() {
+                        Some(':') => break,
+                        Some(c) => name.push(c),
+                        None => return Err("CodegenWasmJit: unterminated record field in signature"),
+                    }
+                }
+                fields.push((ArcStr::from(name.as_str()), parse_sig_type(chars)?));
+            }
+            match chars.next() {
+                Some('}') => {}
+                other => return Err("CodegenWasmJit: expected a closing brace in record signature"),
+            }
+            Ok(SigTy::Record { path: ArcStr::from(path.as_str()), fields: Arc::new(fields) })
+        }
+        // `<params|results>` — a function reference (see [`SigTy::write_code`]).
+        Some('<') => {
+            let mut params = Vec::new();
+            while !matches!(chars.peek(), Some('|') | None) {
+                params.push(parse_sig_type(chars)?);
+            }
+            if chars.next() != Some('|') {
+                return Err("CodegenWasmJit: expected `|` in function-reference signature");
+            }
+            let mut results = Vec::new();
+            while !matches!(chars.peek(), Some('>') | None) {
+                results.push(parse_sig_type(chars)?);
+            }
+            if chars.next() != Some('>') {
+                return Err("CodegenWasmJit: expected a closing `>` in function-reference signature");
+            }
+            Ok(SigTy::Func { params: Arc::new(params), results: Arc::new(results) })
+        }
+        other => return Err("CodegenWasmJit: malformed signature type code"),
+    }
+}
+
+/// Host-imported math builtins, in a fixed order so their wasm function indices
+/// are stable: index `i` is `BUILTINS[i]`. Every generated module imports all
+/// of them from module `"env"` (the runtime `Linker` provides them all); unused
+/// imports cost nothing at runtime. Builtins implementable with a single wasm
+/// instruction (`sqrt`, `abs`, `floor`, `ceil`, `min`, `max`, …) are emitted
+/// inline instead and are not in this table.
+pub(crate) const BUILTINS: &[(&str, &[WTy], WTy)] = &[
+    ("pow", &[WTy::F64, WTy::F64], WTy::F64),
+    ("atan2", &[WTy::F64, WTy::F64], WTy::F64),
+    ("sin", &[WTy::F64], WTy::F64),
+    ("cos", &[WTy::F64], WTy::F64),
+    ("tan", &[WTy::F64], WTy::F64),
+    ("asin", &[WTy::F64], WTy::F64),
+    ("acos", &[WTy::F64], WTy::F64),
+    ("atan", &[WTy::F64], WTy::F64),
+    ("sinh", &[WTy::F64], WTy::F64),
+    ("cosh", &[WTy::F64], WTy::F64),
+    ("tanh", &[WTy::F64], WTy::F64),
+    ("exp", &[WTy::F64], WTy::F64),
+    ("log", &[WTy::F64], WTy::F64),
+    ("log10", &[WTy::F64], WTy::F64),
+    // libm functions reached as `external "C"` math functions (these are *not*
+    // inlined to a Modelica builtin by the frontend, unlike sin/cos/exp/…), routed
+    // to the host's libm via `external_function` lowering.
+    ("cbrt", &[WTy::F64], WTy::F64),
+    ("expm1", &[WTy::F64], WTy::F64),
+    ("log1p", &[WTy::F64], WTy::F64),
+    ("exp2", &[WTy::F64], WTy::F64),
+    ("log2", &[WTy::F64], WTy::F64),
+    ("asinh", &[WTy::F64], WTy::F64),
+    ("acosh", &[WTy::F64], WTy::F64),
+    ("atanh", &[WTy::F64], WTy::F64),
+    ("hypot", &[WTy::F64, WTy::F64], WTy::F64),
+    ("fmod", &[WTy::F64, WTy::F64], WTy::F64),
+];
+
+fn builtin_index(name: &str) -> Option<u32> {
+    BUILTINS.iter().position(|(n, _, _)| *n == name).map(|i| i as u32)
+}
+
+/// Extra host imports (module `"env"`) that the generated code calls but which
+/// are *not* pure-math `BUILTINS` — they have their own signatures and host-side
+/// effects. Imported *after* the [`BUILTINS`] and the [`RT_BUILTINS`] (so the
+/// `rt_*` indices are unaffected), just before the generated functions. The host
+/// closures live in `runtime::add_host_builtins`.
+///
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial, sim_data) -> shouldTrap`
+/// records the failed assertion and answers whether the generated code must trap:
+/// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
+/// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
+/// suppressed; it comes last so callers that already pushed the message append.
+/// `initial` is C's `initial()` at the assert site, for the message header, and
+/// `sim_data` is C's `data` (0 outside a simulation), which an FMU heads the logged
+/// block with the time from.
+///
+/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly, initial)`
+/// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
+/// (dumped condition, message, file) plus source position — for the driver to
+/// format as a `LOG_ASSERT` warning after the step. The generated code continues
+/// (no trap), matching C's `omc_assert_warning`.
+///
+/// `rt_print(str)` writes the String's bytes to the model's stdout (the `print`
+/// builtin). The host reads the handle's bytes from the shared memory during the
+/// call; the generated code releases the (owned) handle afterwards.
+///
+/// `rt_row_asserts(sim_data, warn) -> stop` formats the violations recorded at the
+/// output row the emitted `simulate` loop just stored — the driver's per-row
+/// `LOG_ASSERT` step, which that loop cannot reach from wasm. `warn` selects the
+/// level; a nonzero result means a suppressed `assert()` ends the run.
+///
+/// `rt_reinit_note(state_off, value)` records an executed `reinit` for the driver's
+/// `LOG_EVENTS` block; C prints that line from the model itself, but the block's
+/// indentation belongs to whichever driver owns the run.
+///
+/// `rt_uri_to_filename(uri, fmu) -> filename` is C's `OpenModelica_uriToFilename_impl`,
+/// which needs a filesystem and the loaded program's class directories. `fmu` picks
+/// the FMU resources directory (`OpenModelica_fmuLoadResource`). Borrows `uri`.
+pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
+    (
+        "rt_assert",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
+    (
+        "rt_assert_warning",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[],
+    ),
+    ("rt_print", &[WTy::I32], &[]),
+    ("rt_row_asserts", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_reinit_note", &[WTy::I32, WTy::F64], &[]),
+    ("rt_uri_to_filename", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // Give the external "C" libraries their shadow stack back after a throw
+    // abandoned their frames — the epilogues that would have done it never ran.
+    ("rt_ext_stack_save", &[], &[WTy::I32]),
+    ("rt_ext_stack_restore", &[WTy::I32], &[]),
+];
+
+/// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
+/// and `RT_BUILTINS`).
+pub(crate) fn env_extra_index(name: &str) -> Result<u32> {
+    let pos = ENV_EXTRA
+        .iter()
+        .position(|(n, _, _)| *n == name)
+        .ok_or_else(|| "CodegenWasmJit: unknown env-extra import")?;
+    Ok((BUILTINS.len() + RT_BUILTINS.len() + pos) as u32)
+}
+
+/// Heap-runtime functions imported from the precompiled runtime module `"rt"`
+/// (see `openmodelica_codegen_wasm_jit_runtime`), in a fixed order so their wasm
+/// function indices are stable. They are imported *after* the [`BUILTINS`], so
+/// function index `i` is `rt_index(RT_BUILTINS[i].0)`. The result column is a
+/// slice so void functions (`rt_retain`/`rt_release`) can be expressed. The
+/// runtime's `memory` is imported separately (it is not a function).
+pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
+    ("rt_retain", &[WTy::I32], &[]),
+    ("rt_release", &[WTy::I32], &[]),
+    ("rt_str_new", &[WTy::I32], &[WTy::I32]),
+    ("rt_str_len", &[WTy::I32], &[WTy::I32]),
+    ("rt_str_data", &[WTy::I32], &[WTy::I32]),
+    ("rt_concat", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_streq", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_strcmp", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_substring", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_int_string", &[WTy::I32], &[WTy::I32]),
+    ("rt_real_string", &[WTy::F64], &[WTy::I32]),
+    ("rt_bool_string", &[WTy::I32], &[WTy::I32]),
+    // `String(Real, significantDigits, minimumLength, leftJustified)` (C `%g`),
+    // and space-padding for `String(Integer/Boolean/Enumeration, minLength,
+    // leftJustified)`.
+    ("rt_real_format", &[WTy::F64, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_str_pad", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // N-dimensional arrays: allocate (elem_kind, ndims, total), set a dimension
+    // size, query ndims / total / a dimension, element byte address by row-major
+    // linear index (1-based, bounds-checked), and refcount release (frees nested
+    // heap elements first).
+    ("rt_array_new", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_set_dim", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_array_ndims", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_total", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_dim", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_elem_ptr", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // The element area itself, for an `external "C"` array argument.
+    ("rt_array_data", &[WTy::I32], &[WTy::I32]),
+    // The out-of-range arm of the inlined element-address computation.
+    ("rt_elem_ptr_oob", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_release", &[WTy::I32], &[]),
+    // Value-semantics copy (for whole-array assignment from a variable source).
+    ("rt_array_copy", &[WTy::I32], &[WTy::I32]),
+    // Element-wise builtins: fill (zeros/ones), and reductions sum/product/min/max.
+    ("rt_array_fill_i32", &[WTy::I32, WTy::I32], &[]),
+    ("rt_array_fill_f64", &[WTy::I32, WTy::F64], &[]),
+    ("rt_array_sum_i32", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_sum_f64", &[WTy::I32], &[WTy::F64]),
+    ("rt_array_product_i32", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_product_f64", &[WTy::I32], &[WTy::F64]),
+    ("rt_array_extreme_i32", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_extreme_f64", &[WTy::I32, WTy::I32], &[WTy::F64]),
+    // Records: allocate (nheap, total size; refcount 1, zeroed), refcount release
+    // (frees nested heap fields via the inline table), and value-semantics copy.
+    // Field access needs no call — the codegen loads/stores at a constant offset.
+    ("rt_record_new", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_record_release", &[WTy::I32], &[]),
+    ("rt_record_copy", &[WTy::I32], &[WTy::I32]),
+    // Element-wise array arithmetic (op: 0 add, 1 sub, 2 mul, 3 div): array op
+    // array, scalar broadcast (`rev` swaps operand order), and negation.
+    ("rt_array_ew_i32", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_ew_f64", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_scalar_i32", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_scalar_f64", &[WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_neg_i32", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_neg_f64", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_transpose", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_identity", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_diagonal", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_linspace", &[WTy::F64, WTy::F64, WTy::I32], &[WTy::I32]),
+    // Slice / partial-index `a[i, :, lo:hi, ...]` of a dynamic-dimension array:
+    // (src, nspec, spec) where `spec` is an Integer array of (kind, value) pairs
+    // per source axis (kind 0 INDEX, 1 WHOLE, 2 SLICE). Returns a fresh array.
+    ("rt_array_slice", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Sliced left-hand side `a[i, :, lo:hi, ...] := src`: (dst, nspec, spec, src),
+    // same spec encoding. `src` holds the selected positions in selection order.
+    ("rt_array_indexed_assign", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[]),
+    // `cat(dim, a1, ..., an)`: (dim, n, handles) where `handles` is an Integer
+    // array of the `n` input array handles. Returns a fresh concatenated array.
+    ("rt_array_cat", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Scalar (dot) product `v1 * v2` of two numeric vectors -> a scalar.
+    ("rt_array_dot_f64", &[WTy::I32, WTy::I32], &[WTy::F64]),
+    ("rt_array_dot_i32", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // Matrix product `a * b` (matrix·matrix / matrix·vector / vector·matrix) ->
+    // a fresh array (rank a.ndims + b.ndims - 2).
+    ("rt_array_matmul_f64", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_matmul_i32", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // `base ^ n` for an integer exponent (matches the C `real_int_pow` so scalar
+    // integer powers stay byte-identical instead of going through generic pow).
+    ("rt_real_int_pow", &[WTy::F64, WTy::I32], &[WTy::F64]),
+    // `base ^ exp` generic scalar power matching the C target's negative-base /
+    // odd-root / nan-inf handling; the third argument is the source position an
+    // invalid root reports at.
+    ("rt_real_pow", &[WTy::F64, WTy::F64, WTy::I32], &[WTy::F64]),
+    ("rt_invalid_root", &[WTy::F64, WTy::F64, WTy::I32], &[]),
+    // Integer `mod(x,y)` — floored modulo (result takes the divisor's sign).
+    ("rt_mod_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // Shape / geometric array builtins: vector / matrix reshape, symmetric,
+    // cross (Real 3-vector), outerProduct, skew (Real 3-vector → 3x3).
+    ("rt_array_vector", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_matrix", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_symmetric", &[WTy::I32], &[WTy::I32]),
+    ("rt_array_cross_f64", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_outer_f64", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_array_skew_f64", &[WTy::I32], &[WTy::I32]),
+    // promote(a, n): add trailing size-1 dimensions to reach rank n.
+    ("rt_array_promote", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // Integer[] -> Real[] element-wise cast (the implicit numeric array cast).
+    ("rt_array_int_to_real", &[WTy::I32], &[WTy::I32]),
+    // Element-wise logical `not` over a Boolean array.
+    ("rt_array_not_i32", &[WTy::I32], &[WTy::I32]),
+    // Simulation primitives (wasm-jit simulation target). `rt_euler_step` does
+    // the in-place forward-Euler update `state[i] += h*der[i]`; `rt_sim_store_row`
+    // copies the `n_reals`-f64 time-variant prefix of the `SimData` block into
+    // the result buffer at a row index. See `CodegenWasmJit` and the runtime.
+    ("rt_euler_step", &[WTy::I32, WTy::I32, WTy::F64], &[]),
+    ("rt_sim_store_row", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[]),
+    // Raw allocator (used by the emitted `simulate` loop to allocate the result
+    // buffer). The function half reaches the allocator only indirectly (via
+    // `rt_str_new`/`rt_array_new`), so it is imported here for the first time.
+    ("rt_alloc", &[WTy::I32], &[WTy::I32]),
+    // Copy all elements of `src` into `dst` at a 0-based element offset (used to
+    // build an array constructor whose elements are themselves arrays).
+    ("rt_array_blit", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // `String(Real, format)` (the format-string variant): (value, format-string
+    // handle) -> formatted String. Borrows the format handle.
+    ("rt_string_format_real", &[WTy::F64, WTy::I32], &[WTy::I32]),
+    // `String(Integer, format)`: (value, format-string handle) -> formatted
+    // String (Booleans are coerced to 0/1 i32). Borrows the format handle.
+    ("rt_string_format_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // Dense linear solve `A x = b` in place (A column-major `n*n` f64 at a_ptr,
+    // b `n` f64 at b_ptr; solution overwrites b), C's `aux_x` at x_ptr for the
+    // iterative `-ls lis`, then the equation index and time the fallback warning
+    // needs, whether a `rt_ls_check_step` follows, and whether this is a casual
+    // tearing set (which has no fallback). Returns 0 ok, 1 singular.
+    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
+    // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
+    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // C's `check_linear_solution` + throw for an unsolved system: (index, time).
+    ("rt_ls_failed", &[WTy::I32, WTy::F64], &[]),
+    // `LOG_STATS_V`'s per-system bracket, C's `solve_linear_system`: the generated
+    // code assembles `A`/`b` itself, so it has to open the clock. (index, size, nnz).
+    ("rt_ls_begin", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_ls_end", &[], &[]),
+    // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense, casual) -> 1 when
+    // the step must be redone with total pivoting (`b` then holding `-res`), 2 when
+    // the system is unsolved. See `rt_ls_check_step`.
+    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
+    // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
+    // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
+    ("rt_solve_lin_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Solve `A x = b` from dense column-major A via the sparse solver; see
+    // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, x_ptr, n, index, time) -> 0 ok /
+    // 1 singular.
+    ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // (handle, colptr, rowidx, values, b, x, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
+    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // Raw deallocation (frees a block from `rt_alloc`); used to release the
+    // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
+    ("rt_free", &[WTy::I32], &[]),
+    // Nonlinear solve for one `SES_NONLINEAR` system: (sim_data, residual-table
+    // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
+    // recoverable failure (2 = dynamic tearing's strict set solved it instead). The
+    // Newton driver lives in the runtime; the model supplies `residual`/`load` funcs
+    // reached by `call_indirect` (see `nls.rs`).
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Dynamic tearing: the `LOG_DT` / `LOG_DT_CONS` lines C's `checkConstraints`,
+    // `equationLinear` and `equation*AlternativeTearing` print. `rt_dt_local_violated`
+    // also latches the failure, standing in for `residualFuncConstraints`'s return.
+    ("rt_dt_cons_violated", &[WTy::I32, WTy::I32], &[]),
+    ("rt_dt_local_violated", &[WTy::I32], &[]),
+    ("rt_dt_solving", &[WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[]),
+    ("rt_dt_fallback", &[WTy::I32], &[]),
+    // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
+    ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
+    ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
+    ("rt_delay_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    // `spatialDistribution(...)` transported profiles (runtime `spatial.rs`).
+    // `rt_spatial_eval` returns `out0`; `rt_spatial_out1` hands back the `out1` of
+    // that same call, which is C's `double* out1` out-parameter without a
+    // scratch address.
+    ("rt_spatial_init", &[WTy::I32], &[]),
+    ("rt_spatial_init_profile", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_spatial_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32], &[]),
+    ("rt_spatial_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32, WTy::I32], &[WTy::F64]),
+    ("rt_spatial_out1", &[WTy::I32], &[WTy::F64]),
+    ("rt_spatial_zc", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
+    // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
+    ("rt_nls_recovering", &[], &[WTy::I32]),
+    ("rt_nls_note_assert", &[], &[]),
+    // C's `assertCommonVar` when a catcher is open: `(msg, sim_data, initial)`,
+    // non-zero when the caller must return instead of trapping.
+    ("rt_assert_common", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // `+profiling`: C's `rt_init` / `SIM_PROF_TICK_*` / `SIM_PROF_ACC_*` /
+    // `SIM_PROF_ADD_NCALL_EQ` (see `prof.rs`).
+    ("rt_prof_init", &[WTy::I32], &[]),
+    ("rt_prof_tick", &[WTy::I32], &[]),
+    ("rt_prof_acc", &[WTy::I32], &[]),
+    ("rt_prof_add_ncall", &[WTy::I32, WTy::I32], &[]),
+    // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM`.
+    ("rt_throw_stream", &[WTy::I32], &[]),
+    ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
+    // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
+    ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // `rt_nls_note_assert` plus C's log line for the absorbed assertion:
+    // `(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial, sim_data)`.
+    (
+        "rt_nls_assert_failed",
+        &[
+            WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32,
+            WTy::I32,
+        ],
+        &[],
+    ),
+    // `external` marshalling in a shared-memory module (a wasm FMU), where there
+    // is no host trampoline to convert: a by-reference cell per `_Out_` (or
+    // Fortran) scalar, and a column-major copy per multi-dimensional Fortran
+    // array. Appended last so no existing `rt_index` shifts.
+    ("rt_f77_cell_r", &[WTy::F64], &[WTy::I32]),
+    ("rt_f77_cell_i", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_cell_get_r", &[WTy::I32], &[WTy::F64]),
+    ("rt_f77_cell_get_i", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_arr_in", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_arr_out", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // A `char*` a shared-memory `external "C"` returned or wrote, as a `String`.
+    ("rt_str_from_cstr", &[WTy::I32], &[WTy::I32]),
+];
+
+/// Model global holding the base index at which this module's per-system
+/// `residual`/`load` functions were appended to the shared
+/// `rt.__indirect_function_table` (set once by the module's `start` function).
+pub(crate) const NLS_BASE_GLOBAL: u32 = 0;
+
+/// Module global holding the base index this module's closure thunks were
+/// appended to the shared table at (set by `start`): after the five
+/// nonlinear-solver globals, or the only global when there are none.
+pub(crate) fn closure_base_global(has_nls: bool) -> u32 {
+    if has_nls { NLS_BOUNDS_GLOBAL + 1 } else { 0 }
+}
+
+/// First of the module's shared-literal globals (see `shared_lits`). The closure
+/// global is reserved whether or not the module has thunks, so this base is known
+/// before the bodies are lowered.
+pub(crate) fn lit_base_global(has_nls: bool) -> u32 {
+    closure_base_global(has_nls) + 1
+}
+
+/// Absolute wasm function index of a runtime import (after all [`BUILTINS`]).
+pub(crate) fn rt_index(name: &str) -> Result<u32> {
+    let pos = RT_BUILTINS
+        .iter()
+        .position(|(n, _, _)| *n == name)
+        .ok_or_else(|| "CodegenWasmJit: unknown runtime function")?;
+    Ok((BUILTINS.len() + pos) as u32)
+}
+
+/// `_`-mangled name of a function path, matching `CevalScript`'s
+/// `generateFunctionName` (`AbsynUtil.pathStringUnquoteReplaceDot(path, "_")`).
+/// Used as the key that resolves a `CALL` to one of the generated functions.
+pub(crate) fn mangle(path: &Absyn::Path) -> Result<String> {
+    Ok(AbsynUtil::pathStringUnquoteReplaceDot(Arc::new(path.clone()), arcstr::literal!("_"))?.to_string())
+}
+
+// -------------------------------------------------------------------------
+// Module assembly
+// -------------------------------------------------------------------------
+
+/// Signature of a generated wasm function: parameter and result Modelica types
+/// (`SigTy`, so String parameters/results are distinguishable for reference
+/// counting; the wasm value types are `SigTy::wty`).
+
+/// Everything the second pass needs to resolve a `CALL` to another generated
+/// function: its final wasm function index and signature.
+pub(crate) struct FnInfo {
+    pub(crate) index: u32,
+    pub(crate) sig: FnSig,
+}
+
+
+/// Build the wasm module for `fnCode`. Returns the encoded module bytes and the
+/// input/output `SigTy`s of the main function (for the sidecar).
+/// Read back what [`write_ext_sig`] wrote.
+pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
+    let mut f = line.split('\t');
+    let (Some(name), Some(lang), Some(ret), Some(args), Some(outs)) =
+        (f.next(), f.next(), f.next(), f.next(), f.next())
+    else {
+        return Err("CodegenWasmJit: malformed external \"C\" signature in the .wasm.sig sidecar");
+    };
+    let tys = parse_sig_types(args)?;
+    if tys.len() != outs.chars().count() {
+        return Err("CodegenWasmJit: external \"C\" signature has a stale output mask");
+    }
+    Ok(ExtCallSig {
+        name: name.to_string(),
+        lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
+        args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
+        ret: if ret == "-" { None } else { parse_sig_types(ret)?.into_iter().next() },
+    })
+}
+
+/// `<symbol>\t<C|F>\t<return code or ->\t<argument codes>\t<one 0/1 per argument>`,
+/// a `1` marking an `_Out_`. The flags are separate because an argument code is
+/// variable-length.
+fn write_ext_sig(e: &ExtCallSig) -> String {
+    let mut args = String::new();
+    let mut outs = String::new();
+    for (ty, is_out) in &e.args {
+        ty.write_code(&mut args);
+        outs.push(if *is_out { '1' } else { '0' });
+    }
+    let mut ret = String::new();
+    match &e.ret {
+        Some(t) => t.write_code(&mut ret),
+        None => ret.push('-'),
+    }
+    let lang = if e.lang == ExtLang::Fortran77 { 'F' } else { 'C' };
+    format!("{}\t{lang}\t{ret}\t{args}\t{outs}", e.name)
+}
+
+/// A lowered function module and what its sidecar has to record: the main
+/// function's signature, and the `external "C"` functions the module calls out to.
+struct BuiltModule {
+    bytes: Vec<u8>,
+    in_sig: Vec<SigTy>,
+    out_sig: Vec<SigTy>,
+    ext_imports: Vec<ExtCallSig>,
+}
+
+fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<BuiltModule> {
+    set_record_decls(&fn_code.extraRecordDecls)?;
+    // Collect the functions: the main function first (wasm index BUILTINS.len()),
+    // then the dependencies.
+    let mut funcs: Vec<&SimCodeFunction::Function::Function> = Vec::new();
+    let Some(main) = &fn_code.mainFunction else {
+        return Err("CodegenWasmJit: function code has no main function");
+    };
+    funcs.push(&**main);
+    for f in &*fn_code.functions {
+        // Plain Modelica functions, plus known scalar-math external functions
+        // (lowered to a host-builtin call). Record constructors arrive as
+        // `RECORD_CONSTRUCTOR` but are lowered inline (`E::RECORD`), and unknown
+        // external / function-pointer dependencies cannot be JITed and, if
+        // actually called, fail loudly at that call site instead.
+        if matches!(&**f, SimCodeFunction::Function::Function::FUNCTION { .. })
+            || external_known(f)
+            || external_general(f)
+        {
+            funcs.push(&**f);
+        }
+    }
+
+    // The `external "C"` functions reached from here, as `ext.<extName>` imports.
+    let mut ext_imports: Vec<ExtCallSig> = Vec::new();
+    let mut ext_seen: HashSet<String> = HashSet::new();
+    for f in &funcs {
+        if external_general_why(f).is_ok() {
+            let sig = external_import_sig(f)?;
+            if ext_seen.insert(sig.name.clone()) {
+                ext_imports.push(sig);
+            }
+        }
+    }
+
+    // Imported functions occupy the low function indices: the `env` math
+    // builtins, the `rt` heap-runtime functions, then the `ext` externals;
+    // generated functions follow.
+    let ext_base = (BUILTINS.len() + RT_BUILTINS.len() + ENV_EXTRA.len()) as u32;
+    let base = ext_base + ext_imports.len() as u32;
+    // Map mangled function name -> (local id, signature) so CALLs can resolve.
+    let mut by_name: HashMap<String, FnInfo> = HashMap::new();
+    for (i, sig) in ext_imports.iter().enumerate() {
+        by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
+    }
+    let mut sigs: Vec<FnSig> = Vec::with_capacity(funcs.len());
+    for (id, f) in funcs.iter().enumerate() {
+        let (name, sig) = function_signature(f)?;
+        by_name.insert(name, FnInfo { index: base + id as u32, sig: sig.clone() });
+        sigs.push(sig);
+    }
+
+    // Type section: one type per env builtin, per rt builtin, then per
+    // generated function (matching the import + function order).
+    let mut types = we::TypeSection::new();
+    for (_, params, result) in BUILTINS {
+        types.ty().function(params.iter().map(|w| w.val()), [result.val()]);
+    }
+    for (_, params, results) in RT_BUILTINS {
+        types.ty().function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
+    }
+    for (_, params, results) in ENV_EXTRA {
+        types.ty().function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
+    }
+    for sig in &ext_imports {
+        types.ty().function(
+            sig.wasm_params().iter().map(|s| s.wty().val()),
+            sig.wasm_results().iter().map(|s| s.wty().val()),
+        );
+    }
+    for sig in &sigs {
+        types.ty().function(sig.params.iter().map(|s| s.wty().val()), sig.results.iter().map(|s| s.wty().val()));
+    }
+
+    // Import section: the runtime's shared linear memory, the `env` math
+    // builtins, then the `rt` heap-runtime functions. Type indices line up with
+    // the type section above.
+    let mut imports = we::ImportSection::new();
+    imports.import(
+        "rt",
+        "memory",
+        we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
+    );
+    // All three come from the runtime instance the host registers as `rt`: the math
+    // builtins are in-wasm (libm), not host functions.
+    for (i, (name, _, _)) in BUILTINS.iter().enumerate() {
+        imports.import("rt", *name, we::EntityType::Function(i as u32));
+    }
+    for (j, (name, _, _)) in RT_BUILTINS.iter().enumerate() {
+        imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + j) as u32));
+    }
+    for (k, (name, _, _)) in ENV_EXTRA.iter().enumerate() {
+        imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
+    }
+    for (i, sig) in ext_imports.iter().enumerate() {
+        imports.import("ext", &sig.name, we::EntityType::Function(ext_base + i as u32));
+    }
+
+    // Compile the function bodies first (collecting any String literals into a
+    // module-wide pool), so the data-segment count is known before the code
+    // section is emitted. Function references met on the way add thunks to the
+    // closure pool; the module's only global holds their table base.
+    closures::begin(types.len(), closure_base_global(false));
+    shared_lits::begin(lit_base_global(false));
+    let mut functions = we::FunctionSection::new();
+    let mut bodies: Vec<we::Function> = Vec::with_capacity(funcs.len());
+    let mut literals = Literals::default();
+    for (id, f) in funcs.iter().enumerate() {
+        functions.function(base + id as u32); // type index = base + id
+        bodies.push(compile_function(f, &by_name, &mut literals)?);
+    }
+    let lits = shared_lits::take();
+    let lit_init = lits
+        .iter()
+        .any(|s| s.is_some())
+        .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
+        .transpose()?;
+    // Closure thunks, then the `start` that builds the literals and appends the
+    // thunks to the shared table.
+    let closure_wiring = closures::take();
+    let mut thunk_indices: Vec<u32> = Vec::new();
+    for (type_index, body) in closure_wiring.thunks {
+        thunk_indices.push(base + bodies.len() as u32);
+        functions.function(type_index);
+        bodies.push(body);
+    }
+    for (params, results) in &closure_wiring.types {
+        types.ty().function(params.iter().copied(), results.iter().copied());
+    }
+    let start_idx = if thunk_indices.is_empty() && lit_init.is_none() {
+        None
+    } else {
+        let void_type = types.len();
+        types.ty().function([], []);
+        let lit_init_idx = lit_init.map(|f| {
+            let idx = base + bodies.len() as u32;
+            functions.function(void_type);
+            bodies.push(f);
+            idx
+        });
+        let idx = base + bodies.len() as u32;
+        let mut f = we::Function::new([]);
+        if let Some(i) = lit_init_idx {
+            f.instruction(&we::Instruction::Call(i));
+        }
+        if !thunk_indices.is_empty() {
+            closures::emit_start(&mut f, &thunk_indices, closure_base_global(false));
+        }
+        f.instruction(&we::Instruction::End);
+        functions.function(void_type);
+        bodies.push(f);
+        Some(idx)
+    };
+    if !thunk_indices.is_empty() {
+        // The thunks are reached by `call_indirect` through the runtime's table.
+        imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
+            element_type: we::RefType::FUNCREF,
+            table64: false,
+            minimum: 1,
+            maximum: None,
+            shared: false,
+        }));
+    }
+    let mut code = we::CodeSection::new();
+    for body in &bodies {
+        code.function(body);
+    }
+
+    // Export the main function as "main".
+    let mut exports = we::ExportSection::new();
+    exports.export("main", we::ExportKind::Func, base);
+
+    let mut module = we::Module::new();
+    module.section(&types);
+    module.section(&imports);
+    module.section(&functions);
+    // Flag slots need the globals even with no `start` to fill them.
+    if start_idx.is_some() || !lits.is_empty() {
+        // The closure-thunk table base, then one global per pool slot.
+        let mut globals = we::GlobalSection::new();
+        for _ in 0..lit_base_global(false) as usize + lits.len() {
+            globals.global(
+                we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
+                &we::ConstExpr::i32_const(0),
+            );
+        }
+        module.section(&globals);
+    }
+    module.section(&exports);
+    if let Some(start_idx) = start_idx {
+        module.section(&we::StartSection { function_index: start_idx });
+        if !thunk_indices.is_empty() {
+            let mut elements = we::ElementSection::new();
+            elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
+            module.section(&elements);
+        }
+    }
+    // String literals live in the constant pool, materialized at runtime with
+    // `memory.init` (see SCONST in `compile_exp`). The DataCount section must
+    // precede the code section; the Data section follows it.
+    if !literals.is_empty() {
+        module.section(&we::DataCountSection { count: 1 });
+    }
+    module.section(&code);
+    if !literals.is_empty() {
+        let mut data = we::DataSection::new();
+        data.passive(literals.blob().iter().copied());
+        module.section(&data);
+    }
+    let bytes = module.finish();
+
+    // Signature types of the main function for the sidecar.
+    let (in_sig, out_sig) = main_sig_types(main)?;
+    Ok(BuiltModule { bytes, in_sig, out_sig, ext_imports })
+}
+
+/// The mangled name and wasm signature of a generated function.
+pub(crate) fn function_signature(f: &SimCodeFunction::Function::Function) -> Result<(String, FnSig)> {
+    use SimCodeFunction::Function::Function as F;
+    match f {
+        F::FUNCTION { name, outVars, functionArguments, .. } => {
+            let params = var_sigtys(functionArguments)?;
+            let results = var_sigtys(outVars)?;
+            Ok((mangle(name)?, FnSig { params, results }))
+        }
+        // A known scalar-math `external "C"`/"builtin" function is lowered to a
+        // wasm function calling the corresponding host import ([Approach C]).
+        // A known scalar-math external, or a general external scalar function
+        // (routed to an `ext.<extName>` host import). Both expose the Modelica
+        // wrapper's own signature (funArgs -> outVars).
+        F::EXTERNAL_FUNCTION { name, outVars, funArgs, .. } if external_known(f) || external_general(f) => {
+            let params = var_sigtys(funArgs)?;
+            let results = var_sigtys(outVars)?;
+            Ok((mangle(name)?, FnSig { params, results }))
+        }
+        _ => return Err("CodegenWasmJit: only plain Modelica/MetaModelica FUNCTIONs and known scalar-math external functions are supported"),
+    }
+}
+
+/// Whether an `external "C"`/"builtin" function maps to a known host math builtin
+/// we can route (Approach C, name-based). Only simple return-style scalar
+/// functions — `output := extName(inputs)`, all-scalar args/result, no
+/// output-pointer arguments — qualify; arrays, output-arg style, or an unknown
+/// `extName` are left to fail loudly (the array/library ABI is future work).
+pub(crate) fn external_known(f: &SimCodeFunction::Function::Function) -> bool {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, funArgs, outVars, extReturn, extArgs, .. } = f else {
+        return false;
+    };
+    // One output, produced as the C call's return value (not via an output ptr).
+    if (&**outVars).into_iter().count() != 1 || matches!(&**extReturn, A::SIMNOEXTARG) {
+        return false;
+    }
+    // Every external-call argument must be an input (or a constant exp), never an
+    // output pointer or a size argument.
+    let args_ok = (&**extArgs).into_iter().all(|a| match &**a {
+        A::SIMEXTARG { isInput, .. } => *isInput,
+        A::SIMEXTARGEXP { .. } => true,
+        _ => false,
+    });
+    if !args_ok {
+        return false;
+    }
+    let (Ok(ins), Ok(outs)) = (var_sigtys(funArgs), var_sigtys(outVars)) else {
+        return false;
+    };
+    supported_external(extName, &ins, &outs[0])
+}
+
+/// Whether external function `ext_name` with input types `ins` and result type
+/// `out` is one this codegen can route (Approach C, name-based). Covers scalar
+/// libm math (host builtins / inline) and the pure `ModelicaStrings` functions
+/// that map directly to existing runtime string ops.
+fn supported_external(ext_name: &str, ins: &[SigTy], out: &SigTy) -> bool {
+    let scalar = |s: &SigTy| matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool);
+    match ext_name {
+        // `Modelica.Utilities.Strings.length` → `rt_str_len`.
+        "ModelicaStrings_length" => matches!(ins, [SigTy::Str]) && matches!(out, SigTy::Int),
+        // `Modelica.Utilities.Strings.substring` → `rt_substring` (1-based incl.).
+        "ModelicaStrings_substring" => matches!(ins, [SigTy::Str, SigTy::Int, SigTy::Int]) && matches!(out, SigTy::Str),
+        // Scalar math: a host transcendental or single-instruction math function.
+        _ if builtin_index(ext_name).is_some()
+            || matches!(ext_name, "sqrt" | "fabs" | "floor" | "ceil" | "abs" | "div" | "mod") =>
+        {
+            ins.iter().all(scalar) && scalar(out)
+        }
+        _ => false,
+    }
+}
+
+/// The declared-output slot an `extArgs` entry writes, 1-based as `SimExtArg`
+/// records it; 0 for an input-side argument. `isInput` does *not* answer this: a
+/// protected `biVars` local is `isInput = false, outputIndex = 0` and passed in.
+fn ext_arg_output_index(a: &SimCodeFunction::SimExtArg::SimExtArg) -> usize {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    match a {
+        A::SIMEXTARG { outputIndex, .. } | A::SIMEXTARGSIZE { outputIndex, .. } => (*outputIndex).max(0) as usize,
+        _ => 0,
+    }
+}
+
+/// The external calling convention of `language`, or `None` for one we do not
+/// lower. `"BUILTIN"` shares C's convention, as in `extFunCall`.
+fn ext_lang(language: &str) -> Option<ExtLang> {
+    match language {
+        "C" | "BUILTIN" => Some(ExtLang::C),
+        "FORTRAN 77" => Some(ExtLang::Fortran77),
+        _ => None,
+    }
+}
+
+thread_local! {
+    /// Externals left out of the module, by Modelica identifier, with why. A call
+    /// to one reports that instead of failing as an unknown builtin — the name
+    /// reaching [`compile_math_builtin`] looks the same either way.
+    static DECLINED_EXTERNALS: std::cell::RefCell<HashMap<String, String>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+pub(crate) fn reset_declined_externals() {
+    DECLINED_EXTERNALS.with(|d| d.borrow_mut().clear());
+}
+
+pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
+    let Ok(ident) = AbsynUtil::pathLastIdent(name.clone()) else { return };
+    DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
+}
+
+fn declined_external_reason(ident: &str) -> Option<String> {
+    DECLINED_EXTERNALS.with(|d| d.borrow().get(ident).cloned())
+}
+
+/// A general external function routed to an `ext.<extName>` host import: one
+/// whose `extName` is not a known builtin ([`external_known`]). Every value
+/// crossing the C boundary must be a marshallable kind — scalar
+/// (Real/Integer/Boolean), `String` (→ `char*`), an external object (→ `void*`),
+/// or an array (→ a pointer to its data); only the return value may not be an
+/// array.
+pub(crate) fn external_general(f: &SimCodeFunction::Function::Function) -> bool {
+    external_general_why(f).is_ok()
+}
+
+/// [`external_general`] with the rejection reason, for the diagnostics the
+/// unlowered call site reports.
+pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> std::result::Result<(), String> {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    if external_known(f) {
+        return Err("lowered as a known math/string builtin".to_string());
+    }
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { funArgs, outVars, biVars, extReturn, extArgs, language, .. } = f else {
+        return Err("not an external function".to_string());
+    };
+    if ext_lang(language).is_none() {
+        return Err(format!("external language \"{language}\" is not supported"));
+    }
+    // The host converts a record field by field, so each field must marshal too.
+    fn record_ok(s: &SigTy) -> bool {
+        match s {
+            SigTy::Record { fields, .. } => fields.iter().all(|(_, t)| {
+                matches!(t, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Array { .. }) || record_ok(t)
+            }),
+            _ => false,
+        }
+    }
+    let arg_ok = |s: &SigTy| {
+        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr | SigTy::Array { .. })
+            || record_ok(s)
+    };
+    let ret_ok = |s: &SigTy| {
+        matches!(s, SigTy::Int | SigTy::Real | SigTy::Bool | SigTy::Str | SigTy::Ptr) || record_ok(s)
+    };
+    let n_out = (&**outVars).into_iter().count();
+    // Each declared output is written by at most one `extArgs` entry (or the
+    // return value); one left unwritten keeps its binding, as in the C target.
+    let mut written = vec![false; n_out];
+    // Written once — except that a record output may be filled through its pointer
+    // *and* have one field assigned from the return value, different lvalues.
+    let mut claim = |oi: usize, field: bool| -> bool {
+        if oi == 0 {
+            return true;
+        }
+        oi <= n_out && (field || !std::mem::replace(&mut written[oi - 1], true))
+    };
+    for a in &**extArgs {
+        let ty = match &**a {
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => {
+                sig_ty_quiet(type_).map_err(|e| e.to_string())?
+            }
+            _ => return Err("unsupported external-call argument".to_string()),
+        };
+        if !arg_ok(&ty) {
+            return Err(format!("argument type {ty:?} cannot be marshalled"));
+        }
+        if !claim(ext_arg_output_index(a), false) {
+            return Err("an argument writes an output the function does not declare".to_string());
+        }
+    }
+    match &**extReturn {
+        A::SIMNOEXTARG => {}
+        A::SIMEXTARG { type_, outputIndex, cref, .. } => {
+            let t = sig_ty_quiet(type_).map_err(|e| e.to_string())?;
+            if !ret_ok(&t) || !claim((*outputIndex).max(0) as usize, cref_field(cref).is_some()) {
+                return Err(format!("return type {t:?} cannot be marshalled"));
+            }
+        }
+        _ => return Err("unsupported external return".to_string()),
+    }
+    for (what, vars) in [("input", funArgs), ("output", outVars), ("protected variable", biVars)] {
+        let tys = var_sigtys(vars).map_err(|e| format!("{what}: {e}"))?;
+        if let Some(t) = tys.iter().find(|t| !arg_ok(t)) {
+            return Err(format!("{what} of type {t:?} is not supported"));
+        }
+    }
+    Ok(())
+}
+
+/// The C-call shape ([`ExtCallSig`]) of a general external function, for its
+/// `ext.<extName>` import. Distinct from [`function_signature`] (the Modelica
+/// wrapper's own signature).
+pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, .. } = f else {
+        return Err("CodegenWasmJit: external_import_sig on a non-external function");
+    };
+    let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
+    let mut args: Vec<(SigTy, bool)> = Vec::new();
+    for a in &**extArgs {
+        let ty = match &**a {
+            // A `size(array, dim)` argument is a C `int` dimension (input).
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
+            other => return Err("CodegenWasmJit: unsupported external-call argument"),
+        };
+        args.push((ty, ext_arg_output_index(a) != 0));
+    }
+    let ret = match &**extReturn {
+        A::SIMNOEXTARG => None,
+        A::SIMEXTARG { type_, .. } => Some(sig_ty(type_)?),
+        other => return Err("CodegenWasmJit: unsupported external return"),
+    };
+    // Fortran symbols carry a trailing underscore, as `extFunCallF77` emits.
+    let name = match lang {
+        ExtLang::C => extName.to_string(),
+        ExtLang::Fortran77 => format!("{extName}_"),
+    };
+    Ok(ExtCallSig { name, lang, args, ret })
+}
+
+/// The input/output scalar `SigTy`s of the main function, for the sidecar.
+fn main_sig_types(f: &SimCodeFunction::Function::Function) -> Result<(Vec<SigTy>, Vec<SigTy>)> {
+    use SimCodeFunction::Function::Function as F;
+    match f {
+        F::FUNCTION { outVars, functionArguments, .. } => Ok((var_sigtys(functionArguments)?, var_sigtys(outVars)?)),
+        F::EXTERNAL_FUNCTION { outVars, funArgs, .. } if external_known(f) || external_general(f) => Ok((var_sigtys(funArgs)?, var_sigtys(outVars)?)),
+        _ => return Err("CodegenWasmJit: only plain FUNCTIONs and known scalar-math external functions are supported"),
+    }
+}
+
+fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Result<Vec<SigTy>> {
+    let mut out = Vec::new();
+    for v in &**vars {
+        out.push(match &**v {
+            SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } => variable_sigty(ty, instDims)?,
+            SimCodeFunction::Variable::Variable::FUNCTION_PTR { tys, args, .. } => {
+                closures::function_ptr_sigty(tys, args)?
+            }
+        });
+    }
+    Ok(out)
+}
+
+/// The `SigTy` of a function variable, combining its declared `ty` with its
+/// `instDims`. SimCode is inconsistent about where array dimensions live: an
+/// input array's `ty` is the full `T_ARRAY`, while an output/local array's `ty`
+/// is the scalar element type with the dimensions in `instDims`. So a `T_ARRAY`
+/// `ty` is authoritative (its `dims` are complete); otherwise a non-empty
+/// `instDims` makes the scalar `ty` the element type of a rank-`|instDims|` array.
+fn variable_sigty(ty: &DAE::Type, inst_dims: &Arc<List<Arc<DAE::Dimension>>>) -> Result<SigTy> {
+    // Quiet: `external_known`/`external_general` map a function's variables only to
+    // decide whether they can lower the call at all.
+    let base = sig_ty_quiet(ty)?;
+    if matches!(base, SigTy::Array { .. }) {
+        return Ok(base);
+    }
+    let rank = (&**inst_dims).into_iter().count() as u32;
+    if rank == 0 {
+        Ok(base)
+    } else {
+        Ok(SigTy::Array { elem: Arc::new(base), rank })
+    }
+}
+
+/// Map a `DAE.Type` to a `SigTy`, or fail for types not yet supported. Without
+/// the diagnostic: callers that only *probe* a type must not report the ones they
+/// go on to handle.
+pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
+    Ok(match ty {
+        DAE::Type::T_INTEGER { .. } => SigTy::Int,
+        DAE::Type::T_REAL { .. } => SigTy::Real,
+        DAE::Type::T_BOOL { .. } => SigTy::Bool,
+        // An enumeration value is its 1-based Integer index.
+        DAE::Type::T_ENUMERATION { .. } => SigTy::Int,
+        DAE::Type::T_STRING { .. } => SigTy::Str,
+        // An N-dimensional array. A `T_ARRAY` usually carries all dimensions in
+        // `dims` (so `Real[2,3]` is one `T_ARRAY` with two dims), but a nested
+        // `T_ARRAY` element is also possible; both flatten to a single rank
+        // since Modelica arrays are rectangular.
+        DAE::Type::T_ARRAY { ty, dims } => {
+            let ndims = (&**dims).into_iter().count() as u32;
+            match sig_ty_quiet(ty)? {
+                SigTy::Array { elem, rank } => SigTy::Array { elem, rank: rank + ndims },
+                elem => SigTy::Array { elem: Arc::new(elem), rank: ndims },
+            }
+        }
+        // A record class: an ordered set of component fields. MetaModelica
+        // uniontypes / metarecords (`T_METARECORD`) are a different runtime
+        // representation and are not handled here.
+        // An external object is an opaque native `void*` held as an `i32` handle.
+        DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::EXTERNAL_OBJ { .. }, .. } => SigTy::Ptr,
+        DAE::Type::T_COMPLEX { complexClassType, varLst, .. } => {
+            let ClassInf::State::RECORD { path } = complexClassType else {
+                return Err("CodegenWasmJit: non-record complex type not supported");
+            };
+            let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+            let mut fields = Vec::new();
+            match record_decl_fields(&path_str) {
+                Some(decl) => {
+                    for f in decl.iter() {
+                        fields.push((f.name.clone(), sig_ty_quiet(&f.ty)?));
+                    }
+                }
+                None => {
+                    for v in &**varLst {
+                        fields.push((v.name.clone(), sig_ty_quiet(&v.ty)?));
+                    }
+                }
+            }
+            SigTy::Record { path: path_str, fields: Arc::new(fields) }
+        }
+        // A function reference's argument/result types arrive MetaModelica-boxed
+        // (C calls one boxed `boxptr_` shape); our closures are typed and pass
+        // values unboxed, so the box is nothing.
+        DAE::Type::T_METABOXED { ty } => sig_ty_quiet(ty)?,
+        // A function reference: a closure handle, callable with the wrapped
+        // function type's signature.
+        DAE::Type::T_FUNCTION_REFERENCE_VAR { .. } | DAE::Type::T_FUNCTION_REFERENCE_FUNC { .. } => {
+            closures::reference_sigty(ty)?
+        }
+        DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
+        // Name the variant: `Err` is `&'static str`, and a quiet probe never
+        // reaches `record_error`'s unparsed form.
+        DAE::Type::T_UNKNOWN { .. } => return Err("CodegenWasmJit: type not supported: T_UNKNOWN"),
+        DAE::Type::T_CLOCK { .. } => return Err("CodegenWasmJit: type not supported: Clock"),
+        DAE::Type::T_NORETCALL { .. } => return Err("CodegenWasmJit: type not supported: T_NORETCALL"),
+        DAE::Type::T_FUNCTION { .. } => return Err("CodegenWasmJit: type not supported: T_FUNCTION"),
+        DAE::Type::T_TUPLE { .. } => return Err("CodegenWasmJit: type not supported: T_TUPLE"),
+        DAE::Type::T_CODE { .. } => return Err("CodegenWasmJit: type not supported: T_CODE"),
+        DAE::Type::T_ANYTYPE { .. } => return Err("CodegenWasmJit: type not supported: T_ANYTYPE"),
+        _ => return Err("CodegenWasmJit: type not supported: MetaModelica type"),
+    })
+}
+
+/// The wasm signature type of a DAE type, reporting the type it cannot handle.
+pub(crate) fn sig_ty(ty: &DAE::Type) -> Result<SigTy> {
+    sig_ty_quiet(ty).inspect_err(|_| {
+        let name = openmodelica_frontend_dump::TypesDump::unparseType(Arc::new(ty.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: type not supported: {name}"));
+    })
+}
+
+/// One field of a record *declaration* (C's `RECORD_DECL_FULL` variables), which
+/// is what [`emit_record_default`] builds the default constructor from.
+pub(crate) struct RecDeclField {
+    name: ArcStr,
+    ty: Arc<DAE::Type>,
+    /// The declared binding, evaluated in the record's own scope.
+    value: Option<Arc<DAE::Exp>>,
+    /// The binding came from a derived record (`record A = B(k=exp)`) and is
+    /// evaluated in the using scope instead.
+    bind_outside: bool,
+}
+
+std::thread_local! {
+    /// One field list per record class (the C target's one `<Rec>` struct), keyed
+    /// by definition path. A record *expression*'s `T_COMPLEX` can disagree with
+    /// its consumer's about a field type, which would give the two ends different
+    /// field offsets; the declaration decides for both.
+    static RECORD_DECLS: std::cell::RefCell<HashMap<String, Arc<Vec<RecDeclField>>>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+/// Install the module's record declarations (see [`RECORD_DECLS`]).
+pub(crate) fn set_record_decls(
+    decls: &List<SimCodeFunction::RecordDeclaration>,
+) -> Result<()> {
+    let mut map = HashMap::new();
+    for d in decls {
+        // Only `RECORD_DECL_FULL` declares a layout.
+        let SimCodeFunction::RecordDeclaration::RECORD_DECL_FULL { defPath, variables, .. } = d else {
+            continue;
+        };
+        let path = AbsynUtil::pathString(defPath.clone(), arcstr::literal!("."), true, false)?;
+        let mut fields = Vec::new();
+        for v in &**variables {
+            let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v
+            else {
+                continue;
+            };
+            fields.push(RecDeclField {
+                name: ArcStr::from(cref_ident(name)?),
+                ty: ty.clone(),
+                value: value.clone(),
+                bind_outside: *bind_from_outside,
+            });
+        }
+        map.insert(path.to_string(), Arc::new(fields));
+    }
+    RECORD_DECLS.with(|r| *r.borrow_mut() = map);
+    Ok(())
+}
+
+fn record_decl_fields(path: &str) -> Option<Arc<Vec<RecDeclField>>> {
+    RECORD_DECLS.with(|r| r.borrow().get(path).cloned())
+}
+
+/// The declaration of record type `ty`, if the module declares one.
+fn record_decl_of(ty: &DAE::Type) -> Result<Option<Arc<Vec<RecDeclField>>>> {
+    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, .. } = ty else {
+        return Ok(None);
+    };
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    Ok(record_decl_fields(&path_str))
+}
+
+/// The module's constant pool: every literal concatenated into the single
+/// passive data segment 0, since `memory.init` reads its segment at a source
+/// offset. One segment rather than one per literal, which wasm caps at 100000.
+#[derive(Default)]
+pub(crate) struct Literals {
+    blob: Vec<u8>,
+    /// `(hash, len)` -> offsets already placed. Keyed by hash so the pool is not
+    /// held twice; `intern` still compares before reusing one.
+    seen: HashMap<(u64, usize), Vec<u32>>,
+}
+
+impl Literals {
+    /// Offset of `bytes` within segment 0, appending them if not already there.
+    pub(crate) fn intern(&mut self, bytes: &[u8]) -> u32 {
+        use core::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        bytes.hash(&mut h);
+        let key = (h.finish(), bytes.len());
+        let offsets = self.seen.entry(key).or_default();
+        if let Some(&off) = offsets.iter().find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes) {
+            return off;
+        }
+        let off = self.blob.len() as u32;
+        self.blob.extend_from_slice(bytes);
+        offsets.push(off);
+        off
+    }
+
+    /// Whether nothing was interned. Not "the blob is empty": an empty String
+    /// literal adds no bytes but still emits a `memory.init` naming segment 0.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.seen.is_empty()
+    }
+
+    pub(crate) fn blob(&self) -> &[u8] {
+        &self.blob
+    }
+}
+
+// -------------------------------------------------------------------------
+// Function-body compilation
+// -------------------------------------------------------------------------
+
+/// Per-function compilation state.
+pub(crate) struct FnCtx<'a> {
+    /// ident -> (local index, Modelica type). Inputs are the wasm params
+    /// (indices `0..n_params`); outputs and locals follow.
+    locals: HashMap<String, (u32, SigTy)>,
+    /// Wasm types of every non-parameter local (for `Function::new`), in index
+    /// order starting at `n_params`.
+    extra_locals: Vec<we::ValType>,
+    n_params: u32,
+    /// Output local indices, pushed (in order) before every `return`.
+    outputs: Vec<(u32, SigTy)>,
+    /// Resolves a `CALL` to another generated function.
+    by_name: &'a HashMap<String, FnInfo>,
+    /// Module-wide constant pool; `intern` gives the offset into data segment 0.
+    literals: &'a mut Literals,
+    instrs: Vec<we::Instruction<'static>>,
+    /// Number of currently-open structured-control frames (`block`/`loop`/`if`),
+    /// maintained automatically by [`FnCtx::emit`]. A relative branch index to a
+    /// frame opened at level `L` is `ctrl_depth - L` (see [`FnCtx::branch_to`]).
+    ctrl_depth: u32,
+    /// Stack of enclosing loops, innermost last: `(break_level, continue_level)`,
+    /// the `ctrl_depth` values of the loop's break-target and continue-target
+    /// blocks. Drives `break`/`continue` (`STMT_BREAK`/`STMT_CONTINUE`).
+    loops: Vec<(u32, u32)>,
+    /// Heap locals that hold a *borrowed* reference (not owned), so they must be
+    /// skipped by `release_heap_locals` — currently the `for x in array` iterator,
+    /// which aliases an element of the array that outlives the loop.
+    borrowed_locals: Vec<u32>,
+    /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
+    /// straight-line, so one pair is enough.
+    elem_ptr_tmp: Option<(u32, u32)>,
+    /// Where the equation or statement being lowered came from: C reports a model
+    /// error at the generated C position, which `-d=gendebugsymbols` rewrites to
+    /// this one, and there is no generated C here to name. Rendered only at the
+    /// few sites that can raise one ([`emit_src_loc`]).
+    src_loc: Option<metamodelica::SourceInfo>,
+    /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
+    /// resolver that maps model component references not bound as wasm locals to
+    /// slots in the shared `SimData` block. `None` for ordinary function bodies.
+    pub(crate) sim: Option<SimCtx>,
+    /// Dynamic tearing: set while lowering the *casual* tearing set's residual, where
+    /// a violated `localCon` constraint ends the evaluation (C's
+    /// `residualFuncConstraints` returning 1 — see `createLocalConstraints`).
+    dt_local_cons: bool,
+    /// Dynamic tearing: while lowering the casual tearing set itself, the
+    /// [`ctrl_depth`](Self::ctrl_depth) of the block a failed solve branches out of,
+    /// to hand the component to the strict set instead of reporting it unsolved.
+    dt_fallback: Option<u32>,
+}
+
+/// Resolver for model variables when lowering simulation equations. Component
+/// references that are not function-local wasm slots (states, state
+/// derivatives, algebraics, parameters, `time`) are read/written through the
+/// `SimData` block whose base pointer is held in the wasm local `data_local`
+/// (the equation function's first parameter); every variable lives at a
+/// compile-time-constant byte offset. See `CodegenWasmJit`.
+///
+/// The maps are shared (`Arc`) with `SimVarMap`, not copied: one `SimCtx` is built
+/// per generated function and a large model has hundreds of them.
+/// `+profiling`: which clock each profiled function and equation block ticks —
+/// C's `<fn>_index` defines and `profileBlockIndex` (see `prof.rs`).
+pub(crate) struct ProfPlan {
+    /// C's `measure_time_flag`: bit 1 `blocks`, bit 2 `all`, bit 4 html.
+    pub(crate) level: u8,
+    pub(crate) n_functions: u32,
+    pub(crate) n_blocks: u32,
+    /// Mangled function name -> clock.
+    pub(crate) fn_index: HashMap<String, u32>,
+    /// Equation index -> profile block; the block's clock is `n_functions + block`.
+    pub(crate) blocks: HashMap<i32, u32>,
+}
+
+impl ProfPlan {
+    pub(crate) fn all(&self) -> bool {
+        self.level & 2 != 0
+    }
+    pub(crate) fn block_clock(&self, eq_index: i32) -> Option<u32> {
+        self.blocks.get(&eq_index).map(|b| self.n_functions + b)
+    }
+}
+
+pub(crate) struct SimCtx {
+    /// wasm local index holding the `SimData` base pointer.
+    pub(crate) data_local: u32,
+    /// Canonical cref key (`super::sim_cref_key`) -> slot in `SimData`.
+    pub(crate) vars: Arc<HashMap<String, SimSlot>>,
+    /// Canonical cref key -> its `start` value expression (for `$START.<cref>`),
+    /// `None` when the variable has no explicit start (defaults to the type's
+    /// zero). Stored separately from `vars` because `$START` reads the start
+    /// attribute, not the live value.
+    pub(crate) starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
+    /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
+    /// present, else the inline expression. Empty while building the fill function.
+    pub(crate) start_slots: Arc<HashMap<String, u32>>,
+    /// Canonical cref key of an *array-valued* model variable (the base name with
+    /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
+    /// scalarized elements occupy. A whole-array reference reads/writes the range
+    /// as one runtime array object (gather on read, scatter on assign). See
+    /// `compile_sim_cref_read`/`compile_sim_cref_assign`.
+    pub(crate) array_groups: Arc<HashMap<String, ArrayGroup>>,
+    /// The same keys for the arrays that are not one contiguous range; only a
+    /// run-time subscript resolves through these (see `ScatterGroup`).
+    pub(crate) scatter_groups: Arc<HashMap<String, ScatterGroup>>,
+    /// `varKind = CONST` variables own no slot: a reference is the binding
+    /// literal, as in C's `varArrayNameValues`.
+    pub(crate) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
+    pub(crate) const_groups: Arc<HashMap<String, ConstGroup>>,
+    /// `SimData` byte offset of the `terminate` flag, written by a fired
+    /// `terminate(...)` when-operator (see `lower_when_op`).
+    pub(crate) terminate_off: u32,
+    /// `SimData` byte offset of the `terminal()` flag, raised by the driver for
+    /// the run's final discrete update.
+    pub(crate) terminal_off: u32,
+    /// `SimData` byte offset of the `initial()` flag, raised by the driver for
+    /// the initialization phase.
+    pub(crate) initial_off: u32,
+    /// `SimData` byte offset of the fired `terminate(...)`'s message + source
+    /// position (C's `TermMsg`/`TermInfo`).
+    pub(crate) term_info_off: u32,
+    /// `SimData` byte offset of the nonlinear-solver failure flag, raised by a
+    /// non-converging `SES_NONLINEAR` system (`rt_solve_nls`).
+    pub(crate) nls_fail_off: u32,
+    /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job (shared-table slot
+    /// + unknown count). Empty when the model has no nonlinear systems.
+    pub(crate) nls_jobs: Arc<HashMap<i32, NlsJob>>,
+    /// `SimGenericCall` index -> the shared for-loop body it runs (C's
+    /// `sc.generic_loop_calls`).
+    pub(crate) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// Number of `sample(...)` time events, bounding the `active` flag region.
+    pub(crate) n_samples: u32,
+    /// `SimData` byte offset of the per-sample `active` flags.
+    pub(crate) sample_active_off: u32,
+    /// `SimData` byte offset of the held relation values (`relations[]`).
+    pub(crate) relations_off: u32,
+    /// `SimData` byte offset of the relation-evaluation-mode flag.
+    pub(crate) rel_fresh_off: u32,
+    /// `SimData` byte offset of the held relation snapshot — the hysteresis
+    /// *direction* source, held fixed across an event's discrete update.
+    pub(crate) stored_rel_off: u32,
+    /// `SimData` byte offset of `relationsPre` (held-mode relation values).
+    pub(crate) relations_pre_off: u32,
+    /// Number of indexed relations.
+    pub(crate) n_relations: u32,
+    /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
+    pub(crate) mathevents_off: u32,
+    /// Number of math-event slots (bounds the `mathEventsValuePre` region).
+    pub(crate) n_mathevents: u32,
+    /// `SimData` byte offset of the homotopy parameter lambda (`homotopy(a, s)` =
+    /// `s + lambda*(a-s)`).
+    pub(crate) lambda_off: u32,
+    /// C's `homotopyMethod` code, handed to `rt_solve_nls`.
+    pub(crate) homotopy_method: u8,
+    /// True while lowering the `functionZeroCrossings` body: an indexed relation is
+    /// then evaluated *fresh* (so a sign change is detectable) rather than held.
+    pub(crate) zc_context: bool,
+    /// `SimData` byte offset of the zero-crossing hysteresis tolerance, written by
+    /// the driver at run start from the run's tolerance. Continuous (Real) indexed
+    /// relations use a ±`tolZC*(max(|a|,|b|)+max(nom))` band at events and in
+    /// `functionZeroCrossings` so a relation stays put within the band — this keeps
+    /// a bouncing ball from chattering through the floor near rest.
+    pub(crate) zctol_off: u32,
+    /// C's `data->localData[1]->realVars` as `(one past the live real region, the
+    /// mirror's base)`; `None` when no linear system reads it.
+    pub(crate) old_real: Option<(u32, u32)>,
+    /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
+    /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
+    pub(crate) zc_pre_off: u32,
+    /// `SimData` byte offset of the per-base-clock `$_clkfire` flags.
+    pub(crate) clock_fire_off: u32,
+    /// Sub-clock block of the clocked partition being lowered — C's
+    /// `baseClockIndex`/`subClockIndex`, resolved to an address. `None` outside one.
+    pub(crate) sub_clock_off: Option<u32>,
+    /// `+profiling`'s clock plan; `None` for a model translated without it.
+    pub(crate) prof: Option<Arc<ProfPlan>>,
+}
+
+/// One base clock's `SimData` slots and its parameter-dependent init expressions
+/// (see [`FnCtx::emit_init_synchronous`]).
+pub(crate) struct ClockInit {
+    pub(crate) off: u32,
+    /// `RATIONAL_CLOCK`'s `resolution`; `None` is C's default of 1.
+    pub(crate) resolution: Option<Arc<DAE::Exp>>,
+    /// `EVENT_CLOCK`'s `startInterval`, C's initial `stats.previousInterval`.
+    pub(crate) start_interval: Option<Arc<DAE::Exp>>,
+    pub(crate) sub_offs: Vec<u32>,
+}
+
+/// What one base clock's arm of `functionUpdateSynchronous` recomputes.
+pub(crate) enum ClockUpdate {
+    /// `RATIONAL_CLOCK`: `intervalCounter`, and `interval` from it.
+    Rational(Arc<DAE::Exp>),
+    /// `REAL_CLOCK`: `interval` directly.
+    Real(Arc<DAE::Exp>),
+    /// `INFERRED_CLOCK`, defaulted to `Clock(1, 1)`.
+    Inferred,
+    /// An event or solver clock has no interval to recompute.
+    Nothing,
+}
+
+/// One nonlinear system's `rt_solve_nls` wiring: `k` is the job ordinal (its
+/// `residual`/`load` functions occupy shared-table slots `nls_base + 4k` and
+/// `nls_base + 4k + 1`), `n` is the number of iteration unknowns, `hist_off` is
+/// this system's byte offset into the extrapolation-history block (allocated at
+/// `NLS_HIST_GLOBAL` by the module's `start`).
+#[derive(Clone, Copy)]
+pub(crate) struct NlsJob {
+    pub(crate) k: u32,
+    pub(crate) n: u32,
+    /// C's `NONLINEAR_SYSTEM_DATA::equationIndex`: the number its messages quote.
+    pub(crate) eq_index: u32,
+    pub(crate) hist_off: u32,
+    /// Byte offset of this system's `n` nominal values into the nominal block
+    /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
+    pub(crate) nominal_off: u32,
+    /// The system has a symbolic Jacobian: shared-table slot `4k+2` holds an
+    /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
+    pub(crate) has_jac: bool,
+    /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
+    pub(crate) mixed: bool,
+    /// Nonzero count of the Jacobian's CSC pattern, 0 where there is none.
+    pub(crate) nnz: u32,
+    /// Byte offset of this system's `colptr`/`rowidx` pattern into the pattern
+    /// block (`NLS_PAT_GLOBAL`); only meaningful when `nnz != 0`.
+    pub(crate) pat_off: u32,
+    /// C's per-system default `nlsMethod` by the density/size rule: `NLS_KINSOL`
+    /// (sparse) rather than the dense `NLS_MIXED` ladder. `-nls=` overrides it, and
+    /// it also picks the format `nls_jac` writes (CSC vs dense `n×n`).
+    pub(crate) sparse_default: bool,
+    /// C's `NONLINEAR_SYSTEM_DATA::homotopySupport`.
+    pub(crate) homotopy_support: bool,
+    /// Dynamic tearing: this is the *casual* tearing set, so shared-table slot
+    /// `4k+3` holds the strict set's `solve(sim_data) -> solved` function — C's
+    /// `strictTearingFunctionCall`, which `solveNLS` falls back to.
+    pub(crate) casual: bool,
+}
+
+/// Per-system solver state for `n` unknowns: a count (padded to 8), C's
+/// `lastTimeSolved`, the residual scaling carried between calls, C's
+/// `nlsxExtrapolation`, and `HIST_DEPTH` stored solutions (time + `n`). Matches
+/// `rt_solve_nls`'s layout.
+pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
+    const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
+    16 + 8 * n + 8 * n + DEPTH * (8 + 8 * n)
+}
+
+/// Model global holding the base address of the NLS extrapolation-history block
+/// (`rt_alloc`ated once by `start`; zeroed, so every system's count starts 0).
+pub(crate) const NLS_HIST_GLOBAL: u32 = 1;
+
+/// Model global holding the base address of the NLS nominal block (`n` `f64`
+/// per system, filled with codegen-time constants by `start`).
+pub(crate) const NLS_NOMINAL_GLOBAL: u32 = 2;
+
+/// Model global holding the base address of the sparse-NLS pattern block
+/// (`colptr[n+1]` then `rowidx[nnz]`, `i32`, per sparsely-solved system).
+pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
+
+/// Model global holding the base address of the NLS bounds block: the `min`/`max`
+/// pair per iteration variable, which the solver constrains its restarts to.
+pub(crate) const NLS_BOUNDS_GLOBAL: u32 = 4;
+
+/// A variable attribute the solvers read back at run time.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Attr {
+    Nominal,
+    Min,
+    Max,
+    /// `start`, which the optimizer reads for the input variables (C's `u0`).
+    Start,
+}
+
+/// Where one variable's attribute lands: its entry in each nonlinear system that
+/// iterates on it (indexing the nominal block, and the `min`/`max` pair at twice that
+/// in the bounds block), and the `SimData` nominal slots the integrator scales by (a
+/// state's, and in DAE mode an algebraic unknown's).
+#[derive(Clone, Default)]
+pub(crate) struct AttrTargets {
+    pub(crate) nls: Vec<u32>,
+    pub(crate) nom_offs: Vec<u32>,
+    /// A state's `SimData` `max` slot, which the numeric linearization reads.
+    pub(crate) max_offs: Vec<u32>,
+    /// C's `realVarsData[i].attribute` as declared (`Layout::real_nom_off` and the
+    /// optimizer's arrays): verbatim, without the `fmax(|nominal|, 1e-32)` clamp.
+    pub(crate) raw_min_offs: Vec<u32>,
+    pub(crate) raw_max_offs: Vec<u32>,
+    pub(crate) raw_nom_offs: Vec<u32>,
+    pub(crate) start_offs: Vec<u32>,
+}
+
+/// The contiguous `SimData` slot range backing one scalarized array model
+/// variable. The backend lays an array's scalar elements out consecutively in
+/// row-major order; this records the start offset and shape so a whole-array
+/// reference can be marshalled to/from a runtime array object with one bulk copy.
+#[derive(Clone)]
+pub(crate) struct ArrayGroup {
+    /// Byte offset of element `[1,1,…]` (row-major first) within `SimData`.
+    pub(crate) base_off: u32,
+    /// Element value type (`F64` for Real, `I32` for Integer/Boolean).
+    pub(crate) wty: WTy,
+    /// The elements are heap handles (String), so a read borrows and must retain.
+    pub(crate) heap: bool,
+    /// Array dimension sizes (row-major, outermost first).
+    pub(crate) dims: Vec<u32>,
+    /// Product of `dims` (number of scalar elements).
+    pub(crate) total: u32,
+    /// The `dims.len() + 1` pieces an element key is spelled from, one subscript
+    /// between each: `["module", ".x", ""]` -> `module[i].x[j]`.
+    pub(crate) key_pieces: Vec<String>,
+}
+
+impl ArrayGroup {
+    /// The cref key of element `idx` (1-based), as `sim_cref_key` spells it.
+    pub(crate) fn elem_key(&self, idx: &[i32]) -> String {
+        let mut s = String::new();
+        for (k, piece) in self.key_pieces.iter().enumerate() {
+            s.push_str(piece);
+            if let Some(i) = idx.get(k) {
+                s.push('[');
+                s.push_str(&i.to_string());
+                s.push(']');
+            }
+        }
+        s
+    }
+}
+
+/// An array with no [`ArrayGroup`] because its scalarized elements are not one
+/// contiguous block: alias elimination pointed them at unrelated slots, or one is
+/// a negated alias. A run-time subscript selects between their own offsets.
+#[derive(Clone)]
+pub(crate) struct ScatterGroup {
+    pub(crate) wty: WTy,
+    /// See [`ArrayGroup::heap`].
+    pub(crate) heap: bool,
+    pub(crate) dims: Vec<u32>,
+    /// `SimData` byte offset and alias negation of each element, row-major.
+    pub(crate) elems: Vec<(u32, Neg)>,
+}
+
+/// A constant array's elements, row-major; it owns no `SimData` slots.
+#[derive(Clone)]
+pub(crate) struct ConstGroup {
+    pub(crate) wty: WTy,
+    pub(crate) dims: Vec<u32>,
+    pub(crate) values: Vec<Arc<DAE::Exp>>,
+}
+
+/// A scalar model variable's location within the `SimData` block.
+#[derive(Clone, Copy)]
+pub(crate) struct SimSlot {
+    /// Byte offset of the value within the `SimData` block.
+    pub(crate) off: u32,
+    /// Value type — `F64` for Real, `I32` for Integer/Boolean/String handle.
+    pub(crate) wty: WTy,
+    /// Alias negation: the cref is a negated alias of the variable at `off`, so
+    /// a read negates and a write is rejected (aliases are never assigned).
+    pub(crate) negate: Neg,
+    /// The slot holds a reference-counted heap handle (a String). A read retains;
+    /// an assignment releases the previous handle before storing the new (owned)
+    /// one. Scalar Real/Integer/Boolean slots are not heap.
+    pub(crate) heap: bool,
+}
+
+impl<'a> FnCtx<'a> {
+    /// The simulation context, present whenever a *simulation* equation function
+    /// is being lowered (`new_sim`). Absent for ordinary Modelica-function
+    /// lowering; reaching a sim-only path without it is an internal error, so it
+    /// is surfaced as a `Result` rather than an `unwrap` that would trap the JIT.
+    pub(crate) fn sim(&self) -> Result<&SimCtx> {
+        self.sim
+            .as_ref()
+            .ok_or_else(|| "CodegenWasmJit: sim context missing (internal error)")
+    }
+
+    /// Emit `A[n,n] = 1` for each state set's identity selection (C's
+    /// `initializeStateSetPivoting`): `offs` are the SimData byte offsets of the
+    /// diagonal `$STATESET.A` integer slots. Run once before initialisation so the
+    /// dynamic-state-selection `SES_LINEAR`/`SES_NONLINEAR` systems (`set.x = A·q`)
+    /// are non-singular; without it `A` stays 0 and the selected-state rows vanish.
+    pub(crate) fn emit_stateset_diag_init(&mut self, offs: &[u32]) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for &off in offs {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Const(1));
+            self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn set_src_loc(&mut self, info: &metamodelica::SourceInfo) {
+        self.src_loc = Some(info.clone());
+    }
+
+    /// Instructions emitted so far: where to cut a split equation function.
+    pub(crate) fn instr_len(&self) -> usize {
+        self.instrs.len()
+    }
+
+    pub(crate) fn emit(&mut self, i: we::Instruction<'static>) {
+        // Track structured-control nesting so `break`/`continue` can compute their
+        // relative branch depth. `Else` keeps the same frame; `End` closes one.
+        match i {
+            we::Instruction::Block(_)
+            | we::Instruction::Loop(_)
+            | we::Instruction::If(_)
+            | we::Instruction::TryTable(..) => {
+                self.ctrl_depth += 1;
+            }
+            we::Instruction::End => {
+                self.ctrl_depth = self.ctrl_depth.saturating_sub(1);
+            }
+            _ => {}
+        }
+        self.instrs.push(i);
+    }
+    fn ctrl_depth(&self) -> u32 {
+        self.ctrl_depth
+    }
+
+    pub(crate) fn emit_drop(&mut self) {
+        self.emit(we::Instruction::Drop);
+    }
+
+    /// Emit an unconditional branch to the structured-control frame that was open
+    /// at `target_level` (a recorded `ctrl_depth`). `br 0` is the innermost frame.
+    fn branch_to(&mut self, target_level: u32) {
+        let rel = self.ctrl_depth - target_level;
+        self.emit(we::Instruction::Br(rel));
+    }
+    /// Allocate a fresh scratch local of the given type and return its index.
+    /// Never reused, so transient uses inside one expression never clobber.
+    fn alloc_temp(&mut self, wty: WTy) -> u32 {
+        let idx = self.n_params + self.extra_locals.len() as u32;
+        self.extra_locals.push(wty.val());
+        idx
+    }
+    fn elem_ptr_temps(&mut self) -> (u32, u32) {
+        match self.elem_ptr_tmp {
+            Some(p) => p,
+            None => {
+                let p = (self.alloc_temp(WTy::I32), self.alloc_temp(WTy::I32));
+                self.elem_ptr_tmp = Some(p);
+                p
+            }
+        }
+    }
+
+    /// Build a context for lowering one *simulation* equation function (see
+    /// `CodegenWasmJit`). The function takes the `SimData` base pointer as its
+    /// single parameter (wasm local 0); all model variables resolve through
+    /// `sim` rather than wasm locals. `by_name` resolves calls to model
+    /// functions (Modelica functions used by the equations); `literals` is the
+    /// module-wide String-literal pool.
+    pub(crate) fn new_sim(
+        sim: SimCtx,
+        by_name: &'a HashMap<String, FnInfo>,
+        literals: &'a mut Literals,
+    ) -> Self {
+        Self::new_sim_params(sim, by_name, literals, 1)
+    }
+
+    /// Like [`new_sim`] but for a sim helper taking extra pointer parameters after
+    /// the `SimData` pointer (wasm locals `1..n_params`) — the `rt_solve_nls`
+    /// `residual(sim_data, x, r)` / `load(sim_data, x)` callbacks.
+    pub(crate) fn new_sim_params(
+        sim: SimCtx,
+        by_name: &'a HashMap<String, FnInfo>,
+        literals: &'a mut Literals,
+        n_params: u32,
+    ) -> Self {
+        FnCtx {
+            locals: HashMap::new(),
+            extra_locals: Vec::new(),
+            n_params, // local 0 = SimData pointer
+            outputs: Vec::new(),
+            by_name,
+            literals,
+            instrs: Vec::new(),
+            ctrl_depth: 0,
+            loops: Vec::new(),
+            borrowed_locals: Vec::new(),
+            elem_ptr_tmp: None,
+            src_loc: None,
+            sim: Some(sim),
+            dt_local_cons: false,
+            dt_fallback: None,
+        }
+    }
+
+    /// Dynamic tearing: whether a violated local constraint must end the evaluation
+    /// (the casual set's residual), and the block a failed casual solve escapes to.
+    pub(crate) fn set_dt_local_cons(&mut self, on: bool) {
+        self.dt_local_cons = on;
+    }
+
+    pub(crate) fn dt_local_cons(&self) -> bool {
+        self.dt_local_cons
+    }
+
+    pub(crate) fn set_dt_fallback(&mut self, level: Option<u32>) {
+        self.dt_fallback = level;
+    }
+
+    pub(crate) fn dt_fallback(&self) -> Option<u32> {
+        self.dt_fallback
+    }
+
+    /// Whether the system being lowered is a casual tearing set (C's
+    /// `strictTearingFunctionCall != NULL`).
+    pub(crate) fn dt_casual(&self) -> bool {
+        self.dt_fallback.is_some()
+    }
+
+    /// Open `if (stage & mask)` around the next equation, `stage` being the DAE-mode
+    /// residual's second parameter; `sim_end_block` closes it.
+    pub(crate) fn sim_stage_guard(&mut self, mask: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Const(mask as i32));
+        self.emit(we::Instruction::I32And);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
+    /// Open `if (idx == v)` on the second parameter, where C dispatches with a
+    /// `switch`; `sim_end_block` closes it.
+    pub(crate) fn sim_index_guard(&mut self, v: u32) {
+        self.emit(we::Instruction::LocalGet(1));
+        self.emit(we::Instruction::I32Const(v as i32));
+        self.emit(we::Instruction::I32Eq);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+
+    /// Open `if (cond)`; `sim_else` starts the next branch, `sim_end_block` closes one.
+    pub(crate) fn sim_if_cond(&mut self, cond: &DAE::Exp) -> Result<()> {
+        let w = compile_exp(self, cond)?;
+        coerce(self, w, WTy::I32);
+        self.emit(we::Instruction::If(we::BlockType::Empty));
+        Ok(())
+    }
+
+    pub(crate) fn sim_else(&mut self) {
+        self.emit(we::Instruction::Else);
+    }
+
+    pub(crate) fn sim_end_block(&mut self) {
+        self.emit(we::Instruction::End);
+    }
+
+    /// Point the clock builtins at sub-clock `off` (a `SimData` byte offset) while
+    /// the partition it belongs to is lowered.
+    pub(crate) fn set_sub_clock(&mut self, off: Option<u32>) {
+        if let Some(s) = self.sim.as_mut() {
+            s.sub_clock_off = off;
+        }
+    }
+
+    /// Lower one equation `cref := rhs` into this context.
+    pub(crate) fn sim_assign(&mut self, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()> {
+        compile_assign(self, lhs, rhs)
+    }
+
+    /// Lower a list of algorithm statements into this context.
+    pub(crate) fn sim_stmts(&mut self, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Result<()> {
+        compile_stmts(self, stmts)
+    }
+
+    /// Emit `savePreValues`: `pre := live` for each `(pre_off, live_off, bytes)`
+    /// region (via `memory.copy` within `SimData`). Appended to the per-step
+    /// function so a `when` edge test sees the previous step's values.
+    pub(crate) fn sim_save_pre_values(&mut self, regions: &[(u32, u32, u32)]) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for &(dst_off, src_off, bytes) in regions {
+            if bytes == 0 {
+                continue;
+            }
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Const(dst_off as i32));
+            self.emit(we::Instruction::I32Add);
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Const(src_off as i32));
+            self.emit(we::Instruction::I32Add);
+            self.emit(we::Instruction::I32Const(bytes as i32));
+            self.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+        }
+        Ok(())
+    }
+
+    /// Emit `initSample`: for each sample `k`, evaluate its `start`/`interval`
+    /// expressions (which may reference parameters, so this runs after
+    /// `functionParameters`) and store them as f64 into the sample region at
+    /// `sample_off + k*16` / `+ k*16 + 8`. The driver reads them back to schedule
+    /// the time events. `samples[k] = (startExp, intervalExp)`.
+    pub(crate) fn emit_init_sample(
+        &mut self,
+        samples: &[(Arc<DAE::Exp>, Arc<DAE::Exp>)],
+        sample_off: u32,
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (k, (start, interval)) in samples.iter().enumerate() {
+            let base = sample_off + k as u32 * 16;
+            for (exp, off) in [(start, base), (interval, base + 8)] {
+                self.emit(we::Instruction::LocalGet(data));
+                let w = compile_exp(self, exp)?;
+                coerce(self, w, WTy::F64);
+                self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionInitSynchronous`: C's `function_initSynchronous` minus the
+    /// compile-time constants. Called after `functionParameters`, since
+    /// `resolution` / `startInterval` may be parameter-dependent.
+    pub(crate) fn emit_init_synchronous(&mut self, clocks: &[ClockInit]) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for c in clocks {
+            self.emit(we::Instruction::LocalGet(data));
+            match &c.resolution {
+                Some(e) => {
+                    let w = compile_exp(self, e)?;
+                    coerce(self, w, WTy::I32);
+                }
+                None => self.emit(we::Instruction::I32Const(1)),
+            }
+            self.emit(we::Instruction::I32Store(mem_arg(c.off + clock_field::RESOLUTION, 2)));
+            // C's `(CLOCK_STATS){<startInterval>, 0, -1}`.
+            self.emit(we::Instruction::LocalGet(data));
+            match &c.start_interval {
+                Some(e) => {
+                    let w = compile_exp(self, e)?;
+                    coerce(self, w, WTy::F64);
+                }
+                None => self.emit(we::Instruction::F64Const(0.0.into())),
+            }
+            self.emit(we::Instruction::F64Store(mem_arg(c.off + clock_field::PREV_INTERVAL, 3)));
+            for (off, v) in [
+                (c.off + clock_field::INTERVAL, -1.0),
+                (c.off + clock_field::LAST_ACTIVATION, -1.0),
+            ] {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(v.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            }
+            for (off, v) in [
+                (c.off + clock_field::COUNT, 0),
+                (c.off + clock_field::INTERVAL_COUNTER, -1),
+            ] {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(v));
+                self.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+            }
+            for &sub in &c.sub_offs {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(0.0.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_PREV_INTERVAL, 3)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const((-1.0).into()));
+                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_LAST_ACTIVATION, 3)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(0));
+                self.emit(we::Instruction::I32Store(mem_arg(sub + clock_field::SUB_COUNT, 2)));
+            }
+        }
+        Ok(())
+    }
+
+    /// One base clock's arm of `functionUpdateSynchronous` (C's `updatePartition`):
+    /// re-evaluate the clock's interval, which may depend on a variable.
+    pub(crate) fn emit_update_synchronous(&mut self, off: u32, update: &ClockUpdate) -> Result<()> {
+        let data = self.sim()?.data_local;
+        match update {
+            ClockUpdate::Nothing => {}
+            ClockUpdate::Rational(counter) => {
+                self.emit(we::Instruction::LocalGet(data));
+                let w = compile_exp(self, counter)?;
+                coerce(self, w, WTy::I32);
+                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::F64ConvertI32S);
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::RESOLUTION, 2)));
+                self.emit(we::Instruction::F64ConvertI32S);
+                self.emit(we::Instruction::F64Div);
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+            }
+            ClockUpdate::Real(interval) => {
+                self.emit(we::Instruction::LocalGet(data));
+                let w = compile_exp(self, interval)?;
+                coerce(self, w, WTy::F64);
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+            }
+            // C's `INFERRED_CLOCK` default `Clock(intervalCounter=1, resolution=1)`.
+            ClockUpdate::Inferred => {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::I32Const(1));
+                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::F64Const(1.0.into()));
+                self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionUpdateBoundVariableAttributes`: the constant per-state
+    /// `nominal`, then each attribute equation, into the slots the solvers read
+    /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
+    pub(crate) fn emit_update_bound_attrs(
+        &mut self,
+        defaults: &[(u32, f64)],
+        int_defaults: &[(u32, i32)],
+        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (off, value) in defaults {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::F64Const((*value).into()));
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+        }
+        for (off, value) in int_defaults {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::I32Const(*value));
+            self.emit(we::Instruction::I32Store(mem_arg(*off, 2)));
+        }
+        if attrs.is_empty() {
+            return Ok(());
+        }
+        let (raw, val) = (self.alloc_temp(WTy::F64), self.alloc_temp(WTy::F64));
+        for (attr, exp, targets, log_off, var) in attrs {
+            let w = compile_exp(self, exp)?;
+            coerce(self, w, WTy::F64);
+            self.emit(we::Instruction::LocalSet(raw));
+            // C prints the value from inside this function; the driver reads it here.
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::LocalGet(raw));
+            self.emit(we::Instruction::F64Store(mem_arg(*log_off, 3)));
+            if matches!(attr, Attr::Nominal) {
+                for off in &targets.nom_offs {
+                    // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::LocalGet(raw));
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::F64Const(1e-32f64.into()));
+                    self.emit(we::Instruction::F64Max);
+                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                }
+            }
+            if matches!(attr, Attr::Max) {
+                for off in &targets.max_offs {
+                    self.emit(we::Instruction::LocalGet(data));
+                    self.emit(we::Instruction::LocalGet(raw));
+                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                }
+            }
+            let raw_offs: &[u32] = match attr {
+                Attr::Min => &targets.raw_min_offs,
+                Attr::Max => &targets.raw_max_offs,
+                Attr::Nominal => &targets.raw_nom_offs,
+                Attr::Start => &targets.start_offs,
+            };
+            for off in raw_offs {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(raw));
+                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            }
+            // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
+            // holds a reference-counted handle.
+            if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
+                self.emit(we::Instruction::LocalGet(data));
+                self.emit(we::Instruction::LocalGet(raw));
+                match slot.wty {
+                    WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
+                    _ => {
+                        self.emit(we::Instruction::I32TruncSatF64S);
+                        self.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
+                    }
+                }
+            }
+            if targets.nls.is_empty() {
+                continue;
+            }
+            self.emit(we::Instruction::LocalGet(raw));
+            match attr {
+                // `start` has no nonlinear-solver slot; it only feeds the optimizer.
+                Attr::Start => {}
+                // A nonpositive nominal would collapse the x-scaling; 1 stands in.
+                Attr::Nominal => {
+                    self.emit(we::Instruction::F64Abs);
+                    self.emit(we::Instruction::LocalTee(val));
+                    self.emit(we::Instruction::F64Const(1.0f64.into()));
+                    self.emit(we::Instruction::LocalGet(val));
+                    self.emit(we::Instruction::F64Const(0.0f64.into()));
+                    self.emit(we::Instruction::F64Gt);
+                    self.emit(we::Instruction::Select);
+                }
+                Attr::Min | Attr::Max => {}
+            }
+            self.emit(we::Instruction::LocalSet(val));
+            let (global, stride, slot) = match attr {
+                Attr::Nominal => (NLS_NOMINAL_GLOBAL, 8, 0),
+                Attr::Min => (NLS_BOUNDS_GLOBAL, 16, 0),
+                Attr::Max => (NLS_BOUNDS_GLOBAL, 16, 8),
+                // Not a solver input; `targets.nls` is empty for a `start`.
+                Attr::Start => continue,
+            };
+            for idx in &targets.nls {
+                self.emit(we::Instruction::GlobalGet(global));
+                self.emit(we::Instruction::LocalGet(val));
+                self.emit(we::Instruction::F64Store(mem_arg(idx * stride + slot, 3)));
+            }
+        }
+        Ok(())
+    }
+
+    /// Store each real variable's declared `start` value in its start attribute
+    /// slot at `off`.
+    pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)]) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (value, off) in starts {
+            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::F64Const((*value).into()));
+            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
+    /// `gout + k*8`, `gout` being the second parameter. A `Bool` crossing stores
+    /// `expr ? 1 : -1`, as C's `gout[k] = (relation_) ? 1 : -1`.
+    pub(crate) fn emit_zero_crossings(
+        &mut self,
+        crossings: &[crate::CodegenWasmJit::ZcInfo],
+        gout_local: u32,
+    ) -> Result<()> {
+        use crate::CodegenWasmJit::ZcInfo;
+        for (k, zc) in crossings.iter().enumerate() {
+            self.emit(we::Instruction::LocalGet(gout_local));
+            match zc {
+                ZcInfo::Bool { expr } => {
+                    // `select` picks `1.0` when the condition (top of stack) is
+                    // nonzero, else `-1.0`; push both values first, condition last.
+                    self.emit(we::Instruction::F64Const(1.0f64.into()));
+                    self.emit(we::Instruction::F64Const((-1.0f64).into()));
+                    let w = compile_exp(self, expr)?;
+                    coerce(self, w, WTy::I32);
+                    self.emit(we::Instruction::Select);
+                }
+                ZcInfo::Math { kind, ops, idx, .. } => {
+                    // gout = (test(fresh arg) != test(held pre)) ? 1 : -1.
+                    self.emit(we::Instruction::F64Const(1.0f64.into()));
+                    self.emit(we::Instruction::F64Const((-1.0f64).into()));
+                    emit_math_test_fresh(self, *kind, ops)?;
+                    emit_math_test_pre(self, *kind, *idx)?;
+                    self.emit(we::Instruction::F64Ne);
+                    self.emit(we::Instruction::Select);
+                }
+            }
+            self.emit(we::Instruction::F64Store(mem_arg(k as u32 * 8, 3)));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionUpdateRelations`: store each relation's exact value into
+    /// `relations[i]`, C's `function_updateRelations(data, 0)`. No hysteresis band
+    /// and no held `relationsPre`, so the event handler can snapshot the result as
+    /// the band direction. `None` entries keep their index without a store.
+    pub(crate) fn emit_update_relations(
+        &mut self,
+        relations: &[Option<Arc<DAE::Exp>>],
+        relations_off: u32,
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        if relations.len() > self.sim()?.n_relations as usize {
+            return Err("CodegenWasmJit: relations list longer than the relations[] region");
+        }
+        for (i, rel) in relations.iter().enumerate() {
+            let Some(rel) = rel else { continue };
+            let DAE::Exp::RELATION { exp1, operator, exp2, .. } = &**rel else {
+                return Err("CodegenWasmJit: non-relation in the relations list");
+            };
+            self.emit(we::Instruction::LocalGet(data));
+            let w = compile_relation_fresh(self, exp1, operator, exp2)?;
+            coerce(self, w, WTy::I32);
+            self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionStoreDelayed`: `rt_delay_store(idx, time, e, d, dmax)` per
+    /// `delay(...)` expression (C's `function_storeDelayed`).
+    pub(crate) fn emit_store_delayed(
+        &mut self,
+        delayed: &[(i32, Arc<DAE::Exp>, Arc<DAE::Exp>, Arc<DAE::Exp>)],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for (idx, e, d, dmax) in delayed {
+            self.emit(we::Instruction::I32Const(*idx));
+            self.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            self.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for exp in [e, d, dmax] {
+                let w = compile_exp(self, exp)?;
+                coerce(self, w, WTy::F64);
+            }
+            self.emit(we::Instruction::Call(rt_index("rt_delay_store")?));
+        }
+        Ok(())
+    }
+
+    /// Emit `functionStoreSpatialDistribution`: `rt_spatial_store(idx, time, in0,
+    /// in1, x, positiveVelocity)` per `spatialDistribution(...)` operator (C's
+    /// `function_storeSpatialDistribution`).
+    ///
+    /// An operator inside an `if`-branch is guarded by the same condition as the
+    /// branch: storing while it is inactive would advance a profile the model is not
+    /// reading (#16099).
+    pub(crate) fn emit_store_spatial(
+        &mut self,
+        spatial: &[SimCode::SpatialDistribution],
+    ) -> Result<()> {
+        let data = self.sim()?.data_local;
+        for sd in spatial {
+            if let Some(cond) = &sd.condition {
+                compile_bool_operand(self, cond)?;
+                self.emit(we::Instruction::If(we::BlockType::Empty));
+            }
+            self.emit(we::Instruction::I32Const(sd.index));
+            self.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            self.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for exp in [&sd.in0, &sd.in1, &sd.pos] {
+                let w = compile_exp(self, exp)?;
+                coerce(self, w, WTy::F64);
+            }
+            let w = compile_exp(self, &sd.dir)?;
+            coerce(self, w, WTy::I32);
+            self.emit(we::Instruction::Call(rt_index("rt_spatial_store")?));
+            if sd.condition.is_some() {
+                self.emit(we::Instruction::End);
+            }
+        }
+        Ok(())
+    }
+
+    /// Emit `functionInitSpatialDistribution`: allocate the operators for this run
+    /// and fill each from its `initialPoints`/`initialValues` parameter arrays (C's
+    /// `allocSpatialDistribution` + `function_initSpatialDistribution`).
+    pub(crate) fn emit_init_spatial(
+        &mut self,
+        n_spatial: u32,
+        spatial: &[SimCode::SpatialDistribution],
+    ) -> Result<()> {
+        self.emit(we::Instruction::I32Const(n_spatial as i32));
+        self.emit(we::Instruction::Call(rt_index("rt_spatial_init")?));
+        for sd in spatial {
+            // The two array handles are owned here and only borrowed by the runtime,
+            // so they go through temps and are released after the call.
+            let mut temps = Vec::new();
+            for exp in [&sd.initPnts, &sd.initVals] {
+                let w = compile_exp(self, exp)?;
+                if w != WTy::I32 {
+                    return Err("CodegenWasmJit: spatialDistribution initialPoints/initialValues is not an array");
+                }
+                let t = self.alloc_temp(WTy::I32);
+                self.emit(we::Instruction::LocalSet(t));
+                temps.push(t);
+            }
+            self.emit(we::Instruction::I32Const(sd.index));
+            for t in &temps {
+                self.emit(we::Instruction::LocalGet(*t));
+            }
+            self.emit(we::Instruction::Call(rt_index("rt_spatial_init_profile")?));
+            for t in &temps {
+                release_temp_array(self, *t)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Clear the rejected-residual index, so a re-run never reports a stale verdict.
+    pub(crate) fn emit_removed_init_reset(&mut self, idx_off: u32) -> Result<()> {
+        let data = self.sim()?.data_local;
+        self.emit(we::Instruction::LocalGet(data));
+        self.emit(we::Instruction::I32Const(0));
+        self.emit(we::Instruction::I32Store(mem_arg(idx_off, 2)));
+        Ok(())
+    }
+
+    /// C's `functionRemovedInitialEquationsBody`: missing zero by more than `1e-5`
+    /// leaves the residual and its 1-based index behind for the driver and ends the
+    /// function, as C's `return 1` does.
+    pub(crate) fn emit_removed_init_residual(
+        &mut self,
+        index: u32,
+        exp: &DAE::Exp,
+        res_off: u32,
+        idx_off: u32,
+    ) -> Result<()> {
+        use we::Instruction as I;
+        let data = self.sim()?.data_local;
+        let res = self.alloc_temp(WTy::F64);
+        let w = compile_exp(self, exp)?;
+        coerce(self, w, WTy::F64);
+        self.emit(I::LocalTee(res));
+        self.emit(I::F64Abs);
+        self.emit(I::F64Const(1e-5f64.into()));
+        self.emit(I::F64Gt);
+        self.emit(I::If(we::BlockType::Empty));
+        self.emit(I::LocalGet(data));
+        self.emit(I::LocalGet(res));
+        self.emit(I::F64Store(mem_arg(res_off, 3)));
+        self.emit(I::LocalGet(data));
+        self.emit(I::I32Const(index as i32 + 1));
+        self.emit(I::I32Store(mem_arg(idx_off, 2)));
+        self.emit(I::Return);
+        self.emit(I::End);
+        Ok(())
+    }
+
+    /// Lower a `when {conditions} then whenStmtLst; elseWhen` equation. The body
+    /// runs on the rising edge of any condition — `cond && !pre(cond)`, matching
+    /// the C target (`equationWhen`) — so it fires once per event and pre-values
+    /// must be saved after each step.
+    pub(crate) fn sim_when(
+        &mut self,
+        conditions: &Arc<List<Arc<DAE::ComponentRef>>>,
+        stmts: &Arc<List<openmodelica_backend_types::BackendDAE::WhenOperator>>,
+        else_when: &Option<Arc<openmodelica_simcode_types::SimCode::SimEqSystem>>,
+    ) -> Result<()> {
+        use we::Instruction as I;
+        let conds: Vec<&Arc<DAE::ComponentRef>> = (&**conditions).into_iter().collect();
+        // Edge guard: OR of `cond && !pre(cond)`; an empty condition list never
+        // fires (C emits `0`).
+        if conds.is_empty() {
+            self.emit(I::I32Const(0));
+        } else {
+            for (i, c) in conds.iter().enumerate() {
+                if compile_sim_cref_read(self, c)?.is_none() {
+                    return Err("CodegenWasmJit: when-condition is not a model variable");
+                }
+                let pre = pre_cref(c);
+                compile_sim_cref_read(self, &pre)?;
+                self.emit(I::I32Eqz); // !pre(cond)
+                self.emit(I::I32And); // cond && !pre(cond)
+                if i > 0 {
+                    self.emit(I::I32Or);
+                }
+            }
+        }
+        self.emit(I::If(we::BlockType::Empty));
+        for op in &**stmts {
+            self.lower_when_op(op)?;
+        }
+        if let Some(ew) = else_when {
+            self.emit(I::Else);
+            match &**ew {
+                openmodelica_simcode_types::SimCode::SimEqSystem::SES_WHEN {
+                    conditions, whenStmtLst, elseWhen, ..
+                } => self.sim_when(conditions, whenStmtLst, elseWhen)?,
+                other => return Err("CodegenWasmJit: elseWhen is not a SES_WHEN"),
+            }
+        }
+        self.emit(I::End);
+        Ok(())
+    }
+
+    fn lower_when_op(&mut self, op: &openmodelica_backend_types::BackendDAE::WhenOperator) -> Result<()> {
+        use openmodelica_backend_types::BackendDAE::WhenOperator as W;
+        match op {
+            W::ASSIGN { left, right, .. } => compile_assign(self, left, right),
+            W::REINIT { stateVar, value, .. } => {
+                let lhs = DAE::Exp::CREF { componentRef: stateVar.clone(), ty: crate::CodegenWasmJit::t_real() };
+                compile_assign(self, &lhs, value)?;
+                emit_reinit_note(self, stateVar)
+            }
+            W::TERMINATE { message, source } => emit_terminate(self, message, source),
+            W::ASSERT { condition, message, level, source } => emit_assert(self, condition, message, level, source),
+            W::NORETCALL { exp, .. } => emit_noretcall(self, exp),
+        }
+    }
+
+    /// Finish a hand-assembled (simulation) function body: append the final
+    /// `end`, and return its extra-local declarations and instruction stream
+    /// ready for `we::Function::new`. The caller has already emitted any
+    /// `return`/fall-through value handling appropriate for the function.
+    pub(crate) fn finish_sim(mut self) -> (Vec<we::ValType>, Vec<we::Instruction<'static>>) {
+        self.emit(we::Instruction::End);
+        (self.extra_locals, self.instrs)
+    }
+}
+
+pub(crate) fn compile_function(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    CURRENT_FN.with(|c| *c.borrow_mut() = function_path(f));
+    let out = compile_function_body(f, by_name, literals);
+    CURRENT_FN.with(|c| c.borrow_mut().clear());
+    out
+}
+
+fn function_path(f: &SimCodeFunction::Function::Function) -> String {
+    use SimCodeFunction::Function::Function as F;
+    let path = match f {
+        F::FUNCTION { name, .. }
+        | F::PARALLEL_FUNCTION { name, .. }
+        | F::KERNEL_FUNCTION { name, .. }
+        | F::EXTERNAL_FUNCTION { name, .. }
+        | F::RECORD_CONSTRUCTOR { name, .. } => name,
+    };
+    AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)
+        .map(|s| s.to_string())
+        .unwrap_or_default()
+}
+
+fn compile_function_body(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    if matches!(f, SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { .. }) {
+        return compile_external_function(f, by_name, literals);
+    }
+    let SimCodeFunction::Function::Function::FUNCTION { outVars, functionArguments, variableDeclarations, body, .. } = f
+    else {
+        return Err("CodegenWasmJit: only plain FUNCTIONs are supported");
+    };
+
+    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
+    let mut idx: u32 = 0;
+    // Parameters first (wasm locals 0..n_params).
+    for v in &**functionArguments {
+        let (name, sty) = var_name_ty(v)?;
+        locals.insert(name, (idx, sty));
+        idx += 1;
+    }
+    let n_params = idx;
+    let mut extra_locals: Vec<we::ValType> = Vec::new();
+    let mut outputs: Vec<(u32, SigTy)> = Vec::new();
+    // Array locals/outputs to allocate at function entry (see `emit_array_alloc`):
+    // (local index, element type, dimension specs). Inputs are excluded — they
+    // are passed in already built.
+    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)> = Vec::new();
+    // Outputs next, then local declarations. An output is often also listed in
+    // `variableDeclarations` (the function body assigns to it through the same
+    // name); it must map to a single local, so a name already allocated as an
+    // input or output is reused rather than given a fresh slot.
+    for v in &**outVars {
+        let slot = intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+        outputs.push(slot);
+    }
+    for v in &**variableDeclarations {
+        intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+    }
+
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    // In declaration order, like C's `varInit` loop: a declaration's dimensions
+    // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
+    // allocation and binding must interleave. `variableDeclarations` already
+    // contains the outputs; one missing from it is initialized first.
+    let decl_slots: Vec<u32> = (&**variableDeclarations).into_iter().filter_map(|v| var_slot(&ctx, v)).collect();
+    let loose_outs: Vec<_> = (&**outVars)
+        .into_iter()
+        .filter(|v| !var_slot(&ctx, v).is_some_and(|s| decl_slots.contains(&s)))
+        .collect();
+    let mut done: Vec<u32> = Vec::new();
+    for v in loose_outs.into_iter().chain(&**variableDeclarations) {
+        init_var(&mut ctx, v, &mut array_allocs, &mut done)?;
+    }
+    compile_stmts(&mut ctx, body)?;
+    // Fall-through return: release heap locals, push the output locals and end.
+    release_heap_locals(&mut ctx)?;
+    push_outputs(&mut ctx);
+    ctx.emit(we::Instruction::End);
+
+    let FnCtx { extra_locals, instrs, .. } = ctx;
+    let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Lower an `external "C"`/`"builtin"`/`"FORTRAN 77"` function to the wasm
+/// equivalent of C's `functionBodyExternalFunction`: allocate and bind the
+/// outputs and the protected `biVars` locals, call `extName` over `extArgs`,
+/// then copy the results into the outputs.
+fn compile_external_function(
+    f: &SimCodeFunction::Function::Function,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, biVars, extName, extArgs, extReturn, .. } = f else {
+        return Err("CodegenWasmJit: compile_external_function on a non-external function");
+    };
+    // Only for the mismatch diagnostics below.
+    let fn_path = || {
+        AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default()
+    };
+
+    let mut locals: HashMap<String, (u32, SigTy)> = HashMap::new();
+    let mut idx: u32 = 0;
+    for v in &**funArgs {
+        let (name, sty) = var_name_ty(v)?;
+        locals.insert(name, (idx, sty));
+        idx += 1;
+    }
+    let n_params = idx;
+    let mut extra_locals: Vec<we::ValType> = Vec::new();
+    let mut outputs: Vec<(u32, SigTy)> = Vec::new();
+    // Output arrays are pre-allocated at entry and passed to the C call as a pointer
+    // (filled in place natively / copied back on web); collect them for allocation.
+    let mut array_allocs: Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)> = Vec::new();
+    for v in &**outVars {
+        let slot = intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+        outputs.push(slot);
+    }
+    for v in &**biVars {
+        intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
+    }
+
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
+    // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
+    // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
+    // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
+    let lang = external_import_sig(f).map(|s| s.lang).unwrap_or(ExtLang::C);
+    let ordered: Vec<&Arc<SimCodeFunction::Variable::Variable>> = match lang {
+        ExtLang::Fortran77 => (&**biVars).into_iter().chain(&**outVars).collect(),
+        ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
+    };
+    for v in ordered {
+        let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v else {
+            continue;
+        };
+        let slot = var_name_ty(v).ok().and_then(|(n, _)| ctx.locals.get(&n).cloned());
+        if let Some((slot, SigTy::Array { elem, .. })) = slot
+            && let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot)
+        {
+            let (_, _, dims) = array_allocs.remove(k);
+            emit_array_alloc(&mut ctx, slot, &elem, &dims)?;
+        }
+        if *bind_from_outside {
+            continue;
+        }
+        let Some(val) = value else { continue };
+        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        compile_assign(&mut ctx, &lhs, val)?;
+    }
+
+    // Lower an extArg to the argument expression it contributes to the C call.
+    // A scalar/String `_Out_` arg contributes none — its value comes back as a
+    // call result — so `None` skips it.
+    let lower_arg = |a: &A| -> Result<Option<Arc<DAE::Exp>>> {
+        let is_out = ext_arg_output_index(a) != 0;
+        Ok(match a {
+            // An output array is pre-allocated and passed by pointer, like an input.
+            A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })) => {
+                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+            }
+            A::SIMEXTARG { .. } => None,
+            A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
+            // `size(array, dim)`: `cref`+`type_` are the array (full type), `exp`
+            // is the 1-based dimension index. Lower as a `size(cref, exp)`
+            // expression → `rt_array_dim`. (Pushing `exp` alone would pass the
+            // dimension index itself as the C `int`, not the size.)
+            A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
+                let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
+                Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+            }
+            other => return Err("CodegenWasmJit: unsupported external-call argument"),
+        })
+    };
+
+    // Input-side arguments (both known and general externals pass these by value).
+    let mut input_args: Vec<Arc<DAE::Exp>> = Vec::new();
+    for a in &**extArgs {
+        if let Some(e) = lower_arg(&**a)? {
+            input_args.push(e);
+        }
+    }
+
+    if external_known(f) {
+        // Known math/string externals: a single return value, no output pointers.
+        let (out_idx, out_sty) = ctx.outputs[0].clone();
+        let result = emit_known_external_call(&mut ctx, extName, &input_args, &out_sty)?;
+        coerce(&mut ctx, result.wty(), out_sty.wty());
+        ctx.emit(we::Instruction::LocalSet(out_idx));
+    } else {
+        // General external: the host returns one result per *scalar/string* output
+        // (the C return value first, then each `_Out_` scalar/string pointer's
+        // value). Array outputs are filled in place / copied back by the host, so
+        // they are not results — their locals are already populated. The results
+        // land on the stack in order, so they are stored back-to-front into the
+        // declared outputs their `outputIndex` names.
+        let sig = external_import_sig(f)?;
+        // A shared-memory module calls the real symbol directly, so the pointer
+        // and by-reference conversions the host trampoline would do
+        // (`call_external_in_wasm`) are emitted here instead.
+        if EXTERNALS_SHARED.with(|c| c.get()) {
+            emit_shared_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
+            release_heap_locals(&mut ctx)?;
+            push_outputs(&mut ctx);
+            ctx.emit(we::Instruction::End);
+            let FnCtx { extra_locals, instrs, .. } = ctx;
+            let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
+            for i in &instrs {
+                func.instruction(i);
+            }
+            return Ok(func);
+        }
+        let results = emit_general_external_call(&mut ctx, &sig.name, &input_args)?;
+        // The declared output each wasm result feeds, in result order: the C
+        // return value first, then each scalar/String `_Out_` arg.
+        // `(declared output, the field of it this value assigns)`.
+        let mut targets: Vec<(usize, Option<String>)> = Vec::new();
+        if let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn {
+            targets.push((*outputIndex as usize - 1, cref_field(cref)));
+        }
+        for a in &**extArgs {
+            let oi = ext_arg_output_index(a);
+            let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })));
+            if oi != 0 && scalar {
+                let field = match &**a {
+                    A::SIMEXTARG { cref, .. } => cref_field(cref),
+                    _ => None,
+                };
+                targets.push((oi - 1, field));
+            }
+        }
+        if results.len() != targets.len() {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{extName}`: the call returns {} value(s) for {} scalar output(s)",
+                fn_path(),
+                results.len(),
+                targets.len(),
+            ));
+            return Err("CodegenWasmJit: external scalar-return/output count mismatch");
+        }
+        for k in (0..targets.len()).rev() {
+            let (target, field) = targets[k].clone();
+            let (out_idx, out_sty) = ctx.outputs[target].clone();
+            // Must follow the whole-record store through the pointer argument, which
+            // it does: results go back-to-front.
+            if let Some(field) = field {
+                let SigTy::Record { fields, .. } = &out_sty else {
+                    openmodelica_wasm_jit::set_engine_error_detail(format!(
+                        "  {}, external `{extName}`: `{field}` is a field of an output that is not a record",
+                        fn_path(),
+                    ));
+                    return Err("CodegenWasmJit: external output field on a non-record");
+                };
+                let vt = ctx.alloc_temp(results[k].wty());
+                ctx.emit(we::Instruction::LocalSet(vt));
+                store_fresh_into_field(&mut ctx, out_idx, fields, &field, vt)?;
+                continue;
+            }
+            if results[k].wty() != out_sty.wty() {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{extName}`: output {k} is {:?} in the C call but \
+                     {:?} in the function declaration",
+                    fn_path(),
+                    results[k],
+                    out_sty,
+                ));
+                return Err("CodegenWasmJit: external output type mismatch");
+            }
+            ctx.emit(we::Instruction::LocalSet(out_idx));
+        }
+    }
+    // Release heap parameters (e.g. a String input consumed by the callee), as a
+    // normal function body would; the outputs are excluded and moved out.
+    release_heap_locals(&mut ctx)?;
+    push_outputs(&mut ctx);
+    ctx.emit(we::Instruction::End);
+
+    let FnCtx { extra_locals, instrs, .. } = ctx;
+    let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Emit an external call in a *shared-memory* module, where the import is the
+/// real symbol and nothing marshals for us. Mirrors the host trampoline
+/// (`call_external_in_wasm` in `dylink_wasmtime.rs`), which is C's `extFunCallC`
+/// / `extFunCallF77`:
+///
+/// * a `String` passes its bytes, an array its elements; a C array is the
+///   row-major elements themselves, a Fortran array of 2+ dimensions a
+///   column-major copy, copied back if it is an output
+/// * an `_Out_` scalar (every Fortran scalar) goes into an 8-byte cell whose
+///   address is passed and which is read back after the call; an `_Out_` String
+///   cell holds the `char*` the callee wrote
+/// * a returned `char*` becomes a `String`
+///
+/// Every scratch allocation is released afterwards, in one pass over the same
+/// argument list — including on the path a recovered `ModelicaError` takes.
+fn emit_shared_external_call(
+    ctx: &mut FnCtx,
+    sig: &ExtCallSig,
+    extArgs: &Arc<List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>>,
+    extReturn: &Arc<SimCodeFunction::SimExtArg::SimExtArg>,
+    fn_path: &dyn Fn() -> ArcStr,
+) -> Result<()> {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+
+    /// Where a value the callee wrote lands: a declared output, or a field of one.
+    struct Target {
+        out_idx: u32,
+        out_sty: SigTy,
+        field: Option<String>,
+    }
+    /// What the call has to undo for one argument once the callee returns.
+    enum Cleanup {
+        /// A scalar/String cell: read it back into `out` (when it is an `_Out_`), free it.
+        Cell { ptr: u32, ty: SigTy, out: Option<Target> },
+        /// A Fortran array: copy back if it is an output, then release any scratch.
+        F77Array { handle: u32, ptr: u32, is_out: bool },
+        /// C's `<record>_external`: copy its fields into `out`, then free it.
+        CRecord { ptr: u32, fields: Arc<Vec<(ArcStr, SigTy)>>, out: Target },
+    }
+    let fortran = sig.lang == ExtLang::Fortran77;
+    let native = is_native_external(&sig.name);
+    let mut cleanups: Vec<Cleanup> = Vec::new();
+    let key = format!("ext.{}", sig.name);
+    let Some(info) = ctx.by_name.get(&key) else {
+        return Err("CodegenWasmJit: external import not declared");
+    };
+    let (index, results) = (info.index, info.sig.results.clone());
+    let output_target = |ctx: &FnCtx, output_index: usize, cref: Option<&DAE::ComponentRef>| -> Result<Target> {
+        let Some((out_idx, out_sty)) = ctx.outputs.get(output_index.max(1) - 1).cloned() else {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{}`: an argument writes output {} the function does not declare",
+                fn_path(),
+                sig.name,
+                output_index,
+            ));
+            return Err("CodegenWasmJit: external output index out of range");
+        };
+        Ok(Target { out_idx, out_sty, field: cref.and_then(cref_field) })
+    };
+
+    let catch = EXT_ERROR_CATCH.with(|c| c.get());
+    let mut temps: Vec<u32> = Vec::new();
+    let mut saved_stack = 0;
+    if let Some(tag) = catch {
+        temps = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
+        saved_stack = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_save")?));
+        ctx.emit(we::Instruction::LocalSet(saved_stack));
+        ctx.emit(we::Instruction::Block(we::BlockType::Empty)); // done
+        ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
+        ctx.emit(we::Instruction::TryTable(
+            we::BlockType::Empty,
+            vec![we::Catch::OneRef { tag, label: 0 }].into(),
+        ));
+    }
+
+    for a in &**extArgs {
+        let is_out = ext_arg_output_index(a) != 0;
+        let ty = match &**a {
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
+            _ => return Err("CodegenWasmJit: unsupported external-call argument"),
+        };
+        // The expression this argument passes; an `_Out_` scalar has no value to
+        // read, only a cell to hand over.
+        let value: Option<Arc<DAE::Exp>> = match &**a {
+            A::SIMEXTARG { cref, type_, .. } => {
+                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+            }
+            A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
+            A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
+                let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
+                Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+            }
+            _ => None,
+        };
+        let cref: Option<&DAE::ComponentRef> = match &**a {
+            A::SIMEXTARG { cref, .. } => Some(cref),
+            _ => None,
+        };
+        let push_value = |ctx: &mut FnCtx, what: &str, wty: WTy| -> Result<()> {
+            let Some(v) = &value else {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: {what} argument has no value",
+                    fn_path(),
+                    sig.name,
+                ));
+                return Err("CodegenWasmJit: external argument has no value");
+            };
+            let w = compile_exp(ctx, v)?;
+            coerce(ctx, w, wty);
+            Ok(())
+        };
+        match &ty {
+            SigTy::Array { .. } if fortran => {
+                // The array handle, then its Fortran-visible address. Both are kept:
+                // the copy-back needs the handle and the scratch pointer together.
+                push_value(ctx, "an array", WTy::I32)?;
+                let handle = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(handle));
+                ctx.emit(we::Instruction::LocalGet(handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_in")?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                cleanups.push(Cleanup::F77Array { handle, ptr, is_out });
+            }
+            SigTy::Array { .. } => {
+                // C reads and writes the row-major elements in place.
+                push_value(ctx, "an array", WTy::I32)?;
+                if !native {
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
+                }
+            }
+            SigTy::Str if !is_out => {
+                push_value(ctx, "a String", WTy::I32)?;
+                if !native {
+                    ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+                }
+            }
+            SigTy::Int | SigTy::Bool | SigTy::Real if !is_out && !fortran => {
+                push_value(ctx, "a scalar", ty.wty())?;
+            }
+            SigTy::Int | SigTy::Bool | SigTy::Real | SigTy::Str => {
+                // An `_Out_` cell starts zeroed; a Fortran input cell at its value.
+                let cell_fn = if matches!(ty, SigTy::Real) { "rt_f77_cell_r" } else { "rt_f77_cell_i" };
+                match (&value, is_out) {
+                    (Some(v), false) => {
+                        let w = compile_exp(ctx, v)?;
+                        coerce(ctx, w, ty.wty());
+                    }
+                    _ if matches!(ty, SigTy::Real) => ctx.emit(we::Instruction::F64Const(0.0.into())),
+                    _ => ctx.emit(we::Instruction::I32Const(0)),
+                }
+                ctx.emit(we::Instruction::Call(rt_index(cell_fn)?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                let out = if is_out { Some(output_target(ctx, ext_arg_output_index(a), cref)?) } else { None };
+                cleanups.push(Cleanup::Cell { ptr, ty: ty.clone(), out });
+            }
+            SigTy::Ptr => push_value(ctx, "an external-object", WTy::I32)?,
+            // A record still crosses as the runtime object, not C's `<record>_external`.
+            SigTy::Record { .. } if !is_out && !fortran => push_value(ctx, "a record", WTy::I32)?,
+            // C writes a `<record>_external` (the fields' C types, no runtime
+            // header), so it gets a scratch one and the fields are copied back.
+            SigTy::Record { fields, .. } if !fortran => {
+                let size = openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size.max(1);
+                ctx.emit(we::Instruction::I32Const(size as i32));
+                ctx.emit(we::Instruction::Call(rt_index("rt_alloc")?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                // `rt_alloc` reuses freed blocks.
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(we::Instruction::I32Const(size as i32));
+                ctx.emit(we::Instruction::MemoryFill(0));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                let out = output_target(ctx, ext_arg_output_index(a), cref)?;
+                cleanups.push(Cleanup::CRecord { ptr, fields: fields.clone(), out });
+            }
+            other => {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: {other:?} cannot be passed to a shared-memory {}",
+                    fn_path(),
+                    sig.name,
+                    if fortran { "FORTRAN 77 function" } else { "external \"C\" function" },
+                ));
+                return Err("CodegenWasmJit: unsupported shared-memory external argument type");
+            }
+        }
+    }
+
+    ctx.emit(we::Instruction::Call(index));
+
+    if catch.is_some() {
+        // Out of the `try_table` region: the results travel through locals so every
+        // block here is empty-typed but the one the caught `exnref` lands in.
+        for t in temps.iter().rev() {
+            ctx.emit(we::Instruction::LocalSet(*t));
+        }
+        ctx.emit(we::Instruction::End); // try_table
+        ctx.emit(we::Instruction::Br(1)); // done
+        ctx.emit(we::Instruction::End); // handler: the exception is on the stack
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+        ctx.emit(we::Instruction::LocalGet(saved_stack));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        for c in &cleanups {
+            match c {
+                Cleanup::Cell { ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                }
+                Cleanup::F77Array { handle, ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::I32Const(0));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+                }
+                // The call did not return, so nothing is copied back out of it.
+                Cleanup::CRecord { ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                }
+            }
+        }
+        release_heap_locals(ctx)?;
+        push_outputs(ctx);
+        ctx.emit(we::Instruction::Return);
+        ctx.emit(we::Instruction::End); // if
+        // Not inside a residual: a `ModelicaError` ends the run, as in C.
+        ctx.emit(we::Instruction::ThrowRef);
+        ctx.emit(we::Instruction::End); // done
+        for t in &temps {
+            ctx.emit(we::Instruction::LocalGet(*t));
+        }
+    }
+
+    // Store one value the callee produced (on the stack, of type `ty`) into `target`.
+    let store = |ctx: &mut FnCtx, ty: &SigTy, target: &Target| -> Result<()> {
+        if matches!(ty, SigTy::Str) {
+            ctx.emit(we::Instruction::Call(rt_index("rt_str_from_cstr")?));
+        }
+        if let Some(field) = &target.field {
+            let SigTy::Record { fields, .. } = &target.out_sty else {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: `{field}` is a field of an output that is not a record",
+                    fn_path(),
+                    sig.name,
+                ));
+                return Err("CodegenWasmJit: external output field on a non-record");
+            };
+            let vt = ctx.alloc_temp(ty.wty());
+            ctx.emit(we::Instruction::LocalSet(vt));
+            return store_fresh_into_field(ctx, target.out_idx, fields, field, vt);
+        }
+        coerce(ctx, ty.wty(), target.out_sty.wty());
+        ctx.emit(we::Instruction::LocalSet(target.out_idx));
+        Ok(())
+    };
+
+    // The C return value is the only thing on the stack.
+    if results.len() == 1 {
+        let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn else {
+            return Err("CodegenWasmJit: an external return value with no declared output");
+        };
+        let target = output_target(ctx, *outputIndex as usize, Some(cref))?;
+        let ret = sig.ret.clone().unwrap_or(SigTy::Real);
+        store(ctx, &ret, &target)?;
+    } else if !results.is_empty() {
+        return Err("CodegenWasmJit: a shared-memory import returns more than one value");
+    }
+
+    // Read back the `_Out_` cells and release every scratch allocation.
+    for c in &cleanups {
+        match c {
+            Cleanup::Cell { ptr, ty, out } => {
+                if let Some(target) = out {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    let getter = if matches!(ty, SigTy::Real) { "rt_f77_cell_get_r" } else { "rt_f77_cell_get_i" };
+                    ctx.emit(we::Instruction::Call(rt_index(getter)?));
+                    store(ctx, ty, target)?;
+                }
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+            Cleanup::F77Array { handle, ptr, is_out } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::I32Const(i32::from(*is_out)));
+                ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+            }
+            Cleanup::CRecord { ptr, fields, out } => {
+                let c = openmodelica_wasm_jit::sig::c_record_layout(fields, 4);
+                let rec = match &out.out_sty {
+                    SigTy::Record { path, .. } => path.as_str(),
+                    _ => "the output record",
+                };
+                for (i, (name, fty)) in fields.iter().enumerate() {
+                    if !matches!(fty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+                        // As C's `recordMemberCopyToFromExternal` refuses a String.
+                        openmodelica_wasm_jit::set_engine_error_detail(format!(
+                            "  {}, external `{}`: cannot read output field `{name}` of `{rec}` back \
+                             from C - only Real, Integer and Boolean record members are copied",
+                            fn_path(),
+                            sig.name,
+                        ));
+                        return Err("CodegenWasmJit: unsupported external output record field");
+                    }
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    field_load(ctx, fty.wty(), c.offsets[i]);
+                    let vt = ctx.alloc_temp(fty.wty());
+                    ctx.emit(we::Instruction::LocalSet(vt));
+                    store_fresh_into_field(ctx, out.out_idx, fields, name, vt)?;
+                }
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Emit a call to a known math/string `extName` over already-lowered arguments,
+/// leaving its result on the stack (the returned `SigTy` says of which type). Mirrors
+/// the host-builtin path of [`compile_math_builtin`]: an imported transcendental
+/// ([`BUILTINS`]) or a single-instruction math function inline. `out` is the declared
+/// output type, which the `external "builtin"` operators are overloaded on.
+fn emit_known_external_call(
+    ctx: &mut FnCtx,
+    ext_name: &str,
+    args: &[Arc<DAE::Exp>],
+    out: &SigTy,
+) -> Result<SigTy> {
+    // `external "builtin" o = abs(v)` and the `div`/`mod` pairs
+    // (`OpenModelica.Internal.{int,real}{Abs,Div,Mod}`) are the tool's own operators,
+    // not C symbols. Their Integer and Real overloads share one `extName`, so a host
+    // import would bind both to the same signature and hand libc's `abs(int)` a double.
+    if matches!(ext_name, "abs" | "div" | "mod") {
+        let args = Arc::new(args.iter().cloned().collect::<List<Arc<DAE::Exp>>>());
+        let attr = match out {
+            SigTy::Int => DAE::callAttrBuiltinInteger(),
+            _ => DAE::callAttrBuiltinReal(),
+        };
+        return compile_math_builtin(ctx, ext_name, &args, &attr);
+    }
+    // `ModelicaStrings_*` functions that map directly to existing runtime string
+    // ops (same lowering as the corresponding Modelica string builtins, so the
+    // argument ARC is handled identically).
+    match ext_name {
+        "ModelicaStrings_length" => {
+            str_unop(ctx, &args[0], "rt_str_len")?;
+            return Ok(SigTy::Int);
+        }
+        "ModelicaStrings_substring" => {
+            str_substring(ctx, &args[0], &args[1], &args[2])?;
+            return Ok(SigTy::Str);
+        }
+        _ => {}
+    }
+    if let Some(bi) = builtin_index(ext_name) {
+        let (_, params, _) = BUILTINS[bi as usize];
+        if args.len() != params.len() {
+            return Err("CodegenWasmJit: external argument count mismatch");
+        }
+        for (a, p) in args.iter().zip(params.iter()) {
+            let w = compile_exp(ctx, a)?;
+            coerce(ctx, w, *p);
+        }
+        ctx.emit(we::Instruction::Call(bi));
+        return Ok(SigTy::Real);
+    }
+    if args.len() != 1 {
+        return Err("CodegenWasmJit: external expects 1 argument");
+    }
+    let w = compile_exp(ctx, &args[0])?;
+    coerce(ctx, w, WTy::F64);
+    match ext_name {
+        "sqrt" => ctx.emit(we::Instruction::F64Sqrt),
+        "fabs" => ctx.emit(we::Instruction::F64Abs),
+        "floor" => ctx.emit(we::Instruction::F64Floor),
+        "ceil" => ctx.emit(we::Instruction::F64Ceil),
+        other => return Err("CodegenWasmJit: external math function not supported"),
+    }
+    Ok(SigTy::Real)
+}
+
+/// Emit a call to a general external `extName` via its `ext.<extName>` host
+/// import (declared in `build_sim_model`): push each already-lowered *input*
+/// argument coerced to the import's parameter type, then `call`. The import's
+/// results (one per external output: the C return value first, then each `_Out_`
+/// pointer's value) are left on the stack in order; their `SigTy`s are returned.
+thread_local! {
+    /// When set, `external` calls take the real C/Fortran argument list instead
+    /// of the host-trampoline shape ([`emit_shared_external_call`]): a wasm FMU,
+    /// where model, runtime and ModelicaExternalC share one memory.
+    static EXTERNALS_SHARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether externals are being lowered for a shared-memory module, which decides
+/// the wasm signature an import is declared with (see
+/// [`ExtCallSig::wasm_sig_c_shared`] and [`ExtCallSig::wasm_sig_f77_shared`]).
+pub(crate) fn externals_shared() -> bool {
+    EXTERNALS_SHARED.with(|c| c.get())
+}
+
+/// Run `f` with [`EXTERNALS_SHARED`] set, restoring it after.
+pub(crate) fn with_shared_externals<T>(f: impl FnOnce() -> T) -> T {
+    let prev = EXTERNALS_SHARED.with(|c| c.replace(true));
+    let r = f();
+    EXTERNALS_SHARED.with(|c| c.set(prev));
+    r
+}
+
+thread_local! {
+    /// The shared-memory externals a host serves (`om:ext/native`); their stub
+    /// marshals from runtime handles, so a String or array passes as the handle.
+    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::new());
+}
+
+pub(crate) fn set_native_externals(names: impl IntoIterator<Item = String>) {
+    NATIVE_EXTERNALS.with(|c| *c.borrow_mut() = names.into_iter().collect());
+}
+
+fn is_native_external(name: &str) -> bool {
+    NATIVE_EXTERNALS.with(|c| c.borrow().contains(name))
+}
+
+thread_local! {
+    /// The `model_error` tag, while lowering a module that catches an external
+    /// `ModelicaError` rather than letting it trap. Unset for the `-d=gen`
+    /// function JIT, which has no solver to recover into.
+    static EXT_ERROR_CATCH: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+}
+
+/// Lower `ext` calls under a `try_table` for `tag` until unset again.
+pub(crate) fn set_ext_error_catch(tag: Option<u32>) {
+    EXT_ERROR_CATCH.with(|c| c.set(tag));
+}
+
+thread_local! {
+    /// The tag a failed `assert()` throws, while lowering a host-free module. Unset
+    /// where a trap is the end of the run anyway, so C's `unreachable` is enough.
+    static ASSERT_THROW_TAG: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+}
+
+pub(crate) fn set_assert_throw_tag(tag: Option<u32>) {
+    ASSERT_THROW_TAG.with(|c| c.set(tag));
+}
+
+/// End the computation the failed `assert()` was part of: a host-free module unwinds
+/// to its `<entry>$guard`, anything else traps.
+fn emit_assert_unwind(ctx: &mut FnCtx) {
+    match ASSERT_THROW_TAG.with(|c| c.get()) {
+        Some(tag) => ctx.emit(we::Instruction::Throw(tag)),
+        None => ctx.emit(we::Instruction::Unreachable),
+    }
+}
+
+fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<Vec<SigTy>> {
+    let key = format!("ext.{ext_name}");
+    let (index, params, results) = match ctx.by_name.get(&key) {
+        Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),
+        None => return Err("CodegenWasmJit: external import not declared"),
+    };
+    if args.len() != params.len() {
+        return Err("CodegenWasmJit: external input argument count mismatch");
+    }
+    let catch = EXT_ERROR_CATCH.with(|c| c.get());
+    let mut temps: Vec<u32> = Vec::new();
+    let mut saved_stack = 0;
+    if let Some(tag) = catch {
+        temps = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
+        saved_stack = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_save")?));
+        ctx.emit(we::Instruction::LocalSet(saved_stack));
+        ctx.emit(we::Instruction::Block(we::BlockType::Empty)); // done
+        ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
+        ctx.emit(we::Instruction::TryTable(
+            we::BlockType::Empty,
+            vec![we::Catch::OneRef { tag, label: 0 }].into(),
+        ));
+    }
+
+    for (a, p) in args.iter().zip(params.iter()) {
+        let w = compile_exp(ctx, a)?;
+        coerce(ctx, w, p.wty());
+    }
+    ctx.emit(we::Instruction::Call(index));
+    if catch.is_some() {
+        // Out of the `try_table` region: the results travel through locals so every
+        // block here is empty-typed but the one the caught `exnref` lands in.
+        for t in temps.iter().rev() {
+            ctx.emit(we::Instruction::LocalSet(*t));
+        }
+        ctx.emit(we::Instruction::End); // try_table
+        ctx.emit(we::Instruction::Br(1)); // done
+        ctx.emit(we::Instruction::End); // handler: the exception is on the stack
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+        ctx.emit(we::Instruction::LocalGet(saved_stack));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        release_heap_locals(ctx)?;
+        push_outputs(ctx);
+        ctx.emit(we::Instruction::Return);
+        ctx.emit(we::Instruction::End); // if
+        // Not inside a residual: a `ModelicaError` ends the run, as in C.
+        ctx.emit(we::Instruction::ThrowRef);
+        ctx.emit(we::Instruction::End); // done
+        for t in &temps {
+            ctx.emit(we::Instruction::LocalGet(*t));
+        }
+    }
+    Ok(results)
+}
+
+/// Intern a function variable into the locals map (allocating a wasm local slot
+/// on first sight of the name), returning its `(index, type)`. Array variables
+/// are additionally recorded in `array_allocs` (once per slot) for entry-time
+/// allocation.
+fn intern_local(
+    v: &SimCodeFunction::Variable::Variable,
+    idx: &mut u32,
+    extra_locals: &mut Vec<we::ValType>,
+    locals: &mut HashMap<String, (u32, SigTy)>,
+    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
+) -> Result<(u32, SigTy)> {
+    let (name, sty) = var_name_ty(v)?;
+    let slot = locals
+        .entry(name)
+        .or_insert_with(|| {
+            extra_locals.push(sty.wty().val());
+            let s = (*idx, sty.clone());
+            *idx += 1;
+            s
+        })
+        .clone();
+    if let SigTy::Array { elem, .. } = &slot.1 {
+        if !array_allocs.iter().any(|(i, ..)| *i == slot.0) {
+            array_allocs.push((slot.0, elem.clone(), var_array_dims(v)?));
+        }
+    }
+    Ok(slot)
+}
+
+/// The wasm local a `VARIABLE` was interned into, if any.
+fn var_slot(ctx: &FnCtx, v: &SimCodeFunction::Variable::Variable) -> Option<u32> {
+    let (name, _) = var_name_ty(v).ok()?;
+    ctx.locals.get(&name).map(|(slot, _)| *slot)
+}
+
+/// Initialize one local/output at function entry, in C's `varInit` order:
+/// array allocation (unknown `:` dims start at size 0), record default
+/// construction (C's `<Rec>_construct`), then the default binding. A
+/// `bind_from_outside` variable gets only its allocation; an already-initialized
+/// slot is skipped.
+fn init_var(
+    ctx: &mut FnCtx,
+    v: &SimCodeFunction::Variable::Variable,
+    array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
+    done: &mut Vec<u32>,
+) -> Result<()> {
+    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = v else {
+        return Ok(());
+    };
+    let (vname, sty) = var_name_ty(v)?;
+    let Some(slot) = var_slot(ctx, v) else { return Ok(()) };
+    if done.contains(&slot) {
+        return Ok(());
+    }
+    done.push(slot);
+    let _g = PartGuard::new(format!("the declaration of `{vname}`"));
+    if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
+        let (_, elem, dims) = array_allocs.remove(k);
+        emit_array_alloc(ctx, slot, &elem, &dims)?;
+    }
+    if *bind_from_outside {
+        return Ok(());
+    }
+    match &sty {
+        SigTy::Record { .. } => {
+            emit_record_default(ctx, ty)?;
+            ctx.emit(we::Instruction::LocalSet(slot));
+        }
+        SigTy::Array { elem, .. } if matches!(&**elem, SigTy::Record { .. }) => {
+            emit_array_record_defaults(ctx, slot, &Types::arrayElementType(ty.clone()))?;
+        }
+        _ => {}
+    }
+    if let Some(val) = value {
+        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        compile_assign(ctx, &lhs, val)?;
+    }
+    Ok(())
+}
+
+/// The dimension list of an array `VARIABLE`, consistent with [`variable_sigty`]:
+/// a `T_ARRAY` `ty` carries the dimensions (flattened across nesting); otherwise
+/// they live in `instDims`.
+fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<Vec<Arc<DAE::Dimension>>> {
+    let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = v else {
+        return Err("CodegenWasmJit: function-pointer variables not supported");
+    };
+    let from_ty = type_array_dims(ty);
+    Ok(if from_ty.is_empty() { (&**instDims).into_iter().cloned().collect() } else { from_ty })
+}
+
+/// The dimensions carried by a `T_ARRAY` type, flattening nested `T_ARRAY`s
+/// (outer dims first). Empty for a non-array type.
+fn type_array_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
+    match ty {
+        DAE::Type::T_ARRAY { ty, dims } => {
+            let mut out: Vec<Arc<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
+            out.extend(type_array_dims(ty));
+            out
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Allocate an array local at function entry: evaluate each dimension to an
+/// `i32` (unknown `:` dims start at 0), build the runtime array of the right
+/// element kind, set the dimension sizes, and store the handle in `slot`.
+fn emit_array_alloc(ctx: &mut FnCtx, slot: u32, elem: &SigTy, dims: &[Arc<DAE::Dimension>]) -> Result<()> {
+    if dims.is_empty() {
+        return Err("CodegenWasmJit: array local with no dimensions");
+    }
+    // Evaluate each dimension into a scratch local (reused for the total and the
+    // per-axis size).
+    let mut dim_temps = Vec::with_capacity(dims.len());
+    for d in dims {
+        let t = ctx.alloc_temp(WTy::I32);
+        emit_dim_value(ctx, d)?;
+        ctx.emit(we::Instruction::LocalSet(t));
+        dim_temps.push(t);
+    }
+    // total = product of the dimension sizes.
+    ctx.emit(we::Instruction::LocalGet(dim_temps[0]));
+    for t in &dim_temps[1..] {
+        ctx.emit(we::Instruction::LocalGet(*t));
+        ctx.emit(we::Instruction::I32Mul);
+    }
+    let total_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(total_t));
+    // obj = rt_array_new(elem_kind, rank, total); store into the local.
+    ctx.emit(we::Instruction::I32Const(elem.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(dims.len() as i32));
+    ctx.emit(we::Instruction::LocalGet(total_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(slot));
+    for (axis, t) in dim_temps.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(slot));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::LocalGet(*t));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    Ok(())
+}
+
+/// Emit the `i32` size of one array dimension. An unknown (`:`) dimension is 0
+/// (an empty array, resized on first whole-array assignment).
+fn emit_dim_value(ctx: &mut FnCtx, dim: &DAE::Dimension) -> Result<()> {
+    match dim {
+        DAE::Dimension::DIM_INTEGER { integer } => ctx.emit(we::Instruction::I32Const(*integer)),
+        DAE::Dimension::DIM_BOOLEAN => ctx.emit(we::Instruction::I32Const(2)),
+        DAE::Dimension::DIM_ENUM { size, .. } => ctx.emit(we::Instruction::I32Const(*size)),
+        DAE::Dimension::DIM_UNKNOWN => ctx.emit(we::Instruction::I32Const(0)),
+        DAE::Dimension::DIM_EXP { exp } => {
+            let w = compile_exp(ctx, exp)?;
+            coerce(ctx, w, WTy::I32);
+        }
+    }
+    Ok(())
+}
+
+fn push_outputs(ctx: &mut FnCtx) {
+    for (idx, _) in ctx.outputs.clone() {
+        ctx.emit(we::Instruction::LocalGet(idx));
+    }
+}
+
+/// Reference-count cleanup before a return: release every heap local that is
+/// not an output (outputs are moved out to the caller). Parameters are included
+/// — a generated function *owns* its heap parameters (the caller passes an owned
+/// reference and does not release it after the call), so they are released here
+/// too. Releasing the null handle (an unassigned heap local) is a no-op.
+fn release_heap_locals(ctx: &mut FnCtx) -> Result<()> {
+    let output_idxs: std::collections::HashSet<u32> = ctx.outputs.iter().map(|(i, _)| *i).collect();
+    // (local index, release entry point) for each owned heap local that is not
+    // an output. The entry point depends on the type (string vs array vs …).
+    let mut to_release: Vec<(u32, &'static str)> = ctx
+        .locals
+        .values()
+        .filter(|(idx, _)| !output_idxs.contains(idx) && !ctx.borrowed_locals.contains(idx))
+        .filter_map(|(idx, sty)| sty.release_fn().map(|f| (*idx, f)))
+        .collect();
+    // Deterministic order (HashMap iteration is unspecified) for stable output.
+    to_release.sort_unstable();
+    for (idx, release_fn) in to_release {
+        ctx.emit(we::Instruction::LocalGet(idx));
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    }
+    Ok(())
+}
+
+/// Name and Modelica type of a `VARIABLE` (combining `ty` and `instDims`; see
+/// [`variable_sigty`]). The name must be a plain `CREF_IDENT`.
+fn var_name_ty(v: &SimCodeFunction::Variable::Variable) -> Result<(String, SigTy)> {
+    match v {
+        SimCodeFunction::Variable::Variable::VARIABLE { name, ty, instDims, .. } => {
+            Ok((cref_ident(name)?, variable_sigty(ty, instDims)?))
+        }
+        SimCodeFunction::Variable::Variable::FUNCTION_PTR { name, tys, args, .. } => {
+            Ok((name.to_string(), closures::function_ptr_sigty(tys, args)?))
+        }
+    }
+}
+
+/// The identifier of a scalar `CREF_IDENT` component reference (no subscripts /
+/// qualification, which only arise for arrays / records).
+/// The field when a reference is `<var>.<field>` — an external call assigning one
+/// member of a record output (`external "C" r.y = f(…)`).
+fn cref_field(cr: &DAE::ComponentRef) -> Option<String> {
+    match cr {
+        DAE::ComponentRef::CREF_QUAL { componentRef, .. } => match &**componentRef {
+            DAE::ComponentRef::CREF_IDENT { ident, .. } => Some(ident.to_string()),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn cref_ident(cr: &DAE::ComponentRef) -> Result<String> {
+    match cr {
+        DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } => {
+            if !subscriptLst.is_empty() {
+                return Err("CodegenWasmJit: subscripted component reference (arrays not supported)");
+            }
+            Ok(ident.to_string())
+        }
+        DAE::ComponentRef::CREF_QUAL { .. } => return Err("CodegenWasmJit: qualified component reference (records not supported)"),
+        other => return Err("CodegenWasmJit: unsupported component reference"),
+    }
+}
+
+fn compile_stmts(ctx: &mut FnCtx, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Result<()> {
+    for s in &**stmts {
+        compile_stmt(ctx, s)?;
+    }
+    Ok(())
+}
+
+/// Assign `rhs` to a lhs: a whole-variable (scalar / whole array / string) or a
+/// subscripted array element (`a[i,...] := x`, written in place).
+fn compile_assign(ctx: &mut FnCtx, lhs: &DAE::Exp, rhs: &DAE::Exp) -> Result<()> {
+    // `(l1, l2, …) = f(...)` in a when-equation (C's `whenOperators` ASSIGN-of-TUPLE).
+    if let DAE::Exp::TUPLE { PR } = lhs {
+        return compile_tuple_assign(ctx, PR, rhs);
+    }
+    let DAE::Exp::CREF { componentRef, .. } = lhs else {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: assignment to non-cref lhs `{}`",
+            dumped_exp(&Arc::new(lhs.clone()))?
+        ));
+        return Err("CodegenWasmJit: assignment to non-cref lhs not supported");
+    };
+    // Simulation mode: assigning to a model variable writes into the shared
+    // `SimData` block. Returns false for an ordinary wasm local handled below.
+    if compile_sim_cref_assign(ctx, componentRef, RhsSource::Exp(rhs))? {
+        return Ok(());
+    }
+    // A qualified-cref assignment `base[..].f1[..].….fn[..] := rhs`: navigate to
+    // the record holding the final field, then store into it.
+    if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
+        return compile_cref_assign_qual(ctx, componentRef, rhs);
+    }
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
+        return Err("CodegenWasmJit: assignment to qualified/record lhs not supported");
+    };
+    let name = ident.to_string();
+    let (idx, dst_sty) = ctx
+        .locals
+        .get(&name)
+        .ok_or_else(|| {
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: assignment to unknown variable `{name}`{}",
+                fn_context()
+            ));
+            "CodegenWasmJit: assignment to unknown variable"
+        })?
+        .clone();
+
+    if !subscriptLst.is_empty() {
+        // Element assignment `a[i,...] := x` — written in place into the local's
+        // own (private) array, so no copy-on-write is needed (Modelica arrays are
+        // mutable value objects; aliasing is broken at whole-array assignment).
+        let SigTy::Array { elem, rank } = dst_sty else {
+            return Err("CodegenWasmJit: subscripting non-array local");
+        };
+        if !is_scalar_index(subscriptLst, rank) {
+            return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Exp(rhs));
+        }
+        let idx_exps = index_subscripts(subscriptLst, rank)?;
+        return compile_elem_assign(ctx, idx, &elem, &idx_exps, rhs);
+    }
+
+    let src_wty = compile_exp(ctx, rhs)?;
+    // Value semantics for arrays and records: a whole-value assignment from
+    // anything that is not a fresh constructor/call result would otherwise share
+    // the source's mutable buffer (the rhs is a retained alias), so mutating the
+    // destination later would corrupt the source — copy it to a private object.
+    // A fresh rhs is already privately owned and is moved in. (Strings are
+    // immutable, so they are shared via the retain on read — no copy.)
+    if let Some((copy_fn, rel_fn)) = value_copy_fns(&dst_sty) {
+        if !value_rhs_is_fresh(rhs) {
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+            // Release the alias we copied from (the rhs's +1 reference).
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+        }
+    }
+    if let Some(release_fn) = dst_sty.release_fn() {
+        // Release-on-overwrite: free the previous value the local held *after*
+        // computing the new one (which may read the old value, as in `s := s + x`),
+        // then move the new owned value in. Stack: [new] -> release old -> store.
+        ctx.emit(we::Instruction::LocalGet(idx));
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        ctx.emit(we::Instruction::LocalSet(idx));
+    } else {
+        coerce(ctx, src_wty, dst_sty.wty());
+        ctx.emit(we::Instruction::LocalSet(idx));
+    }
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into simple local `idx` of type
+/// `dst_sty`, releasing the local's previous value first (release-on-overwrite).
+/// The value must already be privately owned (a call/constructor result), so no
+/// value-semantics copy is made. Used by tuple assignment.
+fn store_fresh_into_local(ctx: &mut FnCtx, idx: u32, dst_sty: &SigTy, vt: u32) -> Result<()> {
+    if let Some(release_fn) = dst_sty.release_fn() {
+        // [new] -> release old -> store new.
+        ctx.emit(we::Instruction::LocalGet(vt));
+        ctx.emit(we::Instruction::LocalGet(idx));
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        ctx.emit(we::Instruction::LocalSet(idx));
+    } else {
+        ctx.emit(we::Instruction::LocalGet(vt));
+        ctx.emit(we::Instruction::LocalSet(idx));
+    }
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into record field `name` of the
+/// record whose handle is in local/temp `rec_idx`, releasing the previous field
+/// value first. The value is already owned (a call result), so no copy is made.
+fn store_fresh_into_field(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigTy)], name: &str, vt: u32) -> Result<()> {
+    let (off, fty) = record_field(fields, name)?;
+    if let Some(release_fn) = fty.release_fn() {
+        ctx.emit(we::Instruction::LocalGet(rec_idx));
+        field_load(ctx, fty.wty(), off);
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    }
+    ctx.emit(we::Instruction::LocalGet(rec_idx));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    field_store(ctx, fty.wty(), off);
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into array element
+/// `arr[idx_exps...]` (the array local privately owns its buffer), releasing the
+/// previous element first. The value is already owned, so no copy is made.
+fn store_fresh_into_elem(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], vt: u32) -> Result<()> {
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
+    let addr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(addr_t));
+    if let Some(release_fn) = elem.release_fn() {
+        ctx.emit(we::Instruction::LocalGet(addr_t));
+        elem_load(ctx, elem);
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    }
+    ctx.emit(we::Instruction::LocalGet(addr_t));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    elem_store(ctx, elem);
+    Ok(())
+}
+
+/// Store a freshly-owned value held in temp `vt` into an arbitrary cref target
+/// (simple local, array element, or record field — possibly a subscripted
+/// field). Used by tuple assignment, where each result is already computed.
+fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt: u32) -> Result<()> {
+    // A target naming a model variable (not a wasm local) stores into SimData;
+    // `false` means an ordinary local, handled below.
+    if compile_sim_cref_assign(ctx, cref, RhsSource::Temp { local: vt, wty })? {
+        return Ok(());
+    }
+    if let DAE::ComponentRef::CREF_QUAL { .. } = cref {
+        let (rec, fields, leaf, lsubs) = navigate_qual(ctx, cref)?;
+        if lsubs.is_empty() {
+            store_fresh_into_field(ctx, rec, &fields, leaf, vt)?;
+        } else {
+            let (off, fty) = record_field(&fields, leaf)?;
+            let SigTy::Array { elem, rank } = fty else {
+                return Err("CodegenWasmJit: subscripted field is not an array");
+            };
+            let arr_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalGet(rec));
+            field_load(ctx, WTy::I32, off);
+            ctx.emit(we::Instruction::LocalSet(arr_t));
+            if !is_scalar_index(lsubs, rank) {
+                return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Temp { local: vt, wty });
+            }
+            let idx_exps = index_subscripts(lsubs, rank)?;
+            store_fresh_into_elem(ctx, arr_t, &elem, &idx_exps, vt)?;
+        }
+        return Ok(());
+    }
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else {
+        return Err("CodegenWasmJit: unsupported tuple-assignment target");
+    };
+    let name = ident.to_string();
+    let (idx, dst_sty) = ctx
+        .locals
+        .get(&name)
+        .ok_or_else(|| "CodegenWasmJit: tuple assignment to unknown variable")?
+        .clone();
+    if subscriptLst.is_empty() {
+        return store_fresh_into_local(ctx, idx, &dst_sty, vt);
+    }
+    let SigTy::Array { elem, rank } = dst_sty else {
+        return Err("CodegenWasmJit: subscripting non-array local");
+    };
+    if !is_scalar_index(subscriptLst, rank) {
+        return compile_slice_assign(ctx, idx, subscriptLst, RhsSource::Temp { local: vt, wty });
+    }
+    let idx_exps = index_subscripts(subscriptLst, rank)?;
+    store_fresh_into_elem(ctx, idx, &elem, &idx_exps, vt)
+}
+
+/// Lower `(l1, l2, …) := f(args)` (`STMT_TUPLE_ASSIGN`): call the multi-output
+/// generated function (which leaves its results on the stack, first result
+/// deepest), then move each owned result into its target local. A `_` (wildcard)
+/// target discards its value (releasing it if heap).
+fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &DAE::Exp) -> Result<()> {
+    let DAE::Exp::CALL { path, expLst, attr } = call else {
+        return Err("CodegenWasmJit: tuple assignment rhs is not a function call");
+    };
+    let lhs_v: Vec<&Arc<DAE::Exp>> = (&**lhs).into_iter().collect();
+    let results = compile_call(ctx, path, expLst, attr)?;
+    // Trailing outputs the statement does not name are dropped, as in
+    // `algStmtTupleAssign`.
+    if results.len() < lhs_v.len() {
+        return Err("CodegenWasmJit: tuple assignment names more targets than the call returns");
+    }
+    // Pop the results into temps (the last result is on top of the stack).
+    let mut temps = vec![0u32; results.len()];
+    for i in (0..results.len()).rev() {
+        let vt = ctx.alloc_temp(results[i].wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        temps[i] = vt;
+    }
+    for i in lhs_v.len()..results.len() {
+        if let Some(release_fn) = results[i].release_fn() {
+            ctx.emit(we::Instruction::LocalGet(temps[i]));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+    }
+    for (i, lhs_exp) in lhs_v.iter().enumerate() {
+        store_fresh_into_tuple_target(ctx, lhs_exp, &results[i], temps[i])?;
+    }
+    Ok(())
+}
+
+/// Leave only result `want` of a call on the stack (first result deepest),
+/// releasing the discarded ones.
+fn keep_call_result(ctx: &mut FnCtx, results: &[SigTy], want: usize) -> Result<WTy> {
+    if results.len() == 1 {
+        return Ok(results[0].wty());
+    }
+    let mut temps = vec![0u32; results.len()];
+    for i in (0..results.len()).rev() {
+        let vt = ctx.alloc_temp(results[i].wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        temps[i] = vt;
+    }
+    for (i, sty) in results.iter().enumerate() {
+        if i == want {
+            continue;
+        }
+        if let Some(release_fn) = sty.release_fn() {
+            ctx.emit(we::Instruction::LocalGet(temps[i]));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(temps[want]));
+    Ok(results[want].wty())
+}
+
+/// Store one freshly-owned tuple result into its target expression.
+fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy, vt: u32) -> Result<()> {
+    use DAE::Exp as E;
+    match target {
+        E::CREF { componentRef, ty } => {
+            // `_` output: discard (release a heap value).
+            if let DAE::ComponentRef::WILD = &**componentRef {
+                if let Some(release_fn) = sty.release_fn() {
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+                }
+                return Ok(());
+            }
+            // An `Integer` output can land in a `Real` target with no cast in the
+            // statement (`Modelica.Math.Vectors.interpolate`'s `iNew`); C stores
+            // through the target's own type, so convert to it here.
+            let dst = sig_ty_quiet(ty).map(|s| s.wty()).unwrap_or_else(|_| sty.wty());
+            let vt = if dst == sty.wty() {
+                vt
+            } else {
+                let t = ctx.alloc_temp(dst);
+                ctx.emit(we::Instruction::LocalGet(vt));
+                coerce(ctx, sty.wty(), dst);
+                ctx.emit(we::Instruction::LocalSet(t));
+                t
+            };
+            store_fresh_into_cref(ctx, componentRef, dst, vt)
+        }
+        // Alias elimination replaces a record-valued target by its components, as a
+        // constructor call or a `RECORD` (C's `tupleReturnVariableUpdates`).
+        E::RECORD { exps, .. } => scatter_record_target(ctx, exps, sty, vt),
+        E::CALL { expLst, .. } => scatter_record_target(ctx, expLst, sty, vt),
+        _ => Err("CodegenWasmJit: unsupported tuple-assignment target"),
+    }
+}
+
+/// Scatter the freshly-owned record in `vt` into `targets` (one per field, in
+/// declaration order), then release it.
+fn scatter_record_target(
+    ctx: &mut FnCtx,
+    targets: &List<Arc<DAE::Exp>>,
+    sty: &SigTy,
+    vt: u32,
+) -> Result<()> {
+    let SigTy::Record { fields, .. } = sty else {
+        return Err("CodegenWasmJit: record-destructuring tuple target for a non-record output");
+    };
+    let targets: Vec<&Arc<DAE::Exp>> = targets.into_iter().collect();
+    if targets.len() != fields.len() {
+        return Err("CodegenWasmJit: record-destructuring tuple target has the wrong field count");
+    }
+    let layout = record_layout(fields);
+    for (i, (_, fty)) in fields.iter().enumerate() {
+        let ft = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_load(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+        ctx.emit(we::Instruction::LocalSet(ft));
+        if fty.is_heap() {
+            // The record still holds its reference; the store consumes one.
+            ctx.emit(we::Instruction::LocalGet(ft));
+            ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+        }
+        store_fresh_into_tuple_target(ctx, targets[i], fty, ft)?;
+    }
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+    Ok(())
+}
+
+/// The (copy, release) runtime entry points for a mutable value type that needs
+/// a private copy on aliasing assignment, or `None` for scalars and immutable
+/// strings.
+fn value_copy_fns(ty: &SigTy) -> Option<(&'static str, &'static str)> {
+    match ty {
+        SigTy::Array { .. } => Some(("rt_array_copy", "rt_array_release")),
+        SigTy::Record { .. } => Some(("rt_record_copy", "rt_record_release")),
+        _ => None,
+    }
+}
+
+/// Whether a whole-value rhs expression produces a freshly-owned array/record
+/// (so it can be moved into the destination without copying). Constructors,
+/// ranges and call results are fresh; a variable reference / shared literal
+/// aliases an existing object.
+fn value_rhs_is_fresh(e: &DAE::Exp) -> bool {
+    use DAE::Exp as E;
+    if shared_lits::is_shared(e) {
+        return false;
+    }
+    match e {
+        E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::CALL { .. } | E::RECORD { .. } => true,
+        E::SHARED_LITERAL { exp, .. } | E::CAST { exp, .. } => value_rhs_is_fresh(exp),
+        _ => false,
+    }
+}
+
+/// Array-object header offsets, matching the runtime's `ARR_*`.
+const ARR_NDIMS_OFF: u32 = 8;
+const ARR_TOTAL_OFF: u32 = 12;
+const ARR_DIMS_OFF: u32 = 16;
+
+// -------------------------------------------------------------------------
+// Record object layout (`openmodelica_wasm_jit::sig`, shared with the hosts)
+// -------------------------------------------------------------------------
+
+/// Resolve a record field by name to `(absolute offset from the object base,
+/// field type)`.
+fn record_field(fields: &[(ArcStr, SigTy)], name: &str) -> Result<(u32, SigTy)> {
+    let layout = record_layout(fields);
+    for (i, (fname, fty)) in fields.iter().enumerate() {
+        if fname.as_str() == name {
+            return Ok((layout.data_off + layout.field_off[i], fty.clone()));
+        }
+    }
+    return Err("CodegenWasmJit: record has no field");
+}
+
+pub(crate) fn mem_arg(offset: u32, align_log2: u32) -> we::MemArg {
+    we::MemArg { offset: offset as u64, align: align_log2, memory_index: 0 }
+}
+
+/// Load a `wty` value from `(address on stack) + offset` (record field read).
+fn field_load(ctx: &mut FnCtx, wty: WTy, offset: u32) {
+    match wty {
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(offset, 2))),
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(offset, 3))),
+    }
+}
+
+/// Store a `wty` value to `(address on stack) + offset` (record field write).
+fn field_store(ctx: &mut FnCtx, wty: WTy, offset: u32) {
+    match wty {
+        WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(offset, 2))),
+        WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(offset, 3))),
+    }
+}
+
+/// Allocate a record object and fill its inline heap-field table, returning the
+/// temp holding the owned (+1) handle. The field data is left zeroed.
+fn emit_record_alloc(ctx: &mut FnCtx, layout: &RecordLayout) -> Result<u32> {
+    ctx.emit(we::Instruction::I32Const(layout.heap.len() as i32));
+    ctx.emit(we::Instruction::I32Const(layout.size as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_new")?));
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (k, (kind, foff)) in layout.heap.iter().enumerate() {
+        let base = 8 + k as u32 * 8;
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(*kind as i32));
+        ctx.emit(we::Instruction::I32Store(mem_arg(base, 2)));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(*foff as i32));
+        ctx.emit(we::Instruction::I32Store(mem_arg(base + 4, 2)));
+    }
+    Ok(obj)
+}
+
+/// Emit a record construction: allocate the object, fill the inline heap-field
+/// table, then store each field value (`field_exps` in declaration order). The
+/// record owns heap field values. Leaves the owned (+1) record handle on the
+/// stack.
+fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&Arc<DAE::Exp>]) -> Result<()> {
+    let layout = record_layout(fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, (_, fty)) in fields.iter().enumerate() {
+        let w = compile_exp(ctx, field_exps[i])?;
+        coerce(ctx, w, fty.wty());
+        // Value semantics: a record/array field built from a non-fresh source
+        // (a variable, a field read) aliases that source's mutable object — copy
+        // it so the record owns a private value. Fresh constructors/calls/ranges
+        // are already privately owned and move in. (Strings are immutable.)
+        if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
+            if !value_rhs_is_fresh(field_exps[i]) {
+                let t = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(t));
+                ctx.emit(we::Instruction::LocalGet(t));
+                ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+                ctx.emit(we::Instruction::LocalGet(t));
+                ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+            }
+        }
+        // Store the owned (private) value into the field: address then value.
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// The class default of record field `v` — the C target's `<Rec>_construct_p`
+/// field init plus `recordInitOutsideBindings`. A binding synthesized from a
+/// variable's own submods (`R r(i=2)`) is applied at its declaration, not here.
+fn record_field_default(v: &DAE::Var) -> Option<Arc<DAE::Exp>> {
+    match &*v.binding {
+        DAE::Binding::EQBOUND { source: DAE::BindingSource::BINDING_FROM_RECORD_SUBMODS, .. }
+            if !v.bind_from_outside => None,
+        DAE::Binding::EQBOUND { exp, .. } => Some(exp.clone()),
+        _ => None,
+    }
+}
+
+/// A record field: the list comes from the declaration (see [`RECORD_DECLS`]) so
+/// every site lays the record out alike, the default from the type's `varLst`.
+struct RecField {
+    name: ArcStr,
+    sig: SigTy,
+    ty: Arc<DAE::Type>,
+    default: Option<Arc<DAE::Exp>>,
+    /// This use site binds the field from outside, so `default` belongs to the
+    /// using scope (see [`RecDeclField::bind_outside`]).
+    bind_outside: bool,
+}
+
+/// The canonical fields of record type `ty`, or `None` if `ty` is not a record.
+fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
+    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, varLst, .. } = ty
+    else {
+        return Ok(None);
+    };
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
+    let declared: Vec<(ArcStr, Arc<DAE::Type>)> = match record_decl_fields(&path_str) {
+        Some(d) => d.iter().map(|f| (f.name.clone(), f.ty.clone())).collect(),
+        None => vars.iter().map(|v| (v.name.clone(), v.ty.clone())).collect(),
+    };
+    let mut out = Vec::with_capacity(declared.len());
+    for (name, fty) in declared {
+        let var = vars.iter().find(|v| v.name == name);
+        // A `[:,:]` field has its shape only at the use site, which is where C
+        // reads it (`var_lst |> v => constVarOrDaeExp(v, ...)`).
+        let fty = match var {
+            Some(v) if type_array_dims(&fty).iter().any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) => v.ty.clone(),
+            _ => fty,
+        };
+        out.push(RecField {
+            sig: sig_ty(&fty)?,
+            default: var.and_then(|v| record_field_default(v)),
+            bind_outside: var.is_some_and(|v| v.bind_from_outside),
+            ty: fty,
+            name,
+        });
+    }
+    Ok(Some(out))
+}
+
+fn rec_layout(fields: &[RecField]) -> RecordLayout {
+    record_layout(&fields.iter().map(|f| (f.name.clone(), f.sig.clone())).collect::<Vec<_>>())
+}
+
+/// Default-construct a record value of type `ty` (the C target's
+/// `<Rec>_construct`), leaving the owned handle on the stack. A declared field
+/// binding is evaluated in the record's own scope (C's `ths->_x`), a
+/// `bind_from_outside` one in this scope; the constructor is inlined here, so
+/// the first scope is made by binding each finished field under its own name.
+fn emit_record_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
+    let Some(fields) = record_fields(ty)? else {
+        return Err("CodegenWasmJit: default construction of a non-record type");
+    };
+    let decl = record_decl_of(ty)?;
+    let decl_of = |name: &ArcStr| decl.as_ref().and_then(|d| d.iter().find(|f| &f.name == name));
+    let layout = rec_layout(&fields);
+    // Evaluated before any field name is shadowed below.
+    let mut outside: Vec<Option<u32>> = Vec::with_capacity(fields.len());
+    for f in &fields {
+        outside.push(match (f.bind_outside, &f.default) {
+            (true, Some(exp)) => {
+                emit_field_value(ctx, &f.sig, exp)?;
+                let t = ctx.alloc_temp(f.sig.wty());
+                ctx.emit(we::Instruction::LocalSet(t));
+                Some(t)
+            }
+            _ => None,
+        });
+    }
+    let obj = emit_record_alloc(ctx, &layout)?;
+    let mut shadowed: Vec<(String, Option<(u32, SigTy)>)> = Vec::new();
+    let result = (|ctx: &mut FnCtx| -> Result<()> {
+        for (i, f) in fields.iter().enumerate() {
+            let fty = f.sig.clone();
+            // A record with no declaration has only the use site's binding.
+            let bound = match decl_of(&f.name) {
+                Some(d) if !d.bind_outside => d.value.clone().or_else(|| f.default.clone()),
+                _ => f.default.clone(),
+            };
+            match (outside[i], &bound) {
+                (Some(t), _) => ctx.emit(we::Instruction::LocalGet(t)),
+                (None, Some(exp)) => {
+                    let _g = PartGuard::new(format!("the default of record field `{}`", f.name));
+                    emit_field_value(ctx, &fty, exp)?;
+                }
+                (None, None) => emit_type_default(ctx, &f.ty)?,
+            }
+            let vt = ctx.alloc_temp(fty.wty());
+            ctx.emit(we::Instruction::LocalSet(vt));
+            ctx.emit(we::Instruction::LocalGet(obj));
+            ctx.emit(we::Instruction::LocalGet(vt));
+            field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+            let name = f.name.to_string();
+            let prev = ctx.locals.insert(name.clone(), (vt, fty));
+            shadowed.push((name, prev));
+        }
+        Ok(())
+    })(ctx);
+    for (name, prev) in shadowed {
+        match prev {
+            Some(v) => ctx.locals.insert(name, v),
+            None => ctx.locals.remove(&name),
+        };
+    }
+    result?;
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// One record-field binding, copied if it came from an alias (value semantics).
+fn emit_field_value(ctx: &mut FnCtx, fty: &SigTy, exp: &DAE::Exp) -> Result<()> {
+    let w = compile_exp(ctx, exp)?;
+    coerce(ctx, w, fty.wty());
+    if let Some((copy_fn, rel_fn)) = value_copy_fns(fty) {
+        if !value_rhs_is_fresh(exp) {
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+        }
+    }
+    Ok(())
+}
+
+/// The value a variable of type `ty` has before anything is assigned to it: zero,
+/// an allocated (zeroed) array descriptor, or a default-built record.
+fn emit_type_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
+    match ty {
+        DAE::Type::T_REAL { .. } => ctx.emit(we::Instruction::F64Const(0.0f64.into())),
+        DAE::Type::T_STRING { .. } => {
+            let exp = DAE::Exp::SCONST { string: arcstr::literal!("") };
+            compile_exp(ctx, &exp)?;
+        }
+        DAE::Type::T_ARRAY { ty: elem, .. } => {
+            let SigTy::Array { elem: esig, .. } = sig_ty(ty)? else {
+                return Err("CodegenWasmJit: array type did not lower to an array");
+            };
+            let dims = type_array_dims(ty);
+            let slot = ctx.alloc_temp(WTy::I32);
+            emit_array_alloc(ctx, slot, &esig, &dims)?;
+            if matches!(&*esig, SigTy::Record { .. }) {
+                emit_array_record_defaults(ctx, slot, elem)?;
+            }
+            ctx.emit(we::Instruction::LocalGet(slot));
+        }
+        DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { .. }, .. } => {
+            emit_record_default(ctx, ty)?;
+        }
+        _ => ctx.emit(we::Instruction::I32Const(0)),
+    }
+    Ok(())
+}
+
+/// Fill the freshly allocated array in `slot` with default-constructed `elem`
+/// records (the C target's `generic_array_create` with the record constructor).
+fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE::Type) -> Result<()> {
+    let total = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(slot));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(total));
+    let i = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalSet(i));
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(i));
+    ctx.emit(we::Instruction::LocalGet(total));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(slot));
+    ctx.emit(we::Instruction::LocalGet(i));
+    emit_elem_ptr(ctx, &sig_ty(elem)?)?;
+    emit_record_default(ctx, elem)?;
+    ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+    ctx.emit(we::Instruction::LocalGet(i));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(i));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End);
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// A record literal `R(field=…, …)` (`E::RECORD`): the field values are matched
+/// to the type's declaration order by component name.
+fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &Arc<List<Arc<DAE::Exp>>>, comp: &Arc<List<ArcStr>>) -> Result<()> {
+    let SigTy::Record { fields, .. } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: record constructor with non-record type");
+    };
+    let expv: Vec<&Arc<DAE::Exp>> = (&**exps).into_iter().collect();
+    let compv: Vec<&ArcStr> = (&**comp).into_iter().collect();
+    if expv.len() != compv.len() || expv.len() != fields.len() {
+        return Err("CodegenWasmJit: record constructor arity mismatch");
+    }
+    let mut field_exps = Vec::with_capacity(fields.len());
+    for (fname, _) in fields.iter() {
+        let pos = compv
+            .iter()
+            .position(|n| n.as_str() == fname.as_str())
+            .ok_or_else(|| "CodegenWasmJit: record constructor missing field")?;
+        field_exps.push(expv[pos]);
+    }
+    emit_record_construction(ctx, &fields, &field_exps)
+}
+
+/// A `METARECORDCALL` carries no `T_COMPLEX`, so its layout comes from the
+/// module's record declarations.
+fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
+    let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+    let Some(declared) = record_decl_fields(&path_str) else {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: boxed record constructor for undeclared record `{path_str}`"
+        ));
+        return Err("CodegenWasmJit: boxed record constructor for an undeclared record");
+    };
+    let mut fields = Vec::with_capacity(declared.len());
+    for f in declared.iter() {
+        fields.push((f.name.clone(), sig_ty(&f.ty)?));
+    }
+    Ok(SigTy::Record { path: path_str, fields: Arc::new(fields) })
+}
+
+/// The boxed record constructor the frontend emits instead of `E::RECORD` for a
+/// record captured by a function reference (C: `mmc_mk_boxN(index, &R__desc,
+/// args…)`). Our closures hold values unboxed, so it builds a plain record.
+fn compile_metarecord(
+    ctx: &mut FnCtx,
+    path: &Arc<Absyn::Path>,
+    args: &Arc<List<Arc<DAE::Exp>>>,
+    fieldNames: &Arc<List<ArcStr>>,
+) -> Result<()> {
+    let SigTy::Record { fields, .. } = metarecord_sigty(path)? else {
+        return Err("CodegenWasmJit: boxed record constructor with non-record type");
+    };
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let namev: Vec<&ArcStr> = (&**fieldNames).into_iter().collect();
+    if argv.len() != fields.len() || namev.len() != argv.len() {
+        return Err("CodegenWasmJit: boxed record constructor arity mismatch");
+    }
+    let mut field_exps = Vec::with_capacity(fields.len());
+    for (fname, _) in fields.iter() {
+        let pos = namev
+            .iter()
+            .position(|n| n.as_str() == fname.as_str())
+            .ok_or_else(|| "CodegenWasmJit: boxed record constructor missing field")?;
+        field_exps.push(argv[pos]);
+    }
+    emit_record_construction(ctx, &fields, &field_exps)
+}
+
+/// A record-constructor *call* `R(v1, v2, …)` (a `CALL` whose result is a record
+/// and which is not a generated function): the positional arguments are the
+/// fields in declaration order.
+fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
+    let SigTy::Record { fields, .. } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: record constructor call with non-record type");
+    };
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    if argv.len() != fields.len() {
+        return Err("CodegenWasmJit: record constructor call arity mismatch");
+    }
+    emit_record_construction(ctx, &fields, &argv)
+}
+
+/// Read field `name` of the record produced by `exp` (`E::RSUB`). The record
+/// expression is owned (retained if it was a variable) and released after the
+/// field is read; a heap field is retained so the returned value is owned.
+fn compile_rsub(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str) -> Result<WTy> {
+    let SigTy::Record { fields, .. } = exp_sigty(exp)? else {
+        return Err("CodegenWasmJit: field access `.` on a non-record expression");
+    };
+    let (off, fty) = record_field(&fields, name)?;
+    compile_exp(ctx, exp)?; // owned record handle
+    let rec = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(rec));
+    ctx.emit(we::Instruction::LocalGet(rec));
+    field_load(ctx, fty.wty(), off);
+    if fty.is_heap() {
+        // Retain the field (owned read), then release the record temp.
+        let fv = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalTee(fv));
+        ctx.emit(we::Instruction::LocalGet(fv));
+        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    }
+    ctx.emit(we::Instruction::LocalGet(rec));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+    Ok(fty.wty())
+}
+
+/// Assign `rhs` into field `name` of record local `rec_idx` (`r.field := rhs`),
+/// in place. A heap field's previous value is released after the new owned value
+/// is computed; an array/record field assigned from an alias is copied for value
+/// semantics (like a whole-value assignment).
+fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigTy)], name: &str, rhs: &DAE::Exp) -> Result<()> {
+    let (off, fty) = record_field(fields, name)?;
+    let Some(release_fn) = fty.release_fn() else {
+        // Scalar field: store directly.
+        ctx.emit(we::Instruction::LocalGet(rec_idx));
+        let w = compile_exp(ctx, rhs)?;
+        coerce(ctx, w, fty.wty());
+        field_store(ctx, fty.wty(), off);
+        return Ok(());
+    };
+    // Heap field: compute the new owned value into a temp.
+    let w = compile_exp(ctx, rhs)?;
+    coerce(ctx, w, fty.wty());
+    let val_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(val_t));
+    // Value semantics: a mutable array/record from a non-fresh source aliases it.
+    if let Some((copy_fn, rel_fn)) = value_copy_fns(&fty) {
+        if !value_rhs_is_fresh(rhs) {
+            ctx.emit(we::Instruction::LocalGet(val_t));
+            ctx.emit(we::Instruction::Call(rt_index(copy_fn)?));
+            ctx.emit(we::Instruction::LocalGet(val_t));
+            ctx.emit(we::Instruction::Call(rt_index(rel_fn)?));
+            ctx.emit(we::Instruction::LocalSet(val_t));
+        }
+    }
+    // Release the previous field value (now that the new one is computed).
+    ctx.emit(we::Instruction::LocalGet(rec_idx));
+    field_load(ctx, fty.wty(), off);
+    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+    // Store the new owned value into the field.
+    ctx.emit(we::Instruction::LocalGet(rec_idx));
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    field_store(ctx, fty.wty(), off);
+    Ok(())
+}
+
+/// Push a *borrowed* record handle for the head of a qualified cref into a temp:
+/// either a record local, or an array-of-records local subscripted to one element.
+/// The head is always a function local, which holds the reference for the whole
+/// expression, so no retain/release pair is needed.
+fn push_record_base(
+    ctx: &mut FnCtx,
+    ident: &str,
+    subs: &Arc<List<Arc<DAE::Subscript>>>,
+) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
+    let (idx, sty) = ctx
+        .locals
+        .get(ident)
+        .ok_or_else(|| unknown_variable(ident))?
+        .clone();
+    if subs.is_empty() {
+        let SigTy::Record { fields, .. } = sty else {
+            return Err("CodegenWasmJit: field access on non-record local");
+        };
+        Ok((idx, fields))
+    } else {
+        let SigTy::Array { elem, rank } = sty else {
+            return Err("CodegenWasmJit: subscripting non-array local");
+        };
+        let SigTy::Record { fields, .. } = &*elem else {
+            return Err("CodegenWasmJit: indexed base `[..]` is not an array of records");
+        };
+        let fields = fields.clone();
+        if !is_scalar_index(subs, rank) {
+            return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
+        }
+        let idx_exps = index_subscripts(subs, rank)?;
+        emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        Ok((t, fields))
+    }
+}
+
+/// Retain the borrowed heap value on top of the stack, leaving it there: the
+/// expression protocol hands its consumer an owned value. No-op for a scalar.
+fn retain_on_stack(ctx: &mut FnCtx, ty: &SigTy) -> Result<()> {
+    if !ty.is_heap() {
+        return Ok(());
+    }
+    let v = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(v));
+    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    ctx.emit(we::Instruction::LocalGet(v));
+    Ok(())
+}
+
+/// Read field `name` out of the borrowed record in `rec` into a fresh temp. The
+/// value is borrowed too.
+fn load_field(
+    ctx: &mut FnCtx,
+    rec: u32,
+    fields: &[(ArcStr, SigTy)],
+    name: &str,
+) -> Result<(u32, SigTy)> {
+    let (off, fty) = record_field(fields, name)?;
+    let vt = ctx.alloc_temp(fty.wty());
+    ctx.emit(we::Instruction::LocalGet(rec));
+    field_load(ctx, fty.wty(), off);
+    ctx.emit(we::Instruction::LocalSet(vt));
+    Ok((vt, fty))
+}
+
+/// Descend one qualified-cref step into field `field[fsubs]` of the record in
+/// temp `rec`, producing an owned record handle for the field in a fresh temp.
+/// Used by the read/assign navigators for an intermediate `.field.` segment that
+/// must resolve to a (sub-)record. Returns `(record_temp, that record's fields)`.
+fn step_into_record(
+    ctx: &mut FnCtx,
+    rec: u32,
+    fields: &[(ArcStr, SigTy)],
+    field: &str,
+    fsubs: &Arc<List<Arc<DAE::Subscript>>>,
+) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
+    let (vt, fty) = load_field(ctx, rec, fields, field)?;
+    if fsubs.is_empty() {
+        let SigTy::Record { fields: f2, .. } = fty else {
+            return Err("CodegenWasmJit: field access on non-record field");
+        };
+        Ok((vt, f2))
+    } else {
+        let SigTy::Array { elem, rank } = fty else {
+            return Err("CodegenWasmJit: subscripting non-array field");
+        };
+        let SigTy::Record { fields: f2, .. } = &*elem else {
+            return Err("CodegenWasmJit: field access on non-record array element");
+        };
+        let f2 = f2.clone();
+        if !is_scalar_index(fsubs, rank) {
+            return Err("CodegenWasmJit: slicing an array of records before field access is not supported");
+        }
+        let idx_exps = index_subscripts(fsubs, rank)?;
+        emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+        elem_load(ctx, &elem);
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        Ok((t, f2))
+    }
+}
+
+/// Read a qualified cref `base[..].f1[..].….fn[..]` (`E::CREF` with a
+/// `CREF_QUAL` head), descending through nested records (and arrays of records)
+/// to the final field, which may itself be subscripted (a scalar index or a
+/// slice). Leaves the owned field value on the stack.
+fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<WTy> {
+    let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
+        return Err("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
+    };
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
+    let mut cur: &DAE::ComponentRef = rest;
+    loop {
+        match cur {
+            DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
+                let (vt, fty) = load_field(ctx, rec, &fields, field)?;
+                if fsubs.is_empty() {
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    retain_on_stack(ctx, &fty)?;
+                    return Ok(fty.wty());
+                }
+                let SigTy::Array { elem, rank } = fty else {
+                    return Err("CodegenWasmJit: subscripting non-array field");
+                };
+                return if is_scalar_index(fsubs, rank) {
+                    let idx_exps = index_subscripts(fsubs, rank)?;
+                    emit_elem_addr(ctx, vt, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
+                } else {
+                    // `slice_loaded` consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                    slice_loaded(ctx, fsubs)
+                };
+            }
+            DAE::ComponentRef::CREF_QUAL { ident: field, subscriptLst: fsubs, componentRef: inner, .. } => {
+                let (t, f2) = step_into_record(ctx, rec, &fields, field, fsubs)?;
+                rec = t;
+                fields = f2;
+                cur = inner;
+            }
+            other => return Err("CodegenWasmJit: unsupported component reference"),
+        }
+    }
+}
+
+/// Navigate a qualified cref to the record that directly contains its final
+/// field, returning `(owned record temp, that record's fields, final field
+/// name, final field subscripts)`. The caller releases the returned temp.
+fn navigate_qual<'c>(
+    ctx: &mut FnCtx,
+    cref: &'c DAE::ComponentRef,
+) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c Arc<List<Arc<DAE::Subscript>>>)> {
+    let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
+        return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
+    };
+    let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
+    let mut cur: &DAE::ComponentRef = rest;
+    loop {
+        match cur {
+            DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
+                return Ok((rec, fields, field, fsubs));
+            }
+            DAE::ComponentRef::CREF_QUAL { ident: field, subscriptLst: fsubs, componentRef: inner, .. } => {
+                let (t, f2) = step_into_record(ctx, rec, &fields, field, fsubs)?;
+                rec = t;
+                fields = f2;
+                cur = inner;
+            }
+            other => return Err("CodegenWasmJit: unsupported component reference"),
+        }
+    }
+}
+
+/// Assign `rhs` into a qualified cref `base[..].f1[..].….fn[..]`. Navigates to
+/// the record holding the final field and stores in place (a scalar/heap field,
+/// or an element of an array-valued field).
+fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: &DAE::Exp) -> Result<()> {
+    let (rec, fields, leaf, lsubs) = navigate_qual(ctx, cref)?;
+    if lsubs.is_empty() {
+        compile_record_field_assign(ctx, rec, &fields, leaf, rhs)?;
+    } else {
+        // `…field[i] := rhs`: element assignment into the field's (privately
+        // owned) array, in place.
+        let (off, fty) = record_field(&fields, leaf)?;
+        let SigTy::Array { elem, rank } = fty else {
+            return Err("CodegenWasmJit: subscripted field is not an array");
+        };
+        let arr_t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalGet(rec));
+        field_load(ctx, WTy::I32, off);
+        ctx.emit(we::Instruction::LocalSet(arr_t));
+        if !is_scalar_index(lsubs, rank) {
+            return compile_slice_assign(ctx, arr_t, lsubs, RhsSource::Exp(rhs));
+        }
+        let idx_exps = index_subscripts(lsubs, rank)?;
+        compile_elem_assign(ctx, arr_t, &elem, &idx_exps, rhs)?;
+    }
+    Ok(())
+}
+
+/// Element assignment `a[i,...] := rhs`, in place. `arr_idx` is the array local
+/// (which privately owns its buffer). For a heap element the previous handle in
+/// the slot is released and the new owned value moved in; the old value is
+/// released only *after* the rhs is computed, in case the rhs reads it.
+fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
+    emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
+    let addr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(addr_t));
+    if let Some(release_fn) = elem.release_fn() {
+        let w = compile_exp(ctx, rhs)?;
+        coerce(ctx, w, elem.wty());
+        let val_t = ctx.alloc_temp(elem.wty());
+        ctx.emit(we::Instruction::LocalSet(val_t));
+        // Release the previous element handle now that the new value is computed.
+        ctx.emit(we::Instruction::LocalGet(addr_t));
+        elem_load(ctx, elem);
+        ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        // Store the new owned handle into the slot.
+        ctx.emit(we::Instruction::LocalGet(addr_t));
+        ctx.emit(we::Instruction::LocalGet(val_t));
+        elem_store(ctx, elem);
+    } else {
+        ctx.emit(we::Instruction::LocalGet(addr_t));
+        let w = compile_exp(ctx, rhs)?;
+        coerce(ctx, w, elem.wty());
+        elem_store(ctx, elem);
+    }
+    Ok(())
+}
+
+/// Emit the byte address of array element `a[idx_exps...]`, reading the array
+/// handle from local `arr_idx` (the local owns it — no retain/release). Leaves
+/// the address on the stack. Same row-major linear index as [`index_loaded`].
+fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+    let acc = ctx.alloc_temp(WTy::I32);
+    let w = compile_exp(ctx, &idx_exps[0])?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Sub);
+    ctx.emit(we::Instruction::LocalSet(acc));
+    for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
+        ctx.emit(we::Instruction::LocalGet(acc));
+        ctx.emit(we::Instruction::LocalGet(arr_idx));
+        emit_array_dim(ctx, axis0 as u32 + 1)?;
+        ctx.emit(we::Instruction::I32Mul);
+        let w = compile_exp(ctx, ie)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub);
+        ctx.emit(we::Instruction::I32Add);
+        ctx.emit(we::Instruction::LocalSet(acc));
+    }
+    ctx.emit(we::Instruction::LocalGet(arr_idx));
+    ctx.emit(we::Instruction::LocalGet(acc));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    emit_elem_ptr(ctx, elem)
+}
+
+/// Evaluate a call for its side effects and discard any results. A discarded
+/// heap result is owned (+1), so it must be released, not merely dropped. Shared
+/// by `STMT_NORETCALL` and the `when`-body `NORETCALL` operator.
+fn emit_noretcall(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
+    let results = compile_call_drop(ctx, exp)?;
+    for sty in results.iter().rev() {
+        match sty.release_fn() {
+            Some(release_fn) => ctx.emit(we::Instruction::Call(rt_index(release_fn)?)),
+            None => ctx.emit(we::Instruction::Drop),
+        }
+    }
+    Ok(())
+}
+
+/// `terminate(msg)`: raise the `SimData` terminate flag, which the drivers poll
+/// after each communication point, and fill C's `TermMsg`/`TermInfo` slots.
+/// Shared by `STMT_TERMINATE` and the `when`-body `TERMINATE`.
+fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::ElementSource) -> Result<()> {
+    let data = ctx.sim()?.data_local;
+    let off = ctx.sim()?.terminate_off;
+    let info_off = ctx.sim()?.term_info_off;
+    let info = &source.info;
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    ctx.emit(we::Instruction::LocalGet(data));
+    let mw = compile_exp(ctx, message)?;
+    if mw != WTy::I32 {
+        return Err("CodegenWasmJit: terminate message is not a String");
+    }
+    ctx.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
+    ctx.emit(we::Instruction::LocalGet(data));
+    emit_str_literal(ctx, file.as_bytes())?;
+    ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
+    let pos = [
+        info.lineNumberStart,
+        info.columnNumberStart,
+        info.lineNumberEnd,
+        info.columnNumberEnd,
+        info.isReadOnly as i32,
+    ];
+    for (i, v) in pos.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Const(*v));
+        ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
+    }
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+    Ok(())
+}
+
+/// C's `assertCommon`: `if (!cond) { rt_assert(msg, assert_cond, file, line/col…);
+/// unreachable }`, the host formatting the three as `omc_assert` does. A warning-level
+/// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
+/// checks) calls `rt_assert_warning` and continues instead, as C's
+/// `omc_assert_warning`, and latches a per-site flag so it reports once — C's
+/// `if(!warningTriggered)` around the whole test. Shared by `STMT_ASSERT` and the
+/// `when`-body `ASSERT`.
+fn emit_assert(
+    ctx: &mut FnCtx,
+    cond: &Arc<DAE::Exp>,
+    msg: &DAE::Exp,
+    level: &DAE::Exp,
+    source: &DAE::ElementSource,
+) -> Result<()> {
+    let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
+    // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
+    let in_function = ctx.sim().is_err();
+    let warn_flag = is_warning.then(shared_lits::new_flag);
+    if let Some(g) = warn_flag {
+        ctx.emit(we::Instruction::GlobalGet(g));
+        ctx.emit(we::Instruction::I32Eqz);
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    }
+    let c = compile_exp(ctx, cond)?;
+    coerce(ctx, c, WTy::I32);
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    let info = &source.info;
+    let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
+    if let Some(g) = warn_flag {
+        // The dumped condition (C's `assert_cond`), then the message, then the
+        // source position — all consumed by `rt_assert_warning`; execution
+        // continues afterwards (no trap).
+        let dumped = if in_function { String::new() } else { dumped_exp(cond)? };
+        emit_str_literal(ctx, dumped.as_bytes())?; // dumped condition
+        let mw = compile_exp(ctx, msg)?; // owned message String handle
+        if mw != WTy::I32 {
+            return Err("CodegenWasmJit: assert message is not a String");
+        }
+        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        emit_initial_flag(ctx);
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::GlobalSet(g));
+        ctx.emit(we::Instruction::End); // if (!cond)
+        ctx.emit(we::Instruction::End); // if (!warningTriggered)
+        return Ok(());
+    }
+    // C evaluates the message (`preExpMsg`) once, ahead of either arm.
+    let mw = compile_exp(ctx, msg)?; // owned message String handle
+    if mw != WTy::I32 {
+        return Err("CodegenWasmJit: assert message is not a String");
+    }
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    // Both arms take these; `initial` and `sim_data` follow.
+    let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+        ctx.emit(we::Instruction::LocalGet(msg_h));
+        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        if in_function {
+            ctx.emit(we::Instruction::I32Const(0));
+        } else {
+            emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
+        }
+        Ok(())
+    };
+    // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
+    // then unwound into the solver.
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    report_args(ctx)?;
+    emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    report_args(ctx)?;
+    emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    // Unwind unless the driver took it (suppressed during the event search).
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_assert_unwind(ctx);
+    ctx.emit(we::Instruction::End);
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// The running `SimData` pointer, or 0 outside a simulation.
+fn emit_sim_data_or_zero(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| s.data_local) {
+        Some(data) => ctx.emit(we::Instruction::LocalGet(data)),
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
+}
+
+/// A model error inside a nonlinear-solver residual is recoverable in C
+/// (`ERROR_NONLINEARSOLVER` longjmps out and the solver shortens the step): note it
+/// and return, leaving the outputs at their entry values.
+fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// C's `assertCommonVar` for a model error whose message String handle is on the
+/// stack. Where a solver or the step catches the unwind, the evaluation returns with
+/// its outputs untouched, as [`emit_nls_recoverable_return`] does.
+fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
+    use we::Instruction as I;
+    // C's `FUNCTION_CONTEXT` arm is `omc_assert(threadData, omc_dummyFileInfo, msg)`,
+    // which a simulation binds to `omc_assert_simulation` — `emit_assert`'s two arms.
+    if ctx.sim.is_none() {
+        let msg = ctx.alloc_temp(WTy::I32);
+        ctx.emit(I::LocalSet(msg));
+        let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+            ctx.emit(I::LocalGet(msg));
+            emit_str_literal(ctx, b"")?; // file
+            for _ in 0..5 {
+                ctx.emit(I::I32Const(0)); // line/col start+end, isReadOnly
+            }
+            ctx.emit(I::I32Const(0)); // no condition: never suppressed
+            emit_initial_flag(ctx);
+            emit_sim_data_or_zero(ctx);
+            Ok(())
+        };
+        ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(I::If(we::BlockType::Empty));
+        report_args(ctx)?;
+        ctx.emit(I::Call(rt_index("rt_nls_assert_failed")?));
+        release_heap_locals(ctx)?;
+        push_outputs(ctx);
+        ctx.emit(I::Return);
+        ctx.emit(I::End);
+        report_args(ctx)?;
+        ctx.emit(I::Call(env_extra_index("rt_assert")?));
+        ctx.emit(I::Drop); // a model error is never suppressed
+        emit_assert_unwind(ctx);
+        return Ok(());
+    }
+    emit_sim_data_or_zero(ctx);
+    emit_initial_flag(ctx);
+    ctx.emit(I::Call(rt_index("rt_assert_common")?));
+    let taken = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(taken));
+    ctx.emit(I::LocalGet(taken));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Eq);
+    ctx.emit(I::If(we::BlockType::Empty));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
+    // 2 is C's `noThrowAsserts`: fall through and use the out-of-domain value.
+    ctx.emit(I::LocalGet(taken));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_assert_unwind(ctx);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// 0 outside a simulation: C's `FUNCTION_CONTEXT` arm prints no header at all.
+fn emit_initial_flag(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| (s.data_local, s.initial_off)) {
+        Some((data, off)) => {
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+        }
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
+}
+
+/// The dumped source form of `e`, for embedding in an assertion message.
+pub(crate) fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
+}
+
+/// A math builtin's accepted interval and the message text around the `%g`.
+struct Domain {
+    low: f64,
+    low_strict: bool,
+    high: Option<f64>,
+    head: &'static str,
+    tail: &'static str,
+}
+
+/// The guard C's `daeExpCall` emits for `name`, `None` where the whole range is valid.
+fn math_domain(name: &str) -> Option<Domain> {
+    match name {
+        "asin" | "acos" => Some(Domain {
+            low: -1.0,
+            low_strict: false,
+            high: Some(1.0),
+            head: "outside the domain -1.0 <= ",
+            tail: " <= 1.0",
+        }),
+        "log" | "log10" => Some(Domain {
+            low: 0.0,
+            low_strict: true,
+            high: None,
+            head: "was ",
+            tail: " should be > 0",
+        }),
+        "sqrt" => Some(Domain {
+            low: 0.0,
+            low_strict: false,
+            high: None,
+            head: "was ",
+            tail: " should be >= 0",
+        }),
+        _ => None,
+    }
+}
+
+/// C's `daeExpCall` guard (`CodegenCFunctions.tpl`): evaluate `arg` into a temp,
+/// assert its domain, leave it on the stack for the caller's call.
+fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &Domain) -> Result<()> {
+    use we::Instruction as I;
+    let w = compile_exp(ctx, arg)?;
+    coerce(ctx, w, WTy::F64);
+    let t = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalTee(t));
+    ctx.emit(I::F64Const(d.low.into()));
+    ctx.emit(if d.low_strict { I::F64Gt } else { I::F64Ge });
+    if let Some(high) = d.high {
+        ctx.emit(I::LocalGet(t));
+        ctx.emit(I::F64Const(high.into()));
+        ctx.emit(I::F64Le);
+        ctx.emit(I::I32And);
+    }
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    let call = format!("{name}({})", dumped_exp(arg)?);
+    emit_str_literal(ctx, format!("Model error: Argument of {call} {}", d.head).as_bytes())?;
+    ctx.emit(I::LocalGet(t));
+    ctx.emit(I::I32Const(6)); // significant digits (C's `%g`)
+    ctx.emit(I::I32Const(0)); // minimum length
+    ctx.emit(I::I32Const(0)); // left justified
+    ctx.emit(I::Call(rt_index("rt_real_format")?));
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_str_literal(ctx, d.tail.as_bytes())?;
+    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(I::End);
+
+    ctx.emit(I::LocalGet(t));
+    Ok(())
+}
+
+/// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
+/// sign-preserving for odd n — guarded by two model-error assertions: n must be
+/// > 0, and even n requires v >= 0.
+fn emit_nth_root(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], name: &str) -> Result<SigTy> {
+    need_args(argv, 2, name)?;
+    let vw = compile_exp(ctx, argv[0])?;
+    coerce(ctx, vw, WTy::F64);
+    let vt = ctx.alloc_temp(WTy::F64);
+    ctx.emit(we::Instruction::LocalSet(vt));
+    let nw = compile_exp(ctx, argv[1])?;
+    coerce(ctx, nw, WTy::I32);
+    let nt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(nt));
+
+    let (vstr, nstr) = (dumped_exp(argv[0])?, dumped_exp(argv[1])?);
+
+    // assert(n > 0, "…must be > 0, got <n>")
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(we::Instruction::End);
+
+    // assert(mod(n, 2) != 0 or v >= 0, "…must be >= 0 if the second is even, got <v>")
+    ctx.emit(we::Instruction::LocalGet(nt));
+    ctx.emit(we::Instruction::I32Const(2));
+    ctx.emit(we::Instruction::I32RemS);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32Ne);
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+    ctx.emit(we::Instruction::F64Ge);
+    ctx.emit(we::Instruction::I32Or);
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_str_literal(ctx, format!("Model error: First argument of nthRoot({vstr}, {nstr}) must be >= 0 if the second is even, got ").as_bytes())?;
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::I32Const(6)); // significant digits
+    ctx.emit(we::Instruction::I32Const(0)); // minimum length
+    ctx.emit(we::Instruction::I32Const(0)); // left justified
+    ctx.emit(we::Instruction::Call(rt_index("rt_real_format")?));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_model_error(ctx)?;
+    ctx.emit(we::Instruction::End);
+
+    // copysign(pow(|v|, 1/n), v)
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Abs);
+    ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+    ctx.emit(we::Instruction::LocalGet(nt));
+    coerce(ctx, WTy::I32, WTy::F64);
+    ctx.emit(we::Instruction::F64Div);
+    ctx.emit(we::Instruction::Call(builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?));
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::F64Copysign);
+    Ok(SigTy::Real)
+}
+
+/// `DAEUtil.getStatementSource`.
+fn stmt_source(stmt: &DAE::Statement) -> &Arc<DAE::ElementSource> {
+    use DAE::Statement as S;
+    match stmt {
+        S::STMT_ASSIGN { source, .. }
+        | S::STMT_TUPLE_ASSIGN { source, .. }
+        | S::STMT_ASSIGN_ARR { source, .. }
+        | S::STMT_IF { source, .. }
+        | S::STMT_FOR { source, .. }
+        | S::STMT_PARFOR { source, .. }
+        | S::STMT_WHILE { source, .. }
+        | S::STMT_WHEN { source, .. }
+        | S::STMT_ASSERT { source, .. }
+        | S::STMT_TERMINATE { source, .. }
+        | S::STMT_REINIT { source, .. }
+        | S::STMT_NORETCALL { source, .. }
+        | S::STMT_RETURN { source, .. }
+        | S::STMT_BREAK { source, .. }
+        | S::STMT_CONTINUE { source, .. }
+        | S::STMT_ARRAY_INIT { source, .. }
+        | S::STMT_FAILURE { source, .. } => source,
+    }
+}
+
+fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
+    use DAE::Statement as S;
+    ctx.set_src_loc(&stmt_source(stmt).info);
+    match stmt {
+        S::STMT_ASSIGN { exp1, exp, .. } => compile_assign(ctx, exp1, exp),
+        S::STMT_TUPLE_ASSIGN { expExpLst, exp, .. } => compile_tuple_assign(ctx, expExpLst, exp),
+        // Whole-array assignment (`r := {...}`, `r := other`); `compile_assign`
+        // copies when the source is a variable (value semantics) and moves a
+        // fresh constructor/call result.
+        S::STMT_ASSIGN_ARR { lhs, exp, .. } => compile_assign(ctx, lhs, exp),
+        S::STMT_IF { exp, statementLst, else_, .. } => {
+            let c = compile_exp(ctx, exp)?;
+            coerce(ctx, c, WTy::I32);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            compile_stmts(ctx, statementLst)?;
+            compile_else(ctx, else_)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+        S::STMT_WHILE { exp, statementLst, .. } => {
+            // block { loop { <cond>; i32.eqz; br_if 1; block { <body> }; br 0 } }
+            // The inner block is the `continue` target (fall through re-checks the
+            // condition); the outer block is the `break` target.
+            ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+            let break_level = ctx.ctrl_depth;
+            ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+            let c = compile_exp(ctx, exp)?;
+            coerce(ctx, c, WTy::I32);
+            ctx.emit(we::Instruction::I32Eqz);
+            ctx.emit(we::Instruction::BrIf(1));
+            compile_loop_body(ctx, break_level, statementLst)?;
+            ctx.emit(we::Instruction::Br(0));
+            ctx.emit(we::Instruction::End); // loop
+            ctx.emit(we::Instruction::End); // block
+            Ok(())
+        }
+        S::STMT_RETURN { .. } => {
+            release_heap_locals(ctx)?;
+            push_outputs(ctx);
+            ctx.emit(we::Instruction::Return);
+            Ok(())
+        }
+        S::STMT_NORETCALL { exp, .. } => emit_noretcall(ctx, exp),
+        S::STMT_ASSERT { cond, msg, level, source } => emit_assert(ctx, cond, msg, level, source),
+        S::STMT_TERMINATE { msg, source } => emit_terminate(ctx, msg, source),
+        // `reinit` in an algorithm: the assignment plus the note that the
+        // `when`-body REINIT also leaves.
+        S::STMT_REINIT { var, value, .. } => {
+            let DAE::Exp::CREF { componentRef, .. } = &**var else {
+                return Err("CodegenWasmJit: reinit of something other than a variable");
+            };
+            compile_assign(ctx, var, value)?;
+            emit_reinit_note(ctx, componentRef)
+        }
+        S::STMT_FOR { iter, range, statementLst, type_, .. } => compile_for(ctx, iter, range, statementLst, type_),
+        S::STMT_BREAK { .. } => {
+            let (brk, _) = *ctx
+                .loops
+                .last()
+                .ok_or_else(|| "CodegenWasmJit: `break` outside a loop")?;
+            ctx.branch_to(brk);
+            Ok(())
+        }
+        S::STMT_CONTINUE { .. } => {
+            let (_, cont) = *ctx
+                .loops
+                .last()
+                .ok_or_else(|| "CodegenWasmJit: `continue` outside a loop")?;
+            ctx.branch_to(cont);
+            Ok(())
+        }
+        S::STMT_WHEN { conditions, statementLst, elseWhen, .. } => {
+            compile_stmt_when(ctx, conditions, statementLst, elseWhen)
+        }
+        other => {
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: statement not yet supported: {}", stmt_kind(other)
+            ));
+            Err("CodegenWasmJit: statement not yet supported")
+        }
+    }
+}
+
+/// Lower a `when {conditions} then body; elsewhen …` algorithm statement, C's
+/// `algStmtWhen`: the body runs on the rising edge of any condition
+/// (`cond && !pre(cond)`), the elsewhen clause as an `else if` on its own edge.
+/// C's `discreteCall == 1` guard is subsumed by the per-step pre-value save, as
+/// for when-equations ([`FnCtx::sim_when`]).
+fn compile_stmt_when(
+    ctx: &mut FnCtx,
+    conditions: &Arc<List<Arc<DAE::ComponentRef>>>,
+    stmts: &Arc<List<Arc<DAE::Statement>>>,
+    else_when: &Option<Arc<DAE::Statement>>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let conds: Vec<&Arc<DAE::ComponentRef>> = (&**conditions).into_iter().collect();
+    if conds.is_empty() {
+        ctx.emit(I::I32Const(0));
+    } else {
+        for (i, c) in conds.iter().enumerate() {
+            if compile_sim_cref_read(ctx, c)?.is_none() {
+                return Err("CodegenWasmJit: when-statement condition is not a model variable");
+            }
+            let pre = pre_cref(c);
+            compile_sim_cref_read(ctx, &pre)?;
+            ctx.emit(I::I32Eqz); // !pre(cond)
+            ctx.emit(I::I32And); // cond && !pre(cond)
+            if i > 0 {
+                ctx.emit(I::I32Or);
+            }
+        }
+    }
+    ctx.emit(I::If(we::BlockType::Empty));
+    compile_stmts(ctx, stmts)?;
+    if let Some(ew) = else_when {
+        ctx.emit(I::Else);
+        let DAE::Statement::STMT_WHEN { conditions, statementLst, elseWhen, .. } = &**ew else {
+            return Err("CodegenWasmJit: elsewhen is not a when-statement");
+        };
+        compile_stmt_when(ctx, conditions, statementLst, elseWhen)?;
+    }
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// The variant name of a statement, for diagnostics.
+fn stmt_kind(stmt: &DAE::Statement) -> &'static str {
+    use DAE::Statement as S;
+    match stmt {
+        S::STMT_ASSIGN { .. } => "STMT_ASSIGN",
+        S::STMT_TUPLE_ASSIGN { .. } => "STMT_TUPLE_ASSIGN",
+        S::STMT_ASSIGN_ARR { .. } => "STMT_ASSIGN_ARR",
+        S::STMT_IF { .. } => "STMT_IF",
+        S::STMT_FOR { .. } => "STMT_FOR",
+        S::STMT_PARFOR { .. } => "STMT_PARFOR",
+        S::STMT_WHILE { .. } => "STMT_WHILE",
+        S::STMT_WHEN { .. } => "STMT_WHEN",
+        S::STMT_ASSERT { .. } => "STMT_ASSERT",
+        S::STMT_TERMINATE { .. } => "STMT_TERMINATE",
+        S::STMT_REINIT { .. } => "STMT_REINIT",
+        S::STMT_NORETCALL { .. } => "STMT_NORETCALL",
+        S::STMT_RETURN { .. } => "STMT_RETURN",
+        S::STMT_BREAK { .. } => "STMT_BREAK",
+        S::STMT_CONTINUE { .. } => "STMT_CONTINUE",
+        S::STMT_ARRAY_INIT { .. } => "STMT_ARRAY_INIT",
+        S::STMT_FAILURE { .. } => "STMT_FAILURE",
+    }
+}
+
+fn compile_else(ctx: &mut FnCtx, e: &DAE::Else) -> Result<()> {
+    match e {
+        DAE::Else::NOELSE => Ok(()),
+        DAE::Else::ELSE { statementLst } => {
+            ctx.emit(we::Instruction::Else);
+            compile_stmts(ctx, statementLst)
+        }
+        DAE::Else::ELSEIF { exp, statementLst, else_ } => {
+            ctx.emit(we::Instruction::Else);
+            let c = compile_exp(ctx, exp)?;
+            coerce(ctx, c, WTy::I32);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            compile_stmts(ctx, statementLst)?;
+            compile_else(ctx, else_)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+    }
+}
+
+/// Emit a loop body wrapped in its `continue` block, with the loop registered on
+/// `ctx.loops` so nested `break`/`continue` resolve to the right depths. The
+/// enclosing `block` (break target) and `loop` frame must already be open;
+/// `break_level` is the `ctrl_depth` recorded just after opening the break block.
+/// On return the `continue` block is closed, so the caller emits the per-iteration
+/// advance (increment / condition re-check) next — `continue` falls through to it.
+fn compile_loop_body(
+    ctx: &mut FnCtx,
+    break_level: u32,
+    body: &Arc<List<Arc<DAE::Statement>>>,
+) -> Result<()> {
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    let continue_level = ctx.ctrl_depth;
+    ctx.loops.push((break_level, continue_level));
+    let r = compile_stmts(ctx, body);
+    ctx.loops.pop();
+    r?;
+    ctx.emit(we::Instruction::End); // continue block
+    Ok(())
+}
+
+/// Modelica scopes a loop or reduction iterator to its body, and the name may
+/// shadow one the enclosing scope already binds: put that binding back.
+fn restore_local(ctx: &mut FnCtx, name: &str, prev: Option<(u32, SigTy)>) {
+    match prev {
+        Some(v) => {
+            ctx.locals.insert(name.to_string(), v);
+        }
+        None => {
+            ctx.locals.remove(name);
+        }
+    }
+}
+
+/// Lower a `for iter in range loop ...` statement. An Integer (or enumeration)
+/// scalar `start:stop` / `start:step:stop` range uses an efficient counter loop
+/// (no allocation); any other iterable — an array variable, an array literal, a
+/// slice — is evaluated to an array once and iterated element by element
+/// ([`compile_for_array`]).
+fn compile_for(
+    ctx: &mut FnCtx,
+    iter: &ArcStr,
+    range: &DAE::Exp,
+    body: &Arc<List<Arc<DAE::Statement>>>,
+    ty: &DAE::Type,
+) -> Result<()> {
+    if let DAE::Exp::RANGE { .. } = range {
+        if matches!(sig_ty_quiet(ty), Ok(SigTy::Int)) {
+            return compile_for_int_range(ctx, iter, range, body);
+        }
+    }
+    compile_for_array(ctx, iter, range, body)
+}
+
+/// The counter-loop lowering for an Integer scalar range (see [`compile_for`]).
+fn compile_for_int_range(
+    ctx: &mut FnCtx,
+    iter: &ArcStr,
+    range: &DAE::Exp,
+    body: &Arc<List<Arc<DAE::Statement>>>,
+) -> Result<()> {
+    let DAE::Exp::RANGE { start, step, stop, .. } = range else {
+        return Err("CodegenWasmJit: for-loop over non-range expression not supported");
+    };
+    // Allocate the iterator local and stop/step locals.
+    let it = ctx.alloc_temp(WTy::I32);
+    let prev = ctx.locals.insert(iter.to_string(), (it, SigTy::Int));
+    let stop_l = ctx.alloc_temp(WTy::I32);
+    let step_l = ctx.alloc_temp(WTy::I32);
+
+    let sw = compile_exp(ctx, start)?;
+    coerce(ctx, sw, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(it));
+    match step {
+        Some(e) => {
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+        }
+        None => ctx.emit(we::Instruction::I32Const(1)),
+    }
+    ctx.emit(we::Instruction::LocalSet(step_l));
+    let pw = compile_exp(ctx, stop)?;
+    coerce(ctx, pw, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(stop_l));
+    emit_step_check(ctx, step, step_l)?;
+
+    // block { loop { past stop -> br 1; block { body }; it+=step; br 0 } }
+    // The inner block is the `continue` target — falling through runs the increment.
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    let break_level = ctx.ctrl_depth;
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    emit_range_done(ctx, step, it, step_l, stop_l);
+    ctx.emit(we::Instruction::BrIf(1));
+    compile_loop_body(ctx, break_level, body)?;
+    ctx.emit(we::Instruction::LocalGet(it));
+    ctx.emit(we::Instruction::LocalGet(step_l));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(it));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    restore_local(ctx, iter, prev);
+    Ok(())
+}
+
+/// Lower `for x in <array> loop ...`: evaluate the iterable to an array once,
+/// then loop `k = 1..total`, binding `x` to `arr[k]` each pass. Handles array
+/// literals, array variables and slices — any rank-1 vector.
+///
+/// The iterator binds a *borrowed* element: the array (`arr_t`) is held for the
+/// whole loop, so `x` need not own a reference — the body's heap reads retain on
+/// read and release on consume, staying balanced. The slot is recorded in
+/// `borrowed_locals` so `release_heap_locals` skips it (it owns nothing), which
+/// also makes `break`/early-`return` leak-safe.
+fn compile_for_array(
+    ctx: &mut FnCtx,
+    iter: &ArcStr,
+    range: &DAE::Exp,
+    body: &Arc<List<Arc<DAE::Statement>>>,
+) -> Result<()> {
+    let SigTy::Array { elem, rank } = exp_sigty(range)? else {
+        return Err("CodegenWasmJit: for-loop over non-array, non-range expression not supported");
+    };
+    if rank != 1 {
+        return Err("CodegenWasmJit: for-loop over a multi-dimensional array not yet supported");
+    }
+    let elem = (*elem).clone();
+    // Evaluate the iterable to an owned array handle.
+    compile_exp(ctx, range)?;
+    let arr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr_t));
+    // n = total element count; k = 1-based counter.
+    let n = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(n));
+    let k = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalSet(k));
+    let it = ctx.alloc_temp(elem.wty());
+    let prev = ctx.locals.insert(iter.to_string(), (it, elem.clone()));
+    if elem.is_heap() {
+        ctx.borrowed_locals.push(it);
+    }
+
+    // block { loop { k>n -> br 1; it = arr[k]; block { body }; k++; br 0 } }
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    let break_level = ctx.ctrl_depth;
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::LocalGet(n));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::BrIf(1));
+    // it = arr[k] (borrowed; the array outlives the loop).
+    ctx.emit(we::Instruction::LocalGet(arr_t));
+    ctx.emit(we::Instruction::LocalGet(k));
+    emit_elem_ptr(ctx, &elem)?;
+    elem_load(ctx, &elem);
+    ctx.emit(we::Instruction::LocalSet(it));
+    compile_loop_body(ctx, break_level, body)?;
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(k));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    release_temp_array(ctx, arr_t)?;
+    restore_local(ctx, iter, prev);
+    Ok(())
+}
+
+/// Emit a constant from a (scalar) `Values.Value` and coerce it to `wty`. Used
+/// for a reduction's default/identity value.
+fn emit_value_const(ctx: &mut FnCtx, v: &Values::Value, wty: WTy) -> Result<()> {
+    let from = match v {
+        Values::Value::INTEGER { integer } => {
+            ctx.emit(we::Instruction::I32Const(*integer));
+            WTy::I32
+        }
+        Values::Value::BOOL { boolean } => {
+            ctx.emit(we::Instruction::I32Const(*boolean as i32));
+            WTy::I32
+        }
+        Values::Value::REAL { real } => {
+            ctx.emit(we::Instruction::F64Const(real.into_inner().into()));
+            WTy::F64
+        }
+        other => return Err("CodegenWasmJit: unsupported reduction default value"),
+    };
+    coerce(ctx, from, wty);
+    Ok(())
+}
+
+/// Bind a single Integer-range reduction/comprehension iterator: evaluate
+/// `start`/`step`/`stop` into fresh locals, register `id` as the iterator local
+/// (initialized to `start`), and return `(it, step_l, stop_l)`. A positive step
+/// is assumed (matching `compile_for`).
+fn emit_range_iter(
+    ctx: &mut FnCtx,
+    id: &ArcStr,
+    start: &DAE::Exp,
+    step: &Option<Arc<DAE::Exp>>,
+    stop: &DAE::Exp,
+) -> Result<(u32, u32, u32)> {
+    let it = ctx.alloc_temp(WTy::I32);
+    ctx.locals.insert(id.to_string(), (it, SigTy::Int));
+    let step_l = ctx.alloc_temp(WTy::I32);
+    let stop_l = ctx.alloc_temp(WTy::I32);
+    let sw = compile_exp(ctx, start)?;
+    coerce(ctx, sw, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(it));
+    match step {
+        Some(e) => {
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+        }
+        None => ctx.emit(we::Instruction::I32Const(1)),
+    }
+    ctx.emit(we::Instruction::LocalSet(step_l));
+    let pw = compile_exp(ctx, stop)?;
+    coerce(ctx, pw, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(stop_l));
+    emit_step_check(ctx, step, step_l)?;
+    Ok((it, step_l, stop_l))
+}
+
+fn const_step(step: &Option<Arc<DAE::Exp>>) -> Option<i32> {
+    match step {
+        None => Some(1),
+        Some(e) => match &**e {
+            DAE::Exp::ICONST { integer } => Some(*integer),
+            _ => None,
+        },
+    }
+}
+
+/// Leave `it` has passed `stop` on the stack — which way, per C's
+/// `in_range_integer`, is the step's sign.
+fn emit_range_done(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, it: u32, step_l: u32, stop_l: u32) {
+    ctx.emit(we::Instruction::LocalGet(it));
+    ctx.emit(we::Instruction::LocalGet(stop_l));
+    match const_step(step) {
+        Some(k) if k < 0 => ctx.emit(we::Instruction::I32LtS),
+        Some(_) => ctx.emit(we::Instruction::I32GtS),
+        None => {
+            ctx.emit(we::Instruction::I32GtS);
+            ctx.emit(we::Instruction::LocalGet(it));
+            ctx.emit(we::Instruction::LocalGet(stop_l));
+            ctx.emit(we::Instruction::I32LtS);
+            ctx.emit(we::Instruction::LocalGet(step_l));
+            ctx.emit(we::Instruction::I32Const(0));
+            ctx.emit(we::Instruction::I32GtS);
+            ctx.emit(we::Instruction::Select);
+        }
+    }
+}
+
+const ZERO_STEP: &str = "assertion range step != 0 failed";
+
+/// A zero step never reaches `stop`; C's generated code asserts on it.
+fn emit_step_check(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, step_l: u32) -> Result<()> {
+    match const_step(step) {
+        Some(0) => emit_runtime_error(ctx, ZERO_STEP),
+        Some(_) => Ok(()),
+        None => {
+            ctx.emit(we::Instruction::LocalGet(step_l));
+            ctx.emit(we::Instruction::I32Eqz);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_runtime_error(ctx, ZERO_STEP)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+    }
+}
+
+/// Evaluate an Integer range into a fresh local holding its element count,
+/// `max(0, (stop - start)/step + 1)`. Used to size an array comprehension.
+fn emit_range_count(
+    ctx: &mut FnCtx,
+    start: &DAE::Exp,
+    step: &Option<Arc<DAE::Exp>>,
+    stop: &DAE::Exp,
+) -> Result<u32> {
+    let cnt = ctx.alloc_temp(WTy::I32);
+    // A zero step would divide by zero below, before any loop asserts on it.
+    let step_l = match (const_step(step), step) {
+        (Some(0), _) => {
+            emit_runtime_error(ctx, ZERO_STEP)?;
+            None
+        }
+        (None, Some(e)) => {
+            let l = ctx.alloc_temp(WTy::I32);
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(l));
+            emit_step_check(ctx, step, l)?;
+            Some(l)
+        }
+        _ => None,
+    };
+    let pw = compile_exp(ctx, stop)?;
+    coerce(ctx, pw, WTy::I32);
+    let sw = compile_exp(ctx, start)?;
+    coerce(ctx, sw, WTy::I32);
+    ctx.emit(we::Instruction::I32Sub);
+    match (step_l, step) {
+        (Some(l), _) => ctx.emit(we::Instruction::LocalGet(l)),
+        (None, Some(e)) => {
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+        }
+        (None, None) => ctx.emit(we::Instruction::I32Const(1)),
+    }
+    ctx.emit(we::Instruction::I32DivS);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(cnt));
+    // clamp a negative count (empty range) to 0.
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalGet(cnt));
+    ctx.emit(we::Instruction::LocalGet(cnt));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32LtS);
+    ctx.emit(we::Instruction::Select);
+    ctx.emit(we::Instruction::LocalSet(cnt));
+    Ok(cnt)
+}
+
+/// Run `body` once per iteration of a reduction's iterators: over their
+/// cartesian product (`COMBINE`, first iterator outermost) or with every
+/// iterator advancing together (`THREAD`).
+fn emit_red_iteration(
+    ctx: &mut FnCtx,
+    thread: bool,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    if thread && iters.len() > 1 {
+        emit_red_thread(ctx, iters, body)
+    } else {
+        emit_red_nest(ctx, iters, body)
+    }
+}
+
+/// `f(u, v)` vectorized over two unknown dimensions becomes
+/// `array(f(x, y) thread for x in u, y in v)`.
+fn red_is_thread(info: &DAE::ReductionInfo) -> bool {
+    matches!(info.iterType, Absyn::ReductionIterType::THREAD)
+}
+
+const THREAD_LEN: &str = "thread reduction over iterators of different lengths";
+
+/// One pass advances every iterator once. C's `endLoop` odometer throws when
+/// only some can advance, so unequal lengths are a runtime error — checked up
+/// front here, which leaves one counter to drive them all.
+fn emit_red_thread(
+    ctx: &mut FnCtx,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let saved: Vec<(String, Option<(u32, SigTy)>)> =
+        iters.iter().map(|i| (i.id.to_string(), ctx.locals.get(i.id.as_str()).cloned())).collect();
+    let mut binds = Vec::with_capacity(iters.len());
+    for iter in iters {
+        binds.push(bind_thread_iter(ctx, iter)?);
+    }
+    let n = binds[0].count();
+    for b in &binds[1..] {
+        ctx.emit(I::LocalGet(n));
+        ctx.emit(I::LocalGet(b.count()));
+        ctx.emit(I::I32Ne);
+        ctx.emit(I::If(we::BlockType::Empty));
+        emit_runtime_error(ctx, THREAD_LEN)?;
+        ctx.emit(I::End);
+    }
+    let k = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(k));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::LocalGet(n));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    for b in &binds {
+        if let ThreadIter::Array { arr, it, elem, .. } = b {
+            ctx.emit(I::LocalGet(*arr));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::I32Const(1));
+            ctx.emit(I::I32Add);
+            emit_elem_ptr(ctx, elem)?;
+            elem_load(ctx, elem);
+            ctx.emit(I::LocalSet(*it));
+        }
+    }
+    emit_red_thread_guarded(ctx, iters, body)?;
+    for b in &binds {
+        if let ThreadIter::Range { it, step_l, .. } = b {
+            ctx.emit(I::LocalGet(*it));
+            ctx.emit(I::LocalGet(*step_l));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(*it));
+        }
+    }
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(k));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End); // loop
+    ctx.emit(I::End); // block
+    for b in &binds {
+        if let ThreadIter::Array { arr, .. } = b {
+            release_temp_array(ctx, *arr)?;
+        }
+    }
+    for (name, prev) in saved {
+        restore_local(ctx, &name, prev);
+    }
+    Ok(())
+}
+
+/// Loop state for one iterator of a [`emit_red_thread`] pass.
+enum ThreadIter {
+    Range { it: u32, step_l: u32, count: u32 },
+    Array { arr: u32, it: u32, elem: SigTy, count: u32 },
+}
+
+impl ThreadIter {
+    fn count(&self) -> u32 {
+        match self {
+            ThreadIter::Range { count, .. } | ThreadIter::Array { count, .. } => *count,
+        }
+    }
+}
+
+/// Bind one `THREAD` iterator ahead of the loop: its iterator local and length.
+fn bind_thread_iter(ctx: &mut FnCtx, iter: &Arc<DAE::ReductionIterator>) -> Result<ThreadIter> {
+    use we::Instruction as I;
+    if let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp {
+        let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
+        // `it` still holds `start`.
+        let count = emit_range_count_locals(ctx, it, step_l, stop_l);
+        return Ok(ThreadIter::Range { it, step_l, count });
+    }
+    let elem = red_iter_elem_sigty(iter)?;
+    if compile_exp(ctx, &iter.exp)? != WTy::I32 {
+        return Err("CodegenWasmJit: reduction over a non-array, non-range iterator not supported");
+    }
+    let arr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(arr));
+    let count = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalGet(arr));
+    ctx.emit(I::Call(rt_index("rt_array_total")?));
+    ctx.emit(I::LocalSet(count));
+    let it = ctx.alloc_temp(elem.wty());
+    ctx.locals.insert(iter.id.to_string(), (it, elem.clone()));
+    if elem.is_heap() {
+        ctx.borrowed_locals.push(it);
+    }
+    Ok(ThreadIter::Array { arr, it, elem, count })
+}
+
+/// The `THREAD` body, run under every iterator's `guardExp`.
+fn emit_red_thread_guarded(
+    ctx: &mut FnCtx,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    let Some((iter, rest)) = iters.split_first() else {
+        return body(ctx);
+    };
+    match &iter.guardExp {
+        Some(guard) => {
+            let w = compile_exp(ctx, guard)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_red_thread_guarded(ctx, rest, body)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+        None => emit_red_thread_guarded(ctx, rest, body),
+    }
+}
+
+/// Emit nested `for` loops over the given iterators (the first is the
+/// outermost), running `body` at the innermost point. An iterator is either an
+/// Integer range or an array expression (`for x in v`, C's non-`RANGE` arm of
+/// `daeExpReduction`). Relative branch depths make the nesting compose.
+fn emit_red_nest(
+    ctx: &mut FnCtx,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    let Some((iter, rest)) = iters.split_first() else {
+        return body(ctx);
+    };
+    let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp else {
+        return emit_red_nest_array(ctx, iter, rest, body);
+    };
+    let prev = ctx.locals.get(iter.id.as_str()).cloned();
+    let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    emit_range_done(ctx, step, it, step_l, stop_l);
+    ctx.emit(we::Instruction::BrIf(1));
+    emit_red_guarded(ctx, iter, rest, body)?;
+    ctx.emit(we::Instruction::LocalGet(it));
+    ctx.emit(we::Instruction::LocalGet(step_l));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(it));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    restore_local(ctx, &iter.id, prev);
+    Ok(())
+}
+
+/// One level of [`emit_red_nest`] for an iterator over an array expression:
+/// evaluate it once, then loop `k = 1..total` binding the iterator to `arr[k]`.
+/// As in [`compile_for_array`] the element is *borrowed*.
+fn emit_red_nest_array(
+    ctx: &mut FnCtx,
+    iter: &Arc<DAE::ReductionIterator>,
+    rest: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    let elem = red_iter_elem_sigty(iter)?;
+    if compile_exp(ctx, &iter.exp)? != WTy::I32 {
+        return Err("CodegenWasmJit: reduction over a non-array, non-range iterator not supported");
+    }
+    let arr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr));
+    let n = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(n));
+    let k = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalSet(k));
+    let it = ctx.alloc_temp(elem.wty());
+    let prev = ctx.locals.insert(iter.id.to_string(), (it, elem.clone()));
+    if elem.is_heap() {
+        ctx.borrowed_locals.push(it);
+    }
+
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::LocalGet(n));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::LocalGet(k));
+    emit_elem_ptr(ctx, &elem)?;
+    elem_load(ctx, &elem);
+    ctx.emit(we::Instruction::LocalSet(it));
+    emit_red_guarded(ctx, iter, rest, body)?;
+    ctx.emit(we::Instruction::LocalGet(k));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(k));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    release_temp_array(ctx, arr)?;
+    restore_local(ctx, &iter.id, prev);
+    Ok(())
+}
+
+/// The inner levels of [`emit_red_nest`], run under this iterator's `guardExp`.
+fn emit_red_guarded(
+    ctx: &mut FnCtx,
+    iter: &Arc<DAE::ReductionIterator>,
+    rest: &[&Arc<DAE::ReductionIterator>],
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    match &iter.guardExp {
+        Some(guard) => {
+            let w = compile_exp(ctx, guard)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            emit_red_nest(ctx, rest, body)?;
+            ctx.emit(we::Instruction::End);
+            Ok(())
+        }
+        None => emit_red_nest(ctx, rest, body),
+    }
+}
+
+/// The element type an array-expression iterator binds, from the iterable we
+/// load out of, falling back to the iterator's declared type. A matrix would
+/// bind a row, which C's flat `_get1` does not do either.
+fn red_iter_elem_sigty(iter: &DAE::ReductionIterator) -> Result<SigTy> {
+    match exp_sigty(&iter.exp) {
+        Ok(SigTy::Array { elem, rank: 1 }) => Ok((*elem).clone()),
+        Ok(SigTy::Array { .. }) => {
+            Err("CodegenWasmJit: reduction over a multi-dimensional array iterator not supported")
+        }
+        _ => sig_ty(&iter.ty),
+    }
+}
+
+/// `max(0, (stop - start)/step + 1)`, in a fresh local, from locals holding a
+/// range's start, step and stop.
+fn emit_range_count_locals(ctx: &mut FnCtx, start: u32, step_l: u32, stop_l: u32) -> u32 {
+    use we::Instruction as I;
+    let cnt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalGet(stop_l));
+    ctx.emit(I::LocalGet(start));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::LocalGet(step_l));
+    ctx.emit(I::I32DivS);
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(cnt));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalGet(cnt));
+    ctx.emit(I::LocalGet(cnt));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32LtS);
+    ctx.emit(I::Select);
+    ctx.emit(I::LocalSet(cnt));
+    cnt
+}
+
+/// The element count of one comprehension iterator, in a fresh local: an Integer
+/// range's [`emit_range_count`], or the iterable array's element total.
+fn emit_red_iter_count(ctx: &mut FnCtx, iter: &DAE::ReductionIterator) -> Result<u32> {
+    if let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp {
+        return emit_range_count(ctx, start, step, stop);
+    }
+    if compile_exp(ctx, &iter.exp)? != WTy::I32 {
+        return Err("CodegenWasmJit: array comprehension over a non-array, non-range iterator not supported");
+    }
+    let arr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr));
+    let cnt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_total")?));
+    ctx.emit(we::Instruction::LocalSet(cnt));
+    release_temp_array(ctx, arr)?;
+    Ok(cnt)
+}
+
+/// Lower an iterator reduction over Integer ranges or arrays. The folding forms
+/// `sum/product/min/max(expr for i in A, j in B, ...)` (`foldExp` present) build
+/// `acc = default; for i,j,... { acc = foldExp(acc, expr) }`, where `foldExp`
+/// reads the accumulator (`resultName`) and per-iteration value (`foldName`) as
+/// locals — so the same mechanism covers all four. The `array(...)`
+/// comprehension (`foldExp` absent — `{expr for i in A, j in B}`) builds a fresh
+/// array: its dimensions are the iterator counts in reverse order (the last
+/// iterator is the outermost), filled row-major. An array-valued body flattens
+/// into extra trailing dimensions ([`compile_array_comprehension_flat`]) and a
+/// heap accumulator folds from the first value ([`compile_fold_heap`]).
+/// Per-iterator `guardExp`s are honored in the folding forms; a guarded array
+/// comprehension — a MetaModelica list form — bails loudly.
+fn compile_reduction(
+    ctx: &mut FnCtx,
+    info: &DAE::ReductionInfo,
+    expr: &DAE::Exp,
+    iterators: &DAE::ReductionIterators,
+) -> Result<WTy> {
+    let iters: Vec<&Arc<DAE::ReductionIterator>> = (&**iterators).into_iter().collect();
+    if iters.is_empty() {
+        return Err("CodegenWasmJit: reduction with no iterators");
+    }
+    let thread = red_is_thread(info);
+
+    if let Some(fold) = &info.foldExp {
+        // Folding reduction. `info.exprType` is the accumulator type.
+        let elem_sty = sig_ty(&info.exprType)?;
+        if elem_sty.is_heap() {
+            return compile_fold_heap(ctx, info, fold, expr, &iters, elem_sty);
+        }
+        let elem_wty = elem_sty.wty();
+        let Some(default) = &info.defaultValue else {
+            return Err("CodegenWasmJit: reduction without a default value not supported");
+        };
+        let acc = ctx.alloc_temp(elem_wty);
+        let foldval = ctx.alloc_temp(elem_wty);
+        ctx.locals.insert(info.resultName.to_string(), (acc, elem_sty.clone()));
+        ctx.locals.insert(info.foldName.to_string(), (foldval, elem_sty.clone()));
+        emit_value_const(ctx, default, elem_wty)?;
+        ctx.emit(we::Instruction::LocalSet(acc));
+        emit_red_iteration(ctx, thread, &iters, &mut |ctx| {
+            let w = compile_exp(ctx, expr)?;
+            coerce(ctx, w, elem_wty);
+            ctx.emit(we::Instruction::LocalSet(foldval));
+            let fw = compile_exp(ctx, fold)?;
+            coerce(ctx, fw, elem_wty);
+            ctx.emit(we::Instruction::LocalSet(acc));
+            Ok(())
+        })?;
+        ctx.emit(we::Instruction::LocalGet(acc));
+        return Ok(elem_wty);
+    }
+
+    // `array(...)` comprehension. The element type is the per-iteration
+    // expression's type (`info.exprType` is the whole array type here).
+    if iters.iter().any(|it| it.guardExp.is_some()) {
+        return Err("CodegenWasmJit: guarded array comprehension not supported");
+    }
+    let elem_sty = exp_sigty(expr)?;
+    if let SigTy::Array { elem: base, rank: erank } = &elem_sty {
+        return compile_array_comprehension_flat(ctx, expr, thread, &iters, base, *erank);
+    }
+    let elem_wty = elem_sty.wty();
+
+    // The result's dimensions: one per iterator (forward order), or one shared
+    // by iterators that advance together.
+    let mut counts = Vec::with_capacity(iters.len());
+    for it in &iters {
+        counts.push(emit_red_iter_count(ctx, it)?);
+    }
+    if thread {
+        counts.truncate(1);
+    }
+    let n = counts.len() as u32;
+    // total = product of the counts.
+    let total = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalSet(total));
+    for c in &counts {
+        ctx.emit(we::Instruction::LocalGet(total));
+        ctx.emit(we::Instruction::LocalGet(*c));
+        ctx.emit(we::Instruction::I32Mul);
+        ctx.emit(we::Instruction::LocalSet(total));
+    }
+    // Allocate the result; its dimensions are the counts in reverse iterator
+    // order (the last iterator is the outermost / slowest-varying dimension).
+    let res = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(elem_sty.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(n as i32));
+    ctx.emit(we::Instruction::LocalGet(total));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(res));
+    for d in 0..n {
+        let c = counts[(n - 1 - d) as usize];
+        ctx.emit(we::Instruction::LocalGet(res));
+        ctx.emit(we::Instruction::I32Const(d as i32));
+        ctx.emit(we::Instruction::LocalGet(c));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    // Fill row-major: nest with the last iterator outermost so the running index
+    // advances with the first iterator fastest.
+    let idx = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(idx));
+    let rev: Vec<&Arc<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
+    let store_sty = elem_sty.clone();
+    emit_red_iteration(ctx, thread, &rev, &mut |ctx| {
+        ctx.emit(we::Instruction::LocalGet(res));
+        ctx.emit(we::Instruction::LocalGet(idx));
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Add);
+        emit_elem_ptr(ctx, &store_sty)?;
+        let w = compile_exp(ctx, expr)?;
+        coerce(ctx, w, elem_wty);
+        elem_store(ctx, &store_sty);
+        ctx.emit(we::Instruction::LocalGet(idx));
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Add);
+        ctx.emit(we::Instruction::LocalSet(idx));
+        Ok(())
+    })?;
+    ctx.emit(we::Instruction::LocalGet(res));
+    Ok(WTy::I32)
+}
+
+/// A folding reduction whose accumulator is a heap value (`sum(v .^ i for i in
+/// 3:N)` over vectors). C's `daeExpReduction` has no scalar default for these, so
+/// it starts from the first value and throws on an empty range.
+fn compile_fold_heap(
+    ctx: &mut FnCtx,
+    info: &DAE::ReductionInfo,
+    fold: &DAE::Exp,
+    expr: &DAE::Exp,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    elem_sty: SigTy,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let release_fn = elem_sty
+        .release_fn()
+        .ok_or("CodegenWasmJit: heap reduction accumulator without a release entry point")?;
+    let acc = ctx.alloc_temp(WTy::I32);
+    let foldval = ctx.alloc_temp(WTy::I32);
+    let found = ctx.alloc_temp(WTy::I32);
+    // Registered only for this reduction: left in `ctx.locals`, the function
+    // epilogue would release the accumulator we hand back as an owned value.
+    let res_name = info.resultName.to_string();
+    let fold_name = info.foldName.to_string();
+    let prev_res = ctx.locals.insert(res_name.clone(), (acc, elem_sty.clone()));
+    let prev_fold = ctx.locals.insert(fold_name.clone(), (foldval, elem_sty.clone()));
+    for l in [acc, foldval, found] {
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::LocalSet(l));
+    }
+    emit_red_iteration(ctx, red_is_thread(info), iters, &mut |ctx| {
+        let nv = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, expr)?; // owned element
+        ctx.emit(I::LocalSet(nv));
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::Call(rt_index(release_fn)?));
+        ctx.emit(I::LocalGet(nv));
+        ctx.emit(I::LocalSet(foldval));
+        ctx.emit(I::LocalGet(found));
+        ctx.emit(I::If(we::BlockType::Empty));
+        let folded = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, fold)?; // owned; reads both locals retained
+        ctx.emit(I::LocalSet(folded));
+        ctx.emit(I::LocalGet(acc));
+        ctx.emit(I::Call(rt_index(release_fn)?));
+        ctx.emit(I::LocalGet(folded));
+        ctx.emit(I::LocalSet(acc));
+        ctx.emit(I::Else);
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::Call(rt_index("rt_retain")?));
+        ctx.emit(I::LocalGet(foldval));
+        ctx.emit(I::LocalSet(acc));
+        ctx.emit(I::I32Const(1));
+        ctx.emit(I::LocalSet(found));
+        ctx.emit(I::End);
+        Ok(())
+    })?;
+    ctx.emit(I::LocalGet(found));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_runtime_error(ctx, "Reduction over an empty range has no value")?;
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(foldval));
+    ctx.emit(I::Call(rt_index(release_fn)?));
+    match prev_res {
+        Some(v) => ctx.locals.insert(res_name, v),
+        None => ctx.locals.remove(&res_name),
+    };
+    match prev_fold {
+        Some(v) => ctx.locals.insert(fold_name, v),
+        None => ctx.locals.remove(&fold_name),
+    };
+    ctx.emit(I::LocalGet(acc));
+    Ok(WTy::I32)
+}
+
+/// An `array(...)` comprehension whose body is itself an array: one flat array of
+/// rank `iterators + erank`, leading axes the iterator counts (last iterator
+/// outermost) and trailing ones the body's own — C's `alloc_<t>(&res, 1 + |dims|,
+/// length, dims…)`. C takes those trailing dims from the body's type and bails
+/// when they are not resolvable; they are read off the first value here.
+fn compile_array_comprehension_flat(
+    ctx: &mut FnCtx,
+    expr: &DAE::Exp,
+    thread: bool,
+    iters: &[&Arc<DAE::ReductionIterator>],
+    base: &SigTy,
+    erank: u32,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let mut counts = Vec::with_capacity(iters.len());
+    for it in iters {
+        counts.push(emit_red_iter_count(ctx, it)?);
+    }
+    if thread {
+        counts.truncate(1);
+    }
+    let n = counts.len() as u32;
+    let outer = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::LocalSet(outer));
+    for c in &counts {
+        ctx.emit(I::LocalGet(outer));
+        ctx.emit(I::LocalGet(*c));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::LocalSet(outer));
+    }
+    let res = ctx.alloc_temp(WTy::I32);
+    let idx = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(res));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(idx));
+    let kind = base.elem_kind() as i32;
+    let set_outer_dims = |ctx: &mut FnCtx| -> Result<()> {
+        for d in 0..n {
+            ctx.emit(I::LocalGet(res));
+            ctx.emit(I::I32Const(d as i32));
+            ctx.emit(I::LocalGet(counts[(n - 1 - d) as usize]));
+            ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+        }
+        Ok(())
+    };
+    let rev: Vec<&Arc<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
+    emit_red_iteration(ctx, thread, &rev, &mut |ctx| {
+        let h = ctx.alloc_temp(WTy::I32);
+        compile_exp(ctx, expr)?; // owned element array
+        ctx.emit(I::LocalSet(h));
+        ctx.emit(I::LocalGet(res));
+        ctx.emit(I::I32Eqz);
+        ctx.emit(I::If(we::BlockType::Empty));
+        ctx.emit(I::I32Const(kind));
+        ctx.emit(I::I32Const((n + erank) as i32));
+        ctx.emit(I::LocalGet(outer));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::Call(rt_index("rt_array_new")?));
+        ctx.emit(I::LocalSet(res));
+        set_outer_dims(ctx)?;
+        for k in 0..erank {
+            ctx.emit(I::LocalGet(res));
+            ctx.emit(I::I32Const((n + k) as i32)); // rt_array_set_dim: 0-based
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::I32Const((k + 1) as i32)); // rt_array_dim: 1-based
+            ctx.emit(I::Call(rt_index("rt_array_dim")?));
+            ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+        }
+        ctx.emit(I::End);
+        ctx.emit(I::LocalGet(res));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::Call(rt_index("rt_array_blit")?));
+        ctx.emit(I::LocalGet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(idx));
+        ctx.emit(I::LocalGet(h));
+        ctx.emit(I::Call(rt_index("rt_array_release")?));
+        Ok(())
+    })?;
+    // An empty range produced no value to take the body's shape from; the result
+    // is empty either way, so those axes stay zero.
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::I32Const(kind));
+    ctx.emit(I::I32Const((n + erank) as i32));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::Call(rt_index("rt_array_new")?));
+    ctx.emit(I::LocalSet(res));
+    set_outer_dims(ctx)?;
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(res));
+    Ok(WTy::I32)
+}
+
+// -------------------------------------------------------------------------
+// Expression compilation
+// -------------------------------------------------------------------------
+
+/// Compile an expression, leaving exactly one value on the wasm stack; returns
+/// its type.
+/// Canonical string key for a component reference, used to match equation crefs
+/// against the `SimVars` model-variable names (`CodegenWasmJit`). Identifiers
+/// are joined with `.`; constant integer subscripts are appended as `[i]` (the
+/// SimCode is scalarized, so a scalar element's subscripts are part of its
+/// identity). The `$DER`/`$PRE`/`$START` qualifier idents are kept verbatim so
+/// `der(x)` (cref `$DER.x`) keys distinctly from `x`.
+/// The `pre(cr)` component reference: `cr` wrapped in a `$PRE` qualifier, as the
+/// backend emits it. Reused for reading a variable's pre-value.
+fn pre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    let identType = match cr {
+        C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
+        _ => crate::CodegenWasmJit::t_real(),
+    };
+    Arc::new(C::CREF_QUAL {
+        ident: arcstr::literal!("$PRE"),
+        identType,
+        subscriptLst: metamodelica::nil(),
+        componentRef: Arc::new(cr.clone()),
+    })
+}
+
+/// Does `$PRE.<x>` have pre-storage — its own scalar slot, or a subscripted
+/// element of a `$PRE` array group? A whole-array `pre(x)` deliberately does not
+/// count: C's `daeExpCrefRhsSimContext` wraps the live `<type>Vars` region for it,
+/// never `<type>VarsPre`.
+fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let sim = ctx.sim()?;
+    if let Ok(key) = sim_cref_key(cref) {
+        if sim.vars.contains_key(&key) {
+            return Ok(true);
+        }
+    }
+    if let Some((base, _)) = array_ref_of(cref)? {
+        if sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base) {
+            return Ok(true);
+        }
+    }
+    match sim_array_base_subs(cref)? {
+        Some((base, _)) => {
+            Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
+        }
+        None => Ok(false),
+    }
+}
+
+/// [`sim_pre_is_stored`] for an assignment *target*: a whole-array `$PRE.x := …`
+/// keeps the prefix in C where its right-hand side drops it, so the write must
+/// land on the pre-value mirror and not on the live array.
+fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    if sim_pre_is_stored(ctx, cref)? {
+        return Ok(true);
+    }
+    let sim = ctx.sim()?;
+    match sim_cref_key(cref) {
+        Ok(key) => Ok(sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key)),
+        Err(_) => Ok(false),
+    }
+}
+
+/// The `previous(cr)` component reference: `cr` wrapped in `DAE.previousNamePrefix`,
+/// the variable the backend introduced for it (key `$CLKPRE.<cr>`).
+fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    let identType = match cr {
+        C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
+        _ => crate::CodegenWasmJit::t_real(),
+    };
+    Arc::new(C::CREF_QUAL {
+        ident: arcstr::literal!("$CLKPRE"),
+        identType,
+        subscriptLst: metamodelica::nil(),
+        componentRef: Arc::new(cr.clone()),
+    })
+}
+
+/// Address of the sub-clock block `interval()`/`firstTick()` read.
+fn sub_clock_off(sim: &SimCtx) -> Result<u32> {
+    sim.sub_clock_off.ok_or("CodegenWasmJit: clock builtin outside a clocked partition")
+}
+
+/// The `der(cr)` component reference: `cr` wrapped in a `$DER` qualifier, as the
+/// backend names the derivative variable (key `$DER.<cr>`).
+fn der_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    let identType = match cr {
+        C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
+        _ => crate::CodegenWasmJit::t_real(),
+    };
+    Arc::new(C::CREF_QUAL {
+        ident: arcstr::literal!("$DER"),
+        identType,
+        subscriptLst: metamodelica::nil(),
+        componentRef: Arc::new(cr.clone()),
+    })
+}
+
+pub(crate) fn sim_cref_key(cr: &DAE::ComponentRef) -> Result<String> {
+    let mut s = String::new();
+    sim_cref_key_into(cr, &mut s)?;
+    Ok(s)
+}
+
+fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_IDENT { ident, subscriptLst, .. } => {
+            s.push_str(ident);
+            sim_subs_into(subscriptLst, s)?;
+        }
+        C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            s.push_str(ident);
+            sim_subs_into(subscriptLst, s)?;
+            s.push('.');
+            sim_cref_key_into(componentRef, s)?;
+        }
+        other => return Err("CodegenWasmJit: unsupported component reference in simulation"),
+    }
+    Ok(())
+}
+
+/// [`sim_cref_key`] for the call sites with no fallback left: it names the cref in
+/// a recorded message. The callers that recover must not record one.
+fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
+    sim_cref_key(cr).map_err(|e| {
+        let shown = openmodelica_frontend_dump::ComponentReferenceBasics::printComponentRefStr(Arc::new(cr.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: cannot resolve `{shown}` to a simulation variable"));
+        e
+    })
+}
+
+fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Result<()> {
+    for sub in &**subs {
+        match &**sub {
+            DAE::Subscript::INDEX { exp } => match &**exp {
+                DAE::Exp::ICONST { integer } => {
+                    s.push('[');
+                    s.push_str(&integer.to_string());
+                    s.push(']');
+                }
+                DAE::Exp::ENUM_LITERAL { index, .. } => {
+                    s.push('[');
+                    s.push_str(&index.to_string());
+                    s.push(']');
+                }
+                _ => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
+            },
+            _ => return Err("CodegenWasmJit: unsupported subscript in simulation cref"),
+        }
+    }
+    Ok(())
+}
+
+/// Append an intermediate component's subscripts to an array base key, spelled as
+/// [`sim_cref_key`] spells them (`bodybox[1].body.R_start.T`). `false` when a
+/// subscript is not a constant index, so there is no static base key.
+pub(crate) fn push_qual_subs(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> bool {
+    for sub in &**subs {
+        match &**sub {
+            DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
+                Some(ix) => {
+                    s.push('[');
+                    s.push_str(&ix.to_string());
+                    s.push(']');
+                }
+                None => return false,
+            },
+            _ => return false,
+        }
+    }
+    true
+}
+
+/// If `exp` is a constant index (`ICONST`/enum literal), its 1-based value.
+/// A constant subscript outside the array's range, e.g. the `T[0]` scalarizing
+/// `for i in 1:n loop ... T[i-1] ...` leaves in a branch the model never takes. C
+/// emits that access too, so it lowers to the run-time error instead of failing the
+/// translation. Leaves a value of the element type on the stack.
+fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentRef, key: &str) -> Result<Option<WTy>> {
+    let Some((base, subs)) = array_ref_of(cref)? else { return Ok(None) };
+    let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() else { return Ok(None) };
+    if subs.len() != group.dims.len() {
+        return Ok(None);
+    }
+    let outside = subs
+        .iter()
+        .zip(&group.dims)
+        .any(|(e, d)| matches!(const_index_value(e), Some(i) if i < 1 || i > *d as i32));
+    if !outside {
+        return Ok(None);
+    }
+    let dims = group.dims.iter().map(|d| d.to_string()).collect::<Vec<_>>().join(",");
+    emit_runtime_error(ctx, &format!("Index out of bounds: `{key}` of array of size [{dims}]"))?;
+    match group.wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Const(0.0.into())),
+        WTy::I32 => ctx.emit(we::Instruction::I32Const(0)),
+    }
+    Ok(Some(group.wty))
+}
+
+fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
+    match exp {
+        DAE::Exp::ICONST { integer } => Some(*integer),
+        DAE::Exp::ENUM_LITERAL { index, .. } => Some(*index),
+        _ => None,
+    }
+}
+
+/// If `cr` is `base[e1,…,en]` — subscripts on the *final* component — return
+/// `(base cref key, subscript index expressions)`. Unlike [`sim_cref_key`], those
+/// subscripts need not be constant; this backs the dynamic array-element path
+/// (e.g. a `for`-loop iterator index). `None` for a plain scalar or a slice.
+fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut exps = Vec::new();
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        for sub in &**subscriptLst {
+            match &**sub {
+                DAE::Subscript::INDEX { exp } => exps.push(exp.clone()),
+                _ => return Ok(None), // slice / whole-dim: not an element access
+            }
+        }
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => return Ok(if exps.is_empty() { None } else { Some((base, exps)) }),
+        }
+    }
+}
+
+/// `base[i1,…,ik, :, …, :]` (leading `INDEX` subscripts, then whole dims, on the
+/// final component) -> `(base key, leading index exprs)`. Such a selection is a
+/// contiguous row-major block. `None` for a scalar, a `SLICE`, or an `INDEX` after
+/// a whole dim.
+fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut node = cr;
+    loop {
+        match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => {
+                base.push_str(ident);
+                let mut leading = Vec::new();
+                let mut seen_whole = false;
+                for sub in &**subscriptLst {
+                    match &**sub {
+                        DAE::Subscript::INDEX { exp } if !seen_whole => leading.push(exp.clone()),
+                        DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } => seen_whole = true,
+                        _ => return Ok(None),
+                    }
+                }
+                if !seen_whole {
+                    return Ok(None);
+                }
+                return Ok(Some((base, leading)));
+            }
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                base.push_str(ident);
+                if !push_qual_subs(subscriptLst, &mut base) {
+                    return Ok(None);
+                }
+                base.push('.');
+                node = componentRef;
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+/// [`sim_slice_of`] for a slice indexed on *outer* components: `module[$i].x` is
+/// a contiguous run inside the flattened `module.x` group, so every subscript
+/// the cref carries is a leading index. `None` unless one of them is qualified.
+fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut leading = Vec::new();
+    let mut qualified_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                qualified_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        for sub in &**subscriptLst {
+            match &**sub {
+                DAE::Subscript::INDEX { exp } => leading.push(exp.clone()),
+                DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } if next.is_none() => {}
+                _ => return Ok(None),
+            }
+        }
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => return Ok((qualified_subs && !leading.is_empty()).then_some((base, leading))),
+        }
+    }
+}
+
+/// `base[subs]` (subscripts on the final component) -> `(base key, raw subscript
+/// list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
+fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut node = cr;
+    loop {
+        match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => {
+                base.push_str(ident);
+                if subscriptLst.is_empty() {
+                    return Ok(None);
+                }
+                return Ok(Some((base, subscriptLst.clone())));
+            }
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                base.push_str(ident);
+                if !push_qual_subs(subscriptLst, &mut base) {
+                    return Ok(None);
+                }
+                base.push('.');
+                node = componentRef;
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+/// [`sim_array_base_subs`] over a flattened group: `module[$i].x[2:3]` selects from
+/// `module.x`. `None` unless an outer component is subscripted.
+fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut subs: Vec<Arc<DAE::Subscript>> = Vec::new();
+    let mut qualified_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                qualified_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        subs.extend((&**subscriptLst).into_iter().cloned());
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => {
+                return Ok(qualified_subs.then(|| (base, Arc::new(subs.into_iter().collect()))));
+            }
+        }
+    }
+}
+
+fn subs_select_array(subs: &Arc<List<Arc<DAE::Subscript>>>, group: &ArrayGroup) -> bool {
+    let rank = group.dims.len() as u32;
+    (&**subs).into_iter().count() as u32 <= rank && !is_scalar_index(subs, rank)
+}
+
+/// Push the byte address of element `group[leading, 1, …]` and return
+/// `(trailing_element_count, element_stride)`; the block spans
+/// `trailing_count * stride` contiguous bytes from there.
+fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<(u32, u32)> {
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let k = leading.len();
+    if k >= group.dims.len() {
+        return Err("CodegenWasmJit: array slice indexes all dimensions");
+    }
+    let trailing_total: u32 = group.dims[k..].iter().product();
+    let data = ctx.sim()?.data_local;
+    ctx.emit(we::Instruction::I32Const(0)); // acc = 0
+    for (axis, exp) in leading.iter().enumerate() {
+        ctx.emit(we::Instruction::I32Const(group.dims[axis] as i32));
+        ctx.emit(we::Instruction::I32Mul); // acc * dims[axis]
+        let wt = compile_exp(ctx, exp)?;
+        coerce(ctx, wt, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub); // e - 1
+        ctx.emit(we::Instruction::I32Add); // acc = acc*dims[axis] + (e - 1)
+    }
+    // addr = data + base_off + acc * (trailing_total * stride)
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
+    ctx.emit(we::Instruction::I32Add);
+    Ok((trailing_total, stride))
+}
+
+/// Gather the contiguous sub-array `group[leading, :, …]` from `SimData` into a
+/// fresh (refcount-1) runtime array of the trailing dimensions, leaving the
+/// owned handle on the stack.
+fn emit_sim_slice_gather(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>]) -> Result<()> {
+    let (ek, stride) = sim_array_elem_kind_stride(group.wty);
+    let trailing: Vec<u32> = group.dims[leading.len()..].to_vec();
+    let trailing_total: u32 = trailing.iter().product();
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(trailing.len() as i32));
+    ctx.emit(we::Instruction::I32Const(trailing_total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in trailing.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    // memory.copy(dst = obj data, src = slice addr, len = trailing_total * stride).
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_sim_slice_addr(ctx, group, leading)?;
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// Scatter a runtime array `rhs` into the contiguous sub-array
+/// `group[leading, :, …]` of `SimData` (the reverse of [`emit_sim_slice_gather`]).
+fn emit_sim_slice_scatter(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[Arc<DAE::Exp>], rhs: RhsSource) -> Result<()> {
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let trailing_total: u32 = group.dims[leading.len()..].iter().product();
+    let h = ctx.alloc_temp(WTy::I32);
+    let rw = rhs.push(ctx)?;
+    if rw != WTy::I32 {
+        return Err("CodegenWasmJit: array-slice assignment rhs is not an array handle");
+    }
+    ctx.emit(we::Instruction::LocalSet(h));
+    // memory.copy(dst = slice addr, src = rhs data, len = trailing_total * stride).
+    emit_sim_slice_addr(ctx, group, leading)?;
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
+/// The value type of a component reference's leaf, after applying its final
+/// subscripts (so `states[2]` of `states : ThermodynamicState[2]` yields the
+/// record element type). Array dims are peeled one per index subscript.
+fn cref_leaf_value_type(cr: &DAE::ComponentRef) -> Result<Arc<DAE::Type>> {
+    use DAE::ComponentRef as C;
+    let (identType, nsubs) = match cr {
+        C::CREF_QUAL { componentRef, .. } => return cref_leaf_value_type(componentRef),
+        C::CREF_IDENT { identType, subscriptLst, .. } => {
+            (identType, (&**subscriptLst).into_iter().count())
+        }
+        _ => return Err("CodegenWasmJit: unsupported component reference"),
+    };
+    let mut ty = identType.clone();
+    let mut remaining = nsubs;
+    while remaining > 0 {
+        let DAE::Type::T_ARRAY { ty: inner, dims } = &*ty else { break };
+        let nd = (&**dims).into_iter().count();
+        if remaining < nd {
+            break;
+        }
+        remaining -= nd;
+        ty = inner.clone();
+    }
+    Ok(ty)
+}
+
+/// Append `field` (of DAE type `field_ty`) to the leaf of `cr`, turning e.g.
+/// `pipe.flowModel.states[2]` into `pipe.flowModel.states[2].field`.
+fn cref_append_field(
+    cr: &DAE::ComponentRef,
+    field: &DAE::Ident,
+    field_ty: Arc<DAE::Type>,
+) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_IDENT { ident, identType, subscriptLst } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: Arc::new(C::CREF_IDENT {
+                ident: field.clone(),
+                identType: field_ty,
+                subscriptLst: metamodelica::nil(),
+            }),
+        }),
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: cref_append_field(componentRef, field, field_ty),
+        }),
+        other => Arc::new(other.clone()),
+    }
+}
+
+/// Push the byte address of array element `base[e1,…,en]` within `SimData` onto
+/// the stack, for a `group` whose scalarized elements are contiguous row-major
+/// (verified in `finalize_array_groups`). The row-major linear index is built at
+/// run time (Horner: `acc = acc*dims[k] + (e_k - 1)`), so the subscripts may be
+/// non-constant. Returns the element value type.
+fn emit_sim_array_elem_addr(
+    ctx: &mut FnCtx,
+    group: &ArrayGroup,
+    sub_exps: &[Arc<DAE::Exp>],
+) -> Result<WTy> {
+    if sub_exps.len() != group.dims.len() {
+        return Err("error");
+    }
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let data = ctx.sim()?.data_local;
+    emit_sim_flat_index(ctx, &group.dims, sub_exps)?;
+    // addr = data + base_off + linear * stride
+    ctx.emit(we::Instruction::I32Const(stride as i32));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
+    ctx.emit(we::Instruction::I32Add);
+    Ok(group.wty)
+}
+
+/// Push the 0-based row-major index of element `[e1,…,en]` of an array shaped
+/// `dims`, built at run time (Horner: `acc = acc*dims[k] + (e_k - 1)`).
+fn emit_sim_flat_index(ctx: &mut FnCtx, dims: &[u32], sub_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+    ctx.emit(we::Instruction::I32Const(0));
+    for (k, exp) in sub_exps.iter().enumerate() {
+        ctx.emit(we::Instruction::I32Const(dims[k] as i32));
+        ctx.emit(we::Instruction::I32Mul);
+        let wt = compile_exp(ctx, exp)?;
+        coerce(ctx, wt, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub); // e_k - 1 (1-based -> 0-based)
+        ctx.emit(we::Instruction::I32Add);
+    }
+    Ok(())
+}
+
+/// Apply an alias negation to the value on the stack, as C's `crefToCStr` does.
+fn emit_neg(ctx: &mut FnCtx, wty: WTy, neg: Neg) {
+    match wty {
+        WTy::F64 => {
+            if neg != Neg::None {
+                ctx.emit(we::Instruction::F64Neg);
+            }
+        }
+        WTy::I32 => match neg {
+            Neg::None => {}
+            // wasm has no `i32.neg`.
+            Neg::Arith => {
+                ctx.emit(we::Instruction::I32Const(-1));
+                ctx.emit(we::Instruction::I32Mul);
+            }
+            // A Boolean is stored as 0/1, so `!v` is `v == 0`.
+            Neg::Not => ctx.emit(we::Instruction::I32Eqz),
+        },
+    }
+}
+
+/// Select element `[e1,…,en]` of a [`ScatterGroup`] with a chain of `select`s over
+/// the run-time index, picking the element's offset — or its value, when the
+/// elements carry different alias negations. Leaves the element's byte address on
+/// the stack with `addr_only` (for a store), otherwise its value.
+fn emit_sim_scatter_elem(
+    ctx: &mut FnCtx,
+    group: &ScatterGroup,
+    sub_exps: &[Arc<DAE::Exp>],
+    addr_only: bool,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let negated = group.elems.iter().any(|(_, n)| *n != Neg::None);
+    if addr_only && negated {
+        return Err("CodegenWasmJit: assignment to negated alias");
+    }
+    let data = ctx.sim()?.data_local;
+    emit_sim_flat_index(ctx, &group.dims, sub_exps)?;
+    let flat = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(flat));
+    // `acc = flat != k ? acc : <element k>`: one value on the stack, no branches.
+    for (k, &(off, neg)) in group.elems.iter().enumerate() {
+        if negated {
+            ctx.emit(I::LocalGet(data));
+            match group.wty {
+                WTy::F64 => ctx.emit(I::F64Load(mem_arg(off, 3))),
+                WTy::I32 => ctx.emit(I::I32Load(mem_arg(off, 2))),
+            }
+            emit_neg(ctx, group.wty, neg);
+        } else {
+            ctx.emit(I::I32Const(off as i32));
+        }
+        if k > 0 {
+            ctx.emit(I::LocalGet(flat));
+            ctx.emit(I::I32Const(k as i32));
+            ctx.emit(I::I32Ne);
+            ctx.emit(I::Select);
+        }
+    }
+    if !negated {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::I32Add);
+        if !addr_only {
+            match group.wty {
+                WTy::F64 => ctx.emit(I::F64Load(mem_arg(0, 3))),
+                WTy::I32 => ctx.emit(I::I32Load(mem_arg(0, 2))),
+            }
+        }
+    }
+    Ok(group.wty)
+}
+
+/// In simulation mode, try to read a model variable from the `SimData` block.
+/// Returns `Some(wty)` when `cref` resolved to a model variable (state,
+/// derivative, algebraic, parameter, `time`, or a `$START`/`$PRE` access), or
+/// `None` when it is an ordinary wasm local (a lowering temporary / iterator)
+/// that the normal cref path should handle.
+fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
+    if ctx.sim.is_none() {
+        return Ok(None);
+    }
+    // `time` lives at offset 0 of `SimData`; `__HOM_LAMBDA` is left behind by
+    // differentiating `homotopy(a, s)` (C maps it to `simulationInfo->lambda`).
+    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+        if subscriptLst.is_empty() {
+            if ident.as_str() == "time" {
+                let data = ctx.sim()?.data_local;
+                ctx.emit(we::Instruction::LocalGet(data));
+                ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+                return Ok(Some(WTy::F64));
+            }
+            if ident.as_str() == openmodelica_backend_types::BackendDAE::homotopyLambda {
+                let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+                ctx.emit(we::Instruction::LocalGet(data));
+                ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+                return Ok(Some(WTy::F64));
+            }
+            // A real wasm local (e.g. a `for` iterator) shadows model lookup.
+            if ctx.locals.contains_key(ident.as_str()) {
+                return Ok(None);
+            }
+        }
+    }
+    // `$START.<cref>`: read the variable's start-attribute expression (used by
+    // the initial-equation system). `$PRE.<cref>`: the value at the last event,
+    // read from the mirrored pre-slot the driver refreshes at every event.
+    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+        match ident.as_str() {
+            "$START" => {
+                let key = sim_cref_key_fatal(componentRef)?;
+                if let Some(wty) = emit_sim_start_scalar(ctx, &key)? {
+                    return Ok(Some(wty));
+                }
+                // Whole-array `$START.y` (e.g. `y := $START.y`).
+                if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
+                    emit_sim_start_array_gather(ctx, &group, &key)?;
+                    return Ok(Some(WTy::I32));
+                }
+                return Err("CodegenWasmJit: $START for unknown variable");
+            }
+            "$PRE" => {
+                // No pre-storage (e.g. `pre()` of a parameter): read the live value.
+                if !sim_pre_is_stored(ctx, cref)? {
+                    return compile_sim_cref_read(ctx, componentRef);
+                }
+            }
+            _ => {}
+        }
+    }
+    // Array element with a non-constant subscript (e.g. a `for`-loop iterator):
+    // resolve the element address at run time instead of via a static slot key.
+    if let Some((base, sub_exps)) = array_ref_of(cref)? {
+        if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
+            if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?;
+                match wty {
+                    WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
+                    WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(0, 2))),
+                }
+                emit_retain_top(ctx, group.heap)?;
+                return Ok(Some(wty));
+            }
+            if let Some(group) = ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                let wty = emit_sim_scatter_elem(ctx, &group, &sub_exps, false)?;
+                emit_retain_top(ctx, group.heap)?;
+                return Ok(Some(wty));
+            }
+        }
+    }
+    // Contiguous slice `base[i,…,:]`: gather the row-major block.
+    for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
+        let (base, leading) = slice;
+        if let Some(group) =
+            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+        {
+            emit_sim_slice_gather(ctx, &group, &leading)?;
+            return Ok(Some(WTy::I32));
+        }
+    }
+    // Any other slice (a column `[:,1]`, a strided range): gather the whole array
+    // and let the runtime slice handle it.
+    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+        let (base, subs) = selection;
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if subs_select_array(&subs, &group) {
+                emit_sim_array_gather(ctx, &group)?;
+                let wty = slice_loaded(ctx, &subs)?;
+                return Ok(Some(wty));
+            }
+        }
+    }
+    let key = sim_cref_key_fatal(cref)?;
+    let slot = match ctx.sim()?.vars.get(&key) {
+        Some(s) => *s,
+        None => {
+            // Not a scalar slot: it may be a whole array-valued model variable,
+            // whose scalarized elements occupy a contiguous slot range. Gather the
+            // range into a fresh runtime array object.
+            if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
+                emit_sim_array_gather(ctx, &group)?;
+                return Ok(Some(WTy::I32));
+            }
+            if let Some(exp) = ctx.sim()?.consts.get(&key).cloned() {
+                return compile_exp(ctx, &exp).map(Some);
+            }
+            if ctx.sim()?.const_groups.contains_key(&key) {
+                emit_const_array(ctx, &key)?;
+                return Ok(Some(WTy::I32));
+            }
+            // A whole record model variable: gather its scalar field slots into a
+            // fresh runtime record object.
+            if try_emit_sim_record_gather(ctx, cref)? {
+                return Ok(Some(WTy::I32));
+            }
+            if try_emit_empty_sim_array(ctx, cref)? {
+                return Ok(Some(WTy::I32));
+            }
+            if let Some(wty) = emit_sim_const_index_error(ctx, cref, &key)? {
+                return Ok(Some(wty));
+            }
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: simulation reference to unknown variable `{key}`"
+            ));
+            return Err("CodegenWasmJit: simulation reference to unknown variable")
+        }
+    };
+    let data = ctx.sim()?.data_local;
+    ctx.emit(we::Instruction::LocalGet(data));
+    match slot.wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3))),
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2))),
+    }
+    emit_neg(ctx, slot.wty, slot.negate);
+    if slot.heap {
+        // Reading a heap (String) slot yields an owned reference, like reading a
+        // heap local: retain so the slot keeps its reference while the value flows
+        // into the consuming operation. (`rt_retain` is null-safe.)
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
+        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    }
+    Ok(Some(slot.wty))
+}
+
+/// The value stored into a simulation variable: an expression to evaluate, or
+/// an already-computed owned value in a temp (a tuple assignment's result).
+enum RhsSource<'a> {
+    Exp(&'a DAE::Exp),
+    Temp { local: u32, wty: WTy },
+}
+
+impl RhsSource<'_> {
+    fn push(&self, ctx: &mut FnCtx) -> Result<WTy> {
+        match self {
+            RhsSource::Exp(e) => compile_exp(ctx, e),
+            RhsSource::Temp { local, wty } => {
+                ctx.emit(we::Instruction::LocalGet(*local));
+                Ok(*wty)
+            }
+        }
+    }
+}
+
+/// In simulation mode, try to assign to a model variable in the `SimData`
+/// block. Returns `true` when `cref` resolved to a writable model variable.
+/// Aliases are never assigned (they are removed by the backend); `$START`/`time`
+/// are not assignment targets in the equation systems handled here.
+fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSource) -> Result<bool> {
+    if ctx.sim.is_none() {
+        return Ok(false);
+    }
+    // `$START.x := expr` in the initial system: the C target sets `x`'s start
+    // attribute *and* the live value `realVars[x] = start` (see the
+    // `$START.<cref>`-LHS pattern in `_06inz`), so write both: the slot is what a
+    // solver reads for its initial guess and what `LOG_SOTI` prints.
+    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+        if ident.as_str() == "$START" {
+            let start_off = sim_cref_key(componentRef)
+                .ok()
+                .and_then(|k| ctx.sim().ok()?.start_slots.get(&k).copied());
+            let Some(off) = start_off else {
+                return compile_sim_cref_assign(ctx, componentRef, rhs);
+            };
+            let data = ctx.sim()?.data_local;
+            let w = rhs.push(ctx)?;
+            coerce(ctx, w, WTy::F64);
+            let tmp = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(tmp));
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::LocalGet(tmp));
+            ctx.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            return compile_sim_cref_assign(ctx, componentRef, RhsSource::Temp { local: tmp, wty: WTy::F64 });
+        }
+        // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
+        // (no pre-slot, e.g. a parameter) fall back to the live slot.
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+            return compile_sim_cref_assign(ctx, componentRef, rhs);
+        }
+    }
+    // Plain idents that are wasm locals are handled by the normal path.
+    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+        if subscriptLst.is_empty() && ctx.locals.contains_key(ident.as_str()) {
+            return Ok(false);
+        }
+    }
+    // Array element with a non-constant subscript: store to the run-time address.
+    if let Some((base, sub_exps)) = array_ref_of(cref)? {
+        if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
+            // Either group leaves the element's address on the stack.
+            let elem = match ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                Some(group) => Some(emit_sim_array_elem_addr(ctx, &group, &sub_exps)?),
+                None => match ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                    Some(group) => Some(emit_sim_scatter_elem(ctx, &group, &sub_exps, true)?),
+                    None => None,
+                },
+            };
+            if let Some(wty) = elem {
+                let rw = rhs.push(ctx)?;
+                coerce(ctx, rw, wty);
+                match wty {
+                    WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(0, 3))),
+                    WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(0, 2))),
+                }
+                return Ok(true);
+            }
+        }
+    }
+    // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
+    for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
+        let (base, leading) = slice;
+        if let Some(group) =
+            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+        {
+            emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
+            return Ok(true);
+        }
+    }
+    // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
+    // to a gathered copy of the whole array and scatter that back.
+    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+        let (base, subs) = selection;
+        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+            if subs_select_array(&subs, &group) {
+                let arr = ctx.alloc_temp(WTy::I32);
+                emit_sim_array_gather(ctx, &group)?;
+                ctx.emit(we::Instruction::LocalSet(arr));
+                compile_slice_assign(ctx, arr, &subs, rhs)?;
+                emit_sim_array_scatter(ctx, &group, RhsSource::Temp { local: arr, wty: WTy::I32 })?;
+                return Ok(true);
+            }
+        }
+    }
+    let key = sim_cref_key_fatal(cref)?;
+    let slot = match ctx.sim()?.vars.get(&key) {
+        Some(s) => *s,
+        None => {
+            // A whole array-valued model variable: evaluate the rhs to a runtime
+            // array and scatter its elements into the contiguous slot range.
+            if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
+                emit_sim_array_scatter(ctx, &group, rhs)?;
+                return Ok(true);
+            }
+            // A whole record model variable: evaluate the rhs to a runtime record
+            // and store each field into its own scalar slot.
+            if try_emit_sim_record_scatter(ctx, cref, rhs)? {
+                return Ok(true);
+            }
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: simulation assignment to unknown variable `{key}`"
+            ));
+            return Err("CodegenWasmJit: simulation assignment to unknown variable")
+        }
+    };
+    if slot.negate != Neg::None {
+        return Err("CodegenWasmJit: assignment to negated alias");
+    }
+    // An array-valued rhs would `coerce` its handle into the slot: a pointer stored
+    // as a Real. Reject only a type `exp_sigty` names: it is best-effort, and an
+    // expression it cannot type is still one `compile_exp` lowers.
+    if !slot.heap {
+        if let RhsSource::Exp(e) = rhs {
+            if matches!(exp_sigty(e), Ok(SigTy::Array { .. })) {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: array-valued expression assigned to the scalar slot `{key}`"
+                ));
+                return Err("CodegenWasmJit: array-valued expression assigned to a scalar slot");
+            }
+        }
+    }
+    let data = ctx.sim()?.data_local;
+    if slot.heap {
+        // Release-on-overwrite *after* the rhs: `s := s + x` reads the slot, so
+        // releasing first would free a value the rhs still needs. The slot starts
+        // null (zeroed `SimData`), and `rt_release` is null-safe.
+        let rw = rhs.push(ctx)?;
+        coerce(ctx, rw, slot.wty);
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
+        ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::LocalGet(t));
+        ctx.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
+        return Ok(true);
+    }
+    // Stack order for a store is [addr, value]: push the base, evaluate the rhs,
+    // coerce to the slot type, then store at the constant offset.
+    ctx.emit(we::Instruction::LocalGet(data));
+    let rw = rhs.push(ctx)?;
+    coerce(ctx, rw, slot.wty);
+    match slot.wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
+        WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(slot.off, 2))),
+    }
+    Ok(true)
+}
+
+/// The `SimData` slot and little-endian value bytes of an assignment
+/// `cref := <compile-time constant>` that [`compile_sim_cref_assign`] would lower
+/// to a single plain store — `None` when either side needs its general path.
+/// Resolving the slot without emitting anything is what lets
+/// [`emit_sim_const_stores`] group runs of them into data segments.
+pub(crate) fn sim_const_store(
+    ctx: &FnCtx,
+    cref: &DAE::ComponentRef,
+    exp: &DAE::Exp,
+) -> Result<Option<(u32, Vec<u8>)>> {
+    let Some(sim) = &ctx.sim else { return Ok(None) };
+    // Mirror the LHS redirections of `compile_sim_cref_assign`.
+    if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
+        if ident.as_str() == "$START" {
+            return sim_const_store(ctx, componentRef, exp);
+        }
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+            return sim_const_store(ctx, componentRef, exp);
+        }
+    }
+    if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref {
+        if subscriptLst.is_empty() && ctx.locals.contains_key(ident.as_str()) {
+            return Ok(None);
+        }
+    }
+    if let Some((_, sub_exps)) = array_ref_of(cref)? {
+        if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
+            return Ok(None);
+        }
+    }
+    if sim_slice_of(cref)?.is_some() {
+        return Ok(None);
+    }
+    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+        if let Some(group) = sim.array_groups.get(&base) {
+            if !is_scalar_index(&subs, group.dims.len() as u32) {
+                return Ok(None);
+            }
+        }
+    }
+    let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
+    if slot.negate != Neg::None || slot.heap {
+        return Ok(None);
+    }
+    let bytes = match (const_num(exp), slot.wty) {
+        (Some(ConstNum::R(r)), WTy::F64) => r.to_le_bytes().to_vec(),
+        (Some(ConstNum::I(i)), WTy::F64) => (i as f64).to_le_bytes().to_vec(),
+        (Some(ConstNum::I(i)), WTy::I32) => i.to_le_bytes().to_vec(),
+        _ => return Ok(None),
+    };
+    Ok(Some((slot.off, bytes)))
+}
+
+/// Store the constant values collected by [`sim_const_store`] into their
+/// `SimData` slots. Adjacent slots — an evaluated parameter array is one
+/// contiguous block — are copied from a passive data segment with `memory.init`;
+/// short groups stay individual stores. All groups of one call share a single
+/// segment (each `memory.init` reads it at its own source offset).
+pub(crate) fn emit_sim_const_stores(
+    ctx: &mut FnCtx,
+    stores: &std::collections::BTreeMap<u32, Vec<u8>>,
+) -> Result<()> {
+    use we::Instruction as I;
+    if stores.is_empty() {
+        return Ok(());
+    }
+    // Split into maximal adjacent groups.
+    let mut groups: Vec<Vec<(u32, &Vec<u8>)>> = Vec::new();
+    for (&off, bytes) in stores {
+        match groups.last_mut() {
+            Some(g) if g.last().is_some_and(|(o, b)| o + b.len() as u32 == off) => g.push((off, bytes)),
+            _ => groups.push(vec![(off, bytes)]),
+        }
+    }
+    // A group of fewer than four values costs less as stores than as a segment
+    // copy; the rest go into the shared blob as (dest, src, len).
+    let mut blob: Vec<u8> = Vec::new();
+    let mut copies: Vec<(u32, u32, u32)> = Vec::new();
+    let data = ctx.sim()?.data_local;
+    for g in &groups {
+        if g.len() < 4 {
+            for (off, bytes) in g {
+                ctx.emit(I::LocalGet(data));
+                match bytes.len() {
+                    8 => {
+                        let v = f64::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
+                        ctx.emit(I::F64Const(v.into()));
+                        ctx.emit(I::F64Store(mem_arg(*off, 3)));
+                    }
+                    4 => {
+                        let v = i32::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
+                        ctx.emit(I::I32Const(v));
+                        ctx.emit(I::I32Store(mem_arg(*off, 2)));
+                    }
+                    _ => return Err("CodegenWasmJit: constant slot value of unexpected width"),
+                }
+            }
+            continue;
+        }
+        let src = blob.len() as u32;
+        for (_, bytes) in g {
+            blob.extend_from_slice(bytes);
+        }
+        copies.push((g[0].0, src, blob.len() as u32 - src));
+    }
+    if copies.is_empty() {
+        return Ok(());
+    }
+    let base = ctx.literals.intern(&blob);
+    for (dest, src, len) in copies {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::I32Const(dest as i32));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Const((base + src) as i32));
+        ctx.emit(I::I32Const(len as i32));
+        ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
+    }
+    Ok(())
+}
+
+/// The `(elem_kind, byte_stride)` pair for an array of `wty` scalars: Real maps
+/// to `EK_REAL`/8, Integer/Boolean to `EK_INT`/4. (A whole-array Boolean model
+/// variable is tagged `EK_INT`; the two share 4-byte storage and no in-scope
+/// builtin distinguishes them — revisit if a Boolean-array external appears.)
+fn sim_array_elem_kind_stride(wty: WTy) -> (u32, u32) {
+    match wty {
+        WTy::F64 => (SigTy::Real.elem_kind(), 8),
+        WTy::I32 => (SigTy::Int.elem_kind(), 4),
+    }
+}
+
+/// Emit code that gathers a whole array-valued model variable from its
+/// contiguous `SimData` slot range into a fresh (refcount-1) runtime array
+/// object, leaving the owned handle on the stack. The slots are stored
+/// row-major and contiguously (verified at layout time), so the element data is
+/// one `memory.copy` from the slot range into the new object's data area.
+fn emit_sim_array_gather(ctx: &mut FnCtx, group: &ArrayGroup) -> Result<()> {
+    let (ek, stride) = sim_array_elem_kind_stride(group.wty);
+    let ndims = group.dims.len() as u32;
+    let data = ctx.sim()?.data_local;
+    let obj = ctx.alloc_temp(WTy::I32);
+    // obj = rt_array_new(elem_kind, ndims, total); set each dimension.
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(ndims as i32));
+    ctx.emit(we::Instruction::I32Const(group.total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in group.dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    // memory.copy(dst = obj data, src = SimData + base_off, len = total * stride).
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::I32Const((group.total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// Retain the heap handle on top of the stack, leaving it there: a slot read
+/// borrows, and the consuming operation releases what it is given.
+fn emit_retain_top(ctx: &mut FnCtx, heap: bool) -> Result<()> {
+    if !heap {
+        return Ok(());
+    }
+    let t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(t));
+    ctx.emit(we::Instruction::LocalGet(t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    Ok(())
+}
+
+/// An array with a zero dimension scalarizes to nothing, so no slot range holds
+/// it and no `SimVar` names it: build it from the declared shape alone, as C's
+/// `hasZeroDimension` arm of `daeExpCrefRhs` does.
+fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let ty = cref_leaf_value_type(cref)?;
+    let dims = type_array_dims(&ty);
+    if !dims.iter().any(|d| dim_is_zero(d)) {
+        return Ok(false);
+    }
+    let SigTy::Array { elem, .. } = sig_ty(&ty)? else { return Ok(false) };
+    let obj = ctx.alloc_temp(WTy::I32);
+    emit_array_alloc(ctx, obj, &elem, &dims)?;
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(true)
+}
+
+/// C's `Expression.hasZeroDimension` for one dimension: a size known to be zero.
+/// An unknown (`:`) dimension is not one — it says nothing about the shape.
+fn dim_is_zero(dim: &DAE::Dimension) -> bool {
+    match dim {
+        DAE::Dimension::DIM_INTEGER { integer } => *integer == 0,
+        DAE::Dimension::DIM_ENUM { size, .. } => *size == 0,
+        DAE::Dimension::DIM_EXP { exp } => matches!(&**exp, DAE::Exp::ICONST { integer: 0 }),
+        _ => false,
+    }
+}
+
+/// [`emit_sim_array_gather`] for a constant array: nothing to copy from, each
+/// element is its own literal.
+fn emit_const_array(ctx: &mut FnCtx, key: &str) -> Result<()> {
+    let group = ctx.sim()?.const_groups.get(key).ok_or("CodegenWasmJit: not a constant array")?;
+    let (wty, dims, values) = (group.wty, group.dims.clone(), group.values.clone());
+    let (ek, stride) = sim_array_elem_kind_stride(wty);
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(dims.len() as i32));
+    ctx.emit(we::Instruction::I32Const(values.len() as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    let data = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::LocalSet(data));
+    for (i, exp) in values.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(data));
+        let w = compile_exp(ctx, exp)?;
+        coerce(ctx, w, wty);
+        let off = i as u32 * stride;
+        match wty {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(off, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(off, 2))),
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// If `cref` names a whole record model variable (its leaf, after subscripts, is
+/// a record), build a fresh runtime record from the scalar `SimData` slots of
+/// its fields and leave the owned handle on the stack. Each field is read through
+/// its own extended cref, so nested records / arrays-of-records gather
+/// recursively. Returns `Ok(true)` when it handled the reference.
+fn try_emit_sim_record_gather(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let leaf_ty = cref_leaf_value_type(cref)?;
+    let Some(fields) = record_fields(&leaf_ty)? else {
+        return Ok(false);
+    };
+    let layout = rec_layout(&fields);
+    let obj = emit_record_alloc(ctx, &layout)?;
+    for (i, f) in fields.iter().enumerate() {
+        let fty = f.sig.clone();
+        let field_cref = cref_append_field(cref, &f.name, f.ty.clone());
+        let wty = compile_sim_cref_read(ctx, &field_cref)?
+            .ok_or("CodegenWasmJit: record field is not a simulation variable")?;
+        coerce(ctx, wty, fty.wty());
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_store(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(true)
+}
+
+/// The inverse of [`try_emit_sim_record_gather`]: evaluate `rhs` to an owned
+/// record and store each field into its own `SimData` slot, as the C target does
+/// for `$cse1 := f(...)`. Fields go through their own cref, so nested records and
+/// array fields scatter recursively.
+fn try_emit_sim_record_scatter(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSource) -> Result<bool> {
+    let leaf_ty = cref_leaf_value_type(cref)?;
+    let Some(fields) = record_fields(&leaf_ty)? else {
+        return Ok(false);
+    };
+    let layout = rec_layout(&fields);
+    let obj = ctx.alloc_temp(WTy::I32);
+    let rw = rhs.push(ctx)?;
+    if rw != WTy::I32 {
+        return Err("CodegenWasmJit: whole-record assignment rhs is not a record handle");
+    }
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (i, f) in fields.iter().enumerate() {
+        let fty = f.sig.clone();
+        let vt = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalGet(obj));
+        field_load(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+        ctx.emit(we::Instruction::LocalSet(vt));
+        if fty.is_heap() {
+            // The record keeps its reference; the assignment consumes one.
+            ctx.emit(we::Instruction::LocalGet(vt));
+            ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+        }
+        let field_cref = cref_append_field(cref, &f.name, f.ty.clone());
+        if !compile_sim_cref_assign(ctx, &field_cref, RhsSource::Temp { local: vt, wty: fty.wty() })? {
+            return Err("CodegenWasmJit: record field is not a simulation variable");
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
+    Ok(true)
+}
+
+/// Emit code that scatters a whole-array assignment into a model variable's
+/// contiguous `SimData` slot range: evaluate `rhs` to an owned runtime array,
+/// `memory.copy` its (row-major, scalar) element data over the slots, then
+/// release the handle. Real/Integer elements are flat scalars, so the bulk copy
+/// is a complete (deep) value copy — no per-element retain is needed.
+fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: RhsSource) -> Result<()> {
+    let (_, stride) = sim_array_elem_kind_stride(group.wty);
+    let data = ctx.sim()?.data_local;
+    let h = ctx.alloc_temp(WTy::I32);
+    let rw = rhs.push(ctx)?;
+    if rw != WTy::I32 {
+        return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
+    }
+    ctx.emit(we::Instruction::LocalSet(h));
+    // A String array's slots own their handles: drop what they held before the
+    // copy overwrites them.
+    emit_slot_range_refcount(ctx, group, "rt_release")?;
+    // memory.copy(dst = SimData + base_off, src = rhs data, len = total * stride).
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::I32Const((group.total * stride) as i32));
+    ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    // …and take one on what it handed over, since the release below frees the
+    // rhs array's own references to them.
+    emit_slot_range_refcount(ctx, group, "rt_retain")?;
+    // Consume the rhs reference (we copied out the element data, not the handle).
+    ctx.emit(we::Instruction::LocalGet(h));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
+/// Call `f` on every slot of a heap-element array group; nothing for a value type.
+fn emit_slot_range_refcount(ctx: &mut FnCtx, group: &ArrayGroup, f: &str) -> Result<()> {
+    use we::Instruction as I;
+    if !group.heap {
+        return Ok(());
+    }
+    let data = ctx.sim()?.data_local;
+    let i = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(group.total as i32));
+    ctx.emit(I::I32GeU);
+    ctx.emit(I::BrIf(1));
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(group.base_off, 2)));
+    ctx.emit(I::Call(rt_index(f)?));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Push a scalar variable's `$START` value: its overridable start slot, else its
+/// start expression, else `0.0`. `None` (nothing emitted) if `key` has no start.
+fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
+    if let Some(&off) = ctx.sim()?.start_slots.get(key) {
+        let data = ctx.sim()?.data_local;
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::F64Load(mem_arg(off, 3)));
+        return Ok(Some(WTy::F64));
+    }
+    match ctx.sim()?.starts.get(key).cloned() {
+        Some(Some(exp)) => Ok(Some(compile_exp(ctx, &exp)?)),
+        Some(None) => {
+            ctx.emit(we::Instruction::F64Const(0.0.into()));
+            Ok(Some(WTy::F64))
+        }
+        None => Ok(None),
+    }
+}
+
+/// Gather a whole array's per-element `$START` values into a fresh (refcount-1)
+/// runtime array object, leaving the owned handle on the stack.
+fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &str) -> Result<()> {
+    let (ek, stride) = sim_array_elem_kind_stride(group.wty);
+    let ndims = group.dims.len() as u32;
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(ndims as i32));
+    ctx.emit(we::Instruction::I32Const(group.total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in group.dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    for (lin, idx) in crate::CodegenWasmJit::row_major_indices(&group.dims).into_iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+        if lin > 0 {
+            ctx.emit(we::Instruction::I32Const((lin as u32 * stride) as i32));
+            ctx.emit(we::Instruction::I32Add);
+        }
+        let wty = emit_sim_start_scalar(ctx, &group.elem_key(&idx))?
+            .ok_or("CodegenWasmJit: $START for unknown array element")?;
+        coerce(ctx, wty, group.wty);
+        match group.wty {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(0, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(0, 2))),
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+#[path = "CodegenWasmJitFunctions/closures.rs"]
+pub(crate) mod closures;
+
+#[path = "CodegenWasmJitFunctions/shared_lits.rs"]
+pub(crate) mod shared_lits;
+
+#[path = "CodegenWasmJitFunctions/generic_calls.rs"]
+mod generic_calls;
+pub(crate) use generic_calls::{
+    emit_entwined_assign, emit_generic_assign, emit_index_list_loop, emit_resizable_assign,
+};
+
+#[path = "CodegenWasmJitFunctions/sim_systems.rs"]
+mod sim_systems;
+pub(crate) use sim_systems::{
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
+    backup_known_outputs, residual_rows, restore_known_outputs,
+    compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
+    compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
+    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
+    lin_use_sparse, nls_use_sparse,
+    emit_dt_solving, emit_dt_local_constraint, emit_dynamic_tearing, emit_nls_strict_body,
+};
+
+fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
+    use DAE::Exp as E;
+    // A heap-valued constant is one module-wide object (C's `_OMC_LIT`).
+    if let Some(w) = shared_lits::compile(ctx, exp)? {
+        return Ok(w);
+    }
+    match exp {
+        E::ICONST { integer } => {
+            ctx.emit(we::Instruction::I32Const(*integer));
+            Ok(WTy::I32)
+        }
+        E::BCONST { bool } => {
+            ctx.emit(we::Instruction::I32Const(*bool as i32));
+            Ok(WTy::I32)
+        }
+        E::RCONST { real } => {
+            ctx.emit(we::Instruction::F64Const(real.into_inner().into()));
+            Ok(WTy::F64)
+        }
+        E::ENUM_LITERAL { index, .. } => {
+            ctx.emit(we::Instruction::I32Const(*index));
+            Ok(WTy::I32)
+        }
+        // The frontend interns constant literals (strings, but also numeric
+        // ones) into a shared pool; the wrapper carries the underlying constant
+        // expression, which is what we lower.
+        E::SHARED_LITERAL { exp, .. } => compile_exp(ctx, exp),
+        // A String literal: materialize a fresh (refcount 1) String from its
+        // passive data segment with `memory.init`, so the value is owned exactly
+        // like any other heap-producing expression.
+        E::SCONST { string } => {
+            emit_str_literal(ctx, string.as_bytes())?;
+            Ok(WTy::I32)
+        }
+        E::CREF { componentRef, ty } => {
+            if let DAE::Type::T_FUNCTION_REFERENCE_FUNC { .. } = &**ty {
+                closures::compile_fnref_cref(ctx, componentRef, ty)?;
+                return Ok(WTy::I32);
+            }
+            // Simulation mode: model variables (states, derivatives, algebraics,
+            // parameters, `time`, `$START`/`$PRE`) live in the shared `SimData`
+            // block, not in wasm locals. Resolve those first; `None` means an
+            // ordinary local that the normal path below handles.
+            if let Some(wty) = compile_sim_cref_read(ctx, componentRef)? {
+                return Ok(wty);
+            }
+            // A qualified cref `base[..].f1[..].….fn[..]`: descend through nested
+            // records (and arrays of records) to the final field.
+            if let DAE::ComponentRef::CREF_QUAL { .. } = &**componentRef {
+                return compile_cref_read_qual(ctx, componentRef);
+            }
+            // A scalar/whole-value reference, or a subscripted array element.
+            let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else {
+                return Err("CodegenWasmJit: unsupported component reference");
+            };
+            let name = ident.to_string();
+            let (idx, sty) = ctx
+                .locals
+                .get(&name)
+                .ok_or_else(|| unknown_variable(&name))?
+                .clone();
+            if subscriptLst.is_empty() {
+                ctx.emit(we::Instruction::LocalGet(idx));
+                // Reading a heap local yields an *owned* value: retain so the
+                // local keeps its reference while the value flows into an
+                // operation / assignment / call that will consume one reference.
+                // `rt_retain` just bumps the refcount at offset 0, shared by
+                // strings and arrays.
+                if sty.is_heap() {
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                }
+                Ok(sty.wty())
+            } else {
+                let SigTy::Array { elem, rank } = sty else {
+                    return Err("CodegenWasmJit: subscripting non-array local");
+                };
+                // The local keeps the array alive for the whole expression, so read
+                // the element straight out of it; only a heap element is retained.
+                if is_scalar_index(subscriptLst, rank) {
+                    let idx_exps = index_subscripts(subscriptLst, rank)?;
+                    emit_elem_addr(ctx, idx, &elem, &idx_exps)?;
+                    elem_load(ctx, &elem);
+                    retain_on_stack(ctx, &elem)?;
+                    Ok(elem.wty())
+                } else {
+                    // The slice path consumes an owned handle.
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::LocalGet(idx));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                    slice_loaded(ctx, subscriptLst)
+                }
+            }
+        }
+        E::CAST { ty, exp } => {
+            let target = sig_ty(ty)?;
+            // Array casts: the only implicit numeric array cast is Integer[] ->
+            // Real[] (e.g. `Real r := intArray`, mixed arithmetic, and division
+            // which always yields Real). It must rebuild the array with f64
+            // elements — a scalar `coerce` would leave the i32 data misread as
+            // f64. Any other array cast is representationally a no-op (the handle
+            // already has the right element layout).
+            if let SigTy::Array { elem: tgt_elem, .. } = &target {
+                let src_is_int = matches!(exp_sigty(exp), Ok(SigTy::Array { ref elem, .. }) if elem.wty() == WTy::I32);
+                if tgt_elem.wty() == WTy::F64 && src_is_int {
+                    compile_exp(ctx, exp)?; // owned Integer array
+                    let at = ctx.alloc_temp(WTy::I32);
+                    ctx.emit(we::Instruction::LocalSet(at));
+                    ctx.emit(we::Instruction::LocalGet(at));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_int_to_real")?));
+                    release_temp_array(ctx, at)?;
+                } else {
+                    compile_exp(ctx, exp)?;
+                }
+                return Ok(WTy::I32);
+            }
+            let from = compile_exp(ctx, exp)?;
+            let to = target.wty();
+            coerce(ctx, from, to);
+            Ok(to)
+        }
+        E::UNARY { operator, exp } => compile_unary(ctx, operator, exp),
+        E::LUNARY { operator, exp } => {
+            // `not` — the only logical unary.
+            let DAE::Operator::NOT { .. } = operator else {
+                return Err("CodegenWasmJit: unsupported logical unary operator");
+            };
+            // Element-wise `not` over a Boolean array (`daeExpLunary`).
+            if matches!(logical_operator_sigty(operator), Some(SigTy::Array { .. })) {
+                emit_unary_array(ctx, exp, "rt_array_not_i32")?;
+                return Ok(WTy::I32);
+            }
+            let w = compile_exp(ctx, exp)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::I32Eqz);
+            Ok(WTy::I32)
+        }
+        E::BINARY { exp1, operator, exp2 } => compile_binary(ctx, exp1, operator, exp2),
+        E::LBINARY { exp1, operator, exp2 } => {
+            // Element-wise `and`/`or` over Boolean arrays (operands are array
+            // handles, not i32 truth values — a scalar I32And would corrupt them).
+            if matches!(logical_operator_sigty(operator), Some(SigTy::Array { .. })) {
+                let (op_code, ty) = match operator {
+                    DAE::Operator::AND { ty } => (OP_AND, ty),
+                    DAE::Operator::OR { ty } => (OP_OR, ty),
+                    other => return Err("CodegenWasmJit: unsupported logical array operator"),
+                };
+                return compile_array_ew(ctx, exp1, exp2, op_code, ty);
+            }
+            compile_bool_operand(ctx, exp1)?;
+            compile_bool_operand(ctx, exp2)?;
+            match operator {
+                DAE::Operator::AND { .. } => ctx.emit(we::Instruction::I32And),
+                DAE::Operator::OR { .. } => ctx.emit(we::Instruction::I32Or),
+                other => return Err("CodegenWasmJit: unsupported logical binary operator"),
+            }
+            Ok(WTy::I32)
+        }
+        E::RELATION { exp1, operator, exp2, index, optionExpisASUB } => {
+            compile_relation(ctx, exp1, operator, exp2, *index, optionExpisASUB)
+        }
+        E::IFEXP { expCond, expThen, expElse } => {
+            let c = compile_exp(ctx, expCond)?;
+            coerce(ctx, c, WTy::I32);
+            // Determine the result type from the then-branch; both branches are
+            // coerced to it.
+            let result_wty = exp_wty_hint(ctx, expThen)?;
+            ctx.emit(we::Instruction::If(we::BlockType::Result(result_wty.val())));
+            let t = compile_exp(ctx, expThen)?;
+            coerce(ctx, t, result_wty);
+            ctx.emit(we::Instruction::Else);
+            let e = compile_exp(ctx, expElse)?;
+            coerce(ctx, e, result_wty);
+            ctx.emit(we::Instruction::End);
+            Ok(result_wty)
+        }
+        E::CALL { path, expLst, attr } => {
+            let results = compile_call(ctx, path, expLst, attr)?;
+            if results.is_empty() {
+                return Err("CodegenWasmJit: call to used in expression position returns no value");
+            }
+            // As a value a call is its first output (`daeExpCall`).
+            keep_call_result(ctx, &results, 0)
+        }
+        // Array constructor `{e1, e2, ...}` or matrix `{{...}, {...}}`.
+        E::ARRAY { ty, .. } | E::MATRIX { ty, .. } => {
+            compile_array_literal(ctx, ty, exp)?;
+            Ok(WTy::I32)
+        }
+        // A range used as an array value, e.g. `a := 1:n` or `1:2:m`.
+        E::RANGE { ty, start, step, stop } => {
+            compile_range_array(ctx, ty, start, step.as_deref(), stop)?;
+            Ok(WTy::I32)
+        }
+        // Array subscription `a[i]` (single index into a 1-D array).
+        E::ASUB { exp, sub } => compile_index(ctx, exp, sub),
+        // `size(a)` / `size(a, d)`.
+        E::SIZE { exp, sz } => {
+            compile_size(ctx, exp, sz.as_deref())?;
+            Ok(WTy::I32)
+        }
+        // Record constructor `R(field=…, …)`.
+        E::RECORD { ty, exps, comp, .. } => {
+            compile_record(ctx, ty, exps, comp)?;
+            Ok(WTy::I32)
+        }
+        E::METARECORDCALL { path, args, fieldNames, .. } => {
+            compile_metarecord(ctx, path, args, fieldNames)?;
+            Ok(WTy::I32)
+        }
+        // Record field access on an expression result: `f().field`.
+        E::RSUB { exp, fieldName, .. } => compile_rsub(ctx, exp, fieldName),
+        E::REDUCTION { reductionInfo, expr, iterators } => {
+            compile_reduction(ctx, reductionInfo, expr, iterators)
+        }
+        // `f(...)[ix]` — pick one value out of a multi-output call's result
+        // tuple.
+        E::TSUB { exp, ix, .. } => {
+            let DAE::Exp::CALL { path, expLst, attr } = &**exp else {
+                return Err("CodegenWasmJit: tuple subscript of a non-call expression");
+            };
+            let results = compile_call(ctx, path, expLst, attr)?;
+            let want = (*ix as usize).checked_sub(1)
+                .filter(|&i| i < results.len())
+                .ok_or("CodegenWasmJit: tuple subscript index out of range")?;
+            keep_call_result(ctx, &results, want)
+        }
+        // MetaModelica boxing around a call through a function reference; our
+        // closures pass values unboxed, so both are the identity.
+        E::BOX { exp } | E::UNBOX { exp, .. } => compile_exp(ctx, exp),
+        // `function f(w=3)` — a closure over the applied arguments (`closures`).
+        E::PARTEVALFUNCTION { .. } => {
+            closures::compile_parteval(ctx, exp)?;
+            Ok(WTy::I32)
+        }
+        other => return Err(unsupported_exp(other)),
+    }
+}
+
+/// Name the expression we could not lower in a recorded message; the `Result`
+/// error is a `&'static str`.
+fn unsupported_exp(exp: &DAE::Exp) -> &'static str {
+    let shown = openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(exp.clone()))
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: expression not yet supported: `{shown}` ({}){}",
+        exp_variant_name(exp),
+        fn_context()
+    ));
+    "CodegenWasmJit: expression not yet supported"
+}
+
+/// The `DAE.Exp` constructor name, for diagnostics.
+fn exp_variant_name(exp: &DAE::Exp) -> &'static str {
+    use DAE::Exp as E;
+    match exp {
+        E::ICONST { .. } => "ICONST",
+        E::RCONST { .. } => "RCONST",
+        E::SCONST { .. } => "SCONST",
+        E::BCONST { .. } => "BCONST",
+        E::CLKCONST { .. } => "CLKCONST",
+        E::ENUM_LITERAL { .. } => "ENUM_LITERAL",
+        E::CREF { .. } => "CREF",
+        E::BINARY { .. } => "BINARY",
+        E::UNARY { .. } => "UNARY",
+        E::LBINARY { .. } => "LBINARY",
+        E::LUNARY { .. } => "LUNARY",
+        E::RELATION { .. } => "RELATION",
+        E::IFEXP { .. } => "IFEXP",
+        E::CALL { .. } => "CALL",
+        E::RECORD { .. } => "RECORD",
+        E::PARTEVALFUNCTION { .. } => "PARTEVALFUNCTION",
+        E::ARRAY { .. } => "ARRAY",
+        E::MATRIX { .. } => "MATRIX",
+        E::RANGE { .. } => "RANGE",
+        E::TUPLE { .. } => "TUPLE",
+        E::CAST { .. } => "CAST",
+        E::ASUB { .. } => "ASUB",
+        E::TSUB { .. } => "TSUB",
+        E::RSUB { .. } => "RSUB",
+        E::SIZE { .. } => "SIZE",
+        E::CODE { .. } => "CODE",
+        E::EMPTY { .. } => "EMPTY",
+        E::REDUCTION { .. } => "REDUCTION",
+        E::LIST { .. } => "LIST",
+        E::CONS { .. } => "CONS",
+        E::META_TUPLE { .. } => "META_TUPLE",
+        E::META_OPTION { .. } => "META_OPTION",
+        E::METARECORDCALL { .. } => "METARECORDCALL",
+        E::MATCHEXPRESSION { .. } => "MATCHEXPRESSION",
+        E::BOX { .. } => "BOX",
+        E::UNBOX { .. } => "UNBOX",
+        E::SHARED_LITERAL { .. } => "SHARED_LITERAL",
+        E::PATTERN { .. } => "PATTERN",
+    }
+}
+
+/// A cheap static guess of an expression's wasm type, used to pick the result
+/// type of an `if`-expression block before compiling the branches.
+fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
+    use DAE::Exp as E;
+    Ok(match exp {
+        E::RCONST { .. } => WTy::F64,
+        E::ICONST { .. } | E::BCONST { .. } | E::ENUM_LITERAL { .. } | E::SCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. } => WTy::I32,
+        E::CAST { ty, .. } => sig_ty(ty)?.wty(),
+        // The CREF carries its (possibly field) type directly — handles a plain
+        // local and a `r.field` reference alike.
+        E::CREF { ty, .. } => sig_ty(ty)?.wty(),
+        // Through `exp_sigty` for its operand fallback: taking the operator's
+        // own type made the hint fail on `T_UNKNOWN` operators that
+        // `compile_binary` compiles fine.
+        E::BINARY { .. } | E::UNARY { .. } => exp_sigty(exp)?.wty(),
+        E::IFEXP { expThen, .. } => exp_wty_hint(ctx, expThen)?,
+        E::CALL { attr, .. } => match identity_builtin_arg(exp) {
+            Some(inner) if sig_ty_quiet(&call_value_ty(&attr.ty)).is_err() => exp_wty_hint(ctx, &inner)?,
+            _ => sig_ty(&call_value_ty(&attr.ty))?.wty(),
+        },
+        E::SHARED_LITERAL { exp, .. } => exp_wty_hint(ctx, exp)?,
+        // Array/record handles and `size(a, d)` are `i32`; an array element's /
+        // record field's wasm type comes from its element / field type.
+        E::ARRAY { .. } | E::MATRIX { .. } | E::RANGE { .. } | E::SIZE { .. } | E::RECORD { .. } => WTy::I32,
+        E::REDUCTION { reductionInfo, .. } => sig_ty(&reductionInfo.exprType)?.wty(),
+        E::RSUB { ty, .. } => sig_ty(ty)?.wty(),
+        E::TSUB { ty, .. } => sig_ty(ty)?.wty(),
+        E::ASUB { .. } => exp_sigty(exp).map(|s| s.wty()).unwrap_or(WTy::I32),
+        E::BOX { exp } => exp_wty_hint(ctx, exp)?,
+        E::UNBOX { ty, .. } => sig_ty(ty)?.wty(),
+        _ => WTy::F64,
+    })
+}
+
+/// The integer value of a `Real` literal exponent, or `None` if it is not an
+/// integral `RCONST` — mirrors the frontend's `Expression.realExpIntLit`, which
+/// the C target uses to pick the `real_int_pow` (repeated-multiply) path for
+/// scalar integer powers. Matching it exactly keeps the choice (and the output)
+/// in lockstep with the C target.
+fn real_exp_int_lit(e: &DAE::Exp) -> Option<i32> {
+    if let DAE::Exp::RCONST { real } = e {
+        let r = real.into_inner();
+        let i = r.floor() as i32;
+        if r == i as f64 { Some(i) } else { None }
+    } else {
+        None
+    }
+}
+
+/// Whether a `Real` literal exponent is exactly `0.5` — mirrors the frontend's
+/// `Expression.isHalf`, which the C target uses to lower `x ^ 0.5` to `sqrt`.
+fn exp_is_half(e: &DAE::Exp) -> bool {
+    matches!(e, DAE::Exp::RCONST { real } if real.into_inner() == 0.5)
+}
+
+/// The `SigTy` an arithmetic operator works on / produces. Unlike a bare
+/// `WTy` this distinguishes Integer/Boolean and, crucially, String (so `+` on
+/// Strings can be lowered to `rt_concat` rather than `i32.add`).
+fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
+    use DAE::Operator as O;
+    let ty = match op {
+        O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty } | O::UMINUS { ty } => ty,
+        // Scalar/matrix products carry the element (scalar-product) or result
+        // (matrix-product) type; `sig_ty` yields the produced value's `SigTy`.
+        O::MUL_SCALAR_PRODUCT { ty } | O::MUL_MATRIX_PRODUCT { ty } => ty,
+        // Element-wise and array/scalar operators all carry the (array) result
+        // type. `sig_ty` turns it into the `SigTy::Array { .. }` value type.
+        O::UMINUS_ARR { ty }
+        | O::ADD_ARR { ty }
+        | O::SUB_ARR { ty }
+        | O::MUL_ARR { ty }
+        | O::DIV_ARR { ty }
+        | O::MUL_ARRAY_SCALAR { ty }
+        | O::ADD_ARRAY_SCALAR { ty }
+        | O::SUB_SCALAR_ARRAY { ty }
+        | O::DIV_ARRAY_SCALAR { ty }
+        | O::DIV_SCALAR_ARRAY { ty }
+        | O::POW_ARRAY_SCALAR { ty }
+        | O::POW_SCALAR_ARRAY { ty }
+        | O::POW_ARR { ty }
+        | O::POW_ARR2 { ty } => ty,
+        _ => return Err("CodegenWasmJit: cannot determine type of operator"),
+    };
+    sig_ty_quiet(ty)
+}
+
+/// The result type of `and`/`or`/`not`: `Bool`, or a Boolean array when the
+/// operands are arrays. Only the operator records this — a nested logical
+/// operand's own type annotation is just the element type.
+fn logical_operator_sigty(op: &DAE::Operator) -> Option<SigTy> {
+    use DAE::Operator as O;
+    let (O::AND { ty } | O::OR { ty } | O::NOT { ty }) = op else { return None };
+    sig_ty_quiet(ty).ok()
+}
+
+/// The type an operator the frontend left untyped works on: whichever of String,
+/// Real or Integer an operand carries, in Modelica's promotion order.
+fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
+    let ops = [exp_sigty(e1).ok(), exp_sigty(e2).ok()];
+    for want in [SigTy::Str, SigTy::Real, SigTy::Int] {
+        if ops.iter().flatten().any(|s| *s == want) {
+            return Ok(want);
+        }
+    }
+    Err("CodegenWasmJit: cannot determine type of operator")
+}
+
+/// The value expression an identity builtin wraps. C's `daeExpCall` returns the
+/// argument's own expression for these, so the call's type *is* the argument's --
+/// which matters where the frontend left the call itself untyped.
+fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
+    let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
+    let name = AbsynUtil::pathLastIdent(path.clone()).ok()?;
+    let args: Vec<&Arc<DAE::Exp>> = (&**expLst).into_iter().collect();
+    match (name.as_str(), args.len()) {
+        ("smooth", 2) => Some(args[1].clone()),
+        ("noEvent", 1) | ("$getPart", 1) => Some(args[0].clone()),
+        _ => None,
+    }
+}
+
+/// The type of a call *as a value*: its first output (`daeExpCall`).
+fn call_value_ty(ty: &Arc<DAE::Type>) -> Arc<DAE::Type> {
+    match &**ty {
+        DAE::Type::T_TUPLE { types, .. } => {
+            (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone())
+        }
+        _ => ty.clone(),
+    }
+}
+
+/// The `SigTy` of an expression, from the DAE type annotations it carries (the
+/// component reference's `ty`, a call's result `attr.ty`, a literal's kind, …).
+/// Used where the *Modelica* type matters beyond the wasm representation — e.g.
+/// dispatching `String(x)` on the argument type, or telling an Integer `i32`
+/// from a String handle `i32`.
+fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
+    use DAE::Exp as E;
+    Ok(match exp {
+        E::ICONST { .. } | E::ENUM_LITERAL { .. } => SigTy::Int,
+        E::BCONST { .. } => SigTy::Bool,
+        E::RCONST { .. } => SigTy::Real,
+        E::SCONST { .. } => SigTy::Str,
+        E::CREF { ty, .. } => sig_ty_quiet(ty)?,
+        E::CALL { attr, .. } => match sig_ty_quiet(&call_value_ty(&attr.ty)) {
+            Ok(s) => s,
+            Err(e) => match identity_builtin_arg(exp) {
+                Some(inner) => exp_sigty(&inner)?,
+                None => return Err(e),
+            },
+        },
+        E::CAST { ty, .. } => sig_ty_quiet(ty)?,
+        // The new frontend leaves some operators `T_UNKNOWN`; read the operands
+        // instead, as `compile_binary` does.
+        E::BINARY { exp1, operator, exp2 } => match operator_sigty(operator) {
+            Ok(s) => s,
+            Err(_) => operand_sigty(exp1, exp2)?,
+        },
+        E::UNARY { operator, exp } => match operator_sigty(operator) {
+            Ok(s) => s,
+            Err(_) => exp_sigty(exp)?,
+        },
+        E::LBINARY { operator, .. } | E::LUNARY { operator, .. } => {
+            logical_operator_sigty(operator).unwrap_or(SigTy::Bool)
+        }
+        E::RELATION { .. } => SigTy::Bool,
+        E::IFEXP { expThen, .. } => exp_sigty(expThen)?,
+        E::SHARED_LITERAL { exp, .. } => exp_sigty(exp)?,
+        // Array-valued expressions carry their (array) type directly.
+        E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => sig_ty_quiet(ty)?,
+        // A reduction's result type is its element/fold type.
+        E::REDUCTION { reductionInfo, .. } => sig_ty_quiet(&reductionInfo.exprType)?,
+        // `a[subs]`: subscripting reduces the rank by the number of subscripts
+        // (a full index yields the scalar element).
+        E::ASUB { exp, sub } => {
+            let SigTy::Array { elem, rank } = exp_sigty(exp)? else {
+                return Err("CodegenWasmJit: subscripting a non-array expression");
+            };
+            let n = (&**sub).into_iter().count() as u32;
+            match rank.checked_sub(n) {
+                Some(0) | None => (*elem).clone(),
+                Some(left) => SigTy::Array { elem, rank: left },
+            }
+        }
+        // `size(a, d)` is a scalar Integer; `size(a)` is the dimension vector.
+        E::SIZE { sz: Some(_), .. } => SigTy::Int,
+        E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
+        // A record constructor / field access carry their type directly.
+        E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty_quiet(ty)?,
+        E::METARECORDCALL { path, .. } => metarecord_sigty(path)?,
+        E::TSUB { ty, .. } => sig_ty_quiet(ty)?,
+        // A function reference: what the value it produces may be called with.
+        E::PARTEVALFUNCTION { ty, .. } => closures::reference_sigty(ty)?,
+        E::BOX { exp } => exp_sigty(exp)?,
+        E::UNBOX { ty, .. } => sig_ty_quiet(ty)?,
+        other => return Err("CodegenWasmJit: cannot determine type of expression"),
+    })
+}
+
+fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<WTy> {
+    // Array negation `-a`: negate every element into a fresh array.
+    if let DAE::Operator::UMINUS_ARR { ty } = op {
+        let SigTy::Array { elem, .. } = sig_ty_quiet(ty)? else {
+            return Err("CodegenWasmJit: UMINUS_ARR with non-array type");
+        };
+        let rt = if elem.wty() == WTy::F64 { "rt_array_neg_f64" } else { "rt_array_neg_i32" };
+        compile_exp(ctx, exp)?; // owned array
+        let at = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(at));
+        ctx.emit(we::Instruction::LocalGet(at));
+        ctx.emit(we::Instruction::Call(rt_index(rt)?));
+        release_temp_array(ctx, at)?;
+        return Ok(WTy::I32);
+    }
+    let DAE::Operator::UMINUS { ty } = op else {
+        return Err("CodegenWasmJit: unsupported unary operator");
+    };
+    // C's `daeExpUnary` lets the operand's type decide; fall back the same way
+    // `compile_binary` does when the frontend left the operator `T_UNKNOWN`.
+    let wty = match sig_ty_quiet(ty) {
+        Ok(s) => s.wty(),
+        Err(_) => exp_sigty(exp)?.wty(),
+    };
+    let w = compile_exp(ctx, exp)?;
+    coerce(ctx, w, wty);
+    match wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Neg),
+        WTy::I32 => {
+            // 0 - x: reorder via a temp so the constant 0 is below x.
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::I32Const(0));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::I32Sub);
+        }
+    }
+    Ok(wty)
+}
+
+fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp) -> Result<WTy> {
+    use DAE::Operator as O;
+    // Element-wise array arithmetic (same-shape arrays) and scalar broadcast.
+    // Handled before the scalar paths because `operator_sigty` does not classify
+    // the array operators.
+    match op {
+        O::ADD_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_ADD, ty),
+        O::SUB_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_SUB, ty),
+        O::MUL_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_MUL, ty),
+        O::DIV_ARR { ty } => return compile_array_ew(ctx, e1, e2, OP_DIV, ty),
+        // `a + s` / `a * s` (commutative — the array operand is found by type).
+        O::ADD_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_ADD, false, ty),
+        O::MUL_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_MUL, false, ty),
+        // `s - a`, `a / s`, `s / a`.
+        O::SUB_SCALAR_ARRAY { ty } => return compile_array_scalar(ctx, e1, e2, OP_SUB, true, ty),
+        O::DIV_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_DIV, false, ty),
+        O::DIV_SCALAR_ARRAY { ty } => return compile_array_scalar(ctx, e1, e2, OP_DIV, true, ty),
+        // `v1 * v2` dot product (scalar result) and `a * b` matrix product
+        // (matrix·matrix / matrix·vector / vector·matrix → a fresh array).
+        O::MUL_SCALAR_PRODUCT { .. } => return compile_dot(ctx, e1, e2),
+        O::MUL_MATRIX_PRODUCT { .. } => return compile_matmul(ctx, e1, e2),
+        // Element-wise power: `a .^ b` (POW_ARR2), `a .^ s` (POW_ARRAY_SCALAR)
+        // and `s .^ a` (POW_SCALAR_ARRAY). The per-element `pow` runs in-wasm.
+        O::POW_ARR2 { ty } => return compile_array_ew(ctx, e1, e2, OP_POW, ty),
+        O::POW_ARRAY_SCALAR { ty } => return compile_array_scalar(ctx, e1, e2, OP_POW, false, ty),
+        O::POW_SCALAR_ARRAY { ty } => return compile_array_scalar(ctx, e1, e2, OP_POW, true, ty),
+        _ => {}
+    }
+    // C's `daeExpBinary` reads the operator's own type only to tell a String `+`
+    // from arithmetic, and otherwise works off the operands' C types; the new
+    // frontend leaves some operators `T_UNKNOWN`, so fall back the same way.
+    let sig = match operator_sigty(op) {
+        Ok(s) => s,
+        Err(_) => operand_sigty(e1, e2).map_err(|e| {
+            let show = |x: &DAE::Exp| {
+                openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+                    .map(|s| s.to_string())
+                    .unwrap_or_default()
+            };
+            crate::CodegenWasmJit::record_error(format!(
+                "CodegenWasmJit: untyped binary operator between `{}` and `{}`",
+                show(e1),
+                show(e2)
+            ));
+            e
+        })?,
+    };
+    // String `+` is concatenation: both operands are String handles, the result
+    // is a fresh String handle from the runtime.
+    if sig == SigTy::Str {
+        let O::ADD { .. } = op else {
+            return Err("CodegenWasmJit: unsupported String operator");
+        };
+        str_binop(ctx, e1, e2, "rt_concat")?;
+        return Ok(WTy::I32);
+    }
+    let wty = sig.wty();
+    // POW has no wasm instruction. Mirror the C target's scalar-power dispatch
+    // exactly: a literal `0.5` exponent is `sqrt` (with a negative-base check),
+    // an integer-literal exponent is exponentiation by squaring
+    // (`rt_real_int_pow`), and everything else is the generic `rt_real_pow`
+    // (negative-base / odd-root / nan-inf handling). Keeping the same three-way
+    // choice as C keeps the output byte-identical.
+    if matches!(op, O::POW { .. }) {
+        if exp_is_half(e2) {
+            // sqrt(base); a negative base is an invalid root. `rt_invalid_root`
+            // returns only where the throw is recoverable, as `emit_div_zero_guard`.
+            let a = compile_exp(ctx, e1)?;
+            coerce(ctx, a, WTy::F64);
+            let bt = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(bt));
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Lt);
+            ctx.emit(we::Instruction::If(we::BlockType::Empty));
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Const(0.5f64.into()));
+            emit_src_loc(ctx);
+            ctx.emit(we::Instruction::Call(rt_index("rt_invalid_root")?));
+            release_heap_locals(ctx)?;
+            push_outputs(ctx);
+            ctx.emit(we::Instruction::Return);
+            ctx.emit(we::Instruction::End);
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Sqrt);
+            return Ok(WTy::F64);
+        }
+        let rt = if let Some(n) = real_exp_int_lit(e2) {
+            let a = compile_exp(ctx, e1)?;
+            coerce(ctx, a, WTy::F64);
+            ctx.emit(we::Instruction::I32Const(n));
+            "rt_real_int_pow"
+        } else {
+            let a = compile_exp(ctx, e1)?;
+            coerce(ctx, a, WTy::F64);
+            let b = compile_exp(ctx, e2)?;
+            coerce(ctx, b, WTy::F64);
+            emit_src_loc(ctx);
+            "rt_real_pow"
+        };
+        ctx.emit(we::Instruction::Call(rt_index(rt)?));
+        // Integer power keeps Integer type in Modelica: truncate back.
+        if wty == WTy::I32 {
+            ctx.emit(we::Instruction::I32TruncF64S);
+            return Ok(WTy::I32);
+        }
+        return Ok(WTy::F64);
+    }
+    let a = compile_exp(ctx, e1)?;
+    coerce(ctx, a, wty);
+    let b = compile_exp(ctx, e2)?;
+    coerce(ctx, b, wty);
+    // C's `daeExpBinary` guards every division: `FUNCTION_CONTEXT` throws outright,
+    // an equation's is `DIVISION_SIM`.
+    if matches!(op, O::DIV { .. }) {
+        if ctx.sim.is_none() {
+            emit_div_zero_guard(ctx, e1, op, e2, wty)?;
+        } else if wty == WTy::F64 {
+            return emit_div_sim(ctx, e2);
+        }
+    }
+    match (op, wty) {
+        (O::ADD { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Add),
+        (O::ADD { .. }, WTy::I32) => ctx.emit(we::Instruction::I32Add),
+        (O::SUB { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Sub),
+        (O::SUB { .. }, WTy::I32) => ctx.emit(we::Instruction::I32Sub),
+        (O::MUL { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Mul),
+        (O::MUL { .. }, WTy::I32) => ctx.emit(we::Instruction::I32Mul),
+        (O::DIV { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Div),
+        (O::DIV { .. }, WTy::I32) => ctx.emit(we::Instruction::I32DivS),
+        (other, _) => return Err("CodegenWasmJit: unsupported binary operator"),
+    }
+    Ok(wty)
+}
+
+/// A borrowed handle to a module-wide String literal (C's `_OMC_LIT`), so a guard's
+/// message allocates nothing when it fires.
+fn emit_shared_str(ctx: &mut FnCtx, s: &str) {
+    let g = shared_lits::intern_const(&DAE::Exp::SCONST { string: s.into() });
+    ctx.emit(we::Instruction::GlobalGet(g));
+}
+
+/// Push the `"<file>:<line>: "` prefix a model error raised here reports.
+fn emit_src_loc(ctx: &mut FnCtx) {
+    let s = match &ctx.src_loc {
+        Some(i) if i.lineNumberStart > 0 && !i.fileName.is_empty() => {
+            let file = openmodelica_util::Testsuite::friendly(i.fileName.clone()).unwrap_or_else(|_| i.fileName.clone());
+            format!("{file}:{}: ", i.lineNumberStart)
+        }
+        _ => String::new(),
+    };
+    emit_shared_str(ctx, &s);
+}
+
+/// The divisor is on the stack: hold it in a temp, and where it is zero throw as
+/// C's generated `if (tvar == 0) {throwStreamPrint(…)}` does. The throw returns
+/// inside a nonlinear-solver residual, so the function leaves its outputs where
+/// they were, as [`emit_nls_recoverable_return`].
+fn emit_div_zero_guard(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    op: &DAE::Operator,
+    e2: &DAE::Exp,
+    wty: WTy,
+) -> Result<()> {
+    use we::Instruction as I;
+    let t = ctx.alloc_temp(wty);
+    ctx.emit(I::LocalTee(t));
+    if wty == WTy::F64 {
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Eq);
+    } else {
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::I32Eq);
+    }
+    ctx.emit(I::If(we::BlockType::Empty));
+    let exp = Arc::new(DAE::Exp::BINARY {
+        exp1: Arc::new(e1.clone()),
+        operator: op.clone(),
+        exp2: Arc::new(e2.clone()),
+    });
+    emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
+    ctx.emit(I::Call(rt_index("rt_throw_stream")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(t));
+    Ok(())
+}
+
+/// C's `DIVISION_SIM` (`__OMC_DIV_SIM`), with `a` and `b` on the stack. The quotient
+/// stands unless the divisor was zero or it came out inf/nan; `rt_div_sim` (nls.rs)
+/// has what C does with those.
+fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
+    use we::Instruction as I;
+    let (ta, tb, res) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    ctx.emit(I::LocalSet(tb));
+    ctx.emit(I::LocalSet(ta));
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Div);
+    // `res - res != 0` is C's `!valid_number(res)`: inf and nan both fail it.
+    ctx.emit(I::LocalTee(res));
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::F64Sub);
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Ne);
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Eq);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    emit_shared_str(ctx, &dumped_exp(&Arc::new(e2.clone()))?);
+    let data = ctx.sim()?.data_local;
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    emit_initial_flag(ctx);
+    ctx.emit(I::Call(rt_index("rt_div_sim")?));
+    ctx.emit(I::Else);
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::End);
+    Ok(WTy::F64)
+}
+
+fn compile_relation(
+    ctx: &mut FnCtx,
+    e1: &Arc<DAE::Exp>,
+    op: &DAE::Operator,
+    e2: &Arc<DAE::Exp>,
+    index: i32,
+    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+) -> Result<WTy> {
+    use DAE::Operator as O;
+    // String comparisons go through the runtime: equality via `rt_streq`,
+    // ordering via `rt_strcmp` (which returns -1/0/1) compared against 0. As for
+    // the arithmetic operators, an untyped relation takes its operands' type.
+    let sig = match relation_operand_sigty(op) {
+        Ok(s) => s,
+        Err(_) => operand_sigty(e1, e2)?,
+    };
+    if sig == SigTy::Str {
+        match op {
+            O::EQUAL { .. } => str_binop(ctx, e1, e2, "rt_streq")?,
+            O::NEQUAL { .. } => {
+                str_binop(ctx, e1, e2, "rt_streq")?;
+                ctx.emit(we::Instruction::I32Eqz);
+            }
+            O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. } => {
+                str_binop(ctx, e1, e2, "rt_strcmp")?;
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(match op {
+                    O::LESS { .. } => we::Instruction::I32LtS,
+                    O::LESSEQ { .. } => we::Instruction::I32LeS,
+                    O::GREATER { .. } => we::Instruction::I32GtS,
+                    _ => we::Instruction::I32GeS,
+                });
+            }
+            other => return Err("CodegenWasmJit: unsupported String relation"),
+        }
+        return Ok(WTy::I32);
+    }
+    // An indexed relation is held during continuous integration (`rel_fresh == 0`)
+    // and re-evaluated at events/init; the crossing function (`zc_context`) always
+    // re-evaluates. A Real inequality gets a hysteresis band (`compile_relation_hyst`)
+    // at events and in the crossing function, but stays exact at init (`rel_fresh == 2`)
+    // so a start value like `v <= 0` at `v == 0` resolves as written.
+    // A clocked partition is C's `contextOther`: plain relations.
+    let indexed = matches!(ctx.sim(), Ok(s) if index >= 0 && (index as u32) < s.n_relations
+        && s.sub_clock_off.is_none());
+    if !indexed {
+        return compile_relation_fresh(ctx, e1, op, e2);
+    }
+    compile_relation_indexed(ctx, e1, op, e2, index, asub)
+}
+
+/// The held/banded/exact indexed-relation evaluation (integration, event, init modes
+/// selected on `rel_fresh`). Callers guarantee the relation is indexed
+/// (`0 <= index < n_relations`).
+fn compile_relation_indexed(
+    ctx: &mut FnCtx,
+    e1: &Arc<DAE::Exp>,
+    op: &DAE::Operator,
+    e2: &Arc<DAE::Exp>,
+    index: i32,
+    asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
+) -> Result<WTy> {
+    use DAE::Operator as O;
+    let real_ineq = operand_type_of_relation(op)? == WTy::F64
+        && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
+    let data = ctx.sim()?.data_local;
+    // Region bases: `relations[]` (live), `relationsPre[]` (held) and the held
+    // snapshot the hysteresis band's direction reads. Element `k` is at
+    // `base + k*4`.
+    let relations_off = ctx.sim()?.relations_off;
+    let pre_off = ctx.sim()?.relations_pre_off;
+    let dir_off = ctx.sim()?.stored_rel_off;
+    let fresh_off = ctx.sim()?.rel_fresh_off;
+    // The slot address `data + eff_index*4`. A relation inside a `for`-loop shares
+    // one AST node across iterations, so its effective index is
+    // `index + (iterator - i)/j` (C's `daeExpRelationSim`); otherwise it is `index`.
+    // The crossing function evaluates the scalarized copies outside that loop, so
+    // the iterator does not exist there and it keeps the base `index`, as C does.
+    let zc_context = ctx.sim()?.zc_context;
+    let slot = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Const(index));
+    if let Some((iter, i, j)) = asub.as_ref().filter(|_| !zc_context) {
+        let w = compile_exp(ctx, iter)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(*i));
+        ctx.emit(we::Instruction::I32Sub);
+        ctx.emit(we::Instruction::I32Const(*j));
+        ctx.emit(we::Instruction::I32DivS);
+        ctx.emit(we::Instruction::I32Add); // index + (iterator - i)/j
+    }
+    ctx.emit(we::Instruction::I32Const(4));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add); // data + eff_index*4
+    ctx.emit(we::Instruction::LocalSet(slot));
+    if zc_context {
+        if real_ineq {
+            compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
+        } else {
+            compile_relation_fresh(ctx, e1, op, e2)?;
+        }
+        return Ok(WTy::I32);
+    }
+    // Equation context: held / init-fresh / event-fresh selected on `rel_fresh`.
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+    ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+    let v = ctx.alloc_temp(WTy::I32);
+    if real_ineq {
+        // rel_fresh == 2 (init): exact; else (event): hysteretic.
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+        ctx.emit(we::Instruction::I32Const(2));
+        ctx.emit(we::Instruction::I32Eq);
+        ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+        compile_relation_fresh(ctx, e1, op, e2)?;
+        ctx.emit(we::Instruction::Else);
+        compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
+        ctx.emit(we::Instruction::End);
+    } else {
+        compile_relation_fresh(ctx, e1, op, e2)?;
+    }
+    ctx.emit(we::Instruction::LocalSet(v));
+    ctx.emit(we::Instruction::LocalGet(slot)); // store relations[eff] = v
+    ctx.emit(we::Instruction::LocalGet(v));
+    ctx.emit(we::Instruction::I32Store(mem_arg(relations_off, 2)));
+    ctx.emit(we::Instruction::LocalGet(v));
+    ctx.emit(we::Instruction::Else);
+    ctx.emit(we::Instruction::LocalGet(slot)); // held: relationsPre[eff]
+    ctx.emit(we::Instruction::I32Load(mem_arg(pre_off, 2)));
+    ctx.emit(we::Instruction::End);
+    Ok(WTy::I32)
+}
+
+/// Emit a Real inequality with a zero-crossing hysteresis band, leaving an i32
+/// boolean on the stack. The comparison boundary is offset by
+/// ±`eps = tolZC * (max(|a|,|b|) + max(nominal(a), nominal(b)))` in the direction
+/// that resists a flip, using the held relation snapshot (`slot + dir_off`) as the
+/// current side: once true the relation stays true until the operand clears the
+/// band, and vice versa. `slot` addresses the relation's element (`data + eff*4`);
+/// `tolZC` is read from `SimData` (`zctol_off`).
+fn compile_relation_hyst(
+    ctx: &mut FnCtx,
+    e1: &Arc<DAE::Exp>,
+    op: &DAE::Operator,
+    e2: &Arc<DAE::Exp>,
+    slot: u32,
+    dir_off: u32,
+) -> Result<()> {
+    use we::Instruction as I;
+    let data = ctx.sim()?.data_local;
+    let zctol_off = ctx.sim()?.zctol_off;
+
+    let nom = ctx.alloc_temp(WTy::F64);
+    emit_relation_nominal(ctx, e1, e2)?;
+    ctx.emit(I::LocalSet(nom));
+
+    let a = ctx.alloc_temp(WTy::F64);
+    let wa = compile_exp(ctx, e1)?;
+    coerce(ctx, wa, WTy::F64);
+    ctx.emit(I::LocalSet(a));
+    let b = ctx.alloc_temp(WTy::F64);
+    let wb = compile_exp(ctx, e2)?;
+    coerce(ctx, wb, WTy::F64);
+    ctx.emit(I::LocalSet(b));
+
+    // eps = tolZC * (max(|a|,|b|) + nom)
+    let eps = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::F64Abs);
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(I::F64Abs);
+    ctx.emit(I::F64Max);
+    ctx.emit(I::LocalGet(nom));
+    ctx.emit(I::F64Add);
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
+    ctx.emit(I::F64Mul);
+    ctx.emit(I::LocalSet(eps));
+
+    // diff = a - b
+    let diff = ctx.alloc_temp(WTy::F64);
+    ctx.emit(I::LocalGet(a));
+    ctx.emit(I::LocalGet(b));
+    ctx.emit(I::F64Sub);
+    ctx.emit(I::LocalSet(diff));
+
+    // The held snapshot (`slot + dir_off`) chooses which band edge applies.
+    ctx.emit(I::LocalGet(slot));
+    ctx.emit(I::I32Load(mem_arg(dir_off, 2)));
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::I32)));
+    emit_hyst_cmp(ctx, op, diff, eps, true)?;
+    ctx.emit(I::Else);
+    emit_hyst_cmp(ctx, op, diff, eps, false)?;
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Emit `diff <op> (±eps)`, leaving an i32 boolean. `dir` is the current relation
+/// value; it selects which side of the band the boundary sits on so the relation
+/// resists flipping.
+fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: bool) -> Result<()> {
+    use DAE::Operator as O;
+    use we::Instruction as I;
+    // (comparison, whether the +eps edge applies for this direction).
+    let (cmp, plus) = match op {
+        O::LESSEQ { .. } => (I::F64Lt, dir),
+        O::LESS { .. } => (I::F64Le, dir),
+        O::GREATER { .. } => (I::F64Ge, !dir),
+        O::GREATEREQ { .. } => (I::F64Gt, !dir),
+        other => return Err("CodegenWasmJit: non-inequality in hysteresis path"),
+    };
+    ctx.emit(I::LocalGet(diff));
+    ctx.emit(I::LocalGet(eps));
+    if !plus {
+        ctx.emit(I::F64Neg);
+    }
+    ctx.emit(cmp);
+    Ok(())
+}
+
+/// Leave `max(|nominal(e1)|, |nominal(e2)|)` — the scale term of the hysteresis
+/// band — on the stack as an f64, from the same `getExpNominal` derivation C's
+/// `daeExpNominalTmp` uses.
+fn emit_relation_nominal(ctx: &mut FnCtx, e1: &Arc<DAE::Exp>, e2: &Arc<DAE::Exp>) -> Result<()> {
+    let n1 = nominal_exp(e1);
+    let n2 = nominal_exp(e2);
+    match (nominal_const(&n1), nominal_const(&n2)) {
+        (Some(c1), Some(c2)) => ctx.emit(we::Instruction::F64Const(c1.max(c2).into())),
+        _ => {
+            let w1 = compile_exp(ctx, &n1)?;
+            coerce(ctx, w1, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            let w2 = compile_exp(ctx, &n2)?;
+            coerce(ctx, w2, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Max);
+        }
+    }
+    Ok(())
+}
+
+fn nominal_exp(e: &Arc<DAE::Exp>) -> Arc<DAE::Exp> {
+    openmodelica_backend::SimCodeUtil::getExpNominal(Arc::clone(e))
+        .unwrap_or_else(|_| Arc::new(DAE::Exp::RCONST { real: 1.0.into() }))
+}
+
+fn nominal_const(e: &DAE::Exp) -> Option<f64> {
+    match e {
+        DAE::Exp::RCONST { real } => Some(real.into_inner().abs()),
+        DAE::Exp::ICONST { integer } => Some((*integer as f64).abs()),
+        _ => None,
+    }
+}
+
+/// Emit a plain (unheld) relational comparison, leaving an i32 boolean on the
+/// stack. The hysteresis wrapper in [`compile_relation`] calls this for the fresh
+/// branch; non-indexed relations use it directly.
+fn compile_relation_fresh(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp) -> Result<WTy> {
+    use DAE::Operator as O;
+    let operand_wty = operand_type_of_relation(op)?;
+    if matches!(relation_operand_sigty(op), Ok(SigTy::Bool)) {
+        // C compares Booleans through `!`, so a value outside {0,1} still compares
+        // by truth value.
+        compile_bool_operand(ctx, e1)?;
+        compile_bool_operand(ctx, e2)?;
+    } else {
+        let a = compile_exp(ctx, e1)?;
+        coerce(ctx, a, operand_wty);
+        let b = compile_exp(ctx, e2)?;
+        coerce(ctx, b, operand_wty);
+    }
+    let instr = match (op, operand_wty) {
+        (O::LESS { .. }, WTy::F64) => we::Instruction::F64Lt,
+        (O::LESS { .. }, WTy::I32) => we::Instruction::I32LtS,
+        (O::LESSEQ { .. }, WTy::F64) => we::Instruction::F64Le,
+        (O::LESSEQ { .. }, WTy::I32) => we::Instruction::I32LeS,
+        (O::GREATER { .. }, WTy::F64) => we::Instruction::F64Gt,
+        (O::GREATER { .. }, WTy::I32) => we::Instruction::I32GtS,
+        (O::GREATEREQ { .. }, WTy::F64) => we::Instruction::F64Ge,
+        (O::GREATEREQ { .. }, WTy::I32) => we::Instruction::I32GeS,
+        (O::EQUAL { .. }, WTy::F64) => we::Instruction::F64Eq,
+        (O::EQUAL { .. }, WTy::I32) => we::Instruction::I32Eq,
+        (O::NEQUAL { .. }, WTy::F64) => we::Instruction::F64Ne,
+        (O::NEQUAL { .. }, WTy::I32) => we::Instruction::I32Ne,
+        (other, _) => return Err("CodegenWasmJit: unsupported relational operator"),
+    };
+    ctx.emit(instr);
+    Ok(WTy::I32)
+}
+
+fn operand_type_of_relation(op: &DAE::Operator) -> Result<WTy> {
+    Ok(relation_operand_sigty(op)?.wty())
+}
+
+/// Compile a Boolean operand of `and`/`or`/a Boolean relation as a 0/1 i32. C's
+/// `!e`/`e && f` take any nonzero as true and an `external "C"` output can be such
+/// a value, so the truth value is materialized unless the form already gives it.
+fn compile_bool_operand(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<()> {
+    use DAE::Exp as E;
+    let w = compile_exp(ctx, e)?;
+    coerce(ctx, w, WTy::I32);
+    if !matches!(e, E::BCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. }) {
+        ctx.emit(we::Instruction::I32Const(0));
+        ctx.emit(we::Instruction::I32Ne);
+    }
+    Ok(())
+}
+
+/// The `SigTy` of a relational operator's operands (distinguishes String, whose
+/// comparisons go through the runtime, from numeric ones).
+fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
+    use DAE::Operator as O;
+    let ty = match op {
+        O::LESS { ty } | O::LESSEQ { ty } | O::GREATER { ty } | O::GREATEREQ { ty } | O::EQUAL { ty } | O::NEQUAL { ty } => ty,
+        _ => return Err("CodegenWasmJit: not a relational operator"),
+    };
+    sig_ty_quiet(ty)
+}
+
+/// Compile a `CALL`, leaving its result value(s) on the stack; returns their
+/// types. Resolves to another generated function, an inline math builtin, or a
+/// host-imported builtin.
+fn compile_call(
+    ctx: &mut FnCtx,
+    path: &Absyn::Path,
+    args: &Arc<List<Arc<DAE::Exp>>>,
+    attr: &DAE::CallAttributes,
+) -> Result<Vec<SigTy>> {
+    // A call through a function-reference variable: `call_indirect` on the
+    // closure it holds. C likewise dispatches on the variable, not the path.
+    if attr.isFunctionPointerCall {
+        let Absyn::Path::IDENT { name } = path else {
+            return Err("CodegenWasmJit: function-pointer calls are only supported through a local variable");
+        };
+        return closures::compile_fnptr_call(ctx, name, args);
+    }
+    let mangled = mangle(path)?;
+    // A call to another generated function. Heap arguments are passed as owned
+    // (+1) references — a generated function *consumes* its heap parameters
+    // (they are released at its scope exit), so the caller does not release them
+    // after the call.
+    if let Some(info) = ctx.by_name.get(&mangled) {
+        let params = info.sig.params.clone();
+        let results = info.sig.results.clone();
+        let index = info.index;
+        let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+        if argv.len() != params.len() {
+            return Err("CodegenWasmJit: call argument count mismatch");
+        }
+        for (a, p) in argv.iter().zip(params.iter()) {
+            let w = compile_exp(ctx, a)?;
+            coerce(ctx, w, p.wty());
+        }
+        // C's `SIM_PROF_TICK_FN` / `SIM_PROF_ACC_FN` around a profiled call.
+        let clock = prof_fn_clock(ctx, &mangled);
+        emit_prof(ctx, clock, "rt_prof_tick")?;
+        ctx.emit(we::Instruction::Call(index));
+        emit_prof(ctx, clock, "rt_prof_acc")?;
+        return Ok(results);
+    }
+    // A call whose result is a record and which is not a generated function is a
+    // record constructor `R(v1, …)` (the constructor function itself is not
+    // emitted — construction is lowered inline).
+    if let Ok(rty @ SigTy::Record { .. }) = sig_ty_quiet(&attr.ty) {
+        let clock = prof_fn_clock(ctx, &mangled);
+        emit_prof(ctx, clock, "rt_prof_tick")?;
+        compile_record_call(ctx, &attr.ty, args)?;
+        emit_prof(ctx, clock, "rt_prof_acc")?;
+        return Ok(vec![rty]);
+    }
+    // Otherwise it must be a (builtin) math/string function.
+    let name = AbsynUtil::pathLastIdent(Arc::new(path.clone()))?.to_string();
+    // `print(s)`: write the String to the model's stdout via the host `rt_print`.
+    // A void procedure, so it yields no result; the owned handle is released after.
+    if name == "print" {
+        let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+        if argv.len() != 1 {
+            return Err("CodegenWasmJit: print expects one argument");
+        }
+        let w = compile_exp(ctx, argv[0])?;
+        if w != WTy::I32 {
+            return Err("CodegenWasmJit: print expects a String");
+        }
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        ctx.emit(we::Instruction::LocalGet(t));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_print")?));
+        release_temp(ctx, t)?;
+        return Ok(Vec::new());
+    }
+    // The only two-output builtin: the transported profile lives in the runtime, so
+    // the tuple is one call for `out0` plus a read-back of that call's `out1`.
+    if name == "spatialDistribution" {
+        return compile_spatial_distribution(ctx, args).map(|_| vec![SigTy::Real, SigTy::Real]);
+    }
+    compile_math_builtin(ctx, &name, args, attr).map(|s| vec![s])
+}
+
+/// The profiling clock of the generated function `mangled`, in a simulation with
+/// `+profiling`; C profiles every non-builtin call outside a function body.
+fn prof_fn_clock(ctx: &FnCtx, mangled: &str) -> Option<u32> {
+    ctx.sim.as_ref()?.prof.as_ref()?.fn_index.get(mangled).copied()
+}
+
+/// `rt_prof_tick(clock)` / `rt_prof_acc(clock)` / …, when there is a clock.
+pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Result<()> {
+    if let Some(c) = clock {
+        ctx.emit(we::Instruction::I32Const(c as i32));
+        ctx.emit(we::Instruction::Call(rt_index(hook)?));
+    }
+    Ok(())
+}
+
+/// `(out0, out1) = spatialDistribution(index, in0, in1, x, positiveVelocity,
+/// initialPoints, initialValues)` — the backend's form, with the operator index
+/// prepended — leaving both outputs on the stack, first result deepest.
+/// `initialPoints`/`initialValues` are only used during initialization
+/// (`functionInitSpatialDistribution`), as in C.
+fn compile_spatial_distribution(ctx: &mut FnCtx, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
+    use we::Instruction as I;
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    if argv.len() != 7 {
+        return Err("CodegenWasmJit: `spatialDistribution` expects the backend's 7-argument form");
+    }
+    let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+        return Err("CodegenWasmJit: `spatialDistribution` index must be an integer literal");
+    };
+    let (data, rel_fresh_off) = { let s = ctx.sim()?; (s.data_local, s.rel_fresh_off) };
+    ctx.emit(I::I32Const(*index));
+    ctx.emit(I::LocalGet(data)); // time (TIME_OFF = 0)
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
+    for a in &argv[1..4] {
+        let w = compile_exp(ctx, a)?; // in0, in1, x
+        coerce(ctx, w, WTy::F64);
+    }
+    let w = compile_exp(ctx, argv[4])?; // positiveVelocity
+    coerce(ctx, w, WTy::I32);
+    // C's `simulationInfo->discreteCall`: the relation mode is nonzero for an event
+    // update and for the initial system, zero during continuous integration.
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Load(mem_arg(rel_fresh_off, 2)));
+    ctx.emit(I::Call(rt_index("rt_spatial_eval")?));
+    ctx.emit(I::I32Const(*index));
+    ctx.emit(I::Call(rt_index("rt_spatial_out1")?));
+    Ok(())
+}
+
+/// Like [`compile_call`] but for statement position; returns the result types
+/// left on the stack (to be released if heap, otherwise dropped).
+fn compile_call_drop(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<Vec<SigTy>> {
+    let DAE::Exp::CALL { path, expLst, attr } = exp else {
+        return Err("CodegenWasmJit: no-return statement is not a call");
+    };
+    compile_call(ctx, path, expLst, attr)
+}
+
+/// Emit `test(fresh operands)` as an f64 for a math-event crossing (fresh args).
+fn emit_math_test_fresh(
+    ctx: &mut FnCtx,
+    kind: crate::CodegenWasmJit::MathEventKind,
+    ops: &[Arc<DAE::Exp>],
+) -> Result<()> {
+    use crate::CodegenWasmJit::MathEventKind as K;
+    match kind {
+        K::Floor | K::Ceil => {
+            let w = compile_exp(ctx, &ops[0])?;
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(if kind == K::Ceil { we::Instruction::F64Ceil } else { we::Instruction::F64Floor });
+        }
+        K::Div | K::Mod => {
+            let a = compile_exp(ctx, &ops[0])?;
+            coerce(ctx, a, WTy::F64);
+            let b = compile_exp(ctx, &ops[1])?;
+            coerce(ctx, b, WTy::F64);
+            ctx.emit(we::Instruction::F64Div);
+            ctx.emit(if kind == K::Div { we::Instruction::F64Trunc } else { we::Instruction::F64Floor });
+        }
+    }
+    Ok(())
+}
+
+/// Emit `test(mathEventsValuePre[idx])` as an f64 (held-value counterpart).
+fn emit_math_test_pre(
+    ctx: &mut FnCtx,
+    kind: crate::CodegenWasmJit::MathEventKind,
+    idx: u32,
+) -> Result<()> {
+    use crate::CodegenWasmJit::MathEventKind as K;
+    let (data, base) = { let s = ctx.sim()?; (s.data_local, s.mathevents_off + idx * 8) };
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::F64Load(mem_arg(base, 3)));
+    match kind {
+        K::Floor => ctx.emit(we::Instruction::F64Floor),
+        K::Ceil => ctx.emit(we::Instruction::F64Ceil),
+        K::Div | K::Mod => {
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::F64Load(mem_arg(base + 8, 3)));
+            ctx.emit(we::Instruction::F64Div);
+            ctx.emit(if kind == K::Div { we::Instruction::F64Trunc } else { we::Instruction::F64Floor });
+        }
+    }
+    Ok(())
+}
+
+/// Compile a math-event builtin's value in an equation body (C's `_event_*`):
+/// refresh `mathEventsValuePre[idx..]` from the current operands when `rel_fresh !=
+/// 0` (event/init), else use the held value; return the discretized result.
+fn compile_math_event(
+    ctx: &mut FnCtx,
+    name: &str,
+    ops: &[&Arc<DAE::Exp>],
+    idx: u32,
+    result_wty: WTy,
+) -> Result<SigTy> {
+    use we::Instruction as I;
+    let (data, base, fresh_off) = {
+        let s = ctx.sim()?;
+        if idx >= s.n_mathevents {
+            return Err("CodegenWasmJit: math-event index out of range");
+        }
+        (s.data_local, s.mathevents_off + idx * 8, s.rel_fresh_off)
+    };
+    match name {
+        // integer(x): store floor(x), return (int)pre. floor/ceil: store x, return
+        // floor/ceil(pre). (C's _event_integer / _event_floor / _event_ceil.)
+        "integer" | "floor" | "ceil" => {
+            let w = compile_exp(ctx, ops[0])?;
+            coerce(ctx, w, WTy::F64);
+            let xt = ctx.alloc_temp(WTy::F64);
+            ctx.emit(I::LocalSet(xt));
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::I32Load(mem_arg(fresh_off, 2)));
+            ctx.emit(I::If(we::BlockType::Empty));
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::LocalGet(xt));
+            if name == "integer" { ctx.emit(I::F64Floor); }
+            ctx.emit(I::F64Store(mem_arg(base, 3)));
+            ctx.emit(I::End);
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::F64Load(mem_arg(base, 3)));
+            match name {
+                "integer" => { ctx.emit(I::I32TruncSatF64S); Ok(SigTy::Int) }
+                "ceil" => { ctx.emit(I::F64Ceil); Ok(SigTy::Real) }
+                _ => { ctx.emit(I::F64Floor); Ok(SigTy::Real) }
+            }
+        }
+        // div(a,b)/mod(a,b): store the operands, return the held quotient/modulo.
+        // (C's _event_div_*/_event_mod_*.)
+        "div" | "mod" => {
+            let is_int = result_wty == WTy::I32;
+            let wt = if is_int { WTy::I32 } else { WTy::F64 };
+            let a = compile_exp(ctx, ops[0])?;
+            coerce(ctx, a, wt);
+            let at = ctx.alloc_temp(wt);
+            ctx.emit(I::LocalSet(at));
+            let b = compile_exp(ctx, ops[1])?;
+            coerce(ctx, b, wt);
+            let bt = ctx.alloc_temp(wt);
+            ctx.emit(I::LocalSet(bt));
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::I32Load(mem_arg(fresh_off, 2)));
+            ctx.emit(I::If(we::BlockType::Empty));
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::LocalGet(at));
+            if is_int { ctx.emit(I::F64ConvertI32S); }
+            ctx.emit(I::F64Store(mem_arg(base, 3)));
+            ctx.emit(I::LocalGet(data));
+            ctx.emit(I::LocalGet(bt));
+            if is_int { ctx.emit(I::F64ConvertI32S); }
+            ctx.emit(I::F64Store(mem_arg(base + 8, 3)));
+            // mod on Reals uses a third slot for the held floor of the ratio
+            // (C's _event_mod_real calls _event_floor(x1/x2, index+2)).
+            if name == "mod" && !is_int {
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::LocalGet(at));
+                ctx.emit(I::LocalGet(bt));
+                ctx.emit(I::F64Div);
+                ctx.emit(I::F64Store(mem_arg(base + 16, 3)));
+            }
+            ctx.emit(I::End);
+            match (name, is_int) {
+                ("div", true) => {
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(base, 3)));
+                    ctx.emit(I::I32TruncF64S);
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(base + 8, 3)));
+                    ctx.emit(I::I32TruncF64S);
+                    ctx.emit(I::I32DivS);
+                    Ok(SigTy::Int)
+                }
+                ("div", false) => {
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(base, 3)));
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(base + 8, 3)));
+                    ctx.emit(I::F64Div);
+                    ctx.emit(I::F64Trunc);
+                    Ok(SigTy::Real)
+                }
+                // _event_mod_integer returns the floored modulo of the *current*
+                // operands (only the pre-slots are held, for the crossing).
+                ("mod", true) => {
+                    ctx.emit(I::LocalGet(at));
+                    ctx.emit(I::LocalGet(bt));
+                    ctx.emit(I::Call(rt_index("rt_mod_int")?));
+                    Ok(SigTy::Int)
+                }
+                // _event_mod_real: current a - floor(held a/b) * current b.
+                _ => {
+                    ctx.emit(I::LocalGet(at));
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(base + 16, 3)));
+                    ctx.emit(I::F64Floor);
+                    ctx.emit(I::LocalGet(bt));
+                    ctx.emit(I::F64Mul);
+                    ctx.emit(I::F64Sub);
+                    Ok(SigTy::Real)
+                }
+            }
+        }
+        _ => return Err("CodegenWasmJit: not a math-event builtin"),
+    }
+}
+
+/// Lower a scalar math builtin. Single-instruction builtins are emitted inline;
+/// transcendental ones go through the host imports in [`BUILTINS`].
+fn compile_math_builtin(
+    ctx: &mut FnCtx,
+    name: &str,
+    args: &Arc<List<Arc<DAE::Exp>>>,
+    attr: &DAE::CallAttributes,
+) -> Result<SigTy> {
+    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+
+    // Array-valued / array-reducing builtins (fill/zeros/ones, sum/product, the
+    // one-array forms of min/max, ndims) take precedence over the scalar math
+    // handling below (which also defines the two-argument min/max).
+    if let Some(sig) = compile_array_builtin(ctx, name, &argv, attr)? {
+        return Ok(sig);
+    }
+
+    let result_sig = sig_ty_quiet(&attr.ty).unwrap_or(SigTy::Real);
+    let result_wty = result_sig.wty();
+
+    // Event forms (trailing index) get held/refresh semantics; plain arities fall
+    // through to the value handling below.
+    if crate::CodegenWasmJit::math_event_kind(name, argv.len()).is_some() {
+        let idx = crate::CodegenWasmJit::math_event_index(argv[argv.len() - 1])?;
+        return compile_math_event(ctx, name, &argv[..argv.len() - 1], idx, result_wty);
+    }
+
+    // Host-imported transcendentals (all operate on and return f64).
+    if let Some(bi) = builtin_index(name) {
+        let (_, params, _) = BUILTINS[bi as usize];
+        if argv.len() != params.len() {
+            return Err("CodegenWasmJit: builtin expects args");
+        }
+        match math_domain(name) {
+            Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+            None => {
+                for (a, p) in argv.iter().zip(params.iter()) {
+                    let w = compile_exp(ctx, a)?;
+                    coerce(ctx, w, *p);
+                }
+            }
+        }
+        ctx.emit(we::Instruction::Call(bi));
+        return Ok(SigTy::Real);
+    }
+
+    match name {
+        "sqrt" => {
+            need_args(&argv, 1, name)?;
+            // C skips the guard where the argument is provably non-negative.
+            let guarded = !Expression::isPositiveOrZero(argv[0].clone())?;
+            match math_domain(name).filter(|_| guarded) {
+                Some(d) => emit_math_domain_guard(ctx, name, argv[0], &d)?,
+                None => {
+                    let w = compile_exp(ctx, argv[0])?;
+                    coerce(ctx, w, WTy::F64);
+                }
+            }
+            ctx.emit(we::Instruction::F64Sqrt);
+            Ok(SigTy::Real)
+        }
+        "nthRoot" => emit_nth_root(ctx, &argv, name),
+        // C's `(modelica_integer)round(r)`: half-*away*-from-zero, which wasm's
+        // `nearest` (half-to-even) is not. Left as a Real — C's cast only narrows an
+        // already integral value, and the surrounding expression wants the Real.
+        "$_round" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let v = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(v));
+            ctx.emit(we::Instruction::F64Trunc);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalTee(t));
+            // + copysign(1, v) * (|v - trunc(v)| >= 0.5)
+            ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::F64Copysign);
+            ctx.emit(we::Instruction::LocalGet(v));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Const(0.5f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::F64ConvertI32S);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Add);
+            Ok(SigTy::Real)
+        }
+        "floor" => {
+            unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
+            Ok(SigTy::Real)
+        }
+        "ceil" => {
+            unary_f64(ctx, &argv, we::Instruction::F64Ceil)?;
+            Ok(SigTy::Real)
+        }
+        // integer(r): largest Integer <= r.
+        "integer" => {
+            unary_f64(ctx, &argv, we::Instruction::F64Floor)?;
+            ctx.emit(we::Instruction::I32TruncSatF64S);
+            Ok(SigTy::Int)
+        }
+        // `Integer(e)` — the ordinal of an enumeration value. Enum values are
+        // already stored as their 1-based index (an i32), so this is identity.
+        "Integer" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::I32);
+            Ok(SigTy::Int)
+        }
+        "abs" => {
+            need_args(&argv, 1, name)?;
+            if result_wty == WTy::F64 {
+                let w = compile_exp(ctx, argv[0])?;
+                coerce(ctx, w, WTy::F64);
+                ctx.emit(we::Instruction::F64Abs);
+                Ok(SigTy::Real)
+            } else {
+                let w = compile_exp(ctx, argv[0])?;
+                coerce(ctx, w, WTy::I32);
+                let t = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(t));
+                // select(-x, x, x<0)
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(we::Instruction::LocalGet(t));
+                ctx.emit(we::Instruction::I32Sub); // -x
+                ctx.emit(we::Instruction::LocalGet(t)); // x
+                ctx.emit(we::Instruction::LocalGet(t));
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(we::Instruction::I32LtS); // x<0
+                ctx.emit(we::Instruction::Select);
+                Ok(result_sig)
+            }
+        }
+        "max" | "min" => {
+            need_args(&argv, 2, name)?;
+            if result_wty == WTy::F64 {
+                let a = compile_exp(ctx, argv[0])?;
+                coerce(ctx, a, WTy::F64);
+                let b = compile_exp(ctx, argv[1])?;
+                coerce(ctx, b, WTy::F64);
+                ctx.emit(if name == "max" { we::Instruction::F64Max } else { we::Instruction::F64Min });
+                Ok(SigTy::Real)
+            } else {
+                let a = compile_exp(ctx, argv[0])?;
+                coerce(ctx, a, WTy::I32);
+                let b = compile_exp(ctx, argv[1])?;
+                coerce(ctx, b, WTy::I32);
+                let tb = ctx.alloc_temp(WTy::I32);
+                let ta = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(tb));
+                ctx.emit(we::Instruction::LocalSet(ta));
+                ctx.emit(we::Instruction::LocalGet(ta));
+                ctx.emit(we::Instruction::LocalGet(tb));
+                ctx.emit(we::Instruction::LocalGet(ta));
+                ctx.emit(we::Instruction::LocalGet(tb));
+                ctx.emit(if name == "max" { we::Instruction::I32GtS } else { we::Instruction::I32LtS });
+                ctx.emit(we::Instruction::Select);
+                Ok(result_sig)
+            }
+        }
+        // div(a,b): integer division truncating toward zero.
+        "div" if result_wty == WTy::I32 => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::I32);
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::I32);
+            ctx.emit(we::Instruction::I32DivS);
+            Ok(SigTy::Int)
+        }
+        // div(a,b) for Reals: `trunc(a/b)` (truncate toward zero, Real result).
+        // The frontend also expands Real `rem` into `a - b*div(a,b)`.
+        "div" => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::F64);
+            ctx.emit(we::Instruction::F64Div);
+            ctx.emit(we::Instruction::F64Trunc);
+            Ok(SigTy::Real)
+        }
+        // rem(a,b): integer remainder truncating toward zero.
+        "rem" if result_wty == WTy::I32 => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::I32);
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::I32);
+            ctx.emit(we::Instruction::I32RemS);
+            Ok(SigTy::Int)
+        }
+        // rem(a,b) for Reals: `a - b*trunc(a/b)` (truncated remainder).
+        "rem" => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            let at = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(at));
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::F64);
+            let bt = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(bt));
+            ctx.emit(we::Instruction::LocalGet(at)); // a
+            ctx.emit(we::Instruction::LocalGet(bt)); // b * trunc(a/b)
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Div);
+            ctx.emit(we::Instruction::F64Trunc);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Sub);
+            Ok(SigTy::Real)
+        }
+        // mod(a,b): Modelica floored modulo `a - floor(a/b)*b`. Integer goes
+        // through the runtime (floored, result takes the divisor's sign);
+        // Real is inlined with `floor`.
+        "mod" if result_wty == WTy::I32 => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::I32);
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_mod_int")?));
+            Ok(SigTy::Int)
+        }
+        "mod" => {
+            need_args(&argv, 2, name)?;
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            let at = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(at));
+            let b = compile_exp(ctx, argv[1])?;
+            coerce(ctx, b, WTy::F64);
+            let bt = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(bt));
+            ctx.emit(we::Instruction::LocalGet(at)); // a
+            ctx.emit(we::Instruction::LocalGet(at)); // floor(a/b) * b
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Div);
+            ctx.emit(we::Instruction::F64Floor);
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Sub);
+            Ok(SigTy::Real)
+        }
+        // sign(x): -1 / 0 / 1 (Integer), `(x > 0) - (x < 0)`.
+        "sign" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Gt); // (x > 0) -> i32
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Lt); // (x < 0) -> i32
+            ctx.emit(we::Instruction::I32Sub);
+            Ok(SigTy::Int)
+        }
+        // `$_signNoNull(x)` = (x >= 0.0 ? 1.0 : -1.0); a division-guard helper the
+        // backend's `ExpressionSolve` emits when solving torn equations.
+        "$_signNoNull" => {
+            need_args(&argv, 1, name)?;
+            ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+            ctx.emit(we::Instruction::F64Const((-1.0f64).into()));
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::Select);
+            Ok(SigTy::Real)
+        }
+        // semiLinear(x, positiveSlope, negativeSlope) = x * (x >= 0 ? ps : ns).
+        "semiLinear" => {
+            need_args(&argv, 3, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let t = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            let p = compile_exp(ctx, argv[1])?;
+            coerce(ctx, p, WTy::F64);
+            let n = compile_exp(ctx, argv[2])?;
+            coerce(ctx, n, WTy::F64);
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+            ctx.emit(we::Instruction::F64Ge);
+            ctx.emit(we::Instruction::Select);
+            ctx.emit(we::Instruction::F64Mul);
+            Ok(SigTy::Real)
+        }
+        // Number → String formatting via the runtime: a scalar becomes a freshly
+        // allocated (refcount 1) String handle. The typed builtin names are
+        // unambiguous; `String(x)` dispatches on the argument's Modelica type.
+        "intString" => {
+            need_args(&argv, 1, name)?;
+            format_scalar_string(ctx, argv[0], SigTy::Int)
+        }
+        "boolString" => {
+            need_args(&argv, 1, name)?;
+            format_scalar_string(ctx, argv[0], SigTy::Bool)
+        }
+        "realString" if argv.len() == 1 => emit_real_string(ctx, argv[0]),
+        "String" => emit_string_builtin(ctx, &argv),
+        // `s1 + s2` arrives as a BINARY ADD (handled in `compile_binary`); the
+        // explicit builtin form is `stringAppend`.
+        "stringAppend" => {
+            need_args(&argv, 2, name)?;
+            str_binop(ctx, argv[0], argv[1], "rt_concat")?;
+            Ok(SigTy::Str)
+        }
+        "stringLength" => {
+            need_args(&argv, 1, name)?;
+            str_unop(ctx, argv[0], "rt_str_len")?;
+            Ok(SigTy::Int)
+        }
+        "stringEqual" => {
+            need_args(&argv, 2, name)?;
+            str_binop(ctx, argv[0], argv[1], "rt_streq")?;
+            Ok(SigTy::Bool)
+        }
+        // `substring(s, i, j)` — 1-based inclusive.
+        "substring" => {
+            need_args(&argv, 3, name)?;
+            str_substring(ctx, argv[0], argv[1], argv[2])?;
+            Ok(SigTy::Str)
+        }
+        // `smooth(p, expr)` and `noEvent(expr)` are smoothness/event annotations
+        // that are the identity on the value expression at runtime (the C target
+        // likewise just evaluates the expression). The returned `SigTy` is
+        // derived from the emitted wasm type so it always matches the stack.
+        "smooth" => {
+            need_args(&argv, 2, name)?;
+            let w = compile_exp(ctx, argv[1])?;
+            Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
+        }
+        "noEvent" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
+        }
+        // `homotopy(actual, simplified)` = `simplified + lambda*(actual-simplified)`
+        // (C's `homotopy_` with `data->simulationInfo->lambda`). lambda is 1.0
+        // outside the continuation, so this is `actual` for the normal init and the
+        // non-initial partitions; the init driver sweeps lambda 0->1 on fallback.
+        "homotopy" => {
+            need_args(&argv, 2, name)?;
+            let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+            let a = compile_exp(ctx, argv[0])?;
+            coerce(ctx, a, WTy::F64);
+            let at = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(at));
+            let s = compile_exp(ctx, argv[1])?;
+            coerce(ctx, s, WTy::F64);
+            let st = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(st));
+            // simplified + lambda*(actual - simplified)
+            ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::F64Add);
+            Ok(SigTy::Real)
+        }
+        // `pre(x)` reads x's pre-value slot (C's `*VarsPre`), populated by
+        // savePreValues after each step. In simulation mode the argument is a
+        // variable reference; read `$PRE.x`.
+        "pre" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
+                return Err("CodegenWasmJit: `pre` expects a variable reference");
+            };
+            let pre = pre_cref(componentRef);
+            match compile_sim_cref_read(ctx, &pre)? {
+                Some(WTy::F64) => Ok(SigTy::Real),
+                Some(WTy::I32) => Ok(SigTy::Int),
+                None => return Err("CodegenWasmJit: `pre` of a non-model variable"),
+            }
+        }
+        // `sample(index, start, interval)` (the backend's 3-arg internal form,
+        // index first): true exactly at the sample's firing times. The driver
+        // raises `active[k]` for the firing sample before the discrete update, so
+        // this reads that i32 flag. `start`/`interval` are handled by `initSample`
+        // and the driver, not evaluated here.
+        // delay(index, e, d, delayMax): `e` at `time - d` from buffer `index`.
+        "delay" => {
+            need_args(&argv, 4, name)?;
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `delay` index must be an integer literal");
+            };
+            let data = ctx.sim()?.data_local;
+            ctx.emit(we::Instruction::I32Const(*index));
+            ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            for a in &argv[1..4] {
+                let w = compile_exp(ctx, a)?;
+                coerce(ctx, w, WTy::F64);
+            }
+            ctx.emit(we::Instruction::Call(rt_index("rt_delay_eval")?));
+            Ok(SigTy::Real)
+        }
+        // delayZeroCrossing(index, rindex, d): zeroCrossingsPre[rindex], sign-
+        // flipped when a buffered event lies in the (time - d) window.
+        "delayZeroCrossing" => {
+            need_args(&argv, 3, name)?;
+            if !ctx.sim()?.zc_context {
+                return Err("CodegenWasmJit: delayZeroCrossing outside a zero-crossing context");
+            }
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` index must be an integer literal");
+            };
+            let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
+                return Err("CodegenWasmJit: `delayZeroCrossing` relation index must be an integer literal");
+            };
+            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            ctx.emit(we::Instruction::I32Const(*index));
+            ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
+            ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
+            let w = compile_exp(ctx, argv[2])?; // delay time
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
+            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
+            Ok(SigTy::Real)
+        }
+        // spatialDistributionZeroCrossing(index, rindex, x, positiveVelocity): flips
+        // sign each time a stored discontinuity passes the operator's output edge,
+        // holding `zeroCrossingsPre[rindex]` while there is none.
+        "spatialDistributionZeroCrossing" => {
+            need_args(&argv, 4, name)?;
+            if !ctx.sim()?.zc_context {
+                return Err("CodegenWasmJit: spatialDistributionZeroCrossing outside a zero-crossing context");
+            }
+            let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
+                return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` index must be an integer literal");
+            };
+            let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
+                return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` relation index must be an integer literal");
+            };
+            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            ctx.emit(we::Instruction::I32Const(*index));
+            let w = compile_exp(ctx, argv[2])?; // x
+            coerce(ctx, w, WTy::F64);
+            let w = compile_exp(ctx, argv[3])?; // positiveVelocity
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
+            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::Call(rt_index("rt_spatial_zc")?));
+            Ok(SigTy::Real)
+        }
+        // `terminal()` — C's `simulationInfo->terminal`, true only during the
+        // run's final discrete update.
+        "terminal" => {
+            need_args(&argv, 0, name)?;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.terminal_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            Ok(SigTy::Bool)
+        }
+        // `initial()` — C's `simulationInfo->initial`, true for the whole
+        // initialization phase.
+        "initial" => {
+            need_args(&argv, 0, name)?;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.initial_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            Ok(SigTy::Bool)
+        }
+        "sample" => {
+            need_args(&argv, 3, name)?;
+            let DAE::Exp::ICONST { integer } = &**argv[0] else {
+                return Err("CodegenWasmJit: `sample` index must be an integer literal");
+            };
+            // C's `samples[index - 1]`: the expression's index is 1-based into
+            // the samples array, which the driver fills in `timeEvents` order.
+            let n_samples = ctx.sim()?.n_samples;
+            let k = u32::try_from(*integer - 1)
+                .ok()
+                .filter(|k| *k < n_samples)
+                .ok_or_else(|| "CodegenWasmJit: `sample` index out of range")?;
+            let data = ctx.sim()?.data_local;
+            let off = ctx.sim()?.sample_active_off + k * 4;
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            Ok(SigTy::Bool)
+        }
+        // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
+        // `daeExpCall` does: the backend already put the reference in that partition.
+        "interval" if argv.len() <= 1 => {
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::F64Load(mem_arg(off + clock_field::SUB_PREV_INTERVAL, 3)));
+            Ok(SigTy::Real)
+        }
+        "firstTick" if argv.len() <= 1 => {
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
+            ctx.emit(we::Instruction::I32Const(1));
+            ctx.emit(we::Instruction::I32Eq);
+            Ok(SigTy::Bool)
+        }
+        // C's `crefPrefixPrevious`: the `$CLKPRE.x` variable the partition assigns.
+        "previous" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
+                return Err("CodegenWasmJit: `previous` expects a variable reference");
+            };
+            let prev = clkpre_cref(componentRef);
+            match compile_sim_cref_read(ctx, &prev)? {
+                Some(WTy::F64) => Ok(SigTy::Real),
+                Some(WTy::I32) => Ok(SigTy::Int),
+                None => return Err("CodegenWasmJit: `previous` of a non-model variable"),
+            }
+        }
+        // C's `handleBaseClock(data, threadData, i-1, time)`. The timer list is on
+        // the driver's side of the wasm boundary, so raise the clock's flag instead
+        // and let the driver fire it when the model call returns.
+        "$_clkfire" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::ICONST { integer } = &**argv[0] else {
+                return Err("CodegenWasmJit: `$_clkfire` index must be an integer literal");
+            };
+            let base = (*integer - 1).max(0) as u32;
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.clock_fire_off) };
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Const(1));
+            ctx.emit(we::Instruction::I32Store(mem_arg(off + base * 4, 2)));
+            // Only ever reached through `noReturnCall`, which drops one result.
+            ctx.emit(we::Instruction::I32Const(0));
+            Ok(SigTy::Bool)
+        }
+        // `hold(e)` / `sample(e, clk)` after partitioning: just `e` here.
+        "$getPart" => {
+            need_args(&argv, 1, name)?;
+            let w = compile_exp(ctx, argv[0])?;
+            Ok(exp_sigty(argv[0])
+                .unwrap_or(if w == WTy::F64 { SigTy::Real } else { SigTy::Int }))
+        }
+        // The frontend folds a literal URI, so the argument here is computed.
+        "OpenModelica_uriToFilename" | "OpenModelica_fmuLoadResource" => {
+            need_args(&argv, 1, name)?;
+            compile_exp(ctx, argv[0])?;
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::I32Const(i32::from(name == "OpenModelica_fmuLoadResource")));
+            ctx.emit(we::Instruction::Call(env_extra_index("rt_uri_to_filename")?));
+            release_temp(ctx, t)?;
+            Ok(SigTy::Str)
+        }
+        // der(cref): an explicit derivative left in an equation. Read the
+        // derivative variable's slot ($DER.<cref>), as the C target does.
+        "der" => {
+            need_args(&argv, 1, name)?;
+            let DAE::Exp::CREF { componentRef, .. } = &**argv[0] else {
+                return Err("CodegenWasmJit: der() of a non-reference expression not supported");
+            };
+            let dcref = der_cref(componentRef);
+            match compile_sim_cref_read(ctx, &dcref)? {
+                Some(_) => Ok(SigTy::Real),
+                None => return Err("CodegenWasmJit: der() is only supported in simulation mode"),
+            }
+        }
+        other => match declined_external_reason(other) {
+            Some(why) => {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: external function not lowered: {other} ({why})"
+                ));
+                Err("CodegenWasmJit: external function not lowered")
+            }
+            None => {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: builtin function not yet supported: {other}"
+                ));
+                Err("CodegenWasmJit: builtin function not yet supported")
+            }
+        },
+    }
+}
+
+/// Release a heap value held in scratch local `t` (used to free owned operands
+/// after a borrowing runtime op consumed them off the stack).
+fn release_temp(ctx: &mut FnCtx, t: u32) -> Result<()> {
+    ctx.emit(we::Instruction::LocalGet(t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+    Ok(())
+}
+
+/// A runtime string op with two heap operands: each is an owned (+1) value, the
+/// runtime only borrows them, so both are released after the call. Leaves the
+/// op's result on the stack.
+fn str_binop(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, rt_fn: &str) -> Result<()> {
+    compile_exp(ctx, e1)?;
+    let t1 = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(t1));
+    compile_exp(ctx, e2)?;
+    let t2 = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(t2));
+    ctx.emit(we::Instruction::LocalGet(t1));
+    ctx.emit(we::Instruction::LocalGet(t2));
+    ctx.emit(we::Instruction::Call(rt_index(rt_fn)?));
+    release_temp(ctx, t1)?;
+    release_temp(ctx, t2)?;
+    Ok(())
+}
+
+/// A runtime string op with one heap operand (e.g. `rt_str_len`): the owned
+/// operand is released after the call. Leaves the op's result on the stack.
+fn str_unop(ctx: &mut FnCtx, e: &DAE::Exp, rt_fn: &str) -> Result<()> {
+    compile_exp(ctx, e)?;
+    let t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(t));
+    ctx.emit(we::Instruction::LocalGet(t));
+    ctx.emit(we::Instruction::Call(rt_index(rt_fn)?));
+    release_temp(ctx, t)?;
+    Ok(())
+}
+
+/// `substring(s, i, j)`: one heap operand `s` (released after) plus two scalar
+/// indices. Leaves the new String handle on the stack.
+fn str_substring(ctx: &mut FnCtx, s: &DAE::Exp, i: &DAE::Exp, j: &DAE::Exp) -> Result<()> {
+    compile_exp(ctx, s)?;
+    let ts = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(ts));
+    ctx.emit(we::Instruction::LocalGet(ts));
+    let wi = compile_exp(ctx, i)?;
+    coerce(ctx, wi, WTy::I32);
+    let wj = compile_exp(ctx, j)?;
+    coerce(ctx, wj, WTy::I32);
+    ctx.emit(we::Instruction::Call(rt_index("rt_substring")?));
+    release_temp(ctx, ts)?;
+    Ok(())
+}
+
+/// `String(x[, significantDigits], minimumLength, leftJustified)` — the Modelica
+/// builtin. The frontend (`Static.elabBuiltinString`) always fills the format
+/// slots, so the argument shapes that reach here are:
+///   * `String(Integer|Boolean|String, minimumLength, leftJustified)` (3 args)
+///   * `String(Real, significantDigits, minimumLength, leftJustified)` (4 args)
+/// matching `Ceval.cevalBuiltinString`. The Real form is the C `printf`
+/// conversion `"%[-]{minimumLength}.{significantDigits}g"` (via `rt_real_format`,
+/// NOT the shortest-round-trip `realString`); the others format the scalar and
+/// then space-pad to `minimumLength` (`rt_str_pad`).
+fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>]) -> Result<SigTy> {
+    // `String(Enumeration)` must render the enumeration literal *name*
+    // (`Ceval.cevalBuiltinString` uses `AbsynUtil.pathLastIdent`); the wasm-jit
+    // value model carries only the Integer index, so reject rather than silently
+    // stringify the index. Carrying enum names would need the literal table
+    // threaded through from the DAE type into the sidecar/runtime.
+    if exp_is_enumeration(argv[0]) {
+        // `String(enum, format)` formats the 1-based index (C's `String(x, "d")`),
+        // not the name, and does not trap on an out-of-range value.
+        if argv.len() == 2 && exp_sigty(argv[1])? == SigTy::Str {
+            return emit_string_format(ctx, argv[0], argv[1], &SigTy::Int);
+        }
+        let Some(names) = exp_enum_names(argv[0]) else {
+            return Err("CodegenWasmJit: String(Enumeration) on an enum literal whose names are not in scope");
+        };
+        emit_enum_string(ctx, argv[0], &names)?;
+        // String(e, minimumLength, leftJustified): pad the name like any scalar.
+        if let [_, min_len, left_just] = argv {
+            return apply_string_padding(ctx, min_len, left_just);
+        }
+        return Ok(SigTy::Str);
+    }
+    let vty = exp_sigty(argv[0])?;
+    // `String(String, …)` is the identity: the C target ignores the
+    // minimumLength/leftJustified arguments for a string value (see the
+    // `"modelica_string"` arm of `CodegenCFunctions.tpl`'s String builtin —
+    // `tvar = sExp`), so padding must NOT be applied here either.
+    if vty == SigTy::Str {
+        return format_scalar_string(ctx, argv[0], vty);
+    }
+    // The format-string variant `String(value, format)` (`elabBuiltinString`'s
+    // second form): a 2-argument call whose second argument is a String. The
+    // runtime parses the printf directive (mirroring the C runtime's
+    // `modelica_*_to_modelica_string_format`).
+    if argv.len() == 2 && exp_sigty(argv[1])? == SigTy::Str {
+        return emit_string_format(ctx, argv[0], argv[1], &vty);
+    }
+    match (&vty, argv.len()) {
+        // Bare `String(scalar)` (no format slots) — does not normally reach the
+        // codegen (the frontend fills the slots), but is unambiguous.
+        (SigTy::Int, 1) | (SigTy::Bool, 1) => format_scalar_string(ctx, argv[0], vty),
+        // String(Integer|Boolean, minimumLength, leftJustified).
+        (SigTy::Int, 3) | (SigTy::Bool, 3) => {
+            emit_padded_scalar_string(ctx, argv[0], vty, argv[1], argv[2])
+        }
+        // String(Real, significantDigits, minimumLength, leftJustified).
+        (SigTy::Real, 4) => emit_real_format(ctx, argv[0], argv[1], argv[2], argv[3]),
+        other => return Err("CodegenWasmJit: unsupported String() argument shape"),
+    }
+}
+
+/// `String(value, format)` — the format-string variant. Evaluate the value and
+/// the (owned) format-string handle and dispatch to the runtime formatter, which
+/// parses the printf directive at runtime (so the format need not be constant).
+/// The runtime borrows the format handle; it is released here afterwards.
+fn emit_string_format(ctx: &mut FnCtx, val: &DAE::Exp, fmt: &DAE::Exp, vty: &SigTy) -> Result<SigTy> {
+    let rt_fn = match vty {
+        SigTy::Real => "rt_string_format_real",
+        // Integer and Boolean share the integer formatter (Booleans coerce to
+        // 0/1). The String format variant (`%s`) is not yet ported.
+        SigTy::Int | SigTy::Bool => "rt_string_format_int",
+        other => return Err("CodegenWasmJit: String(value, format) not yet implemented for"),
+    };
+    let w = compile_exp(ctx, val)?;
+    coerce(ctx, w, vty.wty());
+    let fmt_t = ctx.alloc_temp(WTy::I32);
+    let fw = compile_exp(ctx, fmt)?;
+    if fw != WTy::I32 {
+        return Err("CodegenWasmJit: String() format argument is not a string");
+    }
+    ctx.emit(we::Instruction::LocalTee(fmt_t)); // keep the handle, leave it on the stack
+    ctx.emit(we::Instruction::Call(rt_index(rt_fn)?));
+    // Release the (borrowed) format handle now that formatting is done.
+    ctx.emit(we::Instruction::LocalGet(fmt_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+    Ok(SigTy::Str)
+}
+
+/// Whether `exp` has an enumeration type (so `String(exp)` would need the
+/// literal name). Covers the expression forms that carry a `DAE.Type`; anything
+/// else is not an enumeration value.
+/// Emit a String literal: materialize a fresh (refcount 1) String from a passive
+/// data segment with `memory.init`, leaving the owned handle on the stack.
+fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
+    let len = bytes.len() as u32;
+    let off = ctx.literals.intern(bytes);
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(len as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_str_new")?));
+    ctx.emit(we::Instruction::LocalTee(obj));
+    // memory.init dest=rt_str_data(obj), src_offset=off, size=len
+    ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+    ctx.emit(we::Instruction::I32Const(off as i32));
+    ctx.emit(we::Instruction::I32Const(len as i32));
+    ctx.emit(we::Instruction::MemoryInit { mem: 0, data_index: 0 });
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// Hand the executed `reinit` to the driver for C's `reinit <var> = <value>` line.
+/// The state's `SimData` offset names it; the value is re-read from the slot. A
+/// state with no static offset (`reinit(x[i], …)`) still reinitializes, just
+/// without the log line.
+fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) -> Result<()> {
+    let Ok(key) = sim_cref_key(stateVar) else { return Ok(()) };
+    let Some(slot) = ctx.sim()?.vars.get(&key).copied() else { return Ok(()) };
+    if slot.wty != WTy::F64 {
+        return Ok(());
+    }
+    let data = ctx.sim()?.data_local;
+    ctx.emit(we::Instruction::I32Const(slot.off as i32));
+    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
+    ctx.emit(we::Instruction::Call(env_extra_index("rt_reinit_note")?));
+    Ok(())
+}
+
+/// Emit `rt_assert(msg, …) ; unreachable`: record a runtime-failure `msg` (via the
+/// same host import a failed `assert()` uses, so the simulation drivers surface it
+/// instead of a bare `unreachable` trap) then trap. For failures with no source
+/// location (a singular/non-converged solver system, an invalid `sqrt`, an
+/// out-of-range index) the source info is zeroed. C reports these with
+/// `throwStreamPrint`, which a nonlinear solver catches, so the recoverable
+/// escape comes first.
+fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
+    emit_nls_recoverable_return(ctx)?;
+    emit_str_literal(ctx, msg.as_bytes())?; // message String handle
+    for _ in 0..6 {
+        ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
+    }
+    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
+    emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    ctx.emit(we::Instruction::Drop);
+    emit_assert_unwind(ctx);
+    Ok(())
+}
+
+/// The enumeration literal names of `exp`'s type (unqualified, indexed 1-based
+/// by the enum value), or `None` if `exp` is not an enumeration carried by a
+/// type we can read the names from.
+fn exp_enum_names(exp: &DAE::Exp) -> Option<Vec<ArcStr>> {
+    use DAE::Exp as E;
+    let names_of = |ty: &DAE::Type| match ty {
+        DAE::Type::T_ENUMERATION { names, .. } => Some((&**names).into_iter().cloned().collect()),
+        _ => None,
+    };
+    match exp {
+        E::CREF { ty, .. } | E::CAST { ty, .. } => names_of(ty),
+        E::CALL { attr, .. } => names_of(&attr.ty),
+        E::SHARED_LITERAL { exp, .. } => exp_enum_names(exp),
+        _ => None,
+    }
+}
+
+/// `String(e)` for an enumeration value `e`: render the literal *name* (matching
+/// `Ceval.cevalBuiltinString`). The value is the 1-based index; emit a switch
+/// that materializes the matching name literal (an out-of-range index traps).
+/// Leaves an owned (+1) String handle on the stack.
+fn emit_enum_string(ctx: &mut FnCtx, arg: &DAE::Exp, names: &[ArcStr]) -> Result<()> {
+    let idx_t = ctx.alloc_temp(WTy::I32);
+    let w = compile_exp(ctx, arg)?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(idx_t));
+    ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::I32)));
+    for (k, name) in names.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(idx_t));
+        ctx.emit(we::Instruction::I32Const(k as i32 + 1));
+        ctx.emit(we::Instruction::I32Eq);
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+        emit_str_literal(ctx, name.as_bytes())?;
+        ctx.emit(we::Instruction::Br(1)); // break out of the Block with the handle
+        ctx.emit(we::Instruction::End); // if
+    }
+    emit_runtime_error(ctx, "wasm-jit: array/enumeration index out of range")?; // no case matched
+    ctx.emit(we::Instruction::End); // block (result = the handle)
+    Ok(())
+}
+
+fn exp_is_enumeration(exp: &DAE::Exp) -> bool {
+    use DAE::Exp as E;
+    let is_enum = |ty: &DAE::Type| matches!(ty, DAE::Type::T_ENUMERATION { .. });
+    match exp {
+        E::ENUM_LITERAL { .. } => true,
+        E::CREF { ty, .. } | E::CAST { ty, .. } => is_enum(ty),
+        E::CALL { attr, .. } => is_enum(&attr.ty),
+        E::SHARED_LITERAL { exp, .. } => exp_is_enumeration(exp),
+        _ => false,
+    }
+}
+
+/// `String(Integer|Boolean|String, minimumLength, leftJustified)`: format the
+/// scalar to an owned String handle, then space-pad it to `minimumLength`.
+/// A literal `minimumLength` of 0 never pads (`cevalBuiltinStringFormat` returns
+/// the string unchanged), so the runtime call is skipped in that common default.
+fn emit_padded_scalar_string(
+    ctx: &mut FnCtx,
+    val: &DAE::Exp,
+    vty: SigTy,
+    min_len: &DAE::Exp,
+    left_just: &DAE::Exp,
+) -> Result<SigTy> {
+    // Leaves an owned (+1) string handle on the stack.
+    format_scalar_string(ctx, val, vty)?;
+    apply_string_padding(ctx, min_len, left_just)
+}
+
+/// Pad the owned String handle on the stack to `min_len` (space-padded,
+/// left-justified per `left_just`), a no-op for a literal-zero `min_len`. The
+/// unpadded handle is released; a fresh owned padded handle is left.
+fn apply_string_padding(ctx: &mut FnCtx, min_len: &DAE::Exp, left_just: &DAE::Exp) -> Result<SigTy> {
+    if let DAE::Exp::ICONST { integer: 0 } = min_len {
+        return Ok(SigTy::Str);
+    }
+    // `rt_str_pad` borrows the unpadded handle and returns a fresh owned one, so
+    // the unpadded one is released afterwards.
+    let t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(t));
+    ctx.emit(we::Instruction::LocalGet(t));
+    let wl = compile_exp(ctx, min_len)?;
+    coerce(ctx, wl, WTy::I32);
+    let wj = compile_exp(ctx, left_just)?;
+    coerce(ctx, wj, WTy::I32);
+    ctx.emit(we::Instruction::Call(rt_index("rt_str_pad")?));
+    release_temp(ctx, t)?;
+    Ok(SigTy::Str)
+}
+
+/// `String(Real, significantDigits, minimumLength, leftJustified)` → the C `%g`
+/// conversion via `rt_real_format`. All four operands are scalars (no heap
+/// operands to release); the result is a fresh owned String handle.
+fn emit_real_format(
+    ctx: &mut FnCtx,
+    r: &DAE::Exp,
+    sig: &DAE::Exp,
+    min_len: &DAE::Exp,
+    left_just: &DAE::Exp,
+) -> Result<SigTy> {
+    let wr = compile_exp(ctx, r)?;
+    coerce(ctx, wr, WTy::F64);
+    let ws = compile_exp(ctx, sig)?;
+    coerce(ctx, ws, WTy::I32);
+    let wl = compile_exp(ctx, min_len)?;
+    coerce(ctx, wl, WTy::I32);
+    let wj = compile_exp(ctx, left_just)?;
+    coerce(ctx, wj, WTy::I32);
+    ctx.emit(we::Instruction::Call(rt_index("rt_real_format")?));
+    Ok(SigTy::Str)
+}
+
+/// Format a scalar of the given `SigTy` to an owned String handle via the
+/// runtime.
+fn format_scalar_string(ctx: &mut FnCtx, arg: &DAE::Exp, ty: SigTy) -> Result<SigTy> {
+    match ty {
+        SigTy::Int => {
+            let w = compile_exp(ctx, arg)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
+            Ok(SigTy::Str)
+        }
+        SigTy::Bool => {
+            let w = compile_exp(ctx, arg)?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_bool_string")?));
+            Ok(SigTy::Str)
+        }
+        SigTy::Real => emit_real_string(ctx, arg),
+        // String(s) is the identity; `compile_exp` already returns an owned copy.
+        SigTy::Str => {
+            compile_exp(ctx, arg)?;
+            Ok(SigTy::Str)
+        }
+        // `String(array)` / `String(record)` are not scalar conversions (the
+        // frontend would not produce them here); reject rather than mis-format.
+        SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: String() of an array/record/external-object is not supported")
+        }
+    }
+}
+
+/// `realString(r)` / `String(r)` with default formatting.
+fn emit_real_string(ctx: &mut FnCtx, arg: &DAE::Exp) -> Result<SigTy> {
+    let w = compile_exp(ctx, arg)?;
+    coerce(ctx, w, WTy::F64);
+    ctx.emit(we::Instruction::Call(rt_index("rt_real_string")?));
+    Ok(SigTy::Str)
+}
+
+// -------------------------------------------------------------------------
+// Arrays (N-dimensional, flat row-major; see the runtime's Arrays section)
+// -------------------------------------------------------------------------
+
+/// Inline what `rt_array_elem_ptr` computes: the byte address of the element at
+/// row-major linear position `index` (1-based), with the same out-of-range arm.
+/// Stack is `[obj, index] -> [addr]`.
+///
+/// Inlined rather than called because element access is the hottest operation in
+/// generated model code (an IF97 property evaluation does hundreds) and the
+/// cross-module call dominated the per-evaluation cost. The stride follows the
+/// element's wasm type, which the load/store that follows already assumes.
+fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
+    use we::Instruction as I;
+    let (ot, it) = ctx.elem_ptr_temps();
+    let shift = match elem.wty() {
+        WTy::F64 => 3,
+        WTy::I32 => 2,
+    };
+    ctx.emit(I::LocalSet(it));
+    ctx.emit(I::LocalSet(ot));
+    ctx.emit(I::Block(we::BlockType::Result(we::ValType::I32)));
+    // index < 1 || index > total -> the runtime's out-of-range arm.
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32LtS);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+    ctx.emit(I::I32GtS);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));
+    ctx.emit(I::Br(1));
+    ctx.emit(I::End);
+    // obj + align8(ARR_DIMS_OFF + ndims*4) + (index - 1) * stride
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::I32Load(mem_arg(ARR_NDIMS_OFF, 2)));
+    ctx.emit(I::I32Const(2));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Const(ARR_DIMS_OFF as i32 + 7));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(-8));
+    ctx.emit(I::I32And);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalGet(it));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Sub);
+    ctx.emit(I::I32Const(shift));
+    ctx.emit(I::I32Shl);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Inline `rt_array_dim` for a constant 1-based `axis`. Stack `[obj] -> [size]`.
+fn emit_array_dim(ctx: &mut FnCtx, axis: u32) -> Result<()> {
+    if axis == 0 {
+        return Err("CodegenWasmJit: array dimension axis is 1-based");
+    }
+    ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + (axis - 1) * 4, 2)));
+    Ok(())
+}
+
+/// Load one array element from the byte address on top of the stack, leaving its
+/// value. The wasm load instruction (and natural alignment) follow the element
+/// type.
+fn elem_load(ctx: &mut FnCtx, elem: &SigTy) {
+    match elem.wty() {
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(we::MemArg { offset: 0, align: 2, memory_index: 0 })),
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(we::MemArg { offset: 0, align: 3, memory_index: 0 })),
+    }
+}
+
+/// Store an array element: stack is `[addr, value]`.
+fn elem_store(ctx: &mut FnCtx, elem: &SigTy) {
+    elem_store_off(ctx, elem, 0)
+}
+
+/// Store an array element at a constant byte `offset` from the address on the
+/// stack: `[base, value]`.
+fn elem_store_off(ctx: &mut FnCtx, elem: &SigTy, offset: u32) {
+    match elem.wty() {
+        WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(offset, 2))),
+        WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(offset, 3))),
+    }
+}
+
+/// Byte offset of the first element of an array object of known rank — the
+/// runtime's `arr_data_off`. Constant here, so a construction's element address
+/// is a plain offset off the object rather than the descriptor arithmetic (and
+/// bounds check) [`emit_elem_ptr`] needs for a run-time index.
+fn arr_data_off(rank: u32) -> u32 {
+    (ARR_DIMS_OFF + rank * 4).next_multiple_of(8)
+}
+
+/// Byte size of one array element.
+fn elem_stride(elem: &SigTy) -> u32 {
+    match elem.wty() {
+        WTy::F64 => 8,
+        WTy::I32 => 4,
+    }
+}
+
+/// A compile-time-constant numeric scalar, as the element bytes it occupies in an
+/// array of element type `elem` — `None` when the expression is not such a
+/// constant. Integer/Boolean/enumeration constants widen to `f64` in a `Real`
+/// array, matching the [`coerce`] the element-wise path emits.
+fn const_elem_bytes(e: &DAE::Exp, elem: &SigTy) -> Option<Vec<u8>> {
+    match (const_num(e)?, elem.wty()) {
+        (ConstNum::R(r), WTy::F64) => Some(r.to_le_bytes().to_vec()),
+        (ConstNum::I(i), WTy::F64) => Some((i as f64).to_le_bytes().to_vec()),
+        (ConstNum::I(i), WTy::I32) => Some(i.to_le_bytes().to_vec()),
+        (ConstNum::R(_), WTy::I32) => None,
+    }
+}
+
+enum ConstNum {
+    I(i32),
+    R(f64),
+}
+
+/// The value of a compile-time-constant numeric/Boolean/enumeration expression.
+fn const_num(e: &DAE::Exp) -> Option<ConstNum> {
+    use DAE::Exp as E;
+    match e {
+        E::ICONST { integer } => Some(ConstNum::I(*integer)),
+        E::BCONST { bool } => Some(ConstNum::I(*bool as i32)),
+        E::ENUM_LITERAL { index, .. } => Some(ConstNum::I(*index)),
+        E::RCONST { real } => Some(ConstNum::R(real.into_inner())),
+        E::SHARED_LITERAL { exp, .. } | E::CAST { exp, .. } => const_num(exp),
+        E::UNARY { operator, exp } => match (operator, const_num(exp)?) {
+            (DAE::Operator::UMINUS { .. }, ConstNum::I(i)) => Some(ConstNum::I(i.wrapping_neg())),
+            (DAE::Operator::UMINUS { .. }, ConstNum::R(r)) => Some(ConstNum::R(-r)),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Materialize a run of constant elements collected by [`compile_array_literal`]
+/// into the array object at `dest_off`. A run long enough to pay for the sequence
+/// is copied from a passive data segment with `memory.init`, so a large constant
+/// table costs a fixed handful of instructions rather than a store per element.
+fn emit_const_run(
+    ctx: &mut FnCtx,
+    obj: u32,
+    dest_off: u32,
+    elem: &SigTy,
+    run: &mut Vec<u8>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let bytes = core::mem::take(run);
+    if bytes.is_empty() {
+        return Ok(());
+    }
+    let stride = elem_stride(elem);
+    if bytes.len() as u32 / stride < 4 {
+        for (i, chunk) in bytes.chunks_exact(stride as usize).enumerate() {
+            ctx.emit(I::LocalGet(obj));
+            match elem.wty() {
+                WTy::F64 => {
+                    let v = f64::from_le_bytes(chunk.try_into().map_err(|_| "CodegenWasmJit: bad literal run")?);
+                    ctx.emit(I::F64Const(v.into()));
+                }
+                WTy::I32 => {
+                    let v = i32::from_le_bytes(chunk.try_into().map_err(|_| "CodegenWasmJit: bad literal run")?);
+                    ctx.emit(I::I32Const(v));
+                }
+            }
+            elem_store_off(ctx, elem, dest_off + i as u32 * stride);
+        }
+        return Ok(());
+    }
+    let len = bytes.len() as u32;
+    // Nothing emits `data.drop`, so a table shared by several equation functions
+    // stays readable.
+    let off = ctx.literals.intern(&bytes);
+    ctx.emit(I::LocalGet(obj));
+    ctx.emit(I::I32Const(dest_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(off as i32));
+    ctx.emit(I::I32Const(len as i32));
+    ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
+    Ok(())
+}
+
+/// [`const_dims`] keeping the non-constant dimensions.
+fn type_dims(ty: &DAE::Type) -> Vec<Arc<DAE::Dimension>> {
+    let DAE::Type::T_ARRAY { ty: elem, dims } = ty else {
+        return Vec::new();
+    };
+    let mut out: Vec<Arc<DAE::Dimension>> = (&**dims).into_iter().cloned().collect();
+    out.extend(type_dims(elem));
+    out
+}
+
+/// [`leaf_array_count`] without needing the size.
+fn leaf_is_array(exp: &DAE::Exp) -> bool {
+    matches!(exp_dae_type(exp).as_deref(), Some(DAE::Type::T_ARRAY { .. }))
+}
+
+/// [`compile_array_literal`] for sizes only known at run time (`Real m[2, n]`
+/// with `n` a parameter): allocate from the evaluated dimensions and fill
+/// through a running element index, a sub-array leaf's length being dynamic too.
+fn compile_array_literal_dynamic(
+    ctx: &mut FnCtx,
+    ty: &DAE::Type,
+    elem: &SigTy,
+    rank: u32,
+    whole: &DAE::Exp,
+) -> Result<()> {
+    use we::Instruction as I;
+    let dims = type_dims(ty);
+    if dims.len() as u32 != rank {
+        return Err("CodegenWasmJit: array constructor rank does not match dimensions");
+    }
+    // `emit_dim_value` makes an unknown (`:`) axis 0; fail rather than mis-size.
+    if dims.iter().any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) {
+        return Err("CodegenWasmJit: array construction needs constant dimensions");
+    }
+    let mut dim_temps = Vec::with_capacity(dims.len());
+    for d in &dims {
+        let t = ctx.alloc_temp(WTy::I32);
+        emit_dim_value(ctx, d)?;
+        ctx.emit(I::LocalSet(t));
+        dim_temps.push(t);
+    }
+    ctx.emit(I::LocalGet(dim_temps[0]));
+    for t in &dim_temps[1..] {
+        ctx.emit(I::LocalGet(*t));
+        ctx.emit(I::I32Mul);
+    }
+    let total = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(total));
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(elem.elem_kind() as i32));
+    ctx.emit(I::I32Const(rank as i32));
+    ctx.emit(I::LocalGet(total));
+    ctx.emit(I::Call(rt_index("rt_array_new")?));
+    ctx.emit(I::LocalSet(obj));
+    for (axis, t) in dim_temps.iter().enumerate() {
+        ctx.emit(I::LocalGet(obj));
+        ctx.emit(I::I32Const(axis as i32));
+        ctx.emit(I::LocalGet(*t));
+        ctx.emit(I::Call(rt_index("rt_array_set_dim")?));
+    }
+    let mut leaves = Vec::new();
+    flatten_array_exp(whole, &mut leaves);
+    let k = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(k));
+    let data_off = arr_data_off(rank);
+    let stride = elem_stride(elem);
+    for leaf in &leaves {
+        if leaf_is_array(leaf) {
+            let h = ctx.alloc_temp(WTy::I32);
+            compile_exp(ctx, leaf)?;
+            ctx.emit(I::LocalSet(h));
+            ctx.emit(I::LocalGet(obj));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::Call(rt_index("rt_array_blit")?));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::I32Load(mem_arg(ARR_TOTAL_OFF, 2)));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(k));
+            ctx.emit(I::LocalGet(h));
+            ctx.emit(I::Call(rt_index("rt_array_release")?));
+        } else {
+            ctx.emit(I::LocalGet(obj));
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::I32Const(stride as i32));
+            ctx.emit(I::I32Mul);
+            ctx.emit(I::I32Add);
+            let w = compile_exp(ctx, leaf)?;
+            coerce(ctx, w, elem.wty());
+            elem_store_off(ctx, elem, data_off);
+            ctx.emit(I::LocalGet(k));
+            ctx.emit(I::I32Const(1));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::LocalSet(k));
+        }
+    }
+    ctx.emit(I::LocalGet(obj));
+    Ok(())
+}
+
+/// The per-axis sizes of a constructor taken from its own shape, for a declared
+/// type that has none (`Real t[:] = {...}`). Mirrors [`flatten_array_exp`]; the
+/// first element supplies the axes below the node's own.
+fn constructor_dims(exp: &DAE::Exp) -> Result<Vec<u32>> {
+    use DAE::Exp as E;
+    match exp {
+        E::SHARED_LITERAL { exp, .. } => constructor_dims(exp),
+        E::ARRAY { array, .. } => {
+            let mut out = vec![(&**array).into_iter().count() as u32];
+            if let Some(first) = (&**array).into_iter().next() {
+                out.extend(constructor_dims(first)?);
+            }
+            Ok(out)
+        }
+        E::MATRIX { matrix, .. } => {
+            let rows: Vec<_> = (&**matrix).into_iter().collect();
+            let mut out = vec![rows.len() as u32, rows.first().map_or(0, |r| (&***r).into_iter().count()) as u32];
+            if let Some(first) = rows.first().and_then(|r| (&***r).into_iter().next()) {
+                out.extend(constructor_dims(first)?);
+            }
+            Ok(out)
+        }
+        other => match exp_dae_type(other) {
+            Some(ty) => const_dims(&ty),
+            None => Ok(Vec::new()),
+        },
+    }
+}
+
+/// The constant per-axis sizes of an array `DAE.Type`, flattening nested
+/// `T_ARRAY`s (a rectangular array may be one `T_ARRAY` with several `dims` or a
+/// nest of `T_ARRAY`s). Fails on a non-constant dimension (`:` / expression),
+/// for which the constructor's own shape ([`constructor_dims`]) decides.
+fn const_dims(ty: &DAE::Type) -> Result<Vec<u32>> {
+    let DAE::Type::T_ARRAY { ty: elem, dims } = ty else {
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    for d in &**dims {
+        match &**d {
+            DAE::Dimension::DIM_INTEGER { integer } if *integer >= 0 => out.push(*integer as u32),
+            other => return Err("CodegenWasmJit: array construction needs constant dimensions"),
+        }
+    }
+    out.extend(const_dims(elem)?);
+    Ok(out)
+}
+
+/// Collect the scalar leaf expressions of a (possibly nested) array constructor
+/// in row-major order. `ARRAY`/`MATRIX` nodes are the structure; anything else
+/// is a leaf element.
+fn flatten_array_exp<'a>(exp: &'a DAE::Exp, out: &mut Vec<&'a DAE::Exp>) {
+    use DAE::Exp as E;
+    match exp {
+        E::ARRAY { array, .. } => {
+            for e in &**array {
+                flatten_array_exp(e, out);
+            }
+        }
+        E::MATRIX { matrix, .. } => {
+            for row in &**matrix {
+                for e in &**row {
+                    flatten_array_exp(e, out);
+                }
+            }
+        }
+        E::SHARED_LITERAL { exp, .. } => flatten_array_exp(exp, out),
+        other => out.push(other),
+    }
+}
+
+/// Lower an array constructor (`{...}`, possibly nested for a matrix) of the
+/// given declared `ty`, leaving an owned (+1) array handle on the stack. Builds
+/// the flat row-major runtime object and stores every scalar leaf; an owned heap
+/// element's reference transfers into the array (released by `rt_array_release`).
+fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE::Exp) -> Result<()> {
+    let SigTy::Array { elem, rank } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: array constructor with non-array type");
+    };
+    // The top-level structure (`ARRAY`/`MATRIX` nodes) is flattened to its
+    // outermost element expressions. Each is either a scalar (one element) or an
+    // array-valued expression (a sub-array, e.g. `{v, w}` of vectors) whose
+    // elements are blitted in. (Scalar leaves remain the common case.)
+    let mut leaves = Vec::new();
+    flatten_array_exp(whole, &mut leaves);
+    // Static placement needs the axis sizes and every sub-array leaf's length as
+    // constants; a parameter-sized axis is only known once parameters have run.
+    let dims = match const_dims(ty).or_else(|_| constructor_dims(whole)) {
+        Ok(d) if d.len() as u32 == rank && leaves.iter().all(|l| leaf_array_count(l).is_ok()) => d,
+        _ => return compile_array_literal_dynamic(ctx, ty, &elem, rank, whole),
+    };
+    let total: u32 = dims.iter().product();
+
+    // obj = rt_array_new(elem_kind, rank, total); set each dimension size.
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(elem.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(rank as i32));
+    ctx.emit(we::Instruction::I32Const(total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    // Store each leaf at its row-major position. A scalar leaf occupies one
+    // element; an array-valued leaf contributes its whole (row-major) contents.
+    // The position is known here, so the element address is `obj` plus a constant
+    // offset — no descriptor arithmetic, no bounds check. Consecutive constant
+    // elements accumulate into `run` and go out as a data segment.
+    let data_off = arr_data_off(rank);
+    let stride = elem_stride(&elem);
+    let mut run: Vec<u8> = Vec::new();
+    let mut run_start: u32 = 0;
+    let mut k: u32 = 0; // running 0-based element index
+    for leaf in &leaves {
+        let count = leaf_array_count(leaf)?;
+        if count.is_none() {
+            if let Some(bytes) = const_elem_bytes(leaf, &elem) {
+                if run.is_empty() {
+                    run_start = k;
+                }
+                run.extend_from_slice(&bytes);
+                k += 1;
+                continue;
+            }
+        }
+        emit_const_run(ctx, obj, data_off + run_start * stride, &elem, &mut run)?;
+        match count {
+            None => {
+                // Scalar element.
+                ctx.emit(we::Instruction::LocalGet(obj));
+                let w = compile_exp(ctx, leaf)?;
+                coerce(ctx, w, elem.wty());
+                elem_store_off(ctx, &elem, data_off + k * stride);
+                k += 1;
+            }
+            Some(n) => {
+                // Array-valued element: evaluate to an owned handle, blit its
+                // elements into the result at the running offset, then release it.
+                let h = ctx.alloc_temp(WTy::I32);
+                compile_exp(ctx, leaf)?;
+                ctx.emit(we::Instruction::LocalSet(h));
+                ctx.emit(we::Instruction::LocalGet(obj));
+                ctx.emit(we::Instruction::I32Const(k as i32));
+                ctx.emit(we::Instruction::LocalGet(h));
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_blit")?));
+                ctx.emit(we::Instruction::LocalGet(h));
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+                k += n;
+            }
+        }
+    }
+    emit_const_run(ctx, obj, data_off + run_start * stride, &elem, &mut run)?;
+    if k != total {
+        return Err("CodegenWasmJit: array constructor element/type count mismatch");
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+/// The number of scalar elements an array constructor *leaf* contributes:
+/// `None` for a scalar leaf, `Some(n)` for an array-valued leaf (a sub-array of
+/// `n` elements, from its constant dimensions). Fails if the leaf is an array of
+/// non-constant size (the dynamic case is not handled in a constructor).
+fn leaf_array_count(exp: &DAE::Exp) -> Result<Option<u32>> {
+    match exp_dae_type(exp) {
+        Some(ty) if matches!(&*ty, DAE::Type::T_ARRAY { .. }) => {
+            Ok(Some(const_dims(&ty)?.iter().product()))
+        }
+        _ => Ok(None),
+    }
+}
+
+/// The DAE type an expression carries, for the cases that can appear as an
+/// array-constructor leaf. `None` when no type annotation is readily available
+/// (treated as a scalar leaf by [`leaf_array_count`]).
+fn exp_dae_type(exp: &DAE::Exp) -> Option<Arc<DAE::Type>> {
+    use DAE::Exp as E;
+    match exp {
+        E::CREF { ty, .. } | E::CAST { ty, .. } | E::ARRAY { ty, .. } | E::MATRIX { ty, .. } | E::RANGE { ty, .. } => {
+            Some(ty.clone())
+        }
+        E::CALL { attr, .. } => Some(attr.ty.clone()),
+        // The whole array type for an `array(...)` comprehension, the scalar
+        // accumulator type for a fold (see `compile_reduction`).
+        E::REDUCTION { reductionInfo, .. } => Some(reductionInfo.exprType.clone()),
+        E::SHARED_LITERAL { exp, .. } => exp_dae_type(exp),
+        E::BINARY { operator, .. } | E::UNARY { operator, .. } => operator_dae_type(operator),
+        _ => None,
+    }
+}
+
+/// The result DAE type carried by an arithmetic operator (for the array-valued
+/// operators that can appear as a constructor leaf). `None` for operators that
+/// do not carry a usable type here.
+fn operator_dae_type(op: &DAE::Operator) -> Option<Arc<DAE::Type>> {
+    use DAE::Operator as O;
+    match op {
+        O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty } | O::UMINUS { ty }
+        | O::MUL_SCALAR_PRODUCT { ty } | O::MUL_MATRIX_PRODUCT { ty }
+        | O::UMINUS_ARR { ty } | O::ADD_ARR { ty } | O::SUB_ARR { ty } | O::MUL_ARR { ty } | O::DIV_ARR { ty }
+        | O::MUL_ARRAY_SCALAR { ty } | O::ADD_ARRAY_SCALAR { ty } | O::SUB_SCALAR_ARRAY { ty }
+        | O::DIV_ARRAY_SCALAR { ty } | O::DIV_SCALAR_ARRAY { ty }
+        | O::POW_ARRAY_SCALAR { ty } | O::POW_SCALAR_ARRAY { ty } | O::POW_ARR { ty } | O::POW_ARR2 { ty } => {
+            Some(ty.clone())
+        }
+        _ => None,
+    }
+}
+
+/// Lower a range used as an array value (`start:step:stop`, step default 1).
+/// The element count is `(stop - start) / step + 1`, clamped to ≥ 0 (an empty
+/// range yields a zero-length array), and a fill loop writes each element. Only
+/// Integer-element ranges are handled; Real ranges need the C runtime's
+/// element-count rounding to stay byte-identical, so they fail loudly.
+fn compile_range_array(ctx: &mut FnCtx, ty: &DAE::Type, start: &DAE::Exp, step: Option<&DAE::Exp>, stop: &DAE::Exp) -> Result<()> {
+    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: range with non-array type");
+    };
+    match &*elem {
+        // Integer and enumeration ranges (enum literals are their i32 index).
+        SigTy::Int => compile_int_range_array(ctx, start, step, stop),
+        SigTy::Real => compile_real_range_array(ctx, start, step, stop),
+        other => return Err("CodegenWasmJit: only Integer/Real ranges are supported as array values"),
+    }
+}
+
+/// `start:step:stop` over Integers — `n = max(0, (stop-start)/step + 1)`
+/// elements (integer division naturally handles either step direction), filled
+/// `arr[k] = start + k*step`.
+fn compile_int_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE::Exp>, stop: &DAE::Exp) -> Result<()> {
+    let start_t = ctx.alloc_temp(WTy::I32);
+    let w = compile_exp(ctx, start)?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(start_t));
+    let step_t = ctx.alloc_temp(WTy::I32);
+    match step {
+        Some(e) => {
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::I32);
+        }
+        None => ctx.emit(we::Instruction::I32Const(1)),
+    }
+    ctx.emit(we::Instruction::LocalSet(step_t));
+    let stop_t = ctx.alloc_temp(WTy::I32);
+    let w = compile_exp(ctx, stop)?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(stop_t));
+
+    // n = (stop - start) / step + 1, then n = max(n, 0).
+    let n_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(stop_t));
+    ctx.emit(we::Instruction::LocalGet(start_t));
+    ctx.emit(we::Instruction::I32Sub);
+    ctx.emit(we::Instruction::LocalGet(step_t));
+    ctx.emit(we::Instruction::I32DivS);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(n_t));
+    // n = (n > 0) ? n : 0
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32GtS);
+    ctx.emit(we::Instruction::Select);
+    ctx.emit(we::Instruction::LocalSet(n_t));
+
+    let arr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(SigTy::Int.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(arr));
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+
+    // for k in 0..n: arr[k] = start + k*step
+    let k_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(k_t));
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::I32GeS);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    emit_elem_ptr(ctx, &SigTy::Int)?;
+    ctx.emit(we::Instruction::LocalGet(start_t));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::LocalGet(step_t));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add);
+    elem_store(ctx, &SigTy::Int);
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(k_t));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    ctx.emit(we::Instruction::LocalGet(arr));
+    Ok(())
+}
+
+/// `start:step:stop` over Reals, byte-identical to the C runtime's
+/// `create_real_array_from_range`: the element count is
+/// `(step>0 ? start<=stop : start>=stop) ? (size_t)((stop-start)/step + 1) : 0`,
+/// and the elements are produced by **accumulation** (`val += step`), not
+/// `start + k*step`, so the rounding matches exactly.
+fn compile_real_range_array(ctx: &mut FnCtx, start: &DAE::Exp, step: Option<&DAE::Exp>, stop: &DAE::Exp) -> Result<()> {
+    // `val` doubles as the running accumulator (starts at `start`).
+    let val_t = ctx.alloc_temp(WTy::F64);
+    let w = compile_exp(ctx, start)?;
+    coerce(ctx, w, WTy::F64);
+    ctx.emit(we::Instruction::LocalSet(val_t));
+    let step_t = ctx.alloc_temp(WTy::F64);
+    match step {
+        Some(e) => {
+            let w = compile_exp(ctx, e)?;
+            coerce(ctx, w, WTy::F64);
+        }
+        None => ctx.emit(we::Instruction::F64Const(1.0f64.into())),
+    }
+    ctx.emit(we::Instruction::LocalSet(step_t));
+    let stop_t = ctx.alloc_temp(WTy::F64);
+    let w = compile_exp(ctx, stop)?;
+    coerce(ctx, w, WTy::F64);
+    ctx.emit(we::Instruction::LocalSet(stop_t));
+
+    // n = 0; if (step>0 ? start<=stop : start>=stop) n = trunc((stop-start)/step + 1)
+    let n_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(n_t));
+    // cond on the stack:
+    ctx.emit(we::Instruction::LocalGet(step_t));
+    ctx.emit(we::Instruction::F64Const(0.0f64.into()));
+    ctx.emit(we::Instruction::F64Gt);
+    ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    ctx.emit(we::Instruction::LocalGet(stop_t));
+    ctx.emit(we::Instruction::F64Le);
+    ctx.emit(we::Instruction::Else);
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    ctx.emit(we::Instruction::LocalGet(stop_t));
+    ctx.emit(we::Instruction::F64Ge);
+    ctx.emit(we::Instruction::End);
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(stop_t));
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    ctx.emit(we::Instruction::F64Sub);
+    ctx.emit(we::Instruction::LocalGet(step_t));
+    ctx.emit(we::Instruction::F64Div);
+    ctx.emit(we::Instruction::F64Const(1.0f64.into()));
+    ctx.emit(we::Instruction::F64Add);
+    ctx.emit(we::Instruction::I32TruncF64S); // truncate toward zero, like (size_t)
+    ctx.emit(we::Instruction::LocalSet(n_t));
+    ctx.emit(we::Instruction::End);
+
+    let arr = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(SigTy::Real.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(arr));
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+
+    // for k in 0..n: arr[k] = val; val += step
+    let k_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::LocalSet(k_t));
+    ctx.emit(we::Instruction::Block(we::BlockType::Empty));
+    ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::LocalGet(n_t));
+    ctx.emit(we::Instruction::I32GeS);
+    ctx.emit(we::Instruction::BrIf(1));
+    ctx.emit(we::Instruction::LocalGet(arr));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    emit_elem_ptr(ctx, &SigTy::Real)?;
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    elem_store(ctx, &SigTy::Real);
+    ctx.emit(we::Instruction::LocalGet(val_t));
+    ctx.emit(we::Instruction::LocalGet(step_t));
+    ctx.emit(we::Instruction::F64Add);
+    ctx.emit(we::Instruction::LocalSet(val_t));
+    ctx.emit(we::Instruction::LocalGet(k_t));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    ctx.emit(we::Instruction::LocalSet(k_t));
+    ctx.emit(we::Instruction::Br(0));
+    ctx.emit(we::Instruction::End); // loop
+    ctx.emit(we::Instruction::End); // block
+    ctx.emit(we::Instruction::LocalGet(arr));
+    Ok(())
+}
+
+// Element-wise / broadcast op codes — must match the runtime's `OP_*`.
+const OP_ADD: i32 = 0;
+const OP_SUB: i32 = 1;
+const OP_MUL: i32 = 2;
+const OP_DIV: i32 = 3;
+const OP_POW: i32 = 4;
+const OP_AND: i32 = 5;
+const OP_OR: i32 = 6;
+
+/// Element-wise `a op b` over two same-shape arrays: produces a fresh array; the
+/// operand arrays are released after.
+fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, ty: &DAE::Type) -> Result<WTy> {
+    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: element-wise array op with non-array type");
+    };
+    let rt = if elem.wty() == WTy::F64 { "rt_array_ew_f64" } else { "rt_array_ew_i32" };
+    compile_exp(ctx, e1)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    compile_exp(ctx, e2)?;
+    let bt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(bt));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    ctx.emit(we::Instruction::I32Const(op_code));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    release_temp_array(ctx, at)?;
+    release_temp_array(ctx, bt)?;
+    Ok(WTy::I32)
+}
+
+/// `v1 * v2` scalar (dot) product of two numeric vectors → a scalar. Both
+/// operand arrays are released; the scalar result is left on the stack.
+fn compile_dot(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
+    let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: scalar-product operand is not an array")?;
+    let f64mode = elem.wty() == WTy::F64;
+    let rt = if f64mode { "rt_array_dot_f64" } else { "rt_array_dot_i32" };
+    compile_exp(ctx, e1)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    compile_exp(ctx, e2)?;
+    let bt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(bt));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    release_temp_array(ctx, at)?;
+    release_temp_array(ctx, bt)?;
+    Ok(if f64mode { WTy::F64 } else { WTy::I32 })
+}
+
+/// `a * b` matrix product (matrix·matrix / matrix·vector / vector·matrix). The
+/// runtime computes the result shape from the operand ranks; both operands are
+/// released and the fresh result array handle is left on the stack.
+fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
+    let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: matrix-product operand is not an array")?;
+    let rt = if elem.wty() == WTy::F64 { "rt_array_matmul_f64" } else { "rt_array_matmul_i32" };
+    compile_exp(ctx, e1)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    compile_exp(ctx, e2)?;
+    let bt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(bt));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    let result_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(result_t));
+    release_temp_array(ctx, at)?;
+    release_temp_array(ctx, bt)?;
+    ctx.emit(we::Instruction::LocalGet(result_t));
+    Ok(WTy::I32)
+}
+
+/// Scalar broadcast over an array: `rev ? (s op a[i]) : (a[i] op s)`. The array
+/// and scalar operands are found by type (so commutative forms accept either
+/// order); the array operand is released after.
+fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, rev: bool, ty: &DAE::Type) -> Result<WTy> {
+    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
+        return Err("CodegenWasmJit: array-scalar op with non-array type");
+    };
+    let elem_wty = elem.wty();
+    let rt = if elem_wty == WTy::F64 { "rt_array_scalar_f64" } else { "rt_array_scalar_i32" };
+    let (arr_e, scal_e) = if matches!(exp_sigty(e1)?, SigTy::Array { .. }) { (e1, e2) } else { (e2, e1) };
+    compile_exp(ctx, arr_e)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    let sw = compile_exp(ctx, scal_e)?;
+    coerce(ctx, sw, elem_wty);
+    let st = ctx.alloc_temp(elem_wty);
+    ctx.emit(we::Instruction::LocalSet(st));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(st));
+    ctx.emit(we::Instruction::I32Const(op_code));
+    ctx.emit(we::Instruction::I32Const(rev as i32));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    release_temp_array(ctx, at)?;
+    Ok(WTy::I32)
+}
+
+/// Lower `a[i, j, ...]`: one `INDEX` per dimension reads a scalar element,
+/// anything else slices to a lower-rank sub-array. `base` produces the owned
+/// array handle. Returns the result's wasm type.
+fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
+    let SigTy::Array { elem, rank } = exp_sigty(base)? else {
+        return Err("CodegenWasmJit: subscripting a non-array expression");
+    };
+    compile_exp(ctx, base)?; // owned array handle
+    if is_scalar_index(subs, rank) {
+        let idx_exps = index_subscripts(subs, rank)?;
+        index_loaded(ctx, &elem, &idx_exps)
+    } else {
+        slice_loaded(ctx, subs)
+    }
+}
+
+/// Whether a subscript list is a full scalar index — exactly one `INDEX` per
+/// dimension — and so yields a scalar element. Anything else (a `WHOLEDIM` /
+/// `SLICE`, or fewer subscripts than the rank, i.e. trailing whole dimensions)
+/// slices the array to a lower-rank sub-array and goes through [`slice_loaded`].
+fn is_scalar_index(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> bool {
+    let mut n = 0u32;
+    let mut all_index = true;
+    for s in &**subs {
+        n += 1;
+        if !matches!(&**s, DAE::Subscript::INDEX { .. }) {
+            all_index = false;
+        }
+    }
+    all_index && n == rank
+}
+
+/// Extract one `INDEX` expression per dimension from a subscript list. Callers
+/// gate on [`is_scalar_index`] first, so anything else is a codegen bug.
+fn index_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    if subs.len() as u32 != rank {
+        return Err("CodegenWasmJit: partial indexing on the scalar-index path");
+    }
+    let mut out = Vec::with_capacity(subs.len());
+    for s in subs {
+        match &**s {
+            DAE::Subscript::INDEX { exp } => out.push(exp.clone()),
+            other => return Err("CodegenWasmJit: non-scalar subscript on the scalar-index path"),
+        }
+    }
+    Ok(out)
+}
+
+/// Given an owned array handle on top of the stack plus the `INDEX` expressions
+/// (one per dimension), compute the row-major linear index, load the scalar
+/// element, release the array, and leave the (owned, if heap) element. Returns
+/// the element's wasm type.
+fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<WTy> {
+    let arr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr_t));
+
+    // acc = (i0 - 1); then acc = acc * dim(axis) + (i_axis - 1) row-major.
+    let acc = ctx.alloc_temp(WTy::I32);
+    let w = compile_exp(ctx, &idx_exps[0])?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Sub);
+    ctx.emit(we::Instruction::LocalSet(acc));
+    for (axis0, ie) in idx_exps.iter().enumerate().skip(1) {
+        ctx.emit(we::Instruction::LocalGet(acc));
+        ctx.emit(we::Instruction::LocalGet(arr_t));
+        emit_array_dim(ctx, axis0 as u32 + 1)?; // 1-based axis
+        ctx.emit(we::Instruction::I32Mul);
+        let w = compile_exp(ctx, ie)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub);
+        ctx.emit(we::Instruction::I32Add);
+        ctx.emit(we::Instruction::LocalSet(acc));
+    }
+    ctx.emit(we::Instruction::LocalGet(arr_t));
+    ctx.emit(we::Instruction::LocalGet(acc));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::I32Add);
+    emit_elem_ptr(ctx, elem)?;
+    elem_load(ctx, elem);
+
+    if elem.is_heap() {
+        // The element is a borrowed handle into the array; retain it so it
+        // outlives the array we now release, making it an owned (+1) result.
+        let v = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(v));
+        ctx.emit(we::Instruction::LocalGet(v));
+        ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+        release_temp_array(ctx, arr_t)?;
+        ctx.emit(we::Instruction::LocalGet(v));
+    } else {
+        // Scalar value already on the stack; releasing the array (void) leaves it.
+        release_temp_array(ctx, arr_t)?;
+    }
+    Ok(elem.wty())
+}
+
+/// Push the byte address of element `slot` (1-based) of the spec array held in
+/// local `spec_t` onto the stack.
+fn spec_elem_addr(ctx: &mut FnCtx, spec_t: u32, slot: i32) -> Result<()> {
+    ctx.emit(we::Instruction::LocalGet(spec_t));
+    ctx.emit(we::Instruction::I32Const(slot));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    Ok(())
+}
+
+/// Build the per-axis spec `rt_array_slice` / `rt_array_indexed_assign` read: an
+/// `Integer[2*nspec]` of (kind, value) pairs, one pair per subscript. Returns the
+/// temps holding the spec and the owned SLICE index arrays; the caller releases
+/// both.
+fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&Arc<DAE::Subscript>]) -> Result<(u32, Vec<u32>)> {
+    let spec_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(0)); // EK_INT
+    ctx.emit(we::Instruction::I32Const(1)); // ndims
+    ctx.emit(we::Instruction::I32Const(2 * subs.len() as i32)); // total
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(spec_t));
+
+    let mut slice_idx_temps: Vec<u32> = Vec::new();
+    for (ax, s) in subs.iter().enumerate() {
+        let kind_slot = 2 * ax as i32 + 1;
+        let val_slot = 2 * ax as i32 + 2;
+        match &***s {
+            DAE::Subscript::INDEX { exp } => {
+                spec_elem_addr(ctx, spec_t, kind_slot)?;
+                ctx.emit(we::Instruction::I32Const(0)); // INDEX
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+                spec_elem_addr(ctx, spec_t, val_slot)?;
+                let w = compile_exp(ctx, exp)?;
+                coerce(ctx, w, WTy::I32);
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+            }
+            DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } => {
+                spec_elem_addr(ctx, spec_t, kind_slot)?;
+                ctx.emit(we::Instruction::I32Const(1)); // WHOLE
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+                // value slot stays 0 (rt_array_new zeroes the spec).
+            }
+            DAE::Subscript::SLICE { exp } => {
+                spec_elem_addr(ctx, spec_t, kind_slot)?;
+                ctx.emit(we::Instruction::I32Const(2)); // SLICE
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+                spec_elem_addr(ctx, spec_t, val_slot)?;
+                let w = compile_exp(ctx, exp)?; // owned Integer index array
+                if w != WTy::I32 {
+                    return Err("CodegenWasmJit: array slice subscript is not an integer index array");
+                }
+                let s_t = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalTee(s_t));
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+                slice_idx_temps.push(s_t);
+            }
+        }
+    }
+    Ok((spec_t, slice_idx_temps))
+}
+
+/// Given an owned source-array handle on top of the stack and a subscript list
+/// that slices / partially indexes it (any `WHOLEDIM`/`SLICE`, or fewer
+/// subscripts than the rank), build the per-axis spec and call `rt_array_slice`,
+/// leaving a fresh (owned) lower-rank sub-array handle. The source array and any
+/// `SLICE` index arrays are released. Returns `WTy::I32` (an array handle).
+fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    let nspec = subs.len() as u32;
+
+    let arr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr_t));
+    let (spec_t, slice_idx_temps) = emit_slice_spec(ctx, &subs)?;
+
+    // result = rt_array_slice(src, nspec, spec)
+    ctx.emit(we::Instruction::LocalGet(arr_t));
+    ctx.emit(we::Instruction::I32Const(nspec as i32));
+    ctx.emit(we::Instruction::LocalGet(spec_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_slice")?));
+    let result_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(result_t));
+
+    // Release the borrowed source, the per-axis SLICE index arrays, and the spec.
+    release_temp_array(ctx, arr_t)?;
+    for s_t in slice_idx_temps {
+        release_temp_array(ctx, s_t)?;
+    }
+    release_temp_array(ctx, spec_t)?;
+
+    ctx.emit(we::Instruction::LocalGet(result_t));
+    Ok(WTy::I32)
+}
+
+/// Slice assignment `a[i, :, lo:hi, …] := rhs`, written in place into the array
+/// in `arr_idx` (which privately owns its buffer, as for element assignment).
+/// The rhs is an array holding the selected positions in selection order;
+/// `rt_array_indexed_assign` copies it in, so the rhs reference is released.
+fn compile_slice_assign(
+    ctx: &mut FnCtx,
+    arr_idx: u32,
+    subs: &Arc<List<Arc<DAE::Subscript>>>,
+    rhs: RhsSource,
+) -> Result<()> {
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
+    let nspec = subs.len() as u32;
+    let (spec_t, slice_idx_temps) = emit_slice_spec(ctx, &subs)?;
+
+    let src_t = ctx.alloc_temp(WTy::I32);
+    if rhs.push(ctx)? != WTy::I32 {
+        return Err("CodegenWasmJit: slice assignment rhs is not an array");
+    }
+    ctx.emit(we::Instruction::LocalSet(src_t));
+
+    ctx.emit(we::Instruction::LocalGet(arr_idx));
+    ctx.emit(we::Instruction::I32Const(nspec as i32));
+    ctx.emit(we::Instruction::LocalGet(spec_t));
+    ctx.emit(we::Instruction::LocalGet(src_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_indexed_assign")?));
+
+    release_temp_array(ctx, src_t)?;
+    for s_t in slice_idx_temps {
+        release_temp_array(ctx, s_t)?;
+    }
+    release_temp_array(ctx, spec_t)?;
+    Ok(())
+}
+
+/// Release an owned array handle held in scratch local `t`.
+fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
+    ctx.emit(we::Instruction::LocalGet(t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
+/// Lower `size(a, d)` (a single dimension size, scalar Integer) or `size(a)`
+/// (the whole dimension vector, an `Integer[ndims]`). `a`'s owned handle is
+/// released after.
+fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
+    // Only the whole-vector form needs the rank statically — as well, since the
+    // frontend leaves a dimension expression's operand `T_UNKNOWN`.
+    let rank = match sz {
+        Some(_) => 0,
+        None => match exp_sigty(exp)? {
+            SigTy::Array { rank, .. } => rank,
+            _ => return Err("CodegenWasmJit: size() of a non-array expression"),
+        },
+    };
+    compile_exp(ctx, exp)?; // owned array handle
+    let arr_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(arr_t));
+
+    if let Some(d) = sz {
+        // size(a, d): one dimension.
+        ctx.emit(we::Instruction::LocalGet(arr_t));
+        let w = compile_exp(ctx, d)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        release_temp_array(ctx, arr_t)?; // leaves the dim value
+        return Ok(());
+    }
+
+    // size(a): build a fresh Integer[rank] whose element i is size(a, i). The
+    // result rank equals `a`'s number of dimensions, known statically.
+    let res = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(SigTy::Int.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(1)); // ndims of the result vector
+    ctx.emit(we::Instruction::I32Const(rank as i32)); // total = number of axes
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(res));
+    ctx.emit(we::Instruction::LocalGet(res));
+    ctx.emit(we::Instruction::I32Const(0));
+    ctx.emit(we::Instruction::I32Const(rank as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    for axis in 1..=rank {
+        ctx.emit(we::Instruction::LocalGet(res));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+        ctx.emit(we::Instruction::LocalGet(arr_t));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+        elem_store(ctx, &SigTy::Int);
+    }
+    release_temp_array(ctx, arr_t)?;
+    ctx.emit(we::Instruction::LocalGet(res));
+    Ok(())
+}
+
+/// The scalar element type of an array-typed expression, or `None` if it is not
+/// an array (so an overloaded builtin can fall through to its scalar form).
+fn array_elem(e: &DAE::Exp) -> Result<Option<Arc<SigTy>>> {
+    Ok(match exp_sigty(e)? {
+        SigTy::Array { elem, .. } => Some(elem),
+        _ => None,
+    })
+}
+
+/// Lower the array builtins. Returns `Some(result type)` if `name` is one of
+/// them (with the right argument shape), else `None` so the scalar math handler
+/// runs. Numeric only (Integer/Boolean/Real elements); a heap-element array
+/// (e.g. `sum` of a `String[]`, which is not valid Modelica anyway) is rejected
+/// by the runtime dispatch picking an i32/f64 path.
+fn compile_array_builtin(
+    ctx: &mut FnCtx,
+    name: &str,
+    argv: &[&Arc<DAE::Exp>],
+    attr: &DAE::CallAttributes,
+) -> Result<Option<SigTy>> {
+    match name {
+        // fill(s, d1, ..., dk): array of the given dims, every element = s.
+        "fill" => {
+            if argv.len() < 2 {
+                return Err("CodegenWasmJit: fill expects a value and at least one dimension");
+            }
+            let arr_ty = sig_ty(&attr.ty)?;
+            let SigTy::Array { elem, .. } = &arr_ty else {
+                return Err("CodegenWasmJit: fill result is not an array");
+            };
+            let obj = emit_alloc_from_exprs(ctx, elem, &argv[1..])?;
+            emit_fill_value(ctx, obj, elem, argv[0])?;
+            ctx.emit(we::Instruction::LocalGet(obj));
+            Ok(Some(arr_ty))
+        }
+        // zeros(d...) / ones(d...): like fill with a constant 0 / 1.
+        "zeros" | "ones" => {
+            if argv.is_empty() {
+                return Err("CodegenWasmJit: expects at least one dimension");
+            }
+            let arr_ty = sig_ty(&attr.ty)?;
+            let SigTy::Array { elem, .. } = &arr_ty else {
+                return Err("CodegenWasmJit: result is not an array");
+            };
+            let obj = emit_alloc_from_exprs(ctx, elem, argv)?;
+            emit_fill_const(ctx, obj, elem, if name == "ones" { 1 } else { 0 })?;
+            ctx.emit(we::Instruction::LocalGet(obj));
+            Ok(Some(arr_ty))
+        }
+        // sum(a) / product(a) over all elements -> scalar of the element type.
+        "sum" | "product" if argv.len() == 1 => match array_elem(argv[0])? {
+            None => Ok(None),
+            Some(elem) => {
+                let rt = match (name, elem.wty()) {
+                    ("sum", WTy::F64) => "rt_array_sum_f64",
+                    ("sum", WTy::I32) => "rt_array_sum_i32",
+                    (_, WTy::F64) => "rt_array_product_f64",
+                    (_, WTy::I32) => "rt_array_product_i32",
+                };
+                emit_array_reduce(ctx, argv[0], rt, None)?;
+                Ok(Some((*elem).clone()))
+            }
+        },
+        // min(a) / max(a) of a single array (the two-argument forms are scalar
+        // and handled by the math builtins).
+        "min" | "max" if argv.len() == 1 => match array_elem(argv[0])? {
+            None => Ok(None),
+            Some(elem) => {
+                let rt = if elem.wty() == WTy::F64 { "rt_array_extreme_f64" } else { "rt_array_extreme_i32" };
+                emit_array_reduce(ctx, argv[0], rt, Some(if name == "max" { 1 } else { 0 }))?;
+                Ok(Some((*elem).clone()))
+            }
+        },
+        // identity(n): n×n Integer identity matrix.
+        "identity" if argv.len() == 1 => {
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_identity")?));
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // diagonal(v): n×n matrix with the vector v on the diagonal.
+        "diagonal" if argv.len() == 1 => {
+            if array_elem(argv[0])?.is_none() {
+                return Err("CodegenWasmJit: diagonal of a non-array expression");
+            }
+            compile_exp(ctx, argv[0])?;
+            let vt = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(vt));
+            ctx.emit(we::Instruction::LocalGet(vt));
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_diagonal")?));
+            release_temp_array(ctx, vt)?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // linspace(x1, x2, n): n evenly-spaced Reals from x1 to x2.
+        "linspace" if argv.len() == 3 => {
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::F64);
+            let w = compile_exp(ctx, argv[1])?;
+            coerce(ctx, w, WTy::F64);
+            let w = compile_exp(ctx, argv[2])?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_linspace")?));
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // transpose(a): a fresh n×m array (the operand 2-D array is released).
+        "transpose" if argv.len() == 1 => {
+            if array_elem(argv[0])?.is_none() {
+                return Err("CodegenWasmJit: transpose of a non-array expression");
+            }
+            compile_exp(ctx, argv[0])?;
+            let at = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(at));
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_transpose")?));
+            release_temp_array(ctx, at)?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // cat(dim, a1, ..., an): concatenate arrays along dimension `dim` into a
+        // fresh array. The inputs are passed to the runtime as an Integer array
+        // of handles; both the handle array and the inputs are released after.
+        "cat" if argv.len() >= 2 => {
+            let n = (argv.len() - 1) as u32;
+            let dim_t = ctx.alloc_temp(WTy::I32);
+            let w = compile_exp(ctx, argv[0])?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(dim_t));
+            // Integer[n] array of the input handles.
+            let handles_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::I32Const(0)); // EK_INT
+            ctx.emit(we::Instruction::I32Const(1)); // ndims
+            ctx.emit(we::Instruction::I32Const(n as i32)); // total
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+            ctx.emit(we::Instruction::LocalSet(handles_t));
+            let mut in_temps = Vec::with_capacity(n as usize);
+            for (i, a) in argv[1..].iter().enumerate() {
+                if array_elem(a)?.is_none() {
+                    return Err("CodegenWasmJit: cat argument is not an array");
+                }
+                ctx.emit(we::Instruction::LocalGet(handles_t));
+                ctx.emit(we::Instruction::I32Const(i as i32 + 1));
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+                compile_exp(ctx, a)?; // owned input array handle
+                let t = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalTee(t));
+                ctx.emit(we::Instruction::I32Store(mem_arg(0, 2)));
+                in_temps.push(t);
+            }
+            ctx.emit(we::Instruction::LocalGet(dim_t));
+            ctx.emit(we::Instruction::I32Const(n as i32));
+            ctx.emit(we::Instruction::LocalGet(handles_t));
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_cat")?));
+            let result_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(result_t));
+            for t in in_temps {
+                release_temp_array(ctx, t)?;
+            }
+            release_temp_array(ctx, handles_t)?;
+            ctx.emit(we::Instruction::LocalGet(result_t));
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // ndims(a) -> Integer.
+        "ndims" if argv.len() == 1 => {
+            if array_elem(argv[0])?.is_none() {
+                return Err("CodegenWasmJit: ndims of a non-array expression");
+            }
+            emit_array_reduce(ctx, argv[0], "rt_array_ndims", None)?;
+            Ok(Some(SigTy::Int))
+        }
+        // scalar(a): the single element of an array whose dimensions are all 1.
+        "scalar" if argv.len() == 1 => {
+            let elem = array_elem(argv[0])?
+                .ok_or_else(|| "CodegenWasmJit: scalar() of a non-array expression")?;
+            compile_exp(ctx, argv[0])?; // owned array
+            let arr_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(arr_t));
+            ctx.emit(we::Instruction::LocalGet(arr_t));
+            ctx.emit(we::Instruction::I32Const(1));
+            emit_elem_ptr(ctx, &elem)?;
+            elem_load(ctx, &elem);
+            if elem.is_heap() {
+                // Retain the borrowed handle so it outlives the array release.
+                let v = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(v));
+                ctx.emit(we::Instruction::LocalGet(v));
+                ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+                release_temp_array(ctx, arr_t)?;
+                ctx.emit(we::Instruction::LocalGet(v));
+            } else {
+                release_temp_array(ctx, arr_t)?;
+            }
+            Ok(Some((*elem).clone()))
+        }
+        // vector(a) / matrix(a): reshape to rank 1 / rank 2; symmetric(a):
+        // mirror the upper triangle into the lower. Element-kind generic.
+        "vector" if argv.len() == 1 => {
+            emit_unary_array(ctx, argv[0], "rt_array_vector")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        "matrix" if argv.len() == 1 => {
+            emit_unary_array(ctx, argv[0], "rt_array_matrix")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        "symmetric" if argv.len() == 1 => {
+            emit_unary_array(ctx, argv[0], "rt_array_symmetric")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // cross(a,b): Real 3-vector cross product. skew(x): 3x3 skew matrix.
+        "cross" if argv.len() == 2 => {
+            emit_binary_array(ctx, argv[0], argv[1], "rt_array_cross_f64")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        "skew" if argv.len() == 1 => {
+            emit_unary_array(ctx, argv[0], "rt_array_skew_f64")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // outerProduct(a,b): r[i,j] = a[i]*b[j]. Always Real (the operands are
+        // promoted to Real by the frontend, like `cross`).
+        "outerProduct" if argv.len() == 2 => {
+            emit_binary_array(ctx, argv[0], argv[1], "rt_array_outer_f64")?;
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        // promote(a, n): add trailing size-1 dimensions to reach rank `n`.
+        "promote" if argv.len() == 2 => {
+            if array_elem(argv[0])?.is_none() {
+                return Err("CodegenWasmJit: promote of a non-array expression");
+            }
+            compile_exp(ctx, argv[0])?;
+            let at = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(at));
+            ctx.emit(we::Instruction::LocalGet(at));
+            let w = compile_exp(ctx, argv[1])?;
+            coerce(ctx, w, WTy::I32);
+            ctx.emit(we::Instruction::Call(rt_index("rt_array_promote")?));
+            let res_t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(res_t));
+            release_temp_array(ctx, at)?;
+            ctx.emit(we::Instruction::LocalGet(res_t));
+            Ok(Some(sig_ty(&attr.ty)?))
+        }
+        _ => Ok(None),
+    }
+}
+
+/// Lower a one-array-argument runtime builtin: evaluate the operand, call `rt`
+/// (which returns a fresh array handle), then release the operand. Leaves the
+/// result handle on the stack.
+fn emit_unary_array(ctx: &mut FnCtx, arg: &DAE::Exp, rt: &str) -> Result<()> {
+    if array_elem(arg)?.is_none() {
+        return Err("CodegenWasmJit: of a non-array expression");
+    }
+    compile_exp(ctx, arg)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    release_temp_array(ctx, at)?;
+    Ok(())
+}
+
+/// Lower a two-array-argument runtime builtin: evaluate both operands, call
+/// `rt`, then release both operands. Leaves the result handle on the stack.
+fn emit_binary_array(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, rt: &str) -> Result<()> {
+    compile_exp(ctx, e1)?;
+    let at = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(at));
+    compile_exp(ctx, e2)?;
+    let bt = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(bt));
+    ctx.emit(we::Instruction::LocalGet(at));
+    ctx.emit(we::Instruction::LocalGet(bt));
+    ctx.emit(we::Instruction::Call(rt_index(rt)?));
+    release_temp_array(ctx, at)?;
+    release_temp_array(ctx, bt)?;
+    Ok(())
+}
+
+/// Allocate a fresh array of element type `elem` whose dimensions are the given
+/// expressions (evaluated at runtime). Returns the scratch local holding the
+/// owned array handle.
+fn emit_alloc_from_exprs(ctx: &mut FnCtx, elem: &SigTy, dim_exprs: &[&Arc<DAE::Exp>]) -> Result<u32> {
+    let rank = dim_exprs.len() as u32;
+    let mut dim_temps = Vec::with_capacity(dim_exprs.len());
+    for de in dim_exprs {
+        let t = ctx.alloc_temp(WTy::I32);
+        let w = compile_exp(ctx, de)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
+        dim_temps.push(t);
+    }
+    ctx.emit(we::Instruction::LocalGet(dim_temps[0]));
+    for t in &dim_temps[1..] {
+        ctx.emit(we::Instruction::LocalGet(*t));
+        ctx.emit(we::Instruction::I32Mul);
+    }
+    let total_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(total_t));
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(elem.elem_kind() as i32));
+    ctx.emit(we::Instruction::I32Const(rank as i32));
+    ctx.emit(we::Instruction::LocalGet(total_t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, t) in dim_temps.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::LocalGet(*t));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    Ok(obj)
+}
+
+/// Fill every element of array `obj` with the value of `val` (the `fill` value).
+fn emit_fill_value(ctx: &mut FnCtx, obj: u32, elem: &SigTy, val: &DAE::Exp) -> Result<()> {
+    ctx.emit(we::Instruction::LocalGet(obj));
+    let w = compile_exp(ctx, val)?;
+    coerce(ctx, w, elem.wty());
+    ctx.emit(we::Instruction::Call(rt_index(fill_fn(elem))?));
+    Ok(())
+}
+
+/// Fill every element of array `obj` with the integer constant `k` (for
+/// `zeros`/`ones`), converted to the element's wasm type.
+fn emit_fill_const(ctx: &mut FnCtx, obj: u32, elem: &SigTy, k: i32) -> Result<()> {
+    ctx.emit(we::Instruction::LocalGet(obj));
+    match elem.wty() {
+        WTy::I32 => ctx.emit(we::Instruction::I32Const(k)),
+        WTy::F64 => ctx.emit(we::Instruction::F64Const((k as f64).into())),
+    }
+    ctx.emit(we::Instruction::Call(rt_index(fill_fn(elem))?));
+    Ok(())
+}
+
+fn fill_fn(elem: &SigTy) -> &'static str {
+    match elem.wty() {
+        WTy::F64 => "rt_array_fill_f64",
+        WTy::I32 => "rt_array_fill_i32",
+    }
+}
+
+/// Reduce an array to a scalar via runtime function `rt_fn` (optionally with an
+/// extra `i32` argument, e.g. the min/max selector). The array operand is owned
+/// (released after); the scalar result is left on the stack.
+fn emit_array_reduce(ctx: &mut FnCtx, arr: &DAE::Exp, rt_fn: &str, extra: Option<i32>) -> Result<()> {
+    compile_exp(ctx, arr)?; // owned array handle
+    let a_t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(a_t));
+    ctx.emit(we::Instruction::LocalGet(a_t));
+    if let Some(k) = extra {
+        ctx.emit(we::Instruction::I32Const(k));
+    }
+    ctx.emit(we::Instruction::Call(rt_index(rt_fn)?));
+    release_temp_array(ctx, a_t)?; // leaves the scalar result
+    Ok(())
+}
+
+fn unary_f64(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], instr: we::Instruction<'static>) -> Result<()> {
+    need_args(argv, 1, "<f64 builtin>")?;
+    let w = compile_exp(ctx, argv[0])?;
+    coerce(ctx, w, WTy::F64);
+    ctx.emit(instr);
+    Ok(())
+}
+
+fn need_args(argv: &[&Arc<DAE::Exp>], n: usize, name: &str) -> Result<()> {
+    if argv.len() != n {
+        return Err("CodegenWasmJit: builtin argument count mismatch");
+    }
+    Ok(())
+}
+
+/// Emit a numeric conversion if the value on the stack is not already the
+/// wanted type. Integer/Boolean both live in `i32`, so I32<->I32 is a no-op.
+fn coerce(ctx: &mut FnCtx, from: WTy, to: WTy) {
+    match (from, to) {
+        (WTy::I32, WTy::F64) => ctx.emit(we::Instruction::F64ConvertI32S),
+        // Saturating (non-trapping): a transient NaN/out-of-range value from an NLS
+        // probe must not trap the module.
+        (WTy::F64, WTy::I32) => ctx.emit(we::Instruction::I32TruncSatF64S),
+        _ => {}
+    }
+}
+
+// -------------------------------------------------------------------------
+// MetaModelica entry points (called from CevalScript)
+// -------------------------------------------------------------------------
+
+/// `CodegenWasmJitFunctions.translateFunctions`: lower `fnCode` to a wasm module
+/// written to `<name>.wasm` (+ `<name>.wasm.sig`).
+///
+/// When the `wasm-jit` target is selected it is authoritative: a construct it
+/// cannot lower is a hard, visible failure with the precise reason, **not** a
+/// silent degradation to the C target. The reason is recorded as an internal
+/// error (so `getErrorString()`/OMEdit show it and the scripting layer treats the
+/// build as failed) rather than raised as a panic — a panic traps the wasm omc
+/// instance, after which the buffered error can't be read back. Stale artefacts
+/// from a previous target are removed first so a failure cannot leave a
+/// mismatched module behind. Mirrors [`CodegenWasmJit::translateModel`].
+pub fn translateFunctions(fnCode: SimCodeFunction::FunctionCode) {
+    let _ = std::fs::remove_file(format!("{}.wasm", fnCode.name));
+    let _ = std::fs::remove_file(format!("{}.wasm.sig", fnCode.name));
+    if let Err(e) = translate_functions_inner(&fnCode) {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot JIT function `{}` for the wasm-jit target: {e:#}",
+            fnCode.name
+        ));
+    }
+}
+
+fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
+    let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
+    let base = fn_code.name.to_string();
+    // Sidecar: input type codes, output type codes, then a `lib`/`ext` line per
+    // external "C" library and per function called in one.
+    let mut in_codes = String::new();
+    in_sig.iter().for_each(|s| s.write_code(&mut in_codes));
+    let mut out_codes = String::new();
+    out_sig.iter().for_each(|s| s.write_code(&mut out_codes));
+    let mut sig = format!("{in_codes}\n{out_codes}\n");
+    if !ext_imports.is_empty() {
+        let mut notes: Vec<String> = Vec::new();
+        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
+        let wasm_libs = resolved.wasm;
+        for lib in &wasm_libs {
+            sig.push_str(&format!("lib\t{}\n", lib.name));
+        }
+        // C source: an `Include`, or a `Library` naming a `.c` file.
+        let sources: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes)
+            .map(|s| s.to_string())
+            .chain(resolved.sources)
+            .collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        // A host build compiles them the way the C target does and calls them
+        // through libffi, as `build_sim_model` does: the in-wasm `Modelica*`
+        // callbacks are host imports, which cannot take C varargs, so a
+        // `ModelicaFormatMessage` there would lose its arguments. The browser has
+        // no host library to call, so there the wasm unit is all.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
+            if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &sources, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
+                let path = format!("{base}_includes.wasm");
+                openmodelica_wasi::fs::write(&path, &l.bytes)
+                    .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
+                sig.push_str(&format!("lib\t{path}\n"));
+            }
+        }
+        // The model's own code first: it shadows a same-named symbol in a `Library`
+        // shared object, as the C target's own link order does.
+        #[cfg(not(target_arch = "wasm32"))]
+        for lib in native_fallbacks(&base, fn_code, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
+            sig.push_str(&format!("nlib\t{lib}\n"));
+        }
+        for lib in &resolved.native {
+            sig.push_str(&format!("nlib\t{lib}\n"));
+        }
+        for e in &ext_imports {
+            sig.push_str(&format!("ext\t{}\n", write_ext_sig(e)));
+        }
+        for n in &notes {
+            sig.push_str(&format!("note\t{}\n", n.replace('\n', " ")));
+        }
+    }
+    // Native writes the module + sidecar to disk; wasm has no OS filesystem, so
+    // the facade stages them in the VFS where `load_and_execute` reads them back.
+    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
+    Ok(())
+}
+
+/// Host libraries holding the `external "C"` implementations no module in
+/// `wasm_libs` defines: the `Library` archives linked into a loadable one, and the
+/// C sources compiled. Built in the compile phase, as the simulation's are.
+#[cfg(not(target_arch = "wasm32"))]
+fn native_fallbacks(
+    base: &str,
+    fn_code: &SimCodeFunction::FunctionCode,
+    archives: &[String],
+    sources: &[String],
+    dirs: &[String],
+    ext_imports: &[ExtCallSig],
+    wasm_libs: &[openmodelica_wasm_jit::model::ExtLibrary],
+    notes: &mut Vec<String>,
+) -> Vec<String> {
+    let missing = crate::CodegenWasmJit::missing_ext_symbols(ext_imports, wasm_libs);
+    if missing.is_empty() {
+        return Vec::new();
+    }
+    let mp = &fn_code.makefileParams;
+    let mut out = Vec::new();
+    if !sources.is_empty() {
+        let inc = openmodelica_wasm_jit::model::ExtIncludes {
+            sources: sources.to_vec(),
+            include_dirs: dirs.to_vec(),
+            ccompiler: mp.ccompiler.to_string(),
+            cflags: mp.cflags.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match inc.compile(&missing) {
+            Ok(b) => {
+                notes.extend(b.note);
+                out.push(b.path);
+            }
+            Err(e) => notes.push(e),
+        }
+    }
+    if !archives.is_empty() {
+        let arch = openmodelica_wasm_jit::model::ExtArchives {
+            archives: archives.to_vec(),
+            symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
+            ccompiler: mp.ccompiler.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match arch.link() {
+            Ok(path) => out.push(path),
+            Err(e) => notes.push(e),
+        }
+    }
+    out
+}
+
+/// `CodegenWasmJitFunctions.loadAndExecute`: instantiate `<fileName>.wasm` and
+/// call the exported `main`, marshalling `args` in and the result out. Returns
+/// `Values.META_FAIL` on any failure (missing/invalid module, a wasm trap from
+/// a failed assertion or division by zero, …), mirroring `DynLoad.executeFunction`.
+pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: Arc<List<Arc<Values::Value>>>) -> Arc<Values::Value> {
+    match runtime::load_and_execute(&fileName, &name, &args) {
+        Ok(v) => v,
+        // Failure is a normal MetaModelica value the caller handles; no stderr.
+        Err(_) => Arc::new(Values::Value::META_FAIL),
+    }
+}

@@ -1,31 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -85,7 +81,7 @@ int array_shape_eq(const base_array_t *a, const device_array *b)
     int i;
 
     if(a->ndims != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %d != %ld\n", a->ndims, b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, %d != " OMC_INT_FORMAT "\n", a->ndims, b->info[0]);
         return 0;
     }
 
@@ -105,7 +101,7 @@ int array_shape_eq(const device_array *a, const device_array *b)
     int i;
 
     if(a->info[0] != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %ld != %ld\n", a->info[0], b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, " OMC_INT_FORMAT " != " OMC_INT_FORMAT "\n", a->info[0], b->info[0]);
         return 0;
     }
 
@@ -187,11 +183,9 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
 
 //entry point for allocating LOCAL real array on device
 void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...){
-
-    size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_device_base_array(dest,ndims,ap);
+    alloc_device_base_array(dest,ndims,ap);
     va_end(ap);
     // dest->data = ocl_device_alloc(elements*sizeof(modelica_real));
     // dest->info_dev = ocl_device_alloc_init(dest->info,

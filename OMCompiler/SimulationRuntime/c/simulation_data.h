@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -45,22 +42,18 @@
 #include "util/rtclock.h"
 #include "util/simulation_options.h"
 #include "util/context.h"
+#include "simulation/eval_dep.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
-#define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB 1
 #define OMC_LINEARIZE_DUMP_LANGUAGE_JULIA 2
 #define OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON 3
 
-#if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
-#else
-#define set_struct(TYPE, x, info) x = (TYPE)info
-#endif
 
 /* Forward declarations */
 typedef struct DATA DATA;
@@ -94,8 +87,10 @@ typedef struct EQUATION_INFO
   EQUATION_SECTION section;
   int profileBlockIndex;
   int parent;
-  int numVar;
-  const char **vars;
+  int numVar;                           // number of vars
+  const char **vars;                    // vars defined in this equation
+  int numVarUsed;                       // number of varsUsed
+  const char **varsUsed;                // vars used in this equation
 } EQUATION_INFO;
 
 typedef struct FUNCTION_INFO
@@ -151,17 +146,27 @@ typedef enum
 /**
  * @brief Sparse pattern for Jacobian matrix.
  *
- * Using compressed sparse column (CSC) format.
+ * Using compressed sparse column (CSC) or compressed sparse row (CSR) format.
+ * Includes coloring of columns/rows for efficient numerical Jacobian evaluation.
+ * CSC uses column coloring and CSR uses row coloring.
+ * leadindex: size nCols+1 (CSC) or nRows+1 (CSR)
  */
+typedef enum
+{
+  OMC_MATRIX_DENSE = 0,       /* the backend chose a dense factorization */
+  OMC_MATRIX_SPARSE           /* the backend chose a sparse factorization */
+} SOLVER_MATRIX_FORMAT;
+
 typedef struct SPARSE_PATTERN
 {
-  unsigned int* leadindex;        /* Array with column indices, size rows+1 */
+  /* Primary CSC/CSR representation */
+  unsigned int nnz;               /* Number of non-zero elements in matrix, length of array index */
+  unsigned int* leadindex;        /* Array with column/row indices, size sizeCols+1/nRows+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
-  unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
-  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ...
-                                   * Length of array is rows */
-  unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
+  unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
+                                   * Length of array is sizeCols/nRows */
   unsigned int maxColors;         /* Number of colors */
+  unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
 } SPARSE_PATTERN;
 
 /* NONLINEAR_PATTERN
@@ -195,13 +200,22 @@ typedef struct JACOBIAN
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
+  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC/CSR format including column/row coloring */
+  modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
-  modelica_real* resultVars;            /* Result column for given seed vector */
+  modelica_real* resultVars;            /* Result column/row for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
+  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
+                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
+  /* Bidirectional (star bicoloring) support */
+  modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
+  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
+  unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -233,9 +247,9 @@ typedef enum HOMOTOPY_METHOD
 } HOMOTOPY_METHOD;
 
 enum ALIAS_TYPE {
-  ALIAS_TYPE_VARIABLE = 0,
-  ALIAS_TYPE_PARAMETER = 1,
-  ALIAS_TYPE_TIME = 2,
+  ALIAS_TYPE_VARIABLE = 0,  /* Alias of a variable */
+  ALIAS_TYPE_PARAMETER = 1, /* Alias of a parameter */
+  ALIAS_TYPE_TIME = 2,      /* Alias of time */
 };
 
 /* Alias data with various types */
@@ -253,24 +267,23 @@ typedef DATA_ALIAS DATA_INTEGER_ALIAS;
 typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
 typedef DATA_ALIAS DATA_STRING_ALIAS;
 
-enum var_type {
-  T_REAL,     /* Variable is of base type Real */
-  T_INTEGER,  /* Variable is of base type Integer */
-  T_BOOLEAN,  /* Variable is of base type Boolean */
-  T_STRING    /* Variable is of base type String */
-};
+/* Index (i-th variable, j-th index in array variable)*/
+typedef struct array_index_t {
+  size_t array_idx;   /* Index of scalar/ array variable */
+  size_t dim_idx;     /* Index inside array as 1D representation */
+} array_index_t;
 
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
-  modelica_real min;                   /* = -Inf */
-  modelica_real max;                   /* = +Inf */
+  real_array min;                      /* = {-Inf} */
+  real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  modelica_real nominal;               /* = 1.0 */
-  real_array start;                    /* = 0.0 */
+  real_array nominal;                  /* = {1.0} */
+  real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
 typedef struct INTEGER_ATTRIBUTE
@@ -312,7 +325,7 @@ typedef struct DIMENSION_ATTRIBUTE
 typedef struct DIMENSION_INFO
 {
   size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if equal to 0. */
-  DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes, row-major, e.g. `x[1,2]` has dimensions {1,2} */
+  DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes */
   size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array */
 } DIMENSION_INFO;
 
@@ -397,7 +410,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
-  modelica_boolean isPatternAvailable;
   NONLINEAR_PATTERN *nonlinearPattern;
   int *eqn_simcode_indices;
   modelica_integer torn_plus_residual_size;
@@ -410,6 +422,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
   NLS_LS nlsLinearSolver;              /* nls linear solver */
@@ -443,27 +456,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
 typedef void* NONLINEAR_SYSTEM_DATA;
 #endif
 
-typedef struct LINEAR_SYSTEM_THREAD_DATA
-{
-  void *solverData[2];                 /* [1] is the totalPivot solver
-                                          [0] holds other solvers
-                                          both are used for the default solver */
-  modelica_real *x;                    /* solution vector x */
-  modelica_real *A;                    /* matrix A */
-  modelica_real *b;                    /* vector b */
-
-  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
-  JACOBIAN* jacobian;                  /* jacobian */
-
-  /* Statistics for each thread */
-  unsigned long numberOfCall;          /* number of solving calls of this system */
-  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
-  unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
-  double totalTime;                    /* save the totalTime */
-  rtclock_t totalTimeClock;            /* time clock for the totalTime */
-  double jacobianTime;                 /* save the time to calculate jacobians */
-} LINEAR_SYSTEM_THREAD_DATA;
-
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 struct LINEAR_SYSTEM_DATA;
 typedef struct LINEAR_SYSTEM_DATA LINEAR_SYSTEM_DATA;
@@ -494,18 +486,24 @@ typedef struct LINEAR_SYSTEM_DATA
 
   modelica_integer method;             /* 0: No Jacobain created for linear system
                                         * 1: Symbolic Jacobian available for linear system */
-  modelica_boolean useSparseSolver;    /* true if sparse solver is used */
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
+  modelica_boolean useSparseSolver;    /* matrixFormat, unless no sparse solver was built in */
 
-  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
+  /* working data of the solver */
+  void *solverData[2];                 /* [1] is the totalPivot solver
+                                          [0] holds other solvers
+                                          both are used for the default solver */
+  modelica_real *A;                    /* matrix A */
+  modelica_real *b;                    /* vector b */
+  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
+  JACOBIAN* jacobian;                  /* jacobian */
 
-  // ToDo: Gather information from all threads if in parallel region
   modelica_boolean solved;             /* true if solved in current step */
   modelica_boolean failed;             /* true if failed while last try with lapack */
 
   modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
                                           false if `-lv_system` is specified but equationIndex is not in the list, else true */
 
-  // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
@@ -646,6 +644,7 @@ typedef struct MODEL_DATA
   /* Number of un-scalrarized variables (arrays count as one variable) */
   long nStatesArray;            /* Number of array + scalar state variables */
   long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nDiscreteRealArray;      /* Number of array + scalar real discrete variables */
   long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
   long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
   long nVariablesStringArray;   /* Number of array + scalar string variables */
@@ -664,7 +663,6 @@ typedef struct MODEL_DATA
   /* Number of scalarized variables (arrays are flatten to scalar elements.) */
   long nStates;                 /* Number of state variables*/
   long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
-  long nDiscreteReal;           /* Number of all discrete real variables */
   long nVariablesInteger;       /* Number of integer variables */
   long nVariablesBoolean;       /* Number of boolean variables */
   long nVariablesString;        /* Number of string variables */
@@ -681,6 +679,8 @@ typedef struct MODEL_DATA
   long nAliasInteger;           /* Number of integer alias variables */
   long nAliasBoolean;           /* Number of boolean alias variables */
   long nAliasString;            /* Number of string alias variables */
+
+  EVAL_DAG* dag;                        /* dependency of functionODE */
 
   long nZeroCrossings;
   long nRelations;
@@ -775,6 +775,12 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
 
   modelica_real oldPosX;
 
+  modelica_boolean startPosXSet;  /* true once startPosX has been captured */
+  modelica_real startPosX;        /* value of x at the first call; x is shifted by
+                                     this so the operator always starts at x = 0.
+                                     Only the change of x (transport distance)
+                                     matters, so a nonzero start value of x is fine. */
+
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
@@ -790,7 +796,7 @@ typedef struct SIMULATION_INFO
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;
-  const char *outputFormat;
+  const char *outputFormat;           /* Output format: "mat", "csv", "plt", "empty" */
   const char *variableFilter;
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
@@ -850,11 +856,18 @@ typedef struct SIMULATION_INFO
   modelica_real* states_left;          /* work array for findRoot in event.c */
   modelica_real* states_right;         /* work array for findRoot in event.c */
 
-  /* Index maps: arr_idx -> start_idx */
-  size_t* realVarsIndex;
+  /* Index maps: arr_idx -> start_idx
+   * Maps index from modelData-><Type>VarsData (array + scalar variables) to
+   * start index in simulationData-><Type>Vars (scalarized version).
+   */
+
+  size_t* realVarsIndex;    /**< Maps real array/scalar variables to start indices in scalarized version */
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
+
+  /* adaptive eval of functionODE */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
 
   size_t* realParamsIndex;
   size_t* integerParamsIndex;
@@ -865,6 +878,25 @@ typedef struct SIMULATION_INFO
   size_t* integerAliasIndex;
   size_t* booleanAliasIndex;
   size_t* stringAliasIndex;
+
+  /* Reverse index maps: scalar_idx -> array_idx
+   * Maps index from simulationData-><Type>Vars (scalarized version) to
+   * index in modelData-><Type>VarsData (array + scalar variables).
+   */
+  array_index_t* realVarsReverseIndex;
+  array_index_t* integerVarsReverseIndex;
+  array_index_t* booleanVarsReverseIndex;
+  array_index_t* stringVarsReverseIndex;
+
+  array_index_t* realParamsReverseIndex;
+  array_index_t* integerParamsReverseIndex;
+  array_index_t* booleanParamsReverseIndex;
+  array_index_t* stringParamsReverseIndex;
+
+  array_index_t* realAliasReverseIndex;
+  array_index_t* integerAliasReverseIndex;
+  array_index_t* booleanAliasReverseIndex;
+  array_index_t* stringAliasReverseIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;

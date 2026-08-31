@@ -1,8 +1,8 @@
-// name:     testxmlInfoAllEqnsCorrectOrder.mos
+// name:     testxmlInfoAllEqnsCorrectOrder
 // keywords: xml-file
 // status: correct
 // teardown_command: rm -rf testModel* output.log testModel_info.json.filtered
-// cflags: -d=-newInst
+// cflags: -d=-newInst -d=infoXmlOperations
 //
 //
 // checks for correct order of equations in *_info.json file,

@@ -21,7 +21,7 @@ simulate(underdetermined_init); getErrorString();
 // true
 // Created State Start Equations (1):
 // ************************************
-// 	[SCAL] (1) x = $START.x ($RES_SRT_4)
+// 	[SCAL] (1) x = $START.x; ($RES_SRT_4)
 //
 // ##############################
 //
@@ -35,11 +35,11 @@ simulate(underdetermined_init); getErrorString();
 //
 // (1) Unmatched variables:
 // **************************
-// 	[STAT] (1) Real y (start = 2.0);
+// [STAT] (1) Real y (start = 2.0)
 //
 // Created Start Equations for balancing the Initialization (1):
 // ***************************************************************
-// 	[SCAL] (1) y = $START.y ($RES_SIM_6)
+// 	[SCAL] (1) y = $START.y; ($RES_SIM_6)
 //
 // record SimulationResult
 //     resultFile = "underdetermined_init_res.mat",

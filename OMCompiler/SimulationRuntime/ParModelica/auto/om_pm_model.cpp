@@ -1,31 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -81,18 +77,24 @@ void Equation::execute() {
     function_system[task_id](data, threadData);
 }
 
+std::unique_ptr<TaskGraphScheduler> make_parmod_scheduler(TaskSystem_v2<Equation>& sys, size_t max_num_threads) {
+    if (parmod_config().scheduler == "level")
+        return std::unique_ptr<TaskGraphScheduler>(new StepLevels<Equation>(sys, max_num_threads));
+    return std::unique_ptr<TaskGraphScheduler>(new ClusterDynamicScheduler<Equation>(sys, max_num_threads));
+}
+
 OMModel::OMModel(const std::string& in_name, size_t mnt)
     : name(in_name)
     , max_num_threads(mnt)
-    , tbb_system(mnt)
+    , tbb_system(tbb::global_control::max_allowed_parallelism, mnt)
     , INI_system(name, mnt)
-    , INI_scheduler(INI_system, mnt)
+    , INI_scheduler(make_parmod_scheduler(INI_system, mnt))
     , DAE_system(name, mnt)
-    , DAE_scheduler(DAE_system, mnt)
+    , DAE_scheduler(make_parmod_scheduler(DAE_system, mnt))
     , ODE_system(name, mnt)
-    , ODE_scheduler(ODE_system, mnt)
+    , ODE_scheduler(make_parmod_scheduler(ODE_system, mnt))
     , ALG_system(name, mnt)
-    , ALG_scheduler(ALG_system, mnt) {
+    , ALG_scheduler(make_parmod_scheduler(ALG_system, mnt)) {
     intialized = false;
 }
 
@@ -278,7 +280,7 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
 
     nlohmann::json jmodel_info;
 
-    jmodel_info << f_s;
+    f_s >> jmodel_info;
 
     long node_count = 0;
     for (auto& eq : jmodel_info[eq_to_read]) {

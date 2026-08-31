@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -37,7 +41,6 @@ encapsulated package DAEQuery
 
 // public imports
 public import BackendDAE;
-public import SCode;
 
 // protected imports
 protected import Absyn;
@@ -46,9 +49,11 @@ protected import Algorithm;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAE;
 protected import DAEDump;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import List;
 protected import System;
@@ -61,19 +66,19 @@ public function writeAdjacencyMatrix
   input String flatModelicaStr;
   output String fileName;
 algorithm
-  fileName := match(dlow, fileNamePrefix, flatModelicaStr)
+  fileName := match flatModelicaStr
     local
       String file, strIMatrix, strVariables, flatStr, strEquations;
       array<list<String>> m;
 
-    case (_, _, flatStr)
-      equation
-        file = stringAppend(fileNamePrefix, "_imatrix.m");
-        m = adjacencyMatrix(dlow);
-        strIMatrix = getAdjacencyMatrix(m);
-        strVariables = getVariables(dlow);
-        strEquations = getEquations(dlow);
-        strIMatrix = stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
+    case flatStr
+      algorithm
+        file := stringAppend(fileNamePrefix, "_imatrix.m");
+        m := adjacencyMatrix(dlow);
+        strIMatrix := getAdjacencyMatrix(m);
+        strVariables := getVariables(dlow);
+        strEquations := getEquations(dlow);
+        strIMatrix := stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
         System.writeFile(file, strIMatrix);
       then
         file;
@@ -99,63 +104,63 @@ public function equationStr
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := match (inEquation)
+  outString := match inEquation
     local
       String s1,s2,s3,res;
       DAE.Exp e1,e2,e,condition;
       DAE.ComponentRef cr;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({"'", s1," = ",s2, ";'"});
+    case BackendDAE.EQUATION(exp = e1,scalar = e2)
+      algorithm
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
+        res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({"'", s1," = ",s2, ";'"});
+    case BackendDAE.ARRAY_EQUATION(left=e1,right=e2)
+      algorithm
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
+        res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({"'", s1," = ",s2, ";'"});
+    case BackendDAE.COMPLEX_EQUATION(left=e1,right=e2)
+      algorithm
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
+        res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({"'",s1," = ",s2,";'"});
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2)
+      algorithm
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := ExpressionBasics.printExpStr(e2);
+        res := stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)})))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s3 = ExpressionDump.printExpStr(condition);
-        res = stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
+    case BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)}))
+      algorithm
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
+        s3 := ExpressionBasics.printExpStr(condition);
+        res := stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
-      equation
-        s1 = ExpressionDump.printExpStr(e);
-        res = stringAppendList({"'", s1,"= 0", ";'"});
+    case BackendDAE.RESIDUAL_EQUATION(exp = e)
+      algorithm
+        s1 := ExpressionBasics.printExpStr(e);
+        res := stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
 
-    case (BackendDAE.ALGORITHM())
-      equation
-        res = stringAppendList({"Algorithm\n"});
+    case BackendDAE.ALGORITHM()
+      algorithm
+        res := stringAppendList({"Algorithm\n"});
       then
         res;
   end match;
@@ -187,23 +192,23 @@ protected function getAdjacencyMatrix2 "author: adrpo
   output String strIMatrix;
 algorithm
   strIMatrix :=
-  match (inStringLstLst,rowIndex)
+  match inStringLstLst
     local
       list<String> row;
       list<list<String>> rows;
       String str, str1, str2;
-    case ({},_) then "";
-    case ((row :: {}),_)
-      equation
-        str1 = getAdjacencyRow(row);
-        str = stringAppendList({"{", str1, "}"});
+    case {} then "";
+    case row :: {}
+      algorithm
+        str1 := getAdjacencyRow(row);
+        str := stringAppendList({"{", str1, "}"});
       then
         str;
-    case ((row :: rows),_)
-      equation
-        str1 = getAdjacencyRow(row);
-        str2 = getAdjacencyMatrix2(rows,rowIndex+1);
-        str = stringAppendList({"{", str1, "},",  str2});
+    case row :: rows
+      algorithm
+        str1 := getAdjacencyRow(row);
+        str2 := getAdjacencyMatrix2(rows,rowIndex+1);
+        str := stringAppendList({"{", str1, "},",  str2});
       then
         str;
   end match;
@@ -216,16 +221,16 @@ protected function getAdjacencyRow "author: adrpo
   output String strRow;
 algorithm
   strRow :=
-  match (inStringLst)
+  match inStringLst
     local
       String s,  s2, x;
       list<String> xs;
-    case ({}) then "";
-    case ((x :: {})) then x;
-    case ((x :: xs))
-      equation
-        s2 = getAdjacencyRow(xs);
-        s = stringAppendList({x, ",", s2});
+    case {} then "";
+    case x :: {} then x;
+    case x :: xs
+      algorithm
+        s2 := getAdjacencyRow(xs);
+        s := stringAppendList({x, ",", s2});
       then
         s;
   end match;
@@ -237,16 +242,16 @@ public function getVariables "This function returns the variables
   output String strVars;
 algorithm
   strVars:=
-  match (inBackendDAE)
+  match inBackendDAE
     local
       list<BackendDAE.Var> vars;
       String s;
       BackendDAE.Variables vars1;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)::{}))
-      equation
-        vars = BackendVariable.varList(vars1);
-        s = dumpVars(vars);
-        s = "VL = {" + s + "};";
+    case BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)::{})
+      algorithm
+        vars := BackendVariable.varList(vars1);
+        s := dumpVars(vars);
+        s := "VL = {" + s + "};";
       then
         s;
   end match;
@@ -269,30 +274,21 @@ algorithm
   strVars :=
   matchcontinue (inVarLst,inInteger)
     local
-      String varnostr,dirstr,str,str1,str2;
+      String str,str1,str2;
       Integer varno_1,varno;
-      BackendDAE.Var v;
       DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      Option<DAE.Exp> e;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
-      BackendDAE.Type var_type;
-      DAE.ElementSource source;
 
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr)) :: {}),_)
-      equation
-        str1 = ComponentReference.printComponentRefStr(cr);
+      algorithm
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = ExpressionDump.printExpStr(e);
+        s = ExpressionBasics.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
@@ -305,19 +301,19 @@ algorithm
         print("fixed:");print(boolString(varFixed(v)));
         print("\n");
         */
-        str = stringAppendList({"'", str1, "'"});
+        str := stringAppendList({"'", str1, "'"});
       then
         str;
 
       case (((BackendDAE.VAR(varName = cr)) :: xs),varno)
-      equation
-        str1 = ComponentReference.printComponentRefStr(cr);
+      algorithm
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = ExpressionDump.printExpStr(e);
+        s = ExpressionBasics.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
@@ -330,9 +326,9 @@ algorithm
         print("fixed:");print(boolString(varFixed(v)));
         print("\n");
         */
-        varno_1 = varno + 1;
-        str2 = dumpVars2(xs, varno_1);
-        str = stringAppendList({"'", str1, "',", str2});
+        varno_1 := varno + 1;
+        str2 := dumpVars2(xs, varno_1);
+        str := stringAppendList({"'", str1, "',", str2});
       then
         str;
   end matchcontinue;
@@ -346,22 +342,22 @@ public function adjacencyMatrix
   output array<list<String>> outAdjacencyMatrix;
 algorithm
   outAdjacencyMatrix:=
-  matchcontinue (inBackendDAE)
+  matchcontinue inBackendDAE
     local
       list<BackendDAE.Equation> eqnsl;
       list<list<String>> lstlst;
       array<list<String>> arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}))
-      equation
-        eqnsl = BackendEquation.equationList(eqns);
-        lstlst = adjacencyMatrix2(vars, eqnsl);
-        arr = listArray(lstlst);
+    case BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{})
+      algorithm
+        eqnsl := BackendEquation.equationList(eqns);
+        lstlst := adjacencyMatrix2(vars, eqnsl);
+        arr := listArray(lstlst);
       then
         arr;
-    case (_)
-      equation
+    case _
+      algorithm
         print("DAEQuery.adjacencyMatrix failed\n");
       then
         fail();
@@ -387,13 +383,13 @@ algorithm
       list<BackendDAE.Equation> eqns;
     case (_,{}) then {};
     case (vars,(e :: eqns))
-      equation
-        lst = adjacencyMatrix2(vars, eqns);
-        row = adjacencyRow(vars, e);
+      algorithm
+        lst := adjacencyMatrix2(vars, eqns);
+        row := adjacencyRow(vars, e);
       then
         (row :: lst);
     case (_,_)
-      equation
+      algorithm
         print("adjacency_matrix2 failed\n");
       then
         fail();
@@ -420,64 +416,64 @@ algorithm
 
     // equation
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
-      equation
-        lst1 = adjacencyRowExp(e1, vars);
-        lst2 = adjacencyRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        lst1 := adjacencyRowExp(e1, vars);
+        lst2 := adjacencyRowExp(e2, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
     // array equation
     case (vars,BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
-      equation
-        lst1 = adjacencyRowExp(e1, vars);
-        lst2 = adjacencyRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        lst1 := adjacencyRowExp(e1, vars);
+        lst2 := adjacencyRowExp(e2, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
     // complex equation
     case (vars,BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
-      equation
-        lst1 = adjacencyRowExp(e1, vars);
-        lst2 = adjacencyRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        lst1 := adjacencyRowExp(e1, vars);
+        lst2 := adjacencyRowExp(e2, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
-      equation
-        lst1 = adjacencyRowExp(Expression.crefExp(cr), vars);
-        lst2 = adjacencyRowExp(e, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        lst1 := adjacencyRowExp(Expression.crefExp(cr), vars);
+        lst2 := adjacencyRowExp(e, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
-      equation
-        lst1 = adjacencyRowExp(Expression.crefExp(cr), vars);
-        lst2 = adjacencyRowExp(e, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        lst1 := adjacencyRowExp(Expression.crefExp(cr), vars);
+        lst2 := adjacencyRowExp(e, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
     // residual equation
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e))
-      equation
-        res = adjacencyRowExp(e, vars);
+      algorithm
+        res := adjacencyRowExp(e, vars);
       then
         res;
 
     // when equation
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we))
-      equation
-        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
-        e1 = Expression.crefExp(cr);
-        lst1 = adjacencyRowExp(e1, vars);
-        lst2 = adjacencyRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+      algorithm
+        (cr,e2) := BackendEquation.getWhenEquationExpr(we);
+        e1 := Expression.crefExp(cr);
+        lst1 := adjacencyRowExp(e1, vars);
+        lst2 := adjacencyRowExp(e2, vars);
+        res := listAppend(lst1, lst2);
       then
         res;
 
@@ -487,15 +483,15 @@ algorithm
    // different variables than calculated, a non linear solver or
    // analysis of algorithm itself needs to be implemented.
     case (vars,BackendDAE.ALGORITHM(alg=alg))
-      equation
-        expl = Algorithm.getAllExps(alg);
-        lstres = List.map1(expl, adjacencyRowExp, vars);
-        res_1 = List.flatten(lstres);
+      algorithm
+        expl := Algorithm.getAllExps(alg);
+        lstres := List.map1(expl, adjacencyRowExp, vars);
+        res_1 := List.flatten(lstres);
       then
         res_1;
 
     case (_,_)
-      equation
+      algorithm
         print("- DAEQuery.adjacencyRow failed\n");
       then
         fail();
@@ -602,102 +598,102 @@ algorithm
       list<String> pStr,s1,s2,s3;
       String s, ss, ss1, ss2, ss3, opStr, sb;
       list<list<String>> lst;
-      DAE.ComponentRef cr,cref1;
+      DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e1,e2,e,e3,ee1,ee2;
+      DAE.Exp e1,e2,e,e3,ee2;
       list<DAE.Exp> expl;
       DAE.Operator op1;
       list<list<DAE.Exp>> explTpl;
       DAE.ReductionIterators iters;
 
     case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) :=
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in adjacency matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
                                  reduction using dummy derivatives";
-        p_1 = List.map1r(p, intSub, 0);
-        pStr = List.map(p_1, intString);
+        p_1 := List.map1r(p, intSub, 0);
+        pStr := List.map(p_1, intString);
       then
         pStr;
 
     case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
       then
         pStr;
 
     case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
       then
         pStr;
 
     case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
       then
         pStr;
 
     case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
       then
         pStr;
 
     case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = adjacencyRowExp(e1, vars);
-        s2 = adjacencyRowExp(e2, vars);
-        pStr = listAppend(s1, s2);
+      algorithm
+        s1 := adjacencyRowExp(e1, vars);
+        s2 := adjacencyRowExp(e2, vars);
+        pStr := listAppend(s1, s2);
       then
         pStr;
 
     case (DAE.UNARY(exp = e),vars)
-      equation
-        pStr = adjacencyRowExp(e, vars);
+      algorithm
+        pStr := adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.LBINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = adjacencyRowExp(e1, vars);
-        s2 = adjacencyRowExp(e2, vars);
-        pStr = listAppend(s1, s2);
+      algorithm
+        s1 := adjacencyRowExp(e1, vars);
+        s2 := adjacencyRowExp(e2, vars);
+        pStr := listAppend(s1, s2);
       then
         pStr;
 
     case (DAE.LUNARY(exp = e),vars)
-      equation
-        pStr = adjacencyRowExp(e, vars);
+      algorithm
+        pStr := adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.RELATION(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = adjacencyRowExp(e1, vars);
-        s2 = adjacencyRowExp(e2, vars);
-        pStr = listAppend(s1, s2);
+      algorithm
+        s1 := adjacencyRowExp(e1, vars);
+        s2 := adjacencyRowExp(e2, vars);
+        pStr := listAppend(s1, s2);
       then
         pStr;
 
     case (DAE.IFEXP(expCond = e1 as DAE.RELATION(operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
-      equation
-        opStr = ExpressionDump.relopSymbol(op1);
-        s = printExpStr(ee2);
-        s1 = adjacencyRowExp(e1, vars);
-        ss1 = getAdjacencyRow(s1);
-        s2 = adjacencyRowExp(e2, vars);
-        ss2 = getAdjacencyRow(s2);
-        s3 = adjacencyRowExp(e3, vars);
-        ss3 = getAdjacencyRow(s3);
+      algorithm
+        opStr := ExpressionDump.relopSymbol(op1);
+        s := printExpStr(ee2);
+        s1 := adjacencyRowExp(e1, vars);
+        ss1 := getAdjacencyRow(s1);
+        s2 := adjacencyRowExp(e2, vars);
+        ss2 := getAdjacencyRow(s2);
+        s3 := adjacencyRowExp(e3, vars);
+        ss3 := getAdjacencyRow(s3);
         // build the string now
-        ss = stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
-        pStr = {ss};
+        ss := stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr := {ss};
       then
         pStr;
 
@@ -706,7 +702,7 @@ algorithm
 /*      local String ss,sb;
         String ss, ss1, ss2, ss3;
         DAE.ComponentRef cref1;
-      equation
+      algorithm
         sb = printExpStr(e1);
         s1 = adjacencyRowExp(e1, vars);
         ss1 = getAdjacencyRow(s1);
@@ -722,129 +718,128 @@ algorithm
 
     // If expression with logic sentence.
     case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(),expThen = e2,expElse = e3),vars) /* if expressions. */
-      equation
-        _ = printExpStr(e1);
+      algorithm
+        printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
-        sb = stringAppendList({"'true',","'=='"});
-        s1 = adjacencyRowExp(e1, vars);
-        ss1 = getAdjacencyRow(s1);
-        s2 = adjacencyRowExp(e2, vars);
-        ss2 = getAdjacencyRow(s2);
-        s3 = adjacencyRowExp(e3, vars);
-        ss3 = getAdjacencyRow(s3);
+        sb := stringAppendList({"'true',","'=='"});
+        s1 := adjacencyRowExp(e1, vars);
+        ss1 := getAdjacencyRow(s1);
+        s2 := adjacencyRowExp(e2, vars);
+        ss2 := getAdjacencyRow(s2);
+        s3 := adjacencyRowExp(e3, vars);
+        ss3 := getAdjacencyRow(s3);
         // build the string now
-        ss = stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
-        pStr = {ss};
+        ss := stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr := {ss};
       then
         pStr;
     // if-expressions with a variable (Bool)
     case (DAE.IFEXP(expCond = e1 as DAE.CREF(), expThen = e2, expElse = e3),vars) /* if expressions. */
-      equation
+      algorithm
         //sb = printExpStr(e1);
 
-        sb = stringAppendList({"'true',","'=='"});
-        s1 = adjacencyRowExp(e1, vars);
-        ss1 = getAdjacencyRow(s1);
-        s2 = adjacencyRowExp(e2, vars);
-        ss2 = getAdjacencyRow(s2);
-        s3 = adjacencyRowExp(e3, vars);
-        ss3 = getAdjacencyRow(s3);
-        ss = stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
-        pStr = {ss};
+        sb := stringAppendList({"'true',","'=='"});
+        s1 := adjacencyRowExp(e1, vars);
+        ss1 := getAdjacencyRow(s1);
+        s2 := adjacencyRowExp(e2, vars);
+        ss2 := getAdjacencyRow(s2);
+        s3 := adjacencyRowExp(e3, vars);
+        ss3 := getAdjacencyRow(s3);
+        ss := stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr := {ss};
       then
         pStr;
 
     // if-expressions with any other alternative than what we handled until now
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */
-      equation
-        sb = printExpStr(e1);
-        s1 = adjacencyRowExp(e1, vars);
-        ss1 = getAdjacencyRow(s1);
-        s2 = adjacencyRowExp(e2, vars);
-        ss2 = getAdjacencyRow(s2);
-        s3 = adjacencyRowExp(e3, vars);
-        ss3 = getAdjacencyRow(s3);
-        ss = stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
-        pStr = {ss};
+      algorithm
+        sb := printExpStr(e1);
+        s1 := adjacencyRowExp(e1, vars);
+        ss1 := getAdjacencyRow(s1);
+        s2 := adjacencyRowExp(e2, vars);
+        ss2 := getAdjacencyRow(s2);
+        s3 := adjacencyRowExp(e3, vars);
+        ss3 := getAdjacencyRow(s3);
+        ss := stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr := {ss};
       then
         pStr;
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
       then
         pStr;
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
-      equation
-        (_,p) = BackendVariable.getVar(cr, vars);
-        _ = List.map(p, intString);
+      algorithm
+        (_,p) := BackendVariable.getVar(cr, vars);
       then
         {};
 
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* pre(v) is considered a known variable */ //IS IT????
-      equation
-        (_,p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        (_,p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
         //ss = printExpStr(cr, vars);
         //pStr = ss;
       then
         pStr;
 
     case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* previous(v) is considered a known variable*/
-      equation
-        (_,p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+      algorithm
+        (_,p) := BackendVariable.getVar(cr, vars);
+        pStr := List.map(p, intString);
         //ss = printExpStr(cr, vars);
         //pStr = ss;
       then
         pStr;
 
     case (DAE.CALL(expLst = expl),vars)
-      equation
-        lst = List.map1(expl, adjacencyRowExp, vars);
-        pStr = List.flatten(lst);
+      algorithm
+        lst := List.map1(expl, adjacencyRowExp, vars);
+        pStr := List.flatten(lst);
       then
         pStr;
 
     case (DAE.ARRAY(array = expl),vars)
-      equation
-        lst = List.map1(expl, adjacencyRowExp, vars);
-        pStr = List.flatten(lst);
+      algorithm
+        lst := List.map1(expl, adjacencyRowExp, vars);
+        pStr := List.flatten(lst);
       then
         pStr;
 
     case (DAE.MATRIX(matrix = explTpl),vars)
-      equation
-        pStr = adjacencyRowMatrixExp(explTpl, vars);
+      algorithm
+        pStr := adjacencyRowMatrixExp(explTpl, vars);
       then
         pStr;
 
     case (DAE.TUPLE(),_)
-      equation
+      algorithm
         print("- DAEQuery.adjacency_row_exp TUPLE not impl. yet.");
       then
         {};
 
     case (DAE.CAST(exp = e),vars)
-      equation
-        pStr = adjacencyRowExp(e, vars);
+      algorithm
+        pStr := adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.ASUB(exp = e),vars)
-      equation
-        pStr = adjacencyRowExp(e, vars);
+      algorithm
+        pStr := adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.REDUCTION(expr = e1,iterators = iters),vars)
-      equation
-        s1 = adjacencyRowExp(e1, vars);
-        lst = List.map1(iters, adjacencyRowIter, vars);
-        pStr = List.flatten(s1::lst);
+      algorithm
+        s1 := adjacencyRowExp(e1, vars);
+        lst := List.map1(iters, adjacencyRowIter, vars);
+        pStr := List.flatten(s1::lst);
       then
         pStr;
     case (_,_) then {};
@@ -856,16 +851,16 @@ protected function adjacencyRowIter
   input BackendDAE.Variables vars;
   output list<String> strs;
 algorithm
-  strs := match (iter,vars)
+  strs := match iter
     local
       DAE.Exp e1,e2;
       list<String> s1,s2;
-    case (DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2),_)
-      equation
-        s1 = adjacencyRowExp(e1, vars);
-        s2 = adjacencyRowExp(e2, vars);
+    case DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2)
+      algorithm
+        s1 := adjacencyRowExp(e1, vars);
+        s2 := adjacencyRowExp(e2, vars);
       then listAppend(s1,s2);
-    case (DAE.REDUCTIONITER(exp = e1),_)
+    case DAE.REDUCTIONITER(exp = e1)
       then adjacencyRowExp(e1, vars);
   end match;
 end adjacencyRowIter;
@@ -885,11 +880,11 @@ algorithm
       BackendDAE.Variables vars;
     case ({},_) then {};
     case ((expl_1 :: es),vars)
-      equation
-        res1 = List.map1(expl_1, adjacencyRowExp, vars);
-        res2 = adjacencyRowMatrixExp(es, vars);
-        res1_1 = List.flatten(res1);
-        pStr = listAppend(res1_1, res2);
+      algorithm
+        res1 := List.map1(expl_1, adjacencyRowExp, vars);
+        res2 := adjacencyRowMatrixExp(es, vars);
+        res1_1 := List.flatten(res1);
+        pStr := listAppend(res1_1, res2);
       then
         pStr;
   end match;
@@ -902,5 +897,5 @@ algorithm
   s := ExpressionDump.printExp2Str(e, "'", NONE(),NONE());
 end printExpStr;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end DAEQuery;

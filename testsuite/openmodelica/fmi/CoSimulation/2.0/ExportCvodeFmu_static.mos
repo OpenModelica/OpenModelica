@@ -19,7 +19,7 @@ system("unzip -cqq Pendulum.fmu resources/Pendulum_flags.json > Pendulum_flags_s
 readFile("Pendulum_flags_static.json"); getErrorString();
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Pendulum.fmu --mode=cs --tolerance=1e-6 --stopTime=1.0 --resultFile=\"Pendulum_static_res.mat\" --suppressPath=true --tempDir=\"Pendulum-static-tmp\"", "Pendulum_me_cs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Pendulum.fmu --mode=cs --tolerance=1e-6 --stopTime=1.0 --resultFile=\"Pendulum_static_res.mat\" --stripRoot --suppressPath --tempDir=\"Pendulum-static-tmp\"", "Pendulum_me_cs_systemCall.log"); getErrorString();
 readFile("Pendulum_me_cs_systemCall.log"); getErrorString();
 
 // Check results
@@ -38,7 +38,9 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // true
 // ""
 // "Pendulum.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "{
@@ -59,17 +61,24 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // LOG_SOLVER        | info    | CVODE maximum integration order 5
 // LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
 // LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
-// info:    Result file: Pendulum_static_res.mat (bufferSize=1)
-// info:    Parameter model.root.Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
+// info: *** FMU Simulation Info ***
+//      - model     : Pendulum (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
+// info:    Result file: Pendulum_static_res.mat (bufferSize=10)
+// info:    Parameter Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
 // "
 // ""
 // 0.0
 // ""
 // 0.0
 // ""
-// -2.591643977798211
+// -2.5807275314932356
 // ""
-// 3.178793199957211
+// 3.173993419273764
 // ""
 // endResult

@@ -38,12 +38,12 @@ val(y2, 1.0);
 // |                 | |       | | | Number of sub-clocks: 2
 // |                 | |       | | | Sub-clock 1 of base clock 1
 // |                 | |       | | | | shift: 0/1
-// |                 | |       | | | | factor: 4/1
+// |                 | |       | | | | factor: 2/1
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | | Sub-clock 2 of base clock 1
 // |                 | |       | | | | shift: 0/1
-// |                 | |       | | | | factor: 2/1
+// |                 | |       | | | | factor: 4/1
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -52,21 +52,21 @@ val(y2, 1.0);
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.000000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.100000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.200000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.200000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.200000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.300000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.500000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.600000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.600000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.600000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.700000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.900000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 1.000000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,0) at time 1.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

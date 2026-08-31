@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -255,6 +260,16 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(OptionsDefaults::GeneralSettings::displayNFAPIErrorsWarnings);
   }
+  // read read-model-instance-from-memory (no JSON) option (issue #15219)
+  if (mpSettings->contains("enableInstanceApiNoJson")) {
+    mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->setChecked(mpSettings->value("enableInstanceApiNoJson").toBool());
+  } else {
+    mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableInstanceApiNoJson);
+  }
+  // The option and the --NAPINoJson command-line flag both feed the same MainWindow flag; OR them
+  // so the command-line flag still forces the path on even when the option is off.
+  MainWindow::instance()->setNewApiNoJson(mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->isChecked()
+                                          || MainWindow::instance()->isNewApiNoJson());
   // read enable CRML support
   if (mpSettings->contains("enableCRMLSupport")) {
     mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(mpSettings->value("enableCRMLSupport").toBool());
@@ -791,6 +806,7 @@ void OptionsDialog::readSimulationSettings()
 {
   SimulationOptions simulationOptions;
   int currentIndex;
+  // read matching algorithm
   if (mpSettings->contains("simulation/matchingAlgorithm")) {
     currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
   } else {
@@ -800,7 +816,7 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
   }
   mMatchingAlgorithm = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText();
-
+  // read index reduction
   if (mpSettings->contains("simulation/indexReductionMethod")) {
     currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
   } else {
@@ -852,6 +868,16 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->setChecked(simulationOptions.getEnableFMUImport());
   }
   mEnableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
+  // profiling
+  if (mpSettings->contains("simulation/profiling")) {
+    currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->findText(mpSettings->value("simulation/profiling").toString(), Qt::MatchExactly);
+  } else {
+    currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->findText(simulationOptions.getProfiling(), Qt::MatchExactly);
+  }
+  if (currentIndex > -1) {
+    mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->setCurrentIndex(currentIndex);
+  }
+  mProfiling = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->currentText();
   // read additional translation flags
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
@@ -1595,6 +1621,15 @@ void OptionsDialog::saveGeneralSettings()
   } else {
     mpSettings->setValue("createBackupFile", createBackupFile);
   }
+  // save read-model-instance-from-memory (no JSON) option (issue #15219)
+  bool enableInstanceApiNoJson = mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->isChecked();
+  if (enableInstanceApiNoJson == OptionsDefaults::GeneralSettings::enableInstanceApiNoJson) {
+    mpSettings->remove("enableInstanceApiNoJson");
+  } else {
+    mpSettings->setValue("enableInstanceApiNoJson", enableInstanceApiNoJson);
+  }
+  // apply immediately so the change takes effect without restarting OMEdit
+  MainWindow::instance()->setNewApiNoJson(enableInstanceApiNoJson);
   // save enable CRML support
   bool enableCRMLSupport = mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked();
   if (enableCRMLSupport == OptionsDefaults::GeneralSettings::enableCRMLSupport) {
@@ -2189,10 +2224,10 @@ void OptionsDialog::saveGraphicalViewsSettings()
   QString modelingViewMode = mpGraphicalViewsPage->getModelingViewMode();
   if (modelingViewMode.compare(Helper::tabbed) == 0) {
     mpSettings->remove("modeling/viewmode");
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(MainWindow::instance()->getModelWidgetContainer());
   } else {
     mpSettings->setValue("modeling/viewmode", modelingViewMode);
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(MainWindow::instance()->getModelWidgetContainer());
     ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
     if (pModelWidget) {
       pModelWidget->show();
@@ -2310,6 +2345,17 @@ void OptionsDialog::saveSimulationSettings()
   } else {
     mpSettings->setValue("simulation/enableFMUImport", enableFMUImport);
   }
+  // save profiling
+  QString profiling = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->currentText();
+  if (mProfiling.compare(profiling) != 0) {
+    mProfiling = profiling;
+    changed = true;
+  }
+  if (profiling.compare(simulationOptions.getProfiling()) == 0) {
+    mpSettings->remove("simulation/profiling");
+  } else {
+    mpSettings->setValue("simulation/profiling", profiling);
+  }
   // save command line options
   QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
@@ -2400,6 +2446,14 @@ void OptionsDialog::saveGlobalSimulationSettings()
     mpSettings->setValue("simulation/targetLanguage", targetLanguage);
   }
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--simCodeTarget=%1").arg(targetLanguage));
+  // The wasm-jit target has no C toolchain, so never try to build/copy a missing
+  // external library from its Resources (autotools) during function elaboration
+  // (e.g. ModelicaStandardTables): that path shells out and aborts translation on
+  // the web. The externals are provided at run time by the wasm side module. This
+  // is re-applied here because translateModel() clears command line options first.
+  if (targetLanguage.compare("wasm-jit") == 0) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=-buildExternalLibs");
+  }
   // save target build
   QString target = mpSimulationPage->getTargetBuildComboBox()->itemData(mpSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
   if (target.compare(OptionsDefaults::Simulation::targetBuild) == 0) {
@@ -2687,10 +2741,10 @@ void OptionsDialog::savePlottingSettings()
   QString plottingViewMode = mpPlottingPage->getPlottingViewMode();
   if (mpPlottingPage->getPlottingViewMode().compare(Helper::tabbed) == 0) {
     mpSettings->remove("plotting/viewmode");
-    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(MainWindow::instance()->getPlotWindowContainer());
   } else {
     mpSettings->setValue("plotting/viewmode", plottingViewMode);
-    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(MainWindow::instance()->getPlotWindowContainer());
     OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow) {
       pPlotWindow->show();
@@ -2870,7 +2924,9 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("displayUnknownFrames", displayUnknownFrames);
   }
+#if !defined(__EMSCRIPTEN__)
   MainWindow::instance()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
+#endif
 
   bool clearOutputOnNewRun = mpDebuggerPage->getClearOutputOnNewRunCheckBox()->isChecked();
   if (clearOutputOnNewRun == OptionsDefaults::Debugger::clearOutputOnNewRun) {
@@ -3012,16 +3068,6 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/commandLineOptions", commandLineOptions);
   }
-  // first clear all the command line options and then set the new
-  OMSProxy::instance()->setCommandLineOption("--clearAllOptions");
-  OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
-  // set working directory
-  const QString workingDirectory = mpGeneralSettingsPage->getWorkingDirectory();
-  if (workingDirectory.isEmpty()) {
-    OMSProxy::instance()->setWorkingDirectory(OptionsDefaults::GeneralSettings::workingDirectory);
-  } else {
-    OMSProxy::instance()->setWorkingDirectory(workingDirectory);
-  }
   // set logging level
   int loggingLevel = mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
   if (loggingLevel == OptionsDefaults::OMSimulator::loggingLevel) {
@@ -3029,7 +3075,8 @@ void OptionsDialog::saveOMSimulatorSettings()
   } else {
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
   }
-  OMSProxy::instance()->setLoggingLevel(loggingLevel);
+  // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
+  // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
 }
 
 /*!
@@ -3549,6 +3596,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpCreateBackupFileCheckbox->setChecked(OptionsDefaults::GeneralSettings::createBackupFile);
   /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
   mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
+  /* Read the model instance directly from memory instead of via a JSON string (issue #15219) */
+  mpEnableInstanceApiNoJsonCheckBox = new QCheckBox(tr("Read the model instance directly from memory instead of JSON (faster for large models)"));
+  mpEnableInstanceApiNoJsonCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceApiNoJson);
   // Enable CRML support
   mpEnableCRMLSupportCheckBox = new QCheckBox(tr("Enable CRML Support *"));
   mpEnableCRMLSupportCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
@@ -3573,7 +3623,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
   pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 10, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 10, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 11, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));
@@ -3753,9 +3804,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // MODELICAPATH
+  // OPENMODELICALIBRARY
   QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
-  mpModelicaPathLabel = new Label("MODELICAPATH");
+  mpModelicaPathLabel = new Label("OPENMODELICALIBRARY");
   mpModelicaPathTextBox = new QLineEdit;
   mpModelicaPathTextBox->setPlaceholderText(Helper::ModelicaPath);
   mpModelicaPathTextBox->setToolTip(Helper::modelicaPathTip);
@@ -3772,7 +3823,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   // system libraries groupbox
   mpSystemLibrariesGroupBox = new QGroupBox(tr("System libraries loaded automatically on startup *"));
   // system libraries note
-  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
+  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // load latest Modeica checkbox
   mpLoadLatestModelicaCheckbox = new QCheckBox(tr("Load latest Modelica version on startup"));
@@ -5189,7 +5240,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new ComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
+#if defined(__EMSCRIPTEN__)
+  mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("wasm-jit"));
+#else
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
+#endif
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
@@ -6255,8 +6310,8 @@ void DebuggerPage::browseGDBPath()
 }
 
 /*!
- * \class DebuggerPage
- * \brief Creates an interface for debugger settings.
+ * \class FMIPage
+ * \brief Creates an interface for FMI settings.
  */
 /*!
  * \brief FMIPage::FMIPage
@@ -6321,13 +6376,17 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
+  // Referenced by tag, omc resolves the digest and checks it against the one it trusts.
+  // See https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
+  const QString dockerImage = "ghcr.io/openmodelica/crossbuild:v1.27.0";
   QStringList dockerPlarforms;
-  dockerPlarforms << "x86_64-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "i686-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "x86_64-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "i686-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "arm-linux-gnueabihf docker run --pull=never multiarch/crossbuild"
-                  << "aarch64-linux-gnu docker run --pull=never multiarch/crossbuild";
+  dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
+                  << ("i686-linux-gnu docker run " + dockerImage)
+                  << ("aarch64-linux-gnu docker run " + dockerImage)
+                  << ("arm-linux-gnueabi docker run " + dockerImage)
+                  << ("arm-linux-gnueabihf docker run " + dockerImage)
+                  << ("x86_64-w64-mingw32 docker run " + dockerImage)
+                  << ("i686-w64-mingw32 docker run " + dockerImage);
   foreach (QString dockerPlarform, dockerPlarforms) {
     QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);

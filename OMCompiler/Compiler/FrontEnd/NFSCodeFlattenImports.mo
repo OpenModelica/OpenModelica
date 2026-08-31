@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -74,7 +78,7 @@ public function flattenClass
   output SCode.Element outClass;
   output Env outEnv;
 algorithm
-  (outClass, outEnv) := matchcontinue(inClass, inEnv)
+  (outClass, outEnv) := matchcontinue inClass
     local
       SCode.Ident name;
       SCode.ClassDef cdef;
@@ -85,22 +89,22 @@ algorithm
       SCode.Element cls;
       NFSCodeEnv.ClassType cls_ty;
 
-    case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
-      equation
-        (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
+    case SCode.CLASS(name = name, classDef = cdef, info = info)
+      algorithm
+        (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) :=
           NFSCodeLookup.lookupInClass(name, inEnv);
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
+        env := NFSCodeEnv.enterFrame(cls_env, inEnv);
 
-        (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
-        cls = SCodeUtil.setElementClassDefinition(cdef, inClass);
-        item = NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
-        env = NFSCodeEnv.updateItemInEnv(item, env, name);
+        (cdef, cls_env :: env) := flattenClassDef(cdef, env, info);
+        cls := SCodeUtil.setClassDef(cdef, inClass);
+        item := NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
+        env := NFSCodeEnv.updateItemInEnv(item, env, name);
       then
         (cls, env);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +
           SCodeUtil.elementName(inClass) + " in " + NFSCodeEnv.getEnvName(inEnv));
       then
@@ -115,7 +119,7 @@ protected function flattenClassDef
   output SCode.ClassDef outClassDef;
   output Env outEnv;
 algorithm
-  (outClassDef, outEnv) := match(inClassDef, inEnv, inInfo)
+  (outClassDef, outEnv) := match(inClassDef, inEnv)
     local
       list<SCode.Element> el;
       list<SCode.Equation> neql, ieql;
@@ -123,43 +127,41 @@ algorithm
       list<SCode.ConstraintSection> nco;
       list<Absyn.NamedArg> clats; //class attributes
       Option<SCode.ExternalDecl> extdecl;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmt;
       Absyn.TypeSpec ty;
       SCode.Mod mods;
       SCode.Attributes attr;
       Env env;
       SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
-      equation
+    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _)
+      algorithm
         // Lookup elements.
-        el = List.filterOnTrue(el, isNotImport);
-        (el, env) = List.mapFold(el, flattenElement, inEnv);
+        el := List.filterOnTrue(el, isNotImport);
+        (el, env) := List.mapFold(el, flattenElement, inEnv);
 
         // Lookup equations and algorithm names.
-        neql = List.map1(neql, flattenEquation, env);
-        ieql = List.map1(ieql, flattenEquation, env);
-        nal = List.map1(nal, flattenAlgorithm, env);
-        ial = List.map1(ial, flattenAlgorithm, env);
-        nco = List.map2(nco, flattenConstraints, env, inInfo);
+        neql := List.map1(neql, flattenEquation, env);
+        ieql := List.map1(ieql, flattenEquation, env);
+        nal := List.map1(nal, flattenAlgorithm, env);
+        ial := List.map1(ial, flattenAlgorithm, env);
+        nco := List.map2(nco, flattenConstraints, env, inInfo);
       then
         (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
-    case (SCode.CLASS_EXTENDS(mods, cdef), _, _)
-      equation
-        (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
-        mods = flattenModifier(mods, env, inInfo);
+    case (SCode.CLASS_EXTENDS(mods, cdef), _)
+      algorithm
+        (cdef, env) := flattenClassDef(cdef, inEnv, inInfo);
+        mods := flattenModifier(mods, env, inInfo);
       then
         (SCode.CLASS_EXTENDS(mods, cdef), env);
 
-    case (SCode.DERIVED(ty, mods, attr), env, _)
-      equation
-        mods = flattenModifier(mods, env, inInfo);
+    case (SCode.DERIVED(ty, mods, attr), env)
+      algorithm
+        mods := flattenModifier(mods, env, inInfo);
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
-        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
-        ty = flattenTypeSpec(ty, env, inInfo);
+        env := NFSCodeEnv.removeExtendsFromLocalScope(env);
+        ty := flattenTypeSpec(ty, env, inInfo);
       then
         (SCode.DERIVED(ty, mods, attr), inEnv);
 
@@ -187,7 +189,7 @@ protected function isNotImport
   input SCode.Element inElement;
   output Boolean outB;
 algorithm
-  outB := match(inElement)
+  outB := match inElement
     case SCode.IMPORT() then false;
     else true;
   end match;
@@ -199,7 +201,7 @@ protected function flattenElement
   output SCode.Element outElement;
   output Env outEnv;
 algorithm
-  (outElement, outEnv) := match(inElement, inEnv)
+  (outElement, outEnv) := match inElement
     local
       Env env;
       SCode.Element elem;
@@ -207,23 +209,23 @@ algorithm
       Item item;
 
     // Lookup component types, modifications and conditions.
-    case (SCode.COMPONENT(name = name), _)
-      equation
-        elem = flattenComponent(inElement, inEnv);
-        item = NFSCodeEnv.newVarItem(elem, true);
-        env = NFSCodeEnv.updateItemInEnv(item, inEnv, name);
+    case SCode.COMPONENT(name = name)
+      algorithm
+        elem := flattenComponent(inElement, inEnv);
+        item := NFSCodeEnv.newVarItem(elem, true);
+        env := NFSCodeEnv.updateItemInEnv(item, inEnv, name);
       then
         (elem, env);
 
     // Lookup class definitions.
-    case (SCode.CLASS(), _)
-      equation
-        (elem, env) = flattenClass(inElement, inEnv);
+    case SCode.CLASS()
+      algorithm
+        (elem, env) := flattenClass(inElement, inEnv);
       then
         (elem, env);
 
     // Lookup base class and modifications in extends clauses.
-    case (SCode.EXTENDS(), _)
+    case SCode.EXTENDS()
       then (flattenExtends(inElement, inEnv), inEnv);
 
     else (inElement, inEnv);
@@ -236,14 +238,12 @@ protected function flattenComponent
   output SCode.Element outComponent;
 protected
   SCode.Ident name;
-  Absyn.InnerOuter io;
   SCode.Prefixes prefixes;
   SCode.Attributes attr;
   Absyn.TypeSpec type_spec;
   SCode.Mod mod;
   SCode.Comment cmt;
   Option<Absyn.Exp> cond;
-  Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
 algorithm
   SCode.COMPONENT(name, prefixes, attr, type_spec, mod, cmt, cond, info) := inComponent;
@@ -278,27 +278,27 @@ protected function flattenTypeSpec
   input SourceInfo inInfo;
   output Absyn.TypeSpec outTypeSpec;
 algorithm
-  outTypeSpec := match(inTypeSpec, inEnv, inInfo)
+  outTypeSpec := match inTypeSpec
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> ad;
       list<Absyn.TypeSpec> tys;
 
     // A normal type.
-    case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
-      equation
-        (_, path, _) = NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
+    case Absyn.TPATH(path = path, arrayDim = ad)
+      algorithm
+        (_, path, _) := NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
       then
         Absyn.TPATH(path, ad);
 
     // A polymorphic type, i.e. replaceable type Type subtypeof Any.
-    case (Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic")), _, _)
+    case Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic"))
       then inTypeSpec;
 
     // A MetaModelica type such as list or tuple.
-    case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
-      equation
-        tys = List.map2(tys, flattenTypeSpec, inEnv, inInfo);
+    case Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad)
+      algorithm
+        tys := List.map2(tys, flattenTypeSpec, inEnv, inInfo);
       then
         Absyn.TCOMPLEX(path, tys, ad);
 
@@ -450,7 +450,7 @@ protected function flattenModifier
   input SourceInfo inInfo;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inMod, inEnv, inInfo)
+  outMod := match inMod
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -460,20 +460,20 @@ algorithm
       SourceInfo info;
       Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info), _, _)
-      equation
-        opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
-        sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
+    case SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info)
+      algorithm
+        opt_exp := flattenModOptExp(opt_exp, inEnv, inInfo);
+        sub_mods := List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info);
 
-    case (SCode.REDECL(fp, ep, el), _, _)
-      equation
-        el = flattenRedeclare(el, inEnv);
+    case SCode.REDECL(fp, ep, el)
+      algorithm
+        el := flattenRedeclare(el, inEnv);
       then
         SCode.REDECL(fp, ep, el);
 
-    case (SCode.NOMOD(), _, _) then inMod;
+    case SCode.NOMOD() then inMod;
   end match;
 end flattenModifier;
 
@@ -488,8 +488,8 @@ algorithm
       Absyn.Exp exp;
 
     case SOME(exp)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         SOME(exp);
 
@@ -503,15 +503,14 @@ protected function flattenSubMod
   input SourceInfo inInfo;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match(inSubMod, inEnv, inInfo)
+  outSubMod := match inSubMod
     local
       SCode.Ident ident;
-      list<SCode.Subscript> subs;
       SCode.Mod mod;
 
-    case (SCode.NAMEMOD(ident = ident, mod = mod), _, _)
-      equation
-        mod = flattenModifier(mod, inEnv, inInfo);
+    case SCode.NAMEMOD(ident = ident, mod = mod)
+      algorithm
+        mod := flattenModifier(mod, inEnv, inInfo);
       then
         SCode.NAMEMOD(ident, mod);
 
@@ -523,7 +522,7 @@ protected function flattenRedeclare
   input Env inEnv;
   output SCode.Element outElement;
 algorithm
-  outElement := match(inElement, inEnv)
+  outElement := match inElement
     local
       SCode.Ident name;
       SCode.Prefixes prefixes;
@@ -535,25 +534,25 @@ algorithm
       SCode.ClassDef cdef,cdef2;
       SCode.Comment cmt;
 
-    case (SCode.CLASS(name, prefixes, ep, pp, res,
-          cdef as SCode.DERIVED(), cmt, info), _)
-      equation
-        cdef2 = flattenDerivedClassDef(cdef, inEnv, info);
+    case SCode.CLASS(name, prefixes, ep, pp, res,
+          cdef as SCode.DERIVED(), cmt, info)
+      algorithm
+        cdef2 := flattenDerivedClassDef(cdef, inEnv, info);
       then
         SCode.CLASS(name, prefixes, ep, pp, res, cdef2, cmt, info);
 
-    case (SCode.CLASS(classDef = SCode.ENUMERATION()), _)
+    case SCode.CLASS(classDef = SCode.ENUMERATION())
       then
         inElement;
 
-    case (SCode.COMPONENT(), _)
-      equation
-        element = flattenComponent(inElement, inEnv);
+    case SCode.COMPONENT()
+      algorithm
+        element := flattenComponent(inElement, inEnv);
       then
         element;
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Unknown redeclare in NFSCodeFlattenImports.flattenRedeclare"});
       then
@@ -568,17 +567,17 @@ protected function flattenSubscript
   input SourceInfo inInfo;
   output SCode.Subscript outSub;
 algorithm
-  outSub := match(inSub, inEnv, inInfo)
+  outSub := match inSub
     local
       Absyn.Exp exp;
 
-    case (Absyn.SUBSCRIPT(subscript = exp), _, _)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+    case Absyn.SUBSCRIPT(subscript = exp)
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         Absyn.SUBSCRIPT(exp);
 
-    case (Absyn.NOSUB(), _, _) then inSub;
+    case Absyn.NOSUB() then inSub;
   end match;
 end flattenSubscript;
 
@@ -597,13 +596,13 @@ protected function flattenOptExp
   input SourceInfo inInfo;
   output Option<Absyn.Exp> outExp;
 algorithm
-  outExp := match(inExp, inEnv, inInfo)
+  outExp := match inExp
     local
       Absyn.Exp exp;
 
-    case (SOME(exp), _, _)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+    case SOME(exp)
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         SOME(exp);
 
@@ -629,16 +628,16 @@ algorithm
       Absyn.ReductionIterType iterType;
 
     case (Absyn.CREF(componentRef = cref), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
       then
         (Absyn.CREF(cref), tup);
 
     case (Absyn.CALL(function_ = cref, functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterType = iterType, iterators = iters)), (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        exp = flattenExp(exp, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
+        env := NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        exp := flattenExp(exp, env, info);
       then
         (Absyn.CALL(cref, Absyn.FOR_ITER_FARG(exp, iterType, iters), inExp.typeVars), (env, info));
 
@@ -646,22 +645,22 @@ algorithm
       then (inExp,inTuple);
 
     case (Absyn.CALL(function_ = cref, functionArgs = args), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
         (Absyn.CALL(cref, args, inExp.typeVars), tup);
 
     case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
         (Absyn.PARTEVALFUNCTION(cref, args), tup);
 
     case (exp as Absyn.MATCHEXP(), (env, info))
-      equation
-        env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+      algorithm
+        env := NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
         (exp, (env, info));
     else (inExp,inTuple);
@@ -676,7 +675,6 @@ protected function flattenExpTraverserExit
 algorithm
   (outExp,outTuple) := match(inExp,inTuple)
     local
-      Absyn.Exp e;
       Env env;
       SourceInfo info;
 
@@ -700,28 +698,28 @@ public function flattenComponentRefSubs
   input SourceInfo inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inEnv, inInfo)
+  outCref := match inCref
     local
       Absyn.Ident name;
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> subs;
 
-    case (Absyn.CREF_IDENT(name, subs), _, _)
-      equation
-        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
+    case Absyn.CREF_IDENT(name, subs)
+      algorithm
+        subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
       then
         Absyn.CREF_IDENT(name, subs);
 
-    case (Absyn.CREF_QUAL(name, subs, cref), _, _)
-      equation
-        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
-        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+    case Absyn.CREF_QUAL(name, subs, cref)
+      algorithm
+        subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
+        cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_QUAL(name, subs, cref);
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _, _)
-      equation
-        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref)
+      algorithm
+        cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         AbsynUtil.crefMakeFullyQualified(cref);
 

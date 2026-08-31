@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -39,6 +43,7 @@ public
   import Absyn;
   import AbsynUtil;
   import DAE;
+  import JSON;
 
   type Op = enumeration(
     // Basic arithmetic operators.
@@ -135,20 +140,22 @@ public
     end match;
   end invert;
 
+  type TypeRestriction = enumeration(SCALAR, VECTOR, MATRIX, ARRAY, OTHER);
+
   function typeRestriction
     input Type ty;
-    output Integer i;
+    output TypeRestriction restriction;
   algorithm
     if Type.isScalar(ty) then
-      i := 0;
+      restriction := TypeRestriction.SCALAR;
     elseif Type.isVector(ty) then
-      i := 1;
+      restriction := TypeRestriction.VECTOR;
     elseif Type.isMatrix(ty) then
-      i := 2;
+      restriction := TypeRestriction.MATRIX;
     elseif Type.isArray(ty) then
-      i := 3;
+      restriction := TypeRestriction.ARRAY;
     else
-      i := 4;
+      restriction := TypeRestriction.OTHER;
     end if;
   end typeRestriction;
 
@@ -158,12 +165,12 @@ public
   protected
     MathClassification mc = getMathClassification(operator);
     SizeClassification sc;
-    list<tuple<Integer, Type>> lst;
-    tuple<Integer, Type> min_, max_;
+    list<tuple<TypeRestriction, Type>> lst;
+    tuple<TypeRestriction, Type> min_, max_;
     Type ty;
     function tplLt
-      input tuple<Integer, Type> tpl1;
-      input tuple<Integer, Type> tpl2;
+      input tuple<TypeRestriction, Type> tpl1;
+      input tuple<TypeRestriction, Type> tpl2;
       output Boolean b = Util.tuple21(tpl1) < Util.tuple21(tpl2);
     end tplLt;
   algorithm
@@ -171,14 +178,14 @@ public
     min_ := List.minElement(lst, tplLt);
     max_ := List.maxElement(lst, tplLt);
     (sc, ty) := match (min_, max_)
-      case ((0, _), (0, ty))  then (SizeClassification.SCALAR, ty);
-      case ((0, _), (_ ,ty))  then (SizeClassification.SCALAR_ARRAY, ty);
-      case ((1, _), (1, ty))  then (SizeClassification.ELEMENT_WISE, ty);
-      case ((1, _), (2, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
-      case ((2, _), (2, ty))  then (SizeClassification.ELEMENT_WISE, ty);
-      case ((3, _), (3, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.SCALAR, _), (TypeRestriction.SCALAR, ty))  then (SizeClassification.SCALAR, ty);
+      case ((TypeRestriction.SCALAR, _), (_ ,ty))                       then (SizeClassification.SCALAR_ARRAY, ty);
+      case ((TypeRestriction.VECTOR, _), (TypeRestriction.VECTOR, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.VECTOR, _), (TypeRestriction.MATRIX, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
+      case ((TypeRestriction.MATRIX, _), (TypeRestriction.MATRIX, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.ARRAY,  _), (TypeRestriction.ARRAY,  ty))  then (SizeClassification.ELEMENT_WISE, ty);
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
+        Error.terminate(getInstanceName() + " failed because the multary arguments have incompatible sizes: "
         + List.toString(types, Type.toString), sourceInfo());
       then fail();
     end match;
@@ -196,15 +203,15 @@ public
   algorithm
     (sc, ty) := match (typeRestriction(ty1), typeRestriction(ty2))
       local
-        Integer i1, i2;
-      case (0, 0)                 then (SizeClassification.SCALAR, ty1);
-      case (0, i2) guard(i2>0)    then (SizeClassification.SCALAR_ARRAY, ty2);
-      case (i1, 0) guard(i1>0)    then (SizeClassification.ARRAY_SCALAR, ty1);
-      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty2);
-      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty1);
-      case (i1, i2) guard(i1==i2) then (getSizeClassification(operator), ty1);
+        TypeRestriction r1, r2;
+      case (TypeRestriction.SCALAR, TypeRestriction.SCALAR)               then (SizeClassification.SCALAR, ty1);
+      case (TypeRestriction.SCALAR, r2) guard(r2>TypeRestriction.SCALAR)  then (SizeClassification.SCALAR_ARRAY, ty2);
+      case (r1, TypeRestriction.SCALAR) guard(r1>TypeRestriction.SCALAR)  then (SizeClassification.ARRAY_SCALAR, ty1);
+      case (TypeRestriction.VECTOR, TypeRestriction.MATRIX)               then (SizeClassification.VECTOR_MATRIX, ty1);
+      case (TypeRestriction.MATRIX, TypeRestriction.VECTOR)               then (SizeClassification.MATRIX_VECTOR, ty2);
+      case (r1, r2) guard(r1 == r2)                                       then (getSizeClassification(operator), ty1);
       else algorithm
-        Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
+        Error.terminate(getInstanceName() + " failed because the binary arguments have incompatible sizes: "
           + Type.toString(ty1) + ", " + Type.toString(ty2), sourceInfo());
       then fail();
     end match;
@@ -216,10 +223,10 @@ public
     output Boolean b;
   algorithm
     b := match operator.op
-      case Op.AND   then true;
-      case Op.OR    then true;
-      case Op.NOT   then true;
-                    else false;
+      case Op.AND then true;
+      case Op.OR  then true;
+      case Op.NOT then true;
+                  else false;
     end match;
   end isLogical;
 
@@ -324,7 +331,7 @@ public
       case Op.NEQUAL            then Absyn.Operator.NEQUAL();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
@@ -357,6 +364,8 @@ public
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
       case Op.ADD_EW            then DAE.ADD_ARR(ty);
       case Op.SUB_EW            then DAE.SUB_ARR(ty);
+      case Op.MUL_EW            then DAE.MUL_ARR(ty);
+      case Op.DIV_EW            then DAE.DIV_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
@@ -375,7 +384,7 @@ public
       case Op.NEQUAL            then DAE.NEQUAL(ty);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type: " + opToString(op.op), sourceInfo());
         then
           fail();
     end match;
@@ -449,13 +458,60 @@ public
       //case Op.USERDEFINED      then "Userdefined:" + AbsynUtil.pathString(op.fqName);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
 
     symbol := spacing + symbol + spacing;
   end symbol;
+
+  function toJSON
+    input Operator operator;
+    output JSON json;
+  protected
+    constant array<JSON> symbols = MetaModelica.Dangerous.listArrayLiteral({
+      JSON.STRING("+"),
+      JSON.STRING("-"),
+      JSON.STRING("*"),
+      JSON.STRING("/"),
+      JSON.STRING("^"),
+      JSON.STRING(".+"),
+      JSON.STRING(".-"),
+      JSON.STRING(".*"),
+      JSON.STRING("./"),
+      JSON.STRING(".^"),
+      JSON.STRING(".+"),
+      JSON.STRING(".+"),
+      JSON.STRING(".-"),
+      JSON.STRING(".-"),
+      JSON.STRING("*"),
+      JSON.STRING(".*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("./"),
+      JSON.STRING("/"),
+      JSON.STRING(".^"),
+      JSON.STRING(".^"),
+      JSON.STRING("^"),
+      JSON.STRING("-"),
+      JSON.STRING("and"),
+      JSON.STRING("or"),
+      JSON.STRING("not"),
+      JSON.STRING("<"),
+      JSON.STRING("<="),
+      JSON.STRING(">"),
+      JSON.STRING(">="),
+      JSON.STRING("=="),
+      JSON.STRING("<>")
+    });
+
+    Op op = operator.op;
+  algorithm
+    json := symbols[Integer(op)];
+  end toJSON;
 
   function priority
     input Operator op;
@@ -536,6 +592,11 @@ public
     input Type ty;
     output Operator op = OPERATOR(ty, Op.MUL);
   end makeMul;
+
+  function makeScalarProduct
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.SCALAR_PRODUCT);
+  end makeScalarProduct;
 
   function makeDiv
     input Type ty;
@@ -652,6 +713,19 @@ public
 
     outOp := OPERATOR(ty, o);
   end makeArrayScalar;
+
+  function makeEW
+    input output Operator op;
+  algorithm
+    () := match op.op
+      case Op.ADD algorithm op.op := Op.ADD_EW; then ();
+      case Op.SUB algorithm op.op := Op.SUB_EW; then ();
+      case Op.MUL algorithm op.op := Op.MUL_EW; then ();
+      case Op.DIV algorithm op.op := Op.DIV_EW; then ();
+      case Op.POW algorithm op.op := Op.POW_EW; then ();
+      else ();
+    end match;
+  end makeEW;
 
   function stripEW
     input output Operator op;
@@ -907,7 +981,7 @@ public
       case Op.ADD_ARRAY_SCALAR  then true;
       case Op.MUL_SCALAR_ARRAY  then true;
       case Op.MUL_ARRAY_SCALAR  then true;
-      else false;
+                                else false;
     end match;
   end isCommutative;
 
@@ -981,8 +1055,7 @@ public
     input MathClassification mcl2;
     output Boolean b;
   algorithm
-    b :=  (Util.intCompare(Integer(mcl1), Integer(mcl2)) == 0)
-          or (isDashClassification(mcl1) and isDashClassification(mcl2));
+    b := mcl1 == mcl2 or (isDashClassification(mcl1) and isDashClassification(mcl2));
   end isCombineableMath;
 
   function isCombineableSize
@@ -990,7 +1063,7 @@ public
     input SizeClassification scl2;
     output Boolean b;
   algorithm
-    b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
+    b := scl1 == scl2;
   end isCombineableSize;
 
   function toDebugString
@@ -1047,5 +1120,5 @@ public
     end match;
   end opToString;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFOperator;

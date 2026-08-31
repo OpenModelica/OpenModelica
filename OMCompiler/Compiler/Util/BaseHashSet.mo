@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -102,7 +106,6 @@ public function emptyHashSetWork
   output HashSet hashSet;
 protected
   array<list<tuple<Key,Integer>>> arr;
-  list<Option<Key>> lst;
   array<Option<Key>> emptyarr;
 protected
   Integer szArr;
@@ -137,30 +140,30 @@ algorithm
 
     // Adding when not existing previously
     case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
-      equation
-        (fkey,indx) = get1(key, hashSet);
+      algorithm
+        (fkey,indx) := get1(key, hashSet);
         if isSome(fkey) then
           //print("adding when present, indx =" );print(intString(indx));print("\n");
-          varr = valueArraySetnth(varr, indx, key);
+          varr := valueArraySetnth(varr, indx, key);
         else
-          indx = intMod(hashFunc(key), bsize);
-          newpos = valueArrayLength(varr);
-          varr = valueArrayAdd(varr, key);
-          indexes = hashvec[indx + 1];
-          hashvec = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-          n = valueArrayLength(varr);
+          indx := intMod(hashFunc(key), bsize);
+          newpos := valueArrayLength(varr);
+          varr := valueArrayAdd(varr, key);
+          indexes := hashvec[indx + 1];
+          hashvec := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+          n := valueArrayLength(varr);
         end if;
       then ((hashvec,varr,bsize,n,fntpl));
 
     case (key,((_,_,bsize,_,(hashFunc,_,keystrFunc))))
-      equation
+      algorithm
         print("- BaseHashSet.add failed: ");
         print("bsize: ");
         print(intString(bsize));
         print(" key: ");
-        s = keystrFunc(key);
+        s := keystrFunc(key);
         print(s + " Hash: ");
-        hval = intMod(hashFunc(key),bsize);
+        hval := intMod(hashFunc(key),bsize);
         print(intString(hval));
         print("\n");
       then
@@ -176,34 +179,27 @@ public function addNoUpdCheck
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := matchcontinue (entry,hashSet)
+  outHashSet := match (entry,hashSet)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n_1,bsize;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
       Key key;
       FuncsTuple fntpl;
       FuncHash hashFunc;
 
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,_,fntpl as (hashFunc,_,_)))
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
-
-    else
-      equation
-        print("- BaseHashSet.addNoUpdCheck failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end addNoUpdCheck;
 
 public function addUnique
@@ -212,9 +208,9 @@ public function addUnique
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := match(key, hashSet)
+  outHashSet := match hashSet
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n_1,bsize;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
@@ -222,15 +218,14 @@ algorithm
       FuncHash hashFunc;
 
     // Adding when not existing previously
-    case (_,
-        ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+    case (hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)) guard not has(key, hashSet)
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then
         ((hashvec_1, varr_1, bsize, n_1, fntpl));
 
@@ -247,27 +242,17 @@ public function delete
   input Key key;
   input HashSet hashSet;
   output HashSet outHashSet;
+protected
+  Integer indx,n,bsize;
+  tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
+  array<list<tuple<Key,Integer>>> hashvec;
+  FuncsTuple fntpl;
 algorithm
-  outHashSet :=
-  matchcontinue (key,hashSet)
-    local
-      Integer indx,n,bsize,indx_1;
-      tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
-      array<list<tuple<Key,Integer>>> hashvec;
-      FuncsTuple fntpl;
-      /* adding when already present => Updating value */
-    case (_,(hashvec,varr,bsize,n,fntpl))
-      equation
-        (SOME(_),indx) = get1(key, hashSet);
-        varr_1 = valueArrayClearnth(varr, indx);
-      then ((hashvec,varr_1,bsize,n,fntpl));
-    else
-      equation
-        print("-HashSet.delete failed\n");
-      then
-        fail();
-  end matchcontinue;
-end delete;
+  (hashvec,varr,bsize,n,fntpl) := hashSet;
+  (SOME(_),indx) := get1(key, hashSet);
+  varr_1 := valueArrayClearnth(varr, indx);
+  outHashSet := ((hashvec,varr_1,bsize,n,fntpl));
+ end delete;
 
 public function has
 "Returns true if Key is in the HashSet."
@@ -275,16 +260,16 @@ public function has
   input HashSet hashSet;
   output Boolean b;
 algorithm
-  b:= match(key,hashSet)
+  b:= match hashSet
     local
       Option<Key> oKey;
     // empty set containg nothing
-    case (_,(_,(0,_,_),_,_,_))
+    case (_,(0,_,_),_,_,_)
       then
         false;
     else
-      equation
-        (oKey,_) = get1(key,hashSet);
+      algorithm
+        (oKey,_) := get1(key,hashSet);
       then
         isSome(oKey);
   end match;
@@ -319,9 +304,9 @@ protected function get1 "help function to get"
   output Option<Key> okey;
   output Integer indx;
 algorithm
-  (okey,indx) := match (key,hashSet)
+  (okey,indx) := match hashSet
     local
-      Integer hashindx,bsize,n;
+      Integer hashindx,bsize;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
@@ -330,12 +315,12 @@ algorithm
       FuncHash hashFunc;
       Boolean b;
 
-    case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
-      equation
-        hashindx = intMod(hashFunc(key), bsize);
-        indexes = hashvec[hashindx + 1];
-        (indx,b) = get2(key, indexes, keyEqual);
-        k = if b then valueArrayNthT(varr, indx) else NONE();
+    case (hashvec,varr,bsize,_,(hashFunc,keyEqual,_))
+      algorithm
+        hashindx := intMod(hashFunc(key), bsize);
+        indexes := hashvec[hashindx + 1];
+        (indx,b) := get2(key, indexes, keyEqual);
+        k := if b then valueArrayNthT(varr, indx) else NONE();
       then
         (k,indx);
 
@@ -382,10 +367,10 @@ public function hashSetList "returns the entries in the hashSet as a list of Key
   input HashSet hashSet;
   output list<Key> lst;
 algorithm
-  lst := match(hashSet)
+  lst := match hashSet
     local
       ValueArray varr;
-    case((_,varr,_,_,_))
+    case (_,varr,_,_,_)
       then
       valueArrayList(varr);
   end match;
@@ -437,40 +422,22 @@ by factor 1.4"
   input ValueArray valueArray;
   input Key entry;
   output ValueArray outValueArray;
+protected
+  Integer n,size,expandsize,expandsize_1;
+  array<Option<Key>> arr;
+  Real rsize,rexpandsize;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,entry)
-    local
-      Integer n_1,n,size,expandsize,expandsize_1,newsize;
-      array<Option<Key>> arr_1,arr,arr_2;
-      Real rsize,rexpandsize;
-    case ((n,size,arr),_)
-      equation
-        (n < size) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
-      then
-        ((n_1,size,arr_1));
-
-    case ((n,size,arr),_)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
-        arr_1 = Array.expand(expandsize_1, arr, NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
-      then
-        ((n_1,newsize,arr_2));
-    else
-      equation
-        print("-HashSet.valueArrayAdd failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  if n >= size then
+    rsize := intReal(size);
+    rexpandsize := rsize * 0.4;
+    expandsize := realInt(rexpandsize);
+    expandsize_1 := intMax(expandsize, 1);
+    size := expandsize_1 + size;
+    arr := Array.expand(expandsize_1, arr, NONE());
+  end if;
+  arr := arrayUpdate(arr, n + 1, SOME(entry));
+  outValueArray := (n+1,size,arr);
 end valueArrayAdd;
 
 public function valueArraySetnth
@@ -479,24 +446,14 @@ public function valueArraySetnth
   input Integer pos;
   input Key entry;
   output ValueArray outValueArray;
+protected
+  array<Option<Key>> arr_1,arr;
+  Integer n,size;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,pos,entry)
-    local
-      array<Option<Key>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_,_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
-      then
-        ((n,size,arr_1));
-    else
-      equation
-        print("-HashSet.valueArraySetnth failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  true := (pos < size);
+  arr_1 := arrayUpdate(arr, pos + 1, SOME(entry));
+  outValueArray := (n,size,arr_1);
 end valueArraySetnth;
 
 public function valueArrayClearnth
@@ -504,23 +461,14 @@ public function valueArrayClearnth
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
+protected
+  array<Option<Key>> arr_1,arr;
+  Integer n,size;
 algorithm
-  outValueArray := matchcontinue (valueArray,pos)
-    local
-      array<Option<Key>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1,NONE());
-      then
-        ((n,size,arr_1));
-    else
-      equation
-        print("-HashSet.valueArrayClearnth failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  true := (pos < size);
+  arr_1 := arrayUpdate(arr, pos + 1,NONE());
+  outValueArray := ((n,size,arr_1));
 end valueArrayClearnth;
 
 public function valueArrayNth
@@ -529,17 +477,15 @@ public function valueArrayNth
   input Integer pos;
   output Key key;
 algorithm
-  key := match (valueArray,pos)
+  key := match valueArray
     local
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-        SOME(k) = arr[pos + 1];
-      then
-        k;
+    case (n,_,arr) guard pos <= n // should be pos<n
+      algorithm
+        SOME(k) := arr[pos + 1];
+      then k;
   end match;
 end valueArrayNth;
 
@@ -549,16 +495,12 @@ protected function valueArrayNthT
   input Integer pos;
   output Option<Key> key;
 algorithm
-  key := match (valueArray,pos)
+  key := match valueArray
     local
-      Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-      then
-        arr[pos + 1];
+    case (n,_,arr) guard pos <= n // should be pos<n
+      then arr[pos + 1];
   end match;
 end valueArrayNthT;
 

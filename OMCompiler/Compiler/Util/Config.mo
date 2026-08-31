@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -47,7 +51,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', latest, experimental)
+type LanguageStandard = enumeration(_1_x, _2_x, _3_0, _3_1, _3_2, _3_3, _3_4, _3_5, _3_6, latest, experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -396,11 +400,22 @@ algorithm
   FlagsUtil.setConfigString(Flags.TEARING_HEURISTIC, inString);
 end setTearingHeuristic;
 
-public function simCodeTarget "Default is set by +simCodeTarget=C"
+public function simCodeTarget "Default is set by +simCodeTarget=C.
+  \"C+Rust\" generates the same sources as \"C\" and differs only in what the
+  makefile links and defines, so every code generator sees \"C\"."
   output String target;
 algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
+  if target == "C+Rust" then
+    target := "C";
+  end if;
 end simCodeTarget;
+
+public function simCodeRustRuntime "+simCodeTarget=C+Rust: link libSimulationRuntimeRust instead of libSimulationRuntimeC."
+  output Boolean rust;
+algorithm
+  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C+Rust";
+end simCodeRustRuntime;
 
 public function setsimCodeTarget
   input String inString;
@@ -444,25 +459,25 @@ protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
 protected
-  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999);
+  constant array<Integer> lookup = MetaModelica.Dangerous.listArrayLiteral({10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999});
 algorithm
-  outValue := lookup[inStandard];
+  outValue := arrayGet(lookup, Integer(inStandard));
 end languageStandardInt;
 
 protected function intLanguageStandard
   input Integer inValue;
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inValue)
-    case 10 then LanguageStandard.'1.x';
-    case 20 then LanguageStandard.'2.x';
-    case 30 then LanguageStandard.'3.0';
-    case 31 then LanguageStandard.'3.1';
-    case 32 then LanguageStandard.'3.2';
-    case 33 then LanguageStandard.'3.3';
-    case 34 then LanguageStandard.'3.4';
-    case 35 then LanguageStandard.'3.5';
-    case 36 then LanguageStandard.'3.6';
+  outStandard := match inValue
+    case 10 then LanguageStandard._1_x;
+    case 20 then LanguageStandard._2_x;
+    case 30 then LanguageStandard._3_0;
+    case 31 then LanguageStandard._3_1;
+    case 32 then LanguageStandard._3_2;
+    case 33 then LanguageStandard._3_3;
+    case 34 then LanguageStandard._3_4;
+    case 35 then LanguageStandard._3_5;
+    case 36 then LanguageStandard._3_6;
     case 1000 then LanguageStandard.latest;
     case 9999 then LanguageStandard.experimental;
   end match;
@@ -472,9 +487,9 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/);
+  constant array<String> lookup = MetaModelica.Dangerous.listArrayLiteral({"1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/});
 algorithm
-  outString := lookup[inStandard];
+  outString := arrayGet(lookup, Integer(inStandard));
 end languageStandardString;
 
 public function setLanguageStandardFromMSL
@@ -489,7 +504,7 @@ algorithm
     return;
   end if;
 
-  _ := matchcontinue(inLibraryName)
+  () := matchcontinue inLibraryName
     local
       String version;
       LanguageStandard new_std;
@@ -520,7 +535,7 @@ algorithm
   // If the old standard wasn't set by the user, then we consider it to have
   // changed only if the new standard is 3.0 or less. This is to avoid
   // printing a notice if the user loads e.g. MSL 3.1.
-  outHasChanged := languageStandardAtMost(LanguageStandard.'3.0');
+  outHasChanged := languageStandardAtMost(LanguageStandard._3_0);
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
@@ -537,14 +552,14 @@ protected function versionStringToStd2
   input list<String> inVersion;
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inVersion)
-    case "1" :: _ then LanguageStandard.'1.x';
-    case "2" :: _ then LanguageStandard.'2.x';
-    case "3" :: "0" :: _ then LanguageStandard.'3.0';
-    case "3" :: "1" :: _ then LanguageStandard.'3.1';
-    case "3" :: _ then LanguageStandard.'3.2';
-    case "4" :: "0" :: _ then LanguageStandard.'3.4';
-    case "4" :: "1" :: _ then LanguageStandard.'3.6';
+  outStandard := match inVersion
+    case "1" :: _ then LanguageStandard._1_x;
+    case "2" :: _ then LanguageStandard._2_x;
+    case "3" :: "0" :: _ then LanguageStandard._3_0;
+    case "3" :: "1" :: _ then LanguageStandard._3_1;
+    case "3" :: _ then LanguageStandard._3_2;
+    case "4" :: "0" :: _ then LanguageStandard._3_4;
+    case "4" :: "1" :: _ then LanguageStandard._3_6;
     case _ then LanguageStandard.latest;
   end match;
 end versionStringToStd2;
@@ -612,22 +627,22 @@ end ignoreCommandLineOptionsAnnotation;
 public function globalHomotopy
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
-    case("equidistantLocal") then false;
-    case("adaptiveLocal") then false;
-    case("equidistantGlobal") then true;
-    case("adaptiveGlobal") then true;
+  outBoolean := match Flags.getConfigString(Flags.HOMOTOPY_APPROACH)
+    case "equidistantLocal" then false;
+    case "adaptiveLocal" then false;
+    case "equidistantGlobal" then true;
+    case "adaptiveGlobal" then true;
   end match;
 end globalHomotopy;
 
 public function adaptiveHomotopy
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
-    case("equidistantLocal") then false;
-    case("adaptiveLocal") then true;
-    case("equidistantGlobal") then false;
-    case("adaptiveGlobal") then true;
+  outBoolean := match Flags.getConfigString(Flags.HOMOTOPY_APPROACH)
+    case "equidistantLocal" then false;
+    case "adaptiveLocal" then true;
+    case "equidistantGlobal" then false;
+    case "adaptiveGlobal" then true;
   end match;
 end adaptiveHomotopy;
 
@@ -643,7 +658,7 @@ end replacedHomotopy;
 public function synchronousFeaturesAllowed
 "@autor: adrpo
  checks returns true if language standard is above or equal to Modelica 3.3"
-  output Boolean outRes = getLanguageStandard() >= LanguageStandard.'3.3';
+  output Boolean outRes = getLanguageStandard() >= LanguageStandard._3_3;
 end synchronousFeaturesAllowed;
 
 public function flatModelica

@@ -44,10 +44,8 @@ import svgwrite
 from OMPython import OMCSessionZMQ
 omc = OMCSessionZMQ()
 
-# OpenModelica setup commands (use old front-end, see #6301)
-OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,-newInst")']
-# use new front-end and nfAPI
-# OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,newInst,nfAPI")']
+# OpenModelica setup commands
+OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
 
 def classToFileName(cl):
   """
@@ -56,45 +54,45 @@ def classToFileName(cl):
   """
   return cl.replace("/","Division").replace("*","Multiplication").replace("<","x3C").replace(">","x3E")
 
-exp_float = '[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?'
+exp_float = r'[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?'
 
 element_id = 0
-regex_equal_key_value = re.compile("([^ =]+) *= *(\"[^\"]*\"|[^ ]*)")
+regex_equal_key_value = re.compile(r"([^ =]+) *= *(\"[^\"]*\"|[^ ]*)")
 
-regex_type_value = re.compile("(\w+.\w+)*")
+regex_type_value = re.compile(r"(\w+.\w+)*")
 
 # Compile regular expressions ONLY once!
 # example: {-100.0,-100.0,100.0,100.0,true,0.16,2.0,2.0, {...
-regex_coordSys = re.compile('('+exp_float+'),('+exp_float+'),('+exp_float+'),('+exp_float+'),(\w+),('+exp_float+'),('+exp_float+'),('+exp_float+'),')
+regex_coordSys = re.compile(r'({0}),({0}),({0}),({0}),(\w+),({0}),({0}),({0}),'.format(exp_float))
 
 # example: Rectangle(true, {35.0, 10.0}, 0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-15.0, -4.0}, {15.0, 4.0}}, 0
-regex_rectangle = re.compile('Rectangle\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), (\w+.\w+), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ('+exp_float+')')
+regex_rectangle = re.compile(r'Rectangle\(([\w ]+), {{({0}), ({0})}}, ({0}), {{(\d+), (\d+), (\d+)}}, {{(\d+), (\d+), (\d+)}}, (\w+.\w+), (\w+.\w+), ({0}), (\w+.\w+), {{{{({0}), ({0})}}, {{({0}), ({0})}}}}, ({0})'.format(exp_float))
 
 # example: Line(true, {0.0, 0.0}, 0, {{-30, -120}, {-10, -100}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None
-regex_line = re.compile('Line\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), ({{'+exp_float+', '+exp_float+'}(?:, {'+exp_float+', '+exp_float+'})*}), {(\d+), (\d+), (\d+)}, (\w+.\w+), ('+exp_float+'), {(\w+.\w+), (\w+.\w+)}, ('+exp_float+'), (\w+.\w+)')
+regex_line = re.compile(r'Line\(([\w ]+), {{({0}), ({0})}}, ({0}), ({{{{{0}, {0}}}(?:, {{{0}, {0}}})*}}), {{(\d+), (\d+), (\d+)}}, (\w+.\w+), ({0}), {{(\w+.\w+), (\w+.\w+)}}, ({0}), (\w+.\w+)'.format(exp_float))
 
 # example: Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {95, 95, 95}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100, 100}, {100, -100}}, 0, 360)}}
-regex_ellipse = re.compile('Ellipse\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ('+exp_float+'), ('+exp_float+')')
+regex_ellipse = re.compile(r'Ellipse\(([\w ]+), {{({0}), ({0})}}, ({0}), {{(\d+), (\d+), (\d+)}}, {{(\d+), (\d+), (\d+)}}, (\w+.\w+), (\w+.\w+), ({0}), {{{{({0}), ({0})}}, {{({0}), ({0})}}}}, ({0}), ({0})'.format(exp_float))
 
 # example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, "%name", 0, {-1, -1, -1}, "fontName", {TextStyle.Bold, TextStyle.Italic, TextStyle.UnderLine}, TextAlignment.Center
-regex_text = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ("[^"]*"), ('+exp_float+'), {([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}, ("[^"]*"), {([^}]*)}, (\w+.\w+)')
+regex_text = re.compile(r'Text\(([\w ]+), {{({0}), ({0})}}, ({0}), {{(\d+), (\d+), (\d+)}}, {{(\d+), (\d+), (\d+)}}, (\w+.\w+), (\w+.\w+), ({0}), {{{{({0}), ({0})}}, {{({0}), ({0})}}}}, ("[^"]*"), ({0}), {{([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}}, ("[^"]*"), {{([^}}]*)}}, (\w+.\w+)'.format(exp_float))
 
 # example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, {"%name", y, 0}, 0, {-1, -1, -1}, "fontName", {TextStyle.Bold, TextStyle.Italic, TextStyle.UnderLine}, TextAlignment.Center
-regex_text2 = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, {("[^"]*"), [+-, \w\d]*}, ('+exp_float+'), {([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}, ("[^"]*"), {([^}]*)}, (\w+.\w+)')
+regex_text2 = re.compile(r'Text\(([\w ]+), {{({0}), ({0})}}, ({0}), {{(\d+), (\d+), (\d+)}}, {{(\d+), (\d+), (\d+)}}, (\w+.\w+), (\w+.\w+), ({0}), {{{{({0}), ({0})}}, {{({0}), ({0})}}}}, {{("[^"]*"), [+-, \w\d]*}}, ({0}), {{([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}}, ("[^"]*"), {{([^}}]*)}}, (\w+.\w+)'.format(exp_float))
 
 # example: Polygon(true, {0.0, 0.0}, 0, {0, 127, 255}, {0, 127, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-24, -34}, {-82, 40}, {-72, 46}, {-14, -26}, {-24, -34}}, Smooth.None
 #   Polygon(true, {-60, -40},90, {0, 0, 0}, {255, 128, 0}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, {{-20.0, 10.0}, {0.0, -10.0}, {1.22465e-16, -50.0}, {-10.0, -60.0}, {-20.0, -60.0}, {-20.0, 10.0}}, Smooth.None
-regex_polygon = re.compile('Polygon\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), ({{'+exp_float+'(?:e[+-]?\d+)?, '+exp_float+'(?:e[+-]?\d+)?}(?:, {'+exp_float+', '+exp_float+'})*}), (\w+.\w+)')
+regex_polygon = re.compile(r'Polygon\(([\w ]+), {{({0}), ({0})}}, ({0}), {{(\d+), (\d+), (\d+)}}, {{(\d+), (\d+), (\d+)}}, (\w+.\w+), (\w+.\w+), ({0}), ({{{{{0}(?:e[+-]?\d+)?, {0}(?:e[+-]?\d+)?}}(?:, {{{0}, {0}}})*}}), (\w+.\w+)'.format(exp_float))
 
 # example: {{-100.0, -100.0}, {-100.0, -30.0}, {0.0, -30.0}, {0.0, 0.0}}
-regex_points = re.compile('{('+exp_float+'), ('+exp_float+')}')
+regex_points = re.compile(r'{{({0}), ({0})}}'.format(exp_float))
 
 # example: Bitmap(true, {0.0, 0.0}, 0, {{-98, 98}, {98, -98}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Visualizers/TorusIcon.png"
 # TODO: where is the imageSource?
-regex_bitmap = re.compile('Bitmap\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ("[^"]*")(?:, ("[^"]*"))?')
+regex_bitmap = re.compile(r'Bitmap\(([\w ]+), {{({0}), ({0})}}, ({0}), {{{{({0}), ({0})}}, {{({0}), ({0})}}}}, ("[^"]*")(?:, ("[^"]*"))?'.format(exp_float))
 
 # anything unknown that produces output should look like this: Trash(...
-regex_any = re.compile('(\w+)\(')
+regex_any = re.compile(r'(\w+)\(')
 
 omc_cache = {}
 
@@ -114,7 +112,6 @@ def ask_omc(question, opt=None, parsed=True):
     try:
         if parsed:
             res = omc.sendExpression(expression)
-            omc.clearOMParserResult()
         else:
             res = omc.sendExpression(expression, parsed=False)
     except Exception as e:
@@ -218,27 +215,27 @@ def consumeChar(value, res, i):
     if value[i] == '\\':
       i+=1
       if (value[i] == '\''):
-        res.append('\'')
+        res.append(r'\'')
       elif (value[i] == '"'):
-        res.append('\"')
+        res.append(r'\"')
       elif (value[i] == '?'):
-        res.append('\?')
+        res.append(r'\?')
       elif (value[i] == '\\'):
-        res.append('\\')
+        res.append(r'\\')
       elif (value[i] == 'a'):
-        res.append('\a')
+        res.append(r'\a')
       elif (value[i] == 'b'):
-        res.append('\b')
+        res.append(r'\b')
       elif (value[i] == 'f'):
-        res.append('\f')
+        res.append(r'\f')
       elif (value[i] == 'n'):
-        res.append('\n')
+        res.append(r'\n')
       elif (value[i] == 'r'):
-        res.append('\r')
+        res.append(r'\r')
       elif (value[i] == 't'):
-        res.append('\t')
+        res.append(r'\t')
       elif (value[i] == 'v'):
-        res.append('\v')
+        res.append(r'\v')
     else:
       res.append(value[i])
 
@@ -1365,14 +1362,16 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates
 
 # Note: The order of the base classes matters
 def getBaseClasses(modelica_class, base_classes):
-    inheritance_cnt = ask_omc('getInheritanceCount', modelica_class)
+    try:
+        inherited_classes = ask_omc('getInheritedClasses', modelica_class)
+    except Exception as e:
+        logger.error(f"Could not get inherited classes for {modelica_class}, skipping: {e}")
+        return
 
-    if inheritance_cnt:
-        for i in range(1, inheritance_cnt + 1):
-            base_class = ask_omc('getNthInheritedClass', modelica_class + ', ' + str(i))
-            if base_class not in base_classes:
-                base_classes.append(base_class)
-                getBaseClasses(base_class, base_classes)
+    for inherited_class in inherited_classes:
+        if inherited_class not in base_classes:
+            base_classes.append(inherited_class)
+            getBaseClasses(inherited_class, base_classes)
 
 
 def main():

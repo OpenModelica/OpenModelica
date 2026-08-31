@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -95,17 +99,14 @@ protected function mkClassGraph
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inClass, inParentRef, inKind, inGraph)
+  outGraph := match(inClass, inGraph)
     local
-      String name;
       Graph g;
-      SCode.ClassDef cdef;
-      SourceInfo info;
 
     // class (we don't care here if is replaceable or not we can get that from the class)
-    case (SCode.CLASS(), _, _, g)
-      equation
-        g = mkClassNode(inClass, inParentRef, inKind, g);
+    case (SCode.CLASS(), g)
+      algorithm
+        g := mkClassNode(inClass, inParentRef, inKind, g);
       then
         g;
 
@@ -119,26 +120,25 @@ public function mkClassNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inClass, inParentRef, inKind, inGraph)
+  outGraph := match inGraph
     local
       SCode.ClassDef cdef;
       SCode.Element cls;
       String name;
       Graph g;
-      SourceInfo info;
       Node n;
       Ref nr;
 
-    case (_, _, _, g)
-      equation
-        cls = SCodeInstUtil.expandEnumerationClass(inClass);
-        SCode.CLASS(name = name, classDef = cdef) = cls;
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, DAE.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
-        nr = FNode.toRef(n);
+    case g
+      algorithm
+        cls := SCodeInstUtil.expandEnumerationClass(inClass);
+        SCode.CLASS(name = name, classDef = cdef) := cls;
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.CL(cls, DAE.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
         // add constrained by node
-        g = mkConstrainClass(cls, nr, inKind, g);
-        g = mkClassChildren(name, cdef, nr, inKind, g);
+        g := mkConstrainClass(cls, nr, inKind, g);
+        g := mkClassChildren(name, cdef, nr, inKind, g);
       then
         g;
 
@@ -152,7 +152,7 @@ public function mkConstrainClass
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inElement, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue(inElement, inGraph)
     local
       Graph g;
       Node n;
@@ -162,22 +162,22 @@ algorithm
       Absyn.Path p;
 
     case (SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix =
-            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), _, _, g)
-      equation
-        (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
-        nr = FNode.toRef(n);
+            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), g)
+      algorithm
+        (g, n) := FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
+        g := mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
       then
         g;
 
     case (SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix =
-            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), _, _, g)
-      equation
-        (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
-        nr = FNode.toRef(n);
+            SCode.REPLACEABLE(SOME(cc as SCode.CONSTRAINCLASS(constrainingClass = p, modifier = m))))), g)
+      algorithm
+        (g, n) := FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
+        g := mkModNode(FNode.modNodeName, m, FCore.MS_CONSTRAINEDBY(p), nr, inKind, g);
       then
         g;
 
@@ -196,7 +196,7 @@ public function mkModNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inName, inMod, inModScope, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue(inName, inMod, inGraph)
     local
       Name name;
       Graph g;
@@ -205,54 +205,53 @@ algorithm
       SCode.Element e;
       list<SCode.SubMod> sm;
       Option<Absyn.Exp> b;
-      Absyn.Path p;
 
     // no mods
-    case (_, SCode.NOMOD(), _, _, _, g) then g;
+    case (_, SCode.NOMOD(), g) then g;
 
     // no binding no sub-mods
-    case (_, SCode.MOD(subModLst = {}, binding = NONE()), _, _, _, g)
+    case (_, SCode.MOD(subModLst = {}, binding = NONE()), g)
       then
         g;
 
     // just a binding
-    case (name, SCode.MOD(subModLst = {}, binding = b as SOME(_)), _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
-        nr = FNode.toRef(n);
+    case (name, SCode.MOD(subModLst = {}, binding = b as SOME(_)), g)
+      algorithm
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkBindingNode(b, nr, inKind, g);
+        g := mkBindingNode(b, nr, inKind, g);
       then
         g;
 
     // yeha, some mods for sure and a possible binding
-    case (name, SCode.MOD(subModLst = sm, binding = b), _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
-        nr = FNode.toRef(n);
+    case (name, SCode.MOD(subModLst = sm, binding = b), g)
+      algorithm
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
 
         // compact the sub modifiers so no duplicates occur (that would overwrite subnodes)
-        sm = FMod.compactSubMods(sm, inModScope);
+        sm := FMod.compactSubMods(sm, inModScope);
 
-        g = mkSubMods(sm, inModScope, nr, inKind, g);
-        g = mkBindingNode(b, nr, inKind, g);
+        g := mkSubMods(sm, inModScope, nr, inKind, g);
+        g := mkBindingNode(b, nr, inKind, g);
       then
         g;
 
     // ouch, a redeclare :)
-    case (name, SCode.REDECL(element = e), _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
-        nr = FNode.toRef(n);
+    case (name, SCode.REDECL(element = e), g)
+      algorithm
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.MO(inMod));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkElementNode(e, nr, inKind, g);
+        g := mkElementNode(e, nr, inKind, g);
       then
         g;
 
     // something bad happened!
-    case (name, _, _, _, _, g)
-      equation
+    case (name, _, g)
+      algorithm
         print("FGraphBuild.mkModNode failed with: " + name + " mod: " + SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) + "\n");
       then
         g;
@@ -268,22 +267,21 @@ public function mkSubMods
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inSubMod, inModScope, inParentRef, inKind, inGraph)
+  outGraph := match(inSubMod, inGraph)
     local
       list<SCode.SubMod> rest;
-      SCode.SubMod s;
       Name id;
       SCode.Mod m;
       Graph g;
 
     // no more, we're done!
-    case ({}, _, _, _, g) then g;
+    case ({}, g) then g;
 
     // some sub-mods!
-    case (SCode.NAMEMOD(id, m)::rest, _, _, _, g)
-      equation
-        g = mkModNode(id, m, inModScope, inParentRef, inKind, g);
-        g = mkSubMods(rest, inModScope, inParentRef, inKind, g);
+    case (SCode.NAMEMOD(id, m)::rest, g)
+      algorithm
+        g := mkModNode(id, m, inModScope, inParentRef, inKind, g);
+        g := mkSubMods(rest, inModScope, inParentRef, inKind, g);
       then
         g;
 
@@ -297,21 +295,18 @@ public function mkBindingNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inBinding, inParentRef, inKind, inGraph)
+  outGraph := match(inBinding, inGraph)
     local
-      Node n;
-      Ref nr;
-      SCode.Mod m;
       Absyn.Exp e;
       Graph g;
 
     // no binding
-    case (NONE(), _, _, g) then g;
+    case (NONE(), g) then g;
 
     // some binding
-    case (SOME(e), _, _, g)
-      equation
-        g = mkExpressionNode(FNode.bndNodeName, e, inParentRef, inKind, g);
+    case (SOME(e), g)
+      algorithm
+        g := mkExpressionNode(FNode.bndNodeName, e, inParentRef, inKind, g);
       then
         g;
 
@@ -327,13 +322,11 @@ protected function mkClassChildren
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inClassDef, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue(inClassDef, inGraph)
     local
       list<SCode.Element> el;
       Graph g;
-      SCode.Element c;
       SCode.ClassDef cdef;
-      Node n;
       Ref nr;
       Absyn.TypeSpec ts;
       Absyn.Path p;
@@ -344,7 +337,6 @@ algorithm
       list<SCode.ConstraintSection> constraintLst;
       list<Absyn.NamedArg> clsattrs;
       Option<SCode.ExternalDecl> externalDecl;
-      list<Absyn.Path> pathlst;
 
     case (SCode.PARTS(
             elementLst = el,
@@ -355,42 +347,42 @@ algorithm
             constraintLst = constraintLst,
             clsattrs = clsattrs,
             externalDecl = externalDecl
-            ), _, _, g)
-      equation
-        g = List.fold2(el, mkElementNode, inParentRef, inKind, g);
-        g = mkEqNode(FNode.eqNodeName, eqs, inParentRef, inKind, g);
-        g = mkEqNode(FNode.ieqNodeName, ieqs, inParentRef, inKind, g);
-        g = mkAlNode(FNode.alNodeName, als, inParentRef, inKind, g);
-        g = mkAlNode(FNode.ialNodeName, ials, inParentRef, inKind, g);
-        g = mkOptNode(FNode.optNodeName, constraintLst, clsattrs, inParentRef, inKind, g);
-        g = mkExternalNode(FNode.edNodeName, externalDecl, inParentRef, inKind, g);
+            ), g)
+      algorithm
+        g := List.fold2(el, mkElementNode, inParentRef, inKind, g);
+        g := mkEqNode(FNode.eqNodeName, eqs, inParentRef, inKind, g);
+        g := mkEqNode(FNode.ieqNodeName, ieqs, inParentRef, inKind, g);
+        g := mkAlNode(FNode.alNodeName, als, inParentRef, inKind, g);
+        g := mkAlNode(FNode.ialNodeName, ials, inParentRef, inKind, g);
+        g := mkOptNode(FNode.optNodeName, constraintLst, clsattrs, inParentRef, inKind, g);
+        g := mkExternalNode(FNode.edNodeName, externalDecl, inParentRef, inKind, g);
       then
         g;
 
-    case (SCode.CLASS_EXTENDS(composition = cdef, modifications = m), _, _, g)
-      equation
-        g = mkClassChildren(name, cdef, inParentRef, inKind, g);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_CLASS_EXTENDS(name), inParentRef, inKind, g);
+    case (SCode.CLASS_EXTENDS(composition = cdef, modifications = m), g)
+      algorithm
+        g := mkClassChildren(name, cdef, inParentRef, inKind, g);
+        g := mkModNode(FNode.modNodeName, m, FCore.MS_CLASS_EXTENDS(name), inParentRef, inKind, g);
       then
         g;
 
-    case (SCode.DERIVED(typeSpec = ts, modifications = m), _, _, g)
-      equation
-        p = AbsynUtil.typeSpecPath(ts);
-        nr = inParentRef;
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_DERIVED(p), nr, inKind, g);
-        ad = AbsynUtil.typeSpecDimensions(ts);
-        g = mkDimsNode(FNode.tydimsNodeName, SOME(ad), nr, inKind, g);
+    case (SCode.DERIVED(typeSpec = ts, modifications = m), g)
+      algorithm
+        p := AbsynUtil.typeSpecPath(ts);
+        nr := inParentRef;
+        g := mkModNode(FNode.modNodeName, m, FCore.MS_DERIVED(p), nr, inKind, g);
+        ad := AbsynUtil.typeSpecDimensions(ts);
+        g := mkDimsNode(FNode.tydimsNodeName, SOME(ad), nr, inKind, g);
       then
         g;
 
-    case (SCode.OVERLOAD(_), _, _, g)
-      equation
+    case (SCode.OVERLOAD(_), g)
+      algorithm
       then
         g;
 
-    case (SCode.PDER(_, _), _, _, g)
-      equation
+    case (SCode.PDER(_, _), g)
+      algorithm
       then
         g;
 
@@ -407,50 +399,49 @@ public function mkElementNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inElement, inParentRef, inKind, inGraph)
+  outGraph := match(inElement, inGraph)
     local
       Graph g;
       SCode.Ident name;
       Absyn.Path p;
       Node n;
-      Absyn.TypeSpec ts;
       Ref nr;
       SCode.Mod m;
 
     // component
-    case (SCode.COMPONENT(), _, _, g)
-      equation
-        g = mkCompNode(inElement, inParentRef, inKind, g);
+    case (SCode.COMPONENT(), g)
+      algorithm
+        g := mkCompNode(inElement, inParentRef, inKind, g);
       then
         g;
 
     // class
-    case (SCode.CLASS(), _, _, g)
-      equation
-        g = mkClassNode(inElement, inParentRef, inKind, g);
+    case (SCode.CLASS(), g)
+      algorithm
+        g := mkClassNode(inElement, inParentRef, inKind, g);
       then
         g;
 
-    case (SCode.EXTENDS(baseClassPath = p, modifications = m), _, _, g)
-      equation
+    case (SCode.EXTENDS(baseClassPath = p, modifications = m), g)
+      algorithm
         // the extends is saved as a child with the extends name
-        name = FNode.mkExtendsName(p);
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.EX(inElement, DAE.NOMOD()));
-        nr = FNode.toRef(n);
+        name := FNode.mkExtendsName(p);
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.EX(inElement, DAE.NOMOD()));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkModNode(FNode.modNodeName, m, FCore.MS_EXTENDS(p), nr, inKind, g);
+        g := mkModNode(FNode.modNodeName, m, FCore.MS_EXTENDS(p), nr, inKind, g);
       then
         g;
 
-    case (SCode.IMPORT(), _, _, g)
-      equation
-        g = mkImportNode(inElement, inParentRef, inKind, g);
+    case (SCode.IMPORT(), g)
+      algorithm
+        g := mkImportNode(inElement, inParentRef, inKind, g);
       then
         g;
 
-    case (SCode.DEFINEUNIT(), _, _, g)
-      equation
-        g = mkUnitsNode(inElement, inParentRef, inKind, g);
+    case (SCode.DEFINEUNIT(), g)
+      algorithm
+        g := mkUnitsNode(inElement, inParentRef, inKind, g);
       then
         g;
 
@@ -467,26 +458,25 @@ public function mkUnitsNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inElement, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue inGraph
     local
       Graph g;
       Node n;
       Ref r;
-      list<SCode.Element> du;
 
     // if is there add the unit to it
-    case (_, _, _, g)
-      equation
-        r = FNode.child(inParentRef, FNode.duNodeName);
+    case g
+      algorithm
+        r := FNode.child(inParentRef, FNode.duNodeName);
         FNode.addDefinedUnitToRef(r, inElement);
       then
         g;
 
     // if not there create it
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, FNode.duNodeName, {inParentRef}, FCore.DU({inElement}));
-        r = FNode.toRef(n);
+    case g
+      algorithm
+        (g, n) := FGraph.node(g, FNode.duNodeName, {inParentRef}, FCore.DU({inElement}));
+        r := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.duNodeName, r);
       then
         g;
@@ -503,26 +493,25 @@ public function mkImportNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inElement, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue inGraph
     local
       Graph g;
       Node n;
       Ref r;
-      list<SCode.Element> du;
 
     // if is there add the unit to it
-    case (_, _, _, g)
-      equation
-        r = FNode.child(inParentRef, FNode.imNodeName);
+    case g
+      algorithm
+        r := FNode.child(inParentRef, FNode.imNodeName);
         FNode.addImportToRef(r, inElement);
       then
         g;
 
     // if not there create it
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, FNode.imNodeName, {inParentRef}, FCore.IM(FCore.emptyImportTable));
-        r = FNode.toRef(n);
+    case g
+      algorithm
+        (g, n) := FGraph.node(g, FNode.imNodeName, {inParentRef}, FCore.IM(FCore.emptyImportTable));
+        r := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.imNodeName, r);
         FNode.addImportToRef(r, inElement);
       then
@@ -539,24 +528,23 @@ public function mkDimsNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inArrayDims, inParentRef, inKind, inGraph)
+  outGraph := match(inArrayDims, inGraph)
     local
       Node n;
       Ref nr;
-      SCode.Mod m;
       Absyn.ArrayDim a;
       Graph g;
 
-    case (_, NONE(), _, _, g) then g;
-    case (_, SOME({}), _, _, g) then g;
+    case (NONE(), g) then g;
+    case (SOME({}), g) then g;
 
     // some array dims
-    case (_, SOME(a as _::_), _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.DIMS(inName, a));
-        nr = FNode.toRef(n);
+    case (SOME(a as _::_), g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.DIMS(inName, a));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        g = mkDimsNode_helper(0, a, nr, inKind, g);
+        g := mkDimsNode_helper(0, a, nr, inKind, g);
       then
         g;
 
@@ -571,35 +559,32 @@ public function mkDimsNode_helper
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inStartWith, inArrayDims, inParentRef, inKind, inGraph)
+  outGraph := match(inStartWith, inArrayDims, inGraph)
     local
-      Node n;
-      Ref nr;
       Name name;
       Absyn.ArrayDim rest;
-      Absyn.Subscript s;
       Integer i;
       Absyn.Exp e;
       Graph g;
 
     // we're done
-    case (_, {}, _, _, g) then g;
+    case (_, {}, g) then g;
 
     // nosub, saved as Absyn.END
-    case (i, Absyn.NOSUB()::rest, _, _, g)
-      equation
-        name = intString(i);
-        g = mkExpressionNode(name, Absyn.END(), inParentRef, inKind, g);
-        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
+    case (i, Absyn.NOSUB()::rest, g)
+      algorithm
+        name := intString(i);
+        g := mkExpressionNode(name, Absyn.END(), inParentRef, inKind, g);
+        g := mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
       then
         g;
 
     // subscript, saved as exp
-    case (i, Absyn.SUBSCRIPT(e)::rest, _, _, g)
-      equation
-        name = intString(i);
-        g = mkExpressionNode(name, e, inParentRef, inKind, g);
-        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
+    case (i, Absyn.SUBSCRIPT(e)::rest, g)
+      algorithm
+        name := intString(i);
+        g := mkExpressionNode(name, e, inParentRef, inKind, g);
+        g := mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
       then
         g;
 
@@ -673,20 +658,18 @@ public function mkConditionNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inCondition, inParentRef, inKind, inGraph)
+  outGraph := match(inCondition, inGraph)
     local
-      Node n;
-      Ref nr;
       Absyn.Exp e;
       Graph g;
 
     // no binding
-    case (NONE(), _, _, g) then g;
+    case (NONE(), g) then g;
 
     // some condition
-    case (SOME(e), _, _, g)
-      equation
-        g = mkExpressionNode(FNode.cndNodeName, e, inParentRef, inKind, g);
+    case (SOME(e), g)
+      algorithm
+        g := mkExpressionNode(FNode.cndNodeName, e, inParentRef, inKind, g);
       then
         g;
 
@@ -701,20 +684,19 @@ public function mkExpressionNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inExp, inParentRef, inKind, inGraph)
+  outGraph := match(inExp, inGraph)
     local
       Node n;
       Ref nr;
       Absyn.Exp e;
-      list<Absyn.ComponentRef> crefs;
       Graph g;
 
-    case (_, e, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.EXP(inName, e));
-        nr = FNode.toRef(n);
+    case (e, g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.EXP(inName, e));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        g = analyseExp(e, nr, inKind, g);
+        g := analyseExp(e, nr, inKind, g);
       then
         g;
 
@@ -728,26 +710,20 @@ public function mkCrefsNodes
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inCrefs, inParentRef, inKind, inGraph)
+  outGraph := match(inCrefs, inGraph)
     local
-      Node n;
-      Ref nr;
-      Name name;
       list<Absyn.ComponentRef> rest;
-      Absyn.Subscript s;
-      Integer i;
-      Absyn.Exp e;
       Graph g;
       Absyn.ComponentRef cr;
 
     // we're done
-    case ({}, _, _, g) then g;
+    case ({}, g) then g;
 
     // cref::rest
-    case (cr::rest, _, _, g)
-      equation
-        g = mkCrefNode(cr, inParentRef, inKind, g);
-        g = mkCrefsNodes(rest, inParentRef, inKind, g);
+    case (cr::rest, g)
+      algorithm
+        g := mkCrefNode(cr, inParentRef, inKind, g);
+        g := mkCrefsNodes(rest, inParentRef, inKind, g);
       then
         g;
 
@@ -761,21 +737,20 @@ public function mkCrefNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inCref, inParentRef, inKind, inGraph)
+  outGraph := match inGraph
     local
       Node n;
       Ref nr;
-      Absyn.Exp e;
       Graph g;
       Name name;
 
-    case (_, _, _, g)
-      equation
-        name = Dump.printComponentRefStr(inCref);
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CR(inCref));
-        nr = FNode.toRef(n);
+    case g
+      algorithm
+        name := Dump.printComponentRefStr(inCref);
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.CR(inCref));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkDimsNode(FNode.subsNodeName, List.mkOption(AbsynUtil.getSubsFromCref(inCref, true, true)), nr, inKind, g);
+        g := mkDimsNode(FNode.subsNodeName, List.mkOption(AbsynUtil.getSubsFromCref(inCref, true, true)), nr, inKind, g);
       then
         g;
 
@@ -789,58 +764,55 @@ public function mkTypeNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inTypes, inParentRef, inName, inGraph)
+  outGraph := matchcontinue inGraph
     local
-      list<DAE.Type> tys;
       Ref nr, pr;
       Option<Name> name;
-      FNode.Parents parents;
-      Children children;
       Node n;
       Graph g;
 
     // type node present, update
-    case (_, _, _, _)
-      equation
+    case _
+      algorithm
         // search in the parent node for a child with name FNode.tyNodeName
-        pr = FNode.child(inParentRef, FNode.tyNodeName);
+        pr := FNode.child(inParentRef, FNode.tyNodeName);
         // search for the given name in FNode.tyNodeName
-        nr = FNode.child(pr, inName);
+        nr := FNode.child(pr, inName);
         FNode.addTypesToRef(nr, inTypes);
       then
         inGraph;
 
     // type node not present, add
-    case (_, _, _, g)
-      equation
+    case g
+      algorithm
         // search in the parent node for a child with name FNode.tyNodeName
-        failure(_ = FNode.child(inParentRef, FNode.tyNodeName));
+        failure(FNode.child(inParentRef, FNode.tyNodeName));
         // add it
-        (g, n) = FGraph.node(g, FNode.tyNodeName, {inParentRef}, FCore.ND(NONE()));
-        pr = FNode.toRef(n);
+        (g, n) := FGraph.node(g, FNode.tyNodeName, {inParentRef}, FCore.ND(NONE()));
+        pr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.tyNodeName, pr);
-        (g, n) = FGraph.node(g, inName, {pr}, FCore.FT(inTypes));
-        nr = FNode.toRef(n);
+        (g, n) := FGraph.node(g, inName, {pr}, FCore.FT(inTypes));
+        nr := FNode.toRef(n);
         FNode.addChildRef(pr, inName, nr);
       then
         g;
 
     // type node present, but inName not present in it
-    case (_, _, _, g)
-      equation
+    case g
+      algorithm
         // search in the parent node for a child with name FNode.tyNodeName
-        pr = FNode.child(inParentRef, FNode.tyNodeName);
-        failure(_ = FNode.child(pr, inName));
+        pr := FNode.child(inParentRef, FNode.tyNodeName);
+        failure(FNode.child(pr, inName));
         // add it
-        (g, n) = FGraph.node(g, inName, {pr}, FCore.FT(inTypes));
-        nr = FNode.toRef(n);
+        (g, n) := FGraph.node(g, inName, {pr}, FCore.FT(inTypes));
+        nr := FNode.toRef(n);
         FNode.addChildRef(pr, inName, nr);
       then
         g;
 
     else
-      equation
-        pr = FGraph.top(inGraph);
+      algorithm
+        pr := FGraph.top(inGraph);
         print("FGraphBuild.mkTypeNode: Error making type node: " + inName +
               " in parent: " + FNode.name(FNode.fromRef(pr)) + "\n");
       then
@@ -858,20 +830,20 @@ public function mkEqNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inEqs, inParentRef, inKind, inGraph)
+  outGraph := match(inEqs, inGraph)
     local
       Graph g;
       Node n;
       Ref nr;
 
-    case (_, {}, _, _, g) then g;
+    case ({}, g) then g;
 
-    case (_, _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.EQ(inName, inEqs));
-        nr = FNode.toRef(n);
+    case (_, g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.EQ(inName, inEqs));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        g = List.fold2(inEqs, analyseEquation, nr, inKind, g);
+        g := List.fold2(inEqs, analyseEquation, nr, inKind, g);
       then
         g;
 
@@ -887,20 +859,20 @@ public function mkAlNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inAlgs, inParentRef, inKind, inGraph)
+  outGraph := match(inAlgs, inGraph)
     local
       Graph g;
       Node n;
       Ref nr;
 
-    case (_, {}, _, _, g) then g;
+    case ({}, g) then g;
 
-    case (_, _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.AL(inName, inAlgs));
-        nr = FNode.toRef(n);
+    case (_, g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.AL(inName, inAlgs));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        g = List.fold2(inAlgs, analyseAlgorithm, nr, inKind, g);
+        g := List.fold2(inAlgs, analyseAlgorithm, nr, inKind, g);
       then
         g;
 
@@ -917,18 +889,18 @@ public function mkOptNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inConstraintLst, inClsAttrs, inParentRef, inKind, inGraph)
+  outGraph := match(inConstraintLst, inClsAttrs, inGraph)
     local
       Graph g;
       Node n;
       Ref nr;
 
-    case (_, {}, {}, _, _, g) then g;
+    case ({}, {}, g) then g;
 
-    case (_, _, _, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.OT(inConstraintLst, inClsAttrs));
-        nr = FNode.toRef(n);
+    case (_, _, g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.OT(inConstraintLst, inClsAttrs));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
       then
         g;
@@ -945,7 +917,7 @@ public function mkExternalNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inExternalDeclOpt, inParentRef, inKind, inGraph)
+  outGraph := match(inExternalDeclOpt, inGraph)
     local
       Graph g;
       Node n;
@@ -955,15 +927,15 @@ algorithm
       Option<Absyn.Exp> oae;
       list<Absyn.Exp> exps;
 
-    case (_, NONE(), _, _, g) then g;
+    case (NONE(), g) then g;
 
-    case (_, SOME(ed as SCode.EXTERNALDECL(output_ = ocr, args = exps)), _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.ED(ed));
-        nr = FNode.toRef(n);
+    case (SOME(ed as SCode.EXTERNALDECL(output_ = ocr, args = exps)), g)
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.ED(ed));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        oae = Util.applyOption(ocr, AbsynUtil.crefExp);
-        g = mkCrefsFromExps(List.consOption(oae, exps), nr, inKind, g);
+        oae := Util.applyOption(ocr, AbsynUtil.crefExp);
+        g := mkCrefsFromExps(List.consOption(oae, exps), nr, inKind, g);
       then
         g;
 
@@ -977,22 +949,20 @@ public function mkCrefsFromExps
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inExps, inParentRef, inKind, inGraph)
+  outGraph := match(inExps, inGraph)
     local
-      Node n;
-      Ref nr;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
       list<Absyn.ComponentRef> crefs;
       Graph g;
 
-    case ({}, _, _, g) then g;
+    case ({}, g) then g;
 
-    case (e::rest, _, _, g)
-      equation
-        crefs = AbsynUtil.getCrefFromExp(e, true, true);
-        g = mkCrefsNodes(crefs, inParentRef, inKind, g);
-        g = mkCrefsFromExps(rest, inParentRef, inKind, g);
+    case (e::rest, g)
+      algorithm
+        crefs := AbsynUtil.getCrefFromExp(e, true, true);
+        g := mkCrefsNodes(crefs, inParentRef, inKind, g);
+        g := mkCrefsFromExps(rest, inParentRef, inKind, g);
       then
         g;
 
@@ -1019,16 +989,16 @@ protected function analyseOptExp
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inExp, inRef, inKind, inGraph)
+  outGraph := match(inExp, inGraph)
     local
       Absyn.Exp exp;
       Graph g;
 
-    case (NONE(), _, _, g) then g;
+    case (NONE(), g) then g;
 
-    case (SOME(exp), _, _, g)
-      equation
-        g = analyseExp(exp, inRef, inKind, g);
+    case (SOME(exp), g)
+      algorithm
+        g := analyseExp(exp, inRef, inKind, g);
       then
         g;
 
@@ -1074,21 +1044,19 @@ protected function analyseCref
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inCref, inParentRef, inKind, inGraph)
+  outGraph := match(inCref, inGraph)
     local
-      Absyn.Path path;
-      Ref ref;
       Graph g;
 
-    case (Absyn.WILD(), _, _, g) then g;
+    case (Absyn.WILD(), g) then g;
 
-    case (_, _, _, g)
-      equation
-        g = mkCrefNode(inCref, inParentRef, inKind, g);
+    case (_, g)
+      algorithm
+        g := mkCrefNode(inCref, inParentRef, inKind, g);
       then
         g;
 
-  end matchcontinue;
+  end match;
 end analyseCref;
 
 protected function analyseExpTraverserExit
@@ -1137,7 +1105,7 @@ algorithm
 
     else
       algorithm
-        _ := SCodeUtil.getEquationInfo(eq);
+        SCodeUtil.getEquationInfo(eq);
       then
         SCodeUtil.mapFoldEquationExps(eq, function traverseExp(ref = ref, kind = kind), graph);
 
@@ -1191,7 +1159,6 @@ protected function analyseStatementTraverser
 algorithm
   (stmt, graph) := match stmt
     local
-      String iter_name;
 
     case SCode.ALG_FOR()
       algorithm
@@ -1211,7 +1178,7 @@ algorithm
 
     else
       algorithm
-        _ := SCodeUtil.getStatementInfo(stmt);
+        SCodeUtil.getStatementInfo(stmt);
         (_, graph) := SCodeUtil.mapFoldStatementExps(stmt,
           function traverseExp(ref = ref, kind = kind), graph);
       then
@@ -1228,29 +1195,28 @@ public function addIterators
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inIterators, inParentRef, inKind, inGraph)
+  outGraph := matchcontinue inGraph
     local
       Graph g;
       Node n;
       Ref nr;
-      Absyn.ForIterators i;
 
     // FNode.forNodeName already present!
-    case (_, _, _, g)
-      equation
-        nr = FNode.child(inParentRef, FNode.forNodeName);
+    case g
+      algorithm
+        nr := FNode.child(inParentRef, FNode.forNodeName);
         FNode.addIteratorsToRef(nr, inIterators);
-        g = addIterators_helper(inIterators, nr, inKind, g);
+        g := addIterators_helper(inIterators, nr, inKind, g);
       then
         g;
 
     // FNode.forNodeName not present, add it
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, FNode.forNodeName, {inParentRef}, FCore.FS(inIterators));
-        nr = FNode.toRef(n);
+    case g
+      algorithm
+        (g, n) := FGraph.node(g, FNode.forNodeName, {inParentRef}, FCore.FS(inIterators));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.forNodeName, nr);
-        g = addIterators_helper(inIterators, nr, inKind, g);
+        g := addIterators_helper(inIterators, nr, inKind, g);
       then
         g;
 
@@ -1264,27 +1230,25 @@ public function addIterators_helper
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inIterators, inParentRef, inKind, inGraph)
+  outGraph := match(inIterators, inGraph)
     local
       Node n;
       Ref nr;
       Name name;
       list<Absyn.ForIterator> rest;
       Absyn.ForIterator i;
-      Absyn.Exp e;
       Graph g;
-      Absyn.ComponentRef cr;
 
     // we're done
-    case ({}, _, _, g) then g;
+    case ({}, g) then g;
 
     // iterator::rest
-    case ((i as Absyn.ITERATOR(name=name))::rest, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.FI(i));
-        nr = FNode.toRef(n);
+    case ((i as Absyn.ITERATOR(name=name))::rest, g)
+      algorithm
+        (g, n) := FGraph.node(g, name, {inParentRef}, FCore.FI(i));
+        nr := FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = addIterators_helper(rest, inParentRef, inKind, g);
+        g := addIterators_helper(rest, inParentRef, inKind, g);
       then
         g;
 
@@ -1319,36 +1283,30 @@ public function addMatchScope_helper
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inElements, inParentRef, inKind, inGraph)
+  outGraph := match(inElements, inGraph)
     local
-      Node n;
-      Ref nr;
-      Name name;
       Absyn.Element element;
       list<Absyn.ElementItem> rest;
-      Absyn.ForIterator i;
-      Absyn.Exp e;
       Graph g;
-      Absyn.ComponentRef cr;
       list<SCode.Element> el;
 
     // we're done
-    case ({}, _, _, g) then g;
+    case ({}, g) then g;
 
     // el::rest
-    case (Absyn.ELEMENTITEM(element = element)::rest, _, _, g)
-      equation
+    case (Absyn.ELEMENTITEM(element = element)::rest, g)
+      algorithm
         // Translate the element item to a SCode element.
-        el = AbsynToSCode.translateElement(element, SCode.PROTECTED());
-        g = List.fold2(el, mkElementNode, inParentRef, inKind, g);
-        g = addMatchScope_helper(rest, inParentRef, inKind, g);
+        el := AbsynToSCode.translateElement(element, SCode.PROTECTED());
+        g := List.fold2(el, mkElementNode, inParentRef, inKind, g);
+        g := addMatchScope_helper(rest, inParentRef, inKind, g);
       then
         g;
 
     // el::rest
-    case (_::rest, _, _, g)
-      equation
-        g = addMatchScope_helper(rest, inParentRef, inKind, g);
+    case (_::rest, g)
+      algorithm
+        g := addMatchScope_helper(rest, inParentRef, inKind, g);
       then
         g;
 
@@ -1362,17 +1320,17 @@ public function mkRefNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := match(inName, inTargetScope, inParentRef, inGraph)
+  outGraph := match inGraph
     local
       Node n;
-      Ref rn, rc;
+      Ref rn;
       Graph g;
 
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.REF(inTargetScope));
+    case g
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.REF(inTargetScope));
         // make a ref
-        rn = FNode.toRef(n);
+        rn := FNode.toRef(n);
         // add the ref node
         FNode.addChildRef(inParentRef, inName, rn);
       then
@@ -1389,17 +1347,17 @@ public function mkAssertNode
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := match(inName, inMessage, inParentRef, inGraph)
+  (outGraph, outRef) := match inGraph
     local
       Node n;
-      Ref rn, rc;
+      Ref rn;
       Graph g;
 
-    case (_, _, _, g)
-      equation
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.ASSERT(inMessage));
+    case g
+      algorithm
+        (g, n) := FGraph.node(g, inName, {inParentRef}, FCore.ASSERT(inMessage));
         // make a ref
-        rn = FNode.toRef(n);
+        rn := FNode.toRef(n);
         // add the ref node
         FNode.addChildRef(inParentRef, inName, rn);
       then
@@ -1429,7 +1387,7 @@ algorithm
 
     // not in section (eq or alg), modifiers or dimensions/subscripts
     case (_, _, _, g)
-      equation
+      algorithm
         false = FNode.isRefIn(inParentRef, FNode.isRefSection);
         false = FNode.isRefIn(inParentRef, FNode.isRefMod);
         false = FNode.isRefIn(inParentRef, FNode.isRefDims);

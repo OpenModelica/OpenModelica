@@ -140,7 +140,7 @@ void QwtVectorFieldThinArrow::setLength( qreal length )
 {
     m_data->length = length;
 
-    const qreal headWidth = qMin( m_data->headWidth, length / 3.0 );
+    const qreal headWidth = qMin< qreal >( m_data->headWidth, length / 3.0 );
 
     QPainterPath& path = m_data->path;
 

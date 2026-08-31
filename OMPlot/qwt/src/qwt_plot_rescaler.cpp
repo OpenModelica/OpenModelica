@@ -651,6 +651,4 @@ void QwtPlotRescaler::updateScales(
     }
 }
 
-#if QWT_MOC_INCLUDE
 #include "moc_qwt_plot_rescaler.cpp"
-#endif

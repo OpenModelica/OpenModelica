@@ -1,0 +1,39 @@
+// name:     Ticket13009.mos
+// keywords: record quoted identifier dot codegen
+// status:   correct
+// teardown_command: rm -rf P.M* _P.M* output.log
+
+// Quoted identifiers that contain a dot (e.g. the record name 'fluid.R')
+// must be mangled consistently between the generated record typedef and the
+// places where that type is used. Previously the use sites replaced the dot
+// inside the quoted identifier with __ (-> _5F_5F) while the typedef kept it
+// as part of the name (-> _2E), so the C code failed to compile. See #13009.
+
+loadString("
+package 'P'
+  record 'fluid.R'
+    Real x;
+  end 'fluid.R';
+
+  model 'M'
+    'fluid.R' r;
+  equation
+    r = 'fluid.R'(time);
+  end 'M';
+end 'P';
+"); getErrorString();
+
+simulate('P'.'M'); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "_omcQ_27P_27._omcQ_27M_27_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = '_omcQ_27P_27._omcQ_27M_27', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -22,7 +22,6 @@ equation
     1 - i1 = 0;
     1 - v - i = 0;
     open = time >= 0.5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Switch;
 
 // insert expected flat file here. Can be done by issuing the command

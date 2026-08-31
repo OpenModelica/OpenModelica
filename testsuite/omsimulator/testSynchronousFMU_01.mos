@@ -1,17 +1,16 @@
 // name:     testSynchronousFMU_01.mos
 // status:   correct
-// teardown_command: rm -rf tempSynchronous01/
+// teardown_command: rm -rf Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_diff.csv testSynchronousFMU_systemCall.log
 //
 // Test FMU with clock from Modelica_Synchronous with MSL 3.2.3.
 
 
 setCommandLineOptions("--std=3.5"); getErrorString();
-
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadModel(Modelica_Synchronous); getErrorString();
 
 echo(false);
-mkdir("tempSynchronous01/"); cd("tempSynchronous01/");
+//mkdir("tempSynchronous01/"); cd("tempSynchronous01/");
 echo(true);
 
 // Refernce results without FMU
@@ -21,10 +20,7 @@ simulate(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, stopTi
 buildModelFMU(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, version="2.0", fmuType="me", fileNamePrefix="Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample"); getErrorString();
 
 // Simulate FMU with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"
-  +" --stopTime=0.25 --tolerance=1e-8 --deleteTempFiles=true --tempDir=temp"
-  +" --resultFile=Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv --stripRoot=true --suppressPath=true --skipCSVHeader=true",
-  "testSynchronousFMU_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu --stopTime=0.25 --tolerance=1e-8 --resultFile=Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv --stripRoot", "testSynchronousFMU_systemCall.log"); getErrorString();
 //readFile("testSynchronousFMU_systemCall.log"); getErrorString();
 
 // Compare results
@@ -41,7 +37,9 @@ diffSimulationResults(
 // true
 // ""
 // true
-// ""
+// "[Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // true
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_res.csv",
@@ -52,7 +50,9 @@ diffSimulationResults(
 // end SimulationResult;
 // ""
 // "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // (true, {})

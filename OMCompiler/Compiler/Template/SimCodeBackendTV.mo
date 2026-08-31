@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 interface package SimCodeBackendTV
 
 package BackendVariable
@@ -237,6 +272,146 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end ENUMERATIONVARIABLE;
+
+    /* The FMI 3.0 variables; see FMI.mo for why they are separate records. */
+
+    record FMI3REALVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Real> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3REALVARIABLE;
+
+    record FMI3INTEGERVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Integer> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3INTEGERVARIABLE;
+
+    record FMI3BOOLEANVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Boolean> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3BOOLEANVARIABLE;
+
+    record FMI3STRINGVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<String> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3STRINGVARIABLE;
+
+    record FMI3BINARYVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<String> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String mimeType;
+      Integer maxSize;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3BINARYVARIABLE;
+
+    record FMI3CLOCKVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String intervalVariability;
+      Real intervalDecimal;
+      Boolean hasIntervalDecimal;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3CLOCKVARIABLE;
+
+    record FMI3ENUMERATIONVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Integer> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String declaredType;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3ENUMERATIONVARIABLE;
   end ModelVariables;
 
   uniontype FmiImport
@@ -273,6 +448,11 @@ package FMI
     output Boolean success;
   end isFMIVersion20;
 
+  function isFMIVersion30 "Checks if the FMI version is 3.0."
+    input String inFMUVersion;
+    output Boolean success;
+  end isFMIVersion30;
+
   function isFMICSType "Checks if FMU type is co-simulation"
     input String inFMIType;
     output Boolean success;
@@ -282,6 +462,11 @@ package FMI
     input String inFMIType;
     output Boolean success;
   end isFMIMEType;
+
+  function isFMISEType "Checks if FMU type is scheduled execution"
+    input String inFMIType;
+    output Boolean success;
+  end isFMISEType;
 
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;

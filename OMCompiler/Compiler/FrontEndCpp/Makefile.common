@@ -17,20 +17,30 @@ else
 endif
 
 FRONTEND_CPP_OBJ = \
+	Attributes.o \
+	Binding.o \
 	Class.o \
 	ClassNode.o \
 	ClassTree.o \
+	ComplexType.o \
 	Component.o \
 	ComponentNode.o \
+	ComponentRef.o \
+	ConstrainingClass.o \
+	Dimension.o \
 	Import.o \
 	Inst.o \
 	InstNode.o \
 	InstNodeType.o \
 	MetaModelica.o \
+	Modifier.o \
+	NameNode.o \
 	Path.o \
 	Prefixes.o \
 	Restriction.o \
 	SourceInfo.o \
+	Subscript.o \
+	Type.o \
 
 FRONTEND_CPP_ABSYN_OBJ = \
 	Absyn/Algorithm.o \

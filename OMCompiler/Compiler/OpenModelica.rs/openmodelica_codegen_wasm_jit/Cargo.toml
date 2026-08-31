@@ -1,0 +1,98 @@
+[package]
+name = "openmodelica_codegen_wasm_jit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_wasi.workspace = true
+# Shared `LOG_STDOUT` message formatting (also used by the ModelicaMessage shim).
+openmodelica_modelica_utilities.workspace = true
+# Host-side wasm execution engine (drivers, sim runtime, model, wasm artifacts).
+openmodelica_wasm_jit.workspace = true
+# External-"C" wasm-FMU artifacts, consumed by the FMU linker.
+openmodelica_wasi_libc.workspace = true
+openmodelica_mat_writer.workspace = true
+openmodelica_plt_writer.workspace = true
+# `-iif=<file>`: C's `importStartValues` reads the initialization file with the
+# MATLAB v4 reader, which lives with the other result readers.
+openmodelica_script_util.workspace = true
+openmodelica_sim_meta.workspace = true
+metamodelica.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_simcode_types.workspace = true
+# SimCodeUtil::getFMI3ValueReference: the FMU export's value references must be
+# the ones CodegenFMU3 puts in modelDescription.xml.
+openmodelica_backend.workspace = true
+openmodelica_backend_types.workspace = true
+openmodelica_error.workspace = true
+openmodelica_frontend_types.workspace = true
+openmodelica_frontend_dump.workspace = true
+openmodelica_frontend_base.workspace = true
+openmodelica_tpl.workspace = true
+openmodelica_util.workspace = true
+arcstr.workspace = true
+ordered-float.workspace = true
+# `wasmparser` feature enables wasm-encoder's `reencode` (model→dylink transform).
+wasm-encoder = { workspace = true, features = ["wasmparser"] }
+# FMI3 wasm export: transform the model kernel module to a dylink side module
+# (wasm-encoder reencode) and link it with the embedded adapter into an fmi-ls-wasm
+# component via wit_component::Linker. Pure Rust → works in the browser omc too
+# (no external wasm-merge). wasmparser reads the model for the reencode. Pinned to
+# the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
+wit-component = "0.252"
+wasmparser = "0.252"
+# Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
+# compresses the same way the native one does.
+miniz_oxide = "0.8"
+
+[features]
+# The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit
+# simulation target). Default on. Built without it, the crate still *emits* wasm
+# modules but cannot execute them (the entry points report the engine absent),
+# and neither wasmtime nor wasmer is pulled in.
+default = ["jit", "sundials", "fmu-native", "artifact"]
+# `jit` pulls the native default engine (wasmtime); on wasm32 the wasmtime dep
+# is target-absent and wasmer-js is used instead (requires `engine-wasmer`).
+jit = ["dep:wasmtime", "openmodelica_wasm_jit/jit"]
+# Select wasmer instead of the default wasmtime: natively for benchmarking
+# (wasmer then wins over wasmtime), and mandatorily on wasm32 (its `js` backend
+# is the only engine that builds for wasm).
+engine-wasmer = ["jit", "dep:wasmer", "openmodelica_wasm_jit/engine-wasmer"]
+# Compile an exported wasm FMU's component ahead of time for a native platform
+# (`buildModelFMU(platforms={"wasm", "linux64"})`), for which `all-arch` lets one
+# machine target every platform.
+#
+# Native-only, though wasmtime's compiler half does build for wasm32: cranelift
+# enables its `timing` feature unconditionally through wasmtime, and that calls
+# `Instant::now()`, which panics on wasm32-unknown-unknown ("time not implemented
+# on this platform"). Verified in a browser. Until cranelift can be built without
+# it, a browser omc reports the platform as unavailable rather than trapping.
+fmu-native = ["dep:wasmtime"]
+# Simulate an exported wasm artifact (`resimulateExecutable="M.fmu"`): the FMI
+# masters and the wasmtime component backend, so an artifact runs here without a
+# loader library. Native-only, and implies `fmu-native`'s wasmtime.
+artifact = ["fmu-native", "dep:openmodelica_fmi", "dep:openmodelica_fmi_driver", "dep:openmodelica_ext_native"]
+# SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web).
+# CMake sets this via --features when RUST_OMC_ENABLE_SUNDIALS is ON; the
+# runtime's build.rs then links the precompiled wasm32-wasip1 archives.
+sundials = []
+
+# The wasm engine and the FMU cross-compiler, both native-only; the wasm build of
+# omc runs models through wasmer-js instead.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Reading an exported FMU and driving its component with the FMI masters.
+openmodelica_fmi = { path = "../openmodelica_fmi", optional = true }
+openmodelica_fmi_driver = { path = "../openmodelica_fmi_driver", optional = true, features = ["component"] }
+openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }
+wasmtime = { workspace = true, optional = true, features = [
+  "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+] }
+wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# `wasm-types-polyfill` is required: the JS `WebAssembly` API does not expose a
+# function's parameter/result types, so without the polyfill every exported
+# function reports an empty `[]->[]` signature and `get_typed_function` fails
+# with `ExportError::IncompatibleType`. It ships in wasmer's `js-default` but not
+# bare `js`, so request it explicitly.
+wasmer = { workspace = true, features = ["js", "wasm-types-polyfill"], optional = true }

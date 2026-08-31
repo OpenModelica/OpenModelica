@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -44,6 +48,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QFile>
+#include <QFileInfo>
 #include <QMdiSubWindow>
 #include <QGroupBox>
 #include <QPushButton>
@@ -55,7 +60,6 @@
 #include <QDialogButtonBox>
 
 #include "qwt_series_data.h"
-#include "qwt_scale_draw.h"
 #include "qwt_plot_curve.h"
 #if QWT_VERSION >= 0x060000
 #if QWT_VERSION < 0x060200
@@ -65,12 +69,25 @@
 #endif
 #endif
 
+// MSVC needs the class explicitly exported so its Qt staticMetaObject (a data
+// symbol) is visible across the OMPlotLib DLL boundary; WINDOWS_EXPORT_ALL_SYMBOLS
+// only covers functions. MinGW auto-imports data, so this is a no-op there.
+#if defined(_WIN32) && defined(_MSC_VER)
+#  ifdef OMPLOTLIB_LIBRARY
+#    define OMPLOT_EXPORT __declspec(dllexport)
+#  else
+#    define OMPLOT_EXPORT __declspec(dllimport)
+#  endif
+#else
+#  define OMPLOT_EXPORT
+#endif
+
 namespace OMPlot
 {
 class Plot;
 class PlotCurve;
 
-class PlotWindow : public QMainWindow
+class OMPLOT_EXPORT PlotWindow : public QMainWindow
 {
 	Q_OBJECT
 public:
@@ -86,10 +103,9 @@ private:
 	QToolButton* mpPauseSimulationToolButton;
 	QLabel* mpSimulationSpeedLabel;
 	QComboBox* mpSimulationSpeedComboBox;
-	QTextStream* mpTextStream;
 	QFile mFile;
 	QStringList mVariablesList;
-	PlotType mPlotType;
+	PlotType mPlotType = PLOT;
 	QString mGridType;
 	QString mXLabel;
 	QString mYLabel;
@@ -114,6 +130,7 @@ private:
 	int mCurveStyle;
 	QFont mLegendFont;
 	double mTime;
+	bool mTimeOutOfBounds = false;
 	bool mIsInteractiveSimulation;
 	QString mInteractiveTreeItemOwner;
 	int mInteractivePort;
@@ -189,6 +206,7 @@ public:
   QString getYRightDisplayUnit() { return mYRightDisplayUnit; }
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
+  double getTimeUnitFactor();
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();
@@ -215,13 +233,16 @@ public:
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
-  void closeEvent(QCloseEvent *event);
-  void setTime(double time){mTime = time;}
+  void closeEvent(QCloseEvent *event) override;
+  void setTime(double time) {mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();
   void updatePlot();
   void emitPrefixUnitsChanged();
 private:
+  int setupInterp(double *vals, double val, int N, double &alpha);
+  int readPLTDataset(QTextStream &textStream, QString variable, int N, double *valsOut);
+  void readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
@@ -247,24 +268,43 @@ public slots:
   void interactiveSimulationPaused();
 };
 
-//Exception classes
+// Exception classes
+
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const char *e) : std::runtime_error(e) {}
-  PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
+  PlotException(const QString &windowTitle, const QString &str);
+};
+
+class InvalidInputException : public PlotException
+{
+public:
+  InvalidInputException(const QString &windowTitle, const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const char *fileName) : PlotException(fileName) {}
+  NoFileException(const QString &windowTitle, const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const char *varName) : PlotException(varName) {}
+  NoVariableException(const QString &windowTitle, const QString &error, const QString &varName = QString());
+  NoVariableException(const QString &windowTitle, const QString &error, uint32_t nbVars);
+};
+
+class TimeOutOfBoundsException : public PlotException
+{
+public:
+  TimeOutOfBoundsException(const QString &windowTitle, const QFileInfo &fileInfo, double startTime, double stopTime);
+};
+
+class RecurringPlotException : public PlotException
+{
+public:
+  RecurringPlotException(const PlotException &e) : PlotException(e) {}
 };
 
 class SetupDialog;

@@ -50,6 +50,7 @@ ArrayEWOps3.mo \
 ArrayEWOps4.mo \
 ArrayEWOps5.mo \
 ArrayEWOps6.mo \
+ArrayEWOps7.mo \
 ArrayEWOpsCEval1.mo \
 ArrayEWOpsCEval2.mo \
 ArrayEWOpsCEval3.mo \
@@ -240,7 +241,7 @@ failingtest :
 	@echo
 	@echo Running failing tests:
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 keywords :
 	$(TEST) -l $(TESTFILES)

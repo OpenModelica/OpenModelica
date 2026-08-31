@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkoping University,
- * Department of Computer and Information Science,
- * SE-58183 Linkoping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 grammar Modelica;
 
 options {
@@ -116,7 +121,7 @@ goto rule ## func ## Ex; }}
   #define MMC_STRUCTHDR(x,y) 0
 #endif
 
-  #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
+  #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __func__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
@@ -384,6 +389,7 @@ class_specifier2 returns [void* ast, const char *s2]
     }
 | (lp = LPAR na=named_arguments rp=RPAR) cmtStr=string_comment c=composition id=END_IDENT
     {
+      $s2 = (char*)$id.text->chars;
       modelicaParserAssert(optimica_enabled(),"Class attributes are currently allowed only for Optimica. Use -g=Optimica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
       $ast = Absyn__PARTS(mmc_mk_nil(), na, $c.ast, listReverse($c.ann), mmc_mk_some_or_none(cmtStr));
     }
@@ -914,14 +920,14 @@ argument_list [int canHaveBreak] returns [void* ast]
   finally{ OM_POP(5); }
 
 inheritance_modification returns [void* ast]
-@init { OM_PUSHZ2(c, i.ast); } :
+@init { i = 0; OM_PUSHZ1(c); } :
   BREAK ( c=connect_clause { $ast = Absyn__INHERITANCEBREAK(c, PARSER_INFO($start)); }
-        | i=component_reference
+        | i=IDENT
           {
             $ast = Absyn__INHERITANCEBREAK(
               Absyn__EQ_5fCONNECT(
-                i.ast,
-                Absyn__CREF_5fIDENT(mmc_mk_scon("break"),mmc_mk_nil())
+                Absyn__CREF_5fIDENT(mmc_mk_scon("break"),mmc_mk_nil()),
+                Absyn__CREF_5fIDENT(token_to_scon(i),mmc_mk_nil())
               ),
               PARSER_INFO($start));
           }
@@ -1999,19 +2005,30 @@ component_reference2 returns [void* ast, int isNone]
   finally{ OM_POP(2); }
 
 function_call returns [void* ast]
-@init { OM_PUSHZ1(fa); } :
-  LPAR fa=function_arguments RPAR { ast = fa; }
+@init { OM_PUSHZ1(fa.ast); } :
+  LPAR fa=function_arguments RPAR { $ast = fa.ast; }
   ;
   finally{ OM_POP(1); }
 
 function_arguments returns [void* ast]
 @init{ OM_PUSHZ2(for_or_el.ast, namel); for_or_el.isFor = 0; } :
-  for_or_el=for_or_expression_list (namel=named_arguments)?
+  for_or_el=for_or_expression_list (COMMA namel=named_arguments)?
     {
-      if (for_or_el.isFor)
-        ast = for_or_el.ast;
-      else
-        ast = Absyn__FUNCTIONARGS(for_or_el.ast, or_nil(namel));
+      if (for_or_el.isFor) {
+        if (namel) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Named arguments cannot be combined with for-indices.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        }
+        $ast = for_or_el.ast;
+      } else {
+        $ast = Absyn__FUNCTIONARGS(for_or_el.ast, or_nil(namel));
+      }
+    }
+  | namel=named_arguments
+    {
+      $ast = Absyn__FUNCTIONARGS(mmc_mk_nil(), namel);
     }
   ;
   finally{ OM_POP(2); }
@@ -2020,9 +2037,9 @@ for_or_expression_list returns [void* ast, int isFor]
 @init{ OM_PUSHZ3(e.ast, el, forind); } :
   ( {LA(1)==IDENT || (LA(1)==OPERATOR && LA(2) == EQUALS) || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mmc_mk_nil(); $isFor = 0; }
   | ( e=expression[1]
-      ( ({LA(1)==COMMA}? el=for_or_expression_list2)
+      ( el=for_or_expression_list2
       | (threaded=THREADED? FOR forind=for_indices)
-      )?
+      )
     )
     {
       if (el != NULL) {
@@ -2262,18 +2279,18 @@ interactive_stmt_list returns [void* ast]
 
 /* MetaModelica */
 match_expression returns [void* ast]
-@init{ ty = 0; exp.ast = 0; cmt = 0; es = 0; cs = 0; } :
-  ( (ty=MATCHCONTINUE exp=expression[metamodelica_enabled()] cmt=string_comment
+@init{ ty = 0; exp.ast = 0; es = 0; cs = 0; } :
+  ( (ty=MATCHCONTINUE exp=expression[metamodelica_enabled()]
      es=local_clause
      cs=cases
      END_MATCHCONTINUE)
-  | (ty=MATCH exp=expression[metamodelica_enabled()] cmt=string_comment
+  | (ty=MATCH exp=expression[metamodelica_enabled()]
      es=local_clause
      cs=cases
      END_MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mmc_mk_some_or_none(cmt));
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mmc_mk_none());
      }
   ;
 
@@ -2294,16 +2311,12 @@ cases returns [void* ast]
   ;
 
 cases2 returns [void* ast]
-@init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; c.ast = 0; cs.ast = 0; } :
-  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression[metamodelica_enabled()] SEMICOLON)?
+@init{ el = 0; eqs = 0; th = 0; exp.ast = 0; c.ast = 0; cs.ast = 0; } :
+  ( (el=ELSE (((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression[metamodelica_enabled()] SEMICOLON)?
     {
-      if (es != NULL)
-        c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
-                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-                             ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
       if (exp.ast) {
-       $ast = mmc_mk_cons_typed(Absyn_Case, Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_some_or_none(cmt),PARSER_INFO($start)),mmc_mk_nil());
+       $ast = mmc_mk_cons_typed(Absyn_Case, Absyn__ELSE(mmc_mk_nil(),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_none(),PARSER_INFO($start)),mmc_mk_nil());
       } else {
        $ast = mmc_mk_nil();
       }
@@ -2316,15 +2329,10 @@ cases2 returns [void* ast]
   ;
 
 onecase returns [void* ast]
-@init{ pat.ast = 0; guard.ast = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; } :
-  (CASE pat=pattern ((IF|GUARD) guard=expression[metamodelica_enabled()])? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
+@init{ pat.ast = 0; guard.ast = 0; eqs = 0; th = 0; exp.ast = 0; } :
+  (CASE pat=pattern ((IF|GUARD) guard=expression[metamodelica_enabled()])? ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
     {
-        if (es != NULL) {
-          c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
-                               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-                               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        }
-        $ast = Absyn__CASE(pat.ast,mmc_mk_some_or_none(guard.ast),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($th),mmc_mk_some_or_none(cmt),PARSER_INFO($start));
+        $ast = Absyn__CASE(pat.ast,mmc_mk_some_or_none(guard.ast),pat.info,mmc_mk_nil(),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($th),mmc_mk_none(),PARSER_INFO($start));
     }
   ;
 

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -95,12 +99,16 @@ encapsulated package List
   (element, extra arg 1, extra arg 2, fold arg) -> fold arg
 "
 
+public
+  // these styles can be used with List.toString() to get predefined behaviour. Use List.toStringCustom for full control.
+  type Style = enumeration(NONE, FLAT, FLAT_BRACKETS, FLAT_CURLY, FLAT_CURLY_SHORT, NEWLINE, NEWLINE_INDENT, NEWLINE_TAB);
+
 protected
-import Array;
-import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
-import MetaModelica.Dangerous;
-import DoubleEnded;
-import GCExt;
+  import Array;
+  import DoubleEnded;
+  import GCExt;
+  import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+  import MetaModelica.Dangerous;
 
 public function create<T>
   "Creates a list from an element."
@@ -192,7 +200,7 @@ public function fromOption<T>
   input Option<T> inElement;
   output list<T> outList;
 algorithm
-  outList := match(inElement)
+  outList := match inElement
     local
       T e;
 
@@ -389,7 +397,7 @@ public function consOption<T>
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := match(inElement)
+  outList := match inElement
     local
       T e;
 
@@ -440,18 +448,18 @@ public function appendLastList<T>
   input list<T> inList;
   output list<list<T>> outListList;
 algorithm
-  outListList := match(inListList, inList)
+  outListList := match inListList
     local
       list<T> l;
       list<list<T>> ll;
       list<list<T>> ol = {};
 
-    case ({}, _) then {inList};
+    case {} then {inList};
 
-    case ({l}, _)
+    case {l}
       then {listAppend(l, inList)};
 
-    case (l :: ll, _)
+    case l :: ll
       algorithm
         while not listEmpty(ll) loop
           ol := l::ol;
@@ -513,23 +521,22 @@ protected function insertListSorted1<T>
 protected
   list<T> listRest, listRest2, tmpResultList;
   T listHead, listHead2;
-  T elem;
 algorithm
-  outResultList := match(inList, inList2, inCompFunc, inResultList)
-    case({},{},_,_)
+  outResultList := match(inList, inList2)
+    case({}, {})
       then inResultList;
-    case({},_,_,_)
+    case({}, _)
       then append_reverse(inList2, inResultList);
-    case(_,{},_,_)
+    case(_, {})
       then append_reverse(inList, inResultList);
-    case(listHead::listRest, listHead2::listRest2,_,_)
-      equation
+    case(listHead::listRest, listHead2::listRest2)
+      algorithm
         if(inCompFunc(listHead, listHead2)) then
-          tmpResultList = listHead::inResultList;
-          tmpResultList = insertListSorted1(listRest, inList2, inCompFunc, tmpResultList);
+          tmpResultList := listHead::inResultList;
+          tmpResultList := insertListSorted1(listRest, inList2, inCompFunc, tmpResultList);
         else
-          tmpResultList = listHead2::inResultList;
-          tmpResultList = insertListSorted1(inList, listRest2, inCompFunc, tmpResultList);
+          tmpResultList := listHead2::inResultList;
+          tmpResultList := insertListSorted1(inList, listRest2, inCompFunc, tmpResultList);
         end if;
       then tmpResultList;
   end match;
@@ -557,7 +564,7 @@ public function firstOrEmpty<T>
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := match(inList)
+  outList := match inList
     local
       T e;
 
@@ -801,7 +808,6 @@ public function sortedListAllUnique<T>
     output Boolean outEqual;
   end CompareFunc;
 protected
-  T e;
   list<T> rest = lst;
 algorithm
   while not listEmpty(rest) loop
@@ -921,9 +927,8 @@ protected function merge<T>
 algorithm
   outList := match (inLeft, inRight)
     local
-      Boolean b;
       T l, r, el;
-      list<T> l_rest, r_rest, res;
+      list<T> l_rest, r_rest;
 
     /* Tail recursive version */
     case (l :: l_rest, r :: r_rest)
@@ -1353,7 +1358,7 @@ public function sublist<T>
   output list<T> outList = {};
 protected
   T e;
-  list<T> rest = inList, res;
+  list<T> rest = inList;
 algorithm
   true := inOffset > 0;
   true := inLength >= 0;
@@ -1379,7 +1384,6 @@ public function transposeList<T>
   output list<list<T>> outList = {};
 protected
   array<array<T>> arr;
-  array<T> arr_row;
   list<T> new_row;
   Integer c_len, r_len;
 algorithm
@@ -1459,7 +1463,7 @@ protected function addPos
   output array<Integer> outArray;
 algorithm
   for i in inList loop
-    _ := arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
+    arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
   end for;
 
   outArray := inArray;
@@ -1510,7 +1514,6 @@ public function intersection1OnTrue<T>
     output Boolean outIsEqual;
   end CompFunc;
 protected
-  Option<T> oe;
   list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   if listEmpty(inList1) then
@@ -1798,32 +1801,31 @@ public function mapCheckReferenceEq<TI>
     output TI outElement;
   end MapFunc;
 protected
-  Boolean allEq=true;
   DoubleEnded.MutableList<TI> delst;
   Integer n=0;
-  TI e1;
+  TI e1, savedElt;
 algorithm
   for e in inList loop
     e1 := inFunc(e);
     // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
-      allEq:=false;
+    if not referenceEq(e, e1) then
+      savedElt := e1;
       delst := DoubleEnded.empty(e1);
       for elt in inList loop
-        if n < 1 then
-          break;
+        if n < 0 then
+          e1 := inFunc(elt);
+        else
+          e1 := if n == 0 then savedElt else elt;
         end if;
-        DoubleEnded.push_back(delst, elt);
+        DoubleEnded.push_back(delst, e1);
         n := n-1;
       end for;
+      outList := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-    if allEq then
-      n := n + 1;
-    else
-      DoubleEnded.push_back(delst, e1);
-    end if;
+    n := n + 1;
   end for;
-  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
+  outList := inList;
 end mapCheckReferenceEq;
 
 public function mapReverse<TI, TO>
@@ -3036,31 +3038,31 @@ public function map2FoldCheckReferenceEq<TIO, FT, ArgT1, ArgT2>
     output FT outArg;
   end FuncType;
 protected
-  TIO res;
-  Boolean allEq=true;
+  TIO res, savedElt;
   DoubleEnded.MutableList<TIO> delst;
   Integer n=0;
 algorithm
   for e in inList loop
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
-    if (if allEq then not referenceEq(e, res) else false) then
-      allEq:=false;
+    // Preserve reference equality without any allocation if nothing changed
+    if not referenceEq(e, res) then
+      savedElt := res;
       delst := DoubleEnded.empty(res);
       for elt in inList loop
-        if n < 1 then
-          break;
+        if n < 0 then
+          (res, outArg) := inFunc(elt, inConstArg, inConstArg2, outArg);
+        else
+          res := if n == 0 then savedElt else elt;
         end if;
-        DoubleEnded.push_back(delst, elt);
+        DoubleEnded.push_back(delst, res);
         n := n-1;
       end for;
+      outList := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-    if allEq then
-      n := n + 1;
-    else
-      DoubleEnded.push_back(delst, res);
-    end if;
+    n := n + 1;
   end for;
-  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
+  outList := inList;
 end map2FoldCheckReferenceEq;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
@@ -3357,43 +3359,6 @@ algorithm
   outList2 := listReverseInPlace(outList2);
 end threadMapList_2;
 
-public function threadMapAllValue<T1, T2, TO, VT>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, and checks if the result is the same as the given
-   value.
-     Example: threadMapAllValue({true, true}, {false, true}, boolAnd, true) =>
-              fail"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input VT inValue;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  _ := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      TO res;
-
-    case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inMapFunc(e1, e2);
-        equality(res = inValue);
-        threadMapAllValue(rest1, rest2, inMapFunc, inValue);
-      then
-        ();
-
-    case ({}, {}) then ();
-  end match;
-end threadMapAllValue;
-
 public function threadMap1<T1, T2, TO, ArgT1>
   "Takes two lists and a function and threads (interleaves) and maps the
    elements of two lists, creating a new list. This function also takes an
@@ -3429,16 +3394,16 @@ public function threadMap1_0<T1, T2, ArgT1>
     input ArgT1 inArg1;
   end MapFunc;
 algorithm
-  _ := match(inList1, inList2, inMapFunc, inArg1)
+  () := match(inList1, inList2)
     local
       T1 e1;
       list<T1> rest1;
       T2 e2;
       list<T2> rest2;
 
-    case ({}, {}, _, _) then ();
-    case (e1 :: rest1, e2 :: rest2, _, _)
-      equation
+    case ({}, {}) then ();
+    case (e1 :: rest1, e2 :: rest2)
+      algorithm
         inMapFunc(e1, e2, inArg1);
         threadMap1_0(rest1, rest2, inMapFunc, inArg1);
       then
@@ -3555,8 +3520,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inFoldArg);
       then
         threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
 
@@ -3595,8 +3560,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
       then
         threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
 
@@ -3637,8 +3602,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
       then
         threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
 
@@ -3672,8 +3637,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inFoldArg);
       then
         threadFold(rest1, rest2, inFoldFunc, res);
 
@@ -3791,8 +3756,7 @@ public function getMember<T>
   input list<T> inList;
   output T outElement;
 protected
-  T e, res;
-  list<T> rest;
+  T e;
 algorithm
   for e in inList loop
     if valueEq(inElement, e) then
@@ -4441,7 +4405,7 @@ public function deleteMemberOnTrue<T, VT>
   occurence of the value in the list for which the function returns true. It
   returns the new list and the deleted element, or only the original list if
   no element was removed.
-    Example: deleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
+    Example: deleteMemberOnTrue(2,{1,2,3,2},intEq) => ({1,3,2}, SOME(2))"
   input VT inValue;
   input list<T> inList;
   input CompareFunc inCompareFunc;
@@ -4474,27 +4438,29 @@ end deleteMemberOnTrue;
 
 public function deletePositions<T>
   "Takes a list and a list of positions, and deletes the positions from the
-   list. Note that positions are indexed from 0.
-     Example: deletePositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {2, 5}"
+   list.
+     Example: deletePositions({1, 2, 3, 4, 5}, {3, 1, 4}) => {2, 5}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList;
 protected
   list<Integer> sorted_pos;
 algorithm
   sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
-  outList := deletePositionsSorted(inList, sorted_pos);
+  outList := deletePositionsSorted(inList, sorted_pos, zeroBased);
 end deletePositions;
 
 public function deletePositionsSorted<T>
   "Takes a list and a sorted list of positions (smallest index first), and
-   deletes the positions from the list. Note that positions are indexed from 0.
-     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {2, 5}"
+   deletes the positions from the list.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {1, 3, 4}) => {2, 5}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList = {};
 protected
-  Integer i = 0;
+  Integer i = if zeroBased then 0 else 1;
   T e;
   list<T> rest = inList;
 algorithm
@@ -4514,27 +4480,29 @@ end deletePositionsSorted;
 
 public function keepPositions<T>
   "Takes a list and a list of positions, and deletes all other elements from the
-   list. Note that positions are indexed from 0.
-     Example: keepPositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {1, 3, 4}"
+   list.
+     Example: keepPositions({1, 2, 3, 4, 5}, {3, 1, 4}) => {1, 3, 4}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList;
 protected
   list<Integer> sorted_pos;
 algorithm
   sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
-  outList := keepPositionsSorted(inList, sorted_pos);
+  outList := keepPositionsSorted(inList, sorted_pos, zeroBased);
 end keepPositions;
 
 public function keepPositionsSorted<T>
   "Takes a list and a sorted list of positions (smallest index first), and
-   deletes all other positions from the list. Note that positions are indexed from 0.
-     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {1, 3, 4}"
+   deletes all other positions from the list.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {1, 3, 4}) => {1, 3, 4}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList = {};
 protected
-  Integer i = 0;
+  Integer i = if zeroBased then 0 else 1;
   T e;
   list<T> rest = inList;
 algorithm
@@ -4628,8 +4596,8 @@ end replaceAtIndexFirst;
 public function replaceAtWithList<T>
   "Takes an list, a position and a list, and replaces the element at the given
   position with the first list in the second list. Position is an integer
-  between 0 and n - 1 for a list of n elements.
-     Example: replaceAt({'A', 'B'}, 1, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
+  between 1 and n for a list of n elements.
+     Example: replaceAt({'A', 'B'}, 2, {'a', 'b', 'c'}) => {'a', 'A', 'B', 'c'}"
   input list<T> inReplacementList;
   input Integer inPosition;
   input list<T> inList;
@@ -4638,10 +4606,10 @@ protected
   T e;
   list<T> rest = inList;
 algorithm
-  true := inPosition >= 0;
+  true := inPosition > 0;
 
   // Shuffle elements from inList to outList until the position is reached.
-  for i in 0:inPosition-1 loop
+  for i in 1:inPosition-1 loop
     e :: rest := rest;
     outList := e :: outList;
   end for;
@@ -4652,7 +4620,34 @@ algorithm
   outList := append_reverse(outList, rest);
 end replaceAtWithList;
 
+
 public function toString<T>
+  input list<T> inList;
+  input FuncType inPrintFunc;
+  input Style style = Style.FLAT_CURLY;
+  output String s;
+
+  partial function FuncType
+    input T t;
+    output String s;
+  end FuncType;
+algorithm
+  s := match style
+    case Style.NONE              then toStringCustom(inList, inPrintFunc, "", "", "", "", true, 0);
+    case Style.FLAT              then toStringCustom(inList, inPrintFunc, "", "", ", ", "", true, 0);
+    case Style.FLAT_BRACKETS     then toStringCustom(inList, inPrintFunc, "", "(", ", ", ")", true, 0);
+    case Style.FLAT_CURLY        then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 0);
+    case Style.FLAT_CURLY_SHORT  then toStringCustom(inList, inPrintFunc, "", "{", ", ", "}", true, 10);
+    case Style.NEWLINE           then toStringCustom(inList, inPrintFunc, "", "", "\n", "", true, 0);
+    case Style.NEWLINE_INDENT    then toStringCustom(inList, inPrintFunc, "", "  ", "\n  ", "", true, 0);
+    case Style.NEWLINE_TAB       then toStringCustom(inList, inPrintFunc, "", "\t", "\n\t", "", true, 0);
+    else algorithm
+      print(getInstanceName() + " failed because of unknown list style.\n");
+    then fail();
+  end match;
+end toString;
+
+public function toStringCustom<T>
   "Creates a string from a list and a function that maps a list element to a
    string. It also takes several parameters that determine the formatting of
    the string. Ex:
@@ -4670,8 +4665,8 @@ public function toString<T>
   output String outString;
 
   partial function FuncType
-    input T inElement;
-    output String outString;
+    input T t;
+    output String s;
   end FuncType;
 protected
   list<T> lst = inList;
@@ -4703,7 +4698,7 @@ algorithm
         str;
 
   end match;
-end toString;
+end toStringCustom;
 
 public function hasOneElement<T>
   "@author:adrpo
@@ -4711,7 +4706,7 @@ public function hasOneElement<T>
   input list<T> inList;
   output Boolean b;
 algorithm
-  b := match(inList)
+  b := match inList
     case {_} then true;
     else false;
   end match;
@@ -4723,7 +4718,7 @@ public function hasSeveralElements<T>
   input list<T> inList;
   output Boolean b;
 algorithm
-  b := match(inList)
+  b := match inList
     case {_} then false;
     case {} then false;
     else true;
@@ -4909,7 +4904,7 @@ protected function combination_tail<TI>
   input list<list<TI>> inAccumElems;
   output list<list<TI>> outElements;
 algorithm
-  outElements := match(inElements)
+  outElements := match inElements
     local
       list<TI> head;
       list<list<TI>> rest;
@@ -4963,7 +4958,7 @@ protected function combinationMap_tail<TI, TO>
     output TO outElement;
   end MapFunc;
 algorithm
-  outElements := match(inElements)
+  outElements := match inElements
     local
       list<TI> head;
       list<list<TI>> rest;
@@ -5220,22 +5215,22 @@ public function allCombinations<T>
   input SourceInfo info;
   output list<list<T>> out;
 algorithm
-  out := matchcontinue (lst,maxTotalSize,info)
+  out := match maxTotalSize
     local
       Integer sz,maxSz;
-    case (_,SOME(maxSz),_)
+    case SOME(maxSz)
       algorithm
         sz := intMul(listLength(lst), applyAndFold(lst,intMul,listLength,1));
         true := (sz <= maxSz);
       then allCombinations2(lst);
-    case (_,NONE(),_) then allCombinations2(lst);
+    case NONE() then allCombinations2(lst);
     /*
     case (_,SOME(_),_)
       algorithm
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
       then fail();
     */
-  end matchcontinue;
+  end match;
 end allCombinations;
 
 protected function allCombinations2<T>
@@ -5246,16 +5241,15 @@ protected function allCombinations2<T>
   input list<list<T>> ilst;
   output list<list<T>> out;
 algorithm
-  out := match (ilst)
+  out := match ilst
     local
       list<T> x;
       list<list<T>> lst;
     case {} then {};
-    case (x::lst)
+    case x::lst
       algorithm
         lst := allCombinations2(lst);
-        lst := allCombinations3(x, lst, {});
-      then lst;
+      then allCombinations3(x, lst, {});
   end match;
 end allCombinations2;
 
@@ -5265,18 +5259,16 @@ protected function allCombinations3<T>
   input list<list<T>> iacc;
   output list<list<T>> out;
 algorithm
-  out := match (ilst1,ilst2,iacc)
+  out := match ilst1
     local
       T x;
       list<T> lst1;
-      list<list<T>> lst2;
       list<list<T>> acc;
-    case ({},_,acc) then listReverse(acc);
-    case (x::lst1,lst2,acc)
+    case {} then listReverse(iacc);
+    case x::lst1
       algorithm
-        acc := allCombinations4(x, lst2, acc);
-        acc := allCombinations3(lst1, lst2, acc);
-      then acc;
+        acc := allCombinations4(x, ilst2, iacc);
+      then allCombinations3(lst1, ilst2, acc);
   end match;
 end allCombinations3;
 
@@ -5285,19 +5277,17 @@ protected function allCombinations4<T>
   input list<list<T>> ilst;
   input list<list<T>> iacc;
   output list<list<T>> out;
+protected
+  list<list<T>> acc = iacc;
 algorithm
-  out := match (x,ilst,iacc)
-    local
-      list<T> l;
-      list<list<T>> lst;
-      list<list<T>> acc;
-    case (_,{},acc) then {x}::acc;
-    case (_,{l},acc) then (x::l)::acc;
-    case (_,l::lst,acc)
-      algorithm
-        acc := allCombinations4(x, lst, (x::l)::acc);
-      then acc;
-  end match;
+  if listEmpty(ilst) then
+    out := {x} :: acc;
+    return;
+  end if;
+  for l in ilst loop
+    acc := (x::l)::acc;
+  end for;
+  out := acc;
 end allCombinations4;
 
 public function contains<T>
@@ -5379,5 +5369,19 @@ algorithm
   end while;
 end trim;
 
-annotation(__OpenModelica_Interface="util");
+function apply<T>
+  "Applies a function to all the elements in the given list."
+  input list<T> lst;
+  input Fn fn;
+
+  partial function Fn
+    input T e;
+  end Fn;
+algorithm
+  for e in lst loop
+    fn(e);
+  end for;
+end apply;
+
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end List;

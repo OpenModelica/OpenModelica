@@ -1,0 +1,35 @@
+// name: Issue14178.mos
+// keywords:
+// status: correct
+//
+// tests if the xml output works fine
+// teardown_command: rm -rf ThermofluidStream.Examples.EspressoMachine* Issue14178*.txt
+//
+// The run goes through resimulateExecutable rather than system("./<model>"), so
+// the simulation target decides how to re-run the model it just built.
+//
+
+loadFile("Issue14178.mo"); getErrorString();
+buildModel(ThermofluidStream.Examples.EspressoMachine);
+echo(false);
+xmlLog := simulate(ThermofluidStream.Examples.EspressoMachine, simflags="-logFormat=xml",
+                   resimulateExecutable="ThermofluidStream.Examples.EspressoMachine");
+// A record member is not accepted as a call argument, so bind it first.
+xmlText := xmlLog.messages;
+echo(true);
+writeFile("Issue14178_log.txt", xmlText);
+system("grep \"<message\" Issue14178_log.txt | grep -v \"/>\" | wc -l > Issue14178_start_tag.txt");
+system("grep \"</message\" Issue14178_log.txt | wc -l > Issue14178_end_tag.txt");
+readFile("Issue14178_start_tag.txt") == readFile("Issue14178_end_tag.txt");
+
+
+// Result:
+// true
+// ""
+// {"ThermofluidStream.Examples.EspressoMachine", "ThermofluidStream.Examples.EspressoMachine_init.xml"}
+// true
+// true
+// 0
+// 0
+// true
+// endResult

@@ -10,14 +10,13 @@ model simple_test
  parameter Real a=6,b=2,c=4;
  input Real u = sin(0);
  output Real y;
- class number
+ model number
    Real x[2];
  end number;
 equation
  der(num.x[1]) = num.x[1]*(a-b*num.x[1]-num.x[2]);
  der(num.x[2]) = num.x[2]*(c-num.x[1]-num.x[2]);
  y = num.x[1] * u + num.x[2] * u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

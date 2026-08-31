@@ -1,3 +1,30 @@
+/*
+ * This file belongs to the OpenModelica Run-Time System
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
+ *
+ */
+
 /** @addtogroup coreSimcontroller
  *
  *  @{
@@ -246,23 +273,26 @@ void SimManager::runSingleStep()
 void SimManager::computeSampleCycles()
 {
     int counter = 0;
-    time_event_type timeEventPairs;                        ///< - Contains start times and time spans
 
     _timeevent_system->initTimeEventData();
-    std::vector<std::pair<double, double> >::iterator iter;
-    iter = timeEventPairs.begin();
-    for (; iter != timeEventPairs.end(); ++iter)
+    int dimTimeEvent = _timeevent_system->getDimTimeEvent();
+    std::pair<double, double>* timeEventData = _timeevent_system->getTimeEventData();
+
+    for (int i = 0; i < dimTimeEvent; i++)
     {
-        if (iter->first != 0.0 || iter->second == 0.0)
+        double startTime = timeEventData[i].first;
+        double interval = timeEventData[i].second;
+
+        if (startTime != 0.0 || interval == 0.0)
         {
             throw ModelicaSimulationError(SIMMANAGER,"Time event not starting at t=0.0 or not cyclic!");
         }
         else
         {
             // Check if sample time is a multiple of the cycle time (with a tolerance)
-            if ((iter->second / _config->getGlobalSettings()->gethOutput()) - int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
+            if (std::fabs((interval / _config->getGlobalSettings()->gethOutput()) - int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5)) <= 1e6 * UROUND)
             {
-                _sampleCycles[counter] = int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5);
+                _sampleCycles[counter] = int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5);
             }
             else
             {

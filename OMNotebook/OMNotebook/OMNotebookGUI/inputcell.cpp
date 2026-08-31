@@ -1,35 +1,40 @@
-#define QT_NO_DEBUG_OUTPUT
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
+
+#define QT_NO_DEBUG_OUTPUT
+
 
 /*!
  * \file inputcell.cpp
@@ -192,6 +197,9 @@ namespace IAEX
 
       event->ignore();
     }
+// wasm: the base class must handle Ctrl+C/X/V for Qt's WebAssembly clipboard to
+// work; the programmatic forwardAction path bypasses it and no-ops.
+#ifndef __EMSCRIPTEN__
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
@@ -219,6 +227,7 @@ namespace IAEX
       event->ignore();
       emit forwardAction( 3 );
     }
+#endif
 
     // TAB
     else if( event->key() == Qt::Key_Tab )
@@ -247,10 +256,9 @@ namespace IAEX
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -287,12 +295,7 @@ namespace IAEX
    * the document to insert images to the output part if ploting.
    */
   InputCell::InputCell(Document *doc, QWidget *parent)
-    : Cell(parent),
-    evaluated_(false),
-    closed_(true),
-    delegate_(0),
-    oldHeight_( 0 ),
-    document_(doc)
+    : Cell(parent), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -310,17 +313,6 @@ namespace IAEX
     createOutputCell();
 
     //setBackgroundColor(QColor(200,200,255));
-  }
-
-  /*!
-   * \author Ingemar Axelsson and Anders Fernström
-   *
-   * \brief The class destructor
-   */
-  InputCell::~InputCell()
-  {
-    delete input_;
-    delete output_;
   }
 
   /*!
@@ -515,6 +507,11 @@ namespace IAEX
     return input_->toHtml();
   }
 
+  QTextDocument* InputCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
    * \author Anders Fernström
    * \date 2005-11-23
@@ -581,6 +578,57 @@ namespace IAEX
   QTextEdit* InputCell::textEditOutput()
   {
     return output_;
+  }
+
+  void InputCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void InputCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void InputCell::pasteText()
+  {
+    input_->paste();
+  }
+
+  bool InputCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    if (input_->find(exp, options)) return true;
+    // Also look inside open input cells.
+    if (!isClosed()) return output_->find(exp, options);
+    return false;
+  }
+
+  void InputCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+    cursor = output_->textCursor();
+    cursor.clearSelection();
+    output_->setTextCursor(cursor);
+  }
+
+  void InputCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
+    cursor = output_->textCursor();
+    cursor.movePosition(operation);
+    output_->setTextCursor(cursor);
   }
 
   /*!
@@ -839,7 +887,7 @@ namespace IAEX
    *
    * 2006-03-02 AF, clear text selection in chapter counter
    */
-  void InputCell::setReadOnly(const bool readonly)
+  void InputCell::setReadOnly(bool readonly)
   {
     if( readonly )
     {
@@ -868,7 +916,7 @@ namespace IAEX
    *
    * \param evaluated The boolean value of evaluated property
    */
-  void InputCell::setEvaluated(const bool evaluated)
+  void InputCell::setEvaluated(bool evaluated)
   {
     evaluated_ = evaluated;
   }
@@ -884,14 +932,15 @@ namespace IAEX
    * calculate the new height, to reflect the changes made when
    * porting from Q3TextEdit to QTextEdit.
    */
-  void InputCell::setClosed(const bool closed, bool update)
+  void InputCell::setClosed(bool closed, bool /*update*/)
   {
     if( closed )
-      output_->hide();
-    else
     {
-      if( evaluated_ )
-        output_->show();
+      output_->hide();
+    }
+    else if( evaluated_ )
+    {
+      output_->show();
     }
 
     closed_ = closed;
@@ -901,7 +950,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson and Anders Fernström
    */
-  void InputCell::setFocus(const bool focus)
+  void InputCell::setFocus(bool focus)
   {
     if(focus)
       input_->setFocus();
@@ -910,7 +959,7 @@ namespace IAEX
   /*!
    * \author Anders Fernström
    */
-  void InputCell::setFocusOutput(const bool focus)
+  void InputCell::setFocusOutput(bool focus)
   {
     if(focus)
       output_->setFocus();
@@ -984,7 +1033,7 @@ namespace IAEX
    *
    * \return State of inputcell (closed or not)
    */
-  bool InputCell::isClosed()
+  bool InputCell::isClosed() const
   {
     return closed_;
   }
@@ -1000,7 +1049,7 @@ namespace IAEX
    *
    * \return False
    */
-  bool InputCell::isEditable()
+  bool InputCell::isEditable() const
   {
     return false;
   }
@@ -1290,6 +1339,9 @@ namespace IAEX
 
     if(hasNext())
       next()->accept(v);
+  }
+
+  void InputCell::viewExpression(bool) {
   }
 
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${SolverName})
 
@@ -11,7 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 add_precompiled_header(${SolverName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${SolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${SolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
@@ -27,4 +29,3 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/Core/Solver/SimulationMonitor.h
   ${CMAKE_SOURCE_DIR}/Core/Solver/FactoryExport.h
   DESTINATION include/omc/cpp/Core/Solver)
-

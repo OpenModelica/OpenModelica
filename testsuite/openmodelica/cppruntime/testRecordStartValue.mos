@@ -1,4 +1,4 @@
-// name: testReduction
+// name: testRecordStartValue
 // keywords: cse record parameter binding #10505
 // status: correct
 // teardown_command: rm -f *RecordStartValueTest*

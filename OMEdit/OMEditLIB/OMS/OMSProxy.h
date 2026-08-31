@@ -1,32 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -34,20 +40,49 @@
 #ifndef OMSPROXY_H
 #define OMSPROXY_H
 
-#include "OMSimulator/OMSimulator.h"
 #include "Modeling/MessagesWidget.h"
-
+#include "OMS/OMSModel.h"
 #include <QObject>
 #include <QElapsedTimer>
+#ifndef __EMSCRIPTEN__
+// The GUI server process is launched via QProcess, unavailable on wasm (no
+// subprocess support in a browser sandbox; Qt-for-WebAssembly's QProcess
+// doesn't define the process-lifecycle nested types this file uses).
+#include <QProcess>
+#endif
+
+/*!
+ * \class GuiRequestSocket
+ * \brief Handles synchronous JSON requests between OMEdit and the OMSimulator Python GUI server.
+ * On wasm this is a permanently-unconnected stub: real ZMQ sockets are unavailable in a
+ * browser sandbox, so sendCommand() always fails and sendZmqCommand() never reaches it
+ * (guarded by mServerReady, which never becomes true when the GUI server process itself
+ * cannot be started - see the __EMSCRIPTEN__ guards around startGuiServer() below).
+ */
+class GuiRequestSocket : public QObject
+{
+public:
+  GuiRequestSocket();
+  ~GuiRequestSocket();
+  /*! Returns the local endpoint bound by the request socket. */
+  QString endPoint() const { return mEndPoint; }
+  /*! Returns true if the request socket was bound successfully. */
+  bool isConnected() const { return mSocketConnected; }
+  bool sendCommand(const QJsonObject &obj, QJsonObject &reply);
+private:
+  void* mpContext = nullptr;
+  void* mpSocket = nullptr;
+  QString mEndPoint;
+  bool mSocketConnected = false;
+};
 
 class OMSProxy : public QObject
 {
   Q_OBJECT
 private:
-  // the only class that is allowed to create and destroy
+  // the only class that are allowed to destroy
   friend class MainWindow;
 
-  static void create();
   static void destroy();
   OMSProxy();
   ~OMSProxy();
@@ -58,81 +93,79 @@ private:
   double mTotalOMSCallsTime;
 
   void logCommand(QString command);
-  void logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime);
+  void logResponse(QString method, QString status, QElapsedTimer *responseTime);
+
+  GuiRequestSocket* mpGuiRequestSocket = nullptr;
+  bool mServerReady = false;
+#ifndef __EMSCRIPTEN__
+  // The GUI server subprocess and its lifecycle handling: unavailable on wasm
+  // (no subprocess support in a browser sandbox). mServerReady simply stays
+  // false forever on wasm, which is enough for sendZmqCommand() to fail
+  // gracefully without any of this.
+  QProcess* mpGuiProcess = nullptr;
+  QString mGuiServerScript;
+  void startGuiServer();
+private slots:
+  void guiProcessStarted();
+  void guiProcessError(QProcess::ProcessError error);
+  void guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void readGuiServerStandardOutput();
+  void readGuiServerStandardError();
+#endif
 public:
-  static OMSProxy* instance() {return mpInstance;}
+  static OMSProxy* instance() {
+    if (!mpInstance)
+      mpInstance = new OMSProxy;
+    return mpInstance;
+  }
+  static bool isCreated() { return mpInstance != nullptr; }
 
-  static QString getSystemTypeString(oms_system_enu_t type);
-  static QString getSystemTypeShortString(oms_system_enu_t type);
-  static QString getFMUKindString(oms_fmi_kind_enu_t kind);
-  static QString getSignalTypeString(oms_signal_type_enu_t type);
-  static QString getCausalityString(oms_causality_enu_t causality);
-
-  bool statusToBool(oms_status_enu_t status);
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
+  bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
+  QString getVersion();
 
-  bool addBus(QString cref);
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
-  bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
-  bool addConnectorToBus(QString busCref, QString connectorCref);
+  bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);
   bool addSubModel(QString cref, QString fmuPath);
-  bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
+  bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int& count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
-  bool addSystem(QString cref, oms_system_enu_t type);
+  bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
-  bool deleteConnectorFromBus(QString busCref, QString connectorCref);
-  bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
-  bool getBoolean(QString signal, bool* value);
-  bool getBus(QString cref, oms_busconnector_t **pBusConnector);
-  bool getComponentType(QString cref, oms_component_enu_t *pType);
-  bool getConnections(QString cref, oms_connection_t ***pConnections);
-  bool getConnector(QString cref, oms_connector_t **pConnector);
-  bool getElement(QString cref, oms_element_t **pElement);
-  bool getElements(QString cref, oms_element_t ***pElements);
-  bool getFixedStepSize(QString cref, double* stepSize);
-  bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
-  bool getInteger(QString signal, int* value);
-  bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
-  bool getReal(QString cref, double* value);
-  bool getSolver(QString cref, oms_solver_enu_t* solver);
-  bool getStartTime(QString cref, double* startTime);
-  bool getStopTime(QString cref, double* stopTime);
+  bool getBoolean(const QString &componentCref, const QString &varName, bool &value);
+  bool getElementsJson(QString cref, QJsonArray &elements);
+  bool getFixedStepSize(QString cref, double& stepSize);
+  bool getInteger(const QString &componentCref, const QString &varName, int &value);
+  bool getReal(const QString &componentCref, const QString &varName, double &value);
+  bool getSolverSettings(const QString &cref, QJsonObject &settings);
+  bool setSolverSettings(const QString &cref, const QJsonObject &settings);
+  bool setSolver(const QString &cref, const QString &solverName);
+  bool getStartTime(QString cref, double& startTime);
+  bool getStopTime(QString cref, double& stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
-  bool getSystemType(QString cref, oms_system_enu_t *pType);
-  bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
-  bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
-  bool instantiate(QString cref);
-  bool initialize(QString cref);
-  bool exportSnapshot(QString cref, QString *pContents);
-  bool loadModel(QString filename, QString* pModelName);
-  bool importSnapshot(QString cref, QString snapshot, QString* pNewCref);
-  bool newModel(QString cref);
+  bool getTolerance(QString cref, double& relativeTolerance);
+  bool getVariableStepSize(QString cref, QString solverName, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
+  bool exportSnapshot(QString cref, QString &pContents);
+  bool loadModel(QString filename, QString &pModelName);
+  bool importSnapshot(QString cref, QString snapshot, QString& pNewCref, QString& pNewRootCref);
+  bool newModel(QString cref, QString systemName);
   bool rename(const QString &cref, const QString &newCref);
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
-  bool setBoolean(QString signal, bool value);
-  bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
-  bool setCommandLineOption(QString cmd);
-  bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
-  bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
-  bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
+  bool setBoolean(const QString &componentCref, const QString &varName, bool value);
+  bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);
+  bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
+  bool setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry);
   bool setFixedStepSize(QString cref, double stepSize);
-  void setLogFile(QString filename);
-  void setLoggingCallback();
   bool setLoggingInterval(QString cref, double loggingInterval);
-  void setLoggingLevel(int logLevel);
-  bool setInteger(QString signal, int value);
-  bool setReal(QString cref, double value);
-  bool setResultFile(QString cref, QString filename, int bufferSize);
-  bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
-  bool setSolver(QString cref, oms_solver_enu_t solver);
+  bool setInteger(const QString &componentCref, const QString &varName, int value);
+  bool setReal(const QString &componentCref, const QString &varName, double value);
+  bool setResultFile(QString cref, QString fileName, int bufferSize);
+  bool getResultFile(QString cref, QString& fileName, int& bufferSize);
+  // setSolver(const QString&, const QString&) declared above with getSolverSettings
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
-  void setTempDirectory(QString path);
-  bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
+  bool setTolerance(QString cref, double relativeTolerance);
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
-  void setWorkingDirectory(QString path);
-  bool terminate(QString cref);
 signals:
   void logGUIMessage(MessageItem messageItem);
 };

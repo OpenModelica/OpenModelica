@@ -9,12 +9,36 @@ else
 endif
 
 TESTFILES = \
-  ArrayBinding1.mo \
+	ArrayBinding1.mo \
+	Break1.mo \
 	Comments.mo \
-  DoublePendulum.mos \
+	DoublePendulum.mos \
+	EmptyArray1.mo \
 	Enum1.mo \
+	EnumArraySubscript1.mo \
 	Expression1.mo \
+	FlowAlias1.mos \
+	FlowAlias2.mos \
+	FlowAlias3.mos \
+	FlowAlias4.mos \
+	FlowAlias5.mos \
+	FlowAlias6.mos \
+	FlowAlias7.mos \
+	FlowAlias8.mos \
+	FlowAlias9.mos \
+	FlowAlias10.mos \
+	FlowAlias11.mos \
+	FlowAlias12.mos \
+	FlowAlias13.mos \
 	Functional1.mo \
+	If1.mo \
+	If2.mo \
+	Inline1.mo \
+	Inline2.mo \
+	Inline3.mo \
+	Inline4.mo \
+	Inline5.mo \
+	Inline6.mo \
 	InStreamNominalThreshold.mo \
 	MoveBindings1.mo \
 	NonScalarizedWithRecords1.mo \
@@ -34,6 +58,8 @@ TESTFILES = \
 	Scalarize5.mo \
 	Scalarize6.mo \
 	Scalarize7.mo \
+	Scalarize8.mo \
+	ScalarizeFor1.mo \
 	ScalarizedWithRecords1.mo \
 	ScalarizedWithoutRecords1.mo \
 	SD.mo \
@@ -84,4 +110,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

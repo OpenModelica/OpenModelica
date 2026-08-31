@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -68,6 +65,22 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
 
+  /* fjac/fjacobian receive evalJacobian's dense output (strided by the
+   * analytic Jacobian's own sizeCols) and getAnalyticalJacobian's memcpy uses
+   * sizeRows*sizeCols directly -- both can exceed size*(size+1) for a
+   * partial-slice Jacobian with extra addressable-but-not-genuinely-unknown
+   * seed columns (see allocateHomotopyData's identical fix and
+   * NBJacobian.mo's partialSliceSeedCandidates whole-array fallback). Size
+   * those two buffers off the larger of the two; `size`/`n`, r__ (MINPACK's
+   * own internal packed triangular factor, sized purely off the genuine
+   * unknown count), and everything else below stays genuine (the solver
+   * itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
+
   hybrdData->initialized = FALSE;
   hybrdData->resScaling = (double*) malloc(size*sizeof(double));
   hybrdData->fvecScaled = (double*) malloc(size*sizeof(double));
@@ -93,8 +106,8 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   hybrdData->info = 0;
   hybrdData->nfev = 0;
   hybrdData->njev = 0;
-  hybrdData->fjac = (double*) calloc((size*(size+1)), sizeof(double));
-  hybrdData->fjacobian = (double*) calloc((size*(size+1)), sizeof(double));
+  hybrdData->fjac = (double*) calloc((size*jacCols), sizeof(double));
+  hybrdData->fjacobian = (double*) calloc((size*jacCols), sizeof(double));
   hybrdData->ldfjac = size;
   hybrdData->r__ = (double*) malloc(((size*(size+1))/2)*sizeof(double));
   hybrdData->lr = (size*(size + 1)) / 2;
@@ -319,11 +332,17 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
     }
 
     /* call residual function */
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    MemPoolState mem_pool_state = omc_util_get_pool_state();
+#endif
     if(hybrdData->useXScaling){
       (systemData->residualFunc)(&resUserData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
       (systemData->residualFunc)(&resUserData, x, f, (const int*)iflag);
     }
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    omc_util_restore_pool_state(mem_pool_state);
+#endif
 
     /* debug output */
     if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_RES)) {
@@ -365,9 +384,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
         infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
         for(i=0; i<n; i++)
         {
-          buffer[0] = 0;
+          char *p = buffer;
           for(j=0; j<n; j++)
-            sprintf(buffer, "%s%20.12g ", buffer, fjac[i*hybrdData->n+j]);
+            p += sprintf(p, "%20.12g ", fjac[i*hybrdData->n+j]);
           infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
         }
         messageClose(OMC_LOG_NLS_JAC);
@@ -546,7 +565,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
             warningStreamPrint(OMC_LOG_STDOUT, 0, "It could help to provide better start-values for the iteration variables.");
             if (!OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
               warningStreamPrint(OMC_LOG_STDOUT, 0, "For more information simulate with -lv LOG_NLS_V");
-            messageClose(OMC_LOG_STDOUT);
+            messageCloseWarning(OMC_LOG_STDOUT);
           }
           assertMessage = 1;
         }
@@ -645,9 +664,9 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", (int)hybrdData->n, (int)hybrdData->n);
           for(i=0; i<hybrdData->n; i++)
           {
-            buffer[0] = 0;
+            char *p = buffer;
             for(j=0; j<hybrdData->n; j++)
-              sprintf(buffer, "%s%10g ", buffer, hybrdData->fjacobian[i*hybrdData->n+j]);
+              p += sprintf(p, "%10g ", hybrdData->fjacobian[i*hybrdData->n+j]);
             infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
           }
           messageClose(OMC_LOG_NLS_JAC);

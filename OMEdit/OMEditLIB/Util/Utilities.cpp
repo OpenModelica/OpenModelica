@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -36,7 +41,6 @@
 #include "Helper.h"
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
-#include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
 #include "OMPlot.h"
 
@@ -48,12 +52,14 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QDir>
+#include <QRegularExpression>
 #include <QRegExp>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
 }
 
+#if !defined(__EMSCRIPTEN__)
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -63,14 +69,155 @@ SplashScreen *SplashScreen::instance()
   }
   return mpInstance;
 }
+#else
+#include <emscripten.h>
+#include <QElapsedTimer>
+
+// Return to the browser event loop for one frame so it composites the DOM
+// mutations made just before. A nested QEventLoop cannot do this during startup:
+// the splash runs before qApp->exec(), so there is no Qt loop to suspend and only
+// a raw Asyncify suspend actually yields to the browser (this is exactly how omc's
+// pre-exec worker wait paints its download bar). Safe only pre-exec, which the
+// splash always is (finish() runs before exec()).
+EM_ASYNC_JS(void, wasm_splash_yield, (), {
+  await new Promise(function(resolve) {
+    requestAnimationFrame(function() { setTimeout(resolve, 0); });
+  });
+});
+
+namespace WasmSplash
+{
+  static bool sVisible = false;
+
+  void show()
+  {
+    if (sVisible) {
+      return;
+    }
+    // Pure HTML/DOM, no Qt at all: Qt drawing/resource access before the event
+    // loop stalls the async library install on wasm. The image is referenced by
+    // URL (served beside the page) rather than read through a Qt resource.
+    sVisible = true;
+    EM_ASM({
+      if (document.getElementById('omedit-splash')) return;
+      var style = document.createElement('style');
+      style.id = 'omedit-splash-style';
+      style.textContent =
+        '#omedit-splash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;'
+        + 'align-items:center;justify-content:center;background:#ffffff;font-family:sans-serif;'
+        + 'transition:opacity .4s ease;}'
+        + '#omedit-splash img{max-width:80%;max-height:60%;box-shadow:0 6px 28px rgba(0,0,0,.25);}'
+        + '#omedit-splash .msg{margin-top:20px;font-size:15px;color:#333;min-height:20px;text-align:center;}'
+        + '#omedit-splash .bar{margin-top:16px;width:280px;height:6px;background:#e2e2e2;border-radius:3px;overflow:hidden;}'
+        + '#omedit-splash .bar > div{height:100%;width:40%;background:#e87424;border-radius:3px;'
+        + 'animation:omedit-splash-slide 1.2s ease-in-out infinite;}'
+        // transform (not margin-left) so the compositor animates it smoothly even
+        // while the main thread is blocked building the library tree.
+        + '@keyframes omedit-splash-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}';
+      document.head.appendChild(style);
+      var o = document.createElement('div');
+      o.id = 'omedit-splash';
+      var img = document.createElement('img');
+      img.src = new URL('omedit_splashscreen.png', document.baseURI).href;
+      img.onerror = function() { img.style.display = 'none'; };
+      o.appendChild(img);
+      var msg = document.createElement('div');
+      msg.className = 'msg';
+      msg.id = 'omedit-splash-msg';
+      msg.textContent = 'Starting OMEdit…';
+      o.appendChild(msg);
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.appendChild(document.createElement('div'));
+      o.appendChild(bar);
+      document.body.appendChild(o);
+    });
+  }
+
+  void setMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    EM_ASM({
+      var m = document.getElementById('omedit-splash-msg');
+      if (m) m.textContent = UTF8ToString($0);
+    }, message.toUtf8().constData());
+  }
+
+  void setProgress(int done, int total)
+  {
+    if (!sVisible || total <= 0) {
+      return;
+    }
+    // Callers drive this once per item; painting/yielding every time would dominate
+    // the actual work. Read a monotonic clock (no yield) and only touch the DOM
+    // ~every 300 ms. The first and last step always paint, so a determinate bar
+    // appears immediately (replacing the indeterminate slide) and lands on 100%.
+    int pct = done < 0 ? 0 : (done > total ? 100 : (100 * done) / total);
+    static QElapsedTimer sTimer;
+    static int sLastPct = -1;
+    const bool force = done <= 1 || done >= total;
+    if (!force) {
+      if (pct == sLastPct) {
+        return;
+      }
+      if (sTimer.isValid() && sTimer.elapsed() < 300) {
+        return;
+      }
+    }
+    sTimer.restart();
+    sLastPct = pct;
+    EM_ASM({
+      // Claim the bar: omc's __omcSetStatus fires on every worker reply and would
+      // otherwise keep restoring the indeterminate slide, fighting this update.
+      Module.__omeditSplashDeterminate = true;
+      var f = document.querySelector('#omedit-splash .bar > div');
+      if (f) { f.style.animation = 'none'; f.style.transform = 'none'; f.style.width = $0 + '%'; }
+    }, pct);
+    wasm_splash_yield();
+  }
+
+  void stepMessage(const QString &message)
+  {
+    if (!sVisible) {
+      return;
+    }
+    setMessage(message);
+    // The widget-creation steps are synchronous and never return to the event
+    // loop, so the message above would not paint until the whole phase ends.
+    wasm_splash_yield();
+  }
+
+  void finish()
+  {
+    if (!sVisible) {
+      return;
+    }
+    sVisible = false;
+    EM_ASM({
+      var o = document.getElementById('omedit-splash');
+      if (o) {
+        o.style.opacity = '0';
+        setTimeout(function() { if (o.parentNode) o.parentNode.removeChild(o); }, 450);
+      }
+      var s = document.getElementById('omedit-splash-style');
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    });
+  }
+
+  bool isVisible()
+  {
+    return sVisible;
+  }
+}
+#endif
 
 TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
 {
   // create the filter text box
-  mpFilterTextBox = new QLineEdit;
-  mpFilterTextBox->installEventFilter(this);
-  mpFilterTextBox->setClearButtonEnabled(true);
+  mpFilterTextBox = new LineEdit;
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer(this);
@@ -113,9 +260,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
                       << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
                       << tr("Fixed string matching.");
-  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpSyntaxComboBox->addItem(tr("Regular Expression"), TreeSearchFilters::Regexp);
+  mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
+  mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
@@ -139,33 +286,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   setLayout(pMainLayout);
 }
 
-/*!
- * \brief TreeSearchFilters::eventFilter
- * Handles the ESC key press for filter text box
- * \param pObject
- * \param pEvent
- * \return
- */
-bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  /* Ticket #3987
-   * Clear contents of filter field by clicking ESC key.
-   */
-  QLineEdit *pFilterTextBox = qobject_cast<QLineEdit*>(pObject);
-  if (pFilterTextBox && pEvent->type() == QEvent::KeyPress) {
-    QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-    if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
-      pFilterTextBox->clear();
-      /* Ticket #5998
-       * Emit clearFilter signal which calls textEdited signal of mpFilterTextBox to reset filter.
-       */
-      emit clearFilter("");
-      return true;
-    }
-  }
-  return QWidget::eventFilter(pObject, pEvent);
-}
-
 void TreeSearchFilters::showHideFilters(bool On)
 {
   if (On) {
@@ -174,6 +294,58 @@ void TreeSearchFilters::showHideFilters(bool On)
     mpFiltersWidget->hide();
   }
 }
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+/*!
+ * \brief TreeSearchFilters::getFilterRegExp
+ * Returns the QRegExp for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  QRegExp regExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // it matches something instead of silently matching nothing.
+  if (!regExp.isValid()) {
+    regExp.setPattern(QRegExp::escape(filterText));
+  }
+  return regExp;
+}
+#else
+/*!
+ * \brief TreeSearchFilters::getFilterRegularExpression
+ * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+  QRegularExpression regExp;
+  switch (syntax) {
+    case TreeSearchFilters::Wildcard:
+      regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+      break;
+    case TreeSearchFilters::FixedString:
+      regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+      break;
+    default:
+      regExp = QRegularExpression(filterText, options);
+      break;
+  }
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // QString::contains()/QSortFilterProxyModel do not warn about an invalid regex.
+  if (!regExp.isValid()) {
+    regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+  }
+  return regExp;
+}
+#endif
 
 /*!
  * \class FileDataNotifier
@@ -311,10 +483,65 @@ void Label::resizeEvent(QResizeEvent *event)
   QLabel::setText(elidedText());
 }
 
+/*!
+ * \class LineEdit
+ * \brief Subclass for QLineEdit with clear button enabled and ESC key support to clear the text.
+ */
+/*!
+ * \brief LineEdit::LineEdit
+ * Creates a LineEdit with clear button enabled.
+ * \param parent
+ */
+LineEdit::LineEdit(QWidget *parent)
+  : QLineEdit(parent)
+{
+  setClearButtonEnabled(true);
+}
+
+/*!
+ * \brief LineEdit::keyPressEvent
+ * Reimplementation of QLineEdit::keyPressEvent.\n
+ * \param event
+ */
+void LineEdit::keyPressEvent(QKeyEvent *event)
+{
+  /* Ticket #3987
+   * Clear contents of filter field by clicking ESC key.
+   */
+  if (event->key() == Qt::Key_Escape) {
+    clear();
+    /* Ticket #5998
+     * Emit textEdited. Used by filter text box to reset filter.
+     */
+    emit textEdited("");
+    event->accept();
+  } else {
+    QLineEdit::keyPressEvent(event);
+  }
+}
+
 ComboBox::ComboBox(QWidget *parent)
   : QComboBox(parent)
 {
   setFocusPolicy(Qt::StrongFocus);
+}
+
+/*!
+ * \brief ComboBox::addItemWithToolTip
+ * Adds an item with tooltip.
+ * \param text
+ * \param value
+ * \param toolTip
+ */
+void ComboBox::addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip)
+{
+  // Calculate the text size and set the minimum width accordingly.
+  // We use qMax to retain the previous minimum width if it is greater.
+  QFontMetrics fm = fontMetrics();
+  int textWidth = fm.boundingRect(value).width() + 30; // add extra for dropdown arrow
+  setMinimumWidth(qMax(textWidth, minimumWidth()));
+  addItem(text, value);
+  setItemData(count() - 1, toolTip, Qt::ToolTipRole);
 }
 
 void ComboBox::wheelEvent(QWheelEvent *event)
@@ -393,28 +620,20 @@ QString FixedCheckBox::getTickStateString() const
 void FixedCheckBox::paintEvent(QPaintEvent *event)
 {
   Q_UNUSED(event);
-  QStylePainter p(this);
-  QStyleOptionButton opt;
-  opt.initFrom(this);
+  QStylePainter painter(this);
+  QStyleOptionButton option;
+  option.initFrom(this);
+  // Draw only the checkbox indicator.
+  option.rect = style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option, this);
+
+  bool checked = (!mDefaultValue && mFixedState) || (mDefaultValue && mInheritedValue);
+  option.state |= checked ? QStyle::State_On : QStyle::State_Off;
+
   if (mDefaultValue) {
-    p.setBrush(QColor(225, 225, 225));
-  } else {
-    p.setBrush(Qt::white);
+    painter.fillRect(option.rect.adjusted(1, 1, -1, -1), QColor(225, 225, 225));
   }
-  p.drawRect(opt.rect.adjusted(0, 0, -1, -1));
-  // if is checked then draw a tick
-  if ((!mDefaultValue && mFixedState) || (mDefaultValue && mInheritedValue)) {
-    p.setRenderHint(QPainter::Antialiasing);
-    QPen pen = p.pen();
-    pen.setWidthF(1.5);
-    p.setPen(pen);
-    QVector<QPoint> lines;
-    lines << QPoint(opt.rect.left() + 3, opt.rect.center().y());
-    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
-    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
-    lines << QPoint(opt.rect.width() - 3, opt.rect.top() + 3);
-    p.drawLines(lines);
-  }
+
+  painter.drawPrimitive(QStyle::PE_IndicatorCheckBox, option);
 }
 
 PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)
@@ -467,6 +686,7 @@ ListWidgetItem::ListWidgetItem(QString text, QColor color, QListWidget *pParentL
   setForeground(mColor);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief QDetachableProcess::QDetachableProcess
  * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
@@ -511,6 +731,7 @@ void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
   setProcessState(QProcess::NotRunning);
 }
 #endif
+#endif // QT_CONFIG(process)
 
 
 JsonDocument::JsonDocument(QObject *pParent)
@@ -614,13 +835,14 @@ QString& Utilities::tempDirectory()
     tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user ? user : "nobody") + "/OMEdit/";
 #endif
     tmpPath.remove("\"");
-    if (!QDir().exists(tmpPath)) {
-      if (!QDir().mkpath(tmpPath)) {
-        qDebug() << "Failed to create the tempDirectory" << tmpPath
-                 << "will use" << QDir::tempPath() << "instead.";
-        tmpPath = QDir::tempPath();
-        tmpPath.remove("\"");
-      }
+  }
+  // Recreate on every call if it has been removed (e.g. by tmpfiles cleanup on long-running sessions)
+  if (!QDir().exists(tmpPath)) {
+    if (!QDir().mkpath(tmpPath)) {
+      qDebug() << "Failed to create the tempDirectory" << tmpPath
+               << "will use" << QDir::tempPath() << "instead.";
+      tmpPath = QDir::tempPath();
+      tmpPath.remove("\"");
     }
   }
   return tmpPath;
@@ -690,6 +912,10 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 QStringList Utilities::extractArrayParts(const QString &input) {
   QString trimmed = input.trimmed();
+  // if input is empty then return empty list
+  if (trimmed.isEmpty()) {
+    return QStringList();
+  }
   // If input is NOT an array (doesn't start with { and end with }), return it as single element
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
     return QStringList{ trimmed };
@@ -731,7 +957,7 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?(?:\\s*,\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?)*\\s*\\}?");
+  QRegExp rx("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?");
   return rx.exactMatch(value);
 }
 
@@ -779,7 +1005,7 @@ QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString va
       convertedValues.append(value);
     }
   }
-  return QString("{%1}").arg(convertedValues.join(","));
+  return convertedValues.isEmpty() ? "" : QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)
@@ -926,7 +1152,9 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
+#if !QT_CONFIG(process)
+  Q_UNUSED(pProcess); /* no QProcess on wasm */
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)
@@ -1313,6 +1541,12 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
      * Whenever unit = "m3/s", we also add "l/s" and "m3/h" even if it is not defined as displayUnits.
      */
     displayUnit << "l/s" << "m3/h";
+  } else if (unit.compare(QStringLiteral("s")) == 0) {
+    /* Issue #15242
+     * For time it would be good to have extra display units min, h, d.
+     * Whenever unit = "s", we also add "min", "h" and "d" even if it is not defined as displayUnits.
+     */
+    displayUnit << Helper::timeDisplayUnits;
   }
 
   // add prefixes if unit is prefixable
@@ -1415,4 +1649,111 @@ QMap<QString, QLocale> Utilities::supportedLanguages()
     languagesMap.insert(QObject::tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
   }
   return languagesMap;
+}
+
+/*!
+ * \brief Utilities::buildVariableNodeTree
+ * Builds the variable node tree for the given variable name and its parts.
+ * \param pRootNode
+ * \param prefix
+ * \param fullVariableName
+ * \param parts
+ * \param makeData
+ * \param postCreate
+ */
+void Utilities::buildVariableNodeTree(VariableNode *pRootNode,
+                                      const QString &prefix,
+                                      const QString &fullVariableName,
+                                      const QStringList &parts,
+                                      std::function<QVector<QVariant>(const QString &, const QString &, bool)> makeData,
+                                      std::function<void(VariableNode*)> postCreate)
+{
+  // Precompile regex once (static inside function)
+  static const QRegularExpression arrayIndexRegex(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression));
+
+  const bool isDer = fullVariableName.startsWith("der(");
+  const bool isPrevious = fullVariableName.startsWith("previous(");
+
+  VariableNode *pParentNode = pRootNode;
+  QString parentVar;
+  int count = 1;
+
+  foreach (const QString &part, parts) {
+    const bool isLast = (parts.size() == count);
+    const bool isSecondLastBeforeArrayIndex = (parts.size() - 1 == count) && parts.last().startsWith('[');
+    const bool isLastOrSecondLastArray = isLast || isSecondLastBeforeArrayIndex;
+
+    // Compute findVariable
+    QString findVariable;
+    // if last item of array
+    if (isLast && arrayIndexRegex.match(part).hasMatch()) {
+      findVariable = prefix % fullVariableName;
+    } else if (isDer && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "previous(");
+    } else {
+      if (parentVar.isEmpty()) {
+        findVariable = prefix % part;
+      } else {
+        findVariable = prefix % parentVar % "." % part;
+      }
+    }
+
+    // For non-last parts: reuse existing node if found
+    if (!isLast) {
+      if (VariableNode *found = VariableNode::findVariableNode(findVariable, pParentNode)) {
+        pParentNode = found;
+        if (parentVar.isEmpty()) {
+          parentVar = part;
+        } else {
+          parentVar = parentVar % "." % part;
+        }
+        ++count;
+        continue;
+      }
+    }
+
+    // Compute display name:
+    // der/previous last or 2nd-last-before-array → joined derivative name
+    // everything else (plain, intermediate, array index) → part as-is
+    QString displayName;
+    if (isDer && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "previous(");
+    } else {
+      displayName = part;
+    }
+
+    // isMainArray: true when this node is the parent of an array index node
+    const bool isMainArray = isSecondLastBeforeArrayIndex;
+
+    QVector<QVariant> nodeData = makeData(findVariable, displayName, isMainArray);
+    VariableNode *pNewNode = new VariableNode(nodeData);
+    if (postCreate) {
+      postCreate(pNewNode);
+    }
+    pParentNode->mChildren.insert(findVariable, pNewNode);
+    pParentNode = pNewNode;
+
+    if (parentVar.isEmpty()) {
+      parentVar = part;
+    } else {
+      parentVar = parentVar % "." % part;
+    }
+    ++count;
+  }
 }

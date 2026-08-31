@@ -12,6 +12,10 @@ bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
+cseOutsideNoEvent.mos \
+DelayZeroCrossing.mos \
+derInWhenCondition.mos \
+discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
 EventLoop.mos \
@@ -22,6 +26,7 @@ IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
 noEventEmit.mos \
+noEventNotRespected.mos \
 Reinit.mos \
 sample1.mos \
 sample2.mos \
@@ -47,8 +52,9 @@ ZeroCrossingAlg.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+EventTests.mat \
 Makefile \
-EventTests.mat
+ReferenceFiles
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
@@ -83,4 +89,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

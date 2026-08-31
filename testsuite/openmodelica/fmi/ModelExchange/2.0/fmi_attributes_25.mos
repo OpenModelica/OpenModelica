@@ -32,7 +32,9 @@ readFile("fmi_attributes_25.xml"); getErrorString();
 // true
 // ""
 // "fmi_attributes_25.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription
@@ -51,8 +53,8 @@ readFile("fmi_attributes_25.xml"); getErrorString();
 //     completedIntegratorStepNotNeeded=\"false\"
 //     canBeInstantiatedOnlyOncePerProcess=\"false\"
 //     canNotUseMemoryManagementFunctions=\"false\"
-//     canGetAndSetFMUstate=\"false\"
-//     canSerializeFMUstate=\"false\"
+//     canGetAndSetFMUstate=\"true\"
+//     canSerializeFMUstate=\"true\"
 //     providesDirectionalDerivative=\"false\">
 //   </ModelExchange>
 //   <LogCategories>

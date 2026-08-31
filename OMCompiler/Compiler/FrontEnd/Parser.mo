@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -44,11 +48,11 @@ import GlobalScript;
 import HashTableStringToProgram;
 
 protected
+import AbsynUtil;
 import Config;
 import ErrorExt;
 import Flags;
 import ParserExt;
-import AbsynToSCode;
 import System;
 import Testsuite;
 import Util;
@@ -61,15 +65,20 @@ function parse "Parse a mo-file"
   input String encoding;
   input String libraryPath = "";
   input Option<Integer> lveInstance = NONE();
+  input Integer acceptedGram = Config.acceptedGrammar();
+  input Integer languageStandardInt = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
+  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
   output Absyn.Program outProgram;
 protected
   list<Absyn.Class> classes, classes1;
   Absyn.Within w;
   Absyn.Class cs;
+  String realpath;
 algorithm
-  outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
+  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
+  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
+    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
+
   // Check license features
   if (isSome(lveInstance)) then
     Absyn.PROGRAM(classes, w) := outProgram;
@@ -99,27 +108,7 @@ function parsestring "Parse a string as if it were a stored definition"
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parsestring(str, infoFilename, grammar, languageStd, strict, Testsuite.isRunning());
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
-
-function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
-  input String filename;
-  input String encoding;
-  input String libraryPath = "";
-  input Option<Integer> lveInstance = NONE();
-  input Integer acceptedGram=Config.acceptedGrammar();
-  input Integer languageStandardInt=Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
-  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
-  output Absyn.Program outProgram;
-  annotation(__OpenModelica_EarlyInline = true);
-protected
-  String realpath;
-algorithm
-  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
-    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
-end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
@@ -151,6 +140,14 @@ function stringMod
 algorithm
   mod := ParserExt.stringMod(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringMod;
+
+function stringEq
+  input String str;
+  input String filename = "<internal>";
+  output Absyn.EquationItem eq;
+algorithm
+  eq := ParserExt.stringEq(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
+end stringEq;
 
 function parallelParseFiles
   input list<String> filenames;
@@ -243,7 +240,7 @@ algorithm
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GCExt.disable(); // Seems to sometimes break building nightly omc
-    partialResults := System.launchParallelTasks(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
+    partialResults := System.launchParallelTasksThreaded(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
     // GCExt.enable();
   end if;
 end parallelParseFilesWork;
@@ -317,14 +314,14 @@ protected function getLicenseAnnotationWork1
   input Option<Absyn.Modification> mod;
   output tuple<String, String> license;
 algorithm
-  license := match (mod)
+  license := match mod
     local
       list<Absyn.ElementArg> arglst;
       String libraryKey, licenseFile;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationWork2(arglst);
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationWork2(arglst);
       then (libraryKey, licenseFile);
   end match;
 end getLicenseAnnotationWork1;
@@ -340,16 +337,16 @@ algorithm
       list<Absyn.ElementArg> xs;
       String libraryKey, licenseFile;
 
-    case ({}) then ("", "");
+    case {} then ("", "");
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_)
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationTuple(mod);
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationTuple(mod);
       then (libraryKey, licenseFile);
 
-    case (_::xs)
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationWork2(xs);
+    case _::xs
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationWork2(xs);
       then (libraryKey, licenseFile);
 
   end match;
@@ -360,15 +357,15 @@ protected function getLicenseAnnotationTuple
   input Option<Absyn.Modification> mod;
   output tuple<String, String> license;
 algorithm
-  license := match (mod)
+  license := match mod
     local
       list<Absyn.ElementArg> arglst;
       String libraryKey, licenseFile;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      equation
-        libraryKey = getLicenseAnnotationLibraryKey(arglst);
-        licenseFile = getLicenseAnnotationLicenseFile(arglst);
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
+      algorithm
+        libraryKey := getLicenseAnnotationLibraryKey(arglst);
+        licenseFile := getLicenseAnnotationLicenseFile(arglst);
       then (libraryKey, licenseFile);
   end match;
 end getLicenseAnnotationTuple;
@@ -383,14 +380,14 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
 
-    case ({}) then "";
+    case {} then "";
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="libraryKey"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="libraryKey"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_
       then s;
 
-    case (_::xs)
-      equation
-        s = getLicenseAnnotationLibraryKey(xs);
+    case _::xs
+      algorithm
+        s := getLicenseAnnotationLibraryKey(xs);
       then s;
 
     end match;
@@ -406,14 +403,14 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
 
-    case ({}) then "";
+    case {} then "";
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="licenseFile"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="licenseFile"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_
       then s;
 
-    case (_::xs)
-      equation
-        s = getLicenseAnnotationLicenseFile(xs);
+    case _::xs
+      algorithm
+        s := getLicenseAnnotationLicenseFile(xs);
       then s;
 
     end match;
@@ -437,11 +434,11 @@ protected function getFeaturesAnnotationList
   input Option<Absyn.Modification> mod;
   output list<String> features;
 algorithm
-  features := match (mod)
+  features := match mod
     local
       list<Absyn.ElementArg> arglst;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
       then getFeaturesAnnotationList2(arglst);
 
   end match;
@@ -458,16 +455,16 @@ algorithm
       list<Absyn.ElementArg> xs;
       list<String> featuresList;
 
-    case ({}) then {};
+    case {} then {};
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_)
-      equation
-        featuresList = List.map(expList, expToString);
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_
+      algorithm
+        featuresList := List.map(expList, expToString);
       then featuresList;
 
-    case (_::xs)
-      equation
-        featuresList = getFeaturesAnnotationList2(xs);
+    case _::xs
+      algorithm
+        featuresList := getFeaturesAnnotationList2(xs);
       then featuresList;
 
     end match;
@@ -477,11 +474,11 @@ protected function expToString
   input Absyn.Exp inExp;
   output String outExp;
 algorithm
-  outExp := match (inExp)
+  outExp := match inExp
     local
       String str;
-    case (Absyn.STRING(str)) then str;
-    case (_) then "";
+    case Absyn.STRING(str) then str;
+    case _ then "";
   end match;
 end expToString;
 

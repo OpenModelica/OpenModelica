@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
@@ -48,7 +53,6 @@
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
-#include "OMSimulator/OMSimulator.h"
 
 #include <QOpenGLContext>
 #include <QGraphicsView>
@@ -56,11 +60,6 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
-#include <QtWebKit>
-#endif // #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>
@@ -188,7 +187,7 @@ public:
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
 
-  void drawCoordinateSystem();
+  void drawCoordinateSystem(bool openingModel);
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
@@ -196,7 +195,7 @@ public:
   void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void handleCollidingConnections();
 
-  void setExtentRectangle(const QRectF rectangle, bool moveToCenter);
+  void setExtentRectangle(const QRectF rectangle, bool openingModel);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
@@ -366,6 +365,7 @@ public:
   void showReplaceSubModelDialog(QString name);
   void addErrorTextShape();
   void removeErrorTextShape();
+  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -400,7 +400,6 @@ private:
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
-  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
@@ -482,29 +481,22 @@ public:
   void addRecentFilesListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
+
+  // QWidget interface
+  /* This tells QMainWindow: "I'm happy with very little height",
+   * so when state is restored the messages dock gets the height you saved rather than being squeezed by the central widget.
+   * The widget itself will still expand to fill whatever space QMainWindow actually gives it.
+   * minimumSizeHint() only affects the negotiation during layout/restore, not the final rendered size.
+   */
+  virtual QSize minimumSizeHint() const override { return QSize(200, 50); }
 private:
-  QFrame *mpMainFrame;
-  QFrame *mpTopFrame;
-  Label *mpPixmapLabel;
-  Label *mpHeadingLabel;
-  QFrame *mpRecentFilesFrame;
-  Label *mpRecentFilesLabel;
   Label *mpNoRecentFileLabel;
-  QListWidget *mpRecentItemsList;
-  QPushButton *mpClearRecentFilesListButton;
+  QListWidget *mpRecentItemsListWidget;
   QFrame *mpLatestNewsFrame;
-  Label *mpLatestNewsLabel;
   Label *mpNoLatestNewsLabel;
   QListWidget *mpLatestNewsListWidget;
-  QPushButton *mpReloadLatestNewsButton;
-  Label *mpVisitWebsiteLabel;
   NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
-  QFrame *mpBottomFrame;
-  QPushButton *mpCreateModelButton;
-  QPushButton *mpOpenModelButton;
-  QPushButton *mpSystemLibrariesButton;
-  QPushButton *mpInstallLibraryButton;
 public slots:
   void addLatestNewsListItems();
 private slots:
@@ -597,7 +589,6 @@ public:
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
-  void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
@@ -607,6 +598,9 @@ public:
   void showElement(ModelInstance::Model *pModelInstance, bool addToList);
   void selectDeselectElement(const QString &name, bool selected);
   void navigateToClass(const QString &className);
+
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -659,7 +653,6 @@ private:
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
-  void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   bool dependsOnModel(const QString &modelName, bool unload);
   void updateElementModeButtons();
   void reDrawModelWidgetHelper();
@@ -700,7 +693,7 @@ public:
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
   bool validateText();
-  void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
+  void getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
   void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
 
   QRect mCopiedItemsBoundingRect;
@@ -724,7 +717,6 @@ public slots:
   void addOrEditIcon();
   void deleteIcon();
   void addConnector();
-  void addBus();
   void addSubModel();
 };
 

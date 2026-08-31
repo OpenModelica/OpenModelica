@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NSimGenericCall
 "file:        NSimGenericCall.mo
  package:     NSimGenericCall
@@ -44,6 +49,7 @@ protected
   // NF import
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
+  import DAE;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -110,10 +116,10 @@ public
         + Expression.toString(call.lhs) + " = " + Expression.toString(call.rhs);
       case IF_GENERIC_CALL() then "(" + intString(call.index) + ") [-IF-]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
-        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
+        + List.toStringCustom(call.branches, SimBranch.toString, "", "", "\telse", "");
       case WHEN_GENERIC_CALL() then "(" + intString(call.index) + ") [WHEN]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
-        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
+        + List.toStringCustom(call.branches, SimBranch.toString, "", "", "\telse", "");
       else "CALL_NOT_SUPPORTED";
     end match;
   end toString;
@@ -154,8 +160,8 @@ public
       then SINGLE_GENERIC_CALL(
           index     = index,
           iters     = iters,
-          lhs       = Equation.getLHS(body),
-          rhs       = Equation.getRHS(body),
+          lhs       = Util.getOption(Equation.getLHS(body)),
+          rhs       = Util.getOption(Equation.getRHS(body)),
           resizable = resizable);
 
       else algorithm
@@ -213,12 +219,12 @@ public
       output String str;
       function subIterString
         input list<DependentIterator> sub_iter;
-        output String str = List.toString(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
+        output String str = List.toStringCustom(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
       end subIterString;
     algorithm
       str := match iter
         case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + Expression.toString(iter.start) + ", step:" + Expression.toString(iter.step) + ", stop:" + Expression.toString(iter.stop) + ", size: " + Expression.toString(iter.size) + "}" + subIterString(iter.sub_iter);
-        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, List.Style.FLAT_CURLY_SHORT) + "}" + subIterString(iter.sub_iter);
       end match;
     end toString;
 
@@ -251,12 +257,12 @@ public
             size      := Expression.MULTARY({size}, {step}, mulOp);
             size      := Expression.MULTARY({size, Expression.INTEGER(1)}, {}, addOp);
             size      := SimplifyExp.simplify(size);
-            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+            sub_iter  := if isSome(map) then subIterators(Util.getOption(map)) else {};
           then SIM_ITERATOR_RANGE(name, range.start, step, range.stop, size, sub_iter) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm
             lst       := list(Expression.integerValue(e) for e in range.elements);
-            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+            sub_iter  := if isSome(map) then subIterators(Util.getOption(map)) else {};
           then SIM_ITERATOR_LIST(name, lst, listLength(lst), sub_iter) :: sim_iter;
 
           else algorithm
@@ -298,7 +304,7 @@ public
       end convertSubIterator;
     algorithm
       old_iter := match iter
-        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size), list(convertSubIterator(si) for si in iter.sub_iter));
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size, false), list(convertSubIterator(si) for si in iter.sub_iter));
         case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
       end match;
     end convert;
@@ -352,7 +358,7 @@ public
         then str;
         case SIM_BRANCH_STMT() algorithm
           str := if Expression.isEnd(branch.condition) then "\n" else "when " + Expression.toString(branch.condition) + " then\n";
-          str := str + List.toString(branch.body, function Statement.toString(indent = ""), "\t  ", "\t  ", "\n", "");
+          str := str + List.toString(branch.body, function Statement.toString(indent = ""), List.Style.NEWLINE_TAB);
         then str;
         else "SIM BRANCH NOT KNOWN";
       end match;
@@ -367,10 +373,10 @@ public
     algorithm
       for eqn in listReverse(if_body.then_eqns) loop
         // ToDo: what if there are more complex things inside?
-        body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
+        body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
       end for;
       branch := SIM_BRANCH(if_body.condition, body);
-      if Util.isSome(if_body.else_if) then
+      if isSome(if_body.else_if) then
         branches := branch :: fromIfBody(Util.getOption(if_body.else_if));
       else
         branches := {branch};
@@ -384,7 +390,7 @@ public
       SimBranch branch;
     algorithm
       branch := SIM_BRANCH_STMT(when_body.condition, list(WhenStatement.toStatement(stmt) for stmt in when_body.when_stmts));
-      if Util.isSome(when_body.else_when) then
+      if isSome(when_body.else_when) then
         branches := branch :: fromWhenBody(Util.getOption(when_body.else_when));
       else
         branches := {branch};
@@ -430,5 +436,5 @@ public
     end convert;
   end SimBranch;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimGenericCall;

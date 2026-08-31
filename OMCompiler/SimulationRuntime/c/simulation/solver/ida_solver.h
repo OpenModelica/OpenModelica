@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2016, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -42,6 +39,7 @@
 
 #ifdef WITH_SUNDIALS
 
+#include <sundials/sundials_context.h>       /* SUNContext */
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -75,6 +73,10 @@ typedef struct IDA_SOLVER
   N_Vector yp;                  /* State derivative vector y' */
 
   /* ### scaling data ### */
+  double *nominal;              /* |nominal| per unknown; the tolerances are tolerance times it */
+  double jacNominalFactor;      /* -jacobianNominalFactor */
+  N_Vector absoluteTolerance;   /* Absolute tolerance per unknown, tolerance times nominal */
+  N_Vector id;                  /* 1 for the differential, 0 for the algebraic unknowns; daeMode only */
   double *yScale;               /* Scaling array for states y */
   double *ypScale;              /* Scaling array fpr derivatives y' */
   double *resScale;             /* Scaling for residual F(t,y,y') */
@@ -86,7 +88,6 @@ typedef struct IDA_SOLVER
   double *ysave;
   double *ypsave;
   double *delta_hh;
-  N_Vector errwgt;              /* Error weights W[i] = 1 / (rtol * |y[i]| + atol) */
   N_Vector newdelta;
 
   /* ### ida internal data ### */
@@ -95,6 +96,10 @@ typedef struct IDA_SOLVER
                                   /* See section 4.6.1 Residual function of SUNDIALS v5.4.0 IDA documentation */
   IDA_USERDATA* userData;         /* */
 
+  SUNContext sunctx;        /* SUNDIALS simulation context. Owned by this
+                               struct, one per solver instance so that solvers
+                               running in different threads stay independent. */
+
   /* linear solver data */
   SUNLinearSolver linSol;   /* Linear solver object */
   N_Vector y_linSol;        /* Template for cloning vectors needed inside linear solver */
@@ -102,7 +107,7 @@ typedef struct IDA_SOLVER
                                linear solver */
 
   /* ### daeMode ### */
-  booleantype daeMode;      /* If TRUE then solve dae more with a reals residual function */
+  sunbooleantype daeMode;   /* If TRUE then solve dae more with a reals residual function */
   long int N;               /* Number of unknowns */
   long int NNZ;             /* Number of non-zero elemetes of ... */
   double *states;           /* Array of states. Only used in DAE mode, NULL otherwise */
@@ -115,10 +120,12 @@ typedef struct IDA_SOLVER
   N_Vector* ySp;            /* Array of sensitfity vectors of state derivatives */
   N_Vector* ySResult;
 
-#ifdef USE_PARJAC
-  JACOBIAN* jacColumns;
-#endif
-  int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
+  /* ### daeMode homotopy ramp ### */
+  int homotopyRampActive;   /* set when the initial DAE Jacobian was singular and a
+                               homotopy lambda ramp (0->1 over t_ramp) is used to get
+                               past a degenerate start point; 0 = inactive (lambda=1) */
+  double homotopyTramp;     /* ramp window length [s]; lambda goes 0->1 over
+                               [startTime, startTime+homotopyTramp]. <=0 when unused */
 } IDA_SOLVER;
 
 /* initialize main ida Data */
@@ -127,6 +134,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
 /* deinitialize main ida Data */
 void ida_solver_deinitial(IDA_SOLVER *idaData);
+
+/* read the nominal values into the tolerances, the scaling and the Jacobian's step floor */
+int ida_solver_setNominals(DATA* data, threadData_t *threadData, IDA_SOLVER* idaData);
 
 /* main ida function to make a step */
 int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);

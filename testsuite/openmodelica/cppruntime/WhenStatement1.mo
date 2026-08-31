@@ -6,7 +6,7 @@
 // Drmodelica: 9.1 When-Statements (p. 293)
 //
 
-class WhenStat
+model WhenStat
   Real x(start=1);
   Real y1;
   parameter Real y2 = 5;
@@ -18,7 +18,6 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenStat;
 
 

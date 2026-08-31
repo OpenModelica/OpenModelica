@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -75,7 +79,7 @@ public
 
       for dim in dims loop
         if not Dimension.isKnown(dim) then
-          Error.assertion(false, getInstanceName() + ": unknown dimension " + Dimension.toString(dim),
+          Error.terminate(getInstanceName() + ": unknown dimension " + Dimension.toString(dim),
                                  sourceInfo());
         end if;
 
@@ -169,7 +173,7 @@ public
       output Expression outExp;
     algorithm
       if Expression.isCref(e) then
-        outExp := Ceval.evalExp(e, Ceval.EvalTarget.new(AbsynUtil.dummyInfo, NFInstContext.ITERATION_RANGE));
+        outExp := Ceval.evalExp(e, Ceval.EvalTarget.new(Absyn.dummyInfo, NFInstContext.ITERATION_RANGE));
       else
         outExp := e;
       end if;
@@ -191,7 +195,7 @@ public
       case Expression.RANGE() then intervalFromRange(e);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression " +
+          Error.terminate(getInstanceName() + " got unknown expression " +
                                  Expression.toString(e), sourceInfo());
         then
           fail();
@@ -232,13 +236,13 @@ public
         case Op.MUL then SBInterval.new(llo * rlo, llo * step, lhi * rhi);
         else
           algorithm
-            Error.assertion(false, getInstanceName() +
+            Error.terminate(getInstanceName() +
               " got unknown operator " + Operator.symbol(op), sourceInfo());
           then
             fail();
       end match;
     else
-      Error.assertion(false, getInstanceName() + " got unknown expression " +
+      Error.terminate(getInstanceName() + " got unknown expression " +
         Expression.toString(Expression.BINARY(lhs, op, rhs)) + "\n", sourceInfo());
     end if;
   end intervalFromBinaryExp;
@@ -300,7 +304,7 @@ public
 
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) and
        mi1_sz <> 1 and mi2_sz <> 1 then
-      Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
+      Error.terminate(getInstanceName() + " got incompatible connect", sourceInfo());
     end if;
 
     sz := arrayLength(ints1);
@@ -316,7 +320,7 @@ public
       sz2 := SBInterval.size(ints2[i]);
 
       if sz1 <> sz2 and sz1 <> 1 and sz2 <> 1 then
-        Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
+        Error.terminate(getInstanceName() + " got incompatible connect", sourceInfo());
       end if;
 
       count := max(sz1, sz2);
@@ -363,5 +367,5 @@ public
     name := "E" + String(System.tmpTick());
   end linearMapFromIntervals;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFSBGraphUtil;

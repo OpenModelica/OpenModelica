@@ -13,7 +13,6 @@ model Xpowers3
 equation
   xpowers[1]=1;
   xpowers[2:n+1] = xpowers[1:n]*x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Xpowers3;
 
 

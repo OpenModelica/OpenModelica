@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -86,7 +90,7 @@ protected
     function newNode
       output ConversionRules node;
     algorithm
-      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(System.stringHashDjb2, stringEq), {});
+      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(stringHashDjb2, stringEq), {});
     end newNode;
   end ConversionRules;
 
@@ -160,7 +164,6 @@ public
     input String scriptFile;
   protected
     ConversionRules rules;
-    Env env;
     list<GlobalScript.Statement> stmts;
   algorithm
     stmts := loadScript(scriptFile);
@@ -349,7 +352,7 @@ protected
   algorithm
     info := match stmt
       case GlobalScript.Statement.IEXP() then stmt.info;
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end statementInfo;
 
@@ -382,7 +385,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertClass", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -409,7 +412,7 @@ protected
     input SourceInfo info;
     input output ConversionRules rules;
   algorithm
-    Error.assertion(false, getInstanceName() + ": not implemented", info);
+    Error.terminate(getInstanceName() + ": not implemented", info);
   end parseConvertClassIf;
 
   function parseConvertElement
@@ -438,7 +441,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertElement", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -472,7 +475,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertModifiers", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -563,7 +566,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.INVALID_CONVERSION_RULE,
-            {List.toString(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
+            {List.toStringCustom(args, Dump.printExpStr, "convertMessage", "(", ", ", ")", true)}, info);
         then
           fail();
 
@@ -617,7 +620,7 @@ protected
     "Looks up a node in the conversion rules structure."
     input Absyn.Path path;
     input ConversionRules rules;
-    output Option<ConversionRules> outNode;
+    output Option<ConversionRules> outNode = NONE();
   protected
     ConversionRules node = rules;
   algorithm
@@ -702,13 +705,13 @@ protected
   function newRuleTable
     output RuleTable table;
   algorithm
-    table := UnorderedMap.new<RuleList>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<RuleList>(stringHashDjb2, stringEq);
   end newRuleTable;
 
   function newTypeTable
     output TypeTable table;
   algorithm
-    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<Absyn.Path>(stringHashDjb2, stringEq);
   end newTypeTable;
 
   function newEnv
@@ -849,9 +852,9 @@ protected
       case ConversionRule.MODIFIERS()
         algorithm
           print("convertModifiers: ");
-          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
           print(" => ");
-          print(List.toString(rule.newMods, Dump.unparseElementArgStr, "", "{", ", ", "}", true));
+          print(List.toString(rule.newMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
         then
           ();
 
@@ -897,11 +900,8 @@ protected
   algorithm
     () := match cdef
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
-        Absyn.Path ty_path;
-        Option<tuple<Absyn.Path, String>> import_path;
         Absyn.TypeSpec ty;
 
       case Absyn.ClassDef.PARTS()
@@ -941,7 +941,6 @@ protected
     input SourceInfo info;
   protected
     list<ConversionRules> extends_rules;
-    ImportTree imps;
     Env cls_env;
   algorithm
     cls_env := addImportNamesToEnv(getImportsInParts(parts), rules, env);
@@ -1191,7 +1190,7 @@ protected
   protected
     type OptExp = Option<Absyn.Exp>;
   algorithm
-    placeholders := UnorderedMap.new<OptExp>(System.stringHashDjb2, stringEq);
+    placeholders := UnorderedMap.new<OptExp>(stringHashDjb2, stringEq);
 
     for arg in args loop
       UnorderedMap.add(AbsynUtil.pathString(AbsynUtil.elementArgName(arg)),
@@ -1476,7 +1475,6 @@ protected
   algorithm
     () := match spec
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
         Absyn.Path ty_path;
@@ -1492,7 +1490,7 @@ protected
       case Absyn.ElementSpec.EXTENDS()
         algorithm
           (ty_path, import_path) := applyImportsToPath(spec.path, env.imports);
-          (ty_rule, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, env);
+          (_, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, env);
           ty_path := convertPath(ty_path, rules, env.imports, info);
           spec.path := stripImportPath(ty_path, import_path);
           spec.elementArg := convertModification2(mod_rules, spec.elementArg);
@@ -2126,7 +2124,7 @@ protected
 
       model M
         SomeType a;
-      equation
+      algorithm
         a.b = 0;
       end M;
 
@@ -2134,7 +2132,7 @@ protected
 
       model M
         SomeType a;
-      equation
+      algorithm
         a.c = 0;
       end M;
     "
@@ -2821,5 +2819,5 @@ protected
     end match;
   end addComponentTypesToEnv2;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end Conversion;

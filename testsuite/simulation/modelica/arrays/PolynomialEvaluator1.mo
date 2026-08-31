@@ -25,7 +25,6 @@ class PositionalCall
   Real p;
 equation
   p = PolynomialEvaluator1({1,2,3,4},21);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PositionalCall;
 
 

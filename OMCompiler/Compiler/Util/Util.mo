@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -72,6 +76,7 @@ import List;
 import Print;
 import System;
 
+public constant Integer HASH_SEED = 5381;
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function isIntGreater "Author: BZ"
@@ -336,15 +341,17 @@ end tuple62;
 public function stringContainsChar "Returns true if a string contains a specified character"
   input String str;
   input String char;
-  output Boolean res;
+  output Boolean res = false;
+protected
+  Integer ch;
 algorithm
-  res := matchcontinue()
-    case ()
-      equation
-        _::_::_ = stringSplitAtChar(str,char);
-      then true;
-    else false;
-  end matchcontinue;
+  ch := stringCharInt(char);
+  for i in 1:stringLength(str) loop
+    if MetaModelica.Dangerous.stringGetNoBoundsChecking(str, i) == ch then
+      res := true;
+      return;
+    end if;
+  end for;
 end stringContainsChar;
 
 public function stringDelimitListPrintBuf "
@@ -355,15 +362,15 @@ Usefull for heavy string operations(causes malloc error on some models when gene
   input list<String> inStringLst;
   input String inDelimiter;
 algorithm
-  _:=
-  matchcontinue (inStringLst)
+  ():=
+  matchcontinue inStringLst
     local
-      String f,delim,str1,str2,str;
+      String f;
       list<String> r;
     case {} then ();
-    case {f} equation Print.printBuf(f); then ();
+    case {f} algorithm Print.printBuf(f); then ();
     case f :: r
-      equation
+      algorithm
         stringDelimitListPrintBuf(r, inDelimiter);
         Print.printBuf(f);
         Print.printBuf(inDelimiter);
@@ -399,38 +406,38 @@ protected function stringDelimitListAndSeparate2 "author: PA
   input Integer inInteger4;
   input Integer inInteger5;
 algorithm
-  _ := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
+  () := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
     local
-      String s,str1,str,f,sep1,sep2;
+      String s,f,sep1,sep2;
       list<String> r;
       Integer n,iter_1,iter;
     case ({},_,_,_,_) then ();  /* iterator */
-    case ({s},_,_,_,_) equation
+    case ({s},_,_,_,_) algorithm
       Print.printBuf(s);
     then ();
     case ((f :: r),sep1,sep2,n,0)
-      equation
+      algorithm
         Print.printBuf(f);Print.printBuf(sep1);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, 1) "special case for first element" ;
       then
         ();
     case ((f :: r),sep1,sep2,n,iter)
-      equation
-        0 = intMod(iter, n) "insert second delimiter" ;
-        iter_1 = iter + 1;
+      algorithm
+        0 := intMod(iter, n) "insert second delimiter" ;
+        iter_1 := iter + 1;
         Print.printBuf(f);Print.printBuf(sep1);Print.printBuf(sep2);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
         ();
     case ((f :: r),sep1,sep2,n,iter)
-      equation
-        iter_1 = iter + 1 "not inserting second delimiter" ;
+      algorithm
+        iter_1 := iter + 1 "not inserting second delimiter" ;
         Print.printBuf(f);Print.printBuf(sep1);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
         ();
     else
-      equation
+      algorithm
         print("- stringDelimitListAndSeparate2 failed\n");
       then
         fail();
@@ -539,7 +546,7 @@ public function applyOption<TI, TO>
     output TO outValue;
   end FuncType;
 algorithm
-  outOption := match(inOption)
+  outOption := match inOption
     local
       TI ival;
 
@@ -561,7 +568,7 @@ public function applyOption1<TI, TO, ArgT>
     output TO outValue;
   end FuncType;
 algorithm
-  outOption := match(inOption)
+  outOption := match inOption
     local
       TI ival;
 
@@ -584,7 +591,7 @@ public function applyOptionOrDefault<TI, TO>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -609,7 +616,7 @@ public function applyOptionOrDefault1<TI, TO, ArgT>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -636,7 +643,7 @@ public function applyOptionOrDefault2<TI, TO, ArgT1, ArgT2>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -692,7 +699,7 @@ public function getOptionOrDefault<T>
   input T inDefault;
   output T outValue;
 algorithm
-  outValue := match(inOption)
+  outValue := match inOption
     local
       T value;
 
@@ -932,7 +939,7 @@ public function mulListIntegerOpt
   input Integer inAccum = 1;
   output Integer outResult;
 algorithm
-  outResult := match(inList)
+  outResult := match inList
     local
       Integer i;
       list<Option<Integer>> rest;
@@ -1024,6 +1031,14 @@ public function strcmpBool
   output Boolean b = stringCompare(s1, s2) > 0;
 end strcmpBool;
 
+public function strcmpNoCaseBool
+  "String compare, but ignoring case.
+  Boolean output as is expected by the sort function"
+  input String s1;
+  input String s2;
+  output Boolean b = stringCompare(System.tolower(s1), System.tolower(s2)) > 0;
+end strcmpNoCaseBool;
+
 public function stringAppendReverse
   "@author: adrpo
   This function will append the first string to the second string"
@@ -1037,7 +1052,7 @@ public function stringAppendNonEmpty
   input String inString2;
   output String outString;
 algorithm
-  outString := match(inString2)
+  outString := match inString2
     case "" then inString2;
     else stringAppend(inString1, inString2);
   end match;
@@ -1088,15 +1103,15 @@ algorithm
     case ({}, {}, _, _) then "";
 
     case ({fa}, {fb}, md, _)
-      equation
-        str = stringAppendList({fa, md, fb});
+      algorithm
+        str := stringAppendList({fa, md, fb});
       then
         str;
 
     case (fa :: ra, fb :: rb, md, ed)
-      equation
-        str = buildMapStr(ra, rb, md, ed);
-        str = stringAppendList({fa, md, fb, ed, str});
+      algorithm
+        str := buildMapStr(ra, rb, md, ed);
+        str := stringAppendList({fa, md, fb, ed, str});
       then
         str;
 
@@ -1145,7 +1160,7 @@ protected function stringBool2
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inString)
+  outBoolean := match inString
     case "true" then true;
     case "false" then false;
     case "yes" then true;
@@ -1296,7 +1311,7 @@ public function swap<T>
   output T out1;
   output T out2;
 algorithm
-  (out1,out2) := match (cond)
+  (out1,out2) := match cond
     case true then (in2, in1);
     else (in1, in2);
   end match;
@@ -1325,27 +1340,27 @@ protected function createDirectoryTreeH
   input Boolean parentDirExists;
   output Boolean outBool;
 algorithm
-  outBool := matchcontinue(parentDirExists)
+  outBool := matchcontinue parentDirExists
     local
       Boolean b;
 
     case _
-      equation
+      algorithm
         // this is because System.dirname(".openmodelica") != ".openmodelica"
         // System.dirname(".openmodelica") = "." on Windows!
-        true = stringEqual(parentDir, System.dirname(parentDir));
-        b = System.createDirectory(inString);
+        true := stringEqual(parentDir, System.dirname(parentDir));
+        b := System.createDirectory(inString);
       then b;
 
     case true
-      equation
-        b = System.createDirectory(inString);
+      algorithm
+        b := System.createDirectory(inString);
     then b;
 
     case false
-      equation
-        true = createDirectoryTree(parentDir);
-        b = System.createDirectory(inString);
+      algorithm
+        true := createDirectoryTree(parentDir);
+        b := System.createDirectory(inString);
       then b;
 
     else false;
@@ -1375,11 +1390,11 @@ public function nextPowerOf2
   output Integer v;
 algorithm
   v := i - 1;
-  v := intBitOr(v, intBitLShift(v, 1));
-  v := intBitOr(v, intBitLShift(v, 2));
-  v := intBitOr(v, intBitLShift(v, 4));
-  v := intBitOr(v, intBitLShift(v, 8));
-  v := intBitOr(v, intBitLShift(v, 16));
+  v := intBitOr(v, intBitRShift(v, 1));
+  v := intBitOr(v, intBitRShift(v, 2));
+  v := intBitOr(v, intBitRShift(v, 4));
+  v := intBitOr(v, intBitRShift(v, 8));
+  v := intBitOr(v, intBitRShift(v, 16));
   v := v + 1;
 end nextPowerOf2;
 

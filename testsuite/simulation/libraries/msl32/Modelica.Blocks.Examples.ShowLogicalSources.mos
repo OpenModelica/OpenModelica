@@ -1,7 +1,6 @@
 // name:     Modelica.Blocks.Examples.ShowLogicalSources
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -10,7 +9,7 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 simflags := "-ignoreHideResult";
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Blocks.Examples.ShowLogicalSources);
 compareVars :=
 {
@@ -32,7 +31,7 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "-ignoreHideResult"
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Blocks.Examples.ShowLogicalSources
 // {"booleanExpression.y", "pulse.pulsStart", "pulse.y", "step.y", "sample.y", "table.index", "table.nextTime", "table.y", "const.y"}
 // Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.ShowLogicalSources', options = '', outputFormat = 'mat', variableFilter = 'time|booleanExpression.y|pulse.pulsStart|pulse.y|step.y|sample.y|table.index|table.nextTime|table.y|const.y', cflags = '', simflags = '-ignoreHideResult -abortSlowSimulation -alarm=360 -emit_protected'
@@ -40,6 +39,7 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Files Equal!
 // "true
 // "
 // ""

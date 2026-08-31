@@ -2,7 +2,6 @@
 // keywords: for loops of zero size
 // status: correct
 // teardown_command: rm -rf ZeroSizeLoopTest*
-// cflags: -d=-newInst
 // 
 // 
 
@@ -15,8 +14,8 @@ simulate(ZeroSizeLoopTest); getErrorString();
 // true
 // ""
 // "class ZeroSizeLoopTest
-//   parameter Integer activation.nIn = 0;
-//   parameter Integer activation.nOut = 0;
+//   final parameter Integer activation.nIn = 0;
+//   final parameter Integer activation.nOut = 0;
 //   Boolean activation.firingCon = false;
 //   Boolean activation.active;
 // algorithm
@@ -31,7 +30,7 @@ simulate(ZeroSizeLoopTest); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "ZeroSizeLoopTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ZeroSizeLoopTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroSizeLoopTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

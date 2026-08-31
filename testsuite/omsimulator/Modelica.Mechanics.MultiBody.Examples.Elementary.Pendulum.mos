@@ -5,21 +5,26 @@
 loadModel(Modelica); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu", "Pendulum_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu --mode=cs", "Pendulum_systemCall.log");
 readFile("Pendulum_systemCall.log");
 
 // Result:
 // true
 // ""
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
-// "info:    maximum step size for 'model.root': 0.010000
-// info:    Result file: model_res.mat (bufferSize=10)
-// info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
-// info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 523 NumRhsEvals  = 533 NumLinSolvSetups = 36
-//          NumNonlinSolvIters = 532 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// "info: *** FMU Simulation Info ***
+//      - model     : Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum (co-simulation)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 5.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.01
+// info:    Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_res.mat (bufferSize=10)
+// info:    Parameter Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported
 // "
 // endResult

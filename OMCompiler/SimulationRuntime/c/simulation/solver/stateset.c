@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -33,6 +30,8 @@
 #include "stateset.h"
 #include "../../util/omc_error.h"
 #include "../jacobian_util.h"
+
+#include <string.h>
 
 /*! \fn printStateSelectionInfo
  *
@@ -47,7 +46,7 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
 {
   long k, l;
 
-  infoStreamPrint(OMC_LOG_DSS, 0, "Select %ld state%s from %ld candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
+  infoStreamPrint(OMC_LOG_DSS, 0, "Select " OMC_INT_FORMAT " state%s from " OMC_INT_FORMAT " candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
   infoStreamPrint(OMC_LOG_DSS, 1, "State candidates:");
   for(k=0; k < set->nCandidates; k++)
   {
@@ -84,7 +83,6 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
  */
 void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   long i = 0;
   STATE_SET_DATA *set = NULL;
   JACOBIAN* jacobian;
@@ -101,7 +99,6 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
     }
   }
   initializeStateSetPivoting(data);
-  TRACE_POP
 }
 
 /*! \fn initializeStateSetPivoting
@@ -114,7 +111,6 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
  */
 void initializeStateSetPivoting(DATA *data)
 {
-  TRACE_PUSH
   long i = 0;
   long n = 0;
   STATE_SET_DATA *set = NULL;
@@ -140,7 +136,6 @@ void initializeStateSetPivoting(DATA *data)
     for(n=0; n<set->nStates; n++)
       A[n*set->nCandidates + n] = 1;  /* set A[row, col] */
   }
-  TRACE_POP
 }
 
 /*! \fn freeStateSetData
@@ -153,7 +148,6 @@ void initializeStateSetPivoting(DATA *data)
  */
 void freeStateSetData(DATA *data)
 {
-  TRACE_PUSH
   long i=0;
 
   /* go through all state sets */
@@ -166,7 +160,6 @@ void freeStateSetData(DATA *data)
      free(set->colPivot);
      free(set->J);
   }
-  TRACE_POP
 }
 
 /*! \fn getAnalyticalJacobianSet
@@ -180,7 +173,6 @@ void freeStateSetData(DATA *data)
  */
 static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsigned int index)
 {
-  TRACE_PUSH
   unsigned int i, j, k, l, ii;
   const unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
@@ -199,17 +191,14 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
 
     for(i=0; i<jacobian->sizeRows; i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j < jacobian->sizeCols; j++)
-        sprintf(buffer, "%s%.5e ", buffer, jac[i*jacobian->sizeCols+j]);
+        p += sprintf(p, "%.5e ", jac[i*jacobian->sizeCols+j]);
       infoStreamPrint(OMC_LOG_DSS_JAC, 0, "%s", buffer);
     }
     messageClose(OMC_LOG_DSS_JAC);
     free(buffer);
-
   }
-
-  TRACE_POP
 }
 
 /*! \fn setAMatrix
@@ -226,7 +215,6 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
  */
 static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, VAR_INFO* Ainfo, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data)
 {
-  TRACE_PUSH
   modelica_integer col;
   modelica_integer row=0;
   /* clear old values */
@@ -248,7 +236,6 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       row++;
     }
   }
-  TRACE_POP
 }
 
 /*! \fn comparePivot
@@ -264,7 +251,6 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
  */
 static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long setIndex, DATA *data, int switchStates)
 {
-  TRACE_PUSH
   modelica_integer i;
   int ret = 0;
   modelica_integer *newPivot = set->colPivot;
@@ -306,7 +292,6 @@ static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long se
   free(oldEnable);
   free(newEnable);
 
-  TRACE_POP
   return ret;
 }
 
@@ -346,13 +331,13 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
       /* error, report the matrix and the time */
 
       char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*100+5);
-      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %zux%zu [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %zux%zu [id: " OMC_INT_FORMAT "]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {
-        buffer[0] = 0;
+        char *p = buffer;
         for(j=0; j < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols; j++)
-          sprintf(buffer, "%s%.5e ", buffer, set->J[m*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
+          p += sprintf(p, "%.5e ", set->J[m*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
         warningStreamPrint(OMC_LOG_DSS, 0, "%s", buffer);
       }
 
@@ -360,7 +345,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
 
       for(m=0; m<set->nCandidates; m++)
         warningStreamPrint(OMC_LOG_DSS, 0, "%s", set->statescandidates[m]->name);
-      messageClose(OMC_LOG_DSS);
+      messageCloseWarning(OMC_LOG_DSS);
 
       throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
@@ -394,7 +379,6 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
  */
 int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates)
 {
-  TRACE_PUSH
   long i=0;
   int globalres=0;
 
@@ -404,7 +388,6 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
     globalres = stateSelectionSet(data, threadData, reportError, switchStates, i, globalres);
   }
 
-  TRACE_POP
   return globalres;
 }
 

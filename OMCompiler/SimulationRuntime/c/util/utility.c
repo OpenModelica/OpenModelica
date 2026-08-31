@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -33,10 +30,12 @@
 #include "utility.h"
 #include "modelica_string.h"
 #include "omc_file.h"
+#include "omc_strdup.h"
 #include "../simulation_data.h"
 #include "../simulation/options.h"
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelica_integer n)
 {
@@ -71,20 +70,14 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   regex_t myregex;
   int nmatch=0,i,rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (ignoreCase ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
-#if !defined(_MSC_VER)
-  regmatch_t matches[maxn < 1 ? 1 : maxn];
-#else
-  /* Stupid compiler */
   regmatch_t *matches;
   matches = (regmatch_t*)malloc(maxn*sizeof(regmatch_t));
   assert(matches != NULL);
-#endif
+
   memset(&myregex, 1, sizeof(regex_t));
   rc = regcomp(&myregex, re, flags);
   if (rc && maxn == 0) {
-#if defined(_MSC_VER)
     free(matches);
-#endif
     return 0;
   }
   if (rc) {
@@ -98,16 +91,15 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
       for (i=1; i<maxn; i++)
         outMatches[i] = mystrdup("");
     }
-#if defined(_MSC_VER)
+
     free(matches);
-#endif
     return 0;
   }
   res = regexec(&myregex, str, maxn, matches, 0);
   if (!maxn)
     nmatch += res == 0 ? 1 : 0;
   else if (maxn) {
-    char *dup = strdup(str);
+    char *dup = omc_strdup(str);
     for (i=0; i<maxn; i++) {
       if (!res && matches[i].rm_so != -1) {
         memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);
@@ -122,9 +114,8 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   }
 
   regfree(&myregex);
-#if defined(_MSC_VER)
   free(matches);
-#endif
+
   return nmatch;
 }
 
@@ -368,7 +359,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
         MMC_THROW();
       }
       /* Move the found ident last in the path */
-      strcpy(buf+MMC_STRLEN(dir)+1, buf);
+      memmove(buf+MMC_STRLEN(dir)+1, buf, strlen(buf)+1);
       /* Copy the old directory in there */
       strcpy(buf, MMC_STRINGDATA(dir));
       buf[MMC_STRLEN(dir)]='/';
@@ -406,4 +397,3 @@ extern void uriToFilename(threadData_t *threadData)
 {
   abort();
 }
-

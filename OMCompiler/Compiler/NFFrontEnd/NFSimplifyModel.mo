@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -49,11 +53,12 @@ import Dimension = NFDimension;
 import Subscript = NFSubscript;
 
 protected
-import MetaModelica.Dangerous.*;
-import ExecStat.execStat;
-import SimplifyExp = NFSimplifyExp;
-import NFPrefixes.Variability;
 import Ceval = NFCeval;
+import DAE;
+import ExecStat.execStat;
+import MetaModelica.Dangerous.*;
+import NFPrefixes.Variability;
+import SimplifyExp = NFSimplifyExp;
 
 public
 function simplify
@@ -141,25 +146,12 @@ function simplifyEquation
 algorithm
   equations := match eq
     local
-      Expression e, lhs, rhs;
-      Type ty;
-      Dimension dim;
+      Expression e;
       list<Equation> body;
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        ty := Type.mapDims(eq.ty, simplifyDimension);
-
-        if not Type.isEmptyArray(ty) then
-          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
-          equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.scope, eq.source) :: equations;
-        end if;
-      then
-        equations;
-
-    case Equation.FOR(range = SOME(e))
+    case Equation.FOR(range = SOME(_))
       algorithm
         body := simplifyEquations(eq.body);
 
@@ -243,8 +235,9 @@ protected
   Type ty;
   DAE.ElementSource src;
   InstNode scope;
+  Equation.ScalarizeMode scalarize_mode;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src) := eq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
   if Type.isEmptyArray(ty) then
@@ -259,9 +252,9 @@ algorithm
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
       then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
-        function Equation.makeEquality(scope = scope), equations);
+        function Equation.makeEquality(scope = scope, scalarizeMode = scalarize_mode), equations);
 
-    else Equation.EQUALITY(lhs, rhs, ty, scope, src) :: equations;
+    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode) :: equations;
   end match;
 end simplifyEqualityEquation;
 
@@ -303,7 +296,7 @@ function simplifyStatement
 algorithm
   statements := match stmt
     local
-      Expression e, lhs, rhs;
+      Expression e;
       Dimension dim;
       list<Statement> body;
 
@@ -398,8 +391,7 @@ function simplifyAssignment
   input Statement stmt;
   input output list<Statement> statements;
 protected
-  Expression lhs, rhs, rhs_exp;
-  list<Expression> rhs_rest;
+  Expression lhs, rhs;
   Type ty;
   DAE.ElementSource src;
 algorithm
@@ -671,5 +663,5 @@ algorithm
   flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSimplifyModel;

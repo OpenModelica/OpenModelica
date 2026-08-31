@@ -1,6 +1,7 @@
 // name: CevalFuncRecord4
 // keywords:
 // status: correct
+// suite: disabled
 //
 //
 

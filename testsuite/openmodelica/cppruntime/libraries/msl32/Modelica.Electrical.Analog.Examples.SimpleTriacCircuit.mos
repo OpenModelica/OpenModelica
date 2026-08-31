@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.Electrical.Analog.Examples.SimpleTriacCircuit_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// cflags: 	 +simCodeTarget=Cpp
 //
 // Simulation Results 
 // Modelica Standard Library

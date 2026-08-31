@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — FMI Simulator</title>
+<link rel="stylesheet" href="../theme.css" />
+<style>
+  /* Log severities are this page's own; the rest of the palette is theme.css. */
+  :root { --warn:#d7ba7d; }
+
+  main { flex:1 1 auto; display:grid; grid-template-columns:minmax(340px,38%) 1fr; min-height:0; }
+  .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow-y:auto; }
+  .right { display:flex; flex-direction:column; min-height:0; }
+
+  /* FMU summary, or the drop target when nothing is loaded yet. */
+  .info { padding:2px 12px 12px; }
+  /* The FMU icon from terminalsAndIcons/, sized as the generated library
+     documentation sizes it. Floated so the summary keeps its grid. */
+  .fmu-icon { float:right; width:32px; height:32px; object-fit:contain; margin:0 0 4px 12px; }
+  /* A button, so click and Enter open the file dialog. */
+  .drop { display:block; width:calc(100% - 24px); margin:10px 12px; background:transparent;
+    border:1.5px dashed var(--border); border-radius:8px; cursor:pointer;
+    padding:28px 16px; text-align:center; white-space:normal;
+    color:var(--muted); font:inherit; font-size:14px; }
+  .drop:hover, .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
+  .drop b { color:var(--fg); font-weight:600; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:13.5px; }
+  .kv dt { color:var(--muted); }
+  .kv dd { margin:0; overflow-wrap:anywhere; }
+  .tag { display:inline-block; border:1px solid var(--border); border-radius:3px;
+    padding:0 5px; margin-right:4px; font-size:12px; color:var(--teal); }
+  .tag.off { color:var(--muted); opacity:.55; }
+  .grid2 .wide { grid-column:2 / -1; }
+  /* .chk is shared (theme.css); the settings grid only relaxes its nowrap. */
+  .grid2 label.chk { white-space:normal; font-size:13px; }
+  input:disabled { color:var(--muted); }
+
+  #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
+  .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:7px 18px; }
+  .ic-item { display:grid; grid-template-columns:minmax(0,1fr) 104px auto; gap:9px; align-items:center; }
+  .ic-item .nm .in { color:var(--accent); font-size:11px; margin-left:4px; }
+  .ic-item input { font-size:14px; padding:4px 6px; font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .ic-item input.bad { border-color:var(--err); }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; padding:7px 2px 0; max-height:22%; overflow-y:auto; }
+
+  /* FMU log: fmi3LogMessage callbacks plus anything the guest writes to stdout/stderr. */
+  .log-pane { flex:0 0 auto; height:26%; min-height:96px; display:flex; flex-direction:column;
+    border-top:1px solid var(--border); background:var(--panel); }
+  .log-head { display:flex; align-items:center; gap:8px; }
+  .log-head .section-label { flex:1 1 auto; }
+  .log-head .dropped { color:var(--muted); font-size:12px; }
+  .log-body { flex:1 1 auto; overflow-y:auto; padding:2px 12px 8px;
+    font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; }
+  .log-body .warning, .log-body .stderr { color:var(--warn); }
+  .log-body .error, .log-body .fatal, .log-body .host { color:var(--err); }
+  .log-body .empty { color:var(--muted); font-family:inherit; }
+
+  /* Documentation column, shown only when the screen is wide enough (see below).
+     Mirrors the simulator page: a chevron collapses it, and collapsed it stays a
+     thin rail whose chevron reopens it, so it is never lost. */
+  .docs { display:none; flex-direction:column; min-height:0; border-left:1px solid var(--border); }
+  .docs-head { display:flex; align-items:center; gap:6px; padding-right:4px; flex:0 0 auto; }
+  .docs-head .section-label { flex:1 1 auto; }
+  .doc-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer;
+    padding:6px 8px; display:inline-flex; align-items:center; justify-content:center; }
+  .doc-toggle:hover { color:var(--fg); }
+  .doc-toggle svg { width:16px; height:16px; display:block; transition:transform .15s; }
+  .doc-expand { display:none; }                 /* the collapsed-rail reopen button (desktop) */
+  .doc-body { flex:1 1 auto; overflow-y:auto; padding:4px 14px 16px; font-size:13.5px; line-height:1.5; }
+  .doc-body.empty { color:var(--muted); display:grid; place-items:center; text-align:center; }
+  .doc-body img, .doc-body svg { max-width:100%; height:auto; }
+  .doc-body a { color:var(--accent); }
+  .doc-body table { border-collapse:collapse; max-width:100%; display:block; overflow-x:auto; }
+  .doc-body td, .doc-body th { border:1px solid var(--border); padding:3px 6px; }
+  .doc-body pre, .doc-body code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; }
+  .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
+  .doc-body .svgiconhead { width:24px; height:24px; object-fit:contain; vertical-align:middle; }
+
+  @media (max-width:820px), (orientation:portrait) {
+    main { grid-template-columns:1fr; }
+    .left { border-right:0; border-bottom:1px solid var(--border); overflow:visible; }
+    .grid2 .wide { grid-column:2; }
+    #icPanel { max-height:none; }
+    header .status { order:3; flex-basis:100%; white-space:normal; }
+    .log-pane { height:auto; max-height:40vh; }
+    /* Documentation flows at the end of the page (scroll down to reach it). */
+    .docs { display:block; border-left:0; border-top:1px solid var(--border); }
+    .doc-body { overflow:visible; }
+    .doc-body.empty { min-height:80px; }
+    /* Collapsed: keep the header strip (with its reopen chevron), hide the body. */
+    body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .docs-head .doc-toggle svg { transform:rotate(180deg); }
+  }
+
+  /* Landscape screens: a third column for the FMU's documentation. */
+  @media (min-width:821px) and (orientation:landscape) {
+    main { grid-template-columns:minmax(340px,30%) 1fr minmax(260px,22%); }
+    .docs { display:flex; }
+    /* Collapsed: the column becomes a thin rail with a reopen chevron. */
+    body.docs-hidden main { grid-template-columns:minmax(340px,38%) 1fr 34px; }
+    body.docs-hidden .docs-head, body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .doc-expand { display:flex; flex:1 1 auto; align-items:flex-start;
+      justify-content:center; width:100%; padding:10px 0; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../anim/three.module.min.js",
+    "@bytecodealliance/preview2-shim/cli": "./vendor/preview2-shim/cli.js",
+    "@bytecodealliance/preview2-shim/clocks": "./vendor/preview2-shim/clocks.js",
+    "@bytecodealliance/preview2-shim/filesystem": "./vendor/preview2-shim/filesystem.js",
+    "@bytecodealliance/preview2-shim/io": "./vendor/preview2-shim/io.js",
+    "@bytecodealliance/preview2-shim/random": "./vendor/preview2-shim/random.js",
+    "@bytecodealliance/preview2-shim/sockets": "./vendor/preview2-shim/sockets.js",
+    "@bytecodealliance/preview2-shim/http": "./vendor/preview2-shim/http.js"
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <span class="title">FMI Simulator</span>
+  <span class="status" id="status">Open an FMI 3.0 wasm FMU to begin.</span>
+  <input type="file" id="file" accept=".fmu,application/zip" hidden />
+  <button class="ghost" id="open">Open FMU…</button>
+  <button class="ghost" id="nativeBtn" title="Compile this FMU's component for native platforms and repack it" hidden disabled>Native binaries…</button>
+  <button class="ghost" id="figToggle" title="Switch between the FMU's figures and all recorded variables" hidden>All variables</button>
+  <button id="run" disabled>Simulate</button>
+  <button class="ghost icon-only" id="download" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+</header>
+
+<main>
+  <div class="left">
+    <div class="section-label">FMU</div>
+    <div class="info" id="info">
+      <button type="button" class="drop" id="drop">
+        <b>Drop an .fmu here, or click to browse</b><br />
+        FMI 3.0 Co-Simulation or Model Exchange with a<br />
+        <code>binaries/wasm32-wasip2</code> component (FMI-LS-WASM).
+      </button>
+    </div>
+
+    <div class="section-label">Inputs, parameters and start values</div>
+    <div id="icPanel">
+      <div class="ic-grid" id="icGrid"></div>
+      <div class="ic-empty" id="icEmpty">No FMU loaded.</div>
+    </div>
+
+    <div class="panel grid2">
+      <label for="interface">Interface</label>
+      <select id="interface" class="wide" disabled></select>
+      <label for="start">Start</label><input id="start" value="0" />
+      <label for="stop">Stop</label><input id="stop" value="1" />
+      <label for="step" id="stepLabel">Step size</label><input id="step" value="0.1" />
+      <label for="tol">Tolerance</label><input id="tol" value="1e-6" />
+      <label for="solver" id="solverLabel" title="The integrator the master runs the FMU with (Model Exchange only; a Co-Simulation FMU brings its own)" hidden>Solver</label>
+      <select id="solver" class="wide" hidden></select>
+      <label for="eventMode" id="eventModeLabel" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden>Event mode</label>
+      <label class="chk wide" id="eventModeCell" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden><input type="checkbox" id="eventMode" checked /></label>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="charts" id="charts">
+      <div class="charts-empty" id="chartsEmpty">No results yet.</div>
+    </div>
+    <div class="log-pane">
+      <div class="log-head">
+        <div class="section-label">FMU log</div>
+        <span class="dropped" id="logDropped"></span>
+        <button class="icon-btn" id="logClear" title="Clear the log">✕</button>
+      </div>
+      <div class="log-body" id="log"><span class="empty">No messages.</span></div>
+    </div>
+  </div>
+
+  <div class="docs" id="docs">
+    <div class="docs-head">
+      <span class="section-label">Documentation</span>
+      <button class="doc-toggle" id="docCollapse" title="Hide documentation" aria-label="Hide documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="doc-body empty" id="docBody">No FMU loaded.</div>
+    <button class="doc-toggle doc-expand" id="docExpand" title="Show documentation" aria-label="Show documentation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="nativeBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Add native binaries" aria-modal="true">
+    <div class="modal-head">
+      <span>Add native binaries</span>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Platforms</label>
+      <div class="chk-group" id="nativePlatforms"></div>
+      <p class="modal-hint">Compiles this FMU's component ahead of time for the
+      platforms you tick and repacks it with the matching FMI 3.0 loader library,
+      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
+      the compiler runs here.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" data-close>Cancel</button>
+      <button id="nativeGo" disabled>Build FMU</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { readZip, writeZip, iconDataUri, documentationHtml } from './fmu.js';
+import { loaderIndex, loaderBytes, compileForPlatform } from '../fmu-aot.js';
+import { Session } from './session.js';
+import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { bindModal, downloadBlob } from '../ui.js';
+import { AnimView } from '../anim/anim-view.js';
+import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
+
+const el = (id) => document.getElementById(id);
+const statusEl = el('status'), runBtn = el('run'), openBtn = el('open'), fileEl = el('file');
+const downloadEl = el('download');
+const infoEl = el('info'), dropEl = el('drop'), icGrid = el('icGrid'), icEmpty = el('icEmpty');
+const docBody = el('docBody');
+const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty'), logEl = el('log');
+const charts = createCharts(chartsEl);
+const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
+      tolEl = el('tol'), stepLabel = el('stepLabel');
+const eventModeEl = el('eventMode'), eventModeLabel = el('eventModeLabel'), eventModeCell = el('eventModeCell');
+const solverEl = el('solver'), solverLabel = el('solverLabel');
+const figToggle = el('figToggle');
+
+let fmu = null;         // { md, exports, cs, me, resourcePath }
+let fields = [];        // { v, input, kind:'input'|'parameter' }
+let running = false, cancelled = false, logCount = 0;
+let lastRec = null;     // the most recent simulation record, for re-rendering
+let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
+let animView = null;    // shared 3D animation panel, if the FMU carries a <Visualization>
+let resultName = null;  // the last run's result file, or null when there is none
+let archive = null;     // the .fmu bytes, kept only for the native repack
+
+const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
+const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
+
+// A node plus a forced layout per message takes the tab down when an FMU logs
+// thousands of lines per step: bounded scrollback, flushed once per frame.
+const LOG_MAX = 2000;
+let logPending = [], logFrame = 0, logDropped = 0;
+
+function log(cls, text) {
+  if (!logCount++) logEl.replaceChildren();
+  logPending.push([cls, text]);
+  if (logPending.length > LOG_MAX) { logPending.shift(); logDropped++; }
+  if (!logFrame) logFrame = requestAnimationFrame(flushLog);
+}
+
+function flushLog() {
+  logFrame = 0;
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 4;
+  const frag = document.createDocumentFragment();
+  for (const [cls, text] of logPending) {
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    frag.appendChild(line);
+  }
+  logPending = [];
+  logEl.appendChild(frag);
+  while (logEl.childElementCount > LOG_MAX) { logEl.firstElementChild.remove(); logDropped++; }
+  el('logDropped').textContent = logDropped ? `${logDropped} earlier messages dropped` : '';
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+
+el('logClear').onclick = () => {
+  logEl.innerHTML = '<span class="empty">No messages.</span>';
+  logCount = 0; logPending = []; logDropped = 0;
+  el('logDropped').textContent = '';
+};
+
+// The FMU runs in a worker: a simulation is one uninterruptible call into the
+// driver's wasm, which would otherwise freeze the page for its whole duration.
+const session = new Session({
+  onLog: (tag, text) => log(tag, text),
+  onProgress: (t) => setStatus(`Simulating… t = ${(+t.toPrecision(4))}`, 'busy'),
+  // The samples so far, while the run is still going: plotted as they arrive.
+  onSamples: (batch) => {
+    if (!running) return;
+    renderCharts(toRecord(batch), true);
+    setStatus(`Simulating… t = ${(+batch.time.toPrecision(4))} (${batch.rows} samples)`, 'busy');
+  },
+});
+
+// --- loading ----------------------------------------------------------------
+openBtn.onclick = () => fileEl.click();
+dropEl.onclick = () => fileEl.click();     // a real button, so Enter works too
+fileEl.onchange = () => { if (fileEl.files[0]) openFile(fileEl.files[0]); fileEl.value = ''; };
+
+for (const ev of ['dragenter', 'dragover']) {
+  document.addEventListener(ev, (e) => { e.preventDefault(); dropEl && dropEl.classList.add('over'); });
+}
+for (const ev of ['dragleave', 'drop']) {
+  document.addEventListener(ev, (e) => { e.preventDefault(); dropEl && dropEl.classList.remove('over'); });
+}
+document.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+
+async function openFile(file) {
+  if (running) return;
+  runBtn.disabled = true;
+  hideResultFile();
+  setStatus(`Loading ${file.name}…`, 'busy');
+  try {
+    const buf = await file.arrayBuffer();
+    const t0 = performance.now();
+    if (animView) animView.hide();
+    // The driver opens the archive; this copy is only for the native repack.
+    archive = new Uint8Array(buf.slice(0));
+    const probe = await session.load(buf);
+    const ms = Math.round(performance.now() - t0);
+    fmu = { md: probe };
+    renderInfo(file.name, probe);
+    renderDoc(documentationHtml(probe.documentation));
+    renderFields();
+    applyDefaults();
+    runBtn.disabled = false;
+    syncNativeDialog();
+    setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.fmiVersion}.`);
+  } catch (e) {
+    fmu = null; archive = null;
+    runBtn.disabled = true;
+    syncNativeDialog();
+    renderDoc(null, 'No FMU loaded.');
+    setStatus(`${file.name}: ${e.message}`, 'err');
+    log('host', `load failed: ${e.stack || e.message}`);
+  }
+}
+
+// An interface counts as available only when the model description declares it
+// and the component actually exports it.
+const kinds = (probe) => [
+  probe.coSimulation ? { id: 'cs', label: 'Co-Simulation' } : null,
+  probe.modelExchange ? { id: 'me', label: 'Model Exchange' } : null,
+].filter(Boolean);
+
+function renderInfo(fileName, probe) {
+  const md = fmu.md;
+  const tag = (on, text) => `<span class="tag${on ? '' : ' off'}">${text}</span>`;
+  const row = (k, v) => (v ? `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>` : '');
+  const icon = iconDataUri(md.icon);
+  infoEl.innerHTML = `${icon ? `<img class="fmu-icon" src="${icon}" alt="">` : ''}<dl class="kv">
+    ${row('Model', md.modelName || fileName)}
+    ${row('Description', md.description)}
+    ${row('Generated by', md.generationTool)}
+    ${row('FMI', md.fmiVersion + (md.version ? ' · model version ' + md.version : ''))}
+    <dt>Interfaces</dt><dd>${tag(!!md.coSimulation, 'Co-Simulation')}${tag(!!md.modelExchange, 'Model Exchange')}${md.scheduledExecution ? tag(false, 'Scheduled Execution (unsupported)') : ''}</dd>
+    <dt>Variables</dt><dd>${md.variables.length}${md.numberOfContinuousStates ? ` · ${md.numberOfContinuousStates} continuous states` : ''}${md.numberOfEventIndicators ? ` · ${md.numberOfEventIndicators} event indicators` : ''}</dd>
+  </dl>`;
+
+  renderSolvers(probe.solvers);
+
+  const avail = kinds(probe);
+  if (!avail.length) throw new Error('the component exports neither a Co-Simulation nor a Model Exchange interface');
+  ifaceEl.replaceChildren();
+  for (const k of avail) ifaceEl.append(new Option(k.label, k.id));
+  ifaceEl.disabled = avail.length < 2;
+  ifaceEl.value = avail[0].id;
+  onIfaceChange();
+}
+
+// What the driver was built with, so the page never offers a solver the master
+// would refuse.
+function renderSolvers(solvers) {
+  const keep = solverEl.value;
+  solverEl.replaceChildren();
+  for (const s of solvers || []) solverEl.append(new Option(`${s.name} — ${s.description}`, s.name));
+  if ([...solverEl.options].some((o) => o.value === keep)) solverEl.value = keep;
+}
+
+ifaceEl.onchange = onIfaceChange;
+function onIfaceChange() {
+  stepLabel.textContent = ifaceEl.value === 'me' ? 'Max step' : 'Step size';
+  // The solver is the master's business, so it is offered for Model Exchange
+  // only; a Co-Simulation FMU integrates itself. The Event Mode toggle applies
+  // to a CS FMU that advertises the capability.
+  solverEl.hidden = solverLabel.hidden = ifaceEl.value !== 'me';
+  const showEventMode = ifaceEl.value === 'cs' && !!(fmu && fmu.md.coSimulation && fmu.md.coSimulation.hasEventMode);
+  eventModeLabel.hidden = eventModeCell.hidden = !showEventMode;
+  // Instantiating the component for this interface takes longer than the run
+  // does for a small FMU; get it out of the way while the options are set.
+  if (fmu) session.warm(ifaceEl.value).catch(() => {});
+}
+
+// Inputs are functions of t; parameters and start values are constants applied
+// during Initialization Mode. A continuous state is whatever a derivative points
+// at, and is settable when it declares initial exact/approx.
+function renderFields() {
+  const md = fmu.md;
+  fields = [];
+  icGrid.replaceChildren();
+  const stateVrs = new Set(md.variables.filter((v) => v.derivative != null).map((v) => v.derivative));
+  const isStart = (v) => stateVrs.has(v.vr) && (v.initial === 'exact' || v.initial === 'approx');
+  const wanted = md.variables.filter((v) =>
+    (v.causality === 'input') ||
+    (v.causality === 'parameter' && (v.variability === 'fixed' || v.variability === 'tunable')) ||
+    isStart(v));
+  for (const v of wanted) {
+    const item = document.createElement('div');
+    item.className = 'ic-item';
+    const isInput = v.causality === 'input';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    const kindLabel = isStart(v) ? 'start value' : v.causality;
+    nm.title = `${v.name}${v.description ? ' — ' + v.description : ''} (${kindLabel}, ${v.type})`;
+    nm.innerHTML = escapeHtml(v.name)
+      + (isInput ? '<span class="in">f(t)</span>' : isStart(v) ? '<span class="in">start</span>' : '');
+    const input = document.createElement('input');
+    // An input must be driven; a parameter with no declared start is left unset.
+    input.value = v.start != null ? v.start : isInput ? (v.type === 'Boolean' ? 'false' : '0') : '';
+    input.placeholder = input.value === '' ? 'unset' : '';
+    input.spellcheck = false;
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.innerHTML = v.unit ? unitHTML(v.unit) : '';
+    item.append(nm, input, unit);
+    icGrid.appendChild(item);
+    fields.push({ v, input, kind: isInput ? 'input' : 'parameter' });
+  }
+  icEmpty.textContent = fields.length ? '' : 'This FMU has no inputs, parameters or settable start values.';
+  icEmpty.style.display = fields.length ? 'none' : '';
+}
+
+function applyDefaults() {
+  const de = fmu.md.defaultExperiment;
+  startEl.value = de.startTime != null ? de.startTime : 0;
+  stopEl.value = de.stopTime != null ? de.stopTime : num(startEl.value, 0) + 1;
+  const step = de.stepSize != null ? de.stepSize : (num(stopEl.value, 1) - num(startEl.value, 0)) / 500;
+  stepEl.value = step;
+  tolEl.value = (de.tolerance != null ? de.tolerance : 1e-6).toExponential();
+}
+
+// An input expression in t, with Math in scope: "sin(2*PI*t)", "t < 1 ? 0 : 1".
+const MATH = Object.getOwnPropertyNames(Math).filter((k) => k !== 'constructor');
+function compileExpr(src, name) {
+  let fn;
+  try {
+    fn = new Function('t', `const {${MATH.join(',')}} = Math; return (${src});`);
+    const v = fn(0);
+    if (typeof v !== 'number' && typeof v !== 'boolean') throw new Error('does not evaluate to a number');
+    if (typeof v === 'number' && !isFinite(v)) throw new Error('is not finite at t = 0');
+  } catch (e) {
+    throw new Error(`${name}: "${src}" ${e.message.replace(/^.*?: /, '')}`);
+  }
+  return fn;
+}
+
+// The driver evaluates the expressions itself, so they travel as text; they are
+// still compiled here first, to catch a typo before the run starts.
+function collectFields() {
+  const inputs = [], parameters = [];
+  for (const f of fields) {
+    f.input.classList.remove('bad');
+    const src = f.input.value.trim();
+    if (f.kind === 'parameter' && f.v.start == null && src === '') continue;
+    if (f.v.type === 'String') {
+      log('warning', `${f.v.name}: string variables cannot be set yet; ignoring.`);
+      continue;
+    }
+    try {
+      const fn = compileExpr(src || '0', f.v.name);
+      if (f.kind === 'input') inputs.push({ vr: f.v.vr, expr: src || '0' });
+      else parameters.push({ vr: f.v.vr, value: fn(num(startEl.value, 0)) });
+    } catch (e) { f.input.classList.add('bad'); throw e; }
+  }
+  return { inputs, parameters };
+}
+
+// --- running ----------------------------------------------------------------
+runBtn.onclick = () => {
+  if (!running) return run();
+  cancelled = true;
+  setStatus('Cancelling…', 'busy');
+  // The run stops at its next output point and keeps what it has; where there
+  // is no shared memory to ask through, the worker has to go, and with it the
+  // loaded FMU.
+  if (!session.cancel()) {
+    session.terminate();
+    fmu = null; archive = null;
+    runBtn.disabled = true;
+    hideResultFile();
+    syncNativeDialog();
+  }
+};
+
+async function run() {
+  if (!fmu) return;
+  let opts;
+  try {
+    const { inputs, parameters } = collectFields();
+    opts = {
+      startTime: num(startEl.value, 0),
+      stopTime: num(stopEl.value, 1),
+      stepSize: num(stepEl.value, 0.1),
+      tolerance: num(tolEl.value, 1e-6),
+      inputs, parameters,
+      interface: ifaceEl.value,
+      solver: solverEl.value,
+      eventMode: eventModeEl.checked,
+    };
+  } catch (e) { setStatus(e.message, 'err'); return; }
+  if (!(opts.stopTime > opts.startTime)) { setStatus('Stop time must be after start time.', 'err'); return; }
+  if (!(opts.stepSize > 0)) { setStatus('Step size must be positive.', 'err'); return; }
+
+  running = true; cancelled = false;
+  hideResultFile();
+  runBtn.textContent = 'Cancel'; runBtn.className = 'cancel';
+  openBtn.disabled = true;
+  setStatus('Simulating…', 'busy');
+  const t0 = performance.now();
+  try {
+    const rec = toRecord(await session.run(opts));
+    const ms = Math.round(performance.now() - t0);
+    renderCharts(rec);
+    renderAnimation(rec);
+    offerResultFile();
+    if (rec.summary.cancelled) {
+      setStatus(`Cancelled at t = ${(+rec.time.at(-1).toPrecision(6))} — ${rec.time.length} samples kept.`);
+      return;
+    }
+    const kind = ifaceEl.value === 'me' ? 'Model Exchange' : 'Co-Simulation';
+    const s = rec.summary;
+    const events = s.interface === 'me'
+      ? `${s.stateEvents} state events, ${s.timeEvents} time events, ${s.calls} evaluations`
+      : `${s.steps} steps, ${s.events} events, ${s.earlyReturns} early returns`;
+    if (rec.terminated != null) {
+      // A model-requested `terminate()` is a normal, successful stop — not an error.
+      setStatus(`${rec.time.length} samples in ${ms} ms — ${kind}; model terminated at t = ${rec.terminated}.`, 'ok');
+      log('info', `the model requested termination at t = ${rec.terminated} (normal stop).`);
+    }
+    else setStatus(`${rec.time.length} samples in ${ms} ms — ${kind}: ${events}.`);
+  } catch (e) {
+    if (cancelled) setStatus('Cancelled — the FMU has to be opened again.');
+    else { setStatus(e.message, 'err'); log('host', `simulation failed: ${e.stack || e.message}`); }
+  } finally {
+    running = false;
+    runBtn.textContent = 'Simulate'; runBtn.className = '';
+    openBtn.disabled = false;
+  }
+}
+
+// The driver hands back one flat buffer of samples, during a run and at the end
+// of it; the charts and the animation want a column each.
+function toRecord(result) {
+  const stride = result.stride;
+  const rows = result.rows;
+  const time = new Float64Array(rows);
+  for (let r = 0; r < rows; r++) time[r] = result.values[r * stride];
+  const columns = result.columns.map((c, i) => {
+    const values = new Float64Array(rows);
+    for (let r = 0; r < rows; r++) values[r] = result.values[r * stride + i + 1];
+    return { ...c, values };
+  });
+  const parameters = new Map((result.parameters || []).map((p) => [p.name, p.value]));
+  const summary = result.summary || {};
+  return {
+    columns, time, parameters, summary,
+    terminated: summary.terminatedAt,
+    warning: null,
+  };
+}
+
+// Written on demand: serialising the whole result is the expensive part.
+function offerResultFile() {
+  resultName = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
+  downloadEl.hidden = false;
+  downloadEl.title = downloadEl.ariaLabel = `Download ${resultName}`;
+}
+
+function hideResultFile() {
+  resultName = null;
+  downloadEl.hidden = true;
+}
+
+downloadEl.onclick = async () => {
+  if (!resultName || downloadEl.disabled) return;
+  downloadEl.disabled = true;
+  try {
+    const bytes = await session.mat(`/${resultName}`);
+    if (!bytes || !bytes.length) throw new Error('the driver wrote no result file');
+    downloadBlob(resultName, bytes);
+    setStatus(`${resultName} — ${bytes.length} bytes.`, 'ok');
+  } catch (e) {
+    setStatus(`The result file could not be written: ${e.message}`, 'err');
+    log('warning', `the result file could not be written: ${e.message}`);
+  } finally {
+    downloadEl.disabled = false;
+  }
+};
+
+// --- charts -----------------------------------------------------------------
+const haveFigures = () => !!(fmu && fmu.md.figures && fmu.md.figures.length);
+
+// Reflect whether figures are available and which view is active on the toggle.
+function updateFigToggle() {
+  const have = haveFigures() && !!lastRec;
+  figToggle.hidden = !have;
+  figToggle.textContent = (viewMode === 'all') ? 'Figures' : 'All variables';
+}
+
+// An FMI 3.0 <Alias> is an alternative name sharing another variable's
+// valueReference, so only the base name is ever recorded. Bus signals — which is
+// what a figure or a 3D scene usually references — are nearly all aliases.
+const resolveAlias = (name, have) => (have(name) ? name : ((fmu.md.aliases || {})[name] || name));
+
+// Build the 3D scene from the FMU's <Visualization> resource and the run's data,
+// via the shared anim core. CAD shapes whose modelica:// URI isn't in the FMU are skipped.
+async function renderAnimation(rec) {
+  const viz = fmu && fmu.md.visualization;
+  const text = viz && await session.file('resources/' + viz.file);
+  if (!text) { if (animView) animView.hide(); return; }
+  const xml = new TextDecoder().decode(text);
+  const byName = new Map(rec.columns.map((c) => [c.name, c]));
+  // A cref is a recorded column or a static parameter, possibly via an <Alias>.
+  const lookup = (name) => {
+    const n = resolveAlias(name, (k) => byName.has(k) || !!(rec.parameters && rec.parameters.has(k)));
+    const c = byName.get(n);
+    if (c) return c.values;
+    const p = rec.parameters && rec.parameters.get(n);
+    return p == null ? undefined : [p];
+  };
+  try {
+    const built = await buildAnimData(xml, rec.time, lookup);
+    if (!built) { if (animView) animView.hide(); return; }
+    // CAD shapes: the embedded DXF resource, named by the basename of the type
+    // URI. Fetched up front — attachCadMeshes resolves them synchronously.
+    const cad = new Map();
+    for (const sh of built.shapes) {
+      const name = sh.type && sh.type.split(/[\\/]/).pop();
+      if (!name || cad.has(name) || !/\.(dxf|stl|obj)$/i.test(name)) continue;
+      const bytes = await session.file('resources/' + name);
+      cad.set(name, bytes ? new TextDecoder().decode(bytes) : null);
+    }
+    attachCadMeshes(built.shapes, (type) => cad.get(type.split(/[\\/]/).pop()) || null);
+    if (built.missing && built.missing.length) {
+      log('warning', `3D view: ${built.missing.length} shape variable(s) not found in the FMU result (rendered with 0) — e.g. ${built.missing.slice(0, 3).join(', ')}`);
+    }
+    if (!animView) { animView = new AnimView(); chartsEl.parentElement.insertBefore(animView.el, chartsEl); }
+    animView.setData(built);
+  } catch (e) { log('host', 'animation failed: ' + (e.message || e)); if (animView) animView.hide(); }
+}
+
+// `live` marks a partial record arriving while the run is still going: the
+// selection the user made in the legend is kept, and nothing else is disturbed.
+function renderCharts(rec, live = false) {
+  lastRec = rec;
+  charts.clear();
+  const finite = rec.columns.filter((c) => c.values.some((v) => isFinite(v)));
+  if (!finite.length) {
+    charts.clear(chartsEmpty);
+    chartsEmpty.style.display = '';
+    chartsEmpty.textContent = 'The FMU reported no output, local or input variables to plot.';
+    updateFigToggle();
+    return;
+  }
+  const useFigs = haveFigures() && viewMode !== 'all';
+  if (useFigs) renderFigures(rec, finite); else renderAllVariables(rec, finite);
+  updateFigToggle();
+}
+
+function renderAllVariables(rec, finite) {
+  const xs = Float64Array.from(rec.time);
+  // `ys` references the recorded array, so all signals go into the legend cheaply;
+  // big models default to one state visible with the rest toggled off (drawing all
+  // would be unresponsive).
+  const curves = finite.map((c, i) => ({ label: c.name, unit: c.unit || '', color: COLORS[i % COLORS.length],
+                                         xs, ys: c.values }));
+  const spec = { curves, xText: 'time', xUnit: 's', xIsTime: true, solo: true };
+  if (finite.length > 5) {
+    const state = finite.find((c) => c.isState) || finite[0];
+    spec.defaultVisible = [state.name];
+    log('info', `${finite.length} signals recorded — plotting ${state.name}; click others in the legend to add them.`);
+  }
+  charts.add(spec, 'all');
+}
+
+// Render the FMU's <Figures> as the default plots (preferred first), like the
+// Modelica simulator; a curve whose variable is not in the result is skipped.
+function renderFigures(rec, finite) {
+  const xs = Float64Array.from(rec.time);
+  const byName = new Map(rec.columns.map((c) => [c.name, c]));
+  const figs = fmu.md.figures.slice().sort((a, b) => (b.preferred - a.preferred));
+  let plotted = 0;
+  figs.forEach((fig, fi) => {
+    if (fig.title) {
+      const h = document.createElement('div'); h.className = 'fig-head'; h.textContent = fig.title;
+      chartsEl.appendChild(h);
+    }
+    fig.plots.forEach((plot, pi) => {
+      const curves = [];
+      plot.curves.forEach((cv) => {
+        const has = (k) => byName.has(k);
+        const yc = byName.get(resolveAlias(cv.y, has)); if (!yc) return;
+        const xc = cv.x ? byName.get(resolveAlias(cv.x, has)) : null;
+        curves.push({ label: cv.legend || cv.y, unit: yc.unit || '', color: COLORS[curves.length % COLORS.length],
+                      xs: xc ? Float64Array.from(xc.values) : xs, ys: yc.values, xName: cv.x || 'time' });
+      });
+      const yAxis = plot.y || {}, xAxis = plot.x || {};
+      const xIsTime = curves.every((c) => c.xName === 'time');
+      charts.add({
+        title: plot.title, curves, xIsTime,
+        xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
+        xUnit: xAxis.unit || (xIsTime ? 's' : ''),
+        yText: yAxis.label || '', yUnit: yAxis.unit || '',
+        yMin: yAxis.min != null ? yAxis.min : null, yMax: yAxis.max != null ? yAxis.max : null,
+        yLog: !!yAxis.log,
+        note: plot.curves.length && !curves.length ? 'Referenced variables are not in the result.' : '',
+      }, 'f' + fi + 'p' + pi);
+      if (curves.length) plotted++;
+    });
+    if (fig.caption) {
+      const c = document.createElement('div'); c.className = 'caption'; c.textContent = fig.caption;
+      chartsEl.appendChild(c);
+    }
+  });
+  if (!plotted) log('info', 'the figure annotation referenced no recorded variables; switch to All variables to plot.');
+}
+
+figToggle.onclick = () => {
+  viewMode = (viewMode === 'all') ? 'auto' : 'all';
+  if (lastRec) renderCharts(lastRec);
+};
+
+// ── native binaries for the loaded FMU ───────────────────────────────────────
+// The component is compiled here (fmu-aot-worker.js, wasmtime built for wasip1)
+// and repacked with the prebuilt loader library for each platform, so this works
+// on any FMI-LS-WASM FMU, whoever produced it.
+const PLATFORM_NAMES = {
+  'x86_64-linux': 'Linux x86-64', 'aarch64-linux': 'Linux ARM64',
+  'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
+  'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
+};
+const nativeBtn = el('nativeBtn'), nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
+let loaders = [];
+
+const nativeDialog = bindModal(el('nativeBackdrop'));
+nativeBtn.onclick = () => nativeDialog.open();
+
+(async () => {
+  loaders = await loaderIndex();
+  if (!loaders.length) return;
+  nativeGroup.replaceChildren(...loaders.map((e) => {
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: e.platform });
+    box.onchange = syncNativeDialog;
+    const label = Object.assign(document.createElement('label'), { className: 'chk' });
+    label.append(box, ' ' + (PLATFORM_NAMES[e.platform] || e.platform));
+    return label;
+  }));
+  nativeBtn.hidden = false;
+  syncNativeDialog();
+})();
+
+function syncNativeDialog() {
+  nativeBtn.disabled = !fmu;
+  nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked');
+}
+
+nativeGo.onclick = async () => {
+  const picked = [...nativeGroup.querySelectorAll('input:checked')].map((c) => c.value);
+  if (!fmu || !picked.length) return;
+  nativeDialog.close();
+  nativeGo.disabled = nativeBtn.disabled = true;
+  const id = (fmu.md.coSimulation || fmu.md.modelExchange).modelIdentifier;
+  try {
+    const files = await readZip(archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength));
+    const component = files.get(`binaries/wasm32-wasip2/${id}.wasm`)
+      || [...files.entries()].find(([n]) => n.startsWith('binaries/wasm32-wasip2/') && n.endsWith('.wasm'))?.[1];
+    if (!component) throw new Error('no wasm component found in binaries/wasm32-wasip2');
+    for (const platform of picked) {
+      const entry = loaders.find((e) => e.platform === platform);
+      setStatus(`Compiling for ${platform}…`, 'busy');
+      const t0 = performance.now();
+      const cwasm = await compileForPlatform(component, entry.triple);
+      log('host', `${platform}: ${cwasm.length} bytes in ${Math.round(performance.now() - t0)} ms`);
+      files.set(`binaries/${platform}/${id}${entry.ext}`, await loaderBytes(entry));
+      files.set(`resources/${platform}.cwasm`, cwasm);
+    }
+    const blob = await writeZip(files);
+    downloadBlob(`${id}-native.fmu`, blob);
+    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`, 'ok');
+  } catch (e) {
+    setStatus(`Native build failed: ${e.message}`, 'err');
+    log('host', e.stack || e.message);
+  } finally {
+    syncNativeDialog();
+  }
+};
+
+// Documentation collapse/expand, driven from inside the widget: a chevron in the
+// doc header hides it; when collapsed it leaves a thin rail (desktop) or header
+// strip (mobile) whose chevron reopens it. Collapsing widens the charts.
+let docsUserToggled = false;   // once the user decides, stop auto-collapsing
+function reflowDocs() {
+  charts.redraw();                                   // chart width changed
+  if (animView) animView.resize();
+}
+function toggleDocs() {
+  docsUserToggled = true;
+  document.body.classList.toggle('docs-hidden');
+  reflowDocs();
+}
+// Landscape screens narrower than the full 3-column layout start with the doc
+// column collapsed to its rail (the chevron stays, so it's never lost) rather
+// than vanishing. Wide screens start expanded; the user's choice overrides both.
+function autoDocs() {
+  if (docsUserToggled) return;
+  const landscape = window.matchMedia('(orientation:landscape)').matches && window.innerWidth >= 821;
+  const wantHidden = landscape && window.innerWidth < 1300;
+  if (document.body.classList.contains('docs-hidden') === wantHidden) return;
+  document.body.classList.toggle('docs-hidden', wantHidden);
+  reflowDocs();
+}
+el('docCollapse').addEventListener('click', toggleDocs);
+el('docExpand').addEventListener('click', toggleDocs);
+autoDocs();
+
+// The FMU's own documentation, shown in the page's theme rather than its own.
+function renderDoc(html, empty = 'This FMU carries no documentation.') {
+  if (!html) {
+    docBody.className = 'doc-body empty';
+    docBody.textContent = empty;
+    return;
+  }
+  docBody.className = 'doc-body';
+  docBody.innerHTML = html;
+  docBody.scrollTop = 0;
+}
+
+addEventListener('resize', () => { charts.redraw(); autoDocs(); });
+</script>
+</body>
+</html>

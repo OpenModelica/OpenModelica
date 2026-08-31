@@ -1,33 +1,36 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage
- * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
 /*!
@@ -42,18 +45,15 @@
 #define TEXTCELL_H
 
 
-//QT Headers
+// Qt headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QResizeEvent>
+#include <QUrl>
+#include <QWidget>
 
-//IAEX Headers
+// IAEX headers
 #include "cell.h"
-
-// forward declaration
-class QResizeEvent;
-class QUrl;
-class QWidget;
-
 
 
 namespace IAEX
@@ -63,51 +63,53 @@ namespace IAEX
     Q_OBJECT
 
   public:
-    TextCell(QWidget *parent = 0);      // Changed 2005-10-28 AF
-    TextCell(TextCell &t);
+    TextCell(QWidget *parent = 0);
     virtual ~TextCell();
 
-    QString text();
-    QString textHtml();          // Added 2005-10-28 AF
-    QTextCursor textCursor();      // Added 2005-10-28 AF
-    QTextEdit* textEdit();        // Added 2005-10-28 AF
+    QString text() override;
+    QString textHtml() override;
+    QTextCursor textCursor() override;
+    QTextEdit* textEdit() override;
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
 
     void clear();
-    virtual void accept(Visitor &v);
-    virtual bool isEditable();
-    virtual void viewExpression(const bool expr);
+    virtual void accept(Visitor &v) override;
+    virtual bool isEditable() const override;
+    virtual void viewExpression(bool expr) override;
 
   signals:
     void textChanged();
     void textChanged( bool );
-    void hoverOverUrl( const QUrl &link );    // Added 2006-02-10 AF
-    void forwardAction( int );          // Added 2006-04-27 AF
+    void hoverOverUrl( const QUrl &link );
+    void forwardAction( int );
 
   public slots:
     void clickEvent();
-    void setText(QString text);
-    void setText(QString text, QTextCharFormat format);    // Added 2005-10-28 AF
-    void setTextHtml(QString html);              // Added 2005-10-28 AF
-    void setStyle(const QString &stylename);        // Changed 2005-10-28 AF
-    void setStyle(CellStyle style);              // Changed 2005-10-28 AF
-    void setChapterCounter(QString number);          // Added 2006-03-02 AF
-    QString ChapterCounter();                // Added 2006-03-02 AF
-    QString ChapterCounterHtml();              // Added 2006-03-03 AF
-    void setReadOnly(const bool readonly);
-    virtual void setFocus(const bool focus);
+    void setText(QString text) override;
+    void setText(QString text, QTextCharFormat format) override;
+    void setTextHtml(QString html) override;
+    void setStyle(const QString &stylename) override;
+    void setStyle(CellStyle style) override;
+    void setChapterCounter(QString number);
+    QString ChapterCounter();
+    QString ChapterCounterHtml();
+    void setReadOnly(bool readonly) override;
+    virtual void setFocus(bool focus) override;
 
 
 
   protected slots:
     void contentChanged();
-    void hoverOverLink(const QUrl &link);        // Added 2006-02-10 AF
+    void hoverOverLink(const QUrl &link);
     void openLinkInternal(const QUrl *url);
     void openLinkInternal(const QUrl &url);
     void textChangedInternal();
-    void charFormatChanged(const QTextCharFormat &);  // Added 2006-01-17 AF
+    void charFormatChanged(const QTextCharFormat &);
 
   protected:
-    void resizeEvent(QResizeEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
 
   private:
     void createTextWidget();
@@ -116,11 +118,11 @@ namespace IAEX
   public:
     QTextBrowser *text_;
   private:
-    QTextBrowser *chaptercounter_;            // Added 2006-03-02 AF
+    QTextBrowser *chaptercounter_;
 
-    QString oldHoverLink_;                // Added 2006-02-10 AF
+    QString oldHoverLink_;
 
-    int oldHeight_;                    // Added 2006-04-10 AF
+    int oldHeight_;
   };
 
   //***************************************************
@@ -132,24 +134,24 @@ namespace IAEX
     MyTextBrowser(QWidget *parent=0);
     virtual ~MyTextBrowser();
 
-    void setActive( bool active );        // Added 2006-04-25 AF
+    void setActive( bool active );
 
   signals:
-    void openLink(const QUrl *);        // Changed 2005-11-03 AF
-    void clickOnCell();              // Added 2005-11-01 AF
-    void wheelMove( QWheelEvent* );        // Added 2005-11-28 AF
-    void forwardAction( int );          // Added 2006-04-27 AF
+    void openLink(const QUrl *);
+    void clickOnCell();
+    void wheelMove( QWheelEvent* );
+    void forwardAction( int );
 
   public slots:
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    void setSource(const QUrl &name);      // Changed 2005-11-03 AF
+    void setSource(const QUrl &name) override;
 #endif
 
   protected:
-    void mousePressEvent(QMouseEvent *event) override;      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent * event) override;        // Added 2005-11-28 AF
-    void insertFromMimeData(const QMimeData *source) override;  // Added 2006-01-23 AF
-    void keyPressEvent(QKeyEvent *event ) override;        // Added 2006-01-30 AF
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent * event) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void keyPressEvent(QKeyEvent *event ) override;
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     // QTextBrowser interface

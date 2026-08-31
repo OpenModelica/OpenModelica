@@ -32,14 +32,14 @@ simulate(Alias); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) x = z ($RES_SIM_4)
+// 	[SCAL] (1) x = z; ($RES_SIM_4)
 //
 // Alias Set 2:
 // **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = time ($RES_SIM_3)
+// 	Constant/Parameter Binding: [SCAL] (1) c = time; ($RES_SIM_3)
 // 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_2)
-// 	[SCAL] (1) a = 2.0 * c ($RES_SIM_5)
+// 	[SCAL] (1) y = time + c; ($RES_SIM_2)
+// 	[SCAL] (1) a = 2.0 * c; ($RES_SIM_5)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************

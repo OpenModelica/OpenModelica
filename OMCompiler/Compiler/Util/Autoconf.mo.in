@@ -23,8 +23,12 @@ encapsulated package Autoconf
 
   constant String ldflags_runtime = "@RT_LDFLAGS_GENERATED_CODE@";
   constant String ldflags_runtime_sim = "@RT_LDFLAGS_GENERATED_CODE_SIM@";
+  constant String ldflags_runtime_sim_rust = "@RT_LDFLAGS_GENERATED_CODE_SIM_RUST@";
   constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";
   constant String ldflags_runtime_fmu_static = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@";
+
+  // Libraries linked into generated simulation code when --parmodauto (ParModelica auto) is enabled.
+  constant String parModelicaAutoLibs = "@PARMODELICAAUTO_LDFLAGS@";
 
   constant String corbaLibs = "@CORBALIBS@";
   constant String hwloc = if @WITH_HWLOC@ == 1 then "-lhwloc" else "";

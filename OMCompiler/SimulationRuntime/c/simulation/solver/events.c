@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -44,10 +41,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int maxBisectionIterations = 0;
 void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
@@ -56,7 +49,7 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
  *
  *  \param [ref] [data]
  *  \param [ref] [solverInfo]
- *  \return indicates if a time event is occuered or not.
+ *  \return indicates if a time event is occurred or not.
  *
  *  Function check if a sample expression should be activated
  *  before next step and sets then the next step size to the
@@ -65,7 +58,6 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
  */
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
   if ((data->simulationInfo->nextSampleEvent <= nextTimeStep + SAMPLE_EPS) && (data->simulationInfo->nextSampleEvent >= solverInfo->currentTime))
@@ -74,8 +66,6 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
     data->simulationInfo->sampleActivated = 1;
     infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
   }
-
-  TRACE_POP
 }
 
 /*! \fn checkForStateEvent
@@ -89,43 +79,24 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  */
 int checkForStateEvent(DATA* data, LIST *eventList)
 {
-  TRACE_PUSH
   long i=0;
-
-  debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g", data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData->nZeroCrossings; i++)
   {
     int *eq_indexes;
-    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-    {
-      const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-      debugStreamPrintWithEquationIndexes(OMC_LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
-    }
 
+    // Check if sign of zero crossing changed
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      debugStreamPrint(OMC_LOG_EVENTS, 0, "changed:   %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -> FALSE" : "FALSE -> TRUE");
       listPushFront(eventList, &(data->simulationInfo->zeroCrossingIndex[i]));
     }
-    else
-    {
-      debugStreamPrint(OMC_LOG_EVENTS, 0, "unchanged: %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -- TRUE" : "FALSE -- FALSE");
-    }
-
-    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-      messageClose(OMC_LOG_EVENTS);
   }
-  if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-    messageClose(OMC_LOG_EVENTS);
 
   if(listLen(eventList) > 0)
   {
-    TRACE_POP
     return 1;
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -146,8 +117,6 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  */
 int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime)
 {
-  TRACE_PUSH
-
   int found = checkForStateEvent(data, eventLst);
   if(found && useRootFinding)
   {
@@ -156,17 +125,14 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
 
   if(data->simulationInfo->sampleActivated == 1)
   {
-    TRACE_POP
     return 1;
   }
 
   if(listLen(eventLst) > 0)
   {
-    TRACE_POP
     return 2;
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -180,7 +146,6 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
  */
 void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double time = data->localData[0]->timeValue;
   long i;
   LIST_NODE* it;
@@ -191,12 +156,15 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     storePreValues(data);
 
     /* activate time event */
-    for(i=0; i<data->modelData->nSamples; ++i)
+    for(i=0; i<data->modelData->nSamples; ++i) {
       if(data->simulationInfo->nextSampleTimes[i] <= time + SAMPLE_EPS)
       {
         data->simulationInfo->samples[i] = 1;
         infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData->samplesInfo[i].index, data->modelData->samplesInfo[i].start, data->modelData->samplesInfo[i].interval);
       }
+    }
+
+    solverInfo->sampleEvents++;
   }
   data->simulationInfo->chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex];
   /* state event */
@@ -252,31 +220,17 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
   saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
-  /* time event */
+  /* Compute time of next time event, disable sampleActivated */
   if(data->simulationInfo->sampleActivated)
   {
-    /* deactivate time events */
-    for(i=0; i<data->modelData->nSamples; ++i)
-    {
-      if(data->simulationInfo->samples[i])
-      {
-        data->simulationInfo->samples[i] = 0;
-        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
+    for(i=0; i<data->modelData->nSamples; ++i) {
+      if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
+        // data->simulationInfo->nextSampleTimes[i] update in updateDiscreteSystem
+        data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
       }
     }
-
-    for(i=0; i<data->modelData->nSamples; ++i)
-      if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent))
-        data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
-
     data->simulationInfo->sampleActivated = 0;
-
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "next sample-event at t = %g", data->simulationInfo->nextSampleEvent);
-
-    solverInfo->sampleEvents++;
   }
-
-  TRACE_POP
 }
 
 /*! \fn findRoot
@@ -292,8 +246,6 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
  */
 double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
 {
-  TRACE_PUSH
-
   LIST_NODE* it;
   fortran_integer i=0;
   LIST *tmpEventList = allocList(eventListAlloc, eventListFree, eventListCopy);
@@ -340,15 +292,12 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   listClear(eventList);
 
-  debugStreamPrint(OMC_LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(tmpEventList) > 0)
   {
     long event_id = *((long*)listFirstData(tmpEventList));
     listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
     infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
-
-  debugStreamPrint(OMC_LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
@@ -363,7 +312,6 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   freeList(tmpEventList);
 
-  TRACE_POP
   return time_right;
 }
 
@@ -381,8 +329,6 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
  */
 void bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
-  TRACE_PUSH
-
   double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
@@ -428,8 +374,6 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
       memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsBackup, data->modelData->nZeroCrossings * sizeof(modelica_real));
     }
   }
-
-  TRACE_POP
 }
 
 /*! \fn checkZeroCrossings
@@ -443,7 +387,6 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
  */
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 {
-  TRACE_PUSH
   LIST_NODE *it;
 
   listClear(tmpEventList);
@@ -467,11 +410,9 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 
   if(listLen(tmpEventList) > 0)
   {
-    TRACE_POP
     return 1;   /* event in left section */
   }
 
-  TRACE_POP
   return 0;     /* event in right section */
 }
 
@@ -483,16 +424,14 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
  */
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   long i=0;
 
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
-  for(i=0; i<data->modelData->nZeroCrossings; i++)
+  for(i=0; i<data->modelData->nZeroCrossings; i++) {
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
-
-  TRACE_POP
+  }
 }
 
 /**
@@ -526,7 +465,3 @@ void eventListCopy(void* dest, const void* src) {
   long* dest_event = (long*) dest;
   *dest_event = *((long*) src);
 }
-
-#ifdef __cplusplus
-}
-#endif
