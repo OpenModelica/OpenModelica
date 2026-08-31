@@ -2871,7 +2871,7 @@ public
       case ARRAY(ty = Type.UNKNOWN())
         then 1 + dimensionCount(arrayGet(exp.elements, 1));
       case MATRIX() then 2;
-      case SIZE() then if isNone(exp.dimIndex) then dimensionCount(exp.exp) else 1;
+      case SIZE() then if isNone(exp.dimIndex) then dimensionCount(exp.exp) else 0;
       else Type.dimensionCount(typeOf(exp));
     end match;
   end dimensionCount;
