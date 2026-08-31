@@ -7,8 +7,9 @@
 # port (OM_OMC_ENABLE_RUST). When it is, build from the same per-build working
 # copy rust_omc.cmake mirrors into, so the two cargo builds share a target dir.
 
+# Opt-in: building it needs a Rust toolchain a C-only build does not require.
 option(OM_ENABLE_RUST_SIM_RUNTIME
-       "Build libSimulationRuntimeRust, the runtime --simCodeTarget=C+Rust links." ON)
+       "Build libSimulationRuntimeRust, the runtime --simCodeTarget=C+Rust links." OFF)
 if(NOT OM_ENABLE_RUST_SIM_RUNTIME)
   return()
 endif()
