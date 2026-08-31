@@ -510,6 +510,7 @@ version = "0.1.0"
 name = "openmodelica_nls"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "libm",
  "minpack",
  "openmodelica_lapack",

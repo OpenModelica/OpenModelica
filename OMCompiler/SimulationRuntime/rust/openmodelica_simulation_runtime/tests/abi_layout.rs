@@ -22,9 +22,9 @@ fn include_dirs() -> Option<Vec<PathBuf>> {
     if let Ok(dirs) = std::env::var("OMC_SIMRT_INCLUDE_DIRS") {
         return Some(dirs.split('|').filter(|s| !s.is_empty()).map(PathBuf::from).collect());
     }
-    // <repo>/OMCompiler/Compiler/OpenModelica.rs/<crate> -> <repo>/OMCompiler/SimulationRuntime/c
+    // <repo>/OMCompiler/SimulationRuntime/rust/<crate> -> <repo>/OMCompiler/SimulationRuntime/c
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let c = manifest.parent()?.parent()?.parent()?.join("SimulationRuntime/c");
+    let c = manifest.parent()?.parent()?.join("c");
     let gc = find_gc_h(&c)?;
     c.join("simulation_data.h").exists().then(|| vec![c, gc])
 }

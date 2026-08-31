@@ -17,7 +17,7 @@ openmodelica_wasi.workspace = true
 # The PIC wasi-libc a model's own external "C" library is loaded on top of.
 openmodelica_wasi_libc.workspace = true
 # Native DAE solver for the DASSL driver; only with the engine (jit).
-daskr = { path = "../daskr", optional = true }
+daskr = { path = "../../../SimulationRuntime/rust/daskr", optional = true }
 
 [features]
 # Host-side wasm execution engine. Default on (native wasmtime).

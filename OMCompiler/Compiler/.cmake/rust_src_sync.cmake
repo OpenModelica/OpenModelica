@@ -3,7 +3,7 @@
 # file(COPY) preserves timestamps and skips up-to-date files. The transpile
 # regenerates every other *.rs into DST; only committed inputs are listed (read
 # as a plain file, not git, so tarball builds work).
-#   cmake -DSRC=<src> -DDST=<dst> -DMANIFEST=<file> -P rust_src_sync.cmake
+#   cmake -DSRC=<src> -DDST=<dst> -DMANIFEST=<file> [-DBUILTINS=ON] -P rust_src_sync.cmake
 
 if(NOT SRC OR NOT DST OR NOT MANIFEST)
   message(FATAL_ERROR "rust_src_sync: SRC, DST and MANIFEST must all be set.")
@@ -41,6 +41,9 @@ endif()
 # Builtin .mo that openmodelica_wasi include_str!s via ../../../{FrontEnd,NFFrontEnd}
 # (paths reaching past the crate tree into Compiler/); mirror them beside the copy
 # at the same relative depth. Keep in sync with openmodelica_wasi/src/lib.rs.
+if(NOT BUILTINS)
+  return()
+endif()
 get_filename_component(_src_parent ${SRC} DIRECTORY)
 get_filename_component(_dst_parent ${DST} DIRECTORY)
 foreach(_rel

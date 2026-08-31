@@ -15,6 +15,7 @@
 name = "openmodelica_simulation_runtime"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 
 [lib]
 name = "SimulationRuntimeRust"
@@ -22,38 +23,33 @@ name = "SimulationRuntimeRust"
 # `src/abi.rs` changes.
 crate-type = ["cdylib", "rlib"]
 
-[features]
-# The sparse SVD behind `-lv=LOG_NLS_SVD`, over the same `libprimme.a` the C
-# runtime links (see SimulationRuntime/rust/CMakeLists.txt).
-primme = ["openmodelica_nls/primme"]
-
 [dependencies]
 # The driver (`driver::drive`) and the model description it runs on.
-openmodelica_sim_meta.workspace = true
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta" }
 # The integrators and the `-lv` log formatting they share with the wasm-jit runtime.
 openmodelica_solvers = { path = "../openmodelica_solvers" }
 # The nonlinear solver they share too: `solve_nonlinear_system` and the ladder
 # under it, driven here over `NONLINEAR_SYSTEM_DATA` (src/nls.rs).
 openmodelica_nls = { path = "../openmodelica_nls" }
 # The result file.
-openmodelica_mat_writer.workspace = true
-openmodelica_plt_writer.workspace = true
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_plt_writer = { path = "../openmodelica_plt_writer" }
 # `-iif`: the result file the start values are imported from.
-openmodelica_mat_reader.workspace = true
+openmodelica_mat_reader = { path = "../openmodelica_mat_reader" }
 # `_init.xml`: the variable names, attributes and start values the generated C
 # does not carry (C reads the same file with expat in `simulation_input_xml.c`).
-roxmltree.workspace = true
+roxmltree = "0.21"
 # `<Model>_info.json`: the equation and variable names the generated residuals
 # name their iteration variables through (`simulation_info_json.c` reads the same
 # file with a hand-rolled scanner).
-serde_json.workspace = true
-libc.workspace = true
+serde_json = "1"
+libc = "0.2"
 # `dgesv` for the dense linear systems -- the same LAPACK the wasm-jit runtime
 # factors with, so a system gets the same pivot order and `INFO` either way.
 # Without `fortran-abi`: the executable already links the system liblapack, and
 # defining `d*_` here would collide with it.
-openmodelica_lapack = { path = "../openmodelica_lapack" }
+openmodelica_lapack = { path = "../../../Compiler/OpenModelica.rs/openmodelica_lapack" }
 
 [build-dependencies]
 # Compiles src/shim.c -- the setjmp/longjmp and printf-varargs half of the ABI.
-cc.workspace = true
+cc = "1"

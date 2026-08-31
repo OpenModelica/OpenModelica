@@ -36,10 +36,19 @@ fn main() {
 /// shim into the PRIMME archive itself (rust_omc.cmake's `rust_primme_wasm`); a
 /// native host names the archive the C runtime links and gets the shim here.
 fn primme() {
+    println!("cargo::rustc-check-cfg=cfg(primme)");
     println!("cargo:rerun-if-env-changed=OMC_PRIMME_NATIVE_DIR");
     println!("cargo:rerun-if-env-changed=OMC_PRIMME_INCLUDE_DIR");
+    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
     println!("cargo:rerun-if-changed=src/primme_svds.c");
-    if std::env::var_os("CARGO_FEATURE_PRIMME").is_none() {
+    // wasm: the shim is compiled into libprimme.a itself, which the same
+    // directory carries (rust_omc.cmake's rust_primme_wasm feeds the collect).
+    if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default() == "wasm32" {
+        if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() == "wasi"
+            && std::env::var_os("OMC_SUNDIALS_WASM_DIR").is_some()
+        {
+            println!("cargo:rustc-cfg=primme");
+        }
         return;
     }
     let Some(lib) = std::env::var_os("OMC_PRIMME_NATIVE_DIR") else { return };
@@ -52,4 +61,5 @@ fn primme() {
         .compile("omc_primme_svds");
     println!("cargo:rustc-link-search=native={}", std::path::Path::new(&lib).display());
     println!("cargo:rustc-link-lib=static=primme");
+    println!("cargo:rustc-cfg=primme");
 }

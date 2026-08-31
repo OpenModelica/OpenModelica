@@ -12,7 +12,7 @@ fn main() {
 
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let base = manifest
-        .join("../../OpenModelica/OMCompiler/3rdParty/Cdaskr/solver")
+        .join("../../../3rdParty/Cdaskr/solver")
         .canonicalize()
         .expect("Cdaskr/solver directory not found (needed for the `cref` feature)");
 

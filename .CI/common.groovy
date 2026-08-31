@@ -542,7 +542,7 @@ void buildRustOMC() {
   // them there first, relative to the working copy root.
   sh """
     rm -rf rust-generated-src && mkdir -p rust-generated-src
-    cd ${rustWorkDir()}/rust-src
+    cd ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs
     find . -path '*/src/*.rs' -print0 |
       tar --null -T - -cf - | tar -C ${env.WORKSPACE}/rust-generated-src -xf -
   """
@@ -610,7 +610,7 @@ void configureWeb(String extra) {
 // (which writes a placeholder lib.rs only for the ones still missing).
 void restoreGeneratedSrc() {
   unstash 'rust-generated-src'
-  sh "mkdir -p ${rustWorkDir()}/rust-src && cp -a rust-generated-src/. ${rustWorkDir()}/rust-src/"
+  sh "mkdir -p ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs && cp -a rust-generated-src/. ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs/"
 }
 
 // Run an em++ build under sccache via the shim (see em-sccache-wrapper.sh).
@@ -794,14 +794,18 @@ void ctestRust() {
   // rustWorkDir()). The whole crate tree, not the rust_src_sync manifest: that one
   // omits test fixtures. Then the stage-1 generated .rs (without them the manifest
   // load fails) and the builtin .mo openmodelica_wasi include_str!s from ../../../.
-  def work = "${rustWorkDir()}/rust-src"
+  // The tree reproduces OMCompiler/, since the compiler and simulation-runtime
+  // workspaces path-reference each other across it (cf. rust_omc.cmake).
+  def tree = "${rustWorkDir()}/rust-src"
+  def work = "${tree}/Compiler/OpenModelica.rs"
+  def simrt = "${tree}/SimulationRuntime/rust"
   sh """
-    rm -rf ${work} && mkdir -p ${work}
+    rm -rf ${tree} && mkdir -p ${work} ${simrt} ${tree}/Compiler/FrontEnd ${tree}/Compiler/NFFrontEnd
     tar -C OMCompiler/Compiler/OpenModelica.rs --exclude=./target -cf - . | tar -C ${work} -xf -
+    tar -C OMCompiler/SimulationRuntime/rust --exclude=./target -cf - . | tar -C ${simrt} -xf -
     cp -a rust-generated-src/. ${work}/
     for d in FrontEnd NFFrontEnd; do
-      mkdir -p ${rustWorkDir()}/\$d
-      cp OMCompiler/Compiler/\$d/*Builtin*.mo ${rustWorkDir()}/\$d/
+      cp OMCompiler/Compiler/\$d/*Builtin*.mo ${tree}/Compiler/\$d/
     done
   """
   // Env vars required by the openmodelica_wasi_libc and openmodelica_wasm_jit
@@ -811,6 +815,9 @@ void ctestRust() {
     "OMC_SUNDIALS_WASM_DIR=${env.WORKSPACE}/build_cmake/rust-sundials-wasm",
     "OMC_WASI_P1_ADAPTER=${env.WORKSPACE}/build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm",
     "OMC_EXTERNAL_C_SOURCES=${env.WORKSPACE}/OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources",
+    // The runtime headers openmodelica_simulation_runtime's ABI test compiles;
+    // without them it would skip rather than fail (cf. tests/abi_layout.rs).
+    "OMC_SIMRT_INCLUDE_DIRS=${env.WORKSPACE}/OMCompiler/SimulationRuntime/c|${env.WORKSPACE}/OMCompiler/3rdParty/gc/include",
   ]
   try {
     withSccache(wasmEnv) {

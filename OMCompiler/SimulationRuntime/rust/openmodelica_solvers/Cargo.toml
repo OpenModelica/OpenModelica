@@ -8,6 +8,7 @@
 name = "openmodelica_solvers"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 
 [features]
 default = ["std"]
