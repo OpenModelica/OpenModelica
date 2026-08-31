@@ -615,7 +615,7 @@ algorithm
   for cr in inCrLst loop
     identType := ComponentReference.crefTypeConsiderSubs(cr);
     crefExp := DAE.CREF(cr, identType);
-    crefPreExp := Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
+    crefPreExp := Expression.makePureBuiltinCall("pre", {crefExp}, identType);
     eqn := BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     outEqns := eqn::outEqns;
   end for;
