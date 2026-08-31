@@ -1925,6 +1925,7 @@ external "builtin" annotation(Library = {"omcruntime"});
 annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
+<p>The first signal asks the running command to stop, so that omc survives to report what it completed; a second one a tenth of the time later (at least 5 and at most 60 seconds) terminates omc if the command has no cancellation point to stop at. Re-arming or clearing the alarm withdraws the request.</p>
 </html>"));
 end alarm;
 

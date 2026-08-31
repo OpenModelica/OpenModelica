@@ -5602,6 +5602,7 @@ protected function matchingExternal
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
+  Error.checkCancel();
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
@@ -5786,6 +5787,7 @@ algorithm
   for var in artificialStates loop
     unique_flag := false;
     for eqn in equations loop
+      Error.checkCancel();
       try
         residuals := BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree);
         for res in residuals loop
@@ -5884,6 +5886,7 @@ algorithm
   end for;
   idx := 1;
   for eq in BackendEquation.equationList(eqs) loop
+    Error.checkCancel();
     //print("Check equation "+BackendDump.equationString(eq)+"\n");
     isDiscrete := BackendEquation.isWhenEquationOrDiscreteAlgorithm(eq,vars);
     if isDiscrete then
@@ -5934,6 +5937,7 @@ algorithm
   functionTree := shared.functionTree;
   idx := 1;
   for eq in BackendEquation.equationList(eqs) loop
+    Error.checkCancel();
     (hasNoDerAnno,noDerInputs) := BackendDAEUtil.isFuncCallWithNoDerAnnotation(eq,functionTree);
     if hasNoDerAnno then
       (_,varIdxs) := BackendVariable.getVarLst(noDerInputs,vars);
@@ -6220,6 +6224,7 @@ algorithm
     case e::rest
       guard not intGt(colummarks[e],0)
       algorithm
+        Error.checkCancel();
         // row is not visited
         // if it is a multi dim equation take all scalare equations
         e1 := mapIncRowEqn[e];

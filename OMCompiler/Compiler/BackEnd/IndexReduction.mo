@@ -111,6 +111,7 @@ protected
   Integer size, newsize;
   list<list<Integer>> eqns_1, unassignedStates, unassignedEqns;
 algorithm
+  Error.checkCancel();
   if listEmpty(inEqns) then
     Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
     if Flags.isSet(Flags.OPT_DAE_DUMP) then

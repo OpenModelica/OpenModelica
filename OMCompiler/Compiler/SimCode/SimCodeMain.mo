@@ -1668,8 +1668,11 @@ protected
   String flatString = "", NFFlatString = "";
 
 algorithm
+  // BUILD_MODEL starts only once the translation is through, so clear it too:
+  // a failing translation would otherwise read an earlier command's tick.
   List.map_0({ClockIndexes.RT_CLOCK_FRONTEND,ClockIndexes.RT_CLOCK_BACKEND,
-              ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES},System.realtimeClear);
+              ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES,
+              ClockIndexes.RT_CLOCK_BUILD_MODEL},System.realtimeClear);
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};

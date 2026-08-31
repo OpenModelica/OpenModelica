@@ -1487,22 +1487,16 @@ pub fn realtimeTick(clockIndex: i32) -> Result<()> {
 }
 
 pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
-    // The C runtime's `rt_tock(ix)` never fails: a clock that was never
-    // started has a zeroed `tick_tp[ix]` and the call returns "now minus
-    // zero" — a large, meaningless duration. Callers do tock without tick
-    // (e.g. `Tpl.textFileConvertLines` reads RT_CLOCK_BUILD_MODEL purely
-    // for optional perf logging), so failing here is wrong. Return the
-    // slot's accumulated time instead (0.0 for a never-started clock),
-    // which is harmless for the logging-only consumers and avoids the C
-    // version's garbage value.
-    let nanos = with(|s| -> u128 {
+    // Callers tock without tick, so this must not fail. -1 is what
+    // `System_realtimeTock` answers for a clock whose `rt_ncall` is zero.
+    let nanos = with(|s| -> Option<u128> {
         let slot = rt_slot_mut(s, clockIndex);
-        match slot.tick {
-            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
-            None => slot.accumulated_ns,
-        }
+        slot.tick.map(|start| openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128)
     });
-    Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
+    Ok(metamodelica::OrderedFloat(match nanos {
+        Some(n) => n as f64 / 1.0e9,
+        None => -1.0,
+    }))
 }
 
 pub fn realtimeClear(clockIndex: i32) -> Result<()> {
@@ -1510,6 +1504,8 @@ pub fn realtimeClear(clockIndex: i32) -> Result<()> {
         let slot = rt_slot_mut(s, clockIndex);
         slot.accumulated_ns = 0;
         slot.ntick = 0;
+        // C's `rt_clear` zeroes `rt_clock_ncall`; same effect.
+        slot.tick = None;
     });
     Ok(())
 }
@@ -2394,6 +2390,23 @@ pub fn isCancelled() -> bool {
     metamodelica::cancel::check_cancel()
 }
 
+/// Seconds to unwind in before the process is killed outright: a tenth of the
+/// deadline, bounded. OpenModelicaLibraryTesting/shared.py mirrors the formula,
+/// because the harness has to outwait it.
+#[cfg(unix)]
+const ALARM_GRACE_MIN: u32 = 5;
+#[cfg(unix)]
+const ALARM_GRACE_MAX: u32 = 60;
+#[cfg(unix)]
+static ALARM_GRACE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(ALARM_GRACE_MIN);
+
+/// Tracks that the alarm, rather than a host, asked for the cancellation.
+static ALARM_EXPIRED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn alarmExpired() -> bool {
+    ALARM_EXPIRED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub fn reportProgress(permille: i32, phase: i32) {
     metamodelica::cancel::report_progress(permille, phase);
 }
@@ -2468,22 +2481,36 @@ pub fn stat(filename: ArcStr) -> (bool, metamodelica::Real, metamodelica::Real, 
     }
 }
 
-/// Mirrors `SystemImpl__alarm`: schedule a SIGALRM `seconds` from now and, on
-/// the first call, install a handler that broadcasts SIGALRM to the whole
-/// process group (so child processes die too) and then restores the default
-/// disposition. Used by `--alarm=N` to force-terminate omc after a timeout.
-/// Returns the number of seconds remaining on the previously scheduled alarm.
+/// Mirrors `SystemImpl__alarm`: at `seconds` the running command is asked to
+/// unwind through the shared cancellation flag, so omc survives to report the
+/// phases it completed, and the signal goes to the process group to take any
+/// child simulation with it; [`ALARM_GRACE`] seconds later the process is killed
+/// outright. Returns the seconds left on the previous alarm, which re-arming
+/// withdraws along with its cancellation request.
 #[cfg(unix)]
 pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static HANDLER_INSTALLED: AtomicBool = AtomicBool::new(false);
 
-    extern "C" fn alarm_handler(signo: core::ffi::c_int) {
+    extern "C" fn alarm_handler(
+        signo: core::ffi::c_int,
+        si: *mut libc::siginfo_t,
+        _ctx: *mut core::ffi::c_void,
+    ) {
+        use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
-            // Forward the alarm to every process in our group, then reset
-            // SIGALRM to its default action so the signal terminates us.
-            libc::kill(-libc::getpid(), signo);
+            // Our own group broadcast coming back, not a second deadline.
+            if !si.is_null() && (*si).si_code == libc::SI_USER && (*si).si_pid() == libc::getpid() {
+                return;
+            }
+            if !ALARM_EXPIRED.swap(true, SeqCst) {
+                metamodelica::cancel::request_cancel();
+                libc::kill(-libc::getpid(), signo);
+                libc::alarm(ALARM_GRACE.load(Relaxed));
+                return;
+            }
             libc::signal(libc::SIGALRM, libc::SIG_DFL);
+            libc::raise(signo);
         }
     }
 
@@ -2492,7 +2519,20 @@ pub fn alarm(seconds: i32) -> i32 {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
         {
-            libc::signal(libc::SIGALRM, alarm_handler as *const () as libc::sighandler_t);
+            let mut sa: libc::sigaction = core::mem::zeroed();
+            sa.sa_sigaction = alarm_handler as *const () as libc::sighandler_t;
+            sa.sa_flags = libc::SA_SIGINFO;
+            libc::sigemptyset(&mut sa.sa_mask);
+            libc::sigaction(libc::SIGALRM, &sa, core::ptr::null_mut());
+        }
+        if ALARM_EXPIRED.swap(false, Ordering::SeqCst) {
+            metamodelica::cancel::clear_cancel();
+        }
+        if seconds > 0 {
+            ALARM_GRACE.store(
+                (seconds as u32 / 10).clamp(ALARM_GRACE_MIN, ALARM_GRACE_MAX),
+                Ordering::Relaxed,
+            );
         }
         libc::alarm(seconds as core::ffi::c_uint) as i32
     }

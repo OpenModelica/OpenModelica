@@ -7885,6 +7885,7 @@ algorithm
     then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
 
     case syst::systs algorithm
+      Error.checkCancel();
       (syst,shared,arg,causalized) := causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
       (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
     then (systs,shared,args,causalized);
@@ -7941,6 +7942,8 @@ algorithm
     then (syst, shared,SOME(arg), true);
 
     case (_, (_,mAmethodstr), (_,str1,_,_)) algorithm
+      // A cancel unwinds through here; do not blame the module for it.
+      Error.checkCancel();
       str := "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
       if not isInitializationDAE(ishared) then
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -7971,7 +7974,9 @@ protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
 algorithm
   outSystem := list(match syst
     case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)) then syst;
-    else sortEqnsDAEWork(syst, inShared);
+    else algorithm
+      Error.checkCancel();
+    then sortEqnsDAEWork(syst, inShared);
   end match for syst in inSystem);
 end mapSortEqnsDAE;
 

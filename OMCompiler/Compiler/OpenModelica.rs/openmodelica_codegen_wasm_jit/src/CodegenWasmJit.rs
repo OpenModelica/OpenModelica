@@ -694,15 +694,37 @@ fn fmu_needs_sundials(method: &str) -> bool {
 /// The simulation flags to hard-code into an FMU's metadata: the export's
 /// `_flags.json` but `-s`, which [`SimMeta::cs_method`] carries. An importer has no
 /// channel to pass simulation flags, so the FMU applies these when it instantiates.
-/// `--fmiFlags` takes any name; like C's `parseFlags`, ignore what is not a flag.
+/// `--fmiFlags` takes any name; like C's `parseFlags`, ignore what this FMU cannot
+/// honour — `createFMISimulationFlags` has already warned about the name.
 fn fmu_solver_flags(flags_json: &str) -> String {
     fmi_flags(flags_json)
         .into_iter()
         .filter(|(name, _)| name != "s")
+        .filter(|(name, value)| fmu_accepts_flag(name, value))
         .map(|(name, value)| if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") })
-        .filter(|arg| simflags::parse(&["model".to_string(), arg.clone()]).is_ok())
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// `CodegenWasmJit.fmuAcceptsFlag`: whether a wasm FMU can honour `-name=value`
+/// (an empty value for a flag that takes none). One it cannot is better dropped
+/// where it comes from than baked into `_flags.json`, where it would only
+/// surface at the importer's `instantiate`.
+pub fn fmuAcceptsFlag(name: ArcStr, value: ArcStr) -> bool {
+    fmu_accepts_flag(name.as_str(), value.as_str())
+}
+
+fn fmu_accepts_flag(name: &str, value: &str) -> bool {
+    if name == "s" {
+        // Baked into the component rather than parsed at instantiation, so only
+        // what it linked can serve it.
+        return fmu_cs_solvers().contains(&value);
+    }
+    let arg = if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") };
+    match simflags::parse(&["model".to_string(), arg]) {
+        Ok(f) => simflags::check(&f, fmu_capabilities()).is_ok(),
+        Err(_) => false,
+    }
 }
 
 /// Every `"name" : "value"` pair of a `_flags.json`, in file order.
