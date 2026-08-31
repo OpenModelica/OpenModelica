@@ -101,17 +101,17 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // Event Partition
 // -----------------
 //
-// =========================================================
-//   SimCode Jacobian INI_LS_JAC_1(idx = 0, partition = 0)
-// =========================================================
+// ==========================================================
+//   SimCode Jacobian INI_NLS_JAC_1(idx = 0, partition = 0)
+// ==========================================================
 //
 // SeedVars (size = 5)
 // *********************
-//   (0)[SEED] (1) Real $SEED_INI_LS_JAC_1.u
-//   (1)[SEED] (1) Real $SEED_INI_LS_JAC_1.$FUN_3
-//   (2)[SEED] (1) Real $SEED_INI_LS_JAC_1.$FUN_2
-//   (3)[SEED] (1) Real $SEED_INI_LS_JAC_1.y1
-//   (4)[SEED] (1) Real $SEED_INI_LS_JAC_1.$FUN_1
+//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.u
+//   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1.$FUN_3
+//   (2)[SEED] (1) Real $SEED_INI_NLS_JAC_1.$FUN_2
+//   (3)[SEED] (1) Real $SEED_INI_NLS_JAC_1.y1
+//   (4)[SEED] (1) Real $SEED_INI_NLS_JAC_1.$FUN_1
 //
 // TmpVars (size = 0)
 // ********************
@@ -121,32 +121,32 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Column Equations (size = 5)
 // -----------------------------
-//   (10) $pDER_INI_LS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_INI_LS_JAC_1.u) - $SEED_INI_LS_JAC_1.$FUN_3
-//   (9) $pDER_INI_LS_JAC_1.$RES_SIM_0 := $SEED_INI_LS_JAC_1.$FUN_2 + $SEED_INI_LS_JAC_1.$FUN_3
-//   (8) $pDER_INI_LS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_INI_LS_JAC_1.y1 - $SEED_INI_LS_JAC_1.$FUN_2
-//   (7) $pDER_INI_LS_JAC_1.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_INI_LS_JAC_1.u + $SEED_INI_LS_JAC_1.$FUN_1) - $SEED_INI_LS_JAC_1.y1
-//   (6) $pDER_INI_LS_JAC_1.$RES_AUX_7 := cos(u) * $SEED_INI_LS_JAC_1.u - $SEED_INI_LS_JAC_1.$FUN_1
+//   (10) $pDER_INI_NLS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_INI_NLS_JAC_1.u) - $SEED_INI_NLS_JAC_1.$FUN_3
+//   (9) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := $SEED_INI_NLS_JAC_1.$FUN_2 + $SEED_INI_NLS_JAC_1.$FUN_3
+//   (8) $pDER_INI_NLS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_INI_NLS_JAC_1.y1 - $SEED_INI_NLS_JAC_1.$FUN_2
+//   (7) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.$FUN_1) - $SEED_INI_NLS_JAC_1.y1
+//   (6) $pDER_INI_NLS_JAC_1.$RES_AUX_7 := cos(u) * $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.$FUN_1
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_AUX_5 ... {$pDER_INI_LS_JAC_1.$RES_AUX_5} ... {($SEED_INI_LS_JAC_1.$FUN_3, {}, false), ($SEED_INI_LS_JAC_1.u, {}, true)}
-// $RES_SIM_0 ... {$pDER_INI_LS_JAC_1.$RES_SIM_0} ... {($SEED_INI_LS_JAC_1.$FUN_3, {}, false), ($SEED_INI_LS_JAC_1.$FUN_2, {}, false)}
-// $RES_AUX_6 ... {$pDER_INI_LS_JAC_1.$RES_AUX_6} ... {($SEED_INI_LS_JAC_1.$FUN_2, {}, false), ($SEED_INI_LS_JAC_1.y1, {}, true)}
-// $RES_SIM_1 ... {$pDER_INI_LS_JAC_1.$RES_SIM_1} ... {($SEED_INI_LS_JAC_1.y1, {}, false), ($SEED_INI_LS_JAC_1.$FUN_1, {}, false), ($SEED_INI_LS_JAC_1.u, {}, false)}
-// $RES_AUX_7 ... {$pDER_INI_LS_JAC_1.$RES_AUX_7} ... {($SEED_INI_LS_JAC_1.$FUN_1, {}, false), ($SEED_INI_LS_JAC_1.u, {}, true)}
+// $RES_AUX_5 ... {$pDER_INI_NLS_JAC_1.$RES_AUX_5} ... {($SEED_INI_NLS_JAC_1.$FUN_3, {}, false), ($SEED_INI_NLS_JAC_1.u, {}, true)}
+// $RES_SIM_0 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_1.$FUN_3, {}, false), ($SEED_INI_NLS_JAC_1.$FUN_2, {}, false)}
+// $RES_AUX_6 ... {$pDER_INI_NLS_JAC_1.$RES_AUX_6} ... {($SEED_INI_NLS_JAC_1.$FUN_2, {}, false), ($SEED_INI_NLS_JAC_1.y1, {}, true)}
+// $RES_SIM_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_1} ... {($SEED_INI_NLS_JAC_1.y1, {}, false), ($SEED_INI_NLS_JAC_1.$FUN_1, {}, false), ($SEED_INI_NLS_JAC_1.u, {}, false)}
+// $RES_AUX_7 ... {$pDER_INI_NLS_JAC_1.$RES_AUX_7} ... {($SEED_INI_NLS_JAC_1.$FUN_1, {}, false), ($SEED_INI_NLS_JAC_1.u, {}, true)}
 //
-// =========================================================
-//   SimCode Jacobian ALG_LS_JAC_1(idx = 1, partition = 1)
-// =========================================================
+// ==========================================================
+//   SimCode Jacobian ALG_NLS_JAC_1(idx = 1, partition = 1)
+// ==========================================================
 //
 // SeedVars (size = 6)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_3
-//   (1)[SEED] (1) Real $SEED_ALG_LS_JAC_1.u
-//   (2)[SEED] (1) Real $SEED_ALG_LS_JAC_1.y2
-//   (3)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_2
-//   (4)[SEED] (1) Real $SEED_ALG_LS_JAC_1.y1
-//   (5)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_1
+//   (0)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.$FUN_3
+//   (1)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.u
+//   (2)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.y2
+//   (3)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.$FUN_2
+//   (4)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.y1
+//   (5)[SEED] (1) Real $SEED_ALG_NLS_JAC_1.$FUN_1
 //
 // TmpVars (size = 0)
 // ********************
@@ -156,21 +156,21 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Column Equations (size = 6)
 // -----------------------------
-//   (30) $pDER_ALG_LS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_ALG_LS_JAC_1.u) - $SEED_ALG_LS_JAC_1.$FUN_3
-//   (29) $pDER_ALG_LS_JAC_1.$RES_SIM_4 := -$SEED_ALG_LS_JAC_1.y2
-//   (28) $pDER_ALG_LS_JAC_1.$RES_SIM_0 := ($SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3) - $SEED_ALG_LS_JAC_1.y2
-//   (27) $pDER_ALG_LS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2
-//   (26) $pDER_ALG_LS_JAC_1.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1) - $SEED_ALG_LS_JAC_1.y1
-//   (25) $pDER_ALG_LS_JAC_1.$RES_AUX_7 := cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1
+//   (30) $pDER_ALG_NLS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_ALG_NLS_JAC_1.u) - $SEED_ALG_NLS_JAC_1.$FUN_3
+//   (29) $pDER_ALG_NLS_JAC_1.$RES_SIM_4 := -$SEED_ALG_NLS_JAC_1.y2
+//   (28) $pDER_ALG_NLS_JAC_1.$RES_SIM_0 := ($SEED_ALG_NLS_JAC_1.$FUN_2 + $SEED_ALG_NLS_JAC_1.$FUN_3) - $SEED_ALG_NLS_JAC_1.y2
+//   (27) $pDER_ALG_NLS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2
+//   (26) $pDER_ALG_NLS_JAC_1.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1) - $SEED_ALG_NLS_JAC_1.y1
+//   (25) $pDER_ALG_NLS_JAC_1.$RES_AUX_7 := cos(u) * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_AUX_5 ... {$pDER_ALG_LS_JAC_1.$RES_AUX_5} ... {($SEED_ALG_LS_JAC_1.$FUN_3, {}, false), ($SEED_ALG_LS_JAC_1.u, {}, true)}
-// $RES_SIM_4 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_4} ... {($SEED_ALG_LS_JAC_1.y2, {}, false)}
-// $RES_SIM_0 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_LS_JAC_1.y2, {}, false), ($SEED_ALG_LS_JAC_1.$FUN_3, {}, false), ($SEED_ALG_LS_JAC_1.$FUN_2, {}, false)}
-// $RES_AUX_6 ... {$pDER_ALG_LS_JAC_1.$RES_AUX_6} ... {($SEED_ALG_LS_JAC_1.$FUN_2, {}, false), ($SEED_ALG_LS_JAC_1.y1, {}, true)}
-// $RES_SIM_1 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_LS_JAC_1.y1, {}, false), ($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.u, {}, false)}
-// $RES_AUX_7 ... {$pDER_ALG_LS_JAC_1.$RES_AUX_7} ... {($SEED_ALG_LS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_LS_JAC_1.u, {}, true)}
+// $RES_AUX_5 ... {$pDER_ALG_NLS_JAC_1.$RES_AUX_5} ... {($SEED_ALG_NLS_JAC_1.$FUN_3, {}, false), ($SEED_ALG_NLS_JAC_1.u, {}, true)}
+// $RES_SIM_4 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_4} ... {($SEED_ALG_NLS_JAC_1.y2, {}, false)}
+// $RES_SIM_0 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_NLS_JAC_1.y2, {}, false), ($SEED_ALG_NLS_JAC_1.$FUN_3, {}, false), ($SEED_ALG_NLS_JAC_1.$FUN_2, {}, false)}
+// $RES_AUX_6 ... {$pDER_ALG_NLS_JAC_1.$RES_AUX_6} ... {($SEED_ALG_NLS_JAC_1.$FUN_2, {}, false), ($SEED_ALG_NLS_JAC_1.y1, {}, true)}
+// $RES_SIM_1 ... {$pDER_ALG_NLS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_NLS_JAC_1.y1, {}, false), ($SEED_ALG_NLS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_NLS_JAC_1.u, {}, false)}
+// $RES_AUX_7 ... {$pDER_ALG_NLS_JAC_1.$RES_AUX_7} ... {($SEED_ALG_NLS_JAC_1.$FUN_1, {}, false), ($SEED_ALG_NLS_JAC_1.u, {}, true)}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 2, partition = 0)
@@ -231,12 +231,12 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	23: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	24: sin(u) - $FUN_1 (RESIDUAL)
 // 	Jacobian idx: 1
-// 	30: $pDER_ALG_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
-// 	29: $pDER_ALG_LS_JAC_1.$RES_SIM_4=-$SEED_ALG_LS_JAC_1.y2 [Real]
-// 	28: $pDER_ALG_LS_JAC_1.$RES_SIM_0=$SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3 - $SEED_ALG_LS_JAC_1.y2 [Real]
-// 	27: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
-// 	26: $pDER_ALG_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1 - $SEED_ALG_LS_JAC_1.y1 [Real]
-// 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	30: $pDER_ALG_NLS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_3 [Real]
+// 	29: $pDER_ALG_NLS_JAC_1.$RES_SIM_4=-$SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	28: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=$SEED_ALG_NLS_JAC_1.$FUN_2 + $SEED_ALG_NLS_JAC_1.$FUN_3 - $SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	27: $pDER_ALG_NLS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2 [Real]
+// 	26: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1 - $SEED_ALG_NLS_JAC_1.y1 [Real]
+// 	25: $pDER_ALG_NLS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
 //
 //
 // ========================================
@@ -260,12 +260,12 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	23: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	24: sin(u) - $FUN_1 (RESIDUAL)
 // 	Jacobian idx: 1
-// 	30: $pDER_ALG_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
-// 	29: $pDER_ALG_LS_JAC_1.$RES_SIM_4=-$SEED_ALG_LS_JAC_1.y2 [Real]
-// 	28: $pDER_ALG_LS_JAC_1.$RES_SIM_0=$SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3 - $SEED_ALG_LS_JAC_1.y2 [Real]
-// 	27: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
-// 	26: $pDER_ALG_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1 - $SEED_ALG_LS_JAC_1.y1 [Real]
-// 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	30: $pDER_ALG_NLS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_3 [Real]
+// 	29: $pDER_ALG_NLS_JAC_1.$RES_SIM_4=-$SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	28: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=$SEED_ALG_NLS_JAC_1.$FUN_2 + $SEED_ALG_NLS_JAC_1.$FUN_3 - $SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	27: $pDER_ALG_NLS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2 [Real]
+// 	26: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1 - $SEED_ALG_NLS_JAC_1.y1 [Real]
+// 	25: $pDER_ALG_NLS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
 //
 //
 // ========================================
@@ -288,11 +288,11 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	4: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	5: sin(u) - $FUN_1 (RESIDUAL)
 // 	Jacobian idx: 0
-// 	10: $pDER_INI_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_LS_JAC_1.u - $SEED_INI_LS_JAC_1.$FUN_3 [Real]
-// 	9: $pDER_INI_LS_JAC_1.$RES_SIM_0=$SEED_INI_LS_JAC_1.$FUN_2 + $SEED_INI_LS_JAC_1.$FUN_3 [Real]
-// 	8: $pDER_INI_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_LS_JAC_1.y1 - $SEED_INI_LS_JAC_1.$FUN_2 [Real]
-// 	7: $pDER_INI_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_LS_JAC_1.u + $SEED_INI_LS_JAC_1.$FUN_1 - $SEED_INI_LS_JAC_1.y1 [Real]
-// 	6: $pDER_INI_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_INI_LS_JAC_1.u - $SEED_INI_LS_JAC_1.$FUN_1 [Real]
+// 	10: $pDER_INI_NLS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.$FUN_3 [Real]
+// 	9: $pDER_INI_NLS_JAC_1.$RES_SIM_0=$SEED_INI_NLS_JAC_1.$FUN_2 + $SEED_INI_NLS_JAC_1.$FUN_3 [Real]
+// 	8: $pDER_INI_NLS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_NLS_JAC_1.y1 - $SEED_INI_NLS_JAC_1.$FUN_2 [Real]
+// 	7: $pDER_INI_NLS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.$FUN_1 - $SEED_INI_NLS_JAC_1.y1 [Real]
+// 	6: $pDER_INI_NLS_JAC_1.$RES_AUX_7=cos(u) * $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
 //
 //
 // ========================================
@@ -344,19 +344,19 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	10: $pDER_INI_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_LS_JAC_1.u - $SEED_INI_LS_JAC_1.$FUN_3 [Real]
-// 	9: $pDER_INI_LS_JAC_1.$RES_SIM_0=$SEED_INI_LS_JAC_1.$FUN_2 + $SEED_INI_LS_JAC_1.$FUN_3 [Real]
-// 	8: $pDER_INI_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_LS_JAC_1.y1 - $SEED_INI_LS_JAC_1.$FUN_2 [Real]
-// 	7: $pDER_INI_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_LS_JAC_1.u + $SEED_INI_LS_JAC_1.$FUN_1 - $SEED_INI_LS_JAC_1.y1 [Real]
-// 	6: $pDER_INI_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_INI_LS_JAC_1.u - $SEED_INI_LS_JAC_1.$FUN_1 [Real]
+// 	10: $pDER_INI_NLS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.$FUN_3 [Real]
+// 	9: $pDER_INI_NLS_JAC_1.$RES_SIM_0=$SEED_INI_NLS_JAC_1.$FUN_2 + $SEED_INI_NLS_JAC_1.$FUN_3 [Real]
+// 	8: $pDER_INI_NLS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_NLS_JAC_1.y1 - $SEED_INI_NLS_JAC_1.$FUN_2 [Real]
+// 	7: $pDER_INI_NLS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1.u + $SEED_INI_NLS_JAC_1.$FUN_1 - $SEED_INI_NLS_JAC_1.y1 [Real]
+// 	6: $pDER_INI_NLS_JAC_1.$RES_AUX_7=cos(u) * $SEED_INI_NLS_JAC_1.u - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
 //
 // 	Jacobian idx: 1
-// 	30: $pDER_ALG_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
-// 	29: $pDER_ALG_LS_JAC_1.$RES_SIM_4=-$SEED_ALG_LS_JAC_1.y2 [Real]
-// 	28: $pDER_ALG_LS_JAC_1.$RES_SIM_0=$SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3 - $SEED_ALG_LS_JAC_1.y2 [Real]
-// 	27: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
-// 	26: $pDER_ALG_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1 - $SEED_ALG_LS_JAC_1.y1 [Real]
-// 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
+// 	30: $pDER_ALG_NLS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_3 [Real]
+// 	29: $pDER_ALG_NLS_JAC_1.$RES_SIM_4=-$SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	28: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=$SEED_ALG_NLS_JAC_1.$FUN_2 + $SEED_ALG_NLS_JAC_1.$FUN_3 - $SEED_ALG_NLS_JAC_1.y2 [Real]
+// 	27: $pDER_ALG_NLS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_NLS_JAC_1.y1 - $SEED_ALG_NLS_JAC_1.$FUN_2 [Real]
+// 	26: $pDER_ALG_NLS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.$FUN_1 - $SEED_ALG_NLS_JAC_1.y1 [Real]
+// 	25: $pDER_ALG_NLS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.$FUN_1 [Real]
 //
 // 	Jacobian idx: 2
 //

@@ -8227,15 +8227,37 @@ template crefVarDimension(ComponentRef cr)
       'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
 end crefVarDimension;
 
+template lsVarKind(SimVar var)
+"var_kind enum constant matching this var, for initializeStaticLSVars."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'VAR_KIND_PARAMETER'
+    case SIMVAR(__)              then 'VAR_KIND_VARIABLE'
+end lsVarKind;
+
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
   let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
+  // A torn linear system's own iteration variables can be `fixed=false`
+  // PARAMETERS (solved via an initial-equation call, e.g. a filter's
+  // coefficient array) rather than ordinary VARIABLEs -- their scalar
+  // index lives in realParamsIndex/nParametersReal, a completely
+  // different space than realVarsIndex/nVariablesReal. Hardcoding
+  // VAR_KIND_VARIABLE here (as opposed to the equivalent, correct
+  // per-var dispatch in generateStaticInitialData for NONLINEAR_SYSTEM_DATA)
+  // looked up a variable-space index using a parameter-space index value,
+  // failing getNominalFromScalarIdx's out-of-bounds assertion whenever the
+  // parameter index exceeds nVariablesReal.
+  let kinds = (vars |> var as SIMVAR(__) => lsVarKind(var) ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
     const int indices[<%len%>] = {
       <%indices%>
+    };
+    const enum var_kind kinds[<%len%>] = {
+      <%kinds%>
     };
     for (int i = 0; i < <%len%>; ++i) {
       if (indices[i] < 0) {
@@ -8243,9 +8265,9 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
         linearSystemData->min[i]     = -DBL_MAX;
         linearSystemData->max[i]     = DBL_MAX;
       } else {
-        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, indices[i]);
-        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
-        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
+        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kinds[i], indices[i]);
+        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
+        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
       }
     }
   }
