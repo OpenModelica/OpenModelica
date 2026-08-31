@@ -217,7 +217,6 @@ openmodelica_codegen_wasm_jit_runtime/src/lis.rs
 openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
-openmodelica_codegen_wasm_jit_runtime/src/primme_svds.c
 openmodelica_codegen_wasm_jit_runtime/src/prof.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
@@ -351,6 +350,7 @@ openmodelica_nls/src/kinsol.rs
 openmodelica_nls/src/lib.rs
 openmodelica_nls/src/newton_diagnostics.rs
 openmodelica_nls/src/nls_c_trace.rs
+openmodelica_nls/src/primme_svds.c
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_plt_writer/Cargo.toml

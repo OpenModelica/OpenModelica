@@ -67,12 +67,21 @@ endif()
 if(RUST_IPOPT_NATIVE_DIR)
   list(APPEND _simrt_env "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
 endif()
+# PRIMME, the sparse SVD behind `-lv=LOG_NLS_SVD`: the archive 3rdParty already
+# builds for libSimulationRuntimeC.
+set(_simrt_features "")
+if(TARGET primme)
+  list(APPEND _simrt_env
+       "OMC_PRIMME_NATIVE_DIR=$<TARGET_FILE_DIR:primme>"
+       "OMC_PRIMME_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/primme-3.2.3/include")
+  set(_simrt_features --features primme)
+endif()
 
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
   JOB_SERVER_AWARE TRUE
   COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} build --target-dir ${_simrt_target_dir}
-          ${_simrt_profile_flag} -p openmodelica_simulation_runtime
+          ${_simrt_profile_flag} ${_simrt_features} -p openmodelica_simulation_runtime
   BYPRODUCTS ${_simrt_so}
   COMMENT "Rust: building libSimulationRuntimeRust (${OM_RUST_SIM_RUNTIME_PROFILE})"
   VERBATIM)
@@ -84,6 +93,9 @@ if(TARGET rust_sundials_native_collect)
 endif()
 if(TARGET rust_ipopt_native_collect)
   add_dependencies(SimulationRuntimeRust rust_ipopt_native_collect)
+endif()
+if(TARGET primme)
+  add_dependencies(SimulationRuntimeRust primme)
 endif()
 
 install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)

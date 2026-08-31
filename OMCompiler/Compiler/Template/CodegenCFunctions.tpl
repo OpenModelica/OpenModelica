@@ -5622,18 +5622,21 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(dims)
       let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
-      let arrayData = if hasZeroDimension(dims) then
-          'NULL'
-        else if Flags.getConfigBool(Flags.NEW_BACKEND) then
-          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-          '((modelica_<%type%>*)&(<%nosubname%>))'
+      let t = if boolAnd(isStartCref(cr), boolNot(hasZeroDimension(dims))) then
+          startArrayGather(cr, type, wrapperArray, dimsLenStr, dimsValuesStr, &varDecls)
         else
-          let &sub = buffer ""
-          let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-          '((modelica_<%type%>*)&(<%nosubname%>))'
-      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+          // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
+          let arrayData = if hasZeroDimension(dims) then
+              'NULL'
+            else if Flags.getConfigBool(Flags.NEW_BACKEND) then
+              let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+              let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+            else
+              let &sub = buffer ""
+              let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+          '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
     else
@@ -8168,6 +8171,32 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
       end match
   end match
 end varArrayNameValues;
+
+template startArrayGather(ComponentRef cr, Text type, Text arr, Text ndims, Text dims, Text &varDecls)
+ "A whole-array start attribute whose dimension is not constant, so it was not
+  expanded into one term per element. The start values live one per scalar
+  VarsData entry, not contiguously like the value slots, so there is no first
+  element to build the array from: gather them instead."
+::=
+  let idx = tempDecl("modelica_integer", &varDecls)
+  <<
+  alloc_<%type%>_array(&<%arr%>, <%ndims%>, <%dims%>);
+  for (<%idx%> = 0; <%idx%> < <%type%>_array_nr_of_elements(<%arr%>); <%idx%>++) {
+    ((modelica_<%type%>*)<%arr%>.data)[<%idx%>] = <%startArrayElement(cr, type, idx)%>;
+  }<%\n%>
+  >>
+end startArrayGather;
+
+template startArrayElement(ComponentRef cr, Text type, Text idx)
+ "Element `idx`'s start attribute. With --simCodeScalarize the array's elements
+  are consecutive VarsData entries, each holding its own."
+::=
+  match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+  case var as SIMVAR(__) then
+    if intLt(index,0) then error(sourceInfo(), 'startArrayElement got negative index=<%index%> for <%crefStr(name)%>') else
+    let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
+    if stringEq(type, "real") then '((modelica_real*)(<%entry%>.data))[0]' else entry
+end startArrayElement;
 
 template varArrayName(SimVar var)
 ::=

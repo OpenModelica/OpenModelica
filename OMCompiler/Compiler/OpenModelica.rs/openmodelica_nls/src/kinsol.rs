@@ -1263,3 +1263,39 @@ mod stub {
 
 #[cfg(not(sundials))]
 pub use stub::{b_solve, reset_caches, solve};
+
+/// The KINSOL driver `-nls` names, over the system's CSC pattern: `kinsolSolver.c`
+/// for `kinsol`, `kinsol_b.c` for `experimental-kinsol`. C picks between them per
+/// system in `solveNLS`, so the choice lives here rather than in each host.
+#[allow(clippy::too_many_arguments)]
+pub fn solve_selected(
+    handle: u32,
+    n: usize,
+    nnz: usize,
+    colptr: &[i32],
+    rowidx: &[i32],
+    nominal: &[f64],
+    guess: &[f64],
+    old_values: &[f64],
+    x: &mut [f64],
+    eq_index: u32,
+    time: f64,
+    has_jacobian: bool,
+    load_guess: &mut dyn FnMut(&mut [f64]),
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    assemble: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    if openmodelica_solvers::solverflags::nls() == openmodelica_solvers::solverflags::Nls::KinsolB {
+        // C's `INITIAL_EXTRAPOLATION`: `discreteCall ? nlsx : nlsxExtrapolation`,
+        // which is the start point the caller already picked.
+        let start = x.to_vec();
+        return b_solve(
+            handle, n, nnz, Some((colptr, rowidx)), nominal, &start, old_values, x, eq_index, time,
+            load_guess, eval, has_jacobian.then_some(assemble),
+        );
+    }
+    solve(
+        handle, n, nnz, colptr, rowidx, nominal, guess, x, eq_index, time, has_jacobian, eval,
+        assemble,
+    )
+}

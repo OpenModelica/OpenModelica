@@ -12,7 +12,8 @@
 use core::ffi::{c_int, c_void};
 
 use openmodelica_nls as nls;
-use openmodelica_solvers::{omclog, solverflags};
+use openmodelica_sim_meta::driver;
+use openmodelica_solvers::{omclog, simflags, solverflags};
 
 use crate::abi::*;
 use crate::systems::eval_jacobian;
@@ -337,13 +338,13 @@ impl nls::NlsBackend for CBackend<'_> {
     fn solve_sparse(
         &mut self,
         req: nls::NlsRequest,
-        _load_guess: &mut dyn FnMut(&mut [f64]),
+        load_guess: &mut dyn FnMut(&mut [f64]),
         eval: &mut dyn FnMut(&[f64], &mut [f64]),
         jac: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {
-        nls::kinsol::solve(
-            self.handle, req.n, self.nnz, self.colptr, self.rowidx, req.nominal, req.guess, req.x,
-            req.eq_index, req.time, req.has_jacobian, eval, jac,
+        nls::kinsol::solve_selected(
+            self.handle, req.n, self.nnz, self.colptr, self.rowidx, req.nominal, req.guess,
+            req.old_values, req.x, req.eq_index, req.time, req.has_jacobian, load_guess, eval, jac,
         )
     }
 
@@ -756,6 +757,98 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
         let td = THREAD_DATA.load(core::sync::atomic::Ordering::Relaxed) as *mut threadData_t;
         crate::throw(td, "a model error was raised where nothing could absorb it")
     });
+    // Both names are the path the flag gave; only the wasm host needs a second one.
+    nls::host::set_initial_guess_request(|eq_index| {
+        simflags::with_flags(|f| match &f.save_initial_guess {
+            Some((path, idx)) if *idx == eq_index as i32 => Some((path.clone(), path.clone())),
+            _ => None,
+        })
+        .filter(|_| !GUESS_DONE.swap(true, core::sync::atomic::Ordering::Relaxed))
+    });
+    nls::host::set_initial_guess_writer(write_state);
+}
+
+/// One-shot, as C's `B_save_initial_guess_system` is: it throws once written.
+static GUESS_DONE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Raw because the solve runs inside `driver::drive`, which holds the engine these
+/// belong to; nothing here writes.
+static STATE_META: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+static STATE_RT: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+/// Publish what [`write_state`] reads, for the length of a run.
+pub fn set_state_source(meta: *const openmodelica_sim_meta::SimMeta, rt: *const crate::data::RtData) {
+    STATE_META.store(meta as usize, core::sync::atomic::Ordering::Relaxed);
+    STATE_RT.store(rt as usize, core::sync::atomic::Ordering::Relaxed);
+}
+
+/// Reading the region map needs no model call, and the engine is busy driving the
+/// solve this runs inside.
+struct ReadOnly(*const crate::data::RtData);
+
+impl driver::SimEngine for ReadOnly {
+    fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> driver::Result<()> {
+        unsafe { &*self.0 }.read(addr, buf)
+    }
+    fn write_bytes(&mut self, _addr: u32, _buf: &[u8]) -> driver::Result<()> {
+        Err("the initial-guess writer does not write SimData")
+    }
+    fn call1_raw(&mut self, _name: &str, _arg: u32) -> driver::Result<()> {
+        Err("the initial-guess writer does not call the model")
+    }
+    fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> driver::Result<()> {
+        Ok(())
+    }
+    fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+        Err("the initial-guess writer does not call the model")
+    }
+    fn call_simulate(&mut self, _sim_data: u32, _start: f64, _stop: f64, _n: u32) -> driver::Result<u32> {
+        Err("the initial-guess writer does not call the model")
+    }
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
+        None
+    }
+}
+
+/// C's `mat4_init4` + `mat4_writeParameterData4` + `mat4_emit4`, where the solver
+/// stands.
+fn write_state(path: &str) -> Result<(), String> {
+    let meta = STATE_META.load(core::sync::atomic::Ordering::Relaxed)
+        as *const openmodelica_sim_meta::SimMeta;
+    let rt = STATE_RT.load(core::sync::atomic::Ordering::Relaxed) as *const crate::data::RtData;
+    if meta.is_null() || rt.is_null() {
+        return Err(String::from("no model to write the initial guess from"));
+    }
+    let meta = unsafe { &*meta };
+    let engine = ReadOnly(rt);
+    let mut rows = Vec::new();
+    driver::capture_row(&engine, &mut rows, 0, &meta.layout).map_err(String::from)?;
+    // Every parameter, in `meta.vars` order: `result::write` is what applies `keep`.
+    let mut params = Vec::new();
+    for v in &meta.vars {
+        if let openmodelica_sim_meta::MetaKind::Param { off, wty, .. } = &v.kind {
+            params.push(match wty {
+                openmodelica_sim_meta::WTy::F64 => {
+                    driver::read_f64(&engine, *off).map_err(String::from)?
+                }
+                openmodelica_sim_meta::WTy::I32 => {
+                    driver::read_i32(&engine, *off).map_err(String::from)? as f64
+                }
+            });
+        }
+    }
+    let Some(bytes) = openmodelica_sim_meta::result::write(
+        meta,
+        "mat",
+        &rows,
+        meta.layout.n_row_total(),
+        &params,
+        &meta.output_keep(None),
+        openmodelica_mat_writer::Precision::Double,
+    ) else {
+        return Err(String::from("cannot write the initial guess file"));
+    };
+    std::fs::write(path, bytes).map_err(|e| format!("cannot write {path}: {e}"))
 }
 
 /// `-nls=kinsol` on a build without the SUNDIALS archives; say so once rather than

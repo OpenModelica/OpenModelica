@@ -519,4 +519,6 @@ pub(crate) fn umfpack_solve_dense(a_ptr: u32, b_ptr: u32, n: usize) -> i32 {
 // `openmodelica_nls::kinsol`, shared with `openmodelica_simulation_runtime`: the
 // binding exchanges plain slices, so both runtimes drive the same one.
 #[cfg(sundials)]
-pub(crate) use openmodelica_nls::kinsol::{b_solve as kinsol_b_solve, solve as kinsol_solve};
+pub(crate) use openmodelica_nls::kinsol::{
+    b_solve as kinsol_b_solve, solve_selected as kinsol_solve_selected,
+};

@@ -472,7 +472,7 @@ file(GLOB PRIMME_SOURCES ${_primme_sources}/src/eigs/*.c ${_primme_sources}/src/
                          ${_primme_sources}/src/svds/*.c)
 # The runtime's entry point into it, kept in C so `primme_svds_params` is never
 # described twice.
-list(APPEND PRIMME_SOURCES ${RUST_OMC_DIR}/openmodelica_codegen_wasm_jit_runtime/src/primme_svds.c)
+list(APPEND PRIMME_SOURCES ${RUST_OMC_DIR}/openmodelica_nls/src/primme_svds.c)
 add_library(primme STATIC \${PRIMME_SOURCES})
 target_compile_definitions(primme PRIVATE
   PRIMME_WITHOUT_FLOAT F77UNDERSCORE __unix__ _WASI_EMULATED_PROCESS_CLOCKS)
