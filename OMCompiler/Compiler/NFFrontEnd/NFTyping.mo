@@ -846,7 +846,7 @@ protected
   InstNode parent;
   list<Subscript> subs;
 algorithm
-  exp_dims := Expression.dimensionCount(dimExp);
+  exp_dims := Expression.dimensionCount(dimExp, true);
 
   if exp_dims == 0 then
     // If the expression is a scalar like it should we don't need to do anything.
@@ -1801,7 +1801,7 @@ algorithm
   // We don't yet know the number of dimensions, but the index must at least be 1.
   if dimIndex < 1 then
     dim := Dimension.UNKNOWN();
-    error := TypingError.OUT_OF_BOUNDS(Expression.dimensionCount(arrayExp));
+    error := TypingError.OUT_OF_BOUNDS(Expression.dimensionCount(arrayExp, true));
   else
     (dim, error) := typeArrayDim2(arrayExp, dimIndex);
   end if;
