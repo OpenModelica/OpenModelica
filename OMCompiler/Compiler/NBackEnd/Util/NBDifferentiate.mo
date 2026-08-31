@@ -1370,9 +1370,16 @@ public
           arguments_inputs := List.zip(call.arguments, func.inputs);
           for tpl in arguments_inputs loop
             (arg, inp) := tpl;
-            // check if it is continuous
-            // do not check for continuous if it is for functions (differentiating a function inside a function) crefs are not lowered there! assume it is continuous
-            isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg, false));
+            // check if it is (or contains) something continuous -- do not check for functions
+            // (differentiating a function inside a function) since crefs are not lowered
+            // there, assume continuous. Use an OR-fold (does this expression contain AT LEAST
+            // ONE continuous variable), not isContinuous's ALL-fold (are ALL crefs in it
+            // continuous): a mixed expression like a constant parameter times a genuinely
+            // time-varying variable (e.g. "e * a", a unit-vector parameter times an
+            // acceleration) genuinely needs differentiating -- isContinuous's ALL-fold wrongly
+            // judged it "not continuous" purely because the parameter "e" is present, silently
+            // dropping every argument built this way from the derivative computation entirely.
+            isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.containsContinuousVar(arg));
 
             // input type has to be real value or a function pointer, skip if its in the interface diff info
             isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
