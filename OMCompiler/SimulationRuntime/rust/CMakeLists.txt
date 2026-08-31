@@ -51,9 +51,9 @@ set(_simrt_so ${_simrt_target_dir}/${_simrt_profile_dir}/${CMAKE_SHARED_LIBRARY_
 set(_simrt_headers "${CMAKE_CURRENT_SOURCE_DIR}/../c|${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/gc/include")
 
 set(_simrt_env ${CMAKE_COMMAND} -E env "OMC_SIMRT_INCLUDE_DIRS=${_simrt_headers}")
-# Same SUNDIALS hand-off the omc build uses, so the driver gets CVODE/IDA. Both
-# or neither: openmodelica_solvers' build script needs the index size whenever the
-# archive directory is given.
+# The archives native_solver_archives.cmake collected, so the driver gets
+# CVODE/IDA. Both or neither: openmodelica_solvers' build script needs the index
+# size whenever the archive directory is given.
 get_property(_simrt_sundials GLOBAL PROPERTY OMC_RUST_SUNDIALS_NATIVE_DIR)
 get_property(_simrt_sundials_ix GLOBAL PROPERTY OMC_RUST_SUNDIALS_INDEX_SIZE)
 if(_simrt_sundials AND _simrt_sundials_ix)
@@ -64,8 +64,9 @@ endif()
 # The same hand-off for Ipopt, which `method="optimization"` needs; without it
 # `openmodelica_sim_meta` builds without `cfg(ipopt)` and the driver reports the
 # solver as unavailable, exactly as a C runtime without OMC_HAVE_IPOPT does.
-if(RUST_IPOPT_NATIVE_DIR)
-  list(APPEND _simrt_env "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
+get_property(_simrt_ipopt GLOBAL PROPERTY OMC_RUST_IPOPT_NATIVE_DIR)
+if(_simrt_ipopt)
+  list(APPEND _simrt_env "OMC_IPOPT_NATIVE_DIR=${_simrt_ipopt}")
 endif()
 # PRIMME, the sparse SVD behind `-lv=LOG_NLS_SVD`: the archive 3rdParty already
 # builds for libSimulationRuntimeC.
