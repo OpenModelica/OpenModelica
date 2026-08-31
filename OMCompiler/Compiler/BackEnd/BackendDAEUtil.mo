@@ -83,7 +83,6 @@ import DAEMode;
 import DAEUtil;
 import DataReconciliation;
 import Debug;
-import DoubleEnded;
 import Differentiate;
 import DumpGraphML;
 import DynamicOptimization;
