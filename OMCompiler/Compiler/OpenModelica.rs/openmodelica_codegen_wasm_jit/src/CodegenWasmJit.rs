@@ -7743,23 +7743,56 @@ fn is_computed(key: &str, computed: &std::collections::HashSet<String>) -> bool 
     }
 }
 
-/// Keys of the crefs assigned by a `SimEqSystem` list (scalar/array assigns).
+/// Keys of the crefs a `SimEqSystem` list assigns, a system's iteration
+/// variables included.
 fn assigned_cref_keys(eqs: &[Arc<SimCode::SimEqSystem>]) -> std::collections::HashSet<String> {
     use SimCode::SimEqSystem as E;
     let mut set = std::collections::HashSet::new();
+    let mut add = |cr: &DAE::ComponentRef| {
+        if let Ok(k) = sim_cref_key(cr) {
+            set.insert(k);
+        }
+    };
     for eq in eqs {
-        let cr = match &**eq {
-            E::SES_SIMPLE_ASSIGN { cref, .. } => Some(cref.clone()),
-            E::SES_ARRAY_CALL_ASSIGN { lhs, .. } => match &**lhs {
-                DAE::Exp::CREF { componentRef, .. } => Some(componentRef.clone()),
-                _ => None,
-            },
-            _ => None,
-        };
-        if let Some(cr) = cr {
-            if let Ok(k) = sim_cref_key(&cr) {
-                set.insert(k);
+        match &**eq {
+            E::SES_SIMPLE_ASSIGN { cref, .. }
+            | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, .. }
+            | E::SES_FOR_LOOP { cref, .. } => add(cref),
+            E::SES_ARRAY_CALL_ASSIGN { lhs, .. } => {
+                if let DAE::Exp::CREF { componentRef, .. } = &**lhs {
+                    add(componentRef);
+                }
             }
+            E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+                for s in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
+                    for v in lst(&s.vars) {
+                        add(&v.name);
+                    }
+                }
+            }
+            E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+                for s in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
+                    for c in lst(&s.crefs) {
+                        add(c);
+                    }
+                }
+            }
+            E::SES_MIXED { discVars, .. } => {
+                for v in lst(discVars) {
+                    add(&v.name);
+                }
+            }
+            E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {
+                let defs = openmodelica_frontend_base::Expression::extractUniqueCrefsFromStatmentS(
+                    statements.clone(),
+                );
+                if let Ok((defs, _)) = defs {
+                    for c in lst(&defs) {
+                        add(c);
+                    }
+                }
+            }
+            _ => {}
         }
     }
     set
