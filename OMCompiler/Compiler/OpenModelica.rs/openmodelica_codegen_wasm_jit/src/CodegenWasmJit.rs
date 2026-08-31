@@ -5342,8 +5342,8 @@ fn build_sim_model(
         out.extend(eqs);
         out
     };
-    let algebraic_eqs =
-        with_local_known(if has_when { all_eqs } else { flatten_eqs_ll(&sim_code.algebraicEquations) });
+    let alg_eqs_raw = if has_when { Vec::new() } else { flatten_eqs_ll(&sim_code.algebraicEquations) };
+    let algebraic_eqs = with_local_known(if has_when { all_eqs } else { alg_eqs_raw.clone() });
     let output_eqs = if has_when { flatten_eqs_ll(&sim_code.algebraicEquations) } else { Vec::new() };
     // pre := live regions, appended to the per-step (algebraic) function when the
     // model has `when`-equations (see `sim_save_pre_values`).
@@ -5571,11 +5571,11 @@ fn build_sim_model(
     // earlier ones). `parameterEquations` belongs to `functionUpdateBoundParameters`
     // alone — evaluated in both, an external object's constructor runs twice.
     let stateset_diag = stateset_diag_offsets(&sim_code.stateSets, &var_map)?;
-    let mut chunks: Vec<we::Function> = Vec::new();
+    let mut pool = ChunkPool::default();
     let mut splits: Vec<SplitFn> = Vec::new();
     let param_units: Vec<EqUnit> =
         param_bindings.iter().map(|(cref, exp)| EqUnit::Binding(cref, exp)).collect();
-    splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+    splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
     let init_save: Vec<(u32, u32, u32)> = if layout.n_rel > 0 {
@@ -5583,15 +5583,45 @@ fn build_sim_model(
     } else {
         Vec::new()
     };
-    splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
-    // `--parmodauto`: one chunk per ODE equation, each a schedulable task.
+    splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
+    // Three orders over one equation set, so where they agree on a run they call the
+    // same chunk. Not under `--parmodauto`, whose tasks *are* the ODE chunks.
+    let shared = match parmod_info.is_none() && !has_when {
+        true => eq_segments(&ode_task_eqs, &alg_eqs_raw, &all_eqs_for_dae),
+        false => None,
+    };
     let ode_split = splits.len();
-    if parmod_info.is_some() {
-        splits.push(build_split_fn("functionODE", &eq_units(&ode_task_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, true)?);
-    } else {
-        splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
-    }
-    splits.push(build_split_fn("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+    let dae_chunks = match shared {
+        Some(segs) => {
+            let (ode, alg, dae) = build_shared_eq_chunks(segs, &all_eqs_for_dae, &local_known_eqs, eqfn_type, &var_map, &eq_index, &by_name, &mut literals, &mut pool)?;
+            for chunks in [ode, alg] {
+                let slot = bodies.len();
+                bodies.push(empty_eqfn());
+                splits.push(SplitFn { slot, chunks, n_params: 1, pre_calls: Vec::new() });
+            }
+            Some(dae)
+        }
+        // `--parmodauto`: one chunk per ODE equation, each a schedulable task.
+        None => {
+            if parmod_info.is_some() {
+                splits.push(build_split_fn("functionODE", &eq_units(&ode_task_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, true)?);
+            } else {
+                splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
+            }
+            // A `when`-model's `functionAlgebraics` is `functionDAE` plus
+            // `storePreValues`, so the pre-store gets a chunk of its own and the rest
+            // is shared. `save_pre` is empty otherwise.
+            let slot = bodies.len();
+            bodies.push(empty_eqfn());
+            let eqs = build_chunks("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut pool, false)?;
+            let mut chunks = eqs.clone();
+            if !save_pre.is_empty() {
+                chunks.extend(build_chunks("storePreValues", &[], 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut pool, false)?);
+            }
+            splits.push(SplitFn { slot, chunks, n_params: 1, pre_calls: Vec::new() });
+            has_when.then_some(eqs)
+        }
+    };
     // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
     let all_reals: Vec<&SimCodeVar::SimVar> = states
         .iter()
@@ -5975,7 +6005,7 @@ fn build_sim_model(
     // first step; a stub for models that do not use `homotopy()`.
     let init_lambda0_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionInitialEquations_lambda0", &eq_units(&lambda0_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("functionInitialEquations_lambda0", &eq_units(&lambda0_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
     // Min/max variable-attribute (and equation) assertion checks: C's
@@ -5984,14 +6014,14 @@ fn build_sim_model(
     let has_asserts = !assert_eqs.is_empty();
     let check_asserts_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
     // C's `function_ZeroCrossingsEquations`: what the crossings read, which is
     // neither `functionODE` nor all of `functionAlgebraics`.
     let zc_equations_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
     // C's `functionAlgebraics` + `storePreValues`. Only a `has_when` model needs its
@@ -5999,7 +6029,7 @@ fn build_sim_model(
     let outputs_idx = {
         let idx = import_base + bodies.len() as u32;
         if has_when {
-            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         } else {
             use we::Instruction as I;
             let mut f = we::Function::new([]);
@@ -6066,7 +6096,7 @@ fn build_sim_model(
     // perturbation IDAS made to a sensitivity parameter.
     let update_bound_params_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
     // The optimizer's per-real-variable attributes (C reads them out of the
@@ -6141,28 +6171,37 @@ fn build_sim_model(
     // which form the model is in.
     let dae_residuals_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, dae_fn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, dae_fn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
     // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
     // so every module's entry points sit at the same indices.
     let sym_inline_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("symbolicInlineSystem", &eq_units(&inline_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+        splits.push(build_split_fn("symbolicInlineSystem", &eq_units(&inline_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
 
     // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
-    // context, which `-reconcile` re-solves the model with.
-    let recon_dae_idx = match recon.present {
-        false => None,
-        true => {
-            let idx = import_base + bodies.len() as u32;
-            let mut units = eq_units(&local_known_eqs);
-            units.extend(eq_units(&all_eqs_for_dae));
-            splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
-            Some(idx)
+    // context, and the discrete pass wherever `functionAlgebraics` is not already the
+    // full list: the sorted order interleaves the two subsets, so `functionODE` then
+    // `functionAlgebraics` would read an algebraic variable one pass stale. Exported
+    // from every model, as `MODEL_FNS` promises the runtimes that import it by name.
+    let dae_entry_idx = {
+        let idx = import_base + bodies.len() as u32;
+        match dae_chunks {
+            Some(chunks) => {
+                let slot = bodies.len();
+                bodies.push(empty_eqfn());
+                splits.push(SplitFn { slot, chunks, n_params: 1, pre_calls: Vec::new() });
+            }
+            None => {
+                let mut units = eq_units(&local_known_eqs);
+                units.extend(eq_units(&all_eqs_for_dae));
+                splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
+            }
         }
+        idx
     };
 
     // `parmodTask(sim_data, k)` `call_indirect`s task `k` out of the module's own table 1.
@@ -6170,7 +6209,7 @@ fn build_sim_model(
         false => None,
         true => {
             let lk_idx = import_base + bodies.len() as u32;
-            splits.push(build_split_fn("functionLocalKnownVars", &eq_units(&local_known_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+            splits.push(build_split_fn("functionLocalKnownVars", &eq_units(&local_known_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
             splits[ode_split].pre_calls.push(lk_idx);
             let task_idx = import_base + bodies.len() as u32;
             let mut f = we::Function::new([]);
@@ -6184,15 +6223,15 @@ fn build_sim_model(
     };
 
     // The chunks, after all fixed-index bodies; each entry point's placeholder
-    // becomes a thunk calling its own.
+    // becomes a thunk calling the ones it needs.
     let chunk_base = import_base + bodies.len() as u32;
-    bodies.extend(chunks);
+    let ChunkPool { fns: chunk_fns, meta: chunk_meta } = pool;
+    bodies.extend(chunk_fns);
     for s in &splits {
         bodies[s.slot] = s.thunk(chunk_base);
     }
     let parmod_tasks: Option<Vec<u32>> = parmod_fns.map(|_| {
-        let s = &splits[ode_split];
-        (0..s.count).map(|k| chunk_base + (s.first + k) as u32).collect()
+        splits[ode_split].chunks.iter().map(|c| chunk_base + *c as u32).collect()
     });
 
     // --- Function section (type index per body, in body order). ---
@@ -6263,17 +6302,13 @@ fn build_sim_model(
     functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
     functions.function(dae_fn_type); // evaluateDAEResiduals: (i32, i32) -> ()
     functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
-    if recon_dae_idx.is_some() {
-        functions.function(eqfn_type); // functionDAE: (i32) -> ()
-    }
+    functions.function(eqfn_type); // functionDAE: (i32) -> ()
     if parmod_fns.is_some() {
         functions.function(eqfn_type); // functionLocalKnownVars: (i32) -> ()
         functions.function(dae_fn_type); // parmodTask: (i32 SimData, i32 task) -> ()
     }
-    for s in &splits {
-        for _ in 0..s.count {
-            functions.function(s.ty);
-        }
+    for (ty, _) in &chunk_meta {
+        functions.function(*ty);
     }
 
     // --- Shared literals, closure thunks and the module `start`. Both come after
@@ -6380,6 +6415,7 @@ fn build_sim_model(
         ("functionRemovedInitialEquations", removed_init_idx),
         ("functionInitSynchronous", sync_idx.0),
         ("symbolicInlineSystem", sym_inline_idx),
+        ("functionDAE", dae_entry_idx),
         ("linearJacA", linz_jac_idx),
         ("linearJacB", linz_jac_idx + 1),
         ("linearJacC", linz_jac_idx + 2),
@@ -6450,9 +6486,7 @@ fn build_sim_model(
             exports.export(name, we::ExportKind::Func, base + k as u32);
         }
     }
-    if let Some(idx) = recon_dae_idx {
-        exports.export("functionDAE", we::ExportKind::Func, idx);
-    }
+    exports.export("functionDAE", we::ExportKind::Func, dae_entry_idx);
     let (sync_init, sync_update, sync_eqs) = sync_idx;
     exports.export("functionRemovedInitialEquations", we::ExportKind::Func, removed_init_idx);
     exports.export("functionInitSynchronous", we::ExportKind::Func, sync_init);
@@ -6531,9 +6565,7 @@ fn build_sim_model(
             names.push((base + k as u32, name.to_string()));
         }
     }
-    if let Some(idx) = recon_dae_idx {
-        names.push((idx, "functionDAE".to_string()));
-    }
+    names.push((dae_entry_idx, "functionDAE".to_string()));
     names.push((sync_init, "functionInitSynchronous".to_string()));
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
@@ -6543,10 +6575,8 @@ fn build_sim_model(
         names.push((lk_idx, "functionLocalKnownVars".to_string()));
         names.push((task_idx, "parmodTask".to_string()));
     }
-    for s in &splits {
-        for k in 0..s.count {
-            names.push((chunk_base + (s.first + k) as u32, format!("{}${k}", s.name)));
-        }
+    for (k, (_, name)) in chunk_meta.iter().enumerate() {
+        names.push((chunk_base + k as u32, name.clone()));
     }
     names.sort_by_key(|(idx, _)| *idx);
     let mut fn_names = we::NameMap::new();
@@ -7921,16 +7951,13 @@ fn chunk_instrs() -> usize {
 /// the end of module assembly: the entry point is reserved as a placeholder body
 /// and filled in with [`SplitFn::thunk`] there.
 struct SplitFn {
-    /// Entry-point name, which the chunks extend (`functionODE$3`).
-    name: &'static str,
     /// Body-list slot reserved for the entry point.
     slot: usize,
-    /// This entry point's chunks in the module's chunk list.
-    first: usize,
-    count: usize,
+    /// This entry point's chunks, by position in [`ChunkPool`]. Entry points that
+    /// evaluate the same equations share them (see [`eq_segments`]).
+    chunks: Vec<usize>,
     /// `(SimData*)`, plus DAE mode's `stage`.
     n_params: u32,
-    ty: u32,
     /// Entry points called (with the same arguments) ahead of the chunks.
     pre_calls: Vec<u32>,
 }
@@ -7939,24 +7966,43 @@ impl SplitFn {
     fn thunk(&self, chunk_base: u32) -> we::Function {
         use we::Instruction as I;
         let mut f = we::Function::new([]);
+        let mut call = |f: &mut we::Function, idx: u32| {
+            for p in 0..self.n_params {
+                f.instruction(&I::LocalGet(p));
+            }
+            f.instruction(&I::Call(idx));
+        };
         for c in &self.pre_calls {
-            for p in 0..self.n_params {
-                f.instruction(&I::LocalGet(p));
-            }
-            f.instruction(&I::Call(*c));
+            call(&mut f, *c);
         }
-        for k in 0..self.count {
-            for p in 0..self.n_params {
-                f.instruction(&I::LocalGet(p));
-            }
-            f.instruction(&I::Call(chunk_base + (self.first + k) as u32));
+        for c in &self.chunks {
+            call(&mut f, chunk_base + *c as u32);
         }
         f.instruction(&I::End);
         f
     }
 }
 
-/// Lower `units` into chunk functions appended to `chunks`, reserving a `bodies`
+/// The module's chunk functions, emitted after every fixed-index body. An entry
+/// point names them by pool position, and several may name the same one.
+#[derive(Default)]
+struct ChunkPool {
+    fns: Vec<we::Function>,
+    /// Per chunk, for the function and name sections.
+    meta: Vec<(u32, String)>,
+}
+
+impl ChunkPool {
+    fn len(&self) -> usize {
+        self.fns.len()
+    }
+    fn push(&mut self, f: we::Function, ty: u32, name: String) {
+        self.fns.push(f);
+        self.meta.push((ty, name));
+    }
+}
+
+/// Lower `units` into chunk functions appended to `pool`, reserving a `bodies`
 /// slot for the entry point that calls them. `stateset_diag` heads the first chunk
 /// and `save_pre` tails the last; with no units at all they get a chunk to
 /// themselves. Cuts only happen where no constant-store stretch is open, so
@@ -7974,18 +8020,40 @@ fn build_split_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     bodies: &mut Vec<we::Function>,
-    chunks: &mut Vec<we::Function>,
+    pool: &mut ChunkPool,
     per_unit: bool,
 ) -> Result<SplitFn> {
     let slot = bodies.len();
     bodies.push(empty_eqfn());
-    let first = chunks.len();
+    let chunks = build_chunks(
+        name, units, n_params, ty, stateset_diag, save_pre, var_map, eq_index, by_name, literals,
+        pool, per_unit,
+    )?;
+    Ok(SplitFn { slot, chunks, n_params, pre_calls: Vec::new() })
+}
+
+/// [`build_split_fn`] without an entry point of its own.
+#[allow(clippy::too_many_arguments)]
+fn build_chunks(
+    name: &str,
+    units: &[EqUnit],
+    n_params: u32,
+    ty: u32,
+    stateset_diag: &[u32],
+    save_pre: &[(u32, u32, u32)],
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+    per_unit: bool,
+) -> Result<Vec<usize>> {
+    let first = pool.len();
     let mut i = 0usize;
-    while i < units.len()
-        || (chunks.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty()))
+    while i < units.len() || (pool.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty()))
     {
         let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, n_params);
-        if chunks.len() == first {
+        if pool.len() == first {
             ctx.emit_stateset_diag_init(stateset_diag)?;
         }
         let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
@@ -8005,9 +8073,114 @@ fn build_split_fn(
         if i == units.len() {
             ctx.sim_save_pre_values(save_pre)?;
         }
-        chunks.push(finish_fn(ctx));
+        pool.push(finish_fn(ctx), ty, format!("{name}${}", pool.len() - first));
     }
-    Ok(SplitFn { name, slot, first, count: chunks.len() - first, n_params, ty, pre_calls: Vec::new() })
+    Ok((first..pool.len()).collect())
+}
+
+/// A run of `allEquations` that is also a run of the `odeEquations` or
+/// `algebraicEquations` list holding it, so its chunks serve both entry points, the
+/// way C's `eqFunction_<n>` do.
+struct EqSegment {
+    ode: bool,
+    /// Where the run starts in its own list.
+    pos: usize,
+    /// Where it sits in `allEquations`.
+    span: core::ops::Range<usize>,
+    chunks: Vec<usize>,
+}
+
+/// The equation's own index, including the forms [`eq_index_of`] leaves at -1.
+fn eq_id_of(eq: &SimCode::SimEqSystem) -> i32 {
+    use SimCode::SimEqSystem as E;
+    match eq {
+        E::SES_ALIAS { index, .. } | E::SES_FOR_EQUATION { index, .. } => *index,
+        _ => eq_index_of(eq),
+    }
+}
+
+/// Cut `all` (C's `allEquations`) into runs shared with `ode`/`alg`; `None` unless
+/// the two tile it, which leaves the caller lowering a copy of its own.
+///
+/// The orders differ by more than the interleaving -- `algebraicEquations` ends with
+/// C's `removedEquations` reversed -- so that tail comes back one equation per run.
+fn eq_segments(
+    ode: &[Arc<SimCode::SimEqSystem>],
+    alg: &[Arc<SimCode::SimEqSystem>],
+    all: &[Arc<SimCode::SimEqSystem>],
+) -> Option<Vec<EqSegment>> {
+    if all.len() != ode.len() + alg.len() {
+        return None;
+    }
+    let mut own: HashMap<i32, (bool, usize)> = HashMap::new();
+    for (is_ode, eqs) in [(true, ode), (false, alg)] {
+        for (pos, e) in eqs.iter().enumerate() {
+            if own.insert(eq_id_of(e), (is_ode, pos)).is_some() {
+                return None;
+            }
+        }
+    }
+    let mut segs: Vec<EqSegment> = Vec::new();
+    for (i, e) in all.iter().enumerate() {
+        let &(is_ode, pos) = own.get(&eq_id_of(e))?;
+        match segs.last_mut() {
+            Some(s) if s.ode == is_ode && s.pos + s.span.len() == pos => s.span.end = i + 1,
+            _ => segs.push(EqSegment { ode: is_ode, pos, span: i..i + 1, chunks: Vec::new() }),
+        }
+    }
+    // An entry point calls its own segments in its list's order, so they must tile it.
+    for (is_ode, len) in [(true, ode.len()), (false, alg.len())] {
+        let mut runs: Vec<(usize, usize)> =
+            segs.iter().filter(|s| s.ode == is_ode).map(|s| (s.pos, s.span.len())).collect();
+        runs.sort_unstable();
+        let mut next = 0;
+        for (pos, n) in runs {
+            if pos != next {
+                return None;
+            }
+            next += n;
+        }
+        if next != len {
+            return None;
+        }
+    }
+    Some(segs)
+}
+
+/// Lower the segments once; the three entry points' chunk lists come back, each
+/// headed by `functionLocalKnownVars` as C's are.
+#[allow(clippy::too_many_arguments)]
+fn build_shared_eq_chunks(
+    mut segs: Vec<EqSegment>,
+    all: &[Arc<SimCode::SimEqSystem>],
+    local_known: &[Arc<SimCode::SimEqSystem>],
+    ty: u32,
+    var_map: &SimVarMap,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+    pool: &mut ChunkPool,
+) -> Result<(Vec<usize>, Vec<usize>, Vec<usize>)> {
+    let head = build_chunks(
+        "functionLocalKnownVars", &eq_units(local_known), 1, ty, &[], &[], var_map, eq_index,
+        by_name, literals, pool, false,
+    )?;
+    for seg in &mut segs {
+        let name = format!("eqFunction_{}", eq_id_of(&all[seg.span.start]));
+        seg.chunks = build_chunks(
+            &name, &eq_units(&all[seg.span.clone()]), 1, ty, &[], &[], var_map, eq_index, by_name,
+            literals, pool, false,
+        )?;
+    }
+    let call = |segs: &[&EqSegment]| -> Vec<usize> {
+        head.iter().copied().chain(segs.iter().flat_map(|s| s.chunks.iter().copied())).collect()
+    };
+    let own = |ode: bool| -> Vec<&EqSegment> {
+        let mut own: Vec<&EqSegment> = segs.iter().filter(|s| s.ode == ode).collect();
+        own.sort_by_key(|s| s.pos);
+        own
+    };
+    Ok((call(&own(true)), call(&own(false)), call(&segs.iter().collect::<Vec<_>>())))
 }
 
 /// Lower `units` into one function, for entry points whose size is bounded by the

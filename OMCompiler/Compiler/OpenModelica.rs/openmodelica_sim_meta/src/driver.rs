@@ -583,10 +583,9 @@ pub trait SimEngine {
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         0
     }
-    /// Whether the model has its own discrete-pass entry point (C's generated
-    /// `functionDAE`, which evaluates `allEquations` with `discreteCall` raised).
-    /// A wasm-jit module has none -- there the pass is `functionAlgebraics` --
-    /// so the default keeps [`eval_discrete`]'s split.
+    /// Whether [`eval_discrete`] should call the model's own `functionDAE` (C's
+    /// generated one, `allEquations` with `discreteCall` raised). A wasm-jit module
+    /// always exports one, so there `has_when` decides instead.
     fn has_discrete_entry(&self) -> bool {
         false
     }
@@ -1950,6 +1949,7 @@ mod rethrow_store {
         std::thread_local! {
             static PENDING: RefCell<Option<AssertInfo>> = const { RefCell::new(None) };
             static EVENT: Cell<bool> = const { Cell::new(false) };
+            static NOTED: Cell<bool> = const { Cell::new(false) };
         }
         pub fn arm(info: AssertInfo) {
             PENDING.with(|p| {
@@ -1962,17 +1962,24 @@ mod rethrow_store {
         pub fn note_event() {
             EVENT.with(|ev| ev.set(true));
         }
-        pub fn take() -> (Option<AssertInfo>, bool) {
-            (PENDING.with(|p| p.borrow_mut().take()), EVENT.with(|ev| ev.replace(false)))
+        pub fn note() {
+            NOTED.with(|n| n.set(true));
+        }
+        pub fn take() -> (Option<AssertInfo>, bool, bool) {
+            (
+                PENDING.with(|p| p.borrow_mut().take()),
+                EVENT.with(|ev| ev.replace(false)),
+                NOTED.with(|n| n.replace(false)),
+            )
         }
     }
     #[cfg(not(feature = "std"))]
     mod imp {
         use super::AssertInfo;
         use core::cell::UnsafeCell;
-        struct Store(UnsafeCell<(Option<AssertInfo>, bool)>);
+        struct Store(UnsafeCell<(Option<AssertInfo>, bool, bool)>);
         unsafe impl Sync for Store {}
-        static PENDING: Store = Store(UnsafeCell::new((None, false)));
+        static PENDING: Store = Store(UnsafeCell::new((None, false, false)));
         pub fn arm(info: AssertInfo) {
             unsafe {
                 let st = &mut *PENDING.0.get();
@@ -1984,14 +1991,27 @@ mod rethrow_store {
         pub fn note_event() {
             unsafe { (*PENDING.0.get()).1 = true };
         }
-        pub fn take() -> (Option<AssertInfo>, bool) {
+        pub fn note() {
+            unsafe { (*PENDING.0.get()).2 = true };
+        }
+        pub fn take() -> (Option<AssertInfo>, bool, bool) {
             unsafe {
                 let st = &mut *PENDING.0.get();
-                (st.0.take(), core::mem::replace(&mut st.1, false))
+                (st.0.take(), core::mem::replace(&mut st.1, false), core::mem::replace(&mut st.2, false))
             }
         }
     }
-    pub use imp::{arm, note_event, take};
+    pub use imp::{arm, note, note_event, take};
+}
+
+/// C's `assertCommonVar` under `noThrowAsserts`: arm `needToReThrow` and report
+/// that the caller may carry on with the out-of-domain value instead of throwing.
+pub fn note_no_throw_assert() -> bool {
+    if !NO_THROW.load(Ordering::Relaxed) {
+        return false;
+    }
+    rethrow_store::note();
+    true
 }
 
 /// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
@@ -2006,8 +2026,8 @@ fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_no_throw(false);
     drain_asserts(e, sim_data, omclog::INFO)?;
     let noted = e.take_noted_assert();
-    let (info, found_event) = rethrow_store::take();
-    if info.is_none() && !noted {
+    let (info, found_event, self_noted) = rethrow_store::take();
+    if info.is_none() && !noted && !self_noted {
         return Ok(());
     }
     if found_event {
@@ -2888,19 +2908,15 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
     e.call1("functionODE", sim_data)
 }
 
-/// One pass of C's `functionDAE`, which evaluates `allEquations` once. With
-/// `when`-equations `functionAlgebraics` *is* that list, so `functionODE` first
-/// would solve the algebraic loops a second time against the previous pass's
-/// discrete state -- a switch configuration C never solves for.
+/// One pass of C's `functionDAE`, which evaluates `allEquations` once. A
+/// `when`-model takes it through `functionAlgebraics`, which is that list plus
+/// `storePreValues`.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
-    if e.has_discrete_entry() {
+    if e.has_discrete_entry() || !layout.has_when {
         return e.call1("functionDAE", sim_data);
-    }
-    if !layout.has_when {
-        e.call1("functionODE", sim_data)?;
     }
     e.call1("functionAlgebraics", sim_data)
 }
@@ -6557,7 +6573,7 @@ impl IdaState {
             return Err("CodegenWasmJit: IDA setup failed");
         }
         if self.setup.dae.is_some() {
-            dae_calc_ic(ida, t)?;
+            dae_calc_ic(ida, t, self.rtol)?;
             y.copy_from_slice(ida.y());
             yp.copy_from_slice(ida.yp());
             self.setup.dae_store(e, sim_data, y, yp)?;
@@ -7114,28 +7130,38 @@ impl SolverCore {
         }
     }
 
-    /// The `IDACalcIC` half of C's `ida_event_update`, run after `restart` has
-    /// re-initialized IDA at the post-event state: consistent algebraic unknowns and
-    /// derivatives, pushed back into `SimData`. `ctx` must be the live callback
-    /// context — `IDACalcIC` evaluates the residual.
+    /// C's `ida_event_update`, which DAE mode installs as `functionDAE`: residuals in
+    /// the discrete context, re-initialize at what they leave behind, `IDACalcIC` for
+    /// the algebraic unknowns and derivatives, answer back into `SimData`. `ctx` must
+    /// be the live callback context — `IDACalcIC` evaluates the residual.
     fn dae_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
-        if !self.dae {
-            return Ok(());
-        }
         let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
+        e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
+        self.read_states(e)?;
+        self.restart()?;
         #[cfg(sundials)]
-        if let Solver::Ida(s) = &mut self.solver {
-            let Some(ida) = s.ida.as_mut() else { return Ok(()) };
+        if let Solver::Ida(s) = &mut self.solver
+            && let Some(ida) = s.ida.as_mut()
+        {
             if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
                 return Err("CodegenWasmJit: IDA setup failed");
             }
-            dae_calc_ic(ida, self.t)?;
+            dae_calc_ic(ida, self.t, self.tol)?;
             self.y.copy_from_slice(ida.y());
             self.yp.copy_from_slice(ida.yp());
-            self.write_states(e)?;
-            e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
         }
+        e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
+        self.write_states(e)?;
         Ok(())
+    }
+
+    /// C's `didEventStep`: drop the step history at the post-event state, which in
+    /// DAE mode means the whole of `dae_restart`.
+    fn event_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
+        match self.dae {
+            true => self.dae_restart(e, ctx),
+            false => self.restart(),
+        }
     }
 
     /// The `IDACalcIC` C's initialization performs before the first output row —
@@ -7234,8 +7260,11 @@ impl SolverCore {
     fn restart(&mut self) -> Result<()> {
         match &mut self.solver {
             Solver::Daskr(d) => {
-                d.past.fold(&d.iwork);
-                d.info[0] = 0; // INFO(1)=0
+                // C's `dasslAvoidEventRestart`: `-noRestart` keeps the BDF history.
+                if !crate::simflags::with_flags(|f| f.no_restart) {
+                    d.past.fold(&d.iwork);
+                    d.info[0] = 0; // INFO(1)=0
+                }
             }
             #[cfg(sundials)]
             Solver::Cvode(c) => {
@@ -7265,13 +7294,6 @@ impl SolverCore {
         Ok(())
     }
 
-    /// A time event changes discrete state the derivative may depend on, so a
-    /// solver that carries its own step history has to re-initialize. gbode and the
-    /// sym solvers always do, as C's `didEventStep` is set for time events too.
-    fn restart_after_time_event(&self) -> bool {
-        matches!(self.solver, Solver::Gbode(_) | Solver::Sym(_))
-    }
-
     /// Recompute `yp` after an event, as C's `updateContinuousSystem` does: a
     /// `reinit` otherwise leaves the next step on the pre-event derivative.
     fn refresh_yp(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
@@ -7287,14 +7309,14 @@ impl SolverCore {
 
     /// Latch `(y, yp)` from `SimData` — after initialization, or after anything
     /// that moved a state behind DASKR's back. In DAE mode the algebraic unknowns
-    /// follow the states in `y` (C's `getAlgebraicDAEVars`); their `y'` entries stay
-    /// zero, as C's `calloc`'d `statesDer` leaves them.
+    /// follow the states in `y` (C's `getAlgebraicDAEVars`); only the states' `y'`
+    /// moves, as C's `statesDer` keeps what the last `IDAGetConsistentIC` left there.
     fn read_states(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
         self.read_y(e)?;
-        self.yp = (0..self.n_states)
-            .map(|i| read_f64(e, self.ders_base + (i as u32) * 8))
-            .collect::<Result<_>>()?;
         self.yp.resize(self.n_unknowns, 0.0);
+        for i in 0..self.n_states {
+            self.yp[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
+        }
         Ok(())
     }
 
@@ -7631,8 +7653,7 @@ impl SolverCore {
         // No `functionODE`: `event_update` left the derivative slots consistent, and
         // C restarts DASKR on the `YPRIME` in its ring buffer.
         self.read_states(e)?;
-        self.restart()?;
-        self.dae_restart(e, ctx)?;
+        self.event_restart(e, ctx)?;
         Ok(false)
     }
 
@@ -7659,7 +7680,6 @@ impl SolverCore {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let n_states = self.n_states;
-        let ders_base = self.ders_base;
         let span = model.stop_time - model.start_time;
         let eps = reached_eps(tout, span);
         let step_eps = small_step_eps(span);
@@ -7832,8 +7852,7 @@ impl SolverCore {
                     // Re-read states (a reinit may have jumped one) and restart DASKR
                     // at troot (INFO(1)=0); see `handle_zc_flips` for the `functionODE`.
                     self.read_states(e)?;
-                    self.restart()?;
-                    self.dae_restart(e, ctx)?;
+                    self.event_restart(e, ctx)?;
                     if tout - troot < GRID_SKIP_EPS {
                         grid_covered = true;
                     }
@@ -7886,13 +7905,9 @@ impl SolverCore {
                     return Ok(Step::Terminated);
                 }
                 self.read_y(e)?;
-                // A sample may change discrete state the derivative depends on;
-                // recompute yp and restart so the integrator continues consistently.
+                // C sets `didEventStep` for a time event too.
                 self.refresh_yp(e)?;
-                if layout.n_zc > 0 || self.dae || self.restart_after_time_event() {
-                    self.restart()?;
-                    self.dae_restart(e, ctx)?;
-                }
+                self.event_restart(e, ctx)?;
                 if tout - te < GRID_SKIP_EPS {
                     grid_covered = true;
                 }
@@ -7914,8 +7929,7 @@ impl SolverCore {
                     store_operators(e, sim_data, layout)?;
                     self.read_y(e)?;
                     self.refresh_yp(e)?;
-                    self.restart()?;
-                    self.dae_restart(e, ctx)?;
+                    self.event_restart(e, ctx)?;
                     if tout - target < GRID_SKIP_EPS {
                         grid_covered = true;
                     }
@@ -8269,8 +8283,7 @@ impl CsDriver {
                     self.core.refresh_yp(e)?;
                 }
             }
-            self.core.restart()?;
-            self.core.dae_restart(e, &mut ctx as *mut ResCtx)?;
+            self.core.event_restart(e, &mut ctx as *mut ResCtx)?;
         }
         let mut did_step = false;
         loop {
@@ -9237,8 +9250,9 @@ struct DaeSolve {
 }
 
 #[cfg(sundials)]
-fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64) -> Result<()> {
-    match ida.calc_ic_at(t) {
+fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64, tol: f64) -> Result<()> {
+    omclog::info(omclog::SOLVER, false, &format!("##IDA## do event update at {}", format_g(t, 15)));
+    match ida.calc_ic_at(t, tol) {
         true => Ok(()),
         false => Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)"),
     }
@@ -9652,6 +9666,7 @@ unsafe extern "C" fn ida_jac(
         },
         None => unsafe { core::slice::from_raw_parts_mut(crate::sundials::dense_data(j), n * n) },
     };
+    vals.fill(0.0); // C's `SUNMatZero`: the widened diagonal has no difference to carry
     ctx.jac_gp.resize(n, 0.0);
     ctx.nje += 1;
     // C's `jacColoredSymbolicalSparse` / `jacColoredSymbolicalDense`. IDA's residual
@@ -9664,9 +9679,12 @@ unsafe extern "C" fn ida_jac(
                     None => col * n + row,
                 }] = v;
             })?;
-            // -cj·∂F/∂y' = -cj·I, which the column equations do not carry.
-            for col in 0..n {
-                vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+            // -cj·∂F/∂y' = -cj·I, which the column equations do not carry. C adds it
+            // for an ODE only; a DAE pattern is not widened and has no diagonal slot.
+            if dae.is_none() {
+                for col in 0..n {
+                    vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+                }
             }
             Ok(())
         })();

@@ -167,14 +167,51 @@ pub extern "C" fn rt_nls_assert_failed(
     }
 }
 
+/// Arm C's `needToReThrow` where the `noThrowAsserts` window is open. The driver
+/// holding it is this module's or the host's, never both.
+fn note_no_throw_assert() -> bool {
+    if openmodelica_sim_meta::driver::note_no_throw_assert() {
+        return true;
+    }
+    #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+    {
+        #[link(wasm_import_module = "env")]
+        unsafe extern "C" {
+            fn rt_host_note_no_throw_assert() -> i32;
+        }
+        return unsafe { rt_host_note_no_throw_assert() } != 0;
+    }
+    #[cfg(not(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone"))))]
+    false
+}
+
 /// C's `assertCommonVar` (a math builtin's domain guard): `omc_assert_warning`
 /// heads the `LOG_ASSERT` block and `throwStreamPrintWithEquationIndexes` adds the
 /// message, both before `getBestJumpBuffer` picks the jump buffer — so a fatal
-/// violation reports exactly as a caught one does. Returns non-zero where a solver
-/// residual or the step catches it, so the caller returns instead of unwinding.
-/// `msg` is this call's to release.
+/// violation reports exactly as a caught one does. `msg` is this call's to release.
+///
+/// Returns 0 where the caller must unwind, 1 where a solver residual or the step
+/// catches it (the caller returns instead), and 2 inside `noThrowAsserts`, where C
+/// logs the violation and carries on with the out-of-domain value.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32 {
+    if note_no_throw_assert() {
+        use openmodelica_sim_meta::TIME_OFF;
+        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+        crate::omclog::info(
+            crate::omclog::ASSERT,
+            false,
+            &alloc::format!(
+                "The following assertion has been violated {}at time {}",
+                if initial != 0 { "during initialization " } else { "" },
+                crate::omclog::f(time, 0, 6)
+            ),
+        );
+        if msg != 0 {
+            crate::rt_release(msg as u32);
+        }
+        return 2;
+    }
     let caught = nls::error_caught();
     if nls::throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
