@@ -69,7 +69,6 @@ import DAEDump;
 import DAEDumpTypes;
 import DAEUtil;
 import Debug;
-import DoubleEnded;
 import DumpHTML;
 import ElementSource;
 import Error;
