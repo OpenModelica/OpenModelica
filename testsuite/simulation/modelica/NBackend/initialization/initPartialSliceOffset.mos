@@ -1,0 +1,63 @@
+// name: initPartialSliceOffset
+// keywords: NewBackend
+// status: correct
+//
+// Regression test for NSimJacobian.mo's crefFlatOffset/virtual-SimVar
+// offset computation losing a partial-slice seed's array dimension in the
+// INITIALIZATION partition specifically. x[1] is a plain state with its
+// own trivial initial equation; x[2]/x[3] are excluded from x[1]'s
+// initial equation but form a genuinely coupled 2x2 linear system via
+// their own "der(x[2])=der(x[3])=0" steady-state initial equations,
+// so NBackend must invert that system for x[2]/x[3] at init time even
+// though no inversion is needed during ODE integration (each der(x[i])
+// is already explicit there).
+//
+// Before the fix, InstNode.getType on the init-partition seed cref's
+// leaf node resolved to a bare scalar Real instead of x's true Real[3]
+// array type (unlike the ODE partition's equivalent cref, which kept the
+// correct type for the same conceptual variable) -- crefFlatOffset then
+// silently computed a flat offset of 0 for x[2]/x[3] alike instead of a
+// distinguishing 0/1, corrupting the 2x2 Jacobian into a matrix with an
+// entirely empty first column ("Matrix U" showing "-0" in both rows) and
+// failing "system is singular for U[2,2]". After the fix the flat offset
+// falls back to the raw subscript (still exactly correct for this single-
+// subscript case) whenever the declared-dimension lookup comes back
+// empty, and the system solves normally.
+
+loadString("
+model initPartialSliceOffset
+  parameter Real a = -2, b = 3;
+  Real x[3](start = {1, 0.5, 0.5});
+equation
+  der(x[1]) = -x[1];
+  der(x[2]) = a*x[2] - b*x[3];
+  der(x[3]) = b*x[2] + a*x[3];
+initial equation
+  x[1] = 1;
+  der(x[2]) = 0;
+  der(x[3]) = 0;
+end initPartialSliceOffset;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(initPartialSliceOffset, stopTime=0.1, numberOfIntervals=5, simflags="-lv=LOG_LS,LOG_STDOUT");
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initPartialSliceOffset_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 5, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initPartialSliceOffset', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_LS,LOG_STDOUT'",
+//     messages = "LOG_LS            | info    | initialize linear system solvers
+// |                 | |       | | 1 linear systems
+// LOG_LS            | info    | Start solving Linear System 5 (size 2) at time 0 with Lapack Solver
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

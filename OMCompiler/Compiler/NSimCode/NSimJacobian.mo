@@ -744,9 +744,22 @@ public
         list<Subscript> rest_subs;
         Dimension d;
         list<Dimension> rest_dims;
-        Integer v;
+        Integer v, v3;
         list<tuple<Integer, Integer>> rest_pairs;
       case ({}, _) then {};
+      case ({Subscript.INDEX(index = Expression.INTEGER(v3))}, {}) then {(v3, 1)};
+        // InstNode.getType(node) can come back without array dims for a seed's own
+        // node (e.g. an INIT-partition per-element seed cref, whose leaf node's
+        // declared type resolves to a bare scalar even though it indexes an array
+        // -- see the ODE partition's equivalent cref, whose node keeps its proper
+        // Real[n] type, for the same conceptual variable). When this is the node's
+        // ONLY subscript, falling all the way through to `{}` (as the general
+        // multi-subscript case below still does) would silently drop this
+        // dimension's contribution to the flat offset entirely -- exactly the
+        // "sizeCols/size mismatch" class of bug this whole file exists to avoid.
+        // A dim_size of 1 is always safe here: this pair is the innermost/only
+        // one from this node, so nothing multiplies by it going outward, and
+        // (v3-1)*1 is exactly the correct offset contribution.
       case (_, {}) then {};
       case (s :: rest_subs, d :: rest_dims)
         algorithm
