@@ -193,5 +193,17 @@ algorithm
   methods := {};
 end fmuCsSolvers;
 
+function fmuAcceptsFlag
+  " Whether a wasm FMU can honour the simulation flag `-name=value` (an empty
+    value for a flag that takes none). One it cannot is dropped rather than baked
+    into `resources/<prefix>_flags.json`, where it would only surface at the
+    importer's first instantiate. False without the Rust export. Implemented in Rust. "
+  input String name;
+  input String value;
+  output Boolean accepted;
+algorithm
+  accepted := false;
+end fmuAcceptsFlag;
+
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJit;

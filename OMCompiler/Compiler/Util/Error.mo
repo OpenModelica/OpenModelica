@@ -1347,6 +1347,8 @@ public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, Err
   "Operation cancelled by user.");
 public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
+public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 
@@ -1429,11 +1431,11 @@ algorithm
   end match;
 end getCurrentComponent;
 
-public function checkCancel "Fails with a USER_CANCELLED message if the user requested cancellation.
-  A coarse chokepoint for the frontend/backend driver loops."
+public function checkCancel "Fails if cancellation was requested, either by a user or by the alarm
+  running out. A coarse chokepoint for the frontend/backend driver loops."
 algorithm
   if System.isCancelled() then
-    addMessage(USER_CANCELLED, {});
+    addMessage(if System.alarmExpired() then ALARM_EXPIRED else USER_CANCELLED, {});
     fail();
   end if;
 end checkCancel;

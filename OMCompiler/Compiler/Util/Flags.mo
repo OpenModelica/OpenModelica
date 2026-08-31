@@ -1104,7 +1104,7 @@ constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(92, "calculateSensitiv
   "Generates sensitivities variables and matrices.");
 constant ConfigFlag ALARM = CONFIG_FLAG(93, "alarm",
   SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes.");
+  "Sets the number of seconds until omc times out. Used by the testing framework to terminate infinite running processes. The running command is first asked to stop, so that omc can still report how far it got; it exits outright a tenth of that time later (at least 5 and at most 60 seconds) if the command has no cancellation point to stop at.");
 constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(94, "totalTearing",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes.");

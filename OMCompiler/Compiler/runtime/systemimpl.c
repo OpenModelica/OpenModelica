@@ -188,6 +188,8 @@ static const char *select_from_dir = NULL;
  * port. The flag is set from another context (an OMEdit Cancel button) and
  * polled at the frontend/backend chokepoints via System_isCancelled. */
 static volatile int cancelRequested = 0;
+/* Tracks that the alarm, rather than a host, asked for the cancellation. */
+static volatile int cancelledByAlarm = 0;
 static volatile int progressPermille = -1;
 static volatile int progressPhase = 0;
 /* Free-form label for the step in progress, shown by the host instead of the
@@ -3107,13 +3109,34 @@ int SystemImpl__alarm(int seconds)
 #else
 
 static int default_alarm_action_set = 0;
-static struct sigaction default_alarm_action;
+
+/* Seconds to unwind in before the process is killed outright: a tenth of the
+ * deadline, bounded. OpenModelicaLibraryTesting/shared.py mirrors the formula,
+ * because the harness has to outwait it. */
+#define OMC_ALARM_GRACE_MIN 5
+#define OMC_ALARM_GRACE_MAX 60
+static volatile int alarmGraceSeconds = OMC_ALARM_GRACE_MIN;
 
 static void alarm_handler(int signo, siginfo_t *si, void *ptr)
 {
   assert(signo == SIGALRM);
-  kill(-getpid(), SIGALRM);
-  sigaction(SIGALRM, &default_alarm_action, 0);
+  /* Our own group broadcast coming back, not a second deadline. */
+  if (si != NULL && si->si_code == SI_USER && si->si_pid == getpid()) {
+    return;
+  }
+  if (!cancelledByAlarm) {
+    /* Ask the running command to unwind, so that omc survives to report the
+     * phases it completed. The group kill only lands when omc leads its own
+     * group; the re-armed alarm is what ends the process when it does not. */
+    cancelledByAlarm = 1;
+    cancelRequested = 1;
+    kill(-getpid(), signo);
+    alarm(alarmGraceSeconds);
+    return;
+  }
+  /* The grace ran out: what is running has no cancellation point. */
+  signal(SIGALRM, SIG_DFL);
+  raise(signo);
 }
 
 int SystemImpl__alarm(int seconds)
@@ -3125,6 +3148,16 @@ int SystemImpl__alarm(int seconds)
     };
     sigaction(SIGALRM, &sa, NULL);
     default_alarm_action_set = 1;
+  }
+  /* Re-arming or clearing withdraws the previous deadline's request. */
+  if (cancelledByAlarm) {
+    cancelledByAlarm = 0;
+    cancelRequested = 0;
+  }
+  if (seconds > 0) {
+    alarmGraceSeconds = seconds / 10;
+    if (alarmGraceSeconds < OMC_ALARM_GRACE_MIN) alarmGraceSeconds = OMC_ALARM_GRACE_MIN;
+    if (alarmGraceSeconds > OMC_ALARM_GRACE_MAX) alarmGraceSeconds = OMC_ALARM_GRACE_MAX;
   }
   return alarm(seconds);
 }

@@ -130,6 +130,9 @@ extern void System_realtimeTick(int ix)
 extern double System_realtimeTock(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  /* Never started, or cleared and not restarted: the tick is an earlier
+   * command's. -1 is the "did not run" answer the callers test for. */
+  if (rt_ncall(ix) == 0) return -1.0;
   return rt_tock(ix);
 }
 
@@ -321,6 +324,11 @@ extern int System_isCancelled()
     pumpCallback();
   }
   return cancelRequested;
+}
+
+extern int System_alarmExpired()
+{
+  return cancelledByAlarm;
 }
 
 extern void System_setPumpCallback(void (*cb)(void))

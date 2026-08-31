@@ -4696,15 +4696,17 @@ end fmuMethodToSimulationFlag;
 protected function fmuAnnotationSimulationFlags
   "A wasm FMU runs the model with the flags simulate() would: the class's
    __OpenModelica_simulationFlags go into --fmiFlags, whose `_flags.json` the FMU
-   applies when it instantiates. A flag already named wins. A C FMU reads only a
-   few flags and warns about the rest, so it keeps to what --fmiFlags said."
+   applies when it instantiates. A flag already named wins, and one the FMU cannot
+   honour is left out rather than baked in to fail at the importer's first
+   instantiate. A C FMU reads only a few flags and warns about the rest, so it
+   keeps to what --fmiFlags said."
   input Absyn.Path className;
   input Boolean isWasmFMU;
 protected
   list<String> fmiFlags, names = {}, folded = {};
   list<Absyn.ElementArg> args;
   Option<Absyn.Modification> mod;
-  String name;
+  String name, value;
 algorithm
   if not isWasmFMU or Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
     return;
@@ -4729,8 +4731,14 @@ algorithm
   end match;
   for arg in args loop
     name := AbsynUtil.pathString(AbsynUtil.elementArgName(arg));
+    value := fmuSimulationFlagValue(arg);
     if not listMember(name, names) then
-      folded := (name + ":" + fmuSimulationFlagValue(arg)) :: folded;
+      if CodegenWasmJit.fmuAcceptsFlag(name, value) then
+        folded := (name + ":" + value) :: folded;
+      else
+        Error.addCompilerNotification("Leaving the __OpenModelica_simulationFlags entry " + name
+          + "=\"" + value + "\" out of the FMU: it cannot honour it.");
+      end if;
     end if;
   end for;
   if not listEmpty(folded) then

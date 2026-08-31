@@ -1298,6 +1298,11 @@ public function isCancelled "True if the user has requested cancellation of the 
   external "C" cancelled = System_isCancelled() annotation(Library = "omcruntime");
 end isCancelled;
 
+public function alarmExpired "True if the cancellation being reported came from the alarm running out rather than from a user."
+  output Boolean expired;
+  external "C" expired = System_alarmExpired() annotation(Library = "omcruntime");
+end alarmExpired;
+
 public function reportProgress "Report progress of the running operation to the host UI. permille is 0..1000 or -1 (indeterminate); phase is one of the metamodelica::cancel PHASE_* constants (2 parse, 3 instantiate, 4 backend, 5 simulate)."
   input Integer permille;
   input Integer phase;
