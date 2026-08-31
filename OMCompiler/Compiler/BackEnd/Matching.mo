@@ -46,6 +46,7 @@ import DAE;
 
 protected
 
+import Absyn;
 import Array;
 import BackendDAEEXT;
 import BackendDAEUtil;
@@ -66,6 +67,7 @@ import IndexReduction;
 import Inline;
 import List;
 import MetaModelica.Dangerous;
+import UnorderedMap;
 import UnorderedSet;
 import Util;
 import Sorting;
@@ -5750,12 +5752,22 @@ protected
   list<Integer> flat_unassignedStates, flat_eqns, unmatched1;
   array<Integer> scalarToArrayMap;
   list<BackendDAE.Var> artificialStates = {}, undiffable_artificial = {};
-  list<BackendDAE.Equation> residuals, equations = {};
+  list<BackendDAE.Equation> equations = {};
+  list<tuple<BackendDAE.Equation, Option<list<DAE.Exp>>>> eqn_forms = {};
+  list<DAE.Exp> residual_exps;
+  Option<list<DAE.Exp>> opt_exps;
+  array<BackendDAE.Var> state_array;
+  array<list<BackendDAE.Equation>> failed_eqns;
+  UnorderedMap<DAE.ComponentRef, Integer> state_map;
+  UnorderedSet<Integer> eqn_states;
+  UnorderedSet<Integer> visited_states = UnorderedSet.new(Util.id, intEq);
+  UnorderedSet<Integer> visited_eqns = UnorderedSet.new(Util.id, intEq);
+  Integer arrayIdx, n_states;
   BackendDAE.Var var;
+  BackendDAE.Equation form_eqn;
   DAE.ComponentRef cr;
-  DAE.Exp residualExp;
+  DAE.Exp residualExp, diffExp;
   BackendDAE.AdjacencyMatrix m, mt, m1, m1t;
-  Boolean unique_flag;
   String msg;
 algorithm
   try
@@ -5770,52 +5782,99 @@ algorithm
   flat_unassignedStates := List.flatten(unassignedStates);
   // Collect artificial states
   for state in flat_unassignedStates loop
-    var := BackendVariable.getVarAt(syst.orderedVars, state);
-    if BackendVariable.isArtificialState(var) and not listMember(var, artificialStates) then
-      artificialStates := var :: artificialStates;
+    if UnorderedSet.add(state, visited_states) then
+      var := BackendVariable.getVarAt(syst.orderedVars, state);
+      if BackendVariable.isArtificialState(var) then
+        artificialStates := var :: artificialStates;
+      end if;
     end if;
   end for;
+  if listEmpty(artificialStates) then
+    return;
+  end if;
   flat_eqns := List.flatten(eqns_1); // use eqns_1 (without discrete)
   SOME((_, scalarToArrayMap, _, _, _)) := syst.mapping;
-  for eqn in flat_eqns loop
+  for scalar_eqn in flat_eqns loop
     try
-      equations := BackendEquation.get(syst.orderedEqs, scalarToArrayMap[eqn]) :: equations;
+      arrayIdx := scalarToArrayMap[scalar_eqn];
+      if UnorderedSet.add(arrayIdx, visited_eqns) then
+        equations := BackendEquation.get(syst.orderedEqs, arrayIdx) :: equations;
+      end if;
     else
       // equation can't be found -- scalar index to array index failed?
     end try;
   end for;
-  for var in artificialStates loop
-    unique_flag := false;
-    for eqn in equations loop
-      Error.checkCancel();
-      try
-        residuals := BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree);
-        for res in residuals loop
-          BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
-          cr := BackendVariable.varCref(var);
-          // Only check if the equation actually contains the cref
-          if Expression.expHasCref(residualExp, cr) then
-            // Check if the equation can be differentiated by the artificial state
-            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
-            residualExp := Expression.replaceDerOpInExp(residualExp);
-            Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
-            // Check if the equation contains smooth(0, cr)
-            false := Expression.expHasCrefInSmoothZero(residualExp, cr);
-          end if;
-        end for;
-      else
-        if Flags.isSet(Flags.BLT_DUMP) then
+  state_array := listArray(artificialStates);
+  n_states := arrayLength(state_array);
+  failed_eqns := arrayCreate(n_states, {});
+  state_map := UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef,
+                                         ComponentReferenceBasics.crefEqual, Util.nextPrime(n_states));
+  for i in 1:n_states loop
+    UnorderedMap.add(BackendVariable.varCref(state_array[i]), i, state_map);
+  end for;
+  // The residual form is state independent; an equation without one stays
+  // undiffable for every artificial state.
+  for eqn in equations loop
+    Error.checkCancel();
+    try
+      residual_exps := {};
+      for res in BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree) loop
+        BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
+        residual_exps := residualExp :: residual_exps;
+      end for;
+      eqn_forms := (eqn, SOME(listReverse(residual_exps))) :: eqn_forms;
+    else
+      eqn_forms := (eqn, NONE()) :: eqn_forms;
+    end try;
+  end for;
+  // Look up the states an equation mentions instead of scanning all equations
+  // for every state.
+  for form in listReverse(eqn_forms) loop
+    (form_eqn, opt_exps) := form;
+    if isNone(opt_exps) then
+      for i in 1:n_states loop
+        failed_eqns[i] := form_eqn :: failed_eqns[i];
+      end for;
+    else
+      SOME(residual_exps) := opt_exps;
+      eqn_states := UnorderedSet.new(Util.id, intEq);
+      for res_exp in residual_exps loop
+        Expression.traverseExpTopDown(res_exp, function collectArtificialStates(stateMap = state_map, states = eqn_states), false);
+      end for;
+      for i in UnorderedSet.toList(eqn_states) loop
+        Error.checkCancel();
+        cr := BackendVariable.varCref(state_array[i]);
+        try
+          for res_exp in residual_exps loop
+            // Only check if the equation actually contains the cref
+            if Expression.expHasCref(res_exp, cr) then
+              // Check if the equation can be differentiated by the artificial state
+              (diffExp,_,_) := Inline.forceInlineExp(res_exp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
+              diffExp := Expression.replaceDerOpInExp(diffExp);
+              Differentiate.differentiateExpSolve(diffExp, cr, SOME(shared.functionTree));
+              // Check if the equation contains smooth(0, cr)
+              false := Expression.expHasCrefInSmoothZero(diffExp, cr);
+            end if;
+          end for;
+        else
+          failed_eqns[i] := form_eqn :: failed_eqns[i];
+        end try;
+      end for;
+    end if;
+  end for;
+  for i in 1:n_states loop
+    if not listEmpty(failed_eqns[i]) then
+      var := state_array[i];
+      if Flags.isSet(Flags.BLT_DUMP) then
+        for eqn in listReverse(failed_eqns[i]) loop
           print("### The Equation ### \n" + BackendDump.equationString(eqn) +
                 "\n\n--- could not be differentiated for artificial variable ---\n " +
                  ComponentReferenceBasics.printComponentRefStr(var.varName) + ".\n\n");
-        end if;
-        // revert the varKind from STATE to VARIABLE
-        if not unique_flag then
-          undiffable_artificial := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: undiffable_artificial;
-          unique_flag := true;
-        end if;
-      end try;
-    end for;
+        end for;
+      end if;
+      // revert the varKind from STATE to VARIABLE
+      undiffable_artificial := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: undiffable_artificial;
+    end if;
   end for;
 
   if not listEmpty(undiffable_artificial) then
@@ -5854,6 +5913,32 @@ algorithm
     Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
   end if;
 end sanityCheckArtificialStates;
+
+protected function collectArtificialStates
+  "Collects the indices of the artificial states occurring in the expression.
+   Mirrors Expression.expHasCref, which does not look inside pre()."
+  input DAE.Exp exp;
+  input Boolean arg;
+  input UnorderedMap<DAE.ComponentRef, Integer> stateMap;
+  input UnorderedSet<Integer> states;
+  output DAE.Exp outExp = exp;
+  output Boolean cont;
+  output Boolean outArg = arg;
+protected
+  Integer index;
+algorithm
+  cont := match exp
+    case DAE.CALL(path = Absyn.IDENT("pre")) then false;
+    case DAE.CREF()
+      algorithm
+        () := match UnorderedMap.get(exp.componentRef, stateMap)
+          case SOME(index) algorithm UnorderedSet.add(index, states); then ();
+          else ();
+        end match;
+      then true;
+    else true;
+  end match;
+end collectArtificialStates;
 
 protected function removeEdgesToDiscreteEquations""
   input BackendDAE.AdjacencyMatrix m;
