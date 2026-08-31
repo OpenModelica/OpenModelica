@@ -491,12 +491,14 @@ void buildRustOMC() {
   standardSetup()
   // RUST_OMC_THREADS=4 parallelises the rustc front-end on the (near-serial)
   // generated-crate chain. Linking uses mold (RUST_OMC_MOLD defaults ON); the
-  // image ships a current mold.
+  // image ships a current mold. OM_ENABLE_RUST_SIM_RUNTIME is what the
+  // RUST_PARTEST_SIMCODETARGET=C+Rust partest links against.
   sh """
     cmake -S . -B build_cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -DOM_OMC_ENABLE_RUST=ON \
       -DRUST_OMC_CI=ON \
+      -DOM_ENABLE_RUST_SIM_RUNTIME=ON \
       -DOM_ENABLE_GUI_CLIENTS=OFF \
       -DRUST_OMC_SCRIPTING_API=ON \
       -DOM_USE_CCACHE=OFF \
