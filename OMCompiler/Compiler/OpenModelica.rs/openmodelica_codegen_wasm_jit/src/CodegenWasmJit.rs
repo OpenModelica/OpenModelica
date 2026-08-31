@@ -714,11 +714,18 @@ pub fn fmuAcceptsFlag(name: ArcStr, value: ArcStr) -> bool {
     fmu_accepts_flag(name.as_str(), value.as_str())
 }
 
+/// Flags the importer owns: it sets start values through `fmi3Set*` and decides
+/// when the co-simulation ends. `-variableFilter` is refused by [`fmu_capabilities`].
+const IMPORTER_FLAGS: &[&str] = &["override", "overrideFile", "steadyState", "steadyStateTol"];
+
 fn fmu_accepts_flag(name: &str, value: &str) -> bool {
     if name == "s" {
         // Baked into the component rather than parsed at instantiation, so only
         // what it linked can serve it.
         return fmu_cs_solvers().contains(&value);
+    }
+    if IMPORTER_FLAGS.contains(&name) {
+        return false;
     }
     let arg = if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") };
     match simflags::parse(&["model".to_string(), arg]) {
