@@ -1132,11 +1132,6 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
   JACOBIAN* jacobian;
-  printf("initSymbolicOdeJacobian: forwardJacobian->availability=%d, adjointJacobian->availability=%d, requested jacobianMethod=%d\n",
-         forwardJacobian->availability, adjointJacobian->availability, *jacobianMethod);
-
-  // test call
-  data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
 
   if (requireForwardJacobian || *jacobianMethod != COLOREDSYMJACADJ) {
     data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
@@ -1184,7 +1179,6 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   }
 
   // Check that the requested Jacobian method can be used and log it.
-  printf("calling checkJacobianMethod in initSymbolicOdeJacobian() with availability=%d and jacobianMethod=%d\n", jacobian->availability, *jacobianMethod);
   *jacobianMethod = checkJacobianMethod(threadData, jacobian->availability, *jacobianMethod);
 
   if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
