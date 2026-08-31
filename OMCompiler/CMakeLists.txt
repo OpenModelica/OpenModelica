@@ -110,6 +110,11 @@ endif()
 if(NOT OM_OMC_ENABLE_RUST)
   omc_add_subdirectory(Parser)
 endif()
+# Before Compiler: rust_omc.cmake puts these archives in the omc cdylib's cargo
+# environment, and SimulationRuntime/rust in libSimulationRuntimeRust's.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/SimulationRuntime/rust/native_solver_archives.cmake)
+endif()
 omc_add_subdirectory(Compiler)
 # libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
 # libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
