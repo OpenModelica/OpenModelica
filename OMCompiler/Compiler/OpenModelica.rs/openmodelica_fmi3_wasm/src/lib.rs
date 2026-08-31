@@ -778,9 +778,14 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
     let argv: Vec<String> = core::iter::once("model".to_string())
         .chain(flags.split_whitespace().map(str::to_string))
         .collect();
+    // An FMU writes no result file; `-variableFilter` is the importer's.
+    let cap = simflags::Capabilities {
+        variable_filter: true,
+        ..openmodelica_codegen_wasm_jit_runtime::sim_capabilities()
+    };
     let parsed = simflags::parse(&argv)
         .and_then(|f| {
-            simflags::check(&f, openmodelica_codegen_wasm_jit_runtime::sim_capabilities())?;
+            simflags::check(&f, cap)?;
             Ok(f)
         })
         .map_err(|e| {
