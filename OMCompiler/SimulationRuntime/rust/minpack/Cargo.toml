@@ -2,6 +2,7 @@
 name = "minpack"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 description = "Pure-Rust port of MINPACK's hybrd solver for systems of nonlinear equations (no_std)"
 license-file = "LICENSE"
 repository = "https://github.com/OpenModelica/OpenModelica"

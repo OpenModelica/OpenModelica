@@ -1,0 +1,35 @@
+# Builds libSimulationRuntimeRust without the compiler.
+#
+# The crates below are members of the compiler workspace, so that an omc build
+# compiles each of them exactly once -- the wasm-jit target shares the driver,
+# the integrators and the result writers. That workspace cannot be loaded from a
+# clean checkout, though: most of its members only get a src/lib.rs once mmtorust
+# has run. So this is a second workspace, reaching them as ordinary path
+# dependencies, which cargo resolves without loading their own workspace root:
+#
+#   cargo check                                  # the whole runtime
+#   cargo build --release -p openmodelica_simulation_runtime
+#
+# both work here on a pristine checkout. `exclude` is required -- without it
+# cargo claims the crates under this root as members and rejects them as
+# belonging to the wrong workspace.
+[package]
+name = "openmodelica_simulation_runtime_standalone"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_simulation_runtime = { path = "openmodelica_simulation_runtime" }
+
+[workspace]
+exclude = [
+  "daskr",
+  "minpack",
+  "openmodelica_mat_reader",
+  "openmodelica_mat_writer",
+  "openmodelica_nls",
+  "openmodelica_plt_writer",
+  "openmodelica_sim_meta",
+  "openmodelica_simulation_runtime",
+  "openmodelica_solvers",
+]

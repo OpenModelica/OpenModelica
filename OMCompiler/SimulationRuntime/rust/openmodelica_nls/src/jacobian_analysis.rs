@@ -353,7 +353,7 @@ fn sparse_svd(
     scaled: bool, caller: Caller, count: usize, sigma: f64, tol: f64,
 ) {
     let s = omclog::NLS_SVD;
-    #[cfg(not(feature = "primme"))]
+    #[cfg(not(primme))]
     {
         let _ = (eq_index, time, n, colptr, rowidx, vals, scaled, caller, count, sigma, tol);
         omclog::error(
@@ -364,7 +364,7 @@ fn sparse_svd(
              PRIMME via -DOM_OMC_ENABLE_PRIMME=ON.",
         );
     }
-    #[cfg(feature = "primme")]
+    #[cfg(primme)]
     {
         unsafe extern "C" {
             #[allow(clippy::too_many_arguments)]

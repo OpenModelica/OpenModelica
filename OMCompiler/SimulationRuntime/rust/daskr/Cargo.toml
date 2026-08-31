@@ -2,6 +2,7 @@
 name = "daskr"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 description = "Rust port of the Cdaskr (DASKR/DASSL) DAE solver and its LINPACK/BLAS kernels"
 license = "BSD-3-Clause"
 
@@ -25,4 +26,4 @@ cref = []
 libm = "0.2"
 
 [build-dependencies]
-cc = { workspace = true }
+cc = "1"

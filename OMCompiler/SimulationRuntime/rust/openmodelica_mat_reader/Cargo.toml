@@ -6,8 +6,9 @@
 name = "openmodelica_mat_reader"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 
 [lib]
 
 [dependencies]
-openmodelica_wasi.workspace = true
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }

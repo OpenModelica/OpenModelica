@@ -1,11 +1,13 @@
 # libSimulationRuntimeRust: the simulation runtime `--simCodeTarget=C+Rust` links
 # generated C against, instead of libSimulationRuntimeC.
 #
-# The crate lives with the rest of the Rust port
-# (Compiler/OpenModelica.rs/openmodelica_simulation_runtime) but depends only on
-# hand-written crates, so it builds whether or not the omc itself is the Rust
-# port (OM_OMC_ENABLE_RUST). When it is, build from the same per-build working
-# copy rust_omc.cmake mirrors into, so the two cargo builds share a target dir.
+# The crate is a member of the compiler workspace, so an omc build compiles it
+# and its dependencies exactly once. When omc is the Rust port
+# (OM_OMC_ENABLE_RUST), build from the same per-build working copy
+# rust_omc.cmake mirrors into, sharing its cargo target dir. Otherwise there is
+# no compiler workspace to load -- a clean checkout has no generated lib.rs --
+# so build through the workspace rooted in this directory, which reaches the same
+# crates as plain path dependencies (see Cargo.toml).
 
 # Opt-in: building it needs a Rust toolchain a C-only build does not require.
 option(OM_ENABLE_RUST_SIM_RUNTIME
@@ -24,7 +26,7 @@ endif()
 # when omc itself is the Rust port; without it, build from the canonical tree.
 get_property(_simrt_workspace GLOBAL PROPERTY OMC_RUST_WORKSPACE_DIR)
 if(NOT _simrt_workspace OR NOT EXISTS ${_simrt_workspace}/Cargo.toml)
-  set(_simrt_workspace ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/OpenModelica.rs)
+  set(_simrt_workspace ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 get_property(_simrt_target_dir GLOBAL PROPERTY OMC_RUST_TARGET_DIR)
 if(NOT _simrt_target_dir)
@@ -70,20 +72,20 @@ if(_simrt_ipopt)
   list(APPEND _simrt_env "OMC_IPOPT_NATIVE_DIR=${_simrt_ipopt}")
 endif()
 # PRIMME, the sparse SVD behind `-lv=LOG_NLS_SVD`: the archive 3rdParty already
-# builds for libSimulationRuntimeC.
-set(_simrt_features "")
+# builds for libSimulationRuntimeC. Selected by the environment, not a cargo
+# feature: cargo refuses --features for a package outside the workspace, which
+# openmodelica_simulation_runtime is to the workspace rooted here.
 if(TARGET primme)
   list(APPEND _simrt_env
        "OMC_PRIMME_NATIVE_DIR=$<TARGET_FILE_DIR:primme>"
        "OMC_PRIMME_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/primme-3.2.3/include")
-  set(_simrt_features --features primme)
 endif()
 
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
   JOB_SERVER_AWARE TRUE
   COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} build --target-dir ${_simrt_target_dir}
-          ${_simrt_profile_flag} ${_simrt_features} -p openmodelica_simulation_runtime
+          ${_simrt_profile_flag} -p openmodelica_simulation_runtime
   BYPRODUCTS ${_simrt_so}
   COMMENT "Rust: building libSimulationRuntimeRust (${OM_RUST_SIM_RUNTIME_PROFILE})"
   VERBATIM)

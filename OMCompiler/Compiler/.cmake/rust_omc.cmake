@@ -27,22 +27,38 @@ set(RUST_OMC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
 # rustWorkDir()).
 set(RUST_OMC_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}
     CACHE PATH "Parent directory of the per-build Rust working copy (rust-src).")
+# The working copy reproduces the OMCompiler/ tree shape, because the two cargo
+# workspaces path-reference each other across it: the compiler's crates name
+# ../../SimulationRuntime/rust/*, the runtime's name ../../Compiler/OpenModelica.rs/*,
+# and openmodelica_wasi include_str!s ../../../FrontEnd/*.mo.
 # Not cached: a normal set() shadows a stale cache from before this was per-build,
 # so reconfiguring an existing build dir picks up the new path.
-set(RUST_OMC_DIR ${RUST_OMC_WORK_DIR}/rust-src)
+set(RUST_OMC_TREE ${RUST_OMC_WORK_DIR}/rust-src)
+set(RUST_OMC_DIR ${RUST_OMC_TREE}/Compiler/OpenModelica.rs)
 set(RUST_SRC_MANIFEST ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_files.txt)
+# The simulation runtime is a workspace of its own (no generated sources); it is
+# mirrored only so the compiler workspace's path dependencies resolve in here.
+set(RUST_SIMRT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/rust)
+set(RUST_SIMRT_DIR ${RUST_OMC_TREE}/SimulationRuntime/rust)
 
 # Mirror now so the configure-time reads below (.gitignore, susanSources.txt) see
 # a populated copy; the rust_src_sync target re-mirrors before each build step.
 set(_rust_src_sync_cmd ${CMAKE_COMMAND}
-    -DSRC=${RUST_OMC_SRC_DIR} -DDST=${RUST_OMC_DIR} -DMANIFEST=${RUST_SRC_MANIFEST}
+    -DSRC=${RUST_OMC_SRC_DIR} -DDST=${RUST_OMC_DIR} -DMANIFEST=${RUST_SRC_MANIFEST} -DBUILTINS=ON
     -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_sync.cmake)
-execute_process(COMMAND ${_rust_src_sync_cmd} RESULT_VARIABLE _rust_src_sync_rc)
-if(_rust_src_sync_rc)
-  message(FATAL_ERROR "Initial Rust source mirror failed (${RUST_OMC_SRC_DIR} -> ${RUST_OMC_DIR}).")
-endif()
+set(_rust_simrt_sync_cmd ${CMAKE_COMMAND}
+    -DSRC=${RUST_SIMRT_SRC_DIR} -DDST=${RUST_SIMRT_DIR}
+    -DMANIFEST=${RUST_SIMRT_SRC_DIR}/.cmake/rust_src_files.txt
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_sync.cmake)
+foreach(_cmd _rust_src_sync_cmd _rust_simrt_sync_cmd)
+  execute_process(COMMAND ${${_cmd}} RESULT_VARIABLE _rust_src_sync_rc)
+  if(_rust_src_sync_rc)
+    message(FATAL_ERROR "Initial Rust source mirror failed (${_cmd}).")
+  endif()
+endforeach()
 add_custom_target(rust_src_sync
   COMMAND ${_rust_src_sync_cmd}
+  COMMAND ${_rust_simrt_sync_cmd}
   COMMENT "Rust: syncing hand-written sources -> per-build working copy"
   VERBATIM)
 
@@ -472,7 +488,7 @@ file(GLOB PRIMME_SOURCES ${_primme_sources}/src/eigs/*.c ${_primme_sources}/src/
                          ${_primme_sources}/src/svds/*.c)
 # The runtime's entry point into it, kept in C so `primme_svds_params` is never
 # described twice.
-list(APPEND PRIMME_SOURCES ${RUST_OMC_DIR}/openmodelica_nls/src/primme_svds.c)
+list(APPEND PRIMME_SOURCES ${RUST_SIMRT_DIR}/openmodelica_nls/src/primme_svds.c)
 add_library(primme STATIC \${PRIMME_SOURCES})
 target_compile_definitions(primme PRIVATE
   PRIMME_WITHOUT_FLOAT F77UNDERSCORE __unix__ _WASI_EMULATED_PROCESS_CLOCKS)

@@ -683,17 +683,12 @@ def main() -> int:
         Path(root) / "OMCompiler" / "SimulationRuntime",
         Path(root) / "OMCompiler" / "3rdParty" / "ryu",
     ] + [Path(root) / "OMCompiler" / "Compiler" / "OpenModelica.rs" / subdir for subdir in [
-        "openmodelica_sim_meta",
-        "openmodelica_codegen_wasm_jit_runtime",
         "openmodelica_codegen_wasm_jit_runtime",
         "openmodelica_wasi",
         "openmodelica_wasi_libc",
         "openmodelica_wasm_jit",
-        "openmodelica_mat_writer",
         "openmodelica_fmi3_wasm",
         "openmodelica_modelica_utilities",
-        "openmodelica_simulation_runtime",
-        "openmodelica_nls",
     ]]
 
     for abspath in iter_source_files(root, dirs):

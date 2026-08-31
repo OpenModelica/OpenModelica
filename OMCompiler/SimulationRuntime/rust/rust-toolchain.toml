@@ -1,0 +1,11 @@
+# nightly is required: openmodelica_simulation_runtime's `omc_assert_*` entry
+# points are C variadics (`#![feature(c_variadic)]`).
+#
+# Keep the channel in sync with Compiler/OpenModelica.rs/rust-toolchain.toml --
+# the two workspaces share a cargo target directory in the CMake build, and a
+# split would rebuild everything on each pass. Nothing here needs that file's
+# cranelift/rust-src components or wasm targets.
+[toolchain]
+channel = "nightly-2026-05-31"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

@@ -9,5 +9,6 @@
 name = "openmodelica_mat_writer"
 version = "0.1.0"
 edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
 
 [lib]
