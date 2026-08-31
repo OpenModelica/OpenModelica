@@ -1427,7 +1427,7 @@ void *gbInternalNlsAllocate(int size,
   nls->tabl = tabl;
   nls->use_t_transform = (transform != NULL);
 
-  SPARSE_PATTERN *odePattern = isFast ? gbfData->sparsePattern_ODE : jacobian_ODE->sparsePattern;
+  SPARSE_PATTERN *odePattern = isFast ? gbfData->sparsePattern_ODE : getJacobianCscPattern(jacobian_ODE);
   SPARSE_PATTERN *nlsPattern = isFast ? gbfData->sparsePattern_NLS : gbData->sparsePattern_NLS;
   assertStreamPrint(NULL, odePattern != NULL && nlsPattern != NULL, "GBODE internal NLS requires sparse patterns.");
   nls_nnz_estimate = nlsPattern->nnz;

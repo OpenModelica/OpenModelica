@@ -126,6 +126,7 @@ void freeJacobian(JACOBIAN *jac)
     free(jac->csrToCscMap); jac->csrToCscMap = NULL;
     /* adjointJacobian is not owned; do not free */
     jac->adjointJacobian = NULL;
+    jac->availability = JACOBIAN_UNKNOWN;
   }
 }
 
@@ -171,8 +172,8 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
 {
   int color, row, col, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  const unsigned int nRowsJ = jacobian->sizeRows;
-  const unsigned int nColsJ = jacobian->sizeCols;
+  const unsigned int nRowsJ = jacobian->sizeCols;
+  const unsigned int nColsJ = jacobian->sizeRows;
   const unsigned int* csrToCsc = jacobian->csrToCscMap;
 
   if (!jacobian->isRowEval) {
@@ -773,8 +774,8 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
     /* The transposed pattern has no coloring yet; derive one so that the pattern is
      * usable wherever a fully featured column oriented pattern is expected. */
     computeColumnColoring(jac->cscPattern,
-                          (unsigned int) jac->sizeRows,
-                          (unsigned int) jac->sizeCols);
+                          (unsigned int) jac->sizeCols,
+                          (unsigned int) jac->sizeRows);
   }
   return jac->cscPattern;
 }
@@ -1094,7 +1095,6 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
  */
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
 {
-  printf("calling checkJacobianMethod in setJacobianMethod() with availability=%d and jacobianMethod=%d\n", availability, getRequestedJacobianMethod(threadData));
   return checkJacobianMethod(threadData, availability, getRequestedJacobianMethod(threadData));
 }
 

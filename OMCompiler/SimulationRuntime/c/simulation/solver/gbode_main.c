@@ -292,11 +292,13 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       gbfData->symJacAvailable = gbData->symJacAvailable;
       jacobian = getSymbolicOdeJacobian(data);
     }
-    if (jacobian->availability == JACOBIAN_AVAILABLE) {
-      /* The evaluation DAG is generated for the forward Jacobian A only so get it explicitly. */
-      data->callback->getDAG_JacA(data, threadData, &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]));
+    /* The evaluation DAG is generated and consumed for the forward Jacobian A,
+     * even when the selected Jacobian evaluates adjoint directions. */
+    JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    if (forwardJacobian->availability == JACOBIAN_AVAILABLE) {
+      data->callback->getDAG_JacA(data, threadData, forwardJacobian);
     }
-    if (!jacobian->dag) {
+    if (!forwardJacobian->dag) {
       throwStreamPrint(threadData,
                        "Cannot create multirate data structures without a valid Jacobian DAG. Use a symbolic Jacobian "
                        "(--generateDynamicJacobian=symbolic), an explicit integrator, or switch to single-rate integration.");
