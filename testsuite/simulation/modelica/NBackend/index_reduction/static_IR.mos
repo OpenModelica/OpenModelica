@@ -57,7 +57,6 @@ simulate(static_IR_2); getErrorString();
 //     resultFile = "static_IR_1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.032767. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -87,7 +86,6 @@ simulate(static_IR_2); getErrorString();
 //     resultFile = "static_IR_2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.032766. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

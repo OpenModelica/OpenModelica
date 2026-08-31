@@ -15,15 +15,7 @@ simulate(Buildings.DHC.ETS.Combined.Subsystems.Validation.HeatPump); getErrorStr
 // record SimulationResult
 //     resultFile = "Buildings.DHC.ETS.Combined.Subsystems.Validation.HeatPump_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 172800.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.DHC.ETS.Combined.Subsystems.Validation.HeatPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Using sparse solver kinsol for nonlinear system 3 (699),
-// |                 | |       | because density of 0.09 remains under threshold of 0.10.
-// LOG_STDOUT        | info    | Using sparse solver kinsol for nonlinear system 4 (1495),
-// |                 | |       | because density of 0.10 remains under threshold of 0.10.
-// LOG_STDOUT        | info    | Using sparse solver kinsol for nonlinear system 6 (1847),
-// |                 | |       | because density of 0.08 remains under threshold of 0.10.
-// LOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-nlssMaxDensity=value>'.
-// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
