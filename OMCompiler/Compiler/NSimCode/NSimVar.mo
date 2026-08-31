@@ -1407,7 +1407,7 @@ public
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
         numMixedSystems              = 0,
         numStateSets                 = 0,
-        numJacobians                 = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
+        numJacobians                 = simCodeIndices.nonlinearSystemIndex + simCodeIndices.linearSystemIndex + 5, // #nonlinSystems + #linSystems (torn linear systems with a symbolic Jacobian consume a jacobianIndex slot from the same analyticJacobians array too) + 5 simulation jacs (add state sets later!)
         numOptimizeConstraints       = 0,
         numOptimizeFinalConstraints  = 0,
         numSensitivityParameters     = 0,
