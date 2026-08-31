@@ -2867,16 +2867,12 @@ public
     output Integer dimCount;
   algorithm
     dimCount := match exp
+      case TYPENAME() then 1;
       case ARRAY(ty = Type.UNKNOWN())
         then 1 + dimensionCount(arrayGet(exp.elements, 1));
-      case ARRAY() then Type.dimensionCount(exp.ty);
-      case RANGE() then Type.dimensionCount(exp.ty);
-      case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
-      case CAST() then dimensionCount(exp.exp);
-      case SUBSCRIPTED_EXP() then Type.dimensionCount(exp.ty);
-      case TUPLE_ELEMENT() then Type.dimensionCount(exp.ty);
-      // TODO: Add more expressions.
-      else 0;
+      case MATRIX() then 2;
+      case SIZE() then if isNone(exp.dimIndex) then dimensionCount(exp.exp) else 1;
+      else Type.dimensionCount(typeOf(exp));
     end match;
   end dimensionCount;
 
