@@ -92,3 +92,25 @@ fn abi_matches_the_c_headers() {
     let _ = std::fs::remove_dir_all(&dir);
     assert!(bad.is_empty(), "src/abi.rs no longer matches the C headers:\n{}", bad.join("\n"));
 }
+
+/// src/shim.c declares its own `FILE_INFO`; check it against the mirror.
+#[test]
+fn shim_file_info_matches_the_mirror() {
+    unsafe extern "C" {
+        fn omr_file_info_layout(out: *mut usize);
+    }
+    let mut shim = [0usize; 7];
+    unsafe { omr_file_info_layout(shim.as_mut_ptr()) };
+    assert_eq!(
+        shim,
+        [
+            size_of::<abi::FILE_INFO>(),
+            core::mem::offset_of!(abi::FILE_INFO, filename),
+            core::mem::offset_of!(abi::FILE_INFO, lineStart),
+            core::mem::offset_of!(abi::FILE_INFO, colStart),
+            core::mem::offset_of!(abi::FILE_INFO, lineEnd),
+            core::mem::offset_of!(abi::FILE_INFO, colEnd),
+            core::mem::offset_of!(abi::FILE_INFO, readonly),
+        ]
+    );
+}

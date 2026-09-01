@@ -306,8 +306,8 @@ fn solve_default(
     let time = unsafe { (**(*data).localData).timeValue };
     omclog::warning_with_limit(
         stream,
-        ls.numberOfFailures,
-        unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+        ls.numberOfFailures as u64,
+        unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
         &format!(
             "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
         ),
@@ -528,8 +528,8 @@ fn solve_lapack(
         ls.numberOfFailures += 1;
         omclog::warning_with_limit(
             omclog::LS,
-            ls.numberOfFailures,
-            unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+            ls.numberOfFailures as u64,
+            unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
             &format!(
                 "Failed to solve linear system of equations (no. {eq}) at time {}, system is singular for U[{}, {}].",
                 openmodelica_sim_meta::driver::format_g(time, 6),
@@ -559,8 +559,8 @@ fn solve_lapack(
             ls.numberOfFailures += 1;
             omclog::warning_with_limit(
                 omclog::LS,
-                ls.numberOfFailures,
-                unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+                ls.numberOfFailures as u64,
+                unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
                 &format!(
                     "Failed to solve linear system of equations (no. {eq}) at time {}. Residual norm is {norm:.15}.",
                     openmodelica_sim_meta::driver::format_g(time, 6)

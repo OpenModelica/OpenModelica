@@ -13,12 +13,17 @@
 use core::ffi::{c_char, c_int, c_long, c_uint, c_ulong, c_void};
 
 pub type modelica_real = f64;
-/// `mmc_sint_t`: `long` on the 64-bit unix/mingw builds this library targets.
-pub type modelica_integer = c_long;
+/// `mmc_sint_t` is pointer-sized: `long` on LP64 but `long long` under `_WIN64`,
+/// where `c_long` would be half its width.
+#[cfg(target_pointer_width = "64")]
+pub type modelica_integer = i64;
+#[cfg(not(target_pointer_width = "64"))]
+pub type modelica_integer = i32;
 pub type modelica_boolean = c_int;
 /// A boxed MetaModelica string (`modelica_metatype`); opaque here.
 pub type modelica_string = *mut c_void;
-pub type _index_t = c_long;
+/// Also `mmc_sint_t`.
+pub type _index_t = modelica_integer;
 
 /// `util/rtclock.h`: `union { struct timespec; unsigned long long; }` on unix,
 /// `LARGE_INTEGER`/`uint64_t` elsewhere -- 16 bytes either way on the unix build.

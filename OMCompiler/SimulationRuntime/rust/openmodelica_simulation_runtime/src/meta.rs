@@ -6,7 +6,7 @@
 //! the `.mat` this runtime writes has the same signals in the same places as the
 //! one the C runtime writes for the same model.
 
-use core::ffi::c_char;
+use core::ffi::{c_char, c_long};
 
 use openmodelica_sim_meta::{
     InputVar, Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter,
@@ -256,7 +256,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     for a in 0..md.nAliasRealArray as usize {
         let al = unsafe { &*md.realAlias.add(a) };
         let is_der = al.aliasType == 0
-            && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as i64));
+            && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
         let dim = alias_dimension(md, al, 0);
         for (k, name) in scalar_names(&cstr(al.info.name), dim, is_der).into_iter().enumerate() {
             vars.push(MetaVar {
@@ -457,7 +457,7 @@ fn alias_dimension(md: &MODEL_DATA, al: &DATA_ALIAS, kind: usize) -> &'static DI
     }
 }
 
-fn descriptions(count: i64, get: impl Fn(c_int_t) -> Option<String>) -> Vec<String> {
+fn descriptions(count: c_long, get: impl Fn(c_int_t) -> Option<String>) -> Vec<String> {
     (0..count).map(|i| get(i as c_int_t).unwrap_or_default()).collect()
 }
 

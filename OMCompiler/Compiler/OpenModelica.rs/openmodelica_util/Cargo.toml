@@ -14,9 +14,9 @@ openmodelica_util_datatypes_basic.workspace=true
 arcstr.workspace=true
 match_deref.workspace=true
 libc.workspace=true
-# Backs System::regex and System::Regex on every target; posix_to_rust
-# translates the POSIX syntax first.
-regex = "1"
+# Backs System::regex and System::Regex on every target, translating the POSIX
+# syntax first. Shared with the two simulation runtimes' `variableFilter`.
+openmodelica_regex = { path = "../../../SimulationRuntime/rust/openmodelica_regex" }
 # GraphML reader in the hand-written TaskGraphResults.rs; also the
 # modelDescription.xml parser in the hand-written FMIExt.rs.
 roxmltree.workspace=true

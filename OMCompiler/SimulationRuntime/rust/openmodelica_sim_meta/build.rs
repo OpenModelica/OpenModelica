@@ -110,9 +110,15 @@ fn sundials() {
     }
     let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else { return };
     let lib = Path::new(&dir).join("lib");
+    // MSVC keeps the CMake target's `_static` suffix; openmodelica_solvers, which
+    // links them, resolves the same way.
     let missing: Vec<_> = NATIVE_LIBS
         .iter()
-        .filter(|l| ![format!("lib{l}.a"), format!("{l}.lib")].iter().any(|n| lib.join(n).exists()))
+        .filter(|l| {
+            ![format!("lib{l}.a"), format!("{l}.lib"), format!("{l}_static.lib")]
+                .iter()
+                .any(|n| lib.join(n).exists())
+        })
         .collect();
     if !missing.is_empty() {
         panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \

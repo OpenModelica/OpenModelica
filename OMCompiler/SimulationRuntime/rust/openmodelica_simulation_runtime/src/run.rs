@@ -50,9 +50,10 @@ fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
 /// handle would overtake everything they have buffered.
 fn print_line(s: &str) {
     unsafe extern "C" {
-        static mut stdout: *mut libc::FILE;
+        /// src/shim.c: no libc names that object the same way.
+        fn omr_stdout() -> *mut libc::FILE;
     }
-    unsafe { libc::fwrite(s.as_ptr().cast(), 1, s.len(), stdout) };
+    unsafe { libc::fwrite(s.as_ptr().cast(), 1, s.len(), omr_stdout()) };
 }
 
 /// C's line at the end of `initializeModel`, naming the homotopy steps it took.

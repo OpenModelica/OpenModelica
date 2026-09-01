@@ -9,6 +9,75 @@
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+/// libOpenModelicaRuntimeC, which owns the state this runtime shares with the
+/// generated code. Only an ELF `.so` may leave those to bind from the executable
+/// at load, so `--no-undefined` holds it to what a DLL and a dylib require.
+fn link_runtime_c() {
+    println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DIR");
+    println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_LINK");
+    // MSVC links the static archive *into* SimulationRuntimeC.dll, so absorb it
+    // the same way. CMake names its dependencies, which an archive lacks.
+    if let Ok(libs) = std::env::var("OMC_RUNTIME_C_LINK") {
+        for lib in libs.split('|').filter(|s| !s.is_empty()) {
+            println!("cargo:rustc-cdylib-link-arg={lib}");
+        }
+        return;
+    }
+    let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
+    println!("cargo:rustc-link-search=native={dir}");
+    println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
+    if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
+    }
+}
+
+/// BLAS and LAPACK, which a dylib must resolve where an ELF `.so` leaves them to
+/// the executable. macOS ships them in Accelerate, under the same Fortran names.
+fn link_blas() {
+    if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("macos" | "ios")) {
+        return;
+    }
+    // Cross-compiling the frameworks live in the SDK, and only the compiler has
+    // been told where that is (-iframework), not the linker.
+    println!("cargo:rerun-if-env-changed=SDKROOT");
+    if let Ok(sdk) = std::env::var("SDKROOT") {
+        println!("cargo:rustc-cdylib-link-arg=-F{sdk}/System/Library/Frameworks");
+    }
+    println!("cargo:rustc-cdylib-link-arg=-framework");
+    println!("cargo:rustc-cdylib-link-arg=Accelerate");
+}
+
+/// The variadic entry points src/shim.c defines.
+const SHIM_ENTRY_POINTS: &[&str] = &[
+    "omc_assert_simulation",
+    "omc_assert_simulation_withEquationIndexes",
+    "omc_assert_warning_simulation",
+    "omc_assert_warning_simulation_withEquationIndexes",
+    "omc_terminate_simulation",
+];
+
+/// A cdylib exports only the symbols Rust itself defines, so without this the
+/// generated model does not link.
+fn export_shim_entry_points() {
+    let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
+    match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        // link.exe honours the objects' __declspec(dllexport) alongside its /DEF.
+        Ok("windows") => {}
+        Ok("macos" | "ios") => {
+            let path = out.join("shim_exports.txt");
+            let names: String = SHIM_ENTRY_POINTS.iter().map(|s| format!("_{s}\n")).collect();
+            std::fs::write(&path, names).expect("write the export list");
+            println!("cargo:rustc-cdylib-link-arg=-Wl,-exported_symbols_list,{}", path.display());
+        }
+        _ => {
+            let path = out.join("shim_exports.map");
+            let names: String = SHIM_ENTRY_POINTS.iter().map(|s| format!("  {s};\n")).collect();
+            std::fs::write(&path, format!("{{\n global:\n{names}}};\n")).expect("write the map");
+            println!("cargo:rustc-cdylib-link-arg=-Wl,--version-script={}", path.display());
+        }
+    }
+}
+
 /// Mirror types that are not a C struct of the same name, or whose fields the C
 /// side does not have under those names.
 const SKIP: &[&str] = &["rtclock_t", "threadData_t"];
@@ -20,6 +89,9 @@ const C_TAG: &[&str] = &["OpenModelicaGeneratedFunctionCallbacks"];
 fn main() {
     println!("cargo:rerun-if-changed=src/shim.c");
     cc::Build::new().file("src/shim.c").warnings(true).compile("omc_rust_runtime_shim");
+    export_shim_entry_points();
+    link_runtime_c();
+    link_blas();
     println!("cargo:rerun-if-changed=src/abi.rs");
     println!("cargo:rerun-if-env-changed=OMC_SIMRT_INCLUDE_DIRS");
     let src = std::fs::read_to_string("src/abi.rs").expect("src/abi.rs");

@@ -4,7 +4,7 @@
 //! `jacobian_util.c`, `simulation_omc_assert.c`, `options.c`); the behaviour is
 //! the C one, so a model compiled against either runtime behaves the same.
 
-use core::ffi::{VaList, c_char, c_int, c_long, c_uint, c_void};
+use core::ffi::{c_char, c_int, c_long, c_uint, c_void};
 use core::ptr;
 
 use openmodelica_solvers::omclog;
@@ -167,26 +167,33 @@ unsafe extern "C" {
         ctx: *mut c_void,
         thread_data: *mut threadData_t,
     ) -> c_int;
-    fn omr_vformat(msg: *const c_char, ap: VaList) -> *mut c_char;
-    fn omr_free(p: *mut c_void);
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
+    /// The two entry points the function-pointer globals below are pre-set to.
+    fn omc_assert_simulation_withEquationIndexes(
+        threadData: *mut threadData_t,
+        info: FILE_INFO,
+        indexes: *const c_int,
+        msg: *const c_char,
+        ...
+    ) -> !;
+    fn omc_assert_warning_simulation_withEquationIndexes(
+        info: FILE_INFO,
+        indexes: *const c_int,
+        msg: *const c_char,
+        ...
+    );
 }
 
-/// Format a `printf` message the way the C runtime does, then drop the varargs.
-fn vformat(msg: *const c_char, ap: VaList) -> String {
-    let p = unsafe { omr_vformat(msg, ap) };
-    if p.is_null() {
-        return cstr(msg);
-    }
-    let s = cstr(p);
-    unsafe { omr_free(p as *mut c_void) };
-    s
-}
-
-/// C's `va_omc_assert_simulation_withEquationIndexes`: report on `OMC_LOG_ASSERT`
-/// and say which jump buffer to take, per the current error stage.
-fn assert_report(threadData: *mut threadData_t, info: FILE_INFO, text: &str) -> c_int {
+/// C's `va_omc_assert_simulation_withEquationIndexes`, less the formatting the
+/// shim already did: report, and say which jump buffer the error stage takes.
+#[unsafe(no_mangle)]
+pub extern "C" fn omr_assert_report(
+    threadData: *mut threadData_t,
+    info: *const FILE_INFO,
+    text: *const c_char,
+) -> c_int {
+    let (info, text) = (unsafe { *info }, cstr(text));
     let stage = if threadData.is_null() {
         error_stage::SIMULATION
     } else {
@@ -198,7 +205,7 @@ fn assert_report(threadData: *mut threadData_t, info: FILE_INFO, text: &str) -> 
         _ => false,
     };
     if !quiet {
-        omclog::error(omclog::ASSERT, false, &with_position(&info, text));
+        omclog::error(omclog::ASSERT, false, &with_position(&info, &text));
     }
     match stage {
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
@@ -206,62 +213,18 @@ fn assert_report(threadData: *mut threadData_t, info: FILE_INFO, text: &str) -> 
     }
 }
 
+/// C's `va_omc_assert_warning_simulation`, likewise already formatted.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_assert_simulation(
-    threadData: *mut threadData_t,
-    info: FILE_INFO,
-    msg: *const c_char,
-    ap: ...
-) -> ! {
-    // Every temporary is dropped inside the block: the longjmp below leaves this
-    // frame without unwinding it, exactly as it leaves C's.
-    let target = {
-        let text = vformat(msg, ap);
-        assert_report(threadData, info, &text)
-    };
-    unsafe { omr_jump(threadData, target) };
-    unreachable!("omr_jump returned")
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_assert_simulation_withEquationIndexes(
-    threadData: *mut threadData_t,
-    info: FILE_INFO,
-    _indexes: *const c_int,
-    msg: *const c_char,
-    ap: ...
-) -> ! {
-    let target = {
-        let text = vformat(msg, ap);
-        assert_report(threadData, info, &text)
-    };
-    unsafe { omr_jump(threadData, target) };
-    unreachable!("omr_jump returned")
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_assert_warning_simulation(info: FILE_INFO, msg: *const c_char, ap: ...) {
-    let text = vformat(msg, ap);
-    omclog::warning(omclog::ASSERT, false, &with_position(&info, &text));
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_assert_warning_simulation_withEquationIndexes(
-    info: FILE_INFO,
-    _indexes: *const c_int,
-    msg: *const c_char,
-    ap: ...
-) {
-    let text = vformat(msg, ap);
-    omclog::warning(omclog::ASSERT, false, &with_position(&info, &text));
+pub extern "C" fn omr_assert_warning_report(info: *const FILE_INFO, text: *const c_char) {
+    let text = with_position(unsafe { &*info }, &cstr(text));
+    omclog::warning(omclog::ASSERT, false, &text);
 }
 
 /// C's `omc_terminate_simulation`: record the message; the driver stops at the
 /// next output row.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_terminate_simulation(info: FILE_INFO, msg: *const c_char, ap: ...) {
-    let text = vformat(msg, ap);
-    set_term_msg(info, &text);
+pub extern "C" fn omr_terminate_report(info: *const FILE_INFO, text: *const c_char) {
+    set_term_msg(unsafe { *info }, &cstr(text));
 }
 
 /// C's `omc_throw_simulation`: an external C function asserted.

@@ -64,17 +64,25 @@ fn sundials() {
     }
     let Some(dir) = std::env::var_os("OMC_SUNDIALS_NATIVE_DIR") else { return };
     let lib = Path::new(&dir).join("lib");
-    let missing: Vec<_> = NATIVE_LIBS
+    // MSVC keeps the CMake target's `_static` suffix (sundials_cvode_static.lib)
+    // where the unix builds set an OUTPUT_NAME (libsundials_cvode.a).
+    let resolved: Vec<Option<String>> = NATIVE_LIBS
         .iter()
-        .filter(|l| ![format!("lib{l}.a"), format!("{l}.lib")].iter().any(|n| lib.join(n).exists()))
+        .map(|l| {
+            [l.to_string(), format!("{l}_static")].into_iter().find(|n| {
+                lib.join(format!("lib{n}.a")).exists() || lib.join(format!("{n}.lib")).exists()
+            })
+        })
         .collect();
+    let missing: Vec<_> =
+        NATIVE_LIBS.iter().zip(&resolved).filter(|(_, r)| r.is_none()).map(|(l, _)| l).collect();
     if !missing.is_empty() {
         panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
                 build failed (check the rust_sundials_native_collect CMake target)", lib.display());
     }
     println!("cargo:rustc-link-search=native={}", lib.display());
-    for l in NATIVE_LIBS {
-        println!("cargo:rustc-link-lib=static={l}");
+    for name in resolved.iter().flatten() {
+        println!("cargo:rustc-link-lib=static={name}");
     }
     println!("cargo:rustc-cfg=sundials");
     match std::env::var("OMC_SUNDIALS_NATIVE_INDEX_SIZE").as_deref() {
