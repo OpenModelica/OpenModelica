@@ -129,7 +129,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //
 // ############################################################
 // ============
-//   SimVars 
+//   SimVars
 // ============
 // Algebraic Variables (36)
 // **************************
@@ -642,7 +642,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
 //   end for;
 //
-// 	
+//
 //
 // 50: alias of 3
 // 49: alias of 2
@@ -699,7 +699,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
 //   end for;
 //
-// 	
+//
 //
 // 50: alias of 3
 // 49: alias of 2
@@ -752,7 +752,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	15: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
 // 	14: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
 // 	13: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
-// 	
+//
 //
 // 3:  (SES_RESIZABLE_ASSIGN)  call index: 0
 //
@@ -788,7 +788,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //     $pDER_INI_0_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[$i1] - $SEED_INI_0_LS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
 //   end for;
 //
-// 	
+//
 //
 // 36: plant.TIT=plant.T[6] [Real]
 // 35: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
@@ -860,7 +860,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // 	15: $pDER_INI_NLS_JAC_1.$RES_BND_22=$SEED_INI_NLS_JAC_1.plant.p[6] - $SEED_INI_NLS_JAC_1.plant.TIP [Real]
 // 	14: $pDER_INI_NLS_JAC_1.$RES_SIM_7=($SEED_INI_NLS_JAC_1.plant.p[6] * plant.Kt * $FUN_1 - $SEED_INI_NLS_JAC_1.$FUN_1 * plant.p[6] * plant.Kt) / $FUN_1 ^ 2.0 - $SEED_INI_NLS_JAC_1.plant.w [Real]
 // 	13: $pDER_INI_NLS_JAC_1.$RES_AUX_24=0.5 / (plant.TIT / plant.Tnom) ^ 0.5 * $SEED_INI_NLS_JAC_1.plant.TIT * plant.Tnom / plant.Tnom ^ 2.0 - $SEED_INI_NLS_JAC_1.$FUN_1 [Real]
-// 	
+//
 // 	Jacobian idx: 1
 // 	42:   for $i1 in 1:5 loop
 //     $pDER_INI_0_LS_JAC_1.$RES_SIM_12[$i1] := (0.5 * ($SEED_INI_0_LS_JAC_1.plant.Tfg[7 - $i1] + $SEED_INI_0_LS_JAC_1.plant.Tfg[6 - $i1]) - 0.5 * ($SEED_INI_0_LS_JAC_1.plant.T[1 + $i1] + $SEED_INI_0_LS_JAC_1.plant.T[$i1])) * plant.G[$i1] - $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
@@ -874,7 +874,7 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //     $pDER_INI_0_LS_JAC_1.$RES_SIM_8[$i1] := plant.cp * plant.w * ($SEED_INI_0_LS_JAC_1.plant.T[$i1] - $SEED_INI_0_LS_JAC_1.plant.T[1 + $i1]) + $SEED_INI_0_LS_JAC_1.plant.Q[$i1];
 //   end for;
 //
-// 	
+//
 // 	Jacobian idx: 2
 // 	74: $pDER_ALG_NLS_JAC_1.$RES_BND_21=$SEED_ALG_NLS_JAC_1.plant.Tfg[6] - $SEED_ALG_NLS_JAC_1.plant.Ts [Real]
 // 	73: $pDER_ALG_NLS_JAC_1.$RES_SIM_2=-$SEED_ALG_NLS_JAC_1.plant.Ts [Real]
@@ -900,27 +900,27 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 //     $pDER_ALG_NLS_JAC_1.$RES_SIM_14[$i1] := 0.2 * plant.NTU * 0.8 * plant.w ^ (-0.19999999999999996) * $SEED_ALG_NLS_JAC_1.plant.w - $SEED_ALG_NLS_JAC_1.plant.G[$i1];
 //   end for;
 //
-// 	
+//
 // 	Jacobian idx: 3
-// 	
+//
 // 	Jacobian idx: 5
-// 	
+//
 // 	Jacobian idx: 6
-// 	
+//
 // 	Jacobian idx: 7
-// 	
+//
 // 	Jacobian idx: 8
-// 	
+//
 // 	Jacobian idx: 9
-// 	
+//
 // 	Jacobian idx: 4
-// 	
+//
 // 	Jacobian idx: 10
-// 	
+//
 // 	Jacobian idx: 11
-// 	
+//
 // 	Jacobian idx: 12
-// 	
+//
 //
 // modelInfo:
 // ========================================
@@ -983,9 +983,9 @@ regexBool(msg, "Sparsity pattern for non-linear system 2 is not regular");
 // -----------
 //
 // Function: initialSimplified
-// 	outVars: isInitialLambda0 (Boolean, )  , 
-// 	functionArguments: 
-// 	variableDeclarations: isInitialLambda0 (Boolean, )  , 
+// 	outVars: isInitialLambda0 (Boolean, )  ,
+// 	functionArguments:
+// 	variableDeclarations: isInitialLambda0 (Boolean, )  ,
 // true
 // ""
 // true

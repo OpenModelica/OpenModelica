@@ -1057,7 +1057,7 @@ public
         then exp;
 
         // found a spatial distribution
-        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {in0, in1, pos, dir, initPnts as Expression.ARRAY(), initVals})) 
+        case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {in0, in1, pos, dir, initPnts as Expression.ARRAY(), initVals}))
         guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "spatialDistribution") algorithm
           slst      := Pointer.access(spatial_lst);
           index     := listLength(slst);
@@ -1080,7 +1080,7 @@ public
       Expression cond;
     algorithm
       (cond_true, cond_false) := match condition
-        case SOME(cond) then (Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), new_cond), 
+        case SOME(cond) then (Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), new_cond),
           Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), Expression.logicNegate(new_cond)));
         else (new_cond, Expression.logicNegate(new_cond));
       end match;

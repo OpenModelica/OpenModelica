@@ -694,7 +694,7 @@ protected
         guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
-      // fail for top level inputs     
+      // fail for top level inputs
       case Expression.CREF()
         guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
@@ -917,7 +917,7 @@ protected
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
         end if;
-        
+
         // solve equations for vars to have attribute conversion rules
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());

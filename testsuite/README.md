@@ -16,7 +16,7 @@ rtest special directives added to help creating testcases:
   Useful if you e.g. want to disable compiling functions with gcc while you flatten code.  
   You can also set the environment variable RTEST_OMCFLAGS if you want to insert these flags for all commands you run.
 * setup_command: gcc ...  
-  Will execute the provided command before running omc.  
+  Will execute the provided command before running omc.
   A command that builds an external "C" library should not name a compiler
   directly; use the variables rtest exports so the test also works for the
   wasm-jit target, which needs the library as a PIC dylink `.wasm` module
@@ -44,7 +44,7 @@ rtest special directives added to help creating testcases:
   and has to reach through the host.
 * teardown_command: rm -f ...  
   Will execute the provided command after running omc.
-* suite: metamodelica, 63bit  
+* suite: metamodelica, 63bit
   Puts the test in one or more test suites, so that a run which cannot support
   them can deselect it: `partest/runtests.pl -suites=-metamodelica,-63bit`.
   Run `runtests.pl -h` for the suites and their defaults. The directive must be

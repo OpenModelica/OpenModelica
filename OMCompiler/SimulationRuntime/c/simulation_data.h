@@ -306,7 +306,7 @@ typedef struct STRING_ATTRIBUTE
 } STRING_ATTRIBUTE;
 
 /* Model dimension structures */
-enum DIMENSION_ATTRIBUTE_TYPE{
+enum DIMENSION_ATTRIBUTE_TYPE {
   DIMENSION_BY_START = 0,               /* dimension defined by start */
   DIMENSION_BY_VALUE_REFERENCE = 1      /* dimension defined by value reference of structural parameter */
 };

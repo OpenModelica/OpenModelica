@@ -153,7 +153,7 @@ pub extern "C" fn om_fmi3EnterInitializationMode(
 ) -> i32 {
     with(
         |i| {
-            status(GuestModelExchangeInstance::enter_initialization_mode(i, 
+            status(GuestModelExchangeInstance::enter_initialization_mode(i,
                 (tolerance_defined != 0).then_some(tolerance),
                 start_time,
                 (stop_time_defined != 0).then_some(stop_time),
