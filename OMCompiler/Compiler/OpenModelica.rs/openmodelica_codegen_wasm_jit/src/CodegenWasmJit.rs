@@ -6156,6 +6156,15 @@ fn build_sim_model(
         )?);
         idx
     };
+    // C's `setupDataStruc` half: the constant defaults, written before the solver is
+    // allocated. The expression-bound ones stay in the update function.
+    let attr_defaults_idx = {
+        let idx = import_base + bodies.len() as u32;
+        let defaults: Vec<(u32, f64)> =
+            nominal_defaults.iter().chain(max_defaults.iter()).copied().collect();
+        bodies.push(build_attr_defaults_fn(&defaults, &var_map, &by_name, &mut literals)?);
+        idx
+    };
     // Always exported (empty when the backend generated none) so the standalone
     // merge resolves regardless of the model.
     let linz_jac_idx = {
@@ -6316,6 +6325,7 @@ fn build_sim_model(
     functions.function(eqfn_type); // functionInitSpatialDistribution: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundParameters: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateBoundVariableAttributes: (i32) -> ()
+    functions.function(eqfn_type); // functionAttrDefaults: (i32) -> ()
     for _ in 0..4 {
         functions.function(eqfn_type); // linearJacA..linearJacD: (i32) -> ()
     }
@@ -6441,6 +6451,7 @@ fn build_sim_model(
         ("functionInitSpatialDistribution", init_spatial_idx),
         ("functionUpdateBoundParameters", update_bound_params_idx),
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
+        ("functionAttrDefaults", attr_defaults_idx),
         ("functionRemovedInitialEquations", removed_init_idx),
         ("functionInitSynchronous", sync_idx.0),
         ("symbolicInlineSystem", sym_inline_idx),
@@ -6504,6 +6515,7 @@ fn build_sim_model(
     exports.export("functionInitSpatialDistribution", we::ExportKind::Func, init_spatial_idx);
     exports.export("functionUpdateBoundParameters", we::ExportKind::Func, update_bound_params_idx);
     exports.export("functionUpdateBoundVariableAttributes", we::ExportKind::Func, update_bound_attrs_idx);
+    exports.export("functionAttrDefaults", we::ExportKind::Func, attr_defaults_idx);
     for (k, name) in ["linearJacA", "linearJacB", "linearJacC", "linearJacD"].iter().enumerate() {
         exports.export(name, we::ExportKind::Func, linz_jac_idx + k as u32);
     }
@@ -6575,6 +6587,7 @@ fn build_sim_model(
         ("functionInitSpatialDistribution", init_spatial_idx),
         ("functionUpdateBoundParameters", update_bound_params_idx),
         ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
+        ("functionAttrDefaults", attr_defaults_idx),
         ("linearJacA", linz_jac_idx),
         ("linearJacB", linz_jac_idx + 1),
         ("linearJacC", linz_jac_idx + 2),
@@ -8554,6 +8567,24 @@ fn build_update_bound_attrs_fn(
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_bound_attrs(defaults, int_defaults, &attrs)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
+/// a solver built before initialization.
+fn build_attr_defaults_fn(
+    defaults: &[(u32, f64)],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    ctx.emit_update_bound_attrs(defaults, &[], &[])?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {

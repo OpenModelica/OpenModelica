@@ -350,6 +350,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionInitSpatialDistribution",
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
+    "functionAttrDefaults",
     "evaluateDAEResiduals",
     "functionInitSynchronous",
     "functionUpdateSynchronous",
@@ -2069,7 +2070,7 @@ pub fn run_initialization(
     inputs: &[crate::InputVar],
     start_time: f64,
 ) -> Result<()> {
-    init_model(e, sim_data, layout, inputs, start_time, None)?;
+    init_model(e, sim_data, layout, inputs, start_time, None, None)?;
     signal_init_done();
     terminate_at_init(e, sim_data, layout)
 }
@@ -2077,7 +2078,7 @@ pub fn run_initialization(
 /// [`run_initialization`] where the caller has the metadata the `LOG_SOTI` dump
 /// and the discrete start attributes need.
 pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
-    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model), None)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)
 }
@@ -2098,8 +2099,9 @@ pub fn run_initialization_with_clocks(
     e: &mut dyn SimEngine,
     sim_data: u32,
     model: &SimMeta,
+    dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
 ) -> Result<crate::sync::Sync> {
-    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model), dae)?;
     let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
     // An event clock whose `when` already fired during the initial discrete update
     // is only *scheduled* here (C's `data->simulationInfo->initial` case).
@@ -2117,6 +2119,7 @@ fn init_model(
     inputs: &[crate::InputVar],
     start_time: f64,
     model: Option<&SimMeta>,
+    dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
     // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
@@ -2149,7 +2152,10 @@ fn init_model(
     // sitting in a branch no evaluation takes (`if a then .. else if b then ..`,
     // entered on the `a` side) is reached by nothing but the exact sweep.
     refresh_relations(e, sim_data, layout)?;
-    iterate_discrete(e, sim_data, layout)?;
+    match dae {
+        Some(dae) => iterate_discrete_dae(e, sim_data, layout, dae)?,
+        None => iterate_discrete(e, sim_data, layout)?,
+    }
     // C's generated `functionDAE` throws on a system that did not converge, and the
     // throw is still inside `initializeModel`.
     check_nls(e, sim_data, layout)?;
@@ -3760,7 +3766,7 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// consistent set and chatter on the integrator instead. Assumes the event time is
 /// already written.
 pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    iterate_discrete_from(e, sim_data, layout, false)
+    iterate_discrete_from(e, sim_data, layout, false, None)
 }
 
 /// [`iterate_discrete`] entered after the first `functionDAE` has already run, as
@@ -3772,7 +3778,18 @@ pub(crate) fn iterate_discrete_after_eval(
     sim_data: u32,
     layout: &SimLayout,
 ) -> Result<()> {
-    iterate_discrete_from(e, sim_data, layout, true)
+    iterate_discrete_from(e, sim_data, layout, true, None)
+}
+
+/// [`iterate_discrete`] where DAE mode makes `functionDAE` C's `ida_event_update`:
+/// `dae` ends every pass, so each settles around consistent algebraic unknowns.
+pub(crate) fn iterate_discrete_dae(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    dae: &mut dyn FnMut(&mut dyn SimEngine) -> Result<()>,
+) -> Result<()> {
+    iterate_discrete_from(e, sim_data, layout, false, Some(dae))
 }
 
 fn iterate_discrete_from(
@@ -3780,6 +3797,7 @@ fn iterate_discrete_from(
     sim_data: u32,
     layout: &SimLayout,
     evaluated: bool,
+    mut dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
 ) -> Result<()> {
     rtclock::tick(rtclock::DISCRETE); // C's `callStatistics.updateDiscreteSystem`
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
@@ -3802,6 +3820,9 @@ fn iterate_discrete_from(
         let events_v = omclog::active(omclog::EVENTS_V);
         let before = if events_v { Some(discrete_pre_values(e, sim_data)?) } else { None };
         eval_discrete(e, sim_data, layout)?;
+        if let Some(dae) = dae.as_deref_mut() {
+            dae(e)?;
+        }
         log_reinits(e);
         if let Some(before) = &before {
             log_discrete_changes(e, sim_data, before)?;
@@ -5741,17 +5762,22 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, floored at 1e-32 by
-/// `functionUpdateBoundVariableAttributes` and so only readable after
-/// initialization. In DAE mode the algebraic unknowns' nominals follow (C's
-/// `getAlgebraicDAEVarNominals`), one per extra component of IDA's `y`. Length ≥ 1
-/// so daskr never sees an empty array.
+/// C's `realVarsData[i].attribute.nominal` for the states; in DAE mode the algebraic
+/// unknowns' nominals follow (C's `getAlgebraicDAEVarNominals`), one per extra
+/// component of IDA's `y`. Length ≥ 1 so daskr never sees an empty array.
+///
+/// `fmax(fabs(n), 1e-32)` as `ida_solver_setNominals` does: read before
+/// `initializeModel` has floored them, a zero nominal is a zero `atol` and so an
+/// infinite error weight.
 fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     let mut nominals: Vec<f64> = (0..layout.n_states)
         .map(|i| read_f64(e, sim_data + layout.state_nom_off + i * 8))
         .collect::<Result<_>>()?;
     for k in 0..layout.n_dae_alg {
         nominals.push(read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?);
+    }
+    for n in nominals.iter_mut() {
+        *n = libm::fmax(libm::fabs(*n), 1e-32);
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -7142,17 +7168,10 @@ impl SolverCore {
     /// the algebraic unknowns and derivatives, answer back into `SimData`. `ctx` must
     /// be the live callback context — `IDACalcIC` evaluates the residual.
     fn dae_restart(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
+        let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
         e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
         self.read_states(e)?;
         self.restart()?;
-        self.dae_consistent(e, ctx)
-    }
-
-    /// `ida_event_update`'s second half: `IDACalcIC`, then the consistent point back
-    /// into `SimData` (C's `IDAGetConsistentIC` + `setAlgebraicDAEVars`). `ctx` must
-    /// be the live callback context — `IDACalcIC` evaluates the residual.
-    fn dae_consistent(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
-        let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
         #[cfg(sundials)]
         if let Solver::Ida(s) = &mut self.solver
             && let Some(ida) = s.ida.as_mut()
@@ -7177,43 +7196,42 @@ impl SolverCore {
         }
     }
 
-    /// The `IDACalcIC` C's initialization performs before the first output row —
-    /// which already reports the algebraic unknowns and derivatives IDA solves for.
-    ///
-    /// C builds the solver ahead of `initializeModel` so that the initial
-    /// `updateDiscreteSystem` is already `ida_event_update` (`solver_main.c` says so).
-    /// The solver here exists only once the parameters are final, so that pass is
-    /// made good afterwards, snapshots included.
-    fn prime(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> Result<()> {
+    /// C's `ida_event_update` as the initial `updateDiscreteSystem` calls it: the IDA
+    /// block on first use, then the ordinary restart. Interleaving it with the event
+    /// iteration is what makes it work — a pass that flips a relation is what hands
+    /// the next `IDACalcIC` a system to solve.
+    fn dae_event_update(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
         if !self.dae {
             return Ok(());
         }
-        self.read_states(e)?;
-        let mut ctx = self.res_ctx(e, layout);
-        let ctx_ptr = &mut ctx as *mut ResCtx;
-        RES_CTX.store(ctx_ptr, Ordering::Relaxed);
-        let _guard = ResCtxGuard;
-        let (t, sim_data) = (self.t, self.sim_data);
         #[cfg(sundials)]
-        if let Solver::Ida(state) = &mut self.solver {
-            let e = unsafe { &mut *ctx.engine };
-            state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx_ptr)?;
-        }
-        for _ in 0..max_event_iter() {
-            let before = discrete_snapshot(e, sim_data, layout)?;
-            self.dae_consistent(e, ctx_ptr)?;
-            update_discrete_system(e, sim_data, layout)?;
-            if discrete_snapshot(e, sim_data, layout)? == before {
-                break;
+        {
+            let (t, sim_data) = (self.t, self.sim_data);
+            self.read_states(e)?;
+            if let Solver::Ida(state) = &mut self.solver {
+                state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx)?;
             }
         }
-        update_relations_pre(e, sim_data, layout)?;
-        if layout.n_zc > 0 {
-            save_zc_pre(e, sim_data, layout)?;
-            e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
-        }
-        if let Some(err) = ctx.err.take() {
-            return Err(err);
+        self.dae_restart(e, ctx)
+    }
+
+    /// C's `updateSolverNominals`, for the DAE-mode core built before
+    /// `initializeModel`: the nominals it took its tolerances from are only final now.
+    fn refresh_nominals(&mut self, e: &dyn SimEngine, layout: &SimLayout) -> Result<()> {
+        self.nominals = read_state_nominals(e, self.sim_data, layout)?;
+        self.maxs = read_state_maxs(e, self.sim_data, layout)?;
+        let (_, atol) = dassl_tolerances(self.tol, &self.nominals);
+        #[cfg(sundials)]
+        {
+            let t = self.t;
+            if let Solver::Ida(s) = &mut self.solver {
+                if let Some(ida) = s.ida.as_mut()
+                    && !ida.set_tolerances(t, s.rtol, &atol)
+                {
+                    return Err("CodegenWasmJit: IDA tolerances failed");
+                }
+                s.atol = atol;
+            }
         }
         Ok(())
     }
@@ -8360,26 +8378,56 @@ impl EventsDriver {
         model: &SimModel,
         sim_data: u32,
         method: &str,
-        gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
+        mut gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(1); // see `DasslDriver::new`
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.
         crate::sync::clear_fire_flags(e, sim_data, layout)?;
-        let sync = run_initialization_with_clocks(e, sim_data, model)?;
+        // C's `setupDataStruc`, before `initializeSolverData`: the DAE core below
+        // reads nominals and maxes, not slots nothing has written yet.
+        e.call1_if_present("functionAttrDefaults", sim_data)?;
+        let start = model.start_time;
+        // C's `solver_main` builds the solver before `initializeModel` in DAE mode,
+        // "since the solver is used to obtain consistent values also via
+        // updateDiscreteSystem". Only DAE mode needs it, and only there is the
+        // `refresh_nominals` that repairs the not-yet-final nominals wanted.
+        let mut early = match layout.dae_mode() {
+            false => None,
+            true => Some(SolverCore::new(&*e, model, sim_data, start, method, gbode.take())?),
+        };
+        let sync = match early.as_mut() {
+            None => run_initialization_with_clocks(e, sim_data, model, None)?,
+            Some(core) => {
+                let mut ctx = core.res_ctx(e, layout);
+                let ctx_ptr = &mut ctx as *mut ResCtx;
+                RES_CTX.store(ctx_ptr, Ordering::Relaxed);
+                let _guard = ResCtxGuard;
+                let mut dae = |e: &mut dyn SimEngine| core.dae_event_update(e, ctx_ptr);
+                let sync = run_initialization_with_clocks(e, sim_data, model, Some(&mut dae))?;
+                if let Some(err) = ctx.err.take() {
+                    return Err(err);
+                }
+                sync
+            }
+        };
+        let mut core = match early {
+            Some(mut core) => {
+                core.refresh_nominals(&*e, layout)?;
+                core
+            }
+            None => SolverCore::new(&*e, model, sim_data, start, method, gbode)?,
+        };
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
-        let start = model.start_time;
 
         let samp = Samples::load(e, sim_data, layout, start)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
-        core.prime(e, layout)?;
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
         let dss = StateSelection::initial(e, sim_data, model)?;
