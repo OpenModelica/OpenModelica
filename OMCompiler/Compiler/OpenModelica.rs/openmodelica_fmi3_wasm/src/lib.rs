@@ -27,46 +27,100 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 
 use openmodelica_sim_meta::driver::{
-    self, event_update, run_initialization, set_param_overrides, set_zc_tolerance, Samples,
-    SimEngine,
+    self, dae_solve_explicit, eval_stage, event_update, run_initialization, set_param_overrides,
+    set_zc_tolerance, Samples, SimEngine,
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{decode, omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
 // library's exports, and the model's `rt_*` + memory against this adapter's.
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
-    fn functionParameters(sim_data: u32);
-    fn functionInitStartValues(sim_data: u32);
-    fn functionInitialEquations(sim_data: u32);
-    fn functionInitialEquations_lambda0(sim_data: u32);
-    fn functionODE(sim_data: u32);
-    fn functionAlgebraics(sim_data: u32);
-    fn functionOutputs(sim_data: u32);
-    fn functionStateSetJacobians(sim_data: u32);
+    // The two-argument entry points, not yet guarded: a failed `assert()` in one of
+    // these still traps.
     fn functionZeroCrossings(sim_data: u32, gout: u32);
-    fn functionZeroCrossingsEquations(sim_data: u32);
-    fn functionUpdateRelations(sim_data: u32);
-    fn functionCheckAsserts(sim_data: u32);
-    fn functionStoreDelayed(sim_data: u32);
-    fn functionInitDelay(sim_data: u32);
-    fn functionStoreSpatialDistribution(sim_data: u32);
-    fn functionInitSpatialDistribution(sim_data: u32);
-    fn functionUpdateBoundParameters(sim_data: u32);
-    fn functionUpdateBoundVariableAttributes(sim_data: u32);
-    fn functionRemovedInitialEquations(sim_data: u32);
-    fn functionJacA_constantEqns(sim_data: u32);
-    fn functionJacA_column(sim_data: u32);
-    fn initSample(sim_data: u32);
-    fn functionInitSynchronous(sim_data: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
     fn functionEquationsSynchronous(sim_data: u32, idx: u32);
-    fn callExternalObjectDestructors(sim_data: u32);
+    // `--daeMode`'s residual, exported (empty) by every model so this resolves.
+    fn evaluateDAEResiduals(sim_data: u32, eval_stage: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
+}
+
+// The rest of the driver's entry points, imported only by the me_cs build, which
+// also carries the model's own simulation runtime (`om:sim/simulation`). The
+// emitter exports all of them from every model, so the link resolves regardless.
+#[cfg(all(feature = "me", feature = "cs"))]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
+    #[link_name = "linearJacA$guard"]
+    fn linearJacA_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacB$guard"]
+    fn linearJacB_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacC$guard"]
+    fn linearJacC_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacD$guard"]
+    fn linearJacD_guard(sim_data: u32) -> u32;
+}
+
+// Each entry point again, wrapped by the emitter in a `try_table` for the model-error
+// tag: 1 means a failed `assert()` unwound out of it.
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    #[link_name = "functionParameters$guard"]
+    fn functionParameters_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitStartValues$guard"]
+    fn functionInitStartValues_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitialEquations$guard"]
+    fn functionInitialEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitialEquations_lambda0$guard"]
+    fn functionInitialEquations_lambda0_guard(sim_data: u32) -> u32;
+    #[link_name = "functionODE$guard"]
+    fn functionODE_guard(sim_data: u32) -> u32;
+    #[link_name = "functionAlgebraics$guard"]
+    fn functionAlgebraics_guard(sim_data: u32) -> u32;
+    #[link_name = "functionOutputs$guard"]
+    fn functionOutputs_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStateSetJacobians$guard"]
+    fn functionStateSetJacobians_guard(sim_data: u32) -> u32;
+    #[link_name = "functionZeroCrossingsEquations$guard"]
+    fn functionZeroCrossingsEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateRelations$guard"]
+    fn functionUpdateRelations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionCheckAsserts$guard"]
+    fn functionCheckAsserts_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStoreDelayed$guard"]
+    fn functionStoreDelayed_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitDelay$guard"]
+    fn functionInitDelay_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStoreSpatialDistribution$guard"]
+    fn functionStoreSpatialDistribution_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitSpatialDistribution$guard"]
+    fn functionInitSpatialDistribution_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateBoundParameters$guard"]
+    fn functionUpdateBoundParameters_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateBoundVariableAttributes$guard"]
+    fn functionUpdateBoundVariableAttributes_guard(sim_data: u32) -> u32;
+    #[link_name = "functionRemovedInitialEquations$guard"]
+    fn functionRemovedInitialEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionJacA_constantEqns$guard"]
+    fn functionJacA_constantEqns_guard(sim_data: u32) -> u32;
+    #[link_name = "functionJacA_column$guard"]
+    fn functionJacA_column_guard(sim_data: u32) -> u32;
+    #[link_name = "initSample$guard"]
+    fn initSample_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitSynchronous$guard"]
+    fn functionInitSynchronous_guard(sim_data: u32) -> u32;
+    #[link_name = "callExternalObjectDestructors$guard"]
+    fn callExternalObjectDestructors_guard(sim_data: u32) -> u32;
+    #[link_name = "symbolicInlineSystem$guard"]
+    fn symbolicInlineSystem_guard(sim_data: u32) -> u32;
+    #[link_name = "functionDAE$guard"]
+    fn functionDAE_guard(sim_data: u32) -> u32;
 }
 
 // ── Messages ─────────────────────────────────────────────────────────────────
@@ -151,9 +205,22 @@ fn logger() -> &'static mut Logger {
     unsafe { &mut *core::ptr::addr_of_mut!(LOGGER) }
 }
 
+#[cfg(not(feature = "capi"))]
 fn log_raw(status: Status, cat: u32, msg: &str) {
     let l = logger();
     fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+}
+
+/// Linked as a core module there is no importer to call back into, so what the
+/// component sends through `fmi3LogMessage` goes where its `-lv` streams already
+/// go: the FMU's stdout, which the host captures.
+#[cfg(feature = "capi")]
+fn log_raw(status: Status, cat: u32, msg: &str) {
+    let _ = status;
+    let l = logger();
+    stdio::print(
+        alloc::format!("{}: {}: {}\n", l.name, CATEGORIES[cat as usize], msg.trim_end_matches('\n')).as_bytes(),
+    );
 }
 
 /// [`Engine::call1`] was asked for a model function this adapter does not import.
@@ -188,7 +255,14 @@ fn init_logging(name: String, logging_on: bool) {
     l.name = name;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
+    driver::set_terminate_reporter(terminate_fmi);
     omclog::set_mask(omclog::FMU_STREAMS);
+}
+
+/// C's `omc_terminate_fmi`, which `fmi2Instantiate` installs: stderr, not the
+/// driver's `LOG_STDOUT` notice. The importer reports the terminate itself.
+fn terminate_fmi(pos: &str, msg: &str) {
+    stdio::stderr(alloc::format!("{pos}Modelica Terminate: {msg}!\n").as_bytes());
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
@@ -213,23 +287,40 @@ fn assert_message(msg: i32, file: i32, sline: i32) -> String {
     alloc::format!("{file}:{sline}: {msg}")
 }
 
-/// The runtime leaves `rt_assert` to the host on this target. C's FMU logs and then
-/// throws; the throw is a trap here, aborting the FMI call, which the master
-/// surfaces as a fatal status.
+/// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
+/// `fmi3Error` with the instance usable — so answer that the code must unwind.
+/// `cond` picks which C implementation is mirrored: `fmi2Instantiate` swaps in
+/// `omc_assert_fmi` only for the `FUNCTION_CONTEXT` pointer, while an equation
+/// `assert()` stays on `omc_assert_simulation_withEquationIndexes`'s `LOG_ASSERT`.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
     msg: i32,
     file: i32,
     sline: i32,
-    _scol: i32,
-    _eline: i32,
-    _ecol: i32,
-    _read_only: i32,
-    _cond: i32,
-    _initial: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
 ) -> i32 {
+    if cond != 0 {
+        let info = driver::AssertInfo {
+            msg: rt_string(msg),
+            file: rt_string(file),
+            read_only: read_only != 0,
+            line_start: sline,
+            col_start: scol,
+            line_end: eline,
+            col_end: ecol,
+        };
+        let time = driver::read_f64(&Engine, sim_data as u32 + TIME_OFF).unwrap_or(0.0);
+        driver::log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        return 1;
+    }
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
-    core::arch::wasm32::unreachable()
+    1
 }
 
 /// Warning-level assertion: non-fatal, so continue (C's `omc_assert_fmi_warning`).
@@ -283,46 +374,65 @@ impl SimEngine for Engine {
         dst.copy_from_slice(buf);
         Ok(())
     }
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> driver::Result<()> {
+        openmodelica_codegen_wasm_jit_runtime::set_string_slot(addr, bytes);
+        Ok(())
+    }
     fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        unsafe {
+        let threw = unsafe {
             match name {
-                "functionParameters" => functionParameters(arg),
-                "functionInitStartValues" => functionInitStartValues(arg),
-                "functionInitialEquations" => functionInitialEquations(arg),
-                "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
-                "functionODE" => functionODE(arg),
-                "functionAlgebraics" => functionAlgebraics(arg),
-                "functionOutputs" => functionOutputs(arg),
-                "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
-                "functionUpdateRelations" => functionUpdateRelations(arg),
-                "functionCheckAsserts" => functionCheckAsserts(arg),
-                "functionStoreDelayed" => functionStoreDelayed(arg),
-                "functionInitDelay" => functionInitDelay(arg),
-                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution(arg),
-                "functionInitSpatialDistribution" => functionInitSpatialDistribution(arg),
-                "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
-                "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
-                "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
-                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
-                "functionJacA_column" => functionJacA_column(arg),
-                "initSample" => initSample(arg),
-                "functionInitSynchronous" => functionInitSynchronous(arg),
-                "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
+                "functionParameters" => functionParameters_guard(arg),
+                "functionInitStartValues" => functionInitStartValues_guard(arg),
+                "functionInitialEquations" => functionInitialEquations_guard(arg),
+                "functionInitialEquations_lambda0" => functionInitialEquations_lambda0_guard(arg),
+                "functionODE" => functionODE_guard(arg),
+                "functionAlgebraics" => functionAlgebraics_guard(arg),
+                "functionOutputs" => functionOutputs_guard(arg),
+                "functionStateSetJacobians" => functionStateSetJacobians_guard(arg),
+                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations_guard(arg),
+                "functionUpdateRelations" => functionUpdateRelations_guard(arg),
+                "functionCheckAsserts" => functionCheckAsserts_guard(arg),
+                "functionStoreDelayed" => functionStoreDelayed_guard(arg),
+                "functionInitDelay" => functionInitDelay_guard(arg),
+                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution_guard(arg),
+                "functionInitSpatialDistribution" => functionInitSpatialDistribution_guard(arg),
+                "functionUpdateBoundParameters" => functionUpdateBoundParameters_guard(arg),
+                "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes_guard(arg),
+                "functionRemovedInitialEquations" => functionRemovedInitialEquations_guard(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns_guard(arg),
+                "functionJacA_column" => functionJacA_column_guard(arg),
+                "initSample" => initSample_guard(arg),
+                "functionInitSynchronous" => functionInitSynchronous_guard(arg),
+                "callExternalObjectDestructors" => callExternalObjectDestructors_guard(arg),
+                "symbolicInlineSystem" => symbolicInlineSystem_guard(arg),
+                "functionDAE" => functionDAE_guard(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacA" => linearJacA_guard(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacB" => linearJacB_guard(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacC" => linearJacC_guard(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacD" => linearJacD_guard(arg),
                 _ => return Err(UNKNOWN_MODEL_FN),
             }
+        };
+        // The assertion was logged where it fired; the caller turns this into the
+        // status the FMI call answers with, leaving the instance usable.
+        if threw != 0 {
+            return Err(driver::ASSERT_ERR);
         }
         Ok(())
     }
+
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
                 driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
                 driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
-                // Importing `evaluateDAEResiduals` would leave every non-DAE model
-                // with an unresolved `model.*` import.
-                _ => return Err("fmi3-me: --daeMode models cannot be exported as an FMU"),
+                driver::MODEL_FN_DAE => evaluateDAEResiduals(a, b),
+                _ => return Err(UNKNOWN_MODEL_FN),
             }
         }
         Ok(())
@@ -334,6 +444,13 @@ impl SimEngine for Engine {
             r => r,
         }
     }
+    #[cfg(all(feature = "me", feature = "cs"))]
+    fn call_simulate(&mut self, s: u32, a: f64, b: f64, n: u32) -> driver::Result<u32> {
+        Ok(unsafe { simulate(s, a, b, n) })
+    }
+    /// The FMI interfaces step the model themselves; only the simulation runtime
+    /// the me_cs build carries takes the emitted `simulate` loop.
+    #[cfg(not(all(feature = "me", feature = "cs")))]
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
@@ -345,6 +462,20 @@ impl SimEngine for Engine {
     }
     fn clean_nls_history(&mut self, time: f64) {
         openmodelica_codegen_wasm_jit_runtime::rt_nls_clean_history(time);
+    }
+    // `+profiling`'s clocks: the artifact links the model and the runtime into one
+    // module, so they are this module's own.
+    fn prof_row(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_row()
+    }
+    fn prof_dump(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_dump()
+    }
+    fn prof_clear(&mut self) {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_clear(0);
+    }
+    fn prof_init(&mut self, n: u32) {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_init(n);
     }
 }
 
@@ -398,6 +529,12 @@ struct MeState {
     defer: openmodelica_sim_meta::driver::CsDefer,
     vrs: Vrs,
     mode: Mode,
+    /// fmi-ls-dae: the `EnableDAE` structural parameter's value reference (0 when
+    /// the model has no DAE formulation), whether it is set, and whether the
+    /// importer is in Configuration Mode, the only place it may be set.
+    dae_enable_vr: u32,
+    dae_mode: bool,
+    configuring: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
     /// Every set made before Initialization Mode is left, applied by
@@ -414,6 +551,8 @@ struct MeState {
     /// the point it was assembled at.
     jacobian_cache: Vec<f64>,
     jacobian_valid: bool,
+    /// C's `stateSetData`, seeded by the initial solve.
+    dss: driver::StateSelection,
     /// Sample schedule, loaded once the model's `initSample` has run.
     samples: Option<Samples>,
     /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
@@ -461,10 +600,34 @@ impl MeState {
     }
 
     /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
-    fn eval(&self) {
+    ///
+    /// A `--daeMode` model has neither: its continuous equations are the residual
+    /// `F(t, x, x', z) = 0`. In DAE mode the importer has set `x'` and `z` and reads
+    /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
+    fn eval(&self) -> driver::Result<()> {
         let mut e = Engine;
-        let _ = e.call1("functionODE", self.sim_data);
-        let _ = e.call1("functionOutputs", self.sim_data);
+        if self.layout.dae_mode() {
+            if !self.dae_mode {
+                let dae = self.meta.dae.as_ref().ok_or("fmi3: DAE-mode model without DAE metadata")?;
+                dae_solve_explicit(&mut e, self.sim_data, &self.layout, dae)?;
+            }
+            return e.call2(
+                driver::MODEL_FN_DAE,
+                self.sim_data,
+                eval_stage::DYNAMIC | eval_stage::ALGEBRAIC,
+            );
+        }
+        e.call1("functionODE", self.sim_data)?;
+        e.call1("functionOutputs", self.sim_data)
+    }
+
+    /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
+    /// model has no such partial evaluation, so it evaluates whole.
+    fn eval_ode(&mut self) -> driver::Result<()> {
+        if self.layout.dae_mode() {
+            return self.update_if_needed();
+        }
+        Engine.call1("functionODE", self.sim_data)
     }
 
     /// The state a value reference reads, when it is one of the continuous
@@ -517,7 +680,7 @@ impl MeState {
         if self.mode == Mode::Init {
             self.run_init()?;
         } else {
-            self.eval();
+            self.eval()?;
         }
         self.need_update = false;
         Ok(())
@@ -526,11 +689,12 @@ impl MeState {
     /// C's `initialization()`, repeatable: the overrides stay, so the importer can
     /// keep setting and get a fresh solve each time.
     fn run_init(&mut self) -> driver::Result<()> {
-        set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone());
+        set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone(), Vec::new());
         let mut e = Engine;
         let start_time = self.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
         run_initialization(&mut e, self.sim_data, &self.layout, &[], start_time)?;
+        self.dss = driver::StateSelection::initial(&mut e, self.sim_data, &self.meta)?;
         // C's `initializeModel` runs `initSynchronous` too.
         if !self.meta.clocks.is_empty() {
             let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut e, &self.meta, self.sim_data)?;
@@ -576,6 +740,9 @@ wit_bindgen::generate!({
     world: "model-exchange-and-co-simulation-fmu",
     path: "wit",
     std_feature,
+    // The OpenModelica interfaces are ours; the FMI ones come from the world's
+    // own package.
+    with: { "om:sim/simulation@0.1.0": generate, "om:ext/native@0.1.0": generate },
 });
 
 use exports::fmi::fmi3::common::Guest as CommonGuest;
@@ -604,6 +771,42 @@ pub struct Instance {
 
 /// Allocate and zero the model's `SimData` and build the instance state. Shared by
 /// both worlds' instantiate.
+/// The simulation flags the export hard-coded into the metadata. The export linked
+/// exactly the libraries these reach, so a rejection here means the two disagree and
+/// the instance must not come up quietly using another solver.
+fn apply_baked_solver_flags(flags: &str) -> Option<()> {
+    if flags.is_empty() {
+        return Some(());
+    }
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(flags.split_whitespace().map(str::to_string))
+        .collect();
+    // An FMU writes no result file; `-variableFilter` is the importer's.
+    let cap = simflags::Capabilities {
+        variable_filter: true,
+        ..openmodelica_codegen_wasm_jit_runtime::sim_capabilities()
+    };
+    let parsed = simflags::parse(&argv)
+        .and_then(|f| {
+            simflags::check(&f, cap)?;
+            Ok(f)
+        })
+        .map_err(|e| {
+            omclog::error(
+                omclog::ASSERT,
+                false,
+                &alloc::format!("this FMU was exported with `{flags}`: {e}"),
+            )
+        })
+        .ok()?;
+    openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&parsed);
+    simflags::print_notices(&parsed);
+    let streams = parsed.log_mask & !omclog::ALWAYS_ON;
+    simflags::set_flags(parsed);
+    omclog::set_mask(omclog::FMU_STREAMS | streams);
+    Some(())
+}
+
 fn new_state() -> Option<MeState> {
     #[allow(unused_mut)]
     let mut meta = read_meta();
@@ -613,21 +816,28 @@ fn new_state() -> Option<MeState> {
     }
     // From the model's own DefaultExperiment, as in C's FMU.
     openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(meta.step_size());
+    apply_baked_solver_flags(&meta.fmi_solver_flags)?;
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(layout.total);
     // rt_alloc leaves the block uninitialised; zero it so unset slots read 0.
     unsafe {
         core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
     }
+    let dae_enable_vr = meta.fmi_dae_enable_vr;
+    let dss = driver::StateSelection::new(&meta);
     let st = MeState {
         sim_data,
         layout,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
         meta,
+        dss,
         #[cfg(feature = "cs")]
         cs: None,
         #[cfg(feature = "cs")]
         defer: CsDefer::None,
         mode: Mode::Instantiated,
+        dae_enable_vr,
+        dae_mode: false,
+        configuring: false,
         need_update: true,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
@@ -657,19 +867,34 @@ macro_rules! shared_instance_methods {
     () => {
 
     /// C's `omcSetDebugLogging`: every category off, then the named ones follow
-    /// `logging_on`. An unknown name is reported unfiltered, as in C.
+    /// `logging_on`; an unknown name is reported unfiltered, as in C. A category
+    /// named like a runtime stream (`LOG_EVENTS`; the export declares them all)
+    /// switches that stream instead.
     fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
         let mut cats = 0u32;
         let mut unknown: Vec<String> = Vec::new();
+        let mut streams: Vec<String> = Vec::new();
+        let mut fmi_categories = false;
         for c in categories {
             match CATEGORIES.iter().position(|n| *n == c) {
-                Some(i) if logging_on => cats |= 1 << i,
-                Some(_) => {}
+                Some(i) => {
+                    fmi_categories = true;
+                    if logging_on {
+                        cats |= 1 << i;
+                    }
+                }
+                None if omclog::STREAM_NAME.contains(&c.as_str()) => streams.push(c),
                 None => unknown.push(c),
             }
         }
-        // The `FILTERED_LOG` filter only: C leaves the `-lv` streams alone here.
-        logger().cats = cats;
+        if fmi_categories || streams.is_empty() {
+            logger().cats = cats;
+        }
+        if let Ok(m) = omclog::mask_from_streams(&streams) {
+            let m = m & !omclog::ALWAYS_ON;
+            let cur = omclog::mask();
+            omclog::set_mask(if logging_on { cur | m } else { cur & !m });
+        }
         for c in unknown {
             log_raw(
                 Status::Warning,
@@ -774,6 +999,20 @@ macro_rules! shared_instance_methods {
         // later evaluation restores the relations and hides the next crossing.
         st.write_i32(layout.rel_fresh_off, 0);
 
+        // After the discrete update, as `perform_simulation` has it rather than before
+        // it as C's FMU export does: the state-set Jacobian is worth no more than the
+        // point it is evaluated at.
+        let reselected = {
+            let m = &mut *st;
+            match m.dss.reselect(&mut e, sim_data, &m.meta) {
+                Ok(changed) => changed,
+                Err(err) => return Err(err_status(err)),
+            }
+        };
+        if reselected {
+            st.need_update = true;
+        }
+
         // C's `internalEventUpdate`: the timers, then the earliest of the next
         // sample and the next activation.
         let mut next = up.next_event_time;
@@ -795,7 +1034,7 @@ macro_rules! shared_instance_methods {
             new_discrete_states_needed: false,
             terminate_simulation: up.terminate,
             nominals_of_continuous_states_changed: false,
-            values_of_continuous_states_changed: up.states_changed || ticked,
+            values_of_continuous_states_changed: up.states_changed || ticked || reselected,
             next_event_time_defined: next.is_some(),
             next_event_time: next.unwrap_or(0.0),
         })
@@ -817,6 +1056,8 @@ macro_rules! shared_instance_methods {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
         st.mode = Mode::Instantiated;
+        st.dae_mode = false;
+        st.configuring = false;
         st.need_update = true;
         st.init_overrides.clear();
         st.init_start_overrides.clear();
@@ -831,11 +1072,23 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// The one structural parameter is `fixed`: Configuration Mode is open from
+    /// Instantiated only, not the Reconfiguration Mode a `tunable` one would allow.
     fn enter_configuration_mode(&self) -> Status {
-        Status::Error
+        let mut st = self.st.borrow_mut();
+        if st.mode != Mode::Instantiated || st.configuring {
+            return err_status("fmi3EnterConfigurationMode: only allowed in the Instantiated state");
+        }
+        st.configuring = true;
+        Status::Ok
     }
     fn exit_configuration_mode(&self) -> Status {
-        Status::Error
+        let mut st = self.st.borrow_mut();
+        if !st.configuring {
+            return err_status("fmi3ExitConfigurationMode: not in Configuration Mode");
+        }
+        st.configuring = false;
+        Status::Ok
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
@@ -926,6 +1179,10 @@ macro_rules! shared_instance_methods {
         }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
+            if vr == st.dae_enable_vr && vr != 0 {
+                out.push(st.dae_mode);
+                continue;
+            }
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
                     out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
@@ -1058,6 +1315,16 @@ macro_rules! shared_instance_methods {
         }
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
+            if vr == st.dae_enable_vr && vr != 0 {
+                if !st.configuring {
+                    return err_status("fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode");
+                }
+                if v && !st.layout.dae_mode() {
+                    return err_status("fmi-ls-dae: this FMU has no DAE formulation");
+                }
+                st.dae_mode = v;
+                continue;
+            }
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     let iv = if v { 1 } else { 0 };
@@ -1264,12 +1531,14 @@ impl GuestModelExchangeInstance for Instance {
     }
 
     /// C's `internalGetDerivatives`, which leaves `_need_update` set for the next
-    /// getter.
+    /// getter. In DAE mode the derivatives are the importer's own, set as knowns
+    /// of the residuals; in ODE mode a `--daeMode` model solves for them.
     fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
-        let st = self.st.borrow();
-        let mut e = Engine;
-        if st.need_update && e.call1("functionODE", st.sim_data).is_err() {
-            return Err(Status::Error);
+        let mut st = self.st.borrow_mut();
+        if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
+            if let Err(err) = st.eval_ode() {
+                return Err(err_status(err));
+            }
         }
         let n = st.layout.n_states;
         let base = REAL_OFF + n * 8;
@@ -1279,7 +1548,9 @@ impl GuestModelExchangeInstance for Instance {
         let mut st = self.st.borrow_mut();
         let mut e = Engine;
         if st.need_update {
-            let _ = e.call1("functionODE", st.sim_data);
+            if let Err(err) = st.eval_ode() {
+                return Err(err_status(err));
+            }
             st.need_update = false;
         }
         if st.layout.n_zc == 0 {
@@ -1315,10 +1586,15 @@ impl GuestModelExchangeInstance for Instance {
     ) -> Result<CompletedStepResult, Status> {
         let mut st = self.st.borrow_mut();
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
-        st.eval();
+        st.eval().map_err(|_| Status::Error)?;
+        // The only point the importer gives us to record the accepted step.
+        driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(|_| Status::Error)?;
         st.need_update = true;
+        let sim_data = st.sim_data;
+        let m = &mut *st;
+        let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(|_| Status::Error)?;
         Ok(CompletedStepResult {
-            enter_event_mode: false,
+            enter_event_mode: switching,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,
         })
     }
@@ -1391,7 +1667,7 @@ impl GuestCoSimulationInstance for Instance {
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let outcome = driver.step_to(&mut e, &meta, target, defer);
+        let outcome = driver.step_to(&mut e, &meta, target, defer, &mut st.dss);
         let last = driver.time();
         st.cs = Some(driver);
         // C's `fmi2DoStep`: the getters now report the new time's values.
@@ -1430,4 +1706,21 @@ impl CsGuest for Fmu {
     type CoSimulationInstance = Instance;
 }
 
+/// The model's own simulation runtime, exported alongside the FMI interfaces by
+/// the me_cs build (the world that declares `om:sim/simulation`).
+#[cfg(all(feature = "me", feature = "cs"))]
+mod sim_run;
+// The host serves it in the C-API (linked) build, where the WIT import has no
+// canonical-ABI lowering to reach it through.
+#[cfg(all(feature = "me", feature = "cs", not(feature = "capi")))]
+mod native_ext;
+
+/// The same adapter reached as a core module rather than a component, so a host
+/// can compile it once and keep the artifact.
+#[cfg(feature = "capi")]
+mod capi;
+
+// The component's exports, which is what pulls in the resource intrinsics: the
+// C-API build is linked as a core module and needs none of them.
+#[cfg(not(feature = "capi"))]
 export!(Fmu);

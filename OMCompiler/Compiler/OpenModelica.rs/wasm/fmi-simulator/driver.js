@@ -131,12 +131,46 @@ export class Driver {
       this.exports.om_fmi_free(p, path.length);
       if (got) files.set(name, this.binary());
     }
+    this.resources = files;
+    this.info.icon = this.icon();
+    this.info.documentation = this.documentation();
     this.component = await loadComponent(component, { files, onLog: this.onLog });
     // Wire the component up now rather than when Simulate is pressed: wiring
     // the modules is the expensive half, and every later run reuses this
     // instance through `fmi3Reset`.
     await this.warm(this.info.coSimulation ? 'cs' : 'me');
     return this.info;
+  }
+
+  // One file out of the archive, or null. The page never unpacks the FMU itself:
+  // the driver already has it open.
+  file(name) {
+    const path = this.encoder.encode(name);
+    const p = this.pass(path);
+    const got = this.exports.om_fmi_select_file(p, path.length);
+    this.exports.om_fmi_free(p, path.length);
+    return got ? this.binary() : null;
+  }
+
+  // The FMU icon (terminalsAndIcons/icon.svg, else icon.png), or null.
+  icon() {
+    if (!this.exports.om_fmi_icon()) return null;
+    return { name: this.out().name, bytes: this.binary() };
+  }
+
+  // The documentation entry point and the files beside it, or null. Small enough
+  // to hand over whole — it is a page and the images it shows.
+  documentation() {
+    if (!this.exports.om_fmi_documentation()) return null;
+    const { entry, files } = this.out();
+    const map = new Map();
+    // The icons too: the generated page puts the FMU icon in its heading, which
+    // is a relative reference out of documentation/.
+    for (const name of [...files, 'terminalsAndIcons/icon.svg', 'terminalsAndIcons/icon.png']) {
+      const bytes = this.file(name);
+      if (bytes) map.set(name, bytes);
+    }
+    return { entry, files: map };
   }
 
   // Instantiate an interface before it is run, so pressing Simulate does not

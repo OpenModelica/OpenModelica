@@ -1093,7 +1093,7 @@ int QwtPlotCurve::closestPoint( const QPointF& pos, double* dist ) const
 /*!
    Find the curve point with the smallest coordinate larger than a specific value
    The coordinates have to be monotonic in direction of the orientation.
-    
+
    \param orientation Qt::Horizontal corresponds to x, Qt::Vertical to y coordinates
    \param value x or y coordinate, depending on the orientation
 
@@ -1142,7 +1142,7 @@ int QwtPlotCurve::adjacentPoint( Qt::Orientation orientation, qreal value ) cons
 /*!
    Calculate a fictive curve point by interpolating between the adjacent
    points. The curve points have to be monotonic in direction of the orientation.
-    
+
    \param orientation For Qt::Horizontal value is a x coordinate and a y coordinate
                       is returned. For Qt::Vertical value is a x coordinate
    \param value x or y coordinate, depending on the orientation

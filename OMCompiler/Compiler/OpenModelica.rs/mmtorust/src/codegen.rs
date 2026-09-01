@@ -625,6 +625,14 @@ struct GenCtx {
     /// boundaries alongside `variant_shapes`/`match_refbound`. See the `Var` arm
     /// of [`emit_exp`].
     place_mode: HashMap<String, PlaceMode>,
+    /// While set, a read of an owned plain local is emitted as `&*name` rather
+    /// than `name.clone()`. Armed by [`emit_match`] for a `match_deref!` subject.
+    borrow_reads: bool,
+    /// Base names the enclosing assignment writes; a `match` in its RHS must not
+    /// borrow a subject the statement is about to overwrite.
+    assign_lhs_names: HashSet<String>,
+    /// Per-element borrow decision for a tuple subject. Empty = all elements.
+    borrow_mask: Vec<bool>,
     /// Stack of enclosing loop labels (innermost last), one entry per active
     /// `for`/`while` loop. `Some(label)` when the loop was emitted with an
     /// explicit `'__loopN:` label because its body contains a `break`/`continue`
@@ -732,6 +740,9 @@ impl GenCtx {
             pat_bind_rename: HashMap::new(),
             pat_lit_counter: 0,
             place_mode: HashMap::new(),
+            borrow_reads: false,
+            assign_lhs_names: HashSet::new(),
+            borrow_mask: Vec::new(),
             loop_label_stack: Vec::new(),
         }
     }
@@ -871,13 +882,13 @@ impl GenCtx {
         // stay as builtin derives (they need no short-circuit and `Eq` is a
         // marker requiring the `PartialEq` that `MetaCmp` provides).
         if self.types_directly_containing_dyn_fn.contains(qname) {
-            "#[derive(Clone, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, metamodelica::MMCtor, metamodelica::ReferenceEq)]"
         } else if self.types_containing_mutable.contains(qname)
             || self.types_containing_array.contains(qname)
         {
-            "#[derive(Clone, Debug, Eq, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, Debug, Eq, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
         } else {
-            "#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
         }
     }
 
@@ -1233,21 +1244,45 @@ impl GenCtx {
         feature_for_crate(crate_name)
     }
 
+    /// The message a disabled target crate's stub reports. Names the callee:
+    /// which call wanted the target is not visible in the user's sources.
+    fn gate_message(&self, feature: &str, callee: &str) -> String {
+        let callee = callee.split("::").collect::<Vec<_>>().join(".");
+        format!(
+            "{callee} needs the '{feature}' code generation target, which this \
+             OpenModelica build was compiled without"
+        )
+    }
+
+    /// `sourceInfo!` for the .mo this crate was generated from, falling back to
+    /// the Rust call site when none is known (should not happen for generated code).
+    fn source_info(&self) -> String {
+        if self.source_file.is_empty() {
+            "metamodelica::sourceInfo!()".to_owned()
+        } else {
+            format!("metamodelica::sourceInfo!({:?})", self.source_file)
+        }
+    }
+
+    /// Record the reason, then bail. A `return Err(..)` alone is a plain
+    /// `fail()`, which the caller's `try` swallows into an empty `getErrorString`.
+    fn gate_report(&self, what: &str) -> String {
+        format!(
+            "{{ let _ = ::openmodelica_util::Error::addInternalError(\
+               ::arcstr::literal!({what:?}), {}); return Err({what:?}) }}",
+            self.source_info()
+        )
+    }
+
     /// Wrap a value-producing expression that depends on a gated target crate
     /// so that, when the crate's feature is disabled, evaluating it bails (in a
     /// fallible function) or panics (in an infallible one) instead of referring
     /// to the absent crate. The `#[cfg]`-on-block form below is stable on
     /// edition 2024 and yields the surviving branch's value; `#![allow(warnings)]`
     /// at each generated file's head silences the dead-branch lints.
-    fn gate_value(&self, feature: &str, expr: &str) -> String {
-        let what = format!(
-            "this OpenModelica build was compiled without the '{feature}' code generation target"
-        );
-        let off = if self.current_fn_fallible {
-            format!("return Err({what:?})")
-        } else {
-            format!("panic!({what:?})")
-        };
+    fn gate_value(&self, feature: &str, expr: &str, callee: &str) -> String {
+        let what = self.gate_message(feature, callee);
+        let off = if self.current_fn_fallible { self.gate_report(&what) } else { format!("panic!({what:?})") };
         format!(
             "{{ #[cfg(feature = {feature:?})] {{ {expr} }} #[cfg(not(feature = {feature:?}))] {{ {off} }} }}"
         )
@@ -1262,15 +1297,10 @@ impl GenCtx {
     /// construction (a `!`-typed block) would leave the binding's type
     /// unknowable (E0282). The stub closure bails/panics when *called* instead,
     /// which is the same observable behaviour at the point the target would run.
-    fn gate_fn_value(&self, feature: &str, on_expr: &str, input_tys: &[String], out_ty: &str) -> String {
-        let what = format!(
-            "this OpenModelica build was compiled without the '{feature}' code generation target"
-        );
-        let body = if self.current_fn_fallible {
-            format!("return Err({what:?})")
-        } else {
-            format!("panic!({what:?})")
-        };
+    fn gate_fn_value(&self, feature: &str, on_expr: &str, input_tys: &[String], out_ty: &str, callee: &str) -> String {
+        // A closure returning `Result`, so it bails regardless of the enclosing
+        // function's fallibility.
+        let body = self.gate_report(&self.gate_message(feature, callee));
         let params = (0..input_tys.len())
             .map(|i| format!("_a{i}"))
             .collect::<Vec<_>>()
@@ -6034,6 +6064,96 @@ fn clear_last_use(exp: &mut TypedExp) {
     }
 }
 
+/// Base names of every read `mark_last_uses` marked as a move; a borrowed
+/// subject would still be live there.
+fn collect_moved_names(exp: &TypedExp, out: &mut HashSet<String>) {
+    match exp {
+        TypedExp::Var { name, segments, last_use, .. } => {
+            // Only a whole-binding read is moved; `emit_exp`'s `Var` arm clones
+            // out of any other place.
+            if *last_use
+                && segments.len() <= 1
+                && !name.contains('.')
+                && segments.iter().all(|s| s.subscripts.is_empty())
+            {
+                out.insert(var_base_name(name, segments));
+            }
+            for seg in segments { for sub in &seg.subscripts { collect_moved_names(sub, out); } }
+        }
+        TypedExp::Lit(_) | TypedExp::Todo(_) => {}
+        TypedExp::BinOp { lhs, rhs, .. } => { collect_moved_names(lhs, out); collect_moved_names(rhs, out); }
+        TypedExp::UnOp { operand, .. } => collect_moved_names(operand, out),
+        TypedExp::Call { args, named_args, .. }
+        | TypedExp::Constructor { args, named_args, .. }
+        | TypedExp::PartEval { args, named_args, .. } => {
+            for a in args { collect_moved_names(a, out); }
+            for (_, a) in named_args { collect_moved_names(a, out); }
+        }
+        TypedExp::If { cond, then_, elseif, else_, .. } => {
+            collect_moved_names(cond, out); collect_moved_names(then_, out); collect_moved_names(else_, out);
+            for (c, e) in elseif { collect_moved_names(c, out); collect_moved_names(e, out); }
+        }
+        TypedExp::Cons { head, tail, .. } => { collect_moved_names(head, out); collect_moved_names(tail, out); }
+        TypedExp::Tuple(elems) | TypedExp::Array { elems, .. } => {
+            for e in elems { collect_moved_names(e, out); }
+        }
+        TypedExp::Range { start, step, stop, .. } => {
+            collect_moved_names(start, out); collect_moved_names(stop, out);
+            if let Some(s) = step { collect_moved_names(s, out); }
+        }
+        TypedExp::Reduction { body, iterators, .. } => {
+            collect_moved_names(body, out);
+            for it in iterators {
+                collect_moved_names(&it.range, out);
+                if let Some(g) = &it.guard { collect_moved_names(g, out); }
+            }
+        }
+        TypedExp::Match { input, cases, .. } => {
+            collect_moved_names(input, out);
+            for case in cases {
+                if let Some(g) = &case.guard { collect_moved_names(g, out); }
+                for (_, _, d, _) in &case.locals {
+                    if let Some(d) = d { collect_moved_names(d, out); }
+                }
+                for st in &case.stmts { collect_moved_names_stmt(st, out); }
+                collect_moved_names(&case.result, out);
+            }
+        }
+    }
+}
+
+fn collect_moved_names_stmt(stmt: &TypedStmt, out: &mut HashSet<String>) {
+    match stmt {
+        TypedStmt::Assign { rhs, .. } => collect_moved_names(rhs, out),
+        TypedStmt::NoRetCall { call } => collect_moved_names(call, out),
+        TypedStmt::If { cond, then_, elseif, else_ } => {
+            collect_moved_names(cond, out);
+            for st in then_ { collect_moved_names_stmt(st, out); }
+            for st in else_ { collect_moved_names_stmt(st, out); }
+            for (c, body) in elseif {
+                collect_moved_names(c, out);
+                for st in body { collect_moved_names_stmt(st, out); }
+            }
+        }
+        TypedStmt::For { range, body, .. } => {
+            collect_moved_names(range, out);
+            for st in body { collect_moved_names_stmt(st, out); }
+        }
+        TypedStmt::While { cond, body } => {
+            collect_moved_names(cond, out);
+            for st in body { collect_moved_names_stmt(st, out); }
+        }
+        TypedStmt::Try { body, else_body } => {
+            for st in body { collect_moved_names_stmt(st, out); }
+            for st in else_body { collect_moved_names_stmt(st, out); }
+        }
+        TypedStmt::Failure { body } => {
+            for st in body { collect_moved_names_stmt(st, out); }
+        }
+        TypedStmt::Return | TypedStmt::Break | TypedStmt::Continue | TypedStmt::Todo(_) => {}
+    }
+}
+
 fn clear_last_use_stmt(stmt: &mut TypedStmt) {
     match stmt {
         TypedStmt::Assign { rhs, .. } => clear_last_use(rhs),
@@ -8324,6 +8444,9 @@ fn unescape_mm_string(s: &str) -> String {
 }
 
 fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> String {
+    // Borrow mode applies to this node only; the tuple arm re-arms it per element.
+    let borrow_here = std::mem::take(&mut ctx.borrow_reads);
+    let borrow_mask = std::mem::take(&mut ctx.borrow_mask);
     match exp {
         TypedExp::Lit(Lit::Int(v))  => v.to_string(),
         // MetaModelica `Real` literal — wrap in `metamodelica::Real` (alias for
@@ -8586,8 +8709,10 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // to their qualified runtime path before fnptr! wrapping.
             let var_str = remap_shadowed_builtin_path(&var_str, resolved_fn_qname.as_deref());
             // Captured before the `match` below consumes `var_str`: the feature
-            // gating a reference to a gated target crate's function used as a value.
+            // gating a reference to a gated target crate's function used as a
+            // value, plus the path the stub names in its diagnostic.
             let gated_value_feat = ctx.gated_feature_for_path(&var_str);
+            let gated_value_path = if gated_value_feat.is_some() { var_str.clone() } else { String::new() };
             // Clone-elision inputs (see the `copy`/`node_last_use` arms below).
             // `base` is the enclosing binding this reference reads.
             let base = var_base_name(name, segments);
@@ -8925,6 +9050,12 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 // refcount bump anyway.
                 _ if node_last_use && is_plain_local && owned
                     && !matches!(effective_ty, Ty::Array(_)) => var_str,
+                // Borrow-only read (a `match_deref!` subject). Restricted to the
+                // types the arm patterns already deref through, so `&&T` reaches
+                // the same `&T` as `&Arc<T>` did.
+                _ if borrow_here && is_plain_local && owned
+                    && (is_arc_wrapped(effective_ty, ctx) || matches!(effective_ty, Ty::List(_))) =>
+                    format!("&*{var_str}"),
                 _ => format!("{var_str}.clone()"),
             };
             // `emit_var` reported an inline `RefCell::borrow()` guard (an
@@ -8960,9 +9091,9 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         }
                         // Non-function value of a gated crate (none exist today):
                         // fall back to the diverging form rather than guess a type.
-                        _ => return ctx.gate_value(feat, &emitted),
+                        _ => return ctx.gate_value(feat, &emitted, &gated_value_path),
                     };
-                    ctx.gate_fn_value(feat, &emitted, &input_tys, &out_ty)
+                    ctx.gate_fn_value(feat, &emitted, &input_tys, &out_ty, &gated_value_path)
                 }
                 _ => emitted,
             }
@@ -9601,7 +9732,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // callee path; its head is the target package. Const calls never
             // reference a target crate, so they pass through unwrapped.
             match ctx.gated_feature_for_path(&func_str) {
-                Some(feat) if !is_const => ctx.gate_value(feat, &result),
+                Some(feat) if !is_const => ctx.gate_value(feat, &result, &func_str),
                 _ => result,
             }
         }
@@ -9665,7 +9796,11 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
         }
 
         TypedExp::Tuple(elems) => {
-            let parts: Vec<String> = elems.iter().map(|e| emit_exp(e, is_const, ctx, top_level)).collect();
+            let parts: Vec<String> = elems.iter().enumerate().map(|(i, e)| {
+                ctx.borrow_reads = borrow_here && borrow_mask.get(i).copied().unwrap_or(true);
+                emit_exp(e, is_const, ctx, top_level)
+            }).collect();
+            ctx.borrow_reads = false;
             format!("({})", parts.join(", "))
         }
 
@@ -10251,7 +10386,7 @@ fn emit_parteval<'a>(
     // same-typed stub-closure form (see [`GenCtx::gate_fn_value`]); a diverging
     // block would make the capture's type unknowable (E0282).
     match ctx.gated_feature_for_path(&func_str) {
-        Some(feat) => ctx.gate_fn_value(feat, &cast, &param_ty_strs, &out_ty_str),
+        Some(feat) => ctx.gate_fn_value(feat, &cast, &param_ty_strs, &out_ty_str, &func_str),
         None => cast,
     }
 }
@@ -11132,13 +11267,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // (Error.addInternalError zeroes the position, keeping the file).
             // TODO: carry Absyn.ALGORITHMITEM info through typedexp so the real
             // .mo line can be emitted here.
-            if ctx.source_file.is_empty() {
-                // No source file known (shouldn't happen for generated code);
-                // fall back to the Rust call-site.
-                Ok("metamodelica::sourceInfo!()".to_owned())
-            } else {
-                Ok(format!("metamodelica::sourceInfo!({:?})", ctx.source_file))
-            }
+            Ok(ctx.source_info())
         }
         "list" => {
             if args.is_empty() {
@@ -12215,7 +12344,9 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // lives in openmodelica_simcode_types, but the root accessor stays in
         // openmodelica_backend (which depends on simcode_types): the types crate
         // is datatype-only and must not own mutable global state.
-        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" => {
+        // fmi3VariableAliasCache holds SimCodeVar.SimVar lists; same reasoning as
+        // optionSimCode — the types crate must not own mutable global state.
+        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" | "fmi3VariableAliasCache" => {
             Some("openmodelica_backend")
         }
         // openmodelica_backend_main — the interactive cache holds a tuple
@@ -12224,7 +12355,9 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // root cannot be declared in openmodelica_backend (which does not, and
         // must not, depend on backend_main); its only accessor is also in
         // backend_main, so place the thread_local there.
-        "interactiveCache" => Some("openmodelica_backend_main"),
+        // fmuTranslation holds a SimCodeMain.FmuTranslation, a uniontype defined
+        // in SimCode/SimCodeMain.mo, which is in this crate.
+        "interactiveCache" | "fmuTranslation" => Some("openmodelica_backend_main"),
         _ => None,
     };
     let pkg_top = grc.pkg.split('.').next().unwrap_or(&grc.pkg);
@@ -14260,7 +14393,6 @@ fn emit_range<'a>(start: &TypedExp, step: Option<&TypedExp>, stop: &TypedExp, is
 }
 
 fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_binding: Option<&str>, is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> String {
-    let raw_input_str = emit_exp(input, is_const, ctx, top_level);
     let mut input_ty = input.ty();
     // MetaModelica scalar-context rule: a multi-output (tuple-typed) call whose
     // result is matched against patterns that *structurally require a non-tuple
@@ -14288,6 +14420,56 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     let first_elem_ty = if let Ty::Tuple(elems) = &input_ty { elems.first().cloned() } else { None };
     let take_first = first_elem_ty.is_some()
         && cases.iter().any(|c| pat_requires_non_tuple(&c.pattern));
+    // Emit the subject in borrow mode when `match_deref!` takes it by `&`, on the
+    // same type `use_match_deref` uses below.
+    let deref_ty = if take_first { first_elem_ty.clone().unwrap() } else { input_ty.clone() };
+    // Anything that can write the subject while the borrow is held rules it out:
+    // an arm that reassigns or moves it (the `rest = match rest …` list walk), the
+    // enclosing assignment's target, an `as`-binding, the tail-call lowering.
+    let mut subject_names = HashSet::new();
+    collect_exp_names(input, &mut subject_names);
+    let mut written = HashSet::new();
+    for case in cases {
+        stmts_assigned_var_names(&case.stmts, &mut written);
+        exp_assigned_var_names(&case.result, &mut written);
+        if let Some(g) = &case.guard { collect_moved_names(g, &mut written); }
+        for st in &case.stmts { collect_moved_names_stmt(st, &mut written); }
+        collect_moved_names(&case.result, &mut written);
+    }
+    // A pattern binding a whole subject would see `&&T` where it used to get
+    // `&Arc<T>`, changing what `.clone()` yields; keep those owned.
+    fn pat_binds_whole(p: &TypedPat) -> bool {
+        matches!(p, TypedPat::Var(_) | TypedPat::As { .. } | TypedPat::Index { .. }
+                    | TypedPat::FieldAccess { .. } | TypedPat::Todo(_))
+    }
+    let (borrowable, borrow_mask) = if let TypedExp::Tuple(elems) = input {
+        let mut mask = vec![true; elems.len()];
+        let mut ok = true;
+        for case in cases {
+            match &case.pattern {
+                TypedPat::Tuple(ps) if ps.len() == elems.len() => {
+                    for (i, p) in ps.iter().enumerate() {
+                        if pat_binds_whole(p) { mask[i] = false; }
+                    }
+                }
+                TypedPat::Wildcard => {}
+                _ => ok = false,
+            }
+        }
+        (ok && mask.iter().any(|b| *b), mask)
+    } else {
+        (!cases.iter().any(|c| pat_binds_whole(&c.pattern)), Vec::new())
+    };
+    let borrow_scrutinee = borrowable
+        && matches!(kind, MatchKind::Match)
+        && as_binding.is_none()
+        && ctx.tail_lowering.is_none()
+        && !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n))
+        && match_uses_match_deref(&deref_ty, cases, ctx, top_level);
+    ctx.borrow_reads = borrow_scrutinee;
+    ctx.borrow_mask = if borrow_scrutinee { borrow_mask } else { Vec::new() };
+    let raw_input_str = emit_exp(input, is_const, ctx, top_level);
+    ctx.borrow_reads = false;
     let raw_input_str = if take_first {
         input_ty = first_elem_ty.unwrap();
         format!("({raw_input_str}).0")
@@ -15036,8 +15218,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // diverges (`continue`/`return`), so the fallback must diverge
                 // too: a value-typed `Err(…)` would not unify with the
                 // `!`-typed arms (and the `loop` body must stay `()`/`!`).
-                if active_tail.is_some() && ctx.current_fn_fallible {
-                    ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
+                if matches!(ctx.qmode, QMode::TryBlock(_)) || (active_tail.is_some() && ctx.current_fn_fallible) {
+                    format!(",\n        _ => {}", emit_diverging_fail("match: no arm matched", false, ctx))
                 } else {
                     ",\n        _ => unreachable!(\"tail-call lowered match: no arm matched\")".to_owned()
                 }
@@ -15047,8 +15229,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // unifies with any T) and avoids `bail!`-style return-out
                 // semantics that wouldn't typecheck in every callsite.
                 ",\n        _ => unreachable!(\"match_deref! exhaustiveness placeholder\")".to_owned()
-            } else if ctx.current_fn_fallible {
-                ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
+            } else if matches!(ctx.qmode, QMode::TryBlock(_)) || ctx.current_fn_fallible {
+                format!(",\n        _ => {}", emit_diverging_fail("match: no arm matched", false, ctx))
             } else {
                 // A non-fallible function can't `bail!`; a runtime miss of a
                 // non-exhaustive match panics instead (the typical source is an
@@ -19808,22 +19990,26 @@ impl<'a> UseBeforeDef<'a> {
             }
             E::Cons { head, tail, .. } => { self.walk_exp(head, assigned); self.walk_exp(tail, assigned); }
             E::Tuple(v) | E::Array { elems: v, .. } => for x in v { self.walk_exp(x, assigned); },
-            E::Match { input, cases, .. } => {
+            E::Match { kind, input, cases, .. } => {
                 self.walk_exp(input, assigned);
                 for c in cases {
                     if let Some(g) = &c.guard { self.walk_exp(g, assigned); }
                     for (_, _, def, _) in &c.locals {
                         if let Some(d) = def { self.walk_exp(d, assigned); }
                     }
-                    // A tracked variable assigned inside an arm is threaded out
-                    // of the arm's closure (see "matchcontinue output writeback"
-                    // / "match binds outer local writeback"): the closure
-                    // prologue seeds `let mut v = v.clone();` from the *outer*
-                    // value, an implicit read of `v` before the arm runs. So any
-                    // outer var the arm writes must already be initialised.
-                    let mut arm_writes = HashSet::new();
-                    stmts_assigned_var_names(&c.stmts, &mut arm_writes);
-                    for v in &arm_writes { self.read(v, assigned); }
+                    // A matchcontinue arm is an IIFE, and a tracked variable it
+                    // assigns is threaded out of that closure: the prologue seeds
+                    // `let mut v = v.clone();` from the *outer* value (see
+                    // `init_from_outer`), an implicit read of `v` before the arm
+                    // runs, so `v` must already hold something. A plain `match`
+                    // lowers to a Rust `match` whose arms assign the outer
+                    // binding directly — no seeding read, so an arm write there
+                    // does not force the implicit default.
+                    if matches!(kind, MatchKind::MatchContinue) {
+                        let mut arm_writes = HashSet::new();
+                        stmts_assigned_var_names(&c.stmts, &mut arm_writes);
+                        for v in &arm_writes { self.read(v, assigned); }
+                    }
                     // Arm bodies run conditionally: collect their reads against a
                     // throwaway copy of `assigned` and discard any assignments
                     // they make (they are never definite for the whole match).
@@ -20229,6 +20415,14 @@ fn emit_stmt<'a>(
     }
 
     use typedexp::TypedStmt as S;
+    // Publish this statement's assignment targets for `emit_match`.
+    let saved_assign_lhs = if let S::Assign { lhs, .. } = stmt {
+        let mut names = HashSet::new();
+        pat_assigned_names(lhs, &mut names);
+        Some(std::mem::replace(&mut ctx.assign_lhs_names, names))
+    } else {
+        None
+    };
     match stmt {
         S::Assign { lhs, rhs } => {
             // True when the RHS is an arrayCreateNoInit call.  Slots of the
@@ -20978,6 +21172,9 @@ fn emit_stmt<'a>(
             _ => writeln!(out, "{indent}continue;").unwrap(),
         },
         S::Todo(s)  => writeln!(out, "{indent}/* todo stmt: {} */", s.chars().take(60).collect::<String>()).unwrap(),
+    }
+    if let Some(saved) = saved_assign_lhs {
+        ctx.assign_lhs_names = saved;
     }
 }
 

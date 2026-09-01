@@ -83,7 +83,6 @@ import DAEMode;
 import DAEUtil;
 import DataReconciliation;
 import Debug;
-import DoubleEnded;
 import Differentiate;
 import DumpGraphML;
 import DynamicOptimization;
@@ -611,7 +610,7 @@ protected
 algorithm
   outNumZeroCrossings := ZeroCrossings.length(eventInfo.zeroCrossings);
   outNumTimeEvents := listLength(eventInfo.timeEvents);
-  outNumRelations := DoubleEnded.length(eventInfo.relations);
+  outNumRelations := ZeroCrossings.count(eventInfo.relations);
   outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
@@ -1301,61 +1300,69 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
 
-public function markZeroCrossingEquations "function: markStateEquations
-  This function goes through all equations and marks the ones that
-  calculates a state, or is needed in order to calculate a state,
-  with a non-zero value in the array passed as argument.
-  This is done by traversing the directed graph of nodes where
-  a node is an equation/solved variable and following the edges in the
-  backward direction.
-  inputs: (daeLow: BackendDAE,
-             marks: int array,
-    adjacencyMatrix: AdjacencyMatrix,
-    adjacencyMatrixT: AdjacencyMatrixT,
-    assignments1: int vector,
-    assignments2: int vector)
-  outputs: marks: int array"
+public function zeroCrossingVarIndices
+  "For every equation system, the indices of its variables that occur in a zero
+   crossing relation. All systems are resolved against one combined variable set
+   in a single pass; looking each zero crossing up in every system is quadratic."
+  input BackendDAE.EqSystems systs;
+  input list<BackendDAE.ZeroCrossing> zeroCross;
+  output array<AvlSetInt.Tree> trees;
+protected
+  Integer nsys = listLength(systs), total = 0, gidx = 0, s = 0, n;
+  BackendDAE.Variables allVars;
+  array<Integer> sysOf, locOf "combined index -> system / index within that system";
+  AvlSetInt.Tree tree;
+algorithm
+  trees := arrayCreate(intMax(nsys, 1), AvlSetInt.new());
+  for syst in systs loop
+    total := total + BackendVariable.varsSize(syst.orderedVars);
+  end for;
+  if total == 0 then
+    return;
+  end if;
+
+  allVars := BackendVariable.emptyVarsSized(total);
+  sysOf := arrayCreate(total, 0);
+  locOf := arrayCreate(total, 0);
+  for syst in systs loop
+    s := s + 1;
+    n := BackendVariable.varsSize(syst.orderedVars);
+    for i in 1:n loop
+      allVars := BackendVariable.addNewVar(BackendVariable.getVarAt(syst.orderedVars, i), allVars);
+      gidx := gidx + 1;
+      arrayUpdate(sysOf, gidx, s);
+      arrayUpdate(locOf, gidx, i);
+    end for;
+  end for;
+
+  tree := AvlSetInt.new();
+  for zc in zeroCross loop
+    tree := BackendEquation.expressionVarsIndexes(zc.relation_, tree,
+              function BackendEquation.checkEquationsVarsExpTopDown(vars=allVars));
+  end for;
+
+  for gi in AvlSetInt.listKeys(tree) loop
+    s := arrayGet(sysOf, gi);
+    arrayUpdate(trees, s, AvlSetInt.add(arrayGet(trees, s), arrayGet(locOf, gi)));
+  end for;
+end zeroCrossingVarIndices;
+
+public function markZeroCrossingEquations
+  "Marks the equations needed to evaluate this system's zero crossings by
+  following the adjacency graph backwards from the variables they use."
   input BackendDAE.EqSystem syst;
-  input list<BackendDAE.ZeroCrossing> inZeroCross;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing, see zeroCrossingVarIndices";
   input array<Integer> arr;
   input array<Integer> ass1;
   output array<Integer> outIntegerArray;
 protected
-  list<Integer> varindx_lst,eqns;
+  list<Integer> eqns;
   BackendDAE.AdjacencyMatrix m;
-  BackendDAE.Variables v;
-  AvlSetInt.Tree tree;
-  CheckEquationsVarsExpTopDownFunc func;
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  tree := AvlSetInt.new();
-  func := function BackendEquation.checkEquationsVarsExpTopDown(vars=v);
-  for zc in inZeroCross loop
-    tree := varsCollector(zc.relation_, tree, func);
-  end for;
-  varindx_lst := AvlSetInt.listKeys(tree);
-  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in varindx_lst);
+  BackendDAE.EQSYSTEM(m=SOME(m)) := syst;
+  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in AvlSetInt.listKeys(zcVars));
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
-
-protected function varsCollector
-  input DAE.Exp exp;
-  input output AvlSetInt.Tree tree;
-  input CheckEquationsVarsExpTopDownFunc func;
-
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
-algorithm
-  tree := BackendEquation.expressionVarsIndexes(exp, tree, func);
-end varsCollector;
 
 protected function markStateEquationsWork
   "Helper function to mark_state_equation
@@ -1485,15 +1492,19 @@ protected
   BackendDAE.AdjacencyMatrix adjMatrix, adjMatrixT;
 
   list<BackendDAE.ZeroCrossing> zeroCrossings;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 
   constant Boolean debug = false;
 algorithm
 
   // get zeroCrossings
   zeroCrossings := ZeroCrossings.toList(inBackendDAE.shared.eventInfo.zeroCrossings);
+  zcVars := zeroCrossingVarIndices(inBackendDAE.eqs, zeroCrossings);
 
   // walk once through all comps and get of dependends of dynamic, algebraic, zeroCrossings,
   for eqSystem in inBackendDAE.eqs loop
+    sysIdx := sysIdx + 1;
     if debug then
       BackendDump.printEqSystem(eqSystem);
     end if;
@@ -1521,7 +1532,7 @@ algorithm
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDynamic);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
-      markedEqns := markZeroCrossingEquations(eqSystem, zeroCrossings, markedEqns, assigndVar);
+      markedEqns := markZeroCrossingEquations(eqSystem, arrayGet(zcVars, sysIdx), markedEqns, assigndVar);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageZeroCross);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
@@ -1908,7 +1919,13 @@ algorithm
         newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
         newVar := BackendVariable.copyVarNewName(newCref, v);
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
-        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        /* A discrete output's alias stays discrete; as a continuous variable it
+         * also gets "$PRE.alias = alias", which over-specifies the initial system.
+         */
+        newVar := match v.varKind
+          case BackendDAE.DISCRETE() then newVar;
+          else BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        end match;
         /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15311
          * force StateSelect.never on the alias variable so that state selection never picks the alias
          * instead of original state variable, which would cause wrong code generation and simulation results.
@@ -7874,6 +7891,7 @@ algorithm
     then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
 
     case syst::systs algorithm
+      Error.checkCancel();
       (syst,shared,arg,causalized) := causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
       (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
     then (systs,shared,args,causalized);
@@ -7930,6 +7948,8 @@ algorithm
     then (syst, shared,SOME(arg), true);
 
     case (_, (_,mAmethodstr), (_,str1,_,_)) algorithm
+      // A cancel unwinds through here; do not blame the module for it.
+      Error.checkCancel();
       str := "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
       if not isInitializationDAE(ishared) then
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -7960,7 +7980,9 @@ protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
 algorithm
   outSystem := list(match syst
     case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)) then syst;
-    else sortEqnsDAEWork(syst, inShared);
+    else algorithm
+      Error.checkCancel();
+    then sortEqnsDAEWork(syst, inShared);
   end match for syst in inSystem);
 end mapSortEqnsDAE;
 
@@ -9640,7 +9662,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), ZeroCrossings.new(), ZeroCrossings.new(), 0);
 end emptyEventInfo;
 
 public function getSubClock

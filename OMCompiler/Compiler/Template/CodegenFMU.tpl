@@ -250,21 +250,6 @@ case SIMCODE(__) then
   >>
 end fmuModelDescriptionFile;
 
-template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
-  "Generates <fmiPrefix>_flags.json file for FMUs with custom simulation flags."
- ::=
-  match fmiSimulationFlags
-  case flags as FMI_SIMULATION_FLAGS(__) then
-  let fileContent = (flags.nameValueTuples |> (name, value) =>
-      '"<%name%>" : "<%value%>"'
-      ;separator=",\n")
-    <<
-    {
-      <%fileContent%>
-    }
-    >>
-end fmuSimulationFlagsFile;
-
 template VendorAnnotations(SimCode simCode)
  "Generates code for VendorAnnotations file for FMU target."
 ::=

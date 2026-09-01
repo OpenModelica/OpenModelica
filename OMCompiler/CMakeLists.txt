@@ -32,10 +32,25 @@ if(OM_OMC_ENABLE_OPTIMIZATION AND NOT OM_OMC_ENABLE_FORTRAN AND NOT OM_OMC_ENABL
 endif()
 
 omc_option(OM_OMC_ENABLE_PRIMME "Should we enable sparse singular value support with PRIMME." ON)
+# primme_eigs.h declares its complex entry points with C99 `double complex`, which
+# MSVC has not got, so it does not parse under clang-cl. Only backs -lv=LOG_NLS_SVD.
+if(MSVC AND OM_OMC_ENABLE_PRIMME)
+  message(STATUS "PRIMME does not build with MSVC (C99 complex in its public header); disabling it.")
+  set(OM_OMC_ENABLE_PRIMME OFF)
+endif()
 
 omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
+
+# Its own switch because it is the last thing in the C runtime tree needing Boost
+# and oneTBB, which a cross build has no reason to acquire.
+omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica (--parmodauto) runtime." ON)
+
+# OFF builds only the simulation runtime: what cross-compiling the target side
+# wants, since the compiler runs on -- and is built for -- the build host. Also
+# skips its host-only prerequisites (a JDK and ANTLR for the parser, libintl).
+omc_option(OM_OMC_ENABLE_COMPILER "Build the omc compiler itself, not just the simulation runtime." ON)
 
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
@@ -78,6 +93,12 @@ target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE
 
 
 ## Subdirectories ##########################################################################################
+# We always link a Fortran-ABI BLAS, but SuiteSparse guesses *no* underscore
+# without a Fortran compiler to probe, leaving UMFPACK calling `dgemm` where the
+# BLAS exports `dgemm_`. Pinned, not left to whichever platform configured last:
+# SuiteSparse writes SuiteSparse_config.h into its shared source tree.
+set(SUITESPARSE_C_TO_FORTRAN "(name,NAME) name##_" CACHE STRING "C to Fortran name mangling" FORCE)
+
 # The C/C++ 3rd-party libraries (fmilib, libzmq, lapack, …) are linked only by the
 # native omc artifacts and the simulation runtime. The wasm/web bundle uses none
 # of them (the cdylib is built --no-default-features), so skip them in wasm mode.
@@ -103,14 +124,33 @@ endif()
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(SimulationRuntime)
 endif()
-# The ANTLR Modelica parser (omparse) and the Examples are part of the C omc
-# toolchain only — the Rust omc port has its own parser and links neither. They
-# also pull in the C compiler runtime (omc::compiler::runtime), which the Rust
-# build deliberately does not build. Skip them in Rust mode.
-if(NOT OM_OMC_ENABLE_RUST)
+# The ANTLR Modelica parser (omparse) is part of the C omc toolchain only — the
+# Rust omc port has its own parser and does not link it. It also pulls in the C
+# compiler runtime (omc::compiler::runtime), which the Rust build deliberately
+# does not build. Skip it in Rust mode.
+if(NOT OM_OMC_ENABLE_RUST AND OM_OMC_ENABLE_COMPILER)
   omc_add_subdirectory(Parser)
 endif()
-omc_add_subdirectory(Compiler)
-if(NOT OM_OMC_ENABLE_RUST)
+# Before Compiler: rust_omc.cmake puts these archives in the omc cdylib's cargo
+# environment, and SimulationRuntime/rust in libSimulationRuntimeRust's.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/SimulationRuntime/rust/native_solver_archives.cmake)
+endif()
+if(OM_OMC_ENABLE_COMPILER)
+  omc_add_subdirectory(Compiler)
+else()
+  # The runtime angle-includes omc_config.unix.h, generated under Compiler/.
+  include(${CMAKE_CURRENT_SOURCE_DIR}/Compiler/runtime/omc_config_unix.cmake)
+endif()
+# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
+# libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
+# cargo target directory are set up (rust_omc.cmake) when omc is the Rust port.
+# Skipped where the rest of the simulation runtime is: the wasm bundle does not
+# use it, and the GUI-only stage builds against a prebuilt cdylib.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  omc_add_subdirectory(SimulationRuntime/rust)
+endif()
+# share/doc/omc/testmodels: files only, installed by every native omc.
+if(NOT OM_OMC_WASM)
   omc_add_subdirectory(Examples)
 endif()

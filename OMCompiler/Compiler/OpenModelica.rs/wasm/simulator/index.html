@@ -46,21 +46,9 @@
   .stepper button:last-child { border-radius:0 4px 4px 0; }
   .stepper button:hover { background:#2d2d30; }
 
-  /* Simulation-settings dialog (opened by the cogwheel). */
-  .modal-backdrop { position:fixed; inset:0; z-index:50; display:grid; place-items:center;
-    background:#0008; padding:16px; }
-  .modal-backdrop[hidden] { display:none; }
-  .modal { background:var(--panel); border:1px solid var(--border); border-radius:10px;
-    width:min(460px,100%); box-shadow:0 14px 44px #000a; }
-  .modal-head { display:flex; align-items:center; justify-content:space-between;
-    padding:12px 14px; border-bottom:1px solid var(--border); font-weight:650; color:var(--fg); }
-  .modal-body { padding:14px; display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; }
-  .modal-body > label { color:var(--muted); }
-  .modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
-    border-radius:4px; padding:3px 6px; font:inherit; }
-  .modal-body select:disabled { opacity:.5; }
   /* Settings dialog: label above control, two fields per row, so the solver names
-     and the tolerance stepper each get half the dialog instead of competing for it. */
+     and the tolerance stepper each get half the dialog instead of competing for it.
+     The modal frame itself is shared (theme.css). */
   #settingsBackdrop .modal { width:min(520px,100%); }
   .settings { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; }
   .settings .fld { display:flex; flex-direction:column; gap:5px; min-width:0; }
@@ -68,12 +56,6 @@
   .settings label { color:var(--muted); font-size:13px; }
   .settings label .flag { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11.5px; opacity:.65; white-space:nowrap; }
   .settings select { padding:6px 8px; font-size:15px; }
-  .chk-group { display:flex; flex-direction:column; gap:6px; }
-  .chk { display:flex; align-items:center; gap:7px; color:var(--fg); }
-  .chk input { width:auto; }
-  .modal-foot { display:flex; justify-content:flex-end; gap:8px;
-    padding:12px 14px; border-top:1px solid var(--border); }
-  .modal-hint { grid-column:1 / -1; color:var(--muted); font-size:12px; margin:0; }
 
   #icPanel { max-height:34%; overflow-y:auto; }
   /* Auto-fill into as many columns as fit (PID has many parameters to tune). */
@@ -132,6 +114,7 @@
   </button>
   <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
   <button id="run" disabled>Run</button>
+  <button id="downloadRes" class="ghost icon-only" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
 </header>
 
 <main>
@@ -171,7 +154,7 @@
   <div class="modal" role="dialog" aria-label="Simulation settings" aria-modal="true">
     <div class="modal-head">
       <span>Simulation settings</span>
-      <button class="icon-btn" id="settingsClose" title="Close" aria-label="Close">✕</button>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
     </div>
     <div class="modal-body settings">
       <div class="fld"><label for="stop">Stop time</label>
@@ -205,7 +188,7 @@
   <div class="modal" role="dialog" aria-label="Export FMU" aria-modal="true">
     <div class="modal-head">
       <span>Export FMU</span>
-      <button class="icon-btn" id="exportClose" title="Close" aria-label="Close">✕</button>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
       <label>Interfaces</label>
@@ -217,10 +200,11 @@
       <select id="csSolver"></select>
       <label>Also run natively on</label>
       <div class="chk-group" id="fmuPlatforms"></div>
-      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
+      <p class="modal-hint">FMI 3.0 wasm component, built around the module this model was compiled to — the export links an adapter onto it rather than translating again. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
+      <p class="modal-hint" id="csOnlyHint" hidden>Co-Simulation on its own is translated separately, so that export takes as long as a compile: it needs the output derivatives <code>fmi3GetOutputDerivatives</code> answers from, which only a pure Co-Simulation translation carries.</p>
     </div>
     <div class="modal-foot">
-      <button class="ghost" id="exportCancel">Cancel</button>
+      <button class="ghost" data-close>Cancel</button>
       <button id="exportGo">Export</button>
     </div>
   </div>
@@ -230,6 +214,7 @@
 import { AnimView } from '../anim/anim-view.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
 import { attachFmuAot } from '../fmu-aot.js';
+import { bindModal, downloadBlob } from '../ui.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
 // compile/simulate never freezes the UI. Two are spawned: a plain one that is
 // ready fast, and a second that installs the MSL in the background and takes
@@ -257,7 +242,7 @@ const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty');
 const charts = createCharts(chartsEl);
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 const exSel = el('examples'), docBody = el('docBody');
-const settingsBtn = el('settingsBtn'), settingsBackdrop = el('settingsBackdrop'), settingsClose = el('settingsClose');
+const settingsBtn = el('settingsBtn'), downloadResBtn = el('downloadRes');
 const rightEl = el('right');
 
 // Documentation collapse/expand, driven from inside the widget: a chevron in the
@@ -295,6 +280,17 @@ renderTol();
 
 function setStatus(text, cls='') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
 function num(v, d) { const n = parseFloat(v); return isFinite(n) ? n : d; }
+const dur = (ms) => ms >= 10000 ? (ms / 1000).toFixed(1) + ' s' : Math.round(ms) + ' ms';
+
+// What the page is doing, so `fail` can name it and say how long it took.
+let opStart = null, opLabel = 'Failed';
+function beginOp(label) { opLabel = label; return (opStart = performance.now()); }
+
+function showEmpty(text, isErr = false) {
+  chartsEmpty.textContent = text;
+  chartsEmpty.className = 'charts-empty' + (isErr ? ' err' : '');
+  chartsEmpty.style.display = '';
+}
 
 // --- logging ---------------------------------------------------------------
 const DEBUG = true;
@@ -379,12 +375,24 @@ function promote() {
   log('promoted MSL worker to primary');
   retireW1();
 }
-function retireW1() {
-  if (primaryWorker !== w1 && w1 && jobWorker !== w1) {
-    log('terminating w1');
-    if (builtWorker === w1) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
-    w1.terminate(); w1 = null;
+async function retireW1() {
+  // Not while a job is on it: terminating a worker mid-call leaves the page
+  // waiting on a reply that can never come. An export holds w1 through
+  // activeExportWorker rather than jobWorker, and retires it when it finishes.
+  if (primaryWorker === w1 || !w1 || jobWorker === w1 || activeExportWorker === w1) return;
+  const dying = w1, model = builtModel;
+  // The result file lives in this worker, but the plot the user is looking at
+  // outlives it — so copy the file out first.
+  if (builtWorker === dying && resultReady && !resultCache) {
+    const got = await fetchResultFile(dying, model).catch(() => null);
+    // A run started while that was in flight: its result replaces this one.
+    if (got && resultReady && builtWorker === dying) resultCache = got;
   }
+  if (w1 !== dying || jobWorker === dying || activeExportWorker === dying) return;   // raced
+  log('terminating w1');
+  if (builtWorker === dying) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
+  dying.terminate(); w1 = null;
+  syncResultDownload();
 }
 
 // A user model needs the MSL if it is a library copy, imports/extends Modelica,
@@ -433,6 +441,8 @@ let copyName = null;          // top-level name of the current library copy (cop
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animView = null;          // the shared 3D animation panel (lazily created on first use)
+let resultReady = false;      // the built worker's VFS holds a complete `<model>_res.mat`
+let resultCache = null;       // { name, bytes } — kept when the worker holding it had to go
 
 // Only the parameters the user actually edited. Sending the whole grid back would
 // re-seed every start value from the last run's row 0, and the flag string is
@@ -459,7 +469,8 @@ function fillSolverMenus(options) {
     for (const v of options[flag] || []) sel.add(new Option(v, v));
     sel.value = keep;                     // survives a second worker reporting the same set
   }
-  // The integration method has no "unset": it is a buildModel argument, not a flag.
+  // The integration method is the `-s` flag, so its menu is that flag's values —
+  // but with no "unset" entry: a run always names one.
   const m = el('method'), keep = m.value;
   if (options.s && options.s.length) {
     m.replaceChildren(...options.s.map((v) => new Option(v, v)));
@@ -525,7 +536,8 @@ async function run(kind) {                       // 'full' | 'resim'
     return;
   }
   running = true; runningKind = kind; setRunUI(true);
-  const tRun = performance.now();
+  resultReady = false; resultCache = null; syncResultDownload();
+  const tRun = beginOp(kind === 'resim' ? 'Re-simulation failed' : 'Simulation failed');
   let runMs = 0;
   log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
@@ -543,7 +555,9 @@ async function run(kind) {                       // 'full' | 'resim'
     // Re-simulate the already-built model (fast, no recompile) when possible.
     if (kind === 'resim' && builtModel && builtWorker) {
       jobWorker = builtWorker;
-      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers });
+      // The experiment reaches the run as simflags, so a changed stopTime,
+      // tolerance or solver is honoured here too — no rebuild.
+      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers, ...settings });
       runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
@@ -578,6 +592,7 @@ async function run(kind) {                       // 'full' | 'resim'
     if (kind !== 'resim' && snap.options) { seedFromOptions(snap.options); freshModel = false; }
     if (kind !== 'resim') buildInitialConditions();   // docs already rendered pre-simulation
     renderCharts();
+    resultReady = true; syncResultDownload();
     await fetchAnim(builtWorker);      // 3D scene, if the model enabled -d=visxml
     const figNote = (modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '';
     const drv = DRIVER_MODE !== null ? ` (${DRIVER_MODE ? 'in-wasm' : 'host'} driver)` : '';
@@ -602,6 +617,34 @@ async function run(kind) {                       // 'full' | 'resim'
     if (pendingKind) { const k = pendingKind; pendingKind = null; run(k); }
   }
 }
+
+// Read back on demand from the worker, or from retireW1's copy once that worker is
+// gone. Offered only for a run that finished: a failed one leaves a truncated file.
+function syncResultDownload() {
+  const name = resultCache ? resultCache.name
+             : (resultReady && builtModel && builtWorker) ? `${builtModel}_res.mat` : null;
+  downloadResBtn.hidden = !name;
+  if (name) downloadResBtn.title = downloadResBtn.ariaLabel = `Download ${name}`;
+}
+
+async function fetchResultFile(worker, model) {
+  if (!worker || !model) return null;
+  const r = await call(worker, 'resultFile', { name: model });
+  if (!r.ok) throw new Error(r.error);
+  return { name: r.filename, bytes: r.bytes };
+}
+
+downloadResBtn.addEventListener('click', async () => {
+  if (downloadResBtn.disabled) return;
+  downloadResBtn.disabled = true;
+  try {
+    const r = resultCache || await fetchResultFile(builtWorker, builtModel);
+    if (!r) return;
+    downloadBlob(r.name, r.bytes);
+    setStatus(`${r.name} — ${r.bytes.length} bytes.`);
+  } catch (e) { setStatus('' + e, 'err'); }
+  finally { downloadResBtn.disabled = false; }
+});
 
 // Run ↔ Cancel: while a job is running the button turns into a red Cancel.
 function setRunUI(busy) {
@@ -628,14 +671,16 @@ function showBuilding() {
   icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
   charts.clear(chartsEmpty);
-  chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
+  showEmpty('Simulating…');
   docBody.className = 'doc-body empty'; docBody.textContent = '…';
   if (animView) animView.hide();
 }
 
 async function selectExample(ex) {
+  beginOp('Loading the example failed');
   currentExample = ex;
   builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
+  snap = null; resultReady = false; resultCache = null; syncResultDownload();
   showBuilding();
   if (ex.library) {
     // A genuine editable copy via copyClass: a self-contained top-level class with
@@ -692,10 +737,15 @@ async function loadConfig() {
   }
 }
 
+// The status bar is one truncated line, so it keeps the verdict and the charts
+// box — the only panel big enough — carries the diagnostic itself.
 function fail(msg) {
   log('FAIL', msg);
-  setStatus(msg, 'err'); modelFigures = null;
-  charts.clear(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
+  const took = opStart === null ? '' : ' after ' + dur(performance.now() - opStart);
+  setStatus(`${opLabel}${took} — see the message below.`, 'err');
+  modelFigures = null;
+  charts.clear(chartsEmpty);
+  showEmpty(('' + msg).trim() || 'Failed without a message.', true);
 }
 
 // --- editable initial conditions -------------------------------------------
@@ -782,8 +832,7 @@ function renderCharts() {
   const useFigs = haveFigs && viewMode !== 'all';
   toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
   if (useFigs) renderFigures(); else renderAllVariables();
-  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
-    chartsEmpty.textContent = 'No variables to plot.'; }
+  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); showEmpty('No variables to plot.'); }
 }
 
 function renderAllVariables() {
@@ -899,12 +948,8 @@ function setChartsCursor(t) {
 }
 
 // --- settings dialog --------------------------------------------------------
-function openSettings() { settingsBackdrop.hidden = false; }
-function closeSettings() { settingsBackdrop.hidden = true; }
-settingsBtn.addEventListener('click', openSettings);
-settingsClose.addEventListener('click', closeSettings);
-settingsBackdrop.addEventListener('click', (e) => { if (e.target === settingsBackdrop) closeSettings(); });
-window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsBackdrop.hidden) closeSettings(); });
+const settingsDialog = bindModal(el('settingsBackdrop'));
+settingsBtn.addEventListener('click', () => settingsDialog.open());
 
 // --- wiring -----------------------------------------------------------------
 let debounce;
@@ -923,18 +968,13 @@ tolEl.addEventListener('change', () => { const v = parseFloat(tolEl.value); if (
 runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('full'); });
 
 const exportBtn = el('exportFmu');
-function downloadBlob(name, bytes) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
 let exporting = false;
 async function exportFmu({ fmuType, method, platforms }) {
   if (running || exporting) return;
   const text = srcEl.value;
   if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
   exporting = true;
+  beginOp('FMU export failed');
   exportBtn.textContent = 'Cancel';         // the button cancels the running export
   setStatus('Exporting FMU…', 'busy');
   try {
@@ -942,39 +982,46 @@ async function exportFmu({ fmuType, method, platforms }) {
     const worker = await pickWorker(text);
     if (!worker) throw new Error('compiler not ready');
     activeExportWorker = worker;   // so a Cancel targets this worker's control block
-    const name = parseModelName(text);
-    const lm = await call(worker, 'loadSource', { text, name });
-    if (!lm.ok) return fail(lm.error);
-    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method, platforms });
+    // Loading the source again replaces the program in omc's symbol table, which
+    // is precisely what marks the compile step's translation stale — so an
+    // unchanged model goes straight to the export and links onto the kernel it
+    // already has. A changed one has to be reloaded, and is translated again.
+    let name = builtModel;
+    if (!(name && builtWorker === worker && text === lastText)) {
+      const lm = await call(worker, 'loadSource', { text, name: parseModelName(text) });
+      if (!lm.ok) return fail(lm.error);
+      name = lm.name;
+    }
+    const r = await call(worker, 'exportFmu', { name, fmuType, method, platforms });
     if (r.cancelled) { setStatus('Export cancelled.'); return; }
     if (!r.ok) return fail(r.error);
     downloadBlob(r.filename, r.bytes);
     setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
   } catch (e) { fail('' + e); }
-  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; retireW1(); }
 }
 
 // FMU export dialog: pick interface(s) and (for CS) the embedded solver.
 const exportBackdrop = el('exportBackdrop'), fmiMe = el('fmiMe'), fmiCs = el('fmiCs'), csSolver = el('csSolver');
 function syncExportDialog() {
+  // Only a pure Co-Simulation export needs its own translation; every other
+  // combination is served by the one the model was compiled with.
+  el('csOnlyHint').hidden = !(fmiCs.checked && !fmiMe.checked);
   csSolver.disabled = !fmiCs.checked;
   el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
 }
-function openExport() { if (!exportBtn.disabled) { syncExportDialog(); exportBackdrop.hidden = false; } }
-function closeExport() { exportBackdrop.hidden = true; }
+const exportDialog = bindModal(exportBackdrop, {
+  onOpen: () => { if (exportBtn.disabled) return false; syncExportDialog(); },
+});
 fmiCs.addEventListener('change', syncExportDialog);
 fmiMe.addEventListener('change', syncExportDialog);
 // While exporting the button cancels; otherwise it opens the dialog.
-exportBtn.addEventListener('click', () => { if (exporting) requestExportCancel(); else openExport(); });
-el('exportClose').addEventListener('click', closeExport);
-el('exportCancel').addEventListener('click', closeExport);
-exportBackdrop.addEventListener('click', (e) => { if (e.target === exportBackdrop) closeExport(); });
-window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !exportBackdrop.hidden) closeExport(); });
+exportBtn.addEventListener('click', () => { if (exporting) requestExportCancel(); else exportDialog.open(); });
 el('exportGo').addEventListener('click', () => {
   const fmuType = fmiMe.checked && fmiCs.checked ? 'me_cs' : (fmiCs.checked ? 'cs' : 'me');
   const method = fmiCs.checked ? csSolver.value : undefined;
   const platforms = [...el('fmuPlatforms').querySelectorAll('input:checked')].map((c) => c.value);
-  closeExport();
+  exportDialog.close();
   exportFmu({ fmuType, method, platforms });
 });
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();

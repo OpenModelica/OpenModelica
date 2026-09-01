@@ -49,8 +49,8 @@ simulate(static_IR_2); getErrorString();
 // [stateselection] (4) Selected Dummy States
 // ********************************************
 // [DSTA] (1) Real z (StateSelect = never)
-// [DSTA] (1) Real $FUN_2
 // [DSTA] (1) Real x (fixed = true, start = 1.0)
+// [DSTA] (1) Real $FUN_2
 // [DSTA] (1) Real $FUN_1
 //
 // record SimulationResult

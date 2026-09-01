@@ -305,32 +305,34 @@ void printFlattenedNames(FILE *stream,
   assertStreamPrint(NULL, separator != NULL, "Invalid separator.");
 
   /* Temporary index array */
-  size_t *idx = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t));
+  size_t *idx = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t)); // FIXME allocate once, outside this function
   assertStreamPrint(NULL, idx != NULL, "Out of memory");
 
-  for (size_t linear = 0; linear < dimension_info->scalar_length; linear++)
-  {
-    /* compute multi-dimensional indices for this linear index (row-major) */
-    size_t rem = linear;
-    for (size_t k = 0; k < dimension_info->numberOfDimensions; k++)
-    {
-      /* stride = product of sizes of dimensions after k */
-      size_t stride = 1;
-      for (size_t j = k + 1; j < dimension_info->numberOfDimensions; j++)
-      {
-        stride *= (size_t)dimension_info->dimensions[j].start;
-      }
-      idx[k] = rem / stride;
-      rem = rem % stride;
-    }
+  /* initialize with all ones (Modelica subscripts are one-based) */
+  for (size_t k = 0; k < dimension_info->numberOfDimensions; k++) {
+    idx[k] = 1;
+  }
 
+  for (size_t linear = 0; linear < dimension_info->scalar_length; linear++) {
     /* write indices */
-    fprintf(stream, "%s", name);
-    for (size_t k = 0; k < dimension_info->numberOfDimensions; ++k)
-    {
-      fprintf(stream, "[%zu]", idx[k]);
+    fprintf(stream, "%s\"%s[%zu", separator, name, idx[0]);
+    for (size_t k = 1; k < dimension_info->numberOfDimensions; ++k) {
+      fprintf(stream, ",%zu", idx[k]);
     }
-    fprintf(stream, "%s", separator);
+    fprintf(stream, "]\"");
+
+    /* increment multi-dimensional indices (row-major) */
+    for (size_t k = dimension_info->numberOfDimensions - 1; k < dimension_info->numberOfDimensions; --k) {
+      if (idx[k] < (size_t)dimension_info->dimensions[k].start) {
+        idx[k]++;   /* increment minor index if possible */
+        break;      /* done */
+      } else {
+        idx[k] = 1; /* go back to start, carry to major index */
+        if (k == 0) {
+          break;    /* we are back at all ones, outer for-loop should be done */
+        }
+      }
+    }
   }
 
   free(idx);
@@ -365,14 +367,12 @@ void printFlattenedNames(FILE *stream,
  *
  * @param dimension_info    Dimensions of multi-dimensional array.
  * @param linear_address    Linear array address.
- * @return size_t*          Array of indices,
+ * @return size_t*          Array of indices (zero-based),
  *                          caller is responsible to free with `free`.
  */
 size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
                                    size_t linear_address)
 {
-  size_t k;
-
   assertStreamPrint(NULL, dimension_info != NULL && dimension_info->numberOfDimensions > 0 && dimension_info->dimensions != NULL, "Invalid dimension info.");
   assertStreamPrint(NULL, linear_address < dimension_info->scalar_length, "Array out of range: %zu not in [0, %zu]", linear_address, dimension_info->scalar_length);
 
@@ -380,27 +380,11 @@ size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
   size_t *array_index = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t));
   assertStreamPrint(NULL, array_index != NULL, "Out of memory");
 
-  /* Compute sizes of later dimensions for row-major ordering */
-  size_t *stride = (size_t *)calloc(dimension_info->numberOfDimensions, sizeof(size_t));
-  assertStreamPrint(NULL, stride != NULL, "Out of memory");
-
-  /* stride[k] = product of dimensions[k+1..dimension->numberOfDimensions-1];
-   * last stride = 1 */
-  stride[dimension_info->numberOfDimensions - 1] = 1;
-  for (k = dimension_info->numberOfDimensions - 2; k > 0; k--)
-  {
-    stride[k] = stride[k + 1] * dimension_info->dimensions[k + 1].start;
-  }
-  stride[0] = stride[1] * dimension_info->dimensions[1].start;
-
-  size_t remaining = linear_address;
-  for (k = 0; k < dimension_info->numberOfDimensions; k++)
-  {
-    array_index[k] = remaining / stride[k];
-    remaining = remaining % stride[k];
+  for (size_t k = dimension_info->numberOfDimensions -1; k < dimension_info->numberOfDimensions; --k) {
+    array_index[k] = linear_address % dimension_info->dimensions[k].start;
+    linear_address = linear_address / dimension_info->dimensions[k].start;
   }
 
-  free(stride);
   return array_index;
 }
 
@@ -476,30 +460,24 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
  * ```
  *
  * @param dimension_info    Dimensions of multi-dimensional array.
- * @param array_index       Array of indices
+ * @param array_index       Array of indices (zero-based)
  * @return size_t           Linear array address.
  */
 size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension_info,
                                   size_t* array_index)
 {
   size_t linear_address = 0;
-  size_t dim_product;
 
   assertStreamPrint(NULL, dimension_info != NULL && dimension_info->numberOfDimensions > 0 && dimension_info->dimensions != NULL, "Invalid dimension info.");
   assertStreamPrint(NULL, array_index != NULL, "Array index pointer is NULL.");
 
-   for (size_t k = 0; k < dimension_info->numberOfDimensions; k++) {
+  for (size_t k = 0; k < dimension_info->numberOfDimensions; ++k) {
     assertStreamPrint(NULL, array_index[k] <  dimension_info->dimensions[k].start,
                       "Index out of bounds: array_index[%zu] = %zu >= %zu",
                       k, array_index[k], dimension_info->dimensions[k].start);
 
-     dim_product = 1;
-     /* multiply sizes of later dimensions (k+1 .. n-1) for row-major */
-     for (size_t l = k + 1; l < dimension_info->numberOfDimensions; l++) {
-       dim_product *= dimension_info->dimensions[l].start;
-     }
-     linear_address += dim_product * array_index[k];
-   }
+    linear_address = linear_address * dimension_info->dimensions[k].start + array_index[k];
+  }
 
   return linear_address;
 }

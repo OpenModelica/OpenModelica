@@ -105,7 +105,12 @@ macro(add_compile_script mo_source_file)
 
     set(MM_PACKAGE_NAME ${file_name_no_ext})
     set(MM_INPUT_SOURCE_DIR ${source_dir})
+    # MM_OUTPUT_DIR is where the interfaces (and the dependency information derived
+    # from them) live, MM_C_OUTPUT_DIR is where the translated C ends up. They are
+    # separate because .cmake/bootstrap_sources.cmake reuses the interfaces of this
+    # build but writes its C somewhere else.
     set(MM_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(MM_C_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/c_files)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/mm_compile.in.mos ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos)
 endmacro(add_compile_script)
 
@@ -368,6 +373,11 @@ endif()
 #   target_link_options(omc PRIVATE -Wl,--stack,33554432)
 # endif()
 
+
+# Defines generate-bootstrap-sources / update-bootstrap-sources, the way to
+# refresh the pre-translated C sources bomc is built from. Neither target is part
+# of 'all'. Needs the omc target above and the interfaces of this build.
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
 
 
 ### INSTALLATION

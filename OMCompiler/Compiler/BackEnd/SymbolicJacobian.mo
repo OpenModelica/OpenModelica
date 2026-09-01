@@ -889,28 +889,18 @@ protected function constantLinearSystem1
   input Boolean inRunMatching;
   input Integer sysIdxIn;
   input Integer compIdxIn;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output Boolean runMatching;
-  output Integer sysIdxOut;
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared oshared = ishared;
+  output Boolean runMatching = inRunMatching;
+  output Integer sysIdxOut = sysIdxIn;
+protected
+  Integer compIdx = compIdxIn;
+  Boolean b;
 algorithm
-  (osyst, oshared, runMatching, sysIdxOut) := match inComps
-    local
-      BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponent comp;
-      Boolean b;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      Integer sysIdx, compIdx;
-
-    case {}
-    then (isyst, ishared, inRunMatching, sysIdxIn);
-
-    case comp::comps algorithm
-      (syst, shared, b, sysIdx, compIdx) := constantLinearSystemWork(isyst, ishared, comp, sysIdxIn, compIdxIn);
-      (syst, shared, runMatching, sysIdx) := constantLinearSystem1(syst, shared, comps, b or inRunMatching, sysIdx, compIdx);
-    then (syst, shared, runMatching, sysIdx);
-  end match;
+  for comp in inComps loop
+    (osyst, oshared, b, sysIdxOut, compIdx) := constantLinearSystemWork(osyst, oshared, comp, sysIdxOut, compIdx);
+    runMatching := b or runMatching;
+  end for;
 end constantLinearSystem1;
 
 protected function constantLinearSystemWork

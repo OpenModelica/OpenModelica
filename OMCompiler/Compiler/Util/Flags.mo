@@ -775,7 +775,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
+  SOME(STRING_OPTION({"None", "C", "C+Rust", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
@@ -837,7 +837,7 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(36, "locale",
   "Override the locale from the environment.");
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(37, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the default OpenCL device to be used for parallel execution.");
+  "Sets the default OpenCL device to be used for parallel execution. 0 (the\n   default) picks a suitable device automatically.");
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(38, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   "Maximal traversals to find simple equations in the acausal system.");
@@ -1104,7 +1104,7 @@ constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(92, "calculateSensitiv
   "Generates sensitivities variables and matrices.");
 constant ConfigFlag ALARM = CONFIG_FLAG(93, "alarm",
   SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes.");
+  "Sets the number of seconds until omc times out. Used by the testing framework to terminate infinite running processes. The running command is first asked to stop, so that omc can still report how far it got; it exits outright a tenth of that time later (at least 5 and at most 60 seconds) if the command has no cancellation point to stop at.");
 constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(94, "totalTearing",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes.");
@@ -1448,6 +1448,9 @@ constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(171,
 constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(172, "tplOutputDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Directory the .mo generated from a Susan .tpl is written to. Empty (the\ndefault) writes it next to the .tpl, which is how the templates used to be\ngenerated into the source tree.");
+constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(173, "fmuDirectory",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

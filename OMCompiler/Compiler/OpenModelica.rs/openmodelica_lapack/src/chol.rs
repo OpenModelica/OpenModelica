@@ -8,6 +8,14 @@ use crate::{opt, sqrt};
 /// the other is left untouched, as LAPACK leaves it. Returns `INFO`: `i > 0` when
 /// the leading `i`×`i` minor is not positive definite.
 pub fn dpotrf(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dpotrf(uplo, n, a, lda);
+    #[cfg(not(feature = "faer-backend"))]
+    dpotrf_ref(uplo, n, a, lda)
+}
+
+/// The port of `DPOTRF`, kept as the faer-free fallback.
+pub fn dpotrf_ref(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
     let upper = opt(uplo) == b'U';
     for j in 0..n {
         let mut ajj = at(a, lda, j, j);
@@ -45,6 +53,23 @@ pub fn dpotrf(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
 /// Solve `A*X = B` from a `dpotrf` factorization (`DPOTRS`).
 #[allow(clippy::too_many_arguments)]
 pub fn dpotrs(
+    uplo: &str,
+    n: usize,
+    nrhs: usize,
+    a: &[f64],
+    lda: usize,
+    b: &mut [f64],
+    ldb: usize,
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dpotrs(uplo, n, nrhs, a, lda, b, ldb);
+    #[cfg(not(feature = "faer-backend"))]
+    dpotrs_ref(uplo, n, nrhs, a, lda, b, ldb)
+}
+
+/// The port of `DPOTRS`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dpotrs_ref(
     uplo: &str,
     n: usize,
     nrhs: usize,

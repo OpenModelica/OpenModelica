@@ -80,22 +80,32 @@ static JM_LOG_LEVEL: std::sync::OnceLock<i32> = std::sync::OnceLock::new();
 
 /// jm_log_level_warning.
 const JM_LOG_LEVEL_WARNING: i32 = 3;
+/// jm_log_level_error.
+const JM_LOG_LEVEL_ERROR: i32 = 2;
 
 /// FMIImpl.c's `importlogger`. The tokens read message/level/module because
 /// c_add_message reverses them.
-fn jm_log_warning(module: &str, message: &str) {
-    if JM_LOG_LEVEL_WARNING > *JM_LOG_LEVEL.get().unwrap_or(&JM_LOG_LEVEL_WARNING) {
+fn jm_log(level: i32, level_name: ArcStr, severity: ErrorTypes::Severity, module: &str, message: &str) {
+    if level > *JM_LOG_LEVEL.get().unwrap_or(&JM_LOG_LEVEL_WARNING) {
         return;
     }
     let _ = Error::addMessage(
         ErrorTypes::Message {
             id: -1,
             ty: ErrorTypes::MessageType::SCRIPTING,
-            severity: ErrorTypes::Severity::WARNING,
+            severity,
             message: arcstr::literal!("module = %s, log level = %s: %s"),
         },
-        metamodelica::list![ArcStr::from(message), arcstr::literal!("WARNING"), ArcStr::from(module)],
+        metamodelica::list![ArcStr::from(message), level_name, ArcStr::from(module)],
     );
+}
+
+fn jm_log_warning(module: &str, message: &str) {
+    jm_log(JM_LOG_LEVEL_WARNING, arcstr::literal!("WARNING"), ErrorTypes::Severity::WARNING, module, message);
+}
+
+fn jm_log_error(module: &str, message: &str) {
+    jm_log(JM_LOG_LEVEL_ERROR, arcstr::literal!("ERROR"), ErrorTypes::Severity::ERROR, module, message);
 }
 
 type InitializeFMIImportResult = (
@@ -191,6 +201,19 @@ pub fn initializeFMIImport(
                 add_scripting_error(CS_UNSUPPORTED_ERR, &["CoSimulation"]);
                 return Ok(failure());
             }
+            Ok((true, Some(0), Some(0), info, typedefs, experiment, Some(0), vars))
+        }
+        Some("3.0") => {
+            // `fmi3_import_parse_xml` reports what its scheme does not know before
+            // anything is read out of the document, then does the same for the
+            // FMU's `terminalsAndIcons.xml` if it has one.
+            fmi3_scheme_diagnostics(&root, FMI3_MD_ELEMENTS, FMI3_MD_ATTRIBUTES);
+            terminals_and_icons_diagnostics(&inWorkingDirectory);
+            let Some((info, typedefs, experiment, vars)) = parse_fmi3(&xml_text, inInputConnectors, inOutputConnectors)
+            else {
+                add_scripting_error(PARSE_ERR, &[]);
+                return Ok(failure());
+            };
             Ok((true, Some(0), Some(0), info, typedefs, experiment, Some(0), vars))
         }
         // Missing attribute, wrong root element, or an unsupported version
@@ -742,4 +765,352 @@ fn parse_type_definitions(
     // fmilib's name-sorted table order, then reversed by prepending.
     enums.sort_by(|a, b| a.name.as_bytes().cmp(b.name.as_bytes()));
     Some(prepended_list(enums))
+}
+
+// ───────────────────────────────── FMI 3.0 ───────────────────────────────
+//
+// fmilib parses a 3.0 FMU with a generic XML driver plus a *scheme*: the element
+// and attribute names it knows. Anything outside it is reported, which an import
+// prints — hence the tables and the two diagnostics passes below.
+
+const FMI3XML: &str = "FMI3XML";
+const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
+
+/// `FMI3_XML_ELMLIST_MODEL_DESCR`.
+const FMI3_MD_ELEMENTS: &[&str] = &[
+    "fmiModelDescription", "ModelExchange", "CoSimulation", "ScheduledExecution", "SourceFiles",
+    "File", "UnitDefinitions", "Unit", "BaseUnit", "DisplayUnit", "TypeDefinitions", "SimpleType",
+    "Item", "DefaultExperiment", "VendorAnnotations", "Tool", "ModelVariables", "Dimension",
+    "Start", "Alias", "Annotations", "LogCategories", "Category", "Float64Type", "Float32Type",
+    "Int64Type", "Int32Type", "Int16Type", "Int8Type", "UInt64Type", "UInt32Type", "UInt16Type",
+    "UInt8Type", "BooleanType", "BinaryType", "ClockType", "StringType", "EnumerationType",
+    "ModelStructure", "Output", "ContinuousStateDerivative", "ClockedState", "InitialUnknown",
+    "EventIndicator", "Float64", "Float32", "Int64", "Int32", "Int16", "Int8", "UInt64", "UInt32",
+    "UInt16", "UInt8", "Boolean", "Binary", "Clock", "String", "Enumeration",
+];
+
+/// `FMI3_XML_ATTRLIST_MODEL_DESCR`, with `FMI3_SI_BASE_UNITS` spelled out.
+const FMI3_MD_ATTRIBUTES: &[&str] = &[
+    "fmiVersion", "name", "description", "factor", "offset", "inverse",
+    "kg", "m", "s", "A", "K", "mol", "cd", "rad",
+    "quantity", "unit", "displayUnit", "relativeQuantity", "unbounded", "min", "max", "nominal",
+    "declaredType", "start", "derivative", "reinit", "startTime", "stopTime", "tolerance",
+    "stepSize", "value", "valueReference", "variability", "causality", "initial", "previous",
+    "clocks", "canHandleMultipleSetPerTimeInstant", "intermediateUpdate", "mimeType", "maxSize",
+    "intervalVariability", "canBeDeactivated", "priority", "intervalDecimal", "shiftDecimal",
+    "supportsFraction", "resolution", "intervalCounter", "shiftCounter", "dependencies",
+    "dependenciesKind", "modelName", "modelIdentifier", "instantiationToken", "author",
+    "copyright", "license", "version", "generationTool", "generationDateAndTime",
+    "variableNamingConvention", "numberOfEventIndicators", "input", "needsExecutionTool",
+    "canBeInstantiatedOnlyOncePerProcess", "canGetAndSetFMUState", "canSerializeFMUState",
+    "providesDirectionalDerivatives", "providesDirectionalDerivative", "providesAdjointDerivatives",
+    "providesPerElementDependencies", "providesEvaluateDiscreteStates",
+    "needsCompletedIntegratorStep", "canHandleVariableCommunicationStepSize",
+    "fixedInternalStepSize", "maxOutputDerivativeOrder", "recommendedIntermediateInputSmoothness",
+    "providesIntermediateUpdate", "mightReturnEarlyFromDoStep",
+    "canReturnEarlyAfterIntermediateUpdate", "hasEventMode",
+];
+
+/// `FMI_XML_ELMLIST_TERM_ICON` / `FMI_XML_ATTRLIST_TERM_ICON`: the whole scheme.
+const TERM_ICON_ELEMENTS: &[&str] = &[
+    "fmiTerminalsAndIcons", "Terminals", "Terminal", "TerminalMemberVariable",
+    "TerminalStreamMemberVariable", "TerminalGraphicalRepresentation",
+];
+const TERM_ICON_ATTRIBUTES: &[&str] = &["fmiVersion", "name", "description"];
+
+/// The attribute half of `fmi3_parse_element_start`. An unknown element is skipped
+/// along with its subtree, as `skipElementCnt` does.
+fn fmi3_scheme_diagnostics(node: &roxmltree::Node<'_, '_>, elements: &[&str], attributes: &[&str]) {
+    if !elements.contains(&node.tag_name().name()) {
+        return;
+    }
+    for a in node.attributes() {
+        match a.namespace() {
+            Some(XSI_NS) => match a.name() {
+                "noNamespaceSchemaLocation" => jm_log_warning(
+                    FMI3XML,
+                    &format!(
+                        "Attribute noNamespaceSchemaLocation='{}' is ignored. Using standard fmiModelDescription.xsd.",
+                        a.value()
+                    ),
+                ),
+                "nil" | "type" => jm_log_warning(
+                    FMI3XML,
+                    &format!("Attribute {{{XSI_NS}}}{}={} is ignored", a.name(), a.value()),
+                ),
+                "schemaLocation" => {}
+                other => jm_log_error(
+                    FMI3XML,
+                    &format!("Unknown attribute '{XSI_NS}|{other}={}' in XML", a.value()),
+                ),
+            },
+            // A namespace fmilib has no expat prefix for reaches the name test bare.
+            _ if attributes.contains(&a.name()) => {}
+            _ if a.name().starts_with("providesPartialDerivativesOf_") => jm_log_warning(
+                FMI3XML,
+                &format!(
+                    "FMI API function fmiGetPartialDerivatives is removed from the specification. \
+                     Attribute {} will be ignored.",
+                    a.name()
+                ),
+            ),
+            _ => jm_log_error(FMI3XML, &format!("Unknown attribute '{}={}' in XML", a.name(), a.value())),
+        }
+    }
+    for child in node.children().filter(|c| c.is_element()) {
+        fmi3_scheme_diagnostics(&child, elements, attributes);
+    }
+}
+
+/// `fmi3_xml_parse_terminals_and_icons`, run after the model description. A missing
+/// or unreadable file is not an error (fmilib logs it at info level, which is dropped).
+fn terminals_and_icons_diagnostics(working_directory: &str) {
+    let path = format!("{working_directory}/terminalsAndIcons/terminalsAndIcons.xml");
+    let Ok(bytes) = openmodelica_wasi::fs::read(&path) else { return };
+    let Ok(text) = String::from_utf8(bytes) else { return };
+    let Ok(doc) = roxmltree::Document::parse(&text) else { return };
+    fmi3_scheme_diagnostics(&doc.root_element(), TERM_ICON_ELEMENTS, TERM_ICON_ATTRIBUTES);
+}
+
+/// `FMIImpl__initializeFMI3Import`, over the model description `openmodelica_fmi`
+/// read. The `fmi3_import_get_*` calls C makes are a *view* of that document, so only
+/// the view is written out: fmilib's spellings, and the reversed lists the
+/// MetaModelica caller expects.
+///
+/// FMI 1.0 and 2.0 keep their own readers below — they must reproduce fmilib's
+/// quirks, which the shared reader deliberately does not have.
+fn parse_fmi3(
+    xml: &str,
+    input_connectors: bool,
+    output_connectors: bool,
+) -> Option<ParsedModelDescription> {
+    use openmodelica_fmi::{Causality, Dimension, Start, VarType, Variability};
+
+    let md = openmodelica_fmi::model_description(xml).ok()?;
+
+    // FMIImpl takes the model identifier of the interface it imports, Model Exchange
+    // first (fmi3_fmu_kind_enu_t: me = 2, cs = 4, se = 8).
+    let (fmi_type, interface) = [(2, &md.model_exchange), (4, &md.co_simulation), (8, &md.scheduled_execution)]
+        .into_iter()
+        .find_map(|(kind, i)| Some((kind, i.as_ref()?)))?;
+
+    let info = FMI::Info {
+        fmiVersion: arcstr::literal!("3.0"),
+        fmiType: fmi_type,
+        fmiModelName: ArcStr::from(md.model_name.as_str()),
+        fmiModelIdentifier: ArcStr::from(interface.model_identifier.as_str()),
+        fmiGuid: ArcStr::from(md.instantiation_token.as_str()),
+        fmiDescription: escaped_description(md.description.as_deref()),
+        fmiGenerationTool: ArcStr::from(md.generation_tool.as_deref().unwrap_or("")),
+        fmiGenerationDateAndTime: ArcStr::from(md.generation_date_and_time.as_deref().unwrap_or("")),
+        fmiVariableNamingConvention: ArcStr::from(md.variable_naming_convention.as_str()),
+        // FMI 3.0 has no scalar counts: both come from the <ModelStructure> lists.
+        fmiNumberOfContinuousStates: descending_int_list(md.model_structure.continuous_state_derivatives.len() as u32),
+        fmiNumberOfEventIndicators: descending_int_list(md.number_of_event_indicators),
+    };
+
+    // Only enumeration types are imported, as in FMI 1.0/2.0.
+    let mut enums: Vec<FMI::TypeDefinitions> = Vec::new();
+    for td in md.type_definitions.iter().filter(|t| t.ty == VarType::Enumeration) {
+        let mut items: Vec<_> = td.items.iter().collect();
+        items.sort_by_key(|i| i.value);
+        enums.push(FMI::TypeDefinitions {
+            name: ArcStr::from(make_string_fmi_safe(&td.name)),
+            description: ArcStr::from(td.description.as_deref().unwrap_or("")),
+            quantity: ArcStr::from(td.quantity.as_deref().unwrap_or("")),
+            min: items.first().map(|i| i.value as i32).unwrap_or(0),
+            max: items.last().map(|i| i.value as i32).unwrap_or(0),
+            items: prepended_list(items.into_iter().rev().map(|i| FMI::EnumerationItem {
+                name: ArcStr::from(i.name.as_str()),
+                description: ArcStr::from(i.description.as_deref().unwrap_or("")),
+            })),
+        });
+    }
+    enums.sort_by(|a, b| a.name.as_bytes().cmp(b.name.as_bytes()));
+
+    let experiment = fmi3_default_experiment(&md);
+
+    let mut variables: Vec<FMI::ModelVariables> = Vec::new();
+    let mut placements = (60, 60);
+    for v in &md.variables {
+        // getFMI3ModelVariableCausality: a structural parameter is reported as a
+        // parameter, and the independent one is named so the wrapper can leave it out.
+        let causality = match v.causality {
+            Causality::Input => arcstr::literal!("input"),
+            Causality::Output => arcstr::literal!("output"),
+            Causality::Parameter | Causality::StructuralParameter => arcstr::literal!("parameter"),
+            Causality::Independent => arcstr::literal!("independent"),
+            Causality::Local | Causality::CalculatedParameter => arcstr::literal!(""),
+        };
+        // getFMI3ModelVariableVariability: only "constant" is passed through; the
+        // rest leaves the wrapper on the Modelica default.
+        let variability = if v.variability == Variability::Constant {
+            arcstr::literal!("constant")
+        } else {
+            arcstr::literal!("")
+        };
+        // An enumeration's Modelica type is the name of its declared type; Binary
+        // and Clock have none.
+        let declared = ArcStr::from(make_string_fmi_safe(v.declared_type.as_deref().unwrap_or("")));
+        let base_type = match v.ty {
+            VarType::Float32 | VarType::Float64 => arcstr::literal!("Real"),
+            VarType::Int8 | VarType::UInt8 | VarType::Int16 | VarType::UInt16
+            | VarType::Int32 | VarType::UInt32 | VarType::Int64 | VarType::UInt64 => arcstr::literal!("Integer"),
+            VarType::Boolean => arcstr::literal!("Boolean"),
+            VarType::String => arcstr::literal!("String"),
+            VarType::Enumeration => declared.clone(),
+            VarType::Binary | VarType::Clock => arcstr::literal!(""),
+        };
+        // `fmi3_base_type_to_string` has no name for the two types outside the
+        // base-type enum's string table.
+        let fmi_type = match v.ty {
+            VarType::Binary | VarType::Clock => arcstr::literal!("Error"),
+            t => ArcStr::from(t.as_str()),
+        };
+        // A dimension given by a value reference is only known once the FMU is
+        // instantiated, and is reported as 0.
+        let dimensions = prepended_list(v.dimensions.iter().rev().map(|d| match d {
+            Dimension::Fixed(k) => *k as i32,
+            Dimension::ValueReference(_) => 0,
+        }));
+        // The records take a list because a variable can be an array; C reads only the
+        // scalar start.
+        let start = if v.dimensions.is_empty() { v.start.as_ref() } else { None };
+
+        let (mut x1, mut x2, mut y1, mut y2) = (0, 0, 0, 0);
+        if causality == "input" && input_connectors {
+            (x1, x2, y1, y2) = (-120, -100, placements.0, placements.0 + 20);
+            placements.0 -= 25;
+        } else if causality == "output" && output_connectors {
+            (x1, x2, y1, y2) = (100, 120, placements.1, placements.1 + 20);
+            placements.1 -= 25;
+        }
+
+        macro_rules! variable {
+            ($variant:ident, $start_value:expr $(, $extra:ident : $value:expr)*) => {
+                FMI::ModelVariables::$variant {
+                    // fmilib variable pointer in C; carries no meaning here.
+                    instance: 0,
+                    name: ArcStr::from(make_string_fmi_safe(&v.name)),
+                    description: escaped_description(v.description.as_deref()),
+                    baseType: base_type,
+                    fmiType: fmi_type,
+                    variability,
+                    causality,
+                    hasStartValue: v.start.is_some(),
+                    isFixed: v.variability == Variability::Fixed,
+                    valueReference: v.value_reference as i32,
+                    dimensions,
+                    $($extra: $value,)*
+                    startValue: $start_value,
+                    x1Placement: x1,
+                    x2Placement: x2,
+                    y1Placement: y1,
+                    y2Placement: y2,
+                }
+            };
+        }
+        let first_int = || match start {
+            Some(Start::Ints(i)) => prepended_list(i.first().map(|&i| i as i32)),
+            _ => metamodelica::nil(),
+        };
+        variables.push(match v.ty {
+            VarType::Float32 | VarType::Float64 => variable!(
+                FMI3REALVARIABLE,
+                match start {
+                    Some(Start::Reals(r)) => prepended_list(r.first().map(|&r| metamodelica::Real::from(r))),
+                    _ => metamodelica::nil(),
+                }
+            ),
+            VarType::Boolean => variable!(
+                FMI3BOOLEANVARIABLE,
+                match start {
+                    Some(Start::Bools(b)) => prepended_list(b.first().copied()),
+                    _ => metamodelica::nil(),
+                }
+            ),
+            VarType::String => variable!(
+                FMI3STRINGVARIABLE,
+                match start {
+                    Some(Start::Strings(s)) => prepended_list(s.first().map(|s| ArcStr::from(s.as_str()))),
+                    _ => metamodelica::nil(),
+                }
+            ),
+            VarType::Enumeration => variable!(FMI3ENUMERATIONVARIABLE, first_int(), declaredType: declared),
+            VarType::Binary => variable!(
+                FMI3BINARYVARIABLE,
+                // `getFMI3ModelVariableStartValue` reads no start for a Binary.
+                metamodelica::nil(),
+                mimeType: ArcStr::from(v.binary.as_ref().map(|b| b.mime_type.as_str()).unwrap_or("")),
+                maxSize: v.binary.as_ref().and_then(|b| b.max_size).unwrap_or(0) as i32
+            ),
+            VarType::Clock => FMI::ModelVariables::FMI3CLOCKVARIABLE {
+                instance: 0,
+                name: ArcStr::from(make_string_fmi_safe(&v.name)),
+                description: escaped_description(v.description.as_deref()),
+                baseType: base_type,
+                fmiType: fmi_type,
+                variability,
+                causality,
+                hasStartValue: v.start.is_some(),
+                isFixed: v.variability == Variability::Fixed,
+                valueReference: v.value_reference as i32,
+                dimensions,
+                intervalVariability: ArcStr::from(
+                    v.clock.as_ref().map(|c| interval_variability_string(c.interval_variability)).unwrap_or(""),
+                ),
+                intervalDecimal: metamodelica::Real::from(
+                    v.clock.as_ref().and_then(|c| c.interval_decimal).unwrap_or(0.0),
+                ),
+                hasIntervalDecimal: v.clock.as_ref().is_some_and(|c| c.interval_decimal.is_some()),
+                x1Placement: x1,
+                x2Placement: x2,
+                y1Placement: y1,
+                y2Placement: y2,
+            },
+            _ => variable!(FMI3INTEGERVARIABLE, first_int()),
+        });
+    }
+    Some((info, prepended_list(enums), experiment, prepended_list(variables)))
+}
+
+/// `getFMI3IntervalVariability`, which FMI Library has no `to_string` for.
+fn interval_variability_string(v: openmodelica_fmi::IntervalVariability) -> &'static str {
+    use openmodelica_fmi::IntervalVariability as I;
+    match v {
+        I::Constant => "constant",
+        I::Fixed => "fixed",
+        I::Tunable => "tunable",
+        I::Changing => "changing",
+        I::Countdown => "countdown",
+        I::Triggered => "triggered",
+    }
+}
+
+/// `<DefaultExperiment>`: each fmilib getter warns when its attribute was absent,
+/// and FMIImpl.c reads them in this order.
+fn fmi3_default_experiment(md: &openmodelica_fmi::ModelDescription) -> FMI::ExperimentAnnotation {
+    let de = md.default_experiment;
+    let mut values = [0.0, 1.0, 1e-4];
+    for (value, (getter, given)) in values.iter_mut().zip([
+        ("start", de.and_then(|d| d.start_time)),
+        ("stop", de.and_then(|d| d.stop_time)),
+        ("tolerance", de.and_then(|d| d.tolerance)),
+    ]) {
+        match given {
+            Some(v) => *value = v,
+            None => jm_log_warning(
+                FMI3XML,
+                &format!(
+                    "fmi3_xml_get_default_experiment_{getter}: returning default value, \
+                     since no attribute was defined in modelDescription"
+                ),
+            ),
+        }
+    }
+    FMI::ExperimentAnnotation {
+        fmiExperimentStartTime: metamodelica::Real::from(values[0]),
+        fmiExperimentStopTime: metamodelica::Real::from(values[1]),
+        fmiExperimentTolerance: metamodelica::Real::from(values[2]),
+    }
 }

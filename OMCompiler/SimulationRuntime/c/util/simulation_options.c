@@ -172,6 +172,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_STOP_TIME */                    "stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "svdCount",
   /* FLAG_SVD_SPARSE_SIGMA */             "svdSigma",
+  /* FLAG_SVD_SPARSE_TOL */               "svdTol",
   /* FLAG_DATA_RECONCILE_Sx */            "sx",
   /* FLAG_TOLERANCE */                    "tolerance",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
@@ -333,6 +334,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_STOP_TIME */                    "sets stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "[int (default 0)] Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */             "[double (default 1e-8, > 0)] Estimated smallest singular value for the preconditioner in SVD analysis.",
+  /* FLAG_SVD_SPARSE_TOL */               "[double (default 1e-8, > 0)] Convergence tolerance of the sparse SVD analysis, relative to the norm of the matrix.",
   /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_TOLERANCE */                    "sets tolerance",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
@@ -721,6 +723,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */
   "  Estimated smallest singular value for the preconditioner in SVD analysis.",
+  /* FLAG_SVD_SPARSE_TOL */
+  "  Convergence tolerance of the sparse SVD analysis: PRIMME stops at\n"
+  "  ||r|| <= svdTol*||A||. The normal equations it uses resolve no singular value\n"
+  "  below sqrt(DBL_EPSILON)*||A||, so tightening it past that buys nothing.",
   /* FLAG_DATA_RECONCILE_Sx */
   "  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_TOLERANCE */
@@ -895,6 +901,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_STOP_TIME */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SVD_SPARSE_TOL */               FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_TOLERANCE */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
@@ -1055,6 +1062,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_STOP_TIME */                    FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_TYPE_OPTION,
+  /* FLAG_SVD_SPARSE_TOL */               FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_TOLERANCE */                    FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,

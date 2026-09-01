@@ -30,18 +30,68 @@
  * libc functions are absent; the paths that use them (MatIO file-write, temp
  * file names) are not exercised by the web target's read-only table/matrix use.
  * Everything else resolves against wasi-libc. */
+/* wasi-libc compat shims for the ModelicaExternalC side module (build.rs clang
+ * wasm32-wasi build). WASI has no processes, and wasi-libc ships no temp-name
+ * helpers; these are musl's, over the `mkdir`/`stat` wasi-libc does have. */
+#include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+
+/* musl's `__randname`: six characters from the clock and a per-call counter. */
+static char* randname(char* suffix) {
+    static unsigned long counter;
+    struct timeval tv;
+    unsigned long r;
+    int i;
+    gettimeofday(&tv, NULL);
+    r = (unsigned long) tv.tv_usec * 65537UL
+        ^ ((unsigned long) (uintptr_t) &tv / 16 + counter++);
+    for (i = 0; i < 6; i++, r >>= 5) {
+        suffix[i] = 'A' + (r & 15) + (r & 16) * 2;
+    }
+    return suffix;
+}
 
 char* mkdtemp(char* template) {
-    (void) template;
+    size_t l = strlen(template);
+    int retries;
+    if (l < 6 || memcmp(template + l - 6, "XXXXXX", 6) != 0) {
+        errno = EINVAL;
+        return NULL;
+    }
+    for (retries = 100; retries > 0; retries--) {
+        randname(template + l - 6);
+        if (mkdir(template, 0700) == 0) {
+            return template;
+        }
+        if (errno != EEXIST) {
+            return NULL;
+        }
+    }
+    memcpy(template + l - 6, "XXXXXX", 6);
+    errno = EEXIST;
+    return NULL;
+}
+
+char* tmpnam(char* s) {
+    /* wasi-libc has no `L_tmpnam`; the buffer is the one name this builds. */
+    static char internal[sizeof "/tmp/tmpnam_XXXXXX"];
+    char path[] = "/tmp/tmpnam_XXXXXX";
+    struct stat st;
+    int retries;
+    for (retries = 100; retries > 0; retries--) {
+        randname(path + sizeof(path) - 7);
+        if (stat(path, &st) != 0 && errno == ENOENT) {
+            return strcpy(s ? s : internal, path);
+        }
+    }
     return NULL;
 }
 
 int getpid(void) {
     return 1;
-}
-
-char* tmpnam(char* s) {
-    (void) s;
-    return NULL;
 }

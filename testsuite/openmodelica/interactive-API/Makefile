@@ -36,6 +36,8 @@ CopyClass5.mos \
 CopyClass6.mos \
 CopyClass7.mos \
 CopyClass8.mos \
+CopyClass9.mos \
+CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 daeModeHomotopy.mos \
@@ -176,7 +178,8 @@ UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-Issue14178.mos
+Issue14178.mos \
+Issue16096.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -17,7 +17,7 @@ loadString("
 
 buildModelFMU(terminateTest, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator terminateTest.fmu --stopTime=1.5 --resultFile=terminateTest_res.mat --suppressPath=true", "terminateTest_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator terminateTest.fmu --stopTime=1.5 --resultFile=terminateTest_res.mat --stripRoot --suppressPath", "terminateTest_systemCall.log");
 readFile("terminateTest_systemCall.log");
 
 
@@ -30,14 +30,15 @@ readFile("terminateTest_systemCall.log");
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
-// "info:    *** FMU Simulation Info ***
-//           - model:     terminateTest (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.500000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//      - model     : terminateTest (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.500000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    maximum step size for 'terminateTest.root': 0.002000
-// info:    Result file: terminateTest_res.mat (bufferSize=1)
+// info:    Result file: terminateTest_res.mat (bufferSize=10)
 // [<interactive>:6:7-6:31:writable]Modelica Terminate: Terminated.!
 // info:    Simulation terminated by FMU terminateTest.root.terminateTest at time 1.200000
 // info:    Final Statistics for 'terminateTest.root':

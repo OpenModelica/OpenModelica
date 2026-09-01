@@ -2,9 +2,9 @@
 //! `src/lib.rs`: a `-fPIC` wasi-libc `libc.so`, ModelicaExternalC as a PIC dylink
 //! side module, and the vendored `wasi_snapshot_preview1` adapter.
 //!
-//! All inputs are provided by CMake via environment variables. This crate does
-//! not build wasi-libc or sundials itself — the CMake targets `rust_wasi_pic_sysroot`
-//! and `rust_sundials_wasm` handle that before cargo runs.
+//! All inputs are provided by CMake via environment variables. This crate does not
+//! build wasi-libc itself — the CMake target `rust_wasi_pic_sysroot` handles that
+//! before cargo runs.
 //!
 //! Failure in any step (sysroot missing, external-C clang failure) is a hard error.
 
@@ -44,146 +44,6 @@ fn main() {
         .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
     copy(&usertab, &out_dir.join("usertab_dylink.wasm"));
 
-    // Only a CVODE/IDA Co-Simulation FMU needs this, so a build that never asked
-    // for sundials leaves an empty blob. Asking and failing is a hard error: the
-    // omc would look healthy and just refuse `-s=cvode` at export.
-    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_SOURCES");
-    let sundials_dest = out_dir.join("sundials_dylink.wasm");
-    if std::env::var_os("OMC_SUNDIALS_SOURCES").is_none() {
-        std::fs::write(&sundials_dest, []).expect("write empty sundials blob");
-    } else {
-        let module = build_sundials_dylink(&out_dir, &sysroot, triple).unwrap_or_else(|e| {
-            panic!(
-                "failed to build the SUNDIALS dylink module: {e}\n\
-                 This build asked for sundials (OMC_SUNDIALS_SOURCES is set), so the omc it \
-                 produces must be able to export a wasm FMU with -s=cvode/ida. Build it \
-                 without sundials if that is not wanted."
-            )
-        });
-        copy(&module, &sundials_dest);
-    }
-}
-
-/// The SUNDIALS/KLU API the drivers call. wasm-ld GCs from this list, keeping the
-/// module ~220 KB rather than the archives' 1.5 MB — so a driver calling something
-/// new gets an unresolved import at FMU-export time until it is added here. The
-/// wasip1 runtime links the archives instead and never notices.
-const SUNDIALS_EXPORTS: &[&str] = &[
-    "CVodeCreate", "CVodeInit", "CVodeReInit", "CVodeFree", "CVode", "CVodeSVtolerances",
-    "CVodeRootInit", "CVodeGetRootInfo", "CVodeSetUserData", "CVodeSetLinearSolver",
-    "CVodeSetJacFn", "CVodeSetInitStep", "CVodeSetMaxStep", "CVodeSetMinStep",
-    "CVodeSetMaxOrd", "CVodeSetMaxNumSteps", "CVodeSetMaxErrTestFails",
-    "CVodeSetMaxNonlinIters", "CVodeSetMaxConvFails", "CVodeSetStabLimDet",
-    "CVodeSetStopTime", "CVodeGetNumSteps", "CVodeGetNumRhsEvals", "CVodeGetNumJacEvals",
-    "CVodeGetNumErrTestFails", "CVodeGetNumNonlinSolvConvFails",
-    "IDACreate", "IDAInit", "IDAReInit", "IDAFree", "IDASolve", "IDACalcIC",
-    "IDASVtolerances", "IDARootInit", "IDAGetRootInfo", "IDASetUserData",
-    "IDASetLinearSolver", "IDASetJacFn", "IDASetId", "IDASetSuppressAlg",
-    "IDASetInitStep", "IDASetMaxOrd", "IDASetMaxNonlinIters", "IDASetMaxConvFails",
-    "IDASetMaxErrTestFails", "IDASetNonlinConvCoef", "IDASetLineSearchOffIC", "IDASetMaxStep",
-    "IDASetMaxNumItersIC", "IDASetMaxNumJacsIC", "IDASetMaxNumStepsIC",
-    "IDAGetConsistentIC", "IDAGetCurrentStep", "IDAGetActualInitStep", "IDAGetNumSteps",
-    "IDAGetNumResEvals", "IDAGetNumJacEvals", "IDAGetNumErrTestFails",
-    "IDAGetNumNonlinSolvConvFails", "IDASensInit", "IDASensReInit", "IDASensEEtolerances",
-    "IDASetSensParams", "IDASetSensDQMethod", "IDAGetSens",
-    "N_VNew_Serial", "N_VConst", "N_VDestroy", "N_VGetArrayPointer",
-    "N_VCloneVectorArray", "N_VDestroyVectorArray",
-    "SUNDenseMatrix", "SUNDenseMatrix_Data", "SUNSparseMatrix", "SUNSparseMatrix_Data",
-    "SUNSparseMatrix_IndexPointers", "SUNSparseMatrix_IndexValues", "SUNMatDestroy",
-    "SUNLinSol_Dense", "SUNLinSol_KLU", "SUNLinSol_SPGMR", "SUNLinSol_SPBCGS",
-    "SUNLinSol_SPTFQMR", "SUNLinSolFree",
-    // SUNDIALS 6 moved every object onto a SUNContext and added SUNLogger; the
-    // drivers create one per instance and route its four streams.
-    "SUNContext_Create", "SUNContext_Free", "SUNContext_GetLogger",
-    "SUNContext_PushErrHandler",
-    "SUNLogger_SetErrorFilename", "SUNLogger_SetWarningFilename",
-    "SUNLogger_SetInfoFilename", "SUNLogger_SetDebugFilename",
-];
-
-/// Compile SUNDIALS (CVODE + IDAS), its matrices/linear solvers and SuiteSparse/KLU to
-/// a PIC dylink side module, the form `wit_component::Linker` adds to an FMU. The
-/// archives CMake builds for the wasip1 runtime are not `-fPIC`, so a `--shared` link
-/// rejects them.
-fn build_sundials_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
-    for v in ["OMC_SUNDIALS_SOURCES", "OMC_SUITESPARSE_SOURCES", "OMC_SUNDIALS_WASM_INCLUDE"] {
-        println!("cargo:rerun-if-env-changed={v}");
-    }
-    let sundials = PathBuf::from(std::env::var("OMC_SUNDIALS_SOURCES").map_err(|_| "OMC_SUNDIALS_SOURCES not set")?);
-    let ss = PathBuf::from(std::env::var("OMC_SUITESPARSE_SOURCES").map_err(|_| "OMC_SUITESPARSE_SOURCES not set")?);
-    // Generated by the wasm ExternalProject, so this also sequences us after it.
-    let config = PathBuf::from(std::env::var("OMC_SUNDIALS_WASM_INCLUDE").map_err(|_| "OMC_SUNDIALS_WASM_INCLUDE not set")?);
-    if !config.join("sundials/sundials_config.h").exists() {
-        return Err(format!("{} has no sundials/sundials_config.h", config.display()));
-    }
-
-    // `f*.c` are the Fortran interfaces (duplicate `F2C_*_nonlinsol` symbols),
-    // `sundials_xbraid.c` needs braid.h, and `*mpi*.c` includes `mpi.h`
-    // unconditionally: none belongs in a host-free wasm module. (`sundials_logger.c`
-    // also reaches for `mpi.h`, but behind `#if SUNDIALS_MPI_ENABLED`.)
-    let src = sundials.join("src");
-    let mut srcs = Vec::new();
-    for dir in [
-        "cvode", "idas", "sundials", "nvector/serial",
-        "sunmatrix/dense", "sunmatrix/sparse", "sunmatrix/band",
-        "sunlinsol/dense", "sunlinsol/klu", "sunlinsol/spgmr", "sunlinsol/spbcgs",
-        "sunlinsol/sptfqmr", "sunnonlinsol/newton", "sunnonlinsol/fixedpoint",
-    ] {
-        let mut found = collect_c_files(&src.join(dir));
-        found.retain(|p| {
-            let n = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            !n.starts_with('f') && n != "sundials_xbraid.c" && !n.contains("mpi")
-        });
-        if found.is_empty() {
-            return Err(format!("no sources in {}", src.join(dir).display()));
-        }
-        srcs.extend(found);
-    }
-    for dir in ["KLU/Source", "AMD/Source", "COLAMD/Source", "BTF/Source"] {
-        srcs.extend(collect_c_files(&ss.join(dir)));
-    }
-    srcs.push(ss.join("SuiteSparse_config/SuiteSparse_config.c"));
-    srcs.sort();
-    for s in &srcs {
-        println!("cargo:rerun-if-changed={}", s.display());
-    }
-
-    let raw = out_dir.join("sundials_dylink_raw.wasm");
-    let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
-    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
-    let mut cmd = Command::new(&clang);
-    cmd.arg(format!("--target={triple}"))
-        .arg(format!("--sysroot={}", sysroot.display()))
-        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", "-DNDEBUG",
-               "-Wno-tautological-constant-out-of-range-compare"]);
-    for inc in [
-        sundials.join("include"), config, src.clone(), src.join("sundials"),
-        ss.join("KLU/Include"), ss.join("AMD/Include"), ss.join("COLAMD/Include"),
-        ss.join("BTF/Include"), ss.join("SuiteSparse_config"),
-    ] {
-        cmd.arg("-I").arg(inc);
-    }
-    cmd.args(&srcs)
-        .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry", "-Wl,--allow-undefined"]);
-    for e in SUNDIALS_EXPORTS {
-        cmd.arg(format!("-Wl,--export={e}"));
-    }
-    // No `-lc`, as for modelicaexternalc: the libc calls stay `env` imports the FMU
-    // linker resolves. Linking `libc.so` records a `NEEDED libc.so` it has no library
-    // registered under that name for.
-    let status = cmd
-        .arg(&builtins)
-        .arg("-o")
-        .arg(&raw)
-        .status()
-        .map_err(|e| format!("spawn {clang}: {e}"))?;
-    if !status.success() {
-        return Err(format!("clang (sundials dylink) exited with {status}"));
-    }
-    let bytes = std::fs::read(&raw).map_err(|e| format!("read raw dylink: {e}"))?;
-    let out = out_dir.join("sundials_dylink_stripped.wasm");
-    std::fs::write(&out, strip_wasm_export(&bytes, "_initialize"))
-        .map_err(|e| format!("write dylink: {e}"))?;
-    Ok(out)
 }
 
 /// The preview1→preview2 reactor adapter: `OMC_WASI_P1_ADAPTER` from CMake.

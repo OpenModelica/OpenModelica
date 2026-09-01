@@ -292,7 +292,8 @@ simulate(slice_for); getErrorString();
 // record SimulationResult
 //     resultFile = "slice_for_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'slice_for', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | warning | Analytic Jacobian of non-linear system 0 is 6x7, but the system has 6 iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

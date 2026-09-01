@@ -699,6 +699,7 @@ public
           Call call;
           list<Frame> frames = {};
           Iterator tmp;
+          Iterator tmp_inner;
           list<Dimension> full_dims;
 
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
@@ -714,6 +715,17 @@ public
           else
             iter := tmp;
           end if;
+
+          // createFrame creates a new "$i" iterator but leaves the body referencing the old "i"
+          // cref. add replacement rules here so applySimpleExp in extract() can update the body.
+          for frame in frames loop
+            _ := match Util.tuple33(frame)
+              case SOME(tmp_inner as SINGLE()) algorithm
+                UnorderedMap.add(tmp_inner.name, Expression.applySubscripts({Subscript.INDEX(Expression.fromCref(Util.tuple31(frame)))}, tmp_inner.range), replacements);
+              then ();
+              else ();
+            end match;
+          end for;
 
           // add the dimension -> iterator names to the dims map to apply the iterators correctly to the lhs
           full_dims := Type.arrayDims(Expression.typeOf(exp));
@@ -3346,7 +3358,7 @@ public
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
             (new_exp2, success) := getRHS(Util.getOption(body.else_if));
-            if success then 
+            if success then
               new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, new_exp2);
             else
               new_exp := Expression.END();

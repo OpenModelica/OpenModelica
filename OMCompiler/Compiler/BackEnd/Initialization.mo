@@ -615,7 +615,7 @@ algorithm
   for cr in inCrLst loop
     identType := ComponentReference.crefTypeConsiderSubs(cr);
     crefExp := DAE.CREF(cr, identType);
-    crefPreExp := Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
+    crefPreExp := Expression.makePureBuiltinCall("pre", {crefExp}, identType);
     eqn := BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     outEqns := eqn::outEqns;
   end for;
@@ -1334,9 +1334,14 @@ algorithm
 
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
       // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
-      (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
-      consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
-      redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
+      if not listEmpty(redundantEqns) then
+        // The enhanced adjacency matrix is consulted for the redundant equations
+        // only, and building it differentiates and simplifies every equation
+        // with respect to every variable it contains.
+        (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
+        consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+        redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
+      end if;
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
       (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
       nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
@@ -1373,8 +1378,10 @@ algorithm
 
         if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
           // 7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
-          (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
-          consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+          if not listEmpty(redundantEqns) then
+            (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
+            consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+          end if;
           outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
           (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
         end if;

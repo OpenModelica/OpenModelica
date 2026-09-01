@@ -7,7 +7,7 @@ loadFile("DualMassOscillator.mo"); getErrorString();
 buildModelFMU(DualMassOscillator.System1, fileNamePrefix="DualMassOscillator.System1", platforms={"dynamic"}); getErrorString();
 
 // this should be later replaced by a call to the OMSimulatorPython DualMassOscillator.fmu  when command line interface is implemented with oms3
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 DualMassOscillator.System1.fmu --mode=me", "DualMassOscillator_System1_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator.System1.fmu --mode=me", "DualMassOscillator_System1_systemCall.log");
 readFile("DualMassOscillator_System1_systemCall.log");
 
 // Result:

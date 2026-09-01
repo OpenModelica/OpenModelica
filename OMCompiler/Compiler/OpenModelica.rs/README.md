@@ -29,6 +29,33 @@ Rust debug builds are very slow - only use them if you think compiling the
 release takes too long (we could perhaps introduce a profile with -O1 as a middle
 ground).
 
+## Two cargo workspaces
+
+This directory is the compiler workspace: mmtorust generates most of its `.rs`,
+so a clean checkout cannot load it until the CMake build has run.
+
+The simulation runtime crates live in `OMCompiler/SimulationRuntime/rust`, beside
+the C runtime they stand in for, but are members of *this* workspace -- an omc
+build compiles each of them exactly once, since the wasm-jit target runs the same
+driver, integrators and result writers.
+
+That directory is also the root of a second workspace, which reaches the same
+crates as ordinary path dependencies rather than members. Cargo resolves those
+without loading their own workspace root, so nothing there is generated and
+
+```bash
+cd ../../SimulationRuntime/rust
+cargo check                                                # the whole runtime
+cargo build --release -p openmodelica_simulation_runtime   # libSimulationRuntimeRust
+```
+
+work on a pristine checkout, with no transpile and no CMake. Its `exclude` list
+is what keeps cargo from claiming those crates as its own members.
+
+CMake mirrors both trees into one per-build working copy reproducing the
+`OMCompiler/` shape, since the crates are addressed by relative path; see
+`.cmake/rust_omc.cmake`.
+
 ## Setup
 ```bash
 apt install rustup binaryen

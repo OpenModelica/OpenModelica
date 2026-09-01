@@ -2113,6 +2113,22 @@ algorithm
   end for;
 end handleSets;
 
+protected uniontype AliasWork "work item of the alias graph traversal in getAlias"
+  record ALIAS_ROWS "containers still to visit on one level"
+    list<Integer> rows;
+    Option<Integer> prevVar;
+    Boolean negate;
+    list<Integer> stack;
+  end ALIAS_ROWS;
+
+  record ALIAS_SECOND "the second variable of an alias equation, once the first one is done"
+    Integer var;
+    Integer container;
+    Boolean negate;
+    list<Integer> stack;
+  end ALIAS_SECOND;
+end AliasWork;
+
 protected function getAlias "author: Frenkel TUD 2012-12
   traverse the simple tree to find the variable we keep"
   input list<Integer> rows; //{containerIdx}
@@ -2128,106 +2144,150 @@ protected function getAlias "author: Frenkel TUD 2012-12
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
   input Option<Integer> iConst;
-  output Option<tuple<Integer, Integer>> oRmax;
-  output Option<tuple<Integer, Integer>> oSmax;
-  output Option<Integer> oUnremovable;
-  output Option<Integer> oConst;
-  output Boolean oContinue;
+  output Option<tuple<Integer, Integer>> oRmax = iRmax;
+  output Option<tuple<Integer, Integer>> oSmax = iSmax;
+  output Option<Integer> oUnremovable = iUnremovable;
+  output Option<Integer> oConst = iConst;
+  output Boolean oContinue = true;
+protected
+  list<AliasWork> work = {ALIAS_ROWS(rows, prevVar, negate, stack)};
+  AliasWork item;
+  SimpleContainer container;
+  list<Integer> rest, adjEqs, currStack;
+  Integer r, i, i1, i2, prevVarIdx;
+  Boolean neg, negatedCr1, negatedCr2;
 algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) := match rows
-    local
-      Integer r;
-      list<Integer> rest;
-      SimpleContainer container;
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Boolean visited, cont;
+  while not listEmpty(work) loop
+    item :: work := work;
 
-    case {} then (iRmax, iSmax, iUnremovable, iConst, true);
+    () := match item
+      // scored even when the walk stopped, followed only if not
+      case ALIAS_SECOND()
+        algorithm
+          (oRmax, oSmax, oUnremovable) := getAliasScore(item.var, item.container, vars, unReplaceable, oRmax, oSmax, oUnremovable);
+          if oContinue then
+            adjEqs := List.removeOnTrue(item.container, intEq, iMT[item.var]);
+            work := ALIAS_ROWS(adjEqs, SOME(item.var), item.negate, item.stack)::work;
+          end if;
+        then ();
 
-    case r::rest
-      algorithm
-        container := containerArr[r];
-        visited := isVisited(mark, container);
-        (rmax, smax, unremovable, const, cont) := getAlias1(visited, container, r, rest, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, iRmax, iSmax, iUnremovable, iConst);
-      then
-        (rmax, smax, unremovable, const, cont);
+      case ALIAS_ROWS() guard oContinue and not listEmpty(item.rows)
+        algorithm
+          r :: rest := item.rows;
+          container := containerArr[r];
 
-  end match;
+          if isVisited(mark, container) then
+            oConst := getAliasCircular(container, r, item.negate, item.stack, containerArr, oUnremovable);
+            oRmax := NONE();
+            oSmax := NONE();
+            oUnremovable := NONE();
+            oContinue := false;
+          else
+            // set visited
+            arrayUpdate(containerArr, r, setVisited(mark, container));
+            work := ALIAS_ROWS(rest, item.prevVar, item.negate, item.stack)::work;
+            currStack := r::item.stack;
+
+            () := match (container, item.prevVar)
+              case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), NONE())
+                algorithm
+                  neg := boolOr(negatedCr1, negatedCr2);
+                  neg := if neg then not item.negate else item.negate;
+                  (oRmax, oSmax, oUnremovable) := getAliasScore(i1, r, vars, unReplaceable, oRmax, oSmax, oUnremovable);
+                  adjEqs := List.removeOnTrue(r, intEq, iMT[i1]);
+                  // pushed first, so it runs after this subtree
+                  work := ALIAS_SECOND(i2, r, neg, currStack)::work;
+                  work := ALIAS_ROWS(adjEqs, SOME(i1), neg, currStack)::work;
+                then ();
+
+              case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), SOME(prevVarIdx))
+                algorithm
+                  i := if intEq(prevVarIdx, i1) then i2 else i1;
+                  neg := boolOr(negatedCr1, negatedCr2);
+                  neg := if neg then not item.negate else item.negate;
+                  (oRmax, oSmax, oUnremovable) := getAliasScore(i, r, vars, unReplaceable, oRmax, oSmax, oUnremovable);
+                  adjEqs := List.removeOnTrue(r, intEq, iMT[i]);
+                  // go deeper
+                  work := ALIAS_ROWS(adjEqs, SOME(i), neg, currStack)::work;
+                then ();
+
+              // PARAMETERALIAS, TIMEALIAS and TIMEINDEPENTVAR end the traversal
+              else
+                algorithm
+                  oRmax := NONE();
+                  oSmax := NONE();
+                  oUnremovable := NONE();
+                  oConst := SOME(r);
+                  oContinue := false;
+                then ();
+            end match;
+          end if;
+        then ();
+
+      else ();
+    end match;
+  end while;
 end getAlias;
 
-protected function getAlias1 "author: Frenkel TUD 2012-12"
-  input Boolean visited;
-  input SimpleContainer containerIn;
-  input Integer currIdx; //the container idx
-  input list<Integer> rows;
-  input Option<Integer> prevVar;
-  input Integer mark; //how to mark a visited container
-  input array<SimpleContainer> containerArr;
-  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
+protected function getAliasScore "author: Frenkel TUD 2012-12
+  scores the variable of an alias equation, see getAlias3"
+  input Integer varIdx;
+  input Integer containerIdx;
   input BackendDAE.Variables vars;
   input HashSet.HashSet unReplaceable;
-  input Boolean negate;
-  input list<Integer> stack;
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
-  input Option<Integer> iConst;
   output Option<tuple<Integer, Integer>> oRmax;
   output Option<tuple<Integer, Integer>> oSmax;
   output Option<Integer> oUnremovable;
-  output Option<Integer> oConst;
-  output Boolean oContinue;
+protected
+  BackendDAE.Var v;
+  Boolean state, replaceable_, replaceble1;
 algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  matchcontinue(visited, negate, iUnremovable)
-    local
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      Boolean cont;
-      String msg;
-      DAE.ComponentRef cr;
+  v := BackendVariable.getVarAt(vars, varIdx);
+  (replaceable_, replaceble1) := replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
+  state := BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
+  (oRmax, oSmax, oUnremovable) := getAlias3(v, varIdx, state, replaceable_ and replaceble1, containerIdx, iRmax, iSmax, iUnremovable);
+end getAliasScore;
 
-    case (false, _, _)
-      algorithm
-        // set visited
-        arrayUpdate(containerArr, currIdx, setVisited(mark, containerIn));
-        // check alias connection
-        (rmax, smax, unremovable, const, cont) := getAlias2(containerIn, currIdx, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, currIdx::stack, iRmax, iSmax, iUnremovable, iConst);
-        // next arm
-        if cont then
-          (rmax, smax, unremovable, const, cont) := getAlias(rows, prevVar, mark, containerArr, iMT, vars, unReplaceable, negate, stack, rmax, smax, unremovable, const);
-        end if;
-      then
-        (rmax, smax, unremovable, const, cont);
-
+protected function getAliasCircular "author: Frenkel TUD 2012-12
+  the container was visited before: either a valid circular equality or an error"
+  input SimpleContainer container;
+  input Integer currIdx;
+  input Boolean negate;
+  input list<Integer> stack;
+  input array<SimpleContainer> containerArr;
+  input Option<Integer> iUnremovable;
+  output Option<Integer> oConst;
+protected
+  DAE.ComponentRef cr;
+  String msg;
+algorithm
+  oConst := matchcontinue (negate, iUnremovable)
     // valid circular equality
-    case (true, true, SOME(_))
+    case (true, SOME(_))
       algorithm
         // is only valid for real or int
-        ALIAS(cr1=cr) := containerArr[currIdx];
+        ALIAS(cr1=cr) := container;
         true := Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
-      then
-        (NONE(), NONE(), NONE(), iUnremovable, false);
+      then iUnremovable;
 
-    case (true, true, _)
+    case (true, _)
       algorithm
-        // is only valid for real or int
-        ALIAS(cr1=cr) := containerArr[currIdx];
+        ALIAS(cr1=cr) := container;
         true := Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
-      then
-        (NONE(), NONE(), NONE(), SOME(currIdx), false);
+      then SOME(currIdx);
 
-    case (true, _, _)
+    else
       algorithm
         msg := "Circular Equalities Detected for Variables:\n";
         msg := circularEqualityMsg(stack, currIdx, containerArr, msg);
         // report error
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
-      then
-        fail();
+      then fail();
   end matchcontinue;
-end getAlias1;
+end getAliasCircular;
 
 protected function circularEqualityMsg "author: Frenkel TUD 2013-05, adrpo"
   input list<Integer> stack;
@@ -2279,97 +2339,6 @@ algorithm
     case TIMEINDEPENTVAR(cr=cr1) then {cr1};
   end match;
 end getVarsNames;
-
-protected function getAlias2 "author: Frenkel TUD 2012-12
-is the container connected somehow?"
-  input SimpleContainer containerIn;
-  input Integer currIdx; //the container idx
-  input Option<Integer> prevVar;
-  input Integer mark; //how to mark a visited container
-  input array<SimpleContainer> simpleeqnsarr;
-  input array<list<Integer>> iMT;//[varIdx] = simpleContainer
-  input BackendDAE.Variables vars;
-  input HashSet.HashSet unReplaceable;
-  input Boolean negate; //do we negate negative aliases?
-  input list<Integer> stack;
-  input Option<tuple<Integer, Integer>> iRmax;
-  input Option<tuple<Integer, Integer>> iSmax;
-  input Option<Integer> iUnremovable;
-  input Option<Integer> iConst;
-  output Option<tuple<Integer, Integer>> oRmax;
-  output Option<tuple<Integer, Integer>> oSmax;
-  output Option<Integer> oUnremovable;
-  output Option<Integer> oConst;
-  output Boolean oContinue;
-algorithm
-  (oRmax, oSmax, oUnremovable, oConst, oContinue) :=
-  match(containerIn, prevVar)
-    local
-      list<Integer> adjEqs;
-      Option<tuple<Integer, Integer>> rmax, smax;
-      Option<Integer> unremovable, const;
-      BackendDAE.Var v;
-      Integer i1, i2, i, prevVarIdx;
-      Boolean state, replaceable_, cont, replaceble1, neg, negatedCr1, negatedCr2;
-
-    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), NONE())
-      algorithm
-        // collect next rows
-        neg := boolOr(negatedCr1, negatedCr2);
-        adjEqs := List.removeOnTrue(currIdx, intEq, iMT[i1]);
-        v := BackendVariable.getVarAt(vars, i1);
-        // update max
-        (replaceable_, replaceble1) := replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-        state := BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) := getAlias3(v, i1, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
-        // go deeper
-        neg := if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) := getAlias(adjEqs, SOME(i1), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
-        // collect next rows
-        adjEqs := List.removeOnTrue(currIdx, intEq, iMT[i2]);
-        v := BackendVariable.getVarAt(vars, i2);
-        // update max
-        (replaceable_, replaceble1) := replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-        state := BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) := getAlias3(v, i2, state, replaceable_ and replaceble1, currIdx, rmax, smax, unremovable);
-        // go deeper
-        if cont then
-          (rmax, smax, unremovable, const, cont) := getAlias(adjEqs, SOME(i2), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, const);
-        end if;
-       then
-         (rmax, smax, unremovable, const, cont);
-
-    case (ALIAS(i1=i1, negatedCr1=negatedCr1, i2=i2, negatedCr2=negatedCr2), SOME(prevVarIdx))
-      algorithm
-        i := if intEq(prevVarIdx, i1) then i2 else i1;
-        neg := boolOr(negatedCr1, negatedCr2);
-        // collect next rows
-        adjEqs := List.removeOnTrue(currIdx, intEq, iMT[i]);
-        v := BackendVariable.getVarAt(vars, i);
-        // update max
-        (replaceable_, replaceble1) := replaceableAlias(v, unReplaceable); // (isreplaceable, isNotInUnreplaceblaHashMap)
-        state := BackendVariable.isStateVar(v) or BackendVariable.isClockedStateVar(v);
-        (rmax, smax, unremovable) := getAlias3(v, i, state, replaceable_ and replaceble1, currIdx, iRmax, iSmax, iUnremovable);
-        // go deeper
-        neg := if neg then not negate else negate;
-        (rmax, smax, unremovable, const, cont) := getAlias(adjEqs, SOME(i), mark, simpleeqnsarr, iMT, vars, unReplaceable, neg, stack, rmax, smax, unremovable, iConst);
-       then
-         (rmax, smax, unremovable, const, cont);
-
-    case (PARAMETERALIAS(), _)
-       then
-        (NONE(), NONE(), NONE(), SOME(currIdx), false);
-
-    case (TIMEALIAS(), _)
-      then
-        (NONE(), NONE(), NONE(), SOME(currIdx), false);
-
-    case (TIMEINDEPENTVAR(), _)
-      then
-        (NONE(), NONE(), NONE(), SOME(currIdx), false);
-
-  end match;
-end getAlias2;
 
 protected function getAlias3 "
 apply some heuristics which variable should be kept in the system. quantify some properties, distributes some points.

@@ -6,12 +6,15 @@
 //! is host-free — the browser omc reads an FMU exactly as the native one does.
 
 pub mod description;
+pub mod figures;
+pub mod lsdae;
 #[cfg(feature = "component")]
 pub mod lswasm;
 mod parse;
 mod platform;
 
 pub use description::*;
+pub use figures::{Axis, Curve, Figure, Plot, Visualization};
 pub use parse::model_description;
 pub use platform::{Platform, host_platform};
 
@@ -66,7 +69,8 @@ pub enum Preference {
 pub enum BinaryKind {
     /// A shared library implementing the FMI C API.
     Native,
-    /// `binaries/wasm32-wasip2/*.wasm`, an fmi-ls-wasm component.
+    /// `binaries/wasm32-wasip2/*.wasm`, an fmi-ls-wasm component; `resources/*.wasm`
+    /// where it imports the OpenModelica extension.
     Wasm,
 }
 
@@ -186,6 +190,17 @@ impl Fmu {
                 })
             })
             .collect();
+        // A component importing `om:ext/native` is kept out of `binaries/`, being no
+        // fmi-ls-wasm binary. It is still the FMU's wasm binary to us.
+        let extended = format!("resources/{id}.wasm");
+        if !out.iter().any(|b| b.kind == BinaryKind::Wasm) && self.names.iter().any(|n| *n == extended) {
+            out.push(Binary {
+                kind: BinaryKind::Wasm,
+                platform_dir: platform::WASM_DIR.to_string(),
+                path: extended,
+                is_host: false,
+            });
+        }
         out.sort_by_key(|b| (!b.is_host, b.kind == BinaryKind::Wasm));
         out
     }
@@ -229,6 +244,14 @@ impl Fmu {
     pub fn ls_wasm_manifest(&self) -> Option<lswasm::Manifest> {
         let xml = self.read(lswasm::MANIFEST_PATH)?;
         lswasm::Manifest::parse(&String::from_utf8_lossy(&xml)).ok()
+    }
+
+    /// The fmi-ls-dae manifest, when the FMU has a DAE formulation. A manifest
+    /// that is there but unreadable is an error: the importer was asked for DAE
+    /// mode and must not fall back to ODE mode quietly.
+    pub fn ls_dae_manifest(&self) -> Option<Result<lsdae::Manifest>> {
+        let xml = self.read(lsdae::MANIFEST_PATH)?;
+        Some(lsdae::Manifest::parse(&String::from_utf8_lossy(&xml)))
     }
 }
 

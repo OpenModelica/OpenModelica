@@ -27,7 +27,12 @@ crate-type = ["cdylib"]
 [dependencies]
 wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
 openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
-openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false }
+# The result-file serializers, for the `om:sim/simulation` export: the same
+# writers the standalone export and the host use, so the three cannot drift.
+openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica_mat_writer" }
+openmodelica_plt_writer = { path = "../../../SimulationRuntime/rust/openmodelica_plt_writer" }
+openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal" }
 
 [profile.release]
 opt-level = "s"
@@ -46,7 +51,18 @@ strip = true
 default = ["me"]
 me = []
 cs = []
-# CVODE/IDA for the embedded driver, as imports the SUNDIALS side module resolves. A
-# second `cs`/`me_cs` blob is built with it, so an FMU that does not ask for those
-# solvers links neither the calls nor the module.
-sundials = ["openmodelica_sim_meta/sundials_extern"]
+# Export the FMI 3.0 C API from the core module (src/capi.rs) beside the
+# component's WIT exports, for a host that links this module as a dylink library
+# instead of composing it into a per-model component — and can then compile it
+# once and keep the `.cwasm`, as it already does for the simulation runtime.
+capi = []
+# Both sparse-solve paths, chosen at run time by `rt_set_host_lin_solve`: the
+# host's native solver when one is instantiating this (1.3-2.7x on the large
+# systems of ScalableTestSuite's advection models), the in-wasm one otherwise.
+host_lin_solve = ["openmodelica_codegen_wasm_jit_runtime/host_lin_solve",
+                  "openmodelica_codegen_wasm_jit_runtime/inwasm_solve"]
+# The SUNDIALS/SuiteSparse/Lis solvers for the embedded driver -- CVODE, IDA, KINSOL,
+# KLU, UMFPACK, Lis -- as imports the FMU's SUNDIALS side module resolves. On for the
+# `me_cs` blob, which is the only one that embeds a driver.
+sundials = ["openmodelica_sim_meta/sundials_extern",
+            "openmodelica_codegen_wasm_jit_runtime/sundials_extern"]

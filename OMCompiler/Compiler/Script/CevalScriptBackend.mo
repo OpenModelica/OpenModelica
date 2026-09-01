@@ -1270,8 +1270,7 @@ algorithm
     case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
         simSettings := fmuSimulationSettings(className, filenameprefix, str3);
-        fmuMethodToSimulationFlag(str3);
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings));
+        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         ret_val;
 
@@ -4410,6 +4409,7 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   String FMUType = inFMUType;
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4433,10 +4433,14 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
     success := false;
     outValue := Values.STRING("");
-    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    if FMI.isFMIMEType(FMUType) then
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
+    else
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+    end if;
     return;
   end if;
 
@@ -4450,12 +4454,25 @@ algorithm
     defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
     simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
   end if;
+  // The wasm FMU export uses the wasm-jit code generator, as buildModelFMU does;
+  // the flag change is reverted by translateModelFMU's saveFlags wrapper.
+  if isWasmFMU then
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(List.select(platforms, isNotWasmPlatform), ","));
+  end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
 
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, isWasmFMU),
+                                            cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
+    // A wasm translation wrote no FMU: it lowered the model kernel and kept it,
+    // so force its JIT compile (and resolve its external "C") here, as
+    // buildModel's compile phase does. The model is then ready to simulate and
+    // the buildModelFMU that follows only links and renders.
+    if success and isWasmFMU then
+      CodegenWasmJit.finishCompile(filenameprefix);
+    end if;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     success :=false;
@@ -4465,7 +4482,7 @@ algorithm
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 end callTranslateModelFMU;
 
-protected function generateFMI3GraphicalRepresentation
+public function generateFMI3GraphicalRepresentation
   "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
    model instance (issue #15219) for the *graphical* side only, this renders the
    model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
@@ -4648,14 +4665,19 @@ protected function fmuMethodToSimulationFlag
    `--fmiFlags` writes. So fold an explicit method in there, unless the caller
    already said `s:`.
 
-   Only `euler` and `cvode`: those are the values an FMU's `s` flag accepts, and a
-   model's own `dassl` default must not become an `s:dassl` the FMU rejects at
-   instantiation. `buildModelFMU` restores the flag store afterwards."
+   Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
+   takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
+   `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
+   wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
+   to what it defaults to without one: euler for C, the model's own method (else
+   DASKR) for wasm."
   input String method;
+  input Boolean isWasmFMU;
 protected
   list<String> fmiFlags;
+  list<String> accepted = if isWasmFMU then CodegenWasmJit.fmuCsSolvers() else {"euler", "cvode"};
 algorithm
-  if method == "<default>" or not (method == "euler" or method == "cvode") then
+  if method == "<default>" or not listMember(method, accepted) then
     return;
   end if;
   fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
@@ -4670,6 +4692,80 @@ algorithm
   end if;
   FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, {"s:" + method});
 end fmuMethodToSimulationFlag;
+
+protected function fmuAnnotationSimulationFlags
+  "A wasm FMU runs the model with the flags simulate() would: the class's
+   __OpenModelica_simulationFlags go into --fmiFlags, whose `_flags.json` the FMU
+   applies when it instantiates. A flag already named wins, and one the FMU cannot
+   honour is left out rather than baked in to fail at the importer's first
+   instantiate. A C FMU reads only a few flags and warns about the rest, so it
+   keeps to what --fmiFlags said."
+  input Absyn.Path className;
+  input Boolean isWasmFMU;
+protected
+  list<String> fmiFlags, names = {}, folded = {};
+  list<Absyn.ElementArg> args;
+  Option<Absyn.Modification> mod;
+  String name, value;
+algorithm
+  if not isWasmFMU or Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  if listLength(fmiFlags) == 1 and stringEq(listHead(fmiFlags), "default") then
+    fmiFlags := {};
+  end if;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  for f in fmiFlags loop
+    if not stringEq(f, "default") and not (listLength(Util.stringSplitAtChar(f, ":")) == 2) then
+      return;
+    end if;
+    names := listHead(Util.stringSplitAtChar(f, ":")) :: names;
+  end for;
+  loadProgram(className);
+  mod := ProgramUtil.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
+    Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
+  args := match mod
+    case SOME(Absyn.CLASSMOD(elementArgLst = args)) then args;
+    else {};
+  end match;
+  for arg in args loop
+    name := AbsynUtil.pathString(AbsynUtil.elementArgName(arg));
+    value := fmuSimulationFlagValue(arg);
+    if not listMember(name, names) then
+      if CodegenWasmJit.fmuAcceptsFlag(name, value) then
+        folded := (name + ":" + value) :: folded;
+      else
+        Error.addCompilerNotification("Leaving the __OpenModelica_simulationFlags entry " + name
+          + "=\"" + value + "\" out of the FMU: it cannot honour it.");
+      end if;
+    end if;
+  end for;
+  if not listEmpty(folded) then
+    FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, listAppend(fmiFlags, listReverse(folded)));
+  end if;
+end fmuAnnotationSimulationFlags;
+
+protected function fmuSimulationFlagValue
+  "One __OpenModelica_simulationFlags entry as a `_flags.json` value; empty for a
+   flag that takes none."
+  input Absyn.ElementArg arg;
+  output String value;
+algorithm
+  value := match arg
+    local
+      Absyn.Exp exp;
+    case Absyn.ElementArg.MODIFICATION(modification =
+        SOME(Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp))))
+      then
+        match exp
+          case Absyn.STRING("()") then "";
+          case Absyn.STRING() then exp.value;
+          else Dump.printExpStr(exp);
+        end match;
+    else "";
+  end match;
+end fmuSimulationFlagValue;
 
 protected function reportFMUPlatformsBuilt
   "The platform progress the C export reports around each platform's compile.
@@ -4722,10 +4818,12 @@ protected function buildModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  input String method = "<default>" "`buildModelFMU(method=)`, folded into --fmiFlags where the FMU accepts it";
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
   Flags.Flag flags;
+  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4733,12 +4831,20 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
+    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
+    // hand so one export does not pick the solver for the next. `saveFlags` will
+    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
+    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+    fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
+    fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -4764,7 +4870,7 @@ protected
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
-  list<String> libs;
+  list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
@@ -4774,7 +4880,9 @@ protected
   // is the C export's business even under the wasm simCodeTarget.
   Boolean wasmRequested = listMember("wasm", platforms);
   Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
-  Boolean isWasmFMU = (wasmRequested or wasmTarget) and FMUVersion <> "1.0";
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
+  Option<SimCode.SimCode> keptSimCode;
+  SimCode.SimCode keptTranslation;
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
@@ -4803,9 +4911,13 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
     outValue := Values.STRING("");
-    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    if FMI.isFMIMEType(FMUType) then
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
+    else
+      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
+    end if;
     return;
   end if;
 
@@ -4830,9 +4942,22 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  // A translateModelFMU of this model, this FMI version and this kind of
+  // interface, off the program still loaded and under the flags still set, has
+  // already done the translation: render the metadata and link the adapter onto
+  // the kernel it left rather than translating again. The flags are read after
+  // the munging above so both phases fingerprint the same state.
+  keptSimCode := if isWasmFMU then SimCodeMain.fmuTranslationFor(FMUVersion, FMUType, className, SOME(simSettings)) else NONE();
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    if isSome(keptSimCode) then
+      SOME(keptTranslation) := keptSimCode;
+      Error.addCompilerNotification("Exporting the translation translateModelFMU already made; the model is not translated again.");
+      SimCodeMain.emitWasmFMU(keptTranslation, FMUVersion, FMUType, SymbolTable.getAbsyn());
+      success := true;
+    else
+      (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, false),
+                                              cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
+    end if;
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4854,24 +4979,17 @@ algorithm
 
   // wasm FMU: CodegenWasmJit.emitMeFmu already wrote the self-contained
   // <name>.fmu (component linked in Rust, ZIP assembled in Rust) — nothing to
-  // build or zip. Just confirm it exists.
+  // build or zip. Just confirm it exists. With --fmuDirectory it is an unzipped
+  // directory of that name instead.
   if isWasmFMU then
-    if not System.regularFileExists(fmuTargetName + ".fmu") then
+    if not (System.regularFileExists(fmuTargetName + ".fmu")
+            or (Flags.getConfigBool(Flags.FMU_DIRECTORY) and System.directoryExists(fmuTargetName + ".fmu"))) then
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
       outValue := Values.STRING("");
       return;
     end if;
     reportFMUPlatformsBuilt(platforms);
     return;
-  end if;
-
-  // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
-  // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to
-  // terminalsAndIcons.xml. Done here (after translateModel, before the FMU is
-  // packed) for the C target; the OMGraphics renderer consumes the in-memory
-  // model-instance annotation reference (issue #15219).
-  if FMUVersion == "3.0" and Config.simCodeTarget() == "C" then
-    generateFMI3GraphicalRepresentation(className, fmutmp, filenameprefix);
   end if;
 
   if Config.simCodeTarget() == "Cpp" then
@@ -4963,6 +5081,17 @@ algorithm
     end if;
   end if;
 end callBuildModelFMU;
+
+protected function isWasmFMUExport
+  "Whether `buildModelFMU` takes the wasm (fmi-ls-wasm) route: the `wasm` platform
+   was asked for, or the simCodeTarget is already a wasm one. FMI 1.0 never does."
+  input String FMUVersion;
+  input list<String> platforms;
+  output Boolean isWasm;
+algorithm
+  isWasm := (listMember("wasm", platforms) or Config.simCodeTarget() == "wasm-jit"
+             or Config.simCodeTarget() == "wasm") and FMUVersion <> "1.0";
+end isWasmFMUExport;
 
 protected function isNotWasmPlatform
   "\"static\"/\"dynamic\" are the C target's own platform names, meaningless once

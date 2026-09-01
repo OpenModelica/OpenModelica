@@ -15,13 +15,23 @@ default = ["ffi"]
 # Load a native FMU binary and call the FMI 3.0 C API through it (`dlopen`).
 # Not available on wasm, where there is nothing to dlopen.
 ffi = ["dep:libloading"]
+# Drive an fmi-ls-wasm component in this process: wasmtime instantiates it and
+# the masters reach the FMU through its exports. What lets omc simulate the
+# artifact it exported without a loader library in between.
+component = ["dep:wasmtime", "dep:wasmtime-wasi", "dep:openmodelica_ext_native"]
 
 [dependencies]
 openmodelica_fmi = { path = "../openmodelica_fmi" }
-openmodelica_solvers = { path = "../openmodelica_solvers" }
+openmodelica_solvers = { path = "../../../SimulationRuntime/rust/openmodelica_solvers" }
 # The result file: the same `.mat` a simulated model writes, so OMPlot and
 # omc-diff read an FMU run like any other.
-openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica_mat_writer" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libloading = { version = "0.8", optional = true }
+# The same wasmtime the wasm-jit engine and the FMU exporter use: a `.cwasm` is
+# tied to one build and one configuration, so there can only be one.
+wasmtime = { workspace = true, optional = true, features = ["component-model", "gc", "gc-null", "gc-drc"] }
+# An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
+wasmtime-wasi = { version = "45", default-features = false, optional = true, features = ["p2"] }
+openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }

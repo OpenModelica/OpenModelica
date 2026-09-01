@@ -403,20 +403,29 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
     return FALSE;
   }
 
-  /* check rows (or cols?) */
-  for(i=1; i < nlsSize; i++)
+  /* Use sizeCols (actual allocated columns) for leadindex bounds to avoid OOB when
+   * the Jacobian has fewer seed directions than NLS unknowns (nSeeds < nlsSize). */
   {
-    if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
-      warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
-      return FALSE;
+    unsigned int nCheckCols = sparsePattern->sizeCols < (unsigned int)nlsSize
+                              ? sparsePattern->sizeCols : (unsigned int)nlsSize;
+    for(i=1; i < (int)nCheckCols; i++)
+    {
+      if(sparsePattern->leadindex[i] == sparsePattern->leadindex[i-1]) {
+        warningStreamPrint(stream, 0, "Sparsity pattern row %d has no non-zero elements.", i);
+        return FALSE;
+      }
     }
   }
 
   /* check cols (or rows?) */
   colCheck = (char*) calloc(nlsSize, sizeof(char));
 
-  for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
+  for(i=0; i < (int)sparsePattern->leadindex[sparsePattern->sizeCols]; i++)
   {
+    /* Row index may exceed nlsSize when the Jacobian has auxiliary equations
+     * beyond the NLS residuals (sizeRows > nCols). Skip those rows to avoid
+     * out-of-bounds writes into colCheck[nlsSize]. */
+    if (sparsePattern->index[i] >= (unsigned int)nlsSize) continue;
     colCheck[sparsePattern->index[i]] = TRUE;
   }
 
@@ -507,6 +516,31 @@ void overwriteOldSimulationData(DATA *data)
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
   }
+}
+
+/*! \fn continueSimulationData
+ *
+ *  Makes the current slot of the ring buffer continue from the previous step.
+ *
+ *  `rotateRingBuffer` moves `localData[0]` onto the slot that held the values of
+ *  `SIZERINGBUFFER` steps ago, and the equations only overwrite what they compute,
+ *  so a variable read before the equation that computes it - a dynamic-tearing
+ *  constraint check, a nonlinear system's old value - would see that stale slot.
+ *
+ *  Call directly after `rotateRingBuffer` + `lookupRingBuffer`.
+ *
+ *  \param [ref] [data]
+ */
+void continueSimulationData(DATA *data)
+{
+  if(ringBufferLength(data->simulationData) < 2)
+    return;
+
+  data->localData[0]->timeValue = data->localData[1]->timeValue;
+  memcpy(data->localData[0]->realVars, data->localData[1]->realVars, sizeof(modelica_real)*data->modelData->nVariablesReal);
+  memcpy(data->localData[0]->integerVars, data->localData[1]->integerVars, sizeof(modelica_integer)*data->modelData->nVariablesInteger);
+  memcpy(data->localData[0]->booleanVars, data->localData[1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
+  memcpy(data->localData[0]->stringVars, data->localData[1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
 }
 
 /*! \fn copyRingBufferSimulationData

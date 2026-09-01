@@ -5,7 +5,6 @@ def shouldWeBuildEnterpriseLinux
 def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
-def shouldWeDisableAllCMakeBuilds
 def shouldWeRunTests
 def shouldWeRunRustTests
 
@@ -18,6 +17,8 @@ pipeline {
     // the nodes busy for hours.
     parallelsAlwaysFailFast()
     buildDiscarder(logRotator(daysToKeepStr: "14", artifactNumToKeepStr: "2"))
+    // This group's Jenkins config takes the priority from BUILD_PRIORITY.
+    jobGroup jobGroupName: 'OpenModelica', useJobGroup: true
   }
   environment {
     LC_ALL = 'C.UTF-8'
@@ -28,9 +29,12 @@ pipeline {
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
-    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable running partest on the Rust target')
-    string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'wasm-jit', description: 'Override simCodeTarget for the Rust partest, e.g. wasm-jit (empty = compiler default)')
-    booleanParam(name: 'RUST_PARTEST_JUNIT', defaultValue: false, description: 'Register the Rust partest result.xml as JUnit results (per-test view; makes the build unstable on failures)')
+    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc with RUST_PARTEST_SIMCODETARGET (the wasm-jit partest always runs)')
+    string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'C+Rust', description: 'simCodeTarget for the ENABLE_RUST_PARTEST run (empty = compiler default)')
+    // Read at queue time, before common.groovy is loaded.
+    string(name: 'BUILD_PRIORITY',
+           defaultValue: env.CHANGE_ID ? '3' : '5',
+           description: 'Queue priority, 1 (scheduled first) to 5 (last). Defaults to 3 for pull requests and 5 for branch builds.')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -76,9 +80,6 @@ pipeline {
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
             }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -319,7 +320,8 @@ pipeline {
     stage('tests + extras') {
       parallel {
         // partest against the Rust-built omc; dedicated runtest cache. See
-        // common.partestRust().
+        // common.partestRust(). Opt-in, on RUST_PARTEST_SIMCODETARGET; the
+        // wasm-jit run is stages 23/24.
         stage('01 testsuite-rust 1/2') {
           agent {
             label 'linux'
@@ -336,7 +338,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(1)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 1, 2, false)
               }
             }
           }
@@ -357,7 +359,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(2)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 2, 2, false)
               }
             }
           }
@@ -729,7 +731,12 @@ pipeline {
 
         stage('18 testsuite-clang-parmod') {
           agent {
-            label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
+            // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
+            // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
+            // does not know and falls back to the target CPU 'generic', which LLVM
+            // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
+            // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
+            label 'linux-intel-x64'
           }
           when {
             beforeAgent true
@@ -840,6 +847,58 @@ pipeline {
           post {
             always {
               junit testResults: 'build_cmake/junit.xml', skipPublishingChecks: true
+            }
+          }
+        }
+
+        // The wasm-jit partest, same setup as stages 01/02. Last in the block
+        // (against the ordering rule above): the fastest of the testsuite runs,
+        // so it loses the least by starting after the others.
+        stage('23 testsuite-wasm-jit 1/2') {
+          agent {
+            label 'linux'
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust('wasm-jit', 1, 2, true)
+              }
+            }
+          }
+        }
+        stage('24 testsuite-wasm-jit 2/2') {
+          agent {
+            label 'linux'
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust('wasm-jit', 2, 2, true)
+              }
             }
           }
         }

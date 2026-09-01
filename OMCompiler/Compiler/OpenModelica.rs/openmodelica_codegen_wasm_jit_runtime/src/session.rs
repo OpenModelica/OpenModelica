@@ -95,6 +95,10 @@ impl SimEngine for InWasmEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> driver::Result<()> {
+        crate::set_string_slot(addr, bytes);
+        Ok(())
+    }
     fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
@@ -132,6 +136,9 @@ impl SimEngine for InWasmEngine {
         let idx = self.fn_base + slot;
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
+    }
+    fn has_simulate_entry(&mut self) -> bool {
+        slot_of("simulate").is_some_and(|s| self.present(s))
     }
     fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         let mut out = Vec::new();
@@ -171,6 +178,18 @@ impl SimEngine for InWasmEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn prof_row(&mut self) -> u32 {
+        crate::prof::rt_prof_row()
+    }
+    fn prof_dump(&mut self) -> u32 {
+        crate::prof::rt_prof_dump()
+    }
+    fn prof_clear(&mut self) {
+        crate::prof::rt_prof_clear(0);
+    }
+    fn prof_init(&mut self, n: u32) {
+        crate::prof::rt_prof_init(n);
+    }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
@@ -200,6 +219,9 @@ struct Session {
     stats: SolveStats,
     /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
     lin: Vec<u8>,
+    /// `+profiling`'s collected state (`profiling::snapshot`), for the host to
+    /// render into the report once it has written the result file.
+    prof: Vec<u8>,
 }
 
 struct SessionCell(UnsafeCell<Option<Session>>);
@@ -225,7 +247,7 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
         simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
-            crate::solvers::apply_flags(&f);
+            openmodelica_solvers::solverflags::apply_flags(&f);
             simflags::set_flags(f);
             0
         }
@@ -275,9 +297,21 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
         }
         Some(openmodelica_sim_meta::driver::StartImports { file, time, values })
     };
+    let strings = |p: &mut usize| -> Option<Vec<(u32, alloc::string::String)>> {
+        let n = u32_at(p)? as usize;
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            let off = u32_at(p)?;
+            let len = u32_at(p)? as usize;
+            let s = alloc::string::String::from_utf8_lossy(bytes.get(*p..*p + len)?).into_owned();
+            *p += len;
+            out.push((off, s));
+        }
+        Some(out)
+    };
     match (group(&mut p), group(&mut p)) {
         (Some(params), Some(starts)) => {
-            openmodelica_sim_meta::driver::set_param_overrides(params, starts);
+            openmodelica_sim_meta::driver::set_param_overrides(params, starts, strings(&mut p).unwrap_or_default());
             openmodelica_sim_meta::driver::set_start_imports(imports(&mut p));
             0
         }
@@ -296,6 +330,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     *session() = None;
     crate::reset_lin_solves();
     crate::reset_ls_failures();
+    crate::nls::set_no_throw_div_zero(false); // C's `initializeModel`
     crate::reset_stats();
     crate::sundials::reset_caches();
 
@@ -311,12 +346,10 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     driver::set_log_sink(crate::omclog::sink);
 
     crate::nls::rt_set_step_size(model.step_size());
+    crate::files::set_prefix(&model.prefix);
+    crate::nls::set_diag(&model.nls_vars);
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
-    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
-        model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
-    } else {
-        Vec::new()
-    });
+    crate::nls::set_var_names(model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect());
 
     driver::set_clock(now_ms_hook);
     // This session runs its own start/advance/finish instead of `drive`, so the
@@ -324,15 +357,25 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     use openmodelica_sim_meta::rtclock;
     rtclock::reset(
         openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS)
-            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V),
+            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V)
+            // `+profiling` is C's other `measure_time_flag` source, as in `drive`.
+            || model.prof.is_some(),
     );
     rtclock::tick(rtclock::TOTAL);
     rtclock::tick(rtclock::PREINIT);
-    crate::sysstats::enable(openmodelica_sim_meta::omclog::active(
+    openmodelica_solvers::sysstat::enable(openmodelica_sim_meta::omclog::active(
         openmodelica_sim_meta::omclog::STATS_V,
     ));
+    // `+profiling`: the traces are collected here and rendered by the host, which
+    // is the side that knows what the result file it reports on ended up being
+    // (`profiling::snapshot` / `rt_sim_prof_ptr`).
+    openmodelica_sim_meta::profiling::start(&mut InWasmEngine { fn_base, present_mask }, &model);
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
+    openmodelica_sim_meta::files::set_writer(|path, bytes| {
+        crate::files::write_file(path, &alloc::string::String::from_utf8_lossy(bytes));
+        true
+    });
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
 
     let mut engine = InWasmEngine { fn_base, present_mask };
@@ -356,7 +399,14 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         params: Vec::new(),
         stats: SolveStats::default(),
         lin: Vec::new(),
+        prof: Vec::new(),
     });
+    // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
+    // for the analyses the nonlinear solver runs from inside a solve.
+    #[cfg(sundials)]
+    if let Some(s) = session().as_ref() {
+        crate::model_ctx::set_context(&s.model, s.sim_data);
+    }
     0
 }
 
@@ -418,7 +468,10 @@ fn finish(s: &mut Session) {
     }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     use openmodelica_sim_meta::rtclock;
+    openmodelica_sim_meta::parmod::finish();
     rtclock::accumulate(rtclock::TOTAL);
+    openmodelica_sim_meta::profiling::end_of_run(&mut s.engine);
+    s.prof = openmodelica_sim_meta::profiling::snapshot();
     (s.stats.timers, s.stats.tcalls) = rtclock::snapshot();
     s.finished = true;
 }
@@ -456,6 +509,17 @@ pub extern "C" fn rt_sim_lin_ptr() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_lin_len() -> u32 {
     session().as_ref().map_or(0, |s| s.lin.len() as u32)
+}
+
+/// `+profiling`'s collected state, valid once the run is done.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_prof_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.prof.as_ptr() as u32)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_prof_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.prof.len() as u32)
 }
 
 #[unsafe(no_mangle)]

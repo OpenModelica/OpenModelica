@@ -61,8 +61,12 @@ fn hess_qr(
         wi[ilo - 1] = 0.0;
         return (z, 0);
     }
-    let mut dummy = [0.0f64; 1];
+    let mut dummy = vec![0.0f64; if want_z { 0 } else { n * n }];
     let zz = z.as_deref_mut().unwrap_or(&mut dummy);
+    #[cfg(feature = "faer-backend")]
+    let info =
+        crate::faer_backend::multishift_qr_window(want_t, want_z, n, ilo, ihi, h, ldh, wr, wi, zz, ldh);
+    #[cfg(not(feature = "faer-backend"))]
     let info = crate::hqr::dlahqr(want_t, want_z, n, ilo, ihi, h, ldh, wr, wi, ilo, ihi, zz, ldh);
     if (want_t || info != 0) && n > 2 {
         for j in 1..=n - 2 {
@@ -78,7 +82,7 @@ fn hess_qr(
 /// outside `[sqrt(SAFMIN)/eps, eps/sqrt(SAFMIN)]`, so the QR iteration's
 /// thresholds stay meaningful. `Some(anrm)` means the matrix was scaled and the
 /// eigenvalues have to be scaled back.
-fn prescale(n: usize, a: &mut [f64], lda: usize) -> Option<f64> {
+pub(crate) fn prescale(n: usize, a: &mut [f64], lda: usize) -> Option<f64> {
     let smlnum = crate::sqrt(SAFMIN) / crate::hqr::ULP;
     let bignum = 1.0 / smlnum;
     let anrm = (0..n).flat_map(|j| (0..n).map(move |i| (i, j))).map(|(i, j)| abs(at(a, lda, i, j)))
@@ -99,7 +103,7 @@ fn prescale(n: usize, a: &mut [f64], lda: usize) -> Option<f64> {
 /// `DGEEV`'s final normalization: each eigenvector to Euclidean norm 1, and a
 /// conjugate pair rotated so its largest-modulus component is real. Both halves
 /// of a pair share the scale, and column `j+1` holds the imaginary part.
-fn normalize_eigenvectors(v: &mut [f64], ldv: usize, n: usize, wi: &[f64]) {
+pub(crate) fn normalize_eigenvectors(v: &mut [f64], ldv: usize, n: usize, wi: &[f64]) {
     let mut i = 0;
     while i < n {
         if wi[i] == 0.0 {
@@ -134,6 +138,27 @@ fn normalize_eigenvectors(v: &mut [f64], ldv: usize, n: usize, wi: &[f64]) {
 /// has Euclidean norm 1 with its largest-modulus component real.
 #[allow(clippy::too_many_arguments)]
 pub fn dgeev(
+    jobvl: &str,
+    jobvr: &str,
+    n: usize,
+    a: &[f64],
+    lda: usize,
+    wr: &mut [f64],
+    wi: &mut [f64],
+    vl: &mut [f64],
+    ldvl: usize,
+    vr: &mut [f64],
+    ldvr: usize,
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dgeev(jobvl, jobvr, n, a, lda, wr, wi, vl, ldvl, vr, ldvr);
+    #[cfg(not(feature = "faer-backend"))]
+    dgeev_ref(jobvl, jobvr, n, a, lda, wr, wi, vl, ldvl, vr, ldvr)
+}
+
+/// The port of `DGEEV`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dgeev_ref(
     jobvl: &str,
     jobvr: &str,
     n: usize,
@@ -205,6 +230,7 @@ pub fn dgees(
     vs: &mut [f64],
     ldvs: usize,
 ) -> i32 {
+
     if opt(sort) == b'S' {
         return -2;
     }
@@ -255,6 +281,7 @@ pub fn dhseqr(
     z: &mut [f64],
     ldz: usize,
 ) -> i32 {
+
     if n == 0 {
         return 0;
     }
@@ -269,6 +296,10 @@ pub fn dhseqr(
             }
         }
     }
+    #[cfg(feature = "faer-backend")]
+    let info =
+        crate::faer_backend::multishift_qr_window(want_t, want_z, n, 1, n, h, ldh, wr, wi, z, ldz);
+    #[cfg(not(feature = "faer-backend"))]
     let info = crate::hqr::dlahqr(want_t, want_z, n, 1, n, h, ldh, wr, wi, 1, n, z, ldz);
     if (want_t || info != 0) && n > 2 {
         for j in 0..n - 2 {
@@ -285,6 +316,22 @@ pub fn dhseqr(
 /// reflector `k` is `TAU(k)` plus `V(k+2:)` below it — the packed form `dorghr`
 /// consumes. `ilo`/`ihi` are LAPACK's 1-based active window.
 pub fn dgehrd(
+    n: usize,
+    ilo: usize,
+    ihi: usize,
+    a: &mut [f64],
+    lda: usize,
+    tau: &mut [f64],
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    if let Some(r) = crate::faer_backend::dgehrd(n, ilo, ihi, a, lda, tau) {
+        return r;
+    }
+    dgehrd_ref(n, ilo, ihi, a, lda, tau)
+}
+
+/// The port of `DGEHRD`, and the only path for a proper `[ilo, ihi]` window.
+pub fn dgehrd_ref(
     n: usize,
     ilo: usize,
     ihi: usize,
@@ -529,4 +576,36 @@ fn solve_block_sylvester(p: usize, q: usize, ak: &[f64], bl: &[f64], sgn: f64, r
         rhs[col] = v / mat[col + col * s];
     }
     info
+}
+
+/// `DHGEQZ`: the QZ iteration on an already Hessenberg-triangular pair `(H, T)`.
+/// Needs `faer-backend`; without a QZ here there is nothing to fall back on, so
+/// it reports `INFO = n+1`, which is LAPACK's "the iteration failed" code.
+#[allow(clippy::too_many_arguments)]
+pub fn dhgeqz(
+    job: &str,
+    compq: &str,
+    compz: &str,
+    n: usize,
+    h: &mut [f64],
+    ldh: usize,
+    t: &mut [f64],
+    ldt: usize,
+    alphar: &mut [f64],
+    alphai: &mut [f64],
+    beta: &mut [f64],
+    q: &mut [f64],
+    ldq: usize,
+    z: &mut [f64],
+    ldz: usize,
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dhgeqz(
+        job, compq, compz, n, h, ldh, t, ldt, alphar, alphai, beta, q, ldq, z, ldz,
+    );
+    #[cfg(not(feature = "faer-backend"))]
+    {
+        let _ = (job, compq, compz, h, ldh, t, ldt, alphar, alphai, beta, q, ldq, z, ldz);
+        (n + 1) as i32
+    }
 }

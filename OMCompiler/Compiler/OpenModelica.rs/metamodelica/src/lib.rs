@@ -25,6 +25,9 @@
 //! re-entrant callbacks). If MM-level concurrency is ever introduced, this alias
 //! is the only thing that needs to change.
 
+// The derives expand to `metamodelica::…` paths, also inside this crate.
+extern crate self as metamodelica;
+
 pub use ordered_float::OrderedFloat;
 pub use num_traits::Float;
 

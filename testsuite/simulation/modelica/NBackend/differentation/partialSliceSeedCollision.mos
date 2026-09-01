@@ -1,0 +1,55 @@
+// name: partialSliceSeedCollision
+// keywords: NewBackend
+// status: correct
+//
+// Regression test for VariablePointers.add (NBVariable.mo) silently
+// overwriting distinct literal-indexed seed candidates that share a base
+// array name. x[2],x[3],x[4] (a partial slice of x, x[1] not part of the
+// loop) form a homotopy-required, torn 3-unknown algebraic loop, so all
+// three take partialSliceSeedCandidates' safe "per-element" path and end
+// up in the same non-scalarized VariablePointers collection.
+//
+// Before the fix, x[2]/x[3]/x[4]'s seed candidates all compared equal
+// under the collection's stripped (subscript-ignoring) map equality, so
+// each later add() silently overwrote the previous one -- only x[4]
+// survived, and the runtime reported "Analytic Jacobian of non-linear
+// system 0 is 3x1, but the system has 3 iteration variables", falling
+// back to a numeric Jacobian. After the fix all three seeds are kept.
+//
+// Also incidentally covers a second, separate fix (NSimJacobian.mo's
+// crefFlatOffset/virtual-SimVar offset computation for partial-slice
+// seeds): before that fix, this model additionally emitted "Sparsity
+// pattern ... is not regular" for both non-linear systems, from the same
+// class of lost-array-dimension bug manifesting in the sparsity pattern
+// rather than the seed count. Both warnings are gone after both fixes.
+
+loadString("
+model partialSliceSeedCollision
+  Real x[4](start = {1,1,1,1});
+equation
+  x[1] = 1;
+  0 = homotopy(x[2]^2 - x[4] - 1, x[2] - 1);
+  0 = homotopy(x[3]^2 - x[2] - 1, x[3] - 1);
+  0 = homotopy(x[4]^2 - x[3] - 1, x[4] - 1);
+end partialSliceSeedCollision;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(partialSliceSeedCollision, stopTime=0.1, numberOfIntervals=5);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "partialSliceSeedCollision_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 5, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'partialSliceSeedCollision', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

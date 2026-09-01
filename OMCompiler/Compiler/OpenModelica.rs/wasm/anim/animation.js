@@ -45,14 +45,21 @@ function scaleFor(kind, length, width, height) {
   }
 }
 
-// Camera presets matching OMEdit (AbstractAnimationWindow::cameraPosition*): `dir`
-// is the world direction from the target toward the camera, `up` the camera up.
-// Side is OMEdit's default for Modelica models (x right, y up, z toward viewer).
+// OrbitControls orbits about one axis, read from `camera.up` when it is constructed.
+// A camera exactly on that axis is the frame's singularity: azimuth is a no-op and
+// the polar angle only moves one way, so nothing may come closer to it than POLE.
+const UP = [0, 1, 0];
+const POLE = 0.02;
+
+// Camera presets matching OMEdit (AbstractAnimationWindow::cameraPosition*), as the
+// spherical angles OrbitControls works in: polar `phi` from +Y, azimuth `theta` from
+// +Z toward +X. Top's azimuth keeps OMEdit's +Z-right, +X-up screen orientation.
+const HALF_PI = Math.PI / 2;
 const VIEWS = {
-  iso:   { dir: [0.57735, 0.57735, 0.57735], up: [-0.409, 0.816, -0.409] },
-  side:  { dir: [0, 0, 1], up: [0, 1, 0] },   // look -Z
-  front: { dir: [1, 0, 0], up: [0, 1, 0] },   // look -X
-  top:   { dir: [0, 1, 0], up: [1, 0, 0] },   // look -Y
+  iso:   { theta: Math.PI / 4, phi: Math.acos(1 / Math.sqrt(3)) },
+  side:  { theta: 0,           phi: HALF_PI },   // look -Z
+  front: { theta: HALF_PI,     phi: HALF_PI },   // look -X
+  top:   { theta: -HALF_PI,    phi: POLE },      // look -Y
 };
 const DEFAULT_VIEW = 'side';
 
@@ -62,17 +69,20 @@ export class Animator {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xf2f2f2);   // OMEdit's animation clear colour
     this.camera = new THREE.PerspectiveCamera(45, 1, 1e-3, 1e5);
-    this.camera.up.set(0, 0, 1);
+    this.camera.up.set(...UP);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
     container.appendChild(this.renderer.domElement);
     Object.assign(this.renderer.domElement.style, { width: '100%', height: '100%', display: 'block' });
 
+    // After camera.up: OrbitControls reads it once, to fix the orbit axis.
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     // No damping (which would need a continuous rAF loop); instead re-render on
     // every control change so orbiting works whether or not playback is running.
     this.controls.enableDamping = false;
+    this.controls.minPolarAngle = POLE;
+    this.controls.maxPolarAngle = Math.PI - POLE;
     this.controls.addEventListener('change', () => this.renderOnce());
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x9a9a9a, 1.1));
@@ -81,11 +91,12 @@ export class Animator {
     this.unit = buildUnitGeometries();
     this.meshes = [];
     this.times = null; this.data = null; this.stride = 0; this.nshapes = 0;
-    this.center = new THREE.Vector3(); this.radius = 1; this.extents = [1, 1, 1];
+    this.center = new THREE.Vector3(); this.radius = 1;
 
     this.time = 0; this.playing = false; this.speed = 1; this.loop = false;
     this._last = 0; this._raf = null; this._scratch = null;
     this._tmpScale = new THREE.Matrix4();
+    this._sph = new THREE.Spherical(); this._offset = new THREE.Vector3();
     this.onTime = null;
     this._loop = this._loop.bind(this);
     this._onResize = () => this.resize();
@@ -130,22 +141,41 @@ export class Animator {
     const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial(
       { vertexColors: true, roughness: 0.6, metalness: 0.15, side: THREE.DoubleSide }));
     mesh.userData.owned = true;                 // owns its geometry (dispose on clear)
+    g.computeBoundingSphere();     // reach from the file's origin, for _computeBounds
+    const bs = g.boundingSphere;
+    mesh.userData.reach = bs ? bs.center.length() + bs.radius : 0;
     return mesh;
   }
 
+  // The framing bounds. A shape's position is its *base* — the geometry runs from
+  // there to `length` along local +Z, half the other dimensions radially — so the
+  // box takes both ends of the axis and the radius carries the radial half-extent.
   _computeBounds() {
-    const bb = new THREE.Box3(), p = new THREE.Vector3();
-    const rows = this.times ? this.times.length : 0;
+    const bb = new THREE.Box3(), p = new THREE.Vector3(), e = new THREE.Vector3();
+    const d = this.data, rows = this.times ? this.times.length : 0;
+    let pad = 0;
     for (let f = 0; f < rows; f++)
       for (let s = 0; s < this.nshapes; s++) {
+        const mesh = this.meshes[s];
+        if (!mesh) continue;                    // not rendered, so not framed
         const o = (f * this.nshapes + s) * this.stride;
-        bb.expandByPoint(p.set(this.data[o + 10], this.data[o + 11], this.data[o + 12]));
+        const kind = d[o] | 0;
+        const l = Math.abs(d[o + 13]), w = Math.abs(d[o + 14]), h = Math.abs(d[o + 15]);
+        bb.expandByPoint(p.set(d[o + 10], d[o + 11], d[o + 12]));
+        if (kind === KIND.CAD) {
+          // File coordinates, arbitrary shape: a sphere of the mesh's own reach.
+          pad = Math.max(pad, (mesh.userData.reach || 0) * (d[o + 16] ? Math.max(l, w, h) : 1));
+          continue;
+        }
+        // Local +Z in world coordinates is row 3 of the poke matrix (see _applyShape).
+        bb.expandByPoint(e.set(d[o + 7], d[o + 8], d[o + 9]).multiplyScalar(l).add(p));
+        pad = Math.max(pad, kind === KIND.SPHERE ? l / 2
+                          : kind === KIND.BOX || kind === KIND.BEAM ? Math.hypot(w, h) / 2
+                          : w / 2);
       }
     if (bb.isEmpty()) bb.setFromCenterAndSize(new THREE.Vector3(), new THREE.Vector3(1, 1, 1));
-    const size = bb.getSize(new THREE.Vector3());
     bb.getCenter(this.center);
-    this.extents = [size.x, size.y, size.z];
-    this.radius = Math.max(size.length() * 0.5, 0.05);
+    this.radius = Math.max(bb.getSize(e).length() * 0.5 + pad, 0.05);
   }
 
   // Re-apply the current view, re-fitting the distance to the scene.
@@ -154,10 +184,9 @@ export class Animator {
   setView(name) {
     const v = VIEWS[name] || VIEWS[DEFAULT_VIEW];
     this._view = VIEWS[name] ? name : DEFAULT_VIEW;
-    const dir = new THREE.Vector3(...v.dir).normalize();
     const dist = this.radius / Math.tan((this.camera.fov * Math.PI / 180) / 2) * 1.3;
-    this.camera.up.set(...v.up);
-    this.camera.position.copy(this.center).addScaledVector(dir, dist);
+    this._sph.set(dist, v.phi, v.theta);
+    this.camera.position.copy(this.center).add(this._offset.setFromSpherical(this._sph));
     this.camera.near = dist / 100; this.camera.far = dist * 100;
     this.camera.updateProjectionMatrix();
     this.controls.target.copy(this.center);

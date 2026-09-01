@@ -48,7 +48,7 @@ use crate::Absyn;
 /// An Statement given in the interactive environment can either be
 /// an Algorithm statement or an expression.
 /// - GlobalScript.Statement
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Statement {
     IALG {
         algItem: Arc<Absyn::AlgorithmItem>,
@@ -84,7 +84,7 @@ pub use self::Statement::{IALG,IEXP};
 
 /// Several interactive statements are used in Modelica scripts.
 ///  - GlobalScript.Statements
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Statements {
     /// interactiveStmtLst
     pub interactiveStmtLst: Arc<metamodelica::List<Statement>>,

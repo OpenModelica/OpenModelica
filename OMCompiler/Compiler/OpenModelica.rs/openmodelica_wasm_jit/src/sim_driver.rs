@@ -59,8 +59,38 @@ fn uri_to_filename(uri: &str) -> String {
     }
 }
 
+/// The files a run writes beside its result go where every other file the omc
+/// build writes goes: real files natively, the in-memory store in the web build.
+fn write_side_file(path: &str, bytes: &[u8]) -> bool {
+    openmodelica_wasi::fs::write(path, bytes).is_ok()
+}
+
+fn read_side_file(path: &str) -> Option<Vec<u8>> {
+    openmodelica_wasi::fs::read(path).ok()
+}
+
+/// C's `time(NULL)`, for the `+profiling` report's `<date>`. The same clock the
+/// store stamps files with — `std::time::SystemTime::now()` panics in the web
+/// build.
+fn wall_clock_secs() -> i64 {
+    (openmodelica_wasi::realtime_nanos() / 1_000_000_000) as i64
+}
+
+/// C's `simulationInfo->OPENMODELICAHOME`, which the `+profiling` report needs for
+/// `default_profiling.xsl`: omc's own installation root, not the environment's.
+fn openmodelica_home() -> Option<String> {
+    openmodelica_util::Settings::getInstallationDirectoryPath().ok().map(|h| h.to_string())
+}
+
 pub fn init_host_hooks() {
     set_cancel_hook(metamodelica::cancel::check_cancel);
+    openmodelica_sim_meta::files::set_writer(write_side_file);
+    openmodelica_sim_meta::files::set_reader(read_side_file);
+    openmodelica_sim_meta::parmod::set_hw_threads(
+        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0),
+    );
+    openmodelica_sim_meta::profiling::set_wall_clock(wall_clock_secs);
+    openmodelica_sim_meta::profiling::set_home(openmodelica_home);
     openmodelica_sim_meta::driver::set_uri_resolver(uri_to_filename);
     openmodelica_sim_meta::driver::set_log_sink(log_to_stdout);
     set_assert_reporter(report_assert);

@@ -9,6 +9,7 @@ mod v2;
 mod v3;
 
 use crate::description::*;
+pub(crate) use v3::unknowns as unknowns3;
 use crate::{Error, Result};
 use roxmltree::{Document, Node};
 
@@ -207,6 +208,7 @@ pub(crate) fn blank_variable(name: String, vr: u32, index: u32, ty: VarType) -> 
         clocks: Vec::new(),
         dimensions: Vec::new(),
         clock: None,
+        binary: None,
         aliases: Vec::new(),
         alias: Alias::NoAlias,
         can_handle_multiple_set_per_time_instant: false,

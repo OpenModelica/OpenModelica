@@ -351,3 +351,41 @@ fn fields_cmp(
         }
     }
 }
+
+/// `#[derive(MMCtor)]` — the [`metamodelica::MMCtor`] impl behind
+/// `valueConstructor`, numbering variants as MMC's `MMC_STRUCTHDR` does
+/// (declaration index + 3). Reproducing the numbering, not just picking
+/// distinct tags, is what makes `Util.intCompare` order values by declaration.
+#[proc_macro_derive(MMCtor)]
+pub fn derive_mm_ctor(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+
+    let body = match &input.data {
+        Data::Enum(data) => {
+            let arms = data.variants.iter().enumerate().map(|(i, v)| {
+                let vname = &v.ident;
+                let ctor = i as i32 + 3;
+                match &v.fields {
+                    Fields::Unit => quote! { Self::#vname => #ctor, },
+                    Fields::Named(_) => quote! { Self::#vname { .. } => #ctor, },
+                    Fields::Unnamed(_) => quote! { Self::#vname(..) => #ctor, },
+                }
+            });
+            quote! { match self { #(#arms)* } }
+        }
+        Data::Struct(_) => quote! { 3 },
+        Data::Union(_) => {
+            return syn::Error::new_spanned(name, "MMCtor cannot be derived for unions")
+                .to_compile_error()
+                .into();
+        }
+    };
+
+    TokenStream::from(quote! {
+        impl #impl_generics metamodelica::MMCtor for #name #ty_generics #where_clause {
+            fn mm_ctor(&self) -> i32 { #body }
+        }
+    })
+}

@@ -251,4 +251,10 @@ thread_local! {
     // Index 31 — backendInterface
     // Declared in openmodelica_frontend::Globals.
     // Type: BackendInterface::BackendInterfaceFunctions
+
+    /// Index 33 — the FMI index -> value reference table an FMI 3.0
+    /// `<ModelStructure>` is written through. Live only while one is being
+    /// written; source: `SimCodeUtil.cacheFMI3ValueReferences`.
+    pub static fmi3ValueReferenceCache: RefCell<Option<metamodelica::Array<ArcStr>>> =
+        const { RefCell::new(None) };
 }

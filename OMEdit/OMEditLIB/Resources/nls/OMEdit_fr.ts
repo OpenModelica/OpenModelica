@@ -2051,7 +2051,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="841"/>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation>Une erreur s&apos;est produite lors du chargement du modèle&#xa0;:
 %1.</translation>
@@ -4559,8 +4559,8 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3731"/>
-        <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation>Les bibliothèques systèmes sont lues à partir de MODELICAPATH et sont toujours en lecture seule.</translation>
+        <source>The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only.</source>
+        <translation>Les bibliothèques système sont lues à partir de OPENMODELICALIBRARY (MODELICAPATH dans la spécification du langage) et sont toujours en lecture seule.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3734"/>

@@ -195,6 +195,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "rsparse",
 ]
 
 [[package]]
@@ -223,6 +224,12 @@ checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "rsparse"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d65dc8db760bdc8c94f4163c5d09be710f76fc92a4a1f698c441925db83c09e"
 
 [[package]]
 name = "semver"

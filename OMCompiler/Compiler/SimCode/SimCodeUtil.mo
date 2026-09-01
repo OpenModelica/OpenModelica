@@ -75,6 +75,7 @@ protected
 import AbsynUtil;
 import Array;
 import Autoconf;
+import AvlSetInt;
 import AvlSetString;
 import AvlTreeCRToInt;
 import BackendDAEOptimize;
@@ -265,7 +266,7 @@ protected
   //list<BackendDAE.Equation> paramAsserts, remEqLst;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
-  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
+  BackendDAE.ZeroCrossingSet de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
@@ -388,7 +389,7 @@ algorithm
     timeEvents := eventInfo.timeEvents;
     (zeroCrossings,relations,sampleZC) := match eventInfo
       case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
-      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEnded.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
+      then (ZeroCrossings.toList(zeroCrossingsSet), ZeroCrossings.toList(de_relations), ZeroCrossings.toList(sampleZCSet));
     end match;
     if ifcpp then
       zeroCrossings := listAppend(relations, sampleZC);
@@ -1536,7 +1537,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1561,11 +1562,17 @@ protected function createEquationsForSystems "Some kind of comments would be ver
 protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 algorithm
   try
-    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
+    arg := (shared, createAlgebraicEquations);
+    zcVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, inAllZeroCrossings);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
-    foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    for syst in inSysts loop
+      sysIdx := sysIdx + 1;
+      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), arg, foldArg);
+    end for;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
@@ -1578,6 +1585,7 @@ end createEquationsForSystems;
 
 protected function createEquationsForSystems1
   input BackendDAE.EqSystem inSyst;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing";
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
   output CreateEquationsForSystemsFold outFold;
@@ -1596,7 +1604,6 @@ algorithm
       AvlTreePathFunction.Tree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
       SimCode.BackendMapping backendMapping;
-      list<BackendDAE.ZeroCrossing> zeroCrossings;
       BackendDAE.Shared shared;
       Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
@@ -1605,7 +1612,7 @@ algorithm
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings, createAlgebraicEquations) := inArg;
+        (shared, createAlgebraicEquations) := inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) := inFold;
 
@@ -1615,7 +1622,7 @@ algorithm
         stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
-        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zeroCrossings, zceqnsmarks, ass1);
+        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zcVars, zceqnsmarks, ass1);
 
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) :=
@@ -2174,37 +2181,20 @@ protected function updateZeroCrossEqnIndex
   input list<BackendDAE.ZeroCrossing> izeroCrossings;
   input list<tuple<Integer, Integer>> eqBackendSimCodeMapping;
   input Integer numEqnsinArray;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
+  output list<BackendDAE.ZeroCrossing> ozeroCrossings = {};
 protected
   array<Integer> mappingArray;
+  DAE.Exp exp;
+  list<Integer> occurEquLst;
+  Option<list<BackendDAE.SimIterator>> iter;
 algorithm
   mappingArray := convertListMappingToArray(eqBackendSimCodeMapping, numEqnsinArray);
-  ozeroCrossings := updateZeroCrossEqnIndexHelp(izeroCrossings, mappingArray, {});
+  for zc in izeroCrossings loop
+    BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst, iter=iter) := zc;
+    ozeroCrossings := BackendDAE.ZERO_CROSSING(0, exp, convertListIndx(occurEquLst, mappingArray), iter)::ozeroCrossings;
+  end for;
+  ozeroCrossings := Dangerous.listReverseInPlace(ozeroCrossings);
 end updateZeroCrossEqnIndex;
-
-protected function updateZeroCrossEqnIndexHelp
-  input list<BackendDAE.ZeroCrossing> izeroCrossings;
-  input array<Integer> eqBackendSimCodeMappingArray;
-  input list<BackendDAE.ZeroCrossing> iAccum;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
-algorithm
- ozeroCrossings := match izeroCrossings
- local
-    DAE.Exp exp;
-    list<Integer> occurEquLst;
-    list<BackendDAE.ZeroCrossing> rest;
-    Option<list<BackendDAE.SimIterator>> iter;
-
-   case {} then Dangerous.listReverseInPlace(iAccum);
-
-   case BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst,iter=iter)::rest
-     algorithm
-       occurEquLst := convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings := updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, iter)::iAccum);
-     then
-       ozeroCrossings;
-  end match;
-end updateZeroCrossEqnIndexHelp;
 
 protected function convertListMappingToArray
   input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,BackendEqnIndx>
@@ -10380,21 +10370,21 @@ algorithm
 end startValueIsConstOrDefault;
 
 protected function updateStartValue
-  "function which updates Start value of an expression
-   depending on the initial = EXACT or APPROX and causality = INPUT "
+  "FMI requires a literal start value for a variable that is initial=exact or
+   approx, or an input; those get the type default when the model's start is
+   missing or is an expression. Every other variable keeps its start expression:
+   it is the same field the code generators read `$START.x` from, and the FMI
+   templates render only a literal anyway."
   input BackendDAE.Var var;
   input output Option<DAE.Exp> startValue;
   input SimCodeVar.Initial initial_;
   input SimCodeVar.Causality causality;
 algorithm
-  // update start value for FMI 2.0 and 3.0
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30())
+     and (isInitialExactOrApprox(initial_) or isCausalityInput(causality)) then
     startValue := match startValue
-      case SOME(_) guard isInitialExactOrApprox(initial_) then startValue;
-      case NONE() guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
-      case SOME(_) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
-      case NONE() guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else startValueIsConstOrDefault(startValue, var.varType);
+      case SOME(_) then startValueIsConstOrDefault(startValue, var.varType);
+      else setDefaultStartValue(var.varType);
     end match;
   end if;
 end updateStartValue;
@@ -13738,7 +13728,10 @@ algorithm
 
       // Save value
       if stringEqual(tmpName, "s") then
-        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
+        // euler/cvode is what C's FMI2CS_initializeSolverData accepts; another
+        // target links its own driver and validates against its own solver set.
+        if Config.simCodeTarget() == "C"
+           and not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
           if printWarning then
             msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
             Error.addCompilerWarning(msg);
@@ -14874,6 +14867,60 @@ algorithm
   outValueReference := String(offset + localRef);
 end getFMI3ValueReference;
 
+protected function fmi3ModelVariableLists
+  "The variable lists in the order the FMI indices were handed out."
+  input SimCodeVar.SimVars vars;
+  output list<list<SimCodeVar.SimVar>> allLists;
+algorithm
+  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
+               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
+               vars.inputVars, vars.outputVars,
+               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
+               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+end fmi3ModelVariableLists;
+
+public function cacheFMI3ValueReferences
+  "Build the FMI index -> value reference table the <ModelStructure> emitter reads,
+   and keep it for as long as one is being written (see clearFMI3ValueReferences).
+
+   Without it every unknown and every one of its dependencies searches all
+   seventeen variable lists for its index, which on a model with thousands of
+   variables is most of what exporting an FMI 3.0 FMU costs: FullRobot spent 15 of
+   its 33 export seconds in that search."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  list<list<SimCodeVar.SimVar>> allLists = fmi3ModelVariableLists(simCode.modelInfo.vars);
+  array<String> table;
+  Integer n = 0, i;
+algorithm
+  for lst in allLists loop
+    for v in lst loop
+      n := intMax(n, getVariableFMIIndex(v));
+    end for;
+  end for;
+  // Index 0 is no variable's, so an unmapped entry keeps its own number as the
+  // uncached lookup did.
+  table := arrayCreate(n, "");
+  for lst in allLists loop
+    for v in lst loop
+      i := getVariableFMIIndex(v);
+      if i > 0 and i <= n and stringEmpty(arrayGet(table, i)) then
+        arrayUpdate(table, i, getFMI3ValueReference(v, simCode));
+      end if;
+    end for;
+  end for;
+  setGlobalRoot(Global.fmi3ValueReferenceCache, SOME(table));
+end cacheFMI3ValueReferences;
+
+public function clearFMI3ValueReferences
+  "Drop what cacheFMI3ValueReferences built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3ValueReferenceCache, NONE());
+end clearFMI3ValueReferences;
+
 public function getFMI3ValueReferenceFromFMIIndex
   "Maps an FMI variable index (the 1-based position in the ModelVariables list as
    stored in the FmiModelStructure unknowns/dependencies) to the globally unique
@@ -14887,17 +14934,20 @@ public function getFMI3ValueReferenceFromFMIIndex
   input Integer inFMIIndex;
   output String outValueReference;
 protected
-  SimCode.ModelInfo modelInfo = inSimCode.modelInfo;
-  SimCodeVar.SimVars vars = modelInfo.vars;
-  list<list<SimCodeVar.SimVar>> allLists;
+  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
+  Option<array<String>> cache;
+  array<String> table;
   Option<SimCodeVar.SimVar> found = NONE();
 algorithm
-  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
-               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
-               vars.inputVars, vars.outputVars,
-               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
-               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
-  for lst in allLists loop
+  cache := getGlobalRoot(Global.fmi3ValueReferenceCache);
+  if isSome(cache) then
+    SOME(table) := cache;
+    if inFMIIndex > 0 and inFMIIndex <= arrayLength(table) and not stringEmpty(arrayGet(table, inFMIIndex)) then
+      outValueReference := arrayGet(table, inFMIIndex);
+      return;
+    end if;
+  end if;
+  for lst in fmi3ModelVariableLists(vars) loop
     for v in lst loop
       if intEq(getVariableFMIIndex(v), inFMIIndex) then
         found := SOME(v);
@@ -14937,6 +14987,103 @@ protected
 algorithm
   outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
 end getFMI3TimeValueReference;
+
+public function exportDaeAlgebraicStates
+  "fmi-ls-dae: the algebraic states are unknowns the importer sets, so they are in
+   the model description whatever --fmiFilter hides, as the states are."
+  input output SimCode.ModelInfo modelInfo;
+  input list<SimCodeVar.SimVar> algebraicStateVars;
+protected
+  HashSet.HashSet crefs = HashSet.emptyHashSet();
+  SimCodeVar.SimVars vars;
+algorithm
+  for v in algebraicStateVars loop
+    crefs := BaseHashSet.add(v.name, crefs);
+  end for;
+  vars := modelInfo.vars;
+  vars.algVars := list(exportIfAlgebraicState(v, crefs) for v in vars.algVars);
+  modelInfo.vars := vars;
+end exportDaeAlgebraicStates;
+
+protected function exportIfAlgebraicState
+  input output SimCodeVar.SimVar v;
+  input HashSet.HashSet crefs;
+algorithm
+  if isNone(v.exportVar) and BaseHashSet.has(v.name, crefs) then
+    v.exportVar := SOME(if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX
+                        then ComponentReference.getConcealedCref() else v.name);
+  end if;
+end exportIfAlgebraicState;
+
+public function getFMI3DaeModeValueReference
+  "fmi-ls-dae: the value reference of the structural parameter that switches a
+   --daeMode FMU into DAE mode, the first one past the event indicators. The
+   residuals follow it (getFMI3DaeResidualValueReference); the wasm emitter
+   (CodegenWasmJit.build_fmi_vrs) assigns the same numbers."
+  input SimCode.SimCode simCode;
+  output String vr;
+algorithm
+  vr := String(stringInt(getFMI3TimeValueReference(simCode)) + simCode.modelInfo.varInfo.numZeroCrossings + 1);
+end getFMI3DaeModeValueReference;
+
+public function getFMI3DaeResidualValueReference
+  input SimCodeVar.SimVar residualVar "one of daeModeData.residualVars";
+  input SimCode.SimCode simCode;
+  output String vr;
+algorithm
+  vr := String(stringInt(getFMI3DaeModeValueReference(simCode)) + 1 + residualVar.index);
+end getFMI3DaeResidualValueReference;
+
+public function getFMI3DaeResidualDependencyAttributes
+  "fmi-ls-dae: the dependencies and dependenciesKind attributes of the residual at
+   0-based row `index` of the DAE-mode Jacobian, read off its transposed sparsity.
+   A state column stands for the state and its derivative both, since DAE-mode
+   differentiation folds der(x) into x ($cj * x.Seed); the other columns are the
+   algebraic variables. Empty without a pattern, which the standard reads as a
+   dependency on every known."
+  input SimCode.SimCode simCode;
+  input Integer index;
+  output String attributes = "";
+protected
+  SimCode.DaeModeData dmd;
+  SimCode.JacobianMatrix jm;
+  list<Integer> cols = {};
+  Integer numStates, row = 0;
+  list<Integer> colsOfRow;
+  SimCodeVar.SimVar sv;
+  String stateVR;
+  list<String> acc = {};
+algorithm
+  if isNone(simCode.daeModeData) then
+    return;
+  end if;
+  SOME(dmd) := simCode.daeModeData;
+  if isNone(dmd.sparsityPattern) then
+    return;
+  end if;
+  SOME(jm) := dmd.sparsityPattern;
+  for entry in jm.sparsityT loop
+    (_, colsOfRow) := entry;
+    if row == index then
+      cols := colsOfRow;
+    end if;
+    row := row + 1;
+  end for;
+  numStates := numScalarElems(simCode.modelInfo.vars.stateVars);
+  for c in cols loop
+    if c < numStates then
+      sv := listGet(simCode.modelInfo.vars.stateVars, c + 1);
+      stateVR := getFMI3ValueReference(sv, simCode);
+      acc := String(stringInt(stateVR) + numStates) :: stateVR :: acc;
+    else
+      sv := listGet(dmd.algebraicVars, c - numStates + 1);
+      acc := getFMI3ValueReference(sv, simCode) :: acc;
+    end if;
+  end for;
+  acc := listReverse(acc);
+  attributes := " dependencies=\"" + stringDelimitList(acc, " ") + "\" dependenciesKind=\""
+    + stringDelimitList(list("dependent" for s in acc), " ") + "\"";
+end getFMI3DaeResidualDependencyAttributes;
 
 public function getLocalValueReference
  "returns the local value reference of current OMSIFuncton of a variable for
@@ -15311,7 +15458,8 @@ protected
 algorithm
   ocode := getGlobalRoot(Global.optionSimCode);
   code := match ocode
-    case SOME(code) then code;
+    local SimCode.SimCode c;
+    case SOME(c) then c;
     else algorithm Error.addInternalError("Tried to generate code that requires the SimCode structure, but this is not set (function context?)", sourceInfo()); then fail();
   end match;
 end getSimCode;
@@ -15450,17 +15598,17 @@ public function codegenExpSanityCheck "Handle some things that Susan cannot hand
 "
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
-protected
-  list<SimCodeVar.SimVar> vars;
-  SimCode.SimCode simCode;
-  Integer index;
-  list<DAE.ComponentRef> crf_lst;
 algorithm
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
 
   e := match e
+    local
+      list<SimCodeVar.SimVar> vars;
+      SimCode.SimCode simCode;
+      Integer index;
+      list<DAE.ComponentRef> crf_lst;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
@@ -15729,28 +15877,119 @@ algorithm
   end match;
 end isFMI3NestableAlias;
 
-public function getFMI3VariableAliases
-  "Return the SimVars that are FMI 3.0 <Alias> members of the variable `canonical`:
-   the nestable (see isFMI3NestableAlias) positive aliases whose alias target is
-   `canonical`. FMI 3.0 represents these as <Alias> child elements sharing the
-   canonical variable's valueReference, rather than as separate variables."
+protected function fmi3AliasTargetValueReference
+  "The value reference the nestable alias `v` shares with its target, i.e. the
+   value reference of the canonical variable it is an <Alias> of. `None` when the
+   target is not a variable this FMU exports."
+  input SimCodeVar.SimVar v;
   input SimCode.SimCode simCode;
-  input DAE.ComponentRef canonical;
+  output Option<Integer> vr;
+algorithm
+  vr := match v.aliasvar
+    local
+      DAE.ComponentRef cr;
+      Integer local_;
+    case SimCodeVar.ALIAS(varName = cr)
+      then match AvlTreeCRToInt.getOpt(simCode.valueReferences, cr)
+        case SOME(local_) then SOME(getFMI3TypeOffset(v.type_, simCode.modelInfo) + local_);
+        else NONE();
+      end match;
+    else NONE();
+  end match;
+end fmi3AliasTargetValueReference;
+
+public function cacheFMI3VariableAliases
+  "Build the value reference -> <Alias> members table getFMI3VariableAliases reads,
+   and keep it for as long as one modelDescription.xml is being written (see
+   clearFMI3VariableAliases).
+
+   Without it every variable emitted searches every alias the model has for the
+   ones nested under it, which is quadratic and is what rendering an FMI 3.0
+   modelDescription.xml costs: 14 of FullRobot's 24 export seconds."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  SimCodeVar.SimVars vars = simCode.modelInfo.vars;
+  list<list<SimCodeVar.SimVar>> aliasLists =
+    {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+  array<list<SimCodeVar.SimVar>> table;
+  Integer n = 0, vr;
+algorithm
+  // Two passes: the table is indexed by value reference, whose range is only
+  // known once every alias has been resolved.
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        n := match fmi3AliasTargetValueReference(v, simCode) case SOME(vr) then intMax(n, vr + 1); else n; end match;
+      end if;
+    end for;
+  end for;
+  table := arrayCreate(n, {});
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match fmi3AliasTargetValueReference(v, simCode)
+          case SOME(vr)
+            algorithm arrayUpdate(table, vr + 1, v :: arrayGet(table, vr + 1)); then ();
+          else ();
+        end match;
+      end if;
+    end for;
+  end for;
+  for i in 1:n loop
+    arrayUpdate(table, i, listReverse(arrayGet(table, i)));
+  end for;
+  setGlobalRoot(Global.fmi3VariableAliasCache, SOME(table));
+end cacheFMI3VariableAliases;
+
+public function clearFMI3VariableAliases
+  "Drop what cacheFMI3VariableAliases built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3VariableAliasCache, NONE());
+end clearFMI3VariableAliases;
+
+public function getFMI3VariableAliases
+  "Return the SimVars that are FMI 3.0 <Alias> members of `canonical`: the nestable
+   (see isFMI3NestableAlias) positive aliases whose alias target is `canonical`.
+   FMI 3.0 represents these as <Alias> child elements sharing the canonical
+   variable's valueReference, rather than as separate variables."
+  input SimCode.SimCode simCode;
+  input SimCodeVar.SimVar canonical;
   output list<SimCodeVar.SimVar> aliases = {};
 protected
   SimCodeVar.SimVars vars = simCode.modelInfo.vars;
-  list<SimCodeVar.SimVar> all;
+  Option<array<list<SimCodeVar.SimVar>>> cached;
+  array<list<SimCodeVar.SimVar>> table;
+  Integer vr;
 algorithm
-  all := List.flatten({vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
-  for v in all loop
-    if isFMI3NestableAlias(v) then
-      _ := match v.aliasvar
-        local DAE.ComponentRef cr;
-        case SimCodeVar.ALIAS(varName = cr) guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical)
-          algorithm aliases := v :: aliases; then ();
-        else ();
-      end match;
+  cached := getGlobalRoot(Global.fmi3VariableAliasCache);
+  if isSome(cached) then
+    SOME(table) := cached;
+    vr := getFMI3TypeOffset(canonical.type_, simCode.modelInfo)
+          + (match AvlTreeCRToInt.getOpt(simCode.valueReferences, canonical.name)
+             local Integer local_;
+             case SOME(local_) then local_;
+             else -1;
+             end match);
+    if vr >= 0 and vr < arrayLength(table) then
+      aliases := arrayGet(table, vr + 1);
     end if;
+    return;
+  end if;
+  for lst in {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars} loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match v.aliasvar
+          local DAE.ComponentRef cr;
+          case SimCodeVar.ALIAS(varName = cr)
+            guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical.name)
+            algorithm aliases := v :: aliases; then ();
+          else ();
+        end match;
+      end if;
+    end for;
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;
@@ -16854,15 +17093,12 @@ public function linearSystemMatrixFormat
 protected
   Option<Integer> nnz;
 algorithm
-  format := match ls
-    case SimCode.LINEARSYSTEM() algorithm
-      nnz := match ls.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(sparsity = {})) then simJacNonzeros(ls.simJac);
-        case SOME(SimCode.JAC_MATRIX()) then sparsityNonzeros(ls.jacobianMatrix);
-        else simJacNonzeros(ls.simJac);
-      end match;
-    then matrixFormatC(listLength(ls.vars), nnz, true);
-  end match;
+  nnz := sparsityNonzeros(ls.jacobianMatrix);
+  if isNone(nnz) then
+    // No sparsity info at all -- fall back to the simJac entry count.
+    nnz := simJacNonzeros(ls.simJac);
+  end if;
+  format := matrixFormatC(listLength(ls.vars), nnz, true);
 end linearSystemMatrixFormat;
 
 public function nonlinearSystemMatrixFormat
@@ -16892,9 +17128,15 @@ algorithm
   nnz := match ojac
     local
       SimCode.SparsityPattern sparsity;
+      list<SimCode.SparsityRow> rows;
     case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
       for col in sparsity loop
         entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    case SOME(SimCode.JAC_MATRIX(sparsityMatrix = SimCode.Sparsity.SPARSITY(rows = rows))) algorithm
+      for row in rows loop
+        entries := entries + listLength(row.dependencies);
       end for;
     then SOME(entries);
     else NONE();

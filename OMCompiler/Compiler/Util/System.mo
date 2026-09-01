@@ -1032,7 +1032,7 @@ public function realMaxLit "Returns the maximum real that can be represent using
 end realMaxLit;
 
 public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
-  The result depends on the current MODELICAPATH. Sets the error buffer on failure."
+  The result depends on the current OPENMODELICALIBRARY (MODELICAPATH in the language specification). Sets the error buffer on failure."
   input String uri;
   output String scheme "file:// or modelica://, in lower-case";
   output String classname "empty if file:// is used";
@@ -1297,6 +1297,11 @@ public function isCancelled "True if the user has requested cancellation of the 
   output Boolean cancelled;
   external "C" cancelled = System_isCancelled() annotation(Library = "omcruntime");
 end isCancelled;
+
+public function alarmExpired "True if the cancellation being reported came from the alarm running out rather than from a user."
+  output Boolean expired;
+  external "C" expired = System_alarmExpired() annotation(Library = "omcruntime");
+end alarmExpired;
 
 public function reportProgress "Report progress of the running operation to the host UI. permille is 0..1000 or -1 (indeterminate); phase is one of the metamodelica::cancel PHASE_* constants (2 parse, 3 instantiate, 4 backend, 5 simulate)."
   input Integer permille;

@@ -152,7 +152,7 @@ fn take_message(msg: *const c_char, emit: fn(omclog::Stream, bool, &str)) -> boo
         return false;
     }
     let text = unsafe { std::ffi::CStr::from_ptr(msg) }.to_string_lossy().into_owned();
-    emit(omclog::STDOUT, false, text.strip_suffix('\n').unwrap_or(&text));
+    emit(omclog::STDOUT, false, &text);
     true
 }
 

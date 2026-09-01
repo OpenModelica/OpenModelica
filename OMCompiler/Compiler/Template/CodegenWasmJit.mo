@@ -98,6 +98,23 @@ algorithm
   fail();
 end emitStandalone;
 
+function translateFmu
+  " Lower the model in `simCode` to the WebAssembly kernel a wasm FMU is built
+    around and keep it in-process, without writing an FMU: the wasm counterpart of
+    the C target generating the FMU sources without building them
+    (translateModelFMU). The buildModelFMU that follows links an adapter onto this
+    kernel rather than translating the model a second time, and unless the model
+    has external \"C\" the kernel is also registered as the prepared simulation
+    model, so `simulate` runs the very module the FMU will carry. Implemented in
+    Rust. "
+  input SimCode.SimCode simCode;
+  input String fmuType "me, cs or me_cs: a pure Co-Simulation kernel embeds a different driver";
+  input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
+algorithm
+  Error.addInternalError("CodegenWasmJit.translateFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end translateFmu;
+
 function emitMeFmu
   " wasm Model-Exchange export: lower the model, link it with the
     model-agnostic ME adapter into an fmi-ls-wasm component
@@ -111,7 +128,9 @@ function emitMeFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -126,7 +145,9 @@ function emitCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -141,7 +162,9 @@ function emitMeCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -159,6 +182,28 @@ function runSimulationWasmtime
 algorithm
   status := 0;
 end runSimulationWasmtime;
+
+function fmuCsSolvers
+  " The `method=` values a Co-Simulation wasm FMU can integrate with: the solvers
+    the driver linked into the component carries. `buildModelFMU` folds an accepted
+    method into the FMU's `resources/<prefix>_flags.json`, the only channel the
+    component reads its solver from. Empty without the Rust export. Implemented in Rust. "
+  output list<String> methods;
+algorithm
+  methods := {};
+end fmuCsSolvers;
+
+function fmuAcceptsFlag
+  " Whether a wasm FMU can honour the simulation flag `-name=value` (an empty
+    value for a flag that takes none). One it cannot is dropped rather than baked
+    into `resources/<prefix>_flags.json`, where it would only surface at the
+    importer's first instantiate. False without the Rust export. Implemented in Rust. "
+  input String name;
+  input String value;
+  output Boolean accepted;
+algorithm
+  accepted := false;
+end fmuAcceptsFlag;
 
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJit;

@@ -65,7 +65,9 @@ public:
   bool isTopLevel() const;
   QString getName() const {return mName;}
   QString getNameStructure() const {return mNameStructure;}
+  ModelInstance::Element* getModelInstanceElement() const {return mpModelInstanceElement;}
 private:
+  ModelInstance::Element *mpModelInstanceElement = nullptr;
   ElementTreeItem *mpParentElementTreeItem = 0;
   bool mIsRootItem = false;
   QList<ElementTreeItem*> mChildren;
@@ -122,6 +124,8 @@ public:
   ElementTreeView(ElementWidget *pElementWidget);
 private:
   ElementWidget *mpElementWidget;
+private slots:
+  void showContextMenu(const QPoint &pos);
 };
 
 class ElementWidget : public QWidget

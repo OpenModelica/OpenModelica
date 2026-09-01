@@ -11,7 +11,7 @@
 //!
 //! | file | used when |
 //! | --- | --- |
-//! | `resources/<platform>.cwasm` | always, if present: a precompiled artifact, `deserialize`d in ~1 ms |
+//! | `binaries/<platform>/<modelIdentifier>.cwasm` | always, if present: a precompiled artifact beside this library, `deserialize`d in ~1 ms (older exports: `resources/<platform>.cwasm`) |
 //! | `resources/*.wasm` | `jit` builds only: the component, compiled at instantiate |
 //! | `binaries/wasm32-wasip2/*.wasm` | `jit` builds only, last resort — the wasm binary an FMI 3.0 FMU already ships |
 //!
@@ -44,6 +44,14 @@ mod bindings {
         wasmtime::component::bindgen!({
             path: "../openmodelica_fmi3_wasm/wit",
             world: "co-simulation-fmu",
+       });
+    }
+    /// The OpenModelica extension an me_cs component imports beside the FMI
+    /// callbacks: `external "C"` served from the FMU's platform libraries.
+    pub mod ext {
+        wasmtime::component::bindgen!({
+            path: "../openmodelica_fmi3_wasm/wit",
+            world: "openmodelica-extension-host",
        });
     }
 }
@@ -112,6 +120,50 @@ struct Host {
     intermediate_update: IntermediateUpdateCb,
     wasi: wasmtime_wasi::WasiCtx,
     table: wasmtime::component::ResourceTable,
+    /// `resources/`, where the host-served externals' table is.
+    resources: PathBuf,
+    natives: Option<Result<openmodelica_ext_native::Natives, String>>,
+}
+
+impl bindings::ext::om::ext::native::Host for Host {
+    fn call(
+        &mut self,
+        index: u32,
+        args: Vec<bindings::ext::om::ext::native::Value>,
+    ) -> Result<Vec<bindings::ext::om::ext::native::Value>, String> {
+        use bindings::ext::om::ext::native::Value as W;
+        use openmodelica_ext_native::marshal::Value as V;
+        if self.natives.is_none() {
+            let table = std::fs::read_to_string(self.resources.join(openmodelica_ext_native::TABLE_FILE))
+                .map_err(|e| format!("cannot read {}: {e}", openmodelica_ext_native::TABLE_FILE))
+                .and_then(|t| openmodelica_ext_native::marshal::parse(&t));
+            // The libraries are unpacked beside this library, as FMI has it.
+            let dir = platform_dir(&self.resources);
+            self.natives = Some(table.and_then(|t| openmodelica_ext_native::Natives::open(&t, &dir)));
+        }
+        let natives = self.natives.as_mut().unwrap().as_mut().map_err(|e| e.clone())?;
+        let args: Vec<V> = args
+            .into_iter()
+            .map(|v| match v {
+                W::Int(i) => V::Int(i),
+                W::Real(r) => V::Real(r),
+                W::Str(s) => V::Str(s),
+                W::Bytes(b) => V::Bytes(b),
+                W::Handle(h) => V::Handle(h),
+            })
+            .collect();
+        Ok(natives
+            .call(index, &args)?
+            .into_iter()
+            .map(|v| match v {
+                V::Int(i) => W::Int(i),
+                V::Real(r) => W::Real(r),
+                V::Str(s) => W::Str(s),
+                V::Bytes(b) => W::Bytes(b),
+                V::Handle(h) => W::Handle(h),
+            })
+            .collect())
+    }
 }
 
 // The C API requires one thread at a time per instance.
@@ -301,21 +353,39 @@ fn engine() -> wasmtime::Result<Engine> {
     Engine::new(&cfg)
 }
 
-/// The component wasm the `jit` feature can compile, if this FMU ships one:
-/// `resources/` in an FMI 2.0 FMU, fmi-ls-wasm's `binaries/` in a 3.0 one.
-fn component_source(res: &Path) -> Option<PathBuf> {
-    let wasm = |dir: PathBuf| -> Option<PathBuf> {
-        std::fs::read_dir(dir)
+/// `<modelIdentifier>.<ext>` in `dir`, named after this library; a directory
+/// scan only when the library cannot tell its own path.
+fn model_file(dir: &Path, ext: &str) -> Option<PathBuf> {
+    match openmodelica_ext_native::this_library_path().and_then(|p| Some(p.file_stem()?.to_os_string())) {
+        Some(stem) => {
+            let p = dir.join(Path::new(&stem).with_extension(ext));
+            p.is_file().then_some(p)
+        }
+        None => std::fs::read_dir(dir)
             .ok()?
             .flatten()
             .map(|e| e.path())
-            .find(|p| p.extension().is_some_and(|e| e == "wasm"))
-    };
-    wasm(res.to_path_buf()).or_else(|| wasm(res.parent()?.join("binaries/wasm32-wasip2")))
+            .find(|p| p.extension().is_some_and(|e| e == ext)),
+    }
+}
+
+/// The component wasm the `jit` feature can compile, if this FMU ships one:
+/// `resources/` in an FMI 2.0 FMU, fmi-ls-wasm's `binaries/` in a 3.0 one.
+fn component_source(res: &Path) -> Option<PathBuf> {
+    model_file(res, "wasm").or_else(|| model_file(&res.parent()?.join("binaries/wasm32-wasip2"), "wasm"))
+}
+
+/// `binaries/<platform>/`, where this library was unpacked with the `.cwasm` and
+/// the native libraries beside it; by the FMU's layout when that cannot be asked.
+fn platform_dir(res: &Path) -> PathBuf {
+    openmodelica_ext_native::this_library_dir()
+        .or_else(|| res.parent().and_then(openmodelica_ext_native::binaries_dir))
+        .unwrap_or_else(|| res.to_path_buf())
 }
 
 fn load_component(engine: &Engine, res: &Path) -> wasmtime::Result<Component> {
-    let cwasm = res.join(format!("{PLATFORM}.cwasm"));
+    // Beside this library; `resources/<platform>.cwasm` is where older exports put it.
+    let cwasm = model_file(&platform_dir(res), "cwasm").unwrap_or_else(|| res.join(format!("{PLATFORM}.cwasm")));
     if cwasm.is_file() {
         let bytes = std::fs::read(&cwasm)?;
         // Safety: the artifact is part of the FMU this library was packaged into.
@@ -328,8 +398,8 @@ fn load_component(engine: &Engine, res: &Path) -> wasmtime::Result<Component> {
     #[cfg(not(feature = "jit"))]
     let _ = component_source(res);
     wasmtime::bail!(
-        "no {PLATFORM}.cwasm in the FMU's resources ({}), and this build cannot compile \
-         the component itself",
+        "no .cwasm beside the loader or in the FMU's resources ({}), and this build cannot \
+         compile the component itself",
         res.display()
     )
 }
@@ -352,6 +422,8 @@ fn new_store(engine: &Engine, res: &str, env: *mut c_void, log: Log, iu: Interme
             intermediate_update: iu,
             wasi: builder.build(),
             table: wasmtime::component::ResourceTable::new(),
+            resources: PathBuf::from(res),
+            natives: None,
         },
     ))
 }
@@ -387,6 +459,7 @@ pub(crate) fn instantiate_me(
     // An me_cs component reaches this path too, and its world imports the
     // intermediate-update callbacks even in ME mode.
     bindings::cs::fmi::fmi3::intermediate_update_callbacks::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
+    bindings::ext::om::ext::native::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
     let mut store = new_store(&engine, res, env, log, None)?;
     let world = bindings::me::ModelExchangeFmu::instantiate(&mut store, &component, &linker)?;
     let handle = world
@@ -423,6 +496,7 @@ pub(crate) fn instantiate_cs(
     let mut linker: Linker<Host> = Linker::new(&engine);
     wasmtime_wasi::p2::add_to_linker_sync(&mut linker)?;
     bindings::cs::CoSimulationFmu::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
+    bindings::ext::om::ext::native::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(&mut linker, |s| s)?;
     let mut store = new_store(&engine, res, env, log, iu)?;
     let world = bindings::cs::CoSimulationFmu::instantiate(&mut store, &component, &linker)?;
     let handle = world

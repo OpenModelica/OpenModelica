@@ -381,7 +381,7 @@ protected function traverseEventInfoExps<T>
 algorithm
   arg := DoubleEnded.mapFoldNoCopy(eventInfo.zeroCrossings.zc, function traverseZeroCrossingExps(func=func), arg);
   arg := DoubleEnded.mapFoldNoCopy(eventInfo.samples.zc, function traverseZeroCrossingExps(func=func), arg);
-  arg := DoubleEnded.mapFoldNoCopy(eventInfo.relations, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEnded.mapFoldNoCopy(eventInfo.relations.zc, function traverseZeroCrossingExps(func=func), arg);
 end traverseEventInfoExps;
 
 protected function traverseZeroCrossingExps<T>

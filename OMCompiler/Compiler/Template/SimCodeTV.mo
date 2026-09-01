@@ -1465,6 +1465,24 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
 
+  function cacheFMI3ValueReferences
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3ValueReferences;
+
+  function clearFMI3ValueReferences
+    output String dummy;
+  end clearFMI3ValueReferences;
+
+  function cacheFMI3VariableAliases
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3VariableAliases;
+
+  function clearFMI3VariableAliases
+    output String dummy;
+  end clearFMI3VariableAliases;
+
   function numScalarElems
     input list<SimCodeVar.SimVar> vars;
     output Integer n;
@@ -1503,7 +1521,7 @@ package SimCodeUtil
 
   function getFMI3VariableAliases
     input SimCode.SimCode simCode;
-    input DAE.ComponentRef canonical;
+    input SimCodeVar.SimVar canonical;
     output list<SimCodeVar.SimVar> aliases;
   end getFMI3VariableAliases;
 
@@ -1516,6 +1534,23 @@ package SimCodeUtil
     input SimCode.SimCode inSimCode;
     output String outValueReference;
   end getFMI3TimeValueReference;
+
+  function getFMI3DaeModeValueReference
+    input SimCode.SimCode simCode;
+    output String vr;
+  end getFMI3DaeModeValueReference;
+
+  function getFMI3DaeResidualValueReference
+    input SimCodeVar.SimVar residualVar;
+    input SimCode.SimCode simCode;
+    output String vr;
+  end getFMI3DaeResidualValueReference;
+
+  function getFMI3DaeResidualDependencyAttributes
+    input SimCode.SimCode simCode;
+    input Integer index;
+    output String attributes;
+  end getFMI3DaeResidualDependencyAttributes;
 
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
@@ -3948,6 +3983,12 @@ package ComponentReference
     output DAE.ComponentRef outComponentRef;
   end crefStripSubs;
 
+  function crefRenameSeedRoot
+    input DAE.ComponentRef inComponentRef;
+    input String newJacName;
+    output DAE.ComponentRef outComponentRef;
+  end crefRenameSeedRoot;
+
   function crefTypeFull
     input DAE.ComponentRef inRef;
     output DAE.Type res;
@@ -4269,6 +4310,10 @@ package Config
   function simCodeTarget
     output String target;
   end simCodeTarget;
+
+  function simCodeRustRuntime
+    output Boolean rust;
+  end simCodeRustRuntime;
 
   function simulationCodeTarget
   "@author: adrpo

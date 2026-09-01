@@ -16,7 +16,7 @@ rtest special directives added to help creating testcases:
   Useful if you e.g. want to disable compiling functions with gcc while you flatten code.  
   You can also set the environment variable RTEST_OMCFLAGS if you want to insert these flags for all commands you run.
 * setup_command: gcc ...  
-  Will execute the provided command before running omc.  
+  Will execute the provided command before running omc.
   A command that builds an external "C" library should not name a compiler
   directly; use the variables rtest exports so the test also works for the
   wasm-jit target, which needs the library as a PIC dylink `.wasm` module
@@ -37,13 +37,23 @@ rtest special directives added to help creating testcases:
   at another toolchain. The wasm values are used when the target under test is
   wasm-jit (`OPENMODELICA_TEST_SIMCODETARGET` or `--simCodeTarget=` in
   `RTEST_OMCFLAGS`).
+
+  The same six are also exported as `OMC_NATIVE_CC`, `OMC_NATIVE_CFLAGS`, … with
+  the host values whatever the target under test is, for a test whose `Library`
+  exists for the platform alone — an `external "C"` the wasm side can only wrap
+  and has to reach through the host.
 * teardown_command: rm -f ...  
   Will execute the provided command after running omc.
-* suite: metamodelica, 63bit  
+* suite: metamodelica, 63bit
   Puts the test in one or more test suites, so that a run which cannot support
   them can deselect it: `partest/runtests.pl -suites=-metamodelica,-63bit`.
   Run `runtests.pl -h` for the suites and their defaults. The directive must be
   in the test's header, i.e. before the first line of code.
+* suite: wasm — says that the test selects the `wasm-jit` or `wasm` simCodeTarget
+  itself (rather than running under whatever target the run was given). Only the
+  Rust omc implements those targets, so the suite is off by default and the Rust
+  partest turns it on with `-suites=+wasm`. `rtest test.mos` runs such a test
+  regardless, as it does for the other tag suites.
 * suite: disabled — says that the test is not part of the testsuite, i.e. that it
   is listed in its makefile as a failing, not compiling, not simulating or manual
   test rather than in `TESTFILES`. Such a test is expected to fail, and some of

@@ -4942,7 +4942,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
  match context
-   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+   case JACOBIAN_CONTEXT(name=jacName, jacHT=SOME(jacHT)) then
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
        if stringEq(sub, "") then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
@@ -4953,7 +4953,24 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
        if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
        else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-     case SIMVAR(index=-2) then crefOld(cr, ix)
+     case SIMVAR(index=-2) then
+       // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
+       // reference, or a whole-array seed accessed with a dynamic subscript).
+       // Retry with the subscripts stripped: if the base cref resolves to a
+       // SEED_VAR, use ITS index (not the original -2) so the subscript
+       // (still carried separately in &sub) addresses the right seed array.
+       // Otherwise fall through to crefOld for actual values / loop iterators.
+       match simVarFromHT(crefStripSubs(cr), jacHT)
+       case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+         if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+         else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       else
+         // Still not found: seed cached under a different Jacobian's name. Retry with the root renamed to this Jacobian.
+         match simVarFromHT(crefRenameSeedRoot(crefStripSubs(cr), jacName), jacHT)
+         case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+           if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+           else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+         else crefOldSub(cr, ix, &sub)
 end jacCrefs;
 
 template jacSparsityIndex(ComponentRef cr, Context context)
@@ -5001,6 +5018,12 @@ end cref;
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
 let &sub = buffer ""
+  crefOldSub(cr, ix, &sub)
+end crefOld;
+
+template crefOldSub(ComponentRef cr, Integer ix, Text &sub)
+ "crefOld for a cref whose subscripts the caller already peeled off into &sub."
+::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
@@ -5008,7 +5031,7 @@ let &sub = buffer ""
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false, &sub)
-end crefOld;
+end crefOldSub;
 
 /* public */ template crefPre(ComponentRef cr)
  "Generates C equivalent name for component reference.
@@ -5599,18 +5622,21 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(dims)
       let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
-      let arrayData = if hasZeroDimension(dims) then
-          'NULL'
-        else if Flags.getConfigBool(Flags.NEW_BACKEND) then
-          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-          '((modelica_<%type%>*)&(<%nosubname%>))'
+      let t = if boolAnd(isStartCref(cr), boolNot(hasZeroDimension(dims))) then
+          startArrayGather(cr, type, wrapperArray, dimsLenStr, dimsValuesStr, &varDecls)
         else
-          let &sub = buffer ""
-          let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-          '((modelica_<%type%>*)&(<%nosubname%>))'
-      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+          // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
+          let arrayData = if hasZeroDimension(dims) then
+              'NULL'
+            else if Flags.getConfigBool(Flags.NEW_BACKEND) then
+              let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+              let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+            else
+              let &sub = buffer ""
+              let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+              '((modelica_<%type%>*)&(<%nosubname%>))'
+          '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
     else
@@ -8146,6 +8172,32 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
   end match
 end varArrayNameValues;
 
+template startArrayGather(ComponentRef cr, Text type, Text arr, Text ndims, Text dims, Text &varDecls)
+ "A whole-array start attribute whose dimension is not constant, so it was not
+  expanded into one term per element. The start values live one per scalar
+  VarsData entry, not contiguously like the value slots, so there is no first
+  element to build the array from: gather them instead."
+::=
+  let idx = tempDecl("modelica_integer", &varDecls)
+  <<
+  alloc_<%type%>_array(&<%arr%>, <%ndims%>, <%dims%>);
+  for (<%idx%> = 0; <%idx%> < <%type%>_array_nr_of_elements(<%arr%>); <%idx%>++) {
+    ((modelica_<%type%>*)<%arr%>.data)[<%idx%>] = <%startArrayElement(cr, type, idx)%>;
+  }<%\n%>
+  >>
+end startArrayGather;
+
+template startArrayElement(ComponentRef cr, Text type, Text idx)
+ "Element `idx`'s start attribute. With --simCodeScalarize the array's elements
+  are consecutive VarsData entries, each holding its own."
+::=
+  match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+  case var as SIMVAR(__) then
+    if intLt(index,0) then error(sourceInfo(), 'startArrayElement got negative index=<%index%> for <%crefStr(name)%>') else
+    let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
+    if stringEq(type, "real") then '((modelica_real*)(<%entry%>.data))[0]' else entry
+end startArrayElement;
+
 template varArrayName(SimVar var)
 ::=
   match var
@@ -8175,15 +8227,37 @@ template crefVarDimension(ComponentRef cr)
       'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
 end crefVarDimension;
 
+template lsVarKind(SimVar var)
+"var_kind enum constant matching this var, for initializeStaticLSVars."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'VAR_KIND_PARAMETER'
+    case SIMVAR(__)              then 'VAR_KIND_VARIABLE'
+end lsVarKind;
+
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
   let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
+  // A torn linear system's own iteration variables can be `fixed=false`
+  // PARAMETERS (solved via an initial-equation call, e.g. a filter's
+  // coefficient array) rather than ordinary VARIABLEs -- their scalar
+  // index lives in realParamsIndex/nParametersReal, a completely
+  // different space than realVarsIndex/nVariablesReal. Hardcoding
+  // VAR_KIND_VARIABLE here (as opposed to the equivalent, correct
+  // per-var dispatch in generateStaticInitialData for NONLINEAR_SYSTEM_DATA)
+  // looked up a variable-space index using a parameter-space index value,
+  // failing getNominalFromScalarIdx's out-of-bounds assertion whenever the
+  // parameter index exceeds nVariablesReal.
+  let kinds = (vars |> var as SIMVAR(__) => lsVarKind(var) ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
     const int indices[<%len%>] = {
       <%indices%>
+    };
+    const enum var_kind kinds[<%len%>] = {
+      <%kinds%>
     };
     for (int i = 0; i < <%len%>; ++i) {
       if (indices[i] < 0) {
@@ -8191,9 +8265,9 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
         linearSystemData->min[i]     = -DBL_MAX;
         linearSystemData->max[i]     = DBL_MAX;
       } else {
-        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, indices[i]);
-        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
-        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
+        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, kinds[i], indices[i]);
+        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
+        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, kinds[i], indices[i]);
       }
     }
   }

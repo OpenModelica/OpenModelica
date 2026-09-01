@@ -360,11 +360,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
   /* Set linear multistep method */
   if (omc_flag[FLAG_CVODE_LMM])
   {
-    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_ADAMS]))
+    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_ADAMS]) == 0)
     {
       config->lmm = CV_ADAMS;
     }
-    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_BDF]))
+    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_LMM], CVODE_LMM_NAME[CV_BDF]) == 0)
     {
       config->lmm = CV_BDF;
     }
@@ -390,11 +390,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
   /* Set nonlinear solver iteration type */
   if (omc_flag[FLAG_CVODE_ITER])
   {
-    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_FIXED_POINT]))
+    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_FIXED_POINT]) == 0)
     {
       config->iter = CV_ITER_FIXED_POINT;
     }
-    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_NEWTON]))
+    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_NEWTON]) == 0)
     {
       config->iter = CV_ITER_NEWTON;
     }
@@ -409,7 +409,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
         }
         messageClose(OMC_LOG_SOLVER);
       }
-      throwStreamPrint(threadData, "Unrecognized type of nonlinear solver iteration %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
+      throwStreamPrint(threadData, "Unrecognized type of nonlinear solver iteration %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_ITER]);
     }
   }
   else /* No user provided flag */
@@ -432,8 +432,8 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
     {
       warningStreamPrint(OMC_LOG_SOLVER, 1, "Combination of %s and %s not recommended.", CVODE_LMM_NAME[config->lmm], CVODE_ITER_NAME[config->iter]);
       warningStreamPrint(OMC_LOG_SOLVER, 0, "Use simflags %s and %s to set.", FLAG_NAME[FLAG_CVODE_LMM], FLAG_NAME[FLAG_CVODE_ITER]);
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_BDF, CV_NEWTON) for stiff problems (Default) or");
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_ADAMS, CV_FUNCTIONAL) for nonstiff problems.");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_BDF, CV_ITER_NEWTON) for stiff problems (Default) or");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_ADAMS, CV_ITER_FIXED_POINT) for nonstiff problems.");
       messageClose(OMC_LOG_SOLVER);
     }
   }

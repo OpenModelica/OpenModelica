@@ -547,6 +547,22 @@ void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inde
 }
 #endif
 
+#if !defined(OMC_MINIMAL_LOGGING)
+/* A throw inside the nonlinear solver is a trial point it steps away from, so
+ * the message goes on OMC_LOG_NLS, as in omc_assert_simulation(). Not the
+ * integrator region: the failed-algebraic-solve throw is raised there. */
+static inline int throwPrintsMessage(threadData_t *threadData)
+{
+  if (!omc_useStream[OMC_LOG_ASSERT]) {
+    return 0;
+  }
+  if (threadData->currentErrorStage == ERROR_NONLINEARSOLVER) {
+    return OMC_ACTIVE_STREAM(OMC_LOG_NLS);
+  }
+  return 1;
+}
+#endif
+
 static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 {
   switch (threadData->currentErrorStage) {
@@ -586,14 +602,14 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
  */
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (omc_useStream[OMC_LOG_ASSERT]) {
+  if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
   }
 #endif
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }
 
@@ -628,8 +644,9 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
  */
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (omc_useStream[OMC_LOG_ASSERT]) {
+  if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
@@ -638,6 +655,5 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
   }
 #endif
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*getBestJumpBuffer(threadData), 1);
 }

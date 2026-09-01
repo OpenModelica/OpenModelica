@@ -12,7 +12,7 @@
 use crate::api::{Fmi3, Fmi3CoSimulation};
 use crate::common::{Inputs, event_iteration, initialize};
 use crate::record::Recorder;
-use crate::{Error, Options, Result};
+use crate::{Deadline, Error, Options, Result};
 use openmodelica_fmi::{InterfaceKind, ModelDescription};
 
 /// How a run ended.
@@ -36,7 +36,7 @@ pub struct Run {
 pub fn simulate(
     inst: &mut dyn Fmi3CoSimulation,
     md: &ModelDescription,
-    opts: &Options,
+    opts: &Options<'_>,
 ) -> Result<Run> {
     // Event Mode needs the FMU to have one; without it `fmi3EnterEventMode` is
     // not even callable and the FMU handles its events internally.
@@ -53,8 +53,8 @@ pub fn simulate(
     };
 
     let mut inputs = Inputs::new(opts);
-    let mut rec = Recorder::new(md);
-    initialize(as_common(inst), &mut inputs, opts)?;
+    let mut rec = Recorder::new(md, opts.keep);
+    initialize(as_common(inst), md, &mut inputs, opts)?;
 
     let mut terminated_at = None;
     let (mut steps, mut events, mut early_returns) = (0, 0, 0);
@@ -71,10 +71,14 @@ pub fn simulate(
     rec.snapshot_parameters(as_common(inst))?;
     rec.sample(as_common(inst), opts.start_time)?;
 
+    let deadline = Deadline::arm(opts);
     let mut t = opts.start_time;
     let mut grid = opts.grid(step).skip(1);
     let mut next = grid.next();
     while let Some(target) = next {
+        if deadline.expired() {
+            return Err(Error::Alarm);
+        }
         if inputs.is_time_varying() {
             inputs.apply(as_common(inst), opts, t)?;
         }
@@ -149,7 +153,7 @@ pub fn simulate(
 const MAX_STALLED_STEPS: u32 = 100;
 
 /// A time this close to the communication point counts as having reached it.
-fn step_epsilon(opts: &Options) -> f64 {
+fn step_epsilon(opts: &Options<'_>) -> f64 {
     (opts.stop_time - opts.start_time).abs() * 1e-12
 }
 

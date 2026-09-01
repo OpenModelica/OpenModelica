@@ -5,7 +5,8 @@
 //! group. Parameters and constants are read once, after initialization, and go
 //! into the `.mat`'s time-invariant half — the same layout a simulated
 //! OpenModelica model writes, so OMPlot and `omc-diff` read an FMU run
-//! unchanged.
+//! unchanged. An alias (an FMI 3.0 `<Alias>` child, or an FMI 1.0 `alias`
+//! variable) shares its variable's column.
 
 use crate::api::Fmi3;
 use crate::{Error, Result};
@@ -13,6 +14,7 @@ use openmodelica_fmi::{
     Alias, Causality, Dimension, ModelDescription, VarType, Variability, Variable,
 };
 use openmodelica_mat_writer as mat;
+use std::collections::HashMap;
 
 pub struct Column {
     pub name: String,
@@ -45,6 +47,8 @@ pub struct Recorder {
     param_groups: Vec<Group>,
     /// Aliases: `(name, description, column of the variable it aliases, negated)`.
     aliases: Vec<(String, String, usize, bool)>,
+    /// Aliases of parameters: `(name, description, index into `parameters`, negated)`.
+    param_aliases: Vec<(String, String, usize, bool)>,
     scratch: Vec<f64>,
 }
 
@@ -61,6 +65,46 @@ fn is_recorded(v: &Variable) -> bool {
 /// A variable that keeps one value for the whole run.
 fn is_parameter(v: &Variable) -> bool {
     v.ty.is_numeric() && v.alias == Alias::NoAlias && v.causality != Causality::Independent && !is_recorded(v)
+}
+
+/// The FMI 1.0 alias variables by the value reference they share.
+fn fmi1_aliases(md: &ModelDescription) -> HashMap<u32, Vec<&Variable>> {
+    let mut map: HashMap<u32, Vec<&Variable>> = HashMap::new();
+    for a in md.variables.iter().filter(|a| a.alias != Alias::NoAlias) {
+        map.entry(a.value_reference).or_default().push(a);
+    }
+    map
+}
+
+/// `(name, description, negated)` for the names of `v` and its aliases the filter
+/// keeps; the first names the column (the variable's own, else a non-negated
+/// alias), the rest alias it. `None` when the filter keeps none.
+fn names_kept<'a>(
+    v: &'a Variable,
+    fmi1: &HashMap<u32, Vec<&'a Variable>>,
+    keep: &dyn Fn(&str) -> bool,
+) -> Option<Vec<(&'a str, &'a str, bool)>> {
+    let mut names: Vec<(&str, &str, bool)> = Vec::new();
+    if keep(&v.name) {
+        names.push((&v.name, v.description.as_deref().unwrap_or_default(), false));
+    }
+    names.extend(
+        v.aliases
+            .iter()
+            .filter(|a| keep(&a.name))
+            .map(|a| (a.name.as_str(), a.description.as_deref().unwrap_or_default(), false)),
+    );
+    names.extend(
+        fmi1.get(&v.value_reference)
+            .into_iter()
+            .flatten()
+            .filter(|a| a.ty == v.ty && keep(&a.name))
+            .map(|a| (a.name.as_str(), a.description.as_deref().unwrap_or_default(), a.alias == Alias::NegatedAlias)),
+    );
+    // A negated alias cannot name the column: it would carry the wrong sign.
+    let column = names.iter().position(|(_, _, negated)| !negated)?;
+    names.swap(0, column);
+    Some(names)
 }
 
 fn group_by_type(vars: &[(&Variable, usize, usize)]) -> Vec<Group> {
@@ -122,26 +166,42 @@ fn element_names(name: &str, dimensions: &[usize]) -> Vec<String> {
 }
 
 impl Recorder {
-    pub fn new(md: &ModelDescription) -> Recorder {
+    pub fn new(md: &ModelDescription, keep: Option<&dyn Fn(&str) -> bool>) -> Recorder {
+        // Dropped here, not at write time: the sampling is the cost.
+        let keep = |name: &str| keep.is_none_or(|k| k(name));
         let states: Vec<u32> = md.continuous_states();
         let mut columns = Vec::new();
         let mut recorded = Vec::new();
+        let mut aliases = Vec::new();
+        let fmi1 = fmi1_aliases(md);
         for v in md.variables.iter().filter(|v| is_recorded(v)) {
+            let Some(names) = names_kept(v, &fmi1, &keep) else { continue };
+            let (name, description, _) = names[0];
+            let extents = extents(md, v);
             let first = columns.len() + 1; // column 0 is time
-            for name in element_names(&v.name, &extents(md, v)) {
+            for element in element_names(name, &extents) {
                 columns.push(Column {
-                    name,
-                    description: v.description.clone().unwrap_or_default(),
+                    name: element,
+                    description: description.to_string(),
                     unit: v.unit.clone(),
                     causality: v.causality,
                     is_state: states.contains(&v.value_reference),
                 });
             }
+            for (alias, description, negated) in &names[1..] {
+                for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
+                    aliases.push((element, description.to_string(), first + k, *negated));
+                }
+            }
             recorded.push((v, first, columns.len() + 1 - first));
         }
         let mut parameters = Vec::new();
+        let mut param_aliases = Vec::new();
         let mut params = Vec::new();
         for v in md.variables.iter().filter(|v| is_parameter(v)) {
+            let Some(names) = names_kept(v, &fmi1, &keep) else { continue };
+            let (name, description, _) = names[0];
+            let extents = extents(md, v);
             let first = parameters.len();
             let starts = match &v.start {
                 Some(openmodelica_fmi::Start::Reals(r)) => r.clone(),
@@ -151,34 +211,16 @@ impl Recorder {
                 }
                 _ => Vec::new(),
             };
-            for (k, name) in element_names(&v.name, &extents(md, v)).into_iter().enumerate() {
-                parameters.push((
-                    name,
-                    v.description.clone().unwrap_or_default(),
-                    starts.get(k).copied().unwrap_or(0.0),
-                ));
+            for (k, element) in element_names(name, &extents).into_iter().enumerate() {
+                parameters.push((element, description.to_string(), starts.get(k).copied().unwrap_or(0.0)));
+            }
+            for (alias, description, negated) in &names[1..] {
+                for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
+                    param_aliases.push((element, description.to_string(), first + k, *negated));
+                }
             }
             params.push((v, first, parameters.len() - first));
         }
-        // FMI 1.0 aliases: the same value reference under another name, so they
-        // share the column rather than being sampled again.
-        let aliases = md
-            .variables
-            .iter()
-            .filter(|v| v.alias != Alias::NoAlias && v.ty.is_numeric())
-            .filter_map(|v| {
-                let col = recorded
-                    .iter()
-                    .find(|(base, ..)| base.value_reference == v.value_reference)
-                    .map(|(_, c, _)| *c)?;
-                Some((
-                    v.name.clone(),
-                    v.description.clone().unwrap_or_default(),
-                    col,
-                    v.alias == Alias::NegatedAlias,
-                ))
-            })
-            .collect();
         let n_values = columns.len();
         Recorder {
             groups: group_by_type(&recorded),
@@ -187,6 +229,7 @@ impl Recorder {
             rows: Vec::new(),
             parameters,
             aliases,
+            param_aliases,
             scratch: vec![0.0; n_values.max(1)],
         }
     }
@@ -286,14 +329,23 @@ impl Recorder {
                 },
             });
         }
-        for (name, description, _) in &self.parameters {
+        let mut params: Vec<f64> = Vec::with_capacity(self.parameters.len() + self.param_aliases.len());
+        for (name, description, value) in &self.parameters {
             signals.push(mat::MatVar {
                 name,
                 comment: description,
                 kind: mat::MatKind::Param { negate: mat::Neg::None },
             });
+            params.push(*value);
         }
-        let params: Vec<f64> = self.parameters.iter().map(|(_, _, v)| *v).collect();
+        for (name, description, index, negated) in &self.param_aliases {
+            signals.push(mat::MatVar {
+                name,
+                comment: description,
+                kind: mat::MatKind::Param { negate: if *negated { mat::Neg::Arith } else { mat::Neg::None } },
+            });
+            params.push(self.parameters[*index].2);
+        }
         mat::write_mat4(
             &signals,
             start_time,

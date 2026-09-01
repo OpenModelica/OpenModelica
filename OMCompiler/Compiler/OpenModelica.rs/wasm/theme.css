@@ -25,6 +25,11 @@ header .status { color:var(--muted); flex:1; min-width:0; overflow:hidden;
 header .status.err { color:var(--err); }
 header .status.busy { color:var(--accent); }
 header .status.ok { color:var(--teal); }
+/* One height for every header control: a text button is otherwise sized by its line
+   box (so it scales with its own font-size) and an icon button by its svg. Horizontal
+   padding stays per-class; the flex centring places the content in the fixed box. */
+header button { height:34px; display:inline-flex; align-items:center; justify-content:center; }
+header button[hidden] { display:none; }
 
 /* The plain-button look. :hover stays at one class of specificity (the disabled
    rule below it wins by order, not by :not) so a page whose controls are
@@ -40,10 +45,33 @@ button.cancel:hover:not(:disabled){ background:#c42b0e; }
 button.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); padding:6px 12px; font-size:13px; }
 button.ghost:hover:not(:disabled){ background:#2d2d30; }
 button.ghost.icon-only { padding:6px 9px; display:inline-flex; align-items:center; }
+button.ghost.icon-only[hidden] { display:none; }
 button.ghost.icon-only svg { width:16px; height:16px; display:block; }
 .icon-btn { background:transparent; border:0; color:var(--muted); font-size:17px; line-height:1;
   cursor:pointer; padding:4px 8px; }
 .icon-btn:hover { color:var(--fg); }
+
+/* Modal dialog: a centred card over a dimmed page, used for the settings and
+   export/native-build dialogs. A page adds its own width/body layout on top. */
+.modal-backdrop { position:fixed; inset:0; z-index:50; display:grid; place-items:center;
+  background:#0008; padding:16px; }
+.modal-backdrop[hidden] { display:none; }
+.modal { background:var(--panel); border:1px solid var(--border); border-radius:10px;
+  width:min(460px,100%); box-shadow:0 14px 44px #000a; }
+.modal-head { display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--border); font-weight:650; color:var(--fg); }
+.modal-body { padding:14px; display:grid; grid-template-columns:auto 1fr; gap:12px 14px; align-items:center; }
+.modal-body > label { color:var(--muted); }
+.modal-body select { background:#1b1b1b; color:var(--fg); border:1px solid var(--border);
+  border-radius:4px; padding:3px 6px; font:inherit; }
+.modal-body select:disabled { opacity:.5; }
+.modal-foot { display:flex; justify-content:flex-end; gap:8px;
+  padding:12px 14px; border-top:1px solid var(--border); }
+.modal-hint { grid-column:1 / -1; color:var(--muted); font-size:12px; margin:0; }
+.chk-group { display:flex; flex-direction:column; gap:6px; }
+.chk { display:flex; align-items:center; gap:7px; color:var(--fg); cursor:pointer; }
+.chk[hidden] { display:none; }              /* [hidden] is a UA rule, which display:flex would beat */
+.chk input { width:auto; margin:0; }
 
 .section-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em;
   color:var(--muted); padding:9px 12px 4px; flex:0 0 auto; }
@@ -67,6 +95,10 @@ input, select {
 .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
 .charts[hidden] { display:none; }
 .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
+/* Carrying a compiler diagnostic: fills the area from the top and scrolls. */
+.charts-empty.err { margin:0; align-self:stretch; text-align:left; padding:12px 14px;
+  color:var(--err); white-space:pre-wrap; overflow-wrap:anywhere;
+  font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; }
 .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
 .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
 .chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }

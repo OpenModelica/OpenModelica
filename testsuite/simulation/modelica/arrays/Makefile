@@ -32,6 +32,7 @@ Bug3916.mos \
 ConstructFunc.mos \
 crefIndex.mos \
 DimConvert.mos \
+ConstantSubscriptOutOfRange.mos \
 DynamicSubscriptAliasArray.mos \
 gc.mos \
 gc2980.mos \

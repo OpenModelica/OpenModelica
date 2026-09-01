@@ -648,7 +648,7 @@ uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents    "stores all information related to time events";
     ZeroCrossingSet zeroCrossings "list of zero crossing conditions";
-    DoubleEnded.MutableList<ZeroCrossing> relations "list of zero crossing function as before";
+    ZeroCrossingSet relations "list of zero crossing function as before";
     ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;

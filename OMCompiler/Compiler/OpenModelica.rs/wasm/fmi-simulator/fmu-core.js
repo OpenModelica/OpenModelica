@@ -222,6 +222,12 @@ export async function loadComponent(component, { files, onLog, shimBase = './ven
   imports['fmi:fmi3/intermediate-update-callbacks'] = {
     intermediateUpdate: () => ({ earlyReturnRequested: false, earlyReturnTime: 0 }),
   };
+  // `external "C"` served from a platform library: nothing to serve it from here.
+  for (const n of gen.imports.filter((n) => n.startsWith('om:ext/native'))) {
+    imports[n] = {
+      call: () => ({ tag: 'err', val: 'this FMU needs a native external "C" library, which a browser cannot load' }),
+    };
+  }
   const missing = gen.imports.filter((n) => !imports[n]);
   if (missing.length) {
     throw new Error(`the FMU needs imports this host does not provide: ${missing.join(', ')}`);

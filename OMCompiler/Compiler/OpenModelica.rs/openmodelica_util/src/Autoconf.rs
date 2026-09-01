@@ -167,6 +167,26 @@ pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATE
     },
 };
 
+/// `@RT_LDFLAGS_GENERATED_CODE_SIM_RUST@` (CMake-configured via OMC_RT_LDFLAGS_*; the
+/// fallback matches the C runtime build per platform).
+pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST") {
+    Some(s) => s,
+    None => if cfg!(windows) {
+        // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
+        // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
+        // matching note in Autoconf.mo.omdev.mingw).
+        const_str::concat!(
+            "-Wl,--allow-multiple-definition -lSimulationRuntimeRust -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
+            win_linkType,
+            " -lstdc++ -Wl,-Bdynamic "
+        )
+    } else if cfg!(target_os = "macos") {
+        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
+    } else {
+        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic "
+    },
+};
+
 /// `@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@` (CMake-configured via OMC_RT_LDFLAGS_*;
 /// the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU") {

@@ -791,3 +791,58 @@ fn gemv_tail(v: &mut [f64], ldv: usize, n: usize, col: usize, x: &[f64], beta: f
         v[i + col * ldv] = out[i] + beta * v[i + col * ldv];
     }
 }
+
+/// `DTREVC` with LAPACK's argument list. `howmny = "A"` computes every
+/// eigenvector of `t` itself, `"B"` back-transforms over the basis already in
+/// `vl`/`vr` (what `DGEEV` does with the Schur vectors). `"S"` — a selected
+/// subset — is not implemented and reports `INFO = -3`, the `select` position.
+///
+/// `side` is `"R"`, `"L"` or `"B"`. `m` receives the number of columns written,
+/// which for `"A"`/`"B"` is `n`.
+#[allow(clippy::too_many_arguments)]
+pub fn dtrevc_lapack(
+    side: &str,
+    howmny: &str,
+    n: usize,
+    t: &[f64],
+    ldt: usize,
+    vl: &mut [f64],
+    ldvl: usize,
+    vr: &mut [f64],
+    ldvr: usize,
+    mm: usize,
+    m: &mut i32,
+) -> i32 {
+    let side = crate::opt(side);
+    let howmny = crate::opt(howmny);
+    let (want_l, want_r) = (matches!(side, b'L' | b'B'), matches!(side, b'R' | b'B'));
+    if !want_l && !want_r {
+        return -1;
+    }
+    if !matches!(howmny, b'A' | b'B') {
+        return -3;
+    }
+    if n > mm {
+        return -11;
+    }
+    *m = n as i32;
+    if n == 0 {
+        return 0;
+    }
+    for (want, v, ldv, right) in
+        [(want_l, &mut *vl, ldvl, false), (want_r, &mut *vr, ldvr, true)]
+    {
+        if !want {
+            continue;
+        }
+        if howmny == b'A' {
+            for j in 0..n {
+                for i in 0..n {
+                    crate::blas::set(v, ldv, i, j, if i == j { 1.0 } else { 0.0 });
+                }
+            }
+        }
+        dtrevc(right, n, t, ldt, v, ldv);
+    }
+    0
+}

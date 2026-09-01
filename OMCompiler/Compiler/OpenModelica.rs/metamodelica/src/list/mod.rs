@@ -36,9 +36,32 @@ impl<T: Clone> Drop for List<T> {
         if matches!(&**tail, List::Nil) {
             return;
         }
-        // One shared Nil per unlink walk; replacing a tail with a clone of
-        // it is just a refcount increment.
-        let nil: Arc<List<T>> = Arc::new(List::Nil);
+        // A shared tail is not ours to unlink, and dropping our reference to
+        // it only decrements its refcount, so there is nothing to do.
+        if Arc::strong_count(tail) != 1 || Arc::weak_count(tail) != 0 {
+            return;
+        }
+        // The hole left by each detached tail has to be filled with *some*
+        // `Arc<List<T>>`. Take the list's own terminating Nil rather than
+        // allocating one — a list drop is one of the compiler's most frequent
+        // operations, and `Arc::new(List::Nil)` made every one of them
+        // allocate. The scan only walks the uniquely-owned prefix, i.e. the
+        // nodes the unlink loop below is about to touch anyway; a shared
+        // suffix stops it, and then there is no reachable Nil to borrow.
+        let nil: Arc<List<T>> = {
+            let mut p: &Arc<List<T>> = tail;
+            loop {
+                match &**p {
+                    List::Nil => break p.clone(),
+                    List::Cons { tail: next, .. } => {
+                        if Arc::strong_count(next) != 1 || Arc::weak_count(next) != 0 {
+                            break Arc::new(List::Nil);
+                        }
+                        p = next;
+                    }
+                }
+            }
+        };
         let mut cur = std::mem::replace(tail, nil.clone());
         loop {
             match Arc::get_mut(&mut cur) {
@@ -304,6 +327,29 @@ mod tests {
     use arcstr::{literal, ArcStr};
     mod list_function_tests {
         use super::*;
+
+        /// A long list must be released iteratively (see `impl Drop`), and the
+        /// unlink walk must leave a shared suffix intact.
+        #[test]
+        fn test_drop_long_list_is_iterative() {
+            let mut l: Arc<List<i32>> = nil();
+            for i in 0..500_000 {
+                l = cons(i, l);
+            }
+            drop(l);
+
+            let mut shared: Arc<List<i32>> = nil();
+            for i in 0..200_000 {
+                shared = cons(i, shared);
+            }
+            let mut prefixed = shared.clone();
+            for i in 0..200_000 {
+                prefixed = cons(i, prefixed);
+            }
+            drop(prefixed);
+            assert_eq!(shared.len(), 200_000);
+            drop(shared);
+        }
 
         #[test]
         fn test_list_append() {

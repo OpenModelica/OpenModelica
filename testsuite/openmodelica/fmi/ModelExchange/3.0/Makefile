@@ -12,22 +12,30 @@ fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
 fmi3_binary_extobj.mos \
 fmi3_builddescription.mos \
+fmi3_causalize_protected.mos \
 fmi3_clocks.mos \
 fmi3_directional_derivatives.mos \
+fmi3_documentation.mos \
 fmi3_fmustate.mos \
 fmi3_graphics.mos \
+fmi3_graphics_inherited.mos \
 fmi3_msl_adder4.mos \
 fmi3_msl_engine1a.mos \
 fmi3_terminals_alias_nb.mos \
 fmi3_terminals_alias.mos \
 fmi3_terminals.mos \
-fmi3_types.mos
+fmi3_types.mos \
+fmi3_wasm_daemode_me.mos \
+fmi3_wasm_discrete_output_init.mos \
+fmi3_wasm_native_record.mos \
+fmi3_wasm_output_record.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.c \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

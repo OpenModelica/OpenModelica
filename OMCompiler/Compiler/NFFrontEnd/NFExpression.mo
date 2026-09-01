@@ -2864,19 +2864,18 @@ public
 
   function dimensionCount
     input Expression exp;
+    input Boolean isDim = false;
     output Integer dimCount;
   algorithm
     dimCount := match exp
+      // Typenames expand to arrays when used as e.g. iteration ranges, but when used as a
+      // dimension they work the same as an Integer and are treated as scalars.
+      case TYPENAME() then if isDim then 0 else 1;
       case ARRAY(ty = Type.UNKNOWN())
         then 1 + dimensionCount(arrayGet(exp.elements, 1));
-      case ARRAY() then Type.dimensionCount(exp.ty);
-      case RANGE() then Type.dimensionCount(exp.ty);
-      case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
-      case CAST() then dimensionCount(exp.exp);
-      case SUBSCRIPTED_EXP() then Type.dimensionCount(exp.ty);
-      case TUPLE_ELEMENT() then Type.dimensionCount(exp.ty);
-      // TODO: Add more expressions.
-      else 0;
+      case MATRIX() then 2;
+      case SIZE() then if isNone(exp.dimIndex) then dimensionCount(exp.exp) else 0;
+      else Type.dimensionCount(typeOf(exp));
     end match;
   end dimensionCount;
 

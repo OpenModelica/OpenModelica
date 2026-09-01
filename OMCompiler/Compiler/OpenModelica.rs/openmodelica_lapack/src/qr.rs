@@ -11,6 +11,14 @@ use crate::{abs, opt};
 
 /// `A = Q*R` (`DGEQRF`). `tau` has length `min(m, n)`.
 pub fn dgeqrf(m: usize, n: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dgeqrf(m, n, a, lda, tau);
+    #[cfg(not(feature = "faer-backend"))]
+    dgeqrf_ref(m, n, a, lda, tau)
+}
+
+/// The unblocked port of `DGEQRF`, kept as the faer-free fallback.
+pub fn dgeqrf_ref(m: usize, n: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) -> i32 {
     for j in 0..m.min(n) {
         let (beta, t) = reflect_column(m, j, a, lda);
         tau[j] = t;
@@ -43,6 +51,22 @@ fn reflect_column(m: usize, j: usize, a: &mut [f64], lda: usize) -> (f64, f64) {
 /// entry on input moves that column to the front, a zero leaves it free; on output
 /// it holds the 1-based permutation.
 pub fn dgeqp3(
+    m: usize,
+    n: usize,
+    a: &mut [f64],
+    lda: usize,
+    jpvt: &mut [i32],
+    tau: &mut [f64],
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    if let Some(r) = crate::faer_backend::dgeqp3(m, n, a, lda, jpvt, tau) {
+        return r;
+    }
+    dgeqp3_ref(m, n, a, lda, jpvt, tau)
+}
+
+/// The port of `DGEQP3`, and the only path when `JPVT` pins a column.
+pub fn dgeqp3_ref(
     m: usize,
     n: usize,
     a: &mut [f64],
@@ -115,6 +139,14 @@ fn permute_columns(m: usize, n: usize, a: &mut [f64], lda: usize, perm: &[usize]
 /// Form the first `n` columns of `Q` from `k` reflectors (`DORGQR`). `A` holds the
 /// factored form on input and `Q` (`m`×`n`) on output.
 pub fn dorgqr(m: usize, n: usize, k: usize, a: &mut [f64], lda: usize, tau: &[f64]) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dorgqr(m, n, k, a, lda, tau);
+    #[cfg(not(feature = "faer-backend"))]
+    dorgqr_ref(m, n, k, a, lda, tau)
+}
+
+/// The port of `DORGQR`, kept as the faer-free fallback.
+pub fn dorgqr_ref(m: usize, n: usize, k: usize, a: &mut [f64], lda: usize, tau: &[f64]) -> i32 {
     // Zero out the columns beyond the reflectors, then set the identity in the
     // block those columns' reflectors do not reach, as DORG2R does.
     for j in k..n {
@@ -147,6 +179,26 @@ pub fn dorgqr(m: usize, n: usize, k: usize, a: &mut [f64], lda: usize, tau: &[f6
 /// number of reflectors.
 #[allow(clippy::too_many_arguments)]
 pub fn dormqr(
+    side: &str,
+    trans: &str,
+    m: usize,
+    n: usize,
+    k: usize,
+    a: &[f64],
+    lda: usize,
+    tau: &[f64],
+    c: &mut [f64],
+    ldc: usize,
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dormqr(side, trans, m, n, k, a, lda, tau, c, ldc);
+    #[cfg(not(feature = "faer-backend"))]
+    dormqr_ref(side, trans, m, n, k, a, lda, tau, c, ldc)
+}
+
+/// The port of `DORMQR`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dormqr_ref(
     side: &str,
     trans: &str,
     m: usize,

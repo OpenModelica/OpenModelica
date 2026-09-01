@@ -58,10 +58,13 @@ protected
   import Expression = NFExpression;
   import NFFunction.Function;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
+  import List;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import Scalarize = NFScalarize;
   import NFInstNode.InstNode;
 
   // Backend imports
@@ -72,7 +75,7 @@ protected
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
-  import NBEquation.{Equation, EquationPointers, EqData};
+  import NBEquation.{Equation, Iterator, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
   import Partition = NBPartition;
@@ -495,6 +498,92 @@ protected
     end if;
   end partJacobian;
 
+  function forEquationStart
+    "Returns the INTEGER start value of a FOR_EQUATION's single iterator range.
+     Returns 0 when the equation is not a FOR_EQUATION or start is not an integer."
+    input Equation eqn;
+    output Integer s = 0;
+  protected
+    Expression start_exp;
+  algorithm
+    () := match eqn
+      case Equation.FOR_EQUATION(iter = Iterator.SINGLE(range = Expression.RANGE(start = start_exp)))
+        algorithm s := Expression.integerValueOrDefault(start_exp, 0); then ();
+      else ();
+    end match;
+  end forEquationStart;
+
+  function partialSliceSeedCandidates
+    "Creates per-element seed candidates for partial iteration-var slices where
+     the for-loop starts at or above the slice's first element index.  This
+     avoids phantom seeds (e.g. $SEED.x[1] when x[2..N] is the NLS slice) that
+     would produce a zero sparsity column and cause sparsitySanityCheck to fail.
+     Falls back to whole-array seeds when the for-loop starts below the slice
+     (e.g. slice_for where i1 starts at 1 but x is sliced from x[2])."
+    input list<Slice<VariablePointer>> iteration_vars;
+    input list<Slice<BEquation.EquationPointer>> residual_eqns;
+    output list<VariablePointer> seed_candidates = {};
+  protected
+    Integer for_start = 0;  // 0 = no FOR_EQUATION found
+    Integer s;
+    Integer slice_first_1based;
+    list<Variable> elem_vars;
+    Variable var_elem;
+  algorithm
+    // Find minimum for-loop start across all FOR_EQUATION residuals.
+    for eqn_slice in residual_eqns loop
+      s := forEquationStart(Pointer.access(Slice.getT(eqn_slice)));
+      if s > 0 then
+        if for_start == 0 then
+          for_start := s;
+        else
+          for_start := intMin(for_start, s);
+        end if;
+      end if;
+    end for;
+    // Build seed candidates: per-element for safe partial slices, whole-array otherwise.
+    for var_slice in iteration_vars loop
+      if listEmpty(var_slice.indices) then
+        // Full slice: no phantom risk.
+        seed_candidates := Slice.getT(var_slice) :: seed_candidates;
+      else
+        // Partial slice: first 0-based index + 1 gives the 1-based start element.
+        var_elem := Pointer.access(Slice.getT(var_slice));
+        slice_first_1based := listHead(var_slice.indices) + 1;
+        if (for_start == 0 or for_start >= slice_first_1based) and
+           (Type.isReal(Type.arrayElementType(var_elem.ty)) or Type.isComplex(Type.arrayElementType(var_elem.ty))) then
+          // Safe to use per-element seeds: the loop never reaches below the slice start
+          // (for_start >= slice_first_1based, or no FOR_EQUATION residual at all).
+          // Record (Complex) element types are included here too: scalarizeBackendVariable
+          // only splits the ARRAY dimension (still record-typed per-element results), and
+          // the later general VariablePointers.scalarize pass (already used for every other
+          // Jacobian's seedVars, e.g. NSimJacobian.mo) recurses into scalarizeComplexVariable
+          // to flatten those into scalar leaf fields - the same path record-typed FULL-slice
+          // seed candidates already go through above. Restricting to Real here (as before)
+          // meant a record-element partial slice fell back to the WHOLE parent array/record
+          // as a single seed candidate, which the general scalarize pass then expands to far
+          // more scalar columns than this Jacobian's true torn-unknown count (sizeCols ended
+          // up way bigger than the NLS's own size), silently degrading every such Jacobian to
+          // a numeric one at runtime (see nonlinearSystem.c's sizeCols-vs-size safety check).
+          // NOTE: for_start was computed above but previously never consulted here (only
+          // "slice_first_1based > 1" was checked) -- a dead-code bug that silently defeated
+          // exactly the case this function's own docstring describes (slice_for.mos: the
+          // for-loop starts at 1 but x is sliced from x[2], so a symbolic body term like
+          // x[$i1] at $i1=1 needs a seed for x[1], which per-element scalarization of just
+          // x[2..4] can never provide).
+          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices);
+          for v in elem_vars loop
+            seed_candidates := Pointer.create(v) :: seed_candidates;
+          end for;
+        else
+          // Unsafe or no phantom risk avoidance possible: fall back to whole-array seed pointer.
+          seed_candidates := Slice.getT(var_slice) :: seed_candidates;
+        end if;
+      end if;
+    end for;
+    seed_candidates := listReverse(seed_candidates);
+  end partialSliceSeedCandidates;
+
   function compJacobian
     input output StrongComponent comp;
     input Option<Adjacency.Matrix> full;
@@ -513,9 +602,7 @@ protected
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
-        // Use the whole-array base pointer for every iteration var slice so that
-        // for-loop column equations can access the seed as an array (e.g. $SEED.x[$i1]).
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        seed_candidates := partialSliceSeedCandidates(strict.iteration_vars, strict.residual_eqns);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
@@ -555,6 +642,9 @@ protected
     Adjacency.Matrix fullLocal, sparsity;
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> adj_base_seen;
+    list<Pointer<Variable>> adj_seed_list;
+    ComponentRef adj_base_cref;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     if isSome(strongComponents) then
@@ -644,7 +734,21 @@ protected
     // Using part.adjacencyMatrix (the `full` param) would fail because residual
     // equations created by finalize() during tearing get new names and don't
     // appear in the partition's pre-tearing adjacency matrix.
-    adjacencyVars := VariablePointers.clone(seedCandidates);
+    // Build adjacencyVars from unique base variable ptrs derived from seedCandidates.
+    // When seedCandidates contains scalar element ptrs for partial-slice NLS iter vars,
+    // all elements of the same array share the same base ptr. Using base ptrs here
+    // preserves pseudo=true subscript-stripped lookup in getDependentCref, which matches
+    // any element expression (e.g. module[i].T for iterator i) to the base column.
+    adj_base_seen := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    adj_seed_list := {};
+    for v in VariablePointers.toList(seedCandidates) loop
+      adj_base_cref := ComponentRef.stripSubscriptsAll(BVariable.getVarName(v));
+      if not UnorderedSet.contains(adj_base_cref, adj_base_seen) then
+        UnorderedSet.add(adj_base_cref, adj_base_seen);
+        adj_seed_list := BVariable.getVarPointer(BVariable.getVarName(v), sourceInfo()) :: adj_seed_list;
+      end if;
+    end for;
+    adjacencyVars := VariablePointers.fromList(listReverse(adj_seed_list));
     adjacencyVars := VariablePointers.addList(tmp_vars, adjacencyVars);
     // For ODE Jacobians, also include state derivatives as adjacency variables.
     // Some equations use der(x_j) as an RHS input (e.g. der(x_i) = f(der(x_j), x_k)).
@@ -1578,11 +1682,14 @@ protected
       Pointer.update(vars_ptr, diff_ptr :: Pointer.access(vars_ptr));
       // add x -> $<new>.x to the map for later lookup
       UnorderedMap.add(var.name, diff, map);
-      // For subscripted element crefs (partial-slice NLS iter vars), also add the
-      // base cref mapped to the first element seed (added only once so that
-      // later elements do not overwrite it). This allows iterator-subscripted
-      // deps from for-loop equations to find their seed via base fallback in Part D.
-      if ComponentRef.hasSubscripts(var.name) and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(var.name), map) then
+      // Base-cref fallback for iterator-subscripted deps (x[$i1]) to find their seed in Part D.
+      // Literal subscripts (x[1] vs x[2]) are independent unknowns: registering a base-cref
+      // fallback for them would let an UNRELATED literal element (never itself an unknown of
+      // this Jacobian, e.g. x[1] when only x[2] is) wrongly resolve via NBDifferentiate's
+      // exact-match-first lookup falling through to this template. Exclude those; literal
+      // elements that *are* genuine unknowns already get resolved by the exact-match check.
+      if ComponentRef.hasSubscripts(var.name) and not List.all(ComponentRef.subscriptsAllFlat(var.name), Subscript.isLiteral)
+          and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(var.name), map) then
         UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), diff, map);
       end if;
 

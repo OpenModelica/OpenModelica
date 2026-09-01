@@ -1,8 +1,13 @@
 //! The real SUNDIALS/KLU, cross-compiled to wasm and linked in by `build.rs`
-//! (`cfg(sundials)`).
+//! (`cfg(sundials)`): the SuiteSparse solvers behind this runtime's *linear*
+//! systems. KINSOL, which the nonlinear ones use, is
+//! [`openmodelica_nls::kinsol`] -- shared with the runtime the C code generator
+//! links -- and is re-exported at the end of this file under the names
+//! `src/nls.rs` calls it by.
 //!
-//! Indices are `i32` (`SUNDIALS_INDEX_SIZE=32`, see the build script for why) and
-//! `sunrealtype` is `f64`.
+//! Indices here are `i32` (`SUNDIALS_INDEX_SIZE=32`, see the build script for why)
+//! and `sunrealtype` is `f64`. The shared binding cannot assume that: the host
+//! archives are built with 64-bit indices, so it takes them as `SunIndex`.
 
 /// Whether the real solvers are linked into this blob.
 #[unsafe(no_mangle)]
@@ -11,12 +16,14 @@ pub extern "C" fn rt_sundials_available() -> i32 {
 }
 
 /// What this build can serve, for `simflags::check`.
-#[cfg(any(feature = "session", feature = "standalone"))]
 pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
-        klu: cfg!(sundials),
-        ida: openmodelica_sim_meta::IDA,
-        cvode: openmodelica_sim_meta::CVODE,
+        klu: groups::klu(),
+        kinsol: groups::kinsol(),
+        umfpack: groups::umfpack(),
+        lis: groups::lis(),
+        ida: openmodelica_sim_meta::IDA && groups::driver(),
+        cvode: openmodelica_sim_meta::CVODE && groups::driver(),
         // Served by the driver's per-step deadline; both runtimes install a clock.
         alarm: true,
         // No regex engine in wasm; the model's own filter is resolved at codegen.
@@ -29,6 +36,49 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     }
 }
 
+/// Which solver libraries this build has. An FMU links one PIC side module per
+/// library, chosen at export, so the answer is a run-time one: the stub standing in
+/// for what was left out answers 0 where a real module answers 1. Every other build
+/// links the archives statically and has all of them or none.
+#[cfg(sundials_dylink)]
+mod groups {
+    unsafe extern "C" {
+        fn om_have_klu() -> i32;
+        fn om_have_kinsol() -> i32;
+        fn om_have_umfpack() -> i32;
+        fn om_have_lis() -> i32;
+        fn om_have_sundials_driver() -> i32;
+    }
+    macro_rules! ask {
+        ($name:ident, $sym:ident) => {
+            pub fn $name() -> bool {
+                unsafe { $sym() != 0 }
+            }
+        };
+    }
+    ask!(klu, om_have_klu);
+    ask!(kinsol, om_have_kinsol);
+    ask!(umfpack, om_have_umfpack);
+    ask!(lis, om_have_lis);
+    ask!(driver, om_have_sundials_driver);
+}
+
+#[cfg(not(sundials_dylink))]
+mod groups {
+    macro_rules! ask {
+        ($name:ident) => {
+            pub fn $name() -> bool {
+                cfg!(sundials)
+            }
+        };
+    }
+    ask!(klu);
+    ask!(kinsol);
+    ask!(umfpack);
+    ask!(lis);
+    ask!(driver);
+}
+
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports
 /// success and its values land where [`klu::Common`] mirrors them, and KINSOL
 /// allocates.
@@ -36,7 +86,7 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sundials_selftest() -> i32 {
     let common_ok = klu::Common::defaults().is_some();
-    (common_ok && kinsol::probe()) as i32
+    (common_ok && openmodelica_nls::kinsol::sun::probe()) as i32
 }
 
 #[cfg(not(sundials))]
@@ -370,7 +420,8 @@ pub(crate) fn reset_caches() {
     {
         KLU_CACHE.with(|c| c.borrow_mut().clear());
         UMFPACK_CACHE.with(|c| c.borrow_mut().clear());
-        KIN_CACHE.with(|c| c.borrow_mut().clear());
+        openmodelica_nls::kinsol::reset_caches();
+        crate::lis::reset_caches();
     }
 }
 
@@ -464,452 +515,10 @@ pub(crate) fn umfpack_solve_dense(a_ptr: u32, b_ptr: u32, n: usize) -> i32 {
     }
 }
 
-/// KINSOL over the sparse Jacobian, with KLU as its linear solver — C's
-/// `kinsolSolver.c` for a system with an analytic sparsity pattern.
+// The KINSOL half of C's `kinsolSolver.c` / `kinsol_b.c` is
+// `openmodelica_nls::kinsol`, shared with `openmodelica_simulation_runtime`: the
+// binding exchanges plain slices, so both runtimes drive the same one.
 #[cfg(sundials)]
-pub(crate) mod kinsol {
-    use alloc::vec;
-    use core::ffi::{c_int, c_long, c_void};
-
-    pub type NVector = *mut c_void;
-    pub type SunMatrix = *mut c_void;
-    pub type SunLinSol = *mut c_void;
-    pub type SunContext = *mut c_void;
-
-    type SysFn = extern "C" fn(u: NVector, fval: NVector, user: *mut c_void) -> c_int;
-    type JacFn = extern "C" fn(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, t1: NVector, t2: NVector) -> c_int;
-
-    unsafe extern "C" {
-        fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
-        fn SUNContext_Free(ctx: *mut SunContext) -> c_int;
-        fn SUNContext_ClearErrHandlers(ctx: SunContext) -> c_int;
-
-        fn KINCreate(ctx: SunContext) -> *mut c_void;
-        fn KINFree(kinmem: *mut *mut c_void);
-        fn KINInit(kinmem: *mut c_void, func: SysFn, tmpl: NVector) -> c_int;
-        fn KINSol(kinmem: *mut c_void, uu: NVector, strategy: c_int, u_scale: NVector, f_scale: NVector) -> c_int;
-        fn KINSetUserData(kinmem: *mut c_void, user: *mut c_void) -> c_int;
-        fn KINSetFuncNormTol(kinmem: *mut c_void, tol: f64) -> c_int;
-        fn KINSetScaledStepTol(kinmem: *mut c_void, tol: f64) -> c_int;
-        fn KINSetNumMaxIters(kinmem: *mut c_void, iters: c_long) -> c_int;
-        fn KINSetNoInitSetup(kinmem: *mut c_void, no_init_setup: c_int) -> c_int;
-        fn KINSetMaxSetupCalls(kinmem: *mut c_void, msbset: c_long) -> c_int;
-        fn KINSetMaxNewtonStep(kinmem: *mut c_void, mxnewtstep: f64) -> c_int;
-        fn KINSetLinearSolver(kinmem: *mut c_void, ls: SunLinSol, a: SunMatrix) -> c_int;
-        fn KINSetJacFn(kinmem: *mut c_void, jac: JacFn) -> c_int;
-        fn KINGetFuncNorm(kinmem: *mut c_void, fnorm: *mut f64) -> c_int;
-        fn N_VNew_Serial(len: i32, ctx: SunContext) -> NVector;
-        fn N_VDestroy(v: NVector);
-        fn N_VGetArrayPointer(v: NVector) -> *mut f64;
-        fn N_VConst(c: f64, z: NVector);
-        fn N_VWL2Norm(x: NVector, w: NVector) -> f64;
-        fn SUNSparseMatrix(m: i32, n: i32, nnz: i32, sparsetype: c_int, ctx: SunContext) -> SunMatrix;
-        fn SUNMatDestroy(a: SunMatrix);
-        fn SUNSparseMatrix_Data(a: SunMatrix) -> *mut f64;
-        fn SUNSparseMatrix_IndexPointers(a: SunMatrix) -> *mut i32;
-        fn SUNSparseMatrix_IndexValues(a: SunMatrix) -> *mut i32;
-        fn SUNLinSol_KLU(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinSol;
-        fn SUNLinSol_KLUReInit(s: SunLinSol, a: SunMatrix, nnz: i32, reinit_type: c_int) -> c_int;
-        fn SUNLinSolFree(s: SunLinSol) -> c_int;
-    }
-
-    const SUN_SUCCESS: c_int = 0;
-    const SUN_COMM_NULL: c_int = 0;
-    const CSC_MAT: c_int = 0;
-    const SUNKLU_REINIT_PARTIAL: c_int = 2;
-    const KIN_NONE: c_int = 0;
-    const KIN_LINESEARCH: c_int = 1;
-    const KIN_SUCCESS: c_int = 0;
-    const KIN_INITIAL_GUESS_OK: c_int = 1;
-    const KIN_STEP_LT_STPTOL: c_int = 2;
-    const KIN_MEM_NULL: c_int = -1;
-    const KIN_ILL_INPUT: c_int = -2;
-    const KIN_NO_MALLOC: c_int = -3;
-    const KIN_LINESEARCH_NONCONV: c_int = -5;
-    const KIN_MAXITER_REACHED: c_int = -6;
-    const KIN_MXNEWT_5X_EXCEEDED: c_int = -7;
-    const KIN_LINESEARCH_BCFAIL: c_int = -8;
-    const KIN_LINIT_FAIL: c_int = -10;
-    const KIN_LSETUP_FAIL: c_int = -11;
-    const KIN_LSOLVE_FAIL: c_int = -12;
-    const KIN_REPTD_SYSFUNC_ERR: c_int = -15;
-
-    /// C's `FTOL_WITH_LESS_ACCURACY` and `RETRY_MAX`; the stopping tolerances and
-    /// the step factor are C's `newtonFTol`/`newtonXTol`/`maxStepFactor`, which
-    /// `crate::solvers` holds because `-newtonFTol` and friends move them.
-    const FTOL_LESS_ACCURACY: f64 = 1.0e-6;
-    const RETRY_MAX: i32 = 5;
-
-    /// The system KINSOL is solving, handed to the callbacks through
-    /// `KINSetUserData` for the duration of one [`Solver::solve`].
-    struct Ud<'a> {
-        n: usize,
-        nnz: usize,
-        colptr: &'a [i32],
-        rowidx: &'a [i32],
-        eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
-        assemble: &'a mut dyn FnMut(&[f64], &mut [f64]),
-        /// Difference the Jacobian rather than assemble it analytically.
-        numeric: bool,
-    }
-
-    /// Extract the backing array pointer from an N_Vector.
-    ///
-    /// Returns `&mut [f64]` with a lifetime bounded by the `'a` parameter of the
-    /// enclosing Ud struct. The slice is only valid while the N_Vector exists;
-    /// the caller must not let it escape the callback scope.
-    fn data<'a>(v: NVector, n: usize) -> &'a mut [f64] {
-        unsafe { core::slice::from_raw_parts_mut(N_VGetArrayPointer(v), n) }
-    }
-
-    extern "C" fn residual(u: NVector, fval: NVector, user: *mut c_void) -> c_int {
-        let ud = unsafe { &mut *(user as *mut Ud) };
-        let x = data(u, ud.n);
-        let f = data(fval, ud.n);
-        (ud.eval)(x, f);
-        // A model assert at this point is recoverable: KINSOL shortens the step, as
-        // it does for the C runtime's longjmp-caught residual.
-        crate::nls::assert_hit() as c_int
-    }
-
-    /// C's `nlsSparseJac`: forward differences into the pattern's CSC values. C
-    /// perturbs a whole colour group per evaluation; column at a time gives the same
-    /// entries (no row sees two columns of a group) for more evaluations, and only on
-    /// the systems whose analytic Jacobian KINSOL has already rejected.
-    fn numeric_csc(ud: &mut Ud, x: &mut [f64], fx: &[f64], vals: &mut [f64]) {
-        /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
-        const DELTA_H: f64 = 6.664001874625056e-08;
-        let mut fres = vec![0.0f64; ud.n];
-        for c in 0..ud.n {
-            let saved = x[c];
-            let dh = DELTA_H * (libm::fabs(saved) + 1.0);
-            x[c] = saved + dh;
-            (ud.eval)(x, &mut fres);
-            x[c] = saved;
-            let inv = 1.0 / dh;
-            for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
-                let row = ud.rowidx[k] as usize;
-                vals[k] = (fres[row] - fx[row]) * inv;
-            }
-        }
-    }
-
-    extern "C" fn jacobian(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
-        let ud = unsafe { &mut *(user as *mut Ud) };
-        let x = data(u, ud.n);
-        let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
-        if ud.numeric {
-            let fx = data(fu, ud.n);
-            numeric_csc(ud, x, fx, vals);
-        } else {
-            (ud.assemble)(x, vals);
-        }
-        unsafe {
-            core::ptr::copy_nonoverlapping(ud.colptr.as_ptr(), SUNSparseMatrix_IndexPointers(j), ud.n + 1);
-            core::ptr::copy_nonoverlapping(ud.rowidx.as_ptr(), SUNSparseMatrix_IndexValues(j), ud.nnz);
-        }
-        0
-    }
-
-    /// A silent context: KINSOL writes its own diagnostics to `stderr`, which is
-    /// captured and dropped during a simulation, and the return code carries
-    /// everything the ladder needs.
-    fn context() -> SunContext {
-        let mut ctx: SunContext = core::ptr::null_mut();
-        if unsafe { SUNContext_Create(SUN_COMM_NULL, &mut ctx) } != SUN_SUCCESS {
-            return core::ptr::null_mut();
-        }
-        unsafe { SUNContext_ClearErrHandlers(ctx) };
-        ctx
-    }
-
-    /// Smoke test for [`rt_sundials_selftest`](super::rt_sundials_selftest): a
-    /// context and a KINSOL memory block can be allocated and freed.
-    pub fn probe() -> bool {
-        let ctx = context();
-        if ctx.is_null() {
-            return false;
-        }
-        let mut kin = unsafe { KINCreate(ctx) };
-        let ok = !kin.is_null();
-        unsafe {
-            if ok {
-                KINFree(&mut kin);
-            }
-            let mut ctx = ctx;
-            SUNContext_Free(&mut ctx);
-        }
-        ok
-    }
-
-    /// One system's KINSOL memory, kept across solves as C keeps its `NLS_KINSOL_DATA`:
-    /// the KLU symbolic factorization, the strategy and the step factor all persist.
-    pub struct Solver {
-        /// Outlives every object below it; freed last.
-        ctx: SunContext,
-        kin: *mut c_void,
-        u: NVector,
-        xscale: NVector,
-        fscale: NVector,
-        ftmp: NVector,
-        j: SunMatrix,
-        ls: SunLinSol,
-        n: usize,
-        nnz: usize,
-        strategy: c_int,
-        maxstepfactor: f64,
-        /// Set for good once `KIN_LSETUP_FAIL` rejects the analytic Jacobian.
-        numeric_jac: bool,
-    }
-
-    impl Solver {
-        pub fn new(n: usize, nnz: usize) -> Option<Solver> {
-            let ctx = context();
-            if ctx.is_null() {
-                return None;
-            }
-            let mut s = Solver {
-                ctx,
-                kin: unsafe { KINCreate(ctx) },
-                u: unsafe { N_VNew_Serial(n as i32, ctx) },
-                xscale: unsafe { N_VNew_Serial(n as i32, ctx) },
-                fscale: unsafe { N_VNew_Serial(n as i32, ctx) },
-                ftmp: unsafe { N_VNew_Serial(n as i32, ctx) },
-                j: unsafe { SUNSparseMatrix(n as i32, n as i32, nnz as i32, CSC_MAT, ctx) },
-                ls: core::ptr::null_mut(),
-                n,
-                nnz,
-                strategy: KIN_LINESEARCH,
-                maxstepfactor: crate::solvers::max_step_factor(),
-                numeric_jac: false,
-            };
-            if s.kin.is_null()
-                || s.j.is_null()
-                || [s.u, s.xscale, s.fscale, s.ftmp].iter().any(|v| v.is_null())
-            {
-                return None;
-            }
-            s.ls = unsafe { SUNLinSol_KLU(s.u, s.j, s.ctx) };
-            if s.ls.is_null() {
-                return None;
-            }
-            unsafe {
-                if KINInit(s.kin, residual, s.u) != KIN_SUCCESS
-                    || KINSetLinearSolver(s.kin, s.ls, s.j) != KIN_SUCCESS
-                    || KINSetJacFn(s.kin, jacobian) != KIN_SUCCESS
-                {
-                    return None;
-                }
-                KINSetFuncNormTol(s.kin, crate::solvers::newton_ftol());
-                KINSetScaledStepTol(s.kin, crate::solvers::newton_xtol());
-                KINSetNumMaxIters(s.kin, 100 * n as c_long);
-                KINSetNoInitSetup(s.kin, 0);
-            }
-            Some(s)
-        }
-
-        /// `xScale[i] = 1/max(nominal_i, |x_i|)` at the start point (C's
-        /// `SCALING_NOMINALSTART`).
-        fn x_scaling(&mut self, nominal: &[f64]) {
-            let start = data(self.u, self.n);
-            for (s, (nom, x)) in data(self.xscale, self.n).iter_mut().zip(nominal.iter().zip(start.iter())) {
-                *s = 1.0 / libm::fmax(*nom, libm::fabs(*x));
-            }
-        }
-
-        /// `fScale[i] = 1/max_j |J_ij / xScale_j|` from the Jacobian at the start
-        /// point (C's `SCALING_JACOBIAN`), with C's `1e-12` floor on the row maximum.
-        fn f_scaling(&mut self, ud: &mut Ud, vals: &mut [f64]) {
-            (ud.assemble)(data(self.u, self.n), vals);
-            let xscale = data(self.xscale, self.n);
-            let fscale = data(self.fscale, self.n);
-            fscale.fill(1e-12);
-            for c in 0..self.n {
-                for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
-                    let v = libm::fabs(vals[k] / xscale[c]);
-                    let row = &mut fscale[ud.rowidx[k] as usize];
-                    if *row < v {
-                        *row = v;
-                    }
-                }
-            }
-            for s in fscale.iter_mut() {
-                *s = 1.0 / *s;
-            }
-        }
-
-        /// `mxnewtstep = maxstepfactor * ‖xScale‖₂` (C's `nlsKinsolSetMaxNewtonStep`).
-        fn max_newton_step(&mut self) {
-            unsafe {
-                N_VConst(self.maxstepfactor, self.ftmp);
-                let step = N_VWL2Norm(self.xscale, self.ftmp);
-                KINSetMaxNewtonStep(self.kin, step);
-            }
-        }
-
-        /// C's `nlsKinsolErrorHandler`: `true` to try again. C also re-picks the
-        /// scaling and the start point per retry, but [`solve`](Self::solve) applies
-        /// both again before the next `KINSol`, so only what is set here survives.
-        fn handle_error(&mut self, code: c_int, retries: &mut i32, reset_tol: &mut bool) -> bool {
-            unsafe { KINSetNoInitSetup(self.kin, 0) };
-            match code {
-                KIN_MEM_NULL | KIN_ILL_INPUT | KIN_NO_MALLOC | KIN_LINIT_FAIL => return false,
-                KIN_MXNEWT_5X_EXCEEDED => {
-                    self.maxstepfactor *= 1e5;
-                    self.max_newton_step();
-                    return true;
-                }
-                KIN_LINESEARCH_NONCONV => {
-                    self.strategy = KIN_NONE;
-                    *retries -= 1;
-                    return true;
-                }
-                KIN_LSOLVE_FAIL => {
-                    // An out-of-date factorization; redo it from the pattern.
-                    unsafe { SUNLinSol_KLUReInit(self.ls, self.j, self.nnz as i32, SUNKLU_REINIT_PARTIAL) };
-                    return true;
-                }
-                // A Jacobian KLU cannot factorize (all-zero at the start point, say):
-                // difference it from here on, as C re-points `KINSetJacFn`.
-                KIN_LSETUP_FAIL => self.numeric_jac = true,
-                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
-                _ => return false,
-            }
-            let mut fnorm = 0.0;
-            unsafe { KINGetFuncNorm(self.kin, &mut fnorm) };
-            if fnorm < FTOL_LESS_ACCURACY {
-                // C's "move forward with a less accurate solution".
-                unsafe {
-                    KINSetFuncNormTol(self.kin, FTOL_LESS_ACCURACY);
-                    KINSetScaledStepTol(self.kin, FTOL_LESS_ACCURACY);
-                }
-                *reset_tol = true;
-                return true;
-            }
-            match *retries {
-                0 => {}
-                1 => self.strategy = KIN_LINESEARCH,
-                2 => self.strategy = KIN_NONE,
-                3 | 4 => {
-                    unsafe { KINSetMaxSetupCalls(self.kin, 1) };
-                    self.strategy = KIN_LINESEARCH;
-                }
-                _ => return false,
-            }
-            true
-        }
-
-        /// C's `nlsKinsolSolve`: solve from `guess`, retrying per
-        /// [`handle_error`](Self::handle_error) until it gives up or `RETRY_MAX`.
-        /// On success `x` is the solution.
-        pub fn solve(
-            &mut self,
-            guess: &[f64],
-            nominal: &[f64],
-            colptr: &[i32],
-            rowidx: &[i32],
-            x: &mut [f64],
-            eval: &mut dyn FnMut(&[f64], &mut [f64]),
-            assemble: &mut dyn FnMut(&[f64], &mut [f64]),
-        ) -> bool {
-            let mut ud =
-                Ud { n: self.n, nnz: self.nnz, colptr, rowidx, eval, assemble, numeric: self.numeric_jac };
-            unsafe { KINSetUserData(self.kin, &mut ud as *mut Ud as *mut c_void) };
-            let mut vals = vec![0.0f64; self.nnz];
-            let mut success = false;
-            let mut reset_tol = false;
-            let mut retries = 0;
-            let mut passes = 0;
-            loop {
-                data(self.u, self.n).copy_from_slice(guess);
-                self.x_scaling(nominal);
-                self.f_scaling(&mut ud, &mut vals);
-                self.max_newton_step();
-                let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
-                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
-                let retry = flag < 0 && self.handle_error(flag, &mut retries, &mut reset_tol);
-                ud.numeric = self.numeric_jac;
-                retries += 1;
-                passes += 1;
-                if success || !retry || retries >= RETRY_MAX || passes >= 2 * RETRY_MAX {
-                    break;
-                }
-            }
-            if reset_tol {
-                unsafe {
-                    KINSetFuncNormTol(self.kin, crate::solvers::newton_ftol());
-                    KINSetScaledStepTol(self.kin, crate::solvers::newton_xtol());
-                }
-            }
-            if success {
-                x.copy_from_slice(data(self.u, self.n));
-            }
-            unsafe { KINSetUserData(self.kin, core::ptr::null_mut()) };
-            success
-        }
-    }
-
-    impl Drop for Solver {
-        fn drop(&mut self) {
-            unsafe {
-                if !self.kin.is_null() {
-                    KINFree(&mut self.kin);
-                }
-                if !self.ls.is_null() {
-                    SUNLinSolFree(self.ls);
-                }
-                if !self.j.is_null() {
-                    SUNMatDestroy(self.j);
-                }
-                for v in [self.u, self.xscale, self.fscale, self.ftmp] {
-                    if !v.is_null() {
-                        N_VDestroy(v);
-                    }
-                }
-                // Last: everything above was created with it.
-                if !self.ctx.is_null() {
-                    SUNContext_Free(&mut self.ctx);
-                }
-            }
-        }
-    }
-}
-
-#[cfg(sundials)]
-std::thread_local! {
-    /// One [`kinsol::Solver`] per system `handle`, kept for the run so KINSOL and
-    /// KLU reuse their setup.
-    static KIN_CACHE: core::cell::RefCell<std::collections::HashMap<u32, kinsol::Solver>> =
-        core::cell::RefCell::new(std::collections::HashMap::new());
-}
-
-/// Solve system `handle` with KINSOL + KLU from `guess`, writing the solution into
-/// `x`. `eval` evaluates the residual, `assemble` the `nnz` CSC Jacobian values.
-#[cfg(sundials)]
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn kinsol_solve(
-    handle: u32,
-    n: usize,
-    nnz: usize,
-    colptr: &[i32],
-    rowidx: &[i32],
-    nominal: &[f64],
-    guess: &[f64],
-    x: &mut [f64],
-    eval: &mut dyn FnMut(&[f64], &mut [f64]),
-    assemble: &mut dyn FnMut(&[f64], &mut [f64]),
-) -> bool {
-    KIN_CACHE.with(|cell| {
-        // Detach solver so model callbacks can re-enter kinsol_solve for a nested system.
-        let mut solver = match cell.borrow_mut().remove(&handle) {
-            Some(s) => s,
-            None => match kinsol::Solver::new(n, nnz) {
-                Some(s) => s,
-                None => return false,
-            },
-        };
-        let ok = solver.solve(guess, nominal, colptr, rowidx, x, eval, assemble);
-        cell.borrow_mut().insert(handle, solver);
-        ok
-    })
-}
+pub(crate) use openmodelica_nls::kinsol::{
+    b_solve as kinsol_b_solve, solve_selected as kinsol_solve_selected,
+};

@@ -519,6 +519,11 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 {
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
   int fileExists;
+  /* An FMI 1.0 FMU compiles the info JSON in and leaves fileName NULL, so there is
+     no file to look for. */
+  if (!xml->fileName) {
+    return;
+  }
   if (omc_flag[FLAG_INPUT_PATH])
   {
     const char *jsonFile;

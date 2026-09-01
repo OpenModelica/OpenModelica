@@ -26,6 +26,10 @@ pub struct SimModel {
     /// The model's own `external "C"` libraries, loaded into the simulation's
     /// memory, where they define the `ext_imports` the runtime cannot resolve.
     pub ext_libs: Vec<ExtLibrary>,
+    /// In a shared-memory kernel: the `ext_imports` no wasm library defines, which
+    /// the host serves from a platform library (`om:ext/native`) through a stub
+    /// module the export links in.
+    pub ext_native: Vec<ExtCallSig>,
     /// The model reaches an `external "C"` its own libraries leave open that the
     /// built-in ModelicaExternalC side module defines. The JIT host loads that
     /// module too, so those bind wasm->wasm rather than through the path below.
@@ -34,6 +38,9 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
+    /// The system libraries among `ext_native_libs`: an export declares these
+    /// rather than shipping them.
+    pub ext_native_system: Vec<String>,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,
@@ -186,14 +193,22 @@ pub struct ExtIncludes {
     pub prefix: String,
 }
 
+/// A built `Include` unit: the library to load, and why its wrappers did not
+/// compile — which is what explains a symbol still missing from it.
+#[derive(Clone)]
+pub struct Built {
+    pub path: String,
+    pub note: Option<String>,
+}
+
 impl ExtIncludes {
     /// Build the sources into a host shared library and return its path. Per-process
     /// temp directory: it stays mapped as long as the model can be resimulated.
     /// Built once, so the run reuses what the compile phase built.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         use std::sync::{LazyLock, Mutex};
-        static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<String, String>>>> =
+        static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<Built, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!(
             "{}\n{}\n{}\n{}\n{}",
@@ -215,11 +230,14 @@ impl ExtIncludes {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         let wrappers = ext_wrappers(missing);
         match self.compile_tu(&wrappers) {
-            Err(e) if !wrappers.is_empty() => self.compile_tu("").map_err(|_| e),
-            r => r,
+            // Keep why they did not compile: it explains a symbol still missing.
+            Err(e) if !wrappers.is_empty() => {
+                self.compile_tu("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
+            }
+            r => r.map(|path| Built { path, note: None }),
         }
     }
 
@@ -266,7 +284,7 @@ impl ExtIncludes {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared`"
@@ -359,14 +377,27 @@ fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
 /// it carries the argument conversions ([`EXT_CALL_PREFIX`]).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn external_symbol_or_wrapper(handles: &[usize], name: &str) -> Option<usize> {
-    use openmodelica_util::dynload::external_symbol_in;
-    if let Some(addr) = external_symbol_in(handles, &format!("{EXT_CALL_PREFIX}{name}")) {
+    external_symbol_or_wrapper_impl(handles, name, false)
+}
+
+/// [`external_symbol_or_wrapper`] restricted to `handles`: an export has to name
+/// the files it ships, and what the omc process happens to hold is not one.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn external_symbol_or_wrapper_shippable(handles: &[usize], name: &str) -> Option<usize> {
+    external_symbol_or_wrapper_impl(handles, name, true)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn external_symbol_or_wrapper_impl(handles: &[usize], name: &str, shippable: bool) -> Option<usize> {
+    use openmodelica_util::dynload::{external_symbol_in, symbol_in};
+    let find = |n: &str| if shippable { symbol_in(handles, n) } else { external_symbol_in(handles, n) };
+    if let Some(addr) = find(&format!("{EXT_CALL_PREFIX}{name}")) {
         return Some(addr);
     }
-    if let Some(addr) = external_symbol_in(handles, name) {
+    if let Some(addr) = find(name) {
         return Some(addr);
     }
-    let wrapper = external_symbol_in(handles, &format!("{EXT_ADDR_PREFIX}{name}"))?;
+    let wrapper = find(&format!("{EXT_ADDR_PREFIX}{name}"))?;
     // Safety: the generated wrapper is `void (*w(void))(void)`.
     let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
     Some(w()).filter(|a| *a != 0)
@@ -460,6 +491,9 @@ pub struct EditableParam {
     pub is_start: bool,
     /// A Boolean quantity: reads an `-override` value C's `read_value_bool` way.
     pub is_bool: bool,
+    /// A String quantity: `off` holds a runtime-String handle, so an `-override`
+    /// value is assigned as bytes rather than read as a number.
+    pub is_string: bool,
     /// Enumeration literal names (1-based index → name), empty for non-enum.
     pub enum_names: Vec<String>,
 }
@@ -540,7 +574,7 @@ pub fn inwasm_driver_enabled() -> bool {
 /// `rt_sim_set_overrides`.
 #[cfg(feature = "jit")]
 pub fn encode_overrides() -> Vec<u8> {
-    let (params, starts) = crate::sim_driver::param_overrides();
+    let (params, starts, strings) = crate::sim_driver::param_overrides();
     let mut b = Vec::new();
     for group in [&params, &starts] {
         b.extend_from_slice(&(group.len() as u32).to_le_bytes());
@@ -549,6 +583,12 @@ pub fn encode_overrides() -> Vec<u8> {
             b.extend_from_slice(&(if matches!(wty, WTy::F64) { 0u32 } else { 1u32 }).to_le_bytes());
             b.extend_from_slice(&val.to_le_bytes());
         }
+    }
+    b.extend_from_slice(&(strings.len() as u32).to_le_bytes());
+    for (off, val) in &strings {
+        b.extend_from_slice(&off.to_le_bytes());
+        b.extend_from_slice(&(val.len() as u32).to_le_bytes());
+        b.extend_from_slice(val.as_bytes());
     }
     if let Some(i) = crate::sim_driver::start_imports() {
         b.extend_from_slice(&(i.values.len() as u32).to_le_bytes());

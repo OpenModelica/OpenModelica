@@ -196,6 +196,7 @@ public:
   static QString general;
   static QString output;
   static QString parameters;
+  static QString parametersTip;
   static QString inputs;
   static QString name;
   static QString startScript;

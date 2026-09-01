@@ -197,6 +197,14 @@ pub struct ClockInfo {
     pub shift_counter: u64,
 }
 
+/// The `<Binary>` attributes (FMI 3.0 only).
+#[derive(Clone, Debug)]
+pub struct BinaryInfo {
+    pub mime_type: String,
+    /// `None` when the FMU set no upper bound on the value's size.
+    pub max_size: Option<u64>,
+}
+
 /// An `<Alias>` child (FMI 3.0): another name for the same value reference.
 #[derive(Clone, Debug)]
 pub struct VariableAlias {
@@ -236,6 +244,7 @@ pub struct Variable {
     pub clocks: Vec<u32>,
     pub dimensions: Vec<Dimension>,
     pub clock: Option<ClockInfo>,
+    pub binary: Option<BinaryInfo>,
     pub aliases: Vec<VariableAlias>,
     /// FMI 1.0 only; [`Alias::NoAlias`] everywhere else.
     pub alias: Alias,
@@ -450,6 +459,18 @@ pub struct ModelDescription {
 }
 
 impl ModelDescription {
+    /// The OpenModelica `<Figures>` annotation, parsed. Empty when the model
+    /// declared none.
+    pub fn figures(&self) -> Vec<crate::figures::Figure> {
+        crate::figures::figures(&self.tool_annotations)
+    }
+
+    /// The OpenModelica `<Visualization>` annotation naming the `_visual.xml`
+    /// scene in `resources/`.
+    pub fn visualization(&self) -> Option<crate::figures::Visualization> {
+        crate::figures::visualization(&self.tool_annotations)
+    }
+
     pub(crate) fn build_index(&mut self) {
         self.vr_index.clear();
         for (i, v) in self.variables.iter().enumerate() {

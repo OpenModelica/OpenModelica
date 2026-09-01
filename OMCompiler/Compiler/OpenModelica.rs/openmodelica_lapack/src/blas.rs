@@ -98,6 +98,27 @@ pub fn dtrsm(
     b: &mut [f64],
     ldb: usize,
 ) {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dtrsm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb);
+    #[cfg(not(feature = "faer-backend"))]
+    dtrsm_ref(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+}
+
+/// The port of `DTRSM`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dtrsm_ref(
+    side: &str,
+    uplo: &str,
+    transa: &str,
+    diag: &str,
+    m: usize,
+    n: usize,
+    alpha: f64,
+    a: &[f64],
+    lda: usize,
+    b: &mut [f64],
+    ldb: usize,
+) {
     let left = opt(side) == b'L';
     let upper = opt(uplo) == b'U';
     let trans = opt(transa) != b'N';
@@ -230,6 +251,132 @@ pub(crate) fn dlarf_right(v_rest: &[f64], tau: f64, m: usize, n: usize, c: &mut 
         set(c, ldc, i, 0, at(c, ldc, i, 0) - t);
         for (k, vk) in v_rest.iter().enumerate() {
             set(c, ldc, i, k + 1, at(c, ldc, i, k + 1) - t * vk);
+        }
+    }
+}
+
+// ─────────────────── Level 2/3, for the Fortran ABI's callers ───────────────────
+// Reference implementations: nothing in this crate calls them, and the linked-in
+// library that does (PRIMME) works on projected matrices of a few dozen rows.
+
+/// `y := alpha * op(A) * x + beta * y`, `op` transposing when `trans`.
+pub fn dgemv(trans: bool, m: usize, n: usize, alpha: f64, a: &[f64], lda: usize, x: &[f64], beta: f64, y: &mut [f64]) {
+    let rows = if trans { n } else { m };
+    for v in y.iter_mut().take(rows) {
+        *v = if beta == 0.0 { 0.0 } else { beta * *v };
+    }
+    if alpha == 0.0 {
+        return;
+    }
+    if trans {
+        for j in 0..n {
+            let mut s = 0.0;
+            for i in 0..m {
+                s += a[j * lda + i] * x[i];
+            }
+            y[j] += alpha * s;
+        }
+    } else {
+        for j in 0..n {
+            let t = alpha * x[j];
+            if t == 0.0 {
+                continue;
+            }
+            for i in 0..m {
+                y[i] += t * a[j * lda + i];
+            }
+        }
+    }
+}
+
+/// `C := alpha * op(A) * op(B) + beta * C`, `C` being `m × n` and `op(A)` `m × k`.
+#[allow(clippy::too_many_arguments)]
+pub fn dgemm(
+    ta: bool, tb: bool, m: usize, n: usize, k: usize, alpha: f64,
+    a: &[f64], lda: usize, b: &[f64], ldb: usize, beta: f64, c: &mut [f64], ldc: usize,
+) {
+    let aij = |i: usize, j: usize| if ta { a[i * lda + j] } else { a[j * lda + i] };
+    let bij = |i: usize, j: usize| if tb { b[i * ldb + j] } else { b[j * ldb + i] };
+    for j in 0..n {
+        for i in 0..m {
+            let cij = &mut c[j * ldc + i];
+            let mut s = 0.0;
+            if alpha != 0.0 {
+                for p in 0..k {
+                    s += aij(i, p) * bij(p, j);
+                }
+                s *= alpha;
+            }
+            *cij = if beta == 0.0 { s } else { s + beta * *cij };
+        }
+    }
+}
+
+/// `C := alpha * A * B + beta * C` (`left`) or `C := alpha * B * A + beta * C`,
+/// with `A` symmetric and only its `upper` (or lower) triangle stored.
+#[allow(clippy::too_many_arguments)]
+pub fn dsymm(
+    left: bool, upper: bool, m: usize, n: usize, alpha: f64,
+    a: &[f64], lda: usize, b: &[f64], ldb: usize, beta: f64, c: &mut [f64], ldc: usize,
+) {
+    // The stored triangle mirrored, so the products below read `A` as a full matrix.
+    let sym = |i: usize, j: usize| {
+        let (r, col) = if (i <= j) == upper { (i, j) } else { (j, i) };
+        a[col * lda + r]
+    };
+    for j in 0..n {
+        for i in 0..m {
+            let mut s = 0.0;
+            if alpha != 0.0 {
+                s = alpha
+                    * if left {
+                        (0..m).map(|p| sym(i, p) * b[j * ldb + p]).sum::<f64>()
+                    } else {
+                        (0..n).map(|p| b[p * ldb + i] * sym(p, j)).sum::<f64>()
+                    };
+            }
+            let cij = &mut c[j * ldc + i];
+            *cij = if beta == 0.0 { s } else { s + beta * *cij };
+        }
+    }
+}
+
+/// `B := alpha * op(A) * B` (`left`) or `B := alpha * B * op(A)`, with `A`
+/// triangular (`upper`, transposed by `trans`, unit-diagonal by `unit`).
+#[allow(clippy::too_many_arguments)]
+pub fn dtrmm(
+    left: bool, upper: bool, trans: bool, unit: bool, m: usize, n: usize, alpha: f64,
+    a: &[f64], lda: usize, b: &mut [f64], ldb: usize,
+) {
+    let k = if left { m } else { n };
+    let at = |i: usize, j: usize| {
+        let (r, c) = if trans { (j, i) } else { (i, j) };
+        if r == c && unit {
+            1.0
+        } else if (r <= c) == upper || r == c {
+            a[c * lda + r]
+        } else {
+            0.0
+        }
+    };
+    // A column (`left`) or row (`right`) of the product, so `B` is not read after
+    // the part of it the product needs has been overwritten.
+    let mut tmp = vec![0.0f64; k];
+    if left {
+        for j in 0..n {
+            for (i, v) in tmp.iter_mut().enumerate() {
+                *v = alpha * (0..k).map(|p| at(i, p) * b[j * ldb + p]).sum::<f64>();
+            }
+            b[j * ldb..][..m].copy_from_slice(&tmp[..m]);
+        }
+    } else {
+        for i in 0..m {
+            for (j, v) in tmp.iter_mut().enumerate() {
+                *v = alpha * (0..k).map(|p| b[p * ldb + i] * at(p, j)).sum::<f64>();
+            }
+            for j in 0..n {
+                b[j * ldb + i] = tmp[j];
+            }
         }
     }
 }

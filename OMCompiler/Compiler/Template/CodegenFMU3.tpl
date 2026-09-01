@@ -107,12 +107,27 @@ case SIMCODE(__) then
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
-    <%fmiModelVariables3(simCode, FMUType)%>
-    <%modelStructure3(simCode, modelStructure)%>
+    <%fmiModelVariablesAndStructure3(simCode, FMUType, modelStructure)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
+
+template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType, Option<FmiModelStructure> modelStructure)
+ "<ModelVariables> and <ModelStructure>, with the two tables they are looked up
+  through built for the length of them: each variable asks which aliases nest
+  under it, and each structure entry asks which value reference its index is, and
+  both answers are a search of every variable the model has without a table."
+::=
+  let _ = SimCodeUtil.cacheFMI3VariableAliases(simCode)
+  let variables = fmiModelVariables3(simCode, FMUType)
+  let structure = modelStructure3(simCode, modelStructure)
+  let _ = SimCodeUtil.clearFMI3VariableAliases()
+  <<
+  <%variables%>
+  <%structure%>
+  >>
+end fmiModelVariablesAndStructure3;
 
 template fmiOpenModelicaAnnotations(SimCode simCode)
  "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Tool
@@ -366,22 +381,18 @@ case SIMCODE(__) then
 end ModelExchange3;
 
 template CoSimulation3(SimCode simCode, list<String> sourceFiles)
- "Generates the CoSimulation element for FMI 3.0. The capabilities are the
-  runtime's, so they depend on the code-generation target: the wasm-jit adapter
-  integrates itself and has no output derivatives, but supports Event Mode
-  (stops at events and reports them when the importer negotiates eventModeUsed)."
+ "Generates the CoSimulation element for FMI 3.0."
 ::=
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let isWasm = if stringEq(Config.simCodeTarget(), "wasm-jit") then "true" else "false"
   <<
   <CoSimulation
     modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canBeInstantiatedOnlyOncePerProcess="false"
-    maxOutputDerivativeOrder="<%if stringEq(isWasm, "true") then "0" else "1"%>"
+    maxOutputDerivativeOrder="1"
     providesIntermediateUpdate="false"
     mightReturnEarlyFromDoStep="true"
     canReturnEarlyAfterIntermediateUpdate="false"
@@ -461,30 +472,103 @@ match simCode
 case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
+  let numScalarStates = SimCodeUtil.numScalarElems(stateVars)
   <<
   <ModelVariables>
     <%TimeVariable3(simCode)%>
-    <%vars.stateVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.derivativeVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.algVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.discreteAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.paramVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.aliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.stateVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.derivativeVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.algVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.discreteAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.paramVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.aliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.extObjVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
     <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
     <%EventIndicatorVariables3(simCode)%>
+    <%if isFMIMEType(FMUType) then DaeModeVariables3(simCode)%>
   </ModelVariables>
   >>
 end fmiModelVariables3;
+
+template DaeModeVariables3(SimCode simCode)
+ "fmi-ls-dae, for a Model Exchange FMU of a --daeMode model: the structural
+  parameter that switches it into DAE mode (false: an ordinary ODE FMU), and one
+  Float64 per residual of the DAE formulation. Their value references follow the
+  event indicators; the manifest (fmiLsDaeManifest) names them."
+::=
+match simCode
+case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__))) then
+  <<
+  <Boolean name="_D_daeMode" valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
+  <%dmd.residualVars |> var => DaeResidualVariable3(var, simCode) ;separator="\n"%>
+  >>
+end DaeModeVariables3;
+
+template DaeResidualVariable3(SimVar simVar, SimCode simCode)
+::=
+match simVar
+case SIMVAR(__) then
+  let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(name),"$", "_D_"))
+  '<Float64 name="<%nm%>" valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(simVar, simCode)%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
+end DaeResidualVariable3;
+
+template fmiLsDaeManifest(SimCode simCode)
+ "fmi-ls-dae's manifest (extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml)
+  for a --daeMode Model Exchange FMU: the switch, the algebraic variables the
+  importer solves for beside the states, and a ModelStructure that restates the
+  model description's and adds the residuals — the fully implicit form
+  F(der(x), x, z, t) = 0, so no ContinuousStateDerivative entries."
+::=
+match simCode
+case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure) then
+  let _ = SimCodeUtil.cacheFMI3ValueReferences(simCode)
+  let structure = match modelStructure
+    case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
+      <<
+      <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
+      <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
+      >>
+    else ''
+  let indicators = EventIndicators3(simCode)
+  let residuals = (dmd.residualVars |> var hasindex i0 => DaeResidual3(simCode, var, i0) ;separator="\n")
+  let _ = SimCodeUtil.clearFMI3ValueReferences()
+  <<
+  <fmi-ls-dae
+    xmlns="http://fmi-standard.org/fmi-ls-manifest"
+    xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
+    fmi-ls:fmi-ls-name="org.fmi-standard.fmi-ls-dae"
+    fmi-ls:fmi-ls-version="0.1.0"
+    fmi-ls:fmi-ls-description="Layered standard for DAE support in FMI.">
+    <EnableDAE valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
+    <AlgebraicVariables>
+      <%dmd.algebraicVars |> var => '<AlgebraicVariable valueReference="<%SimCodeUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
+    </AlgebraicVariables>
+    <ModelStructure>
+      <%structure%>
+      <%indicators%>
+      <%residuals%>
+    </ModelStructure>
+  </fmi-ls-dae>
+  >>
+end fmiLsDaeManifest;
+
+template DaeResidual3(SimCode simCode, SimVar residualVar, Integer row)
+::=
+  <<
+  <Residual>
+    <Formulation valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(residualVar, simCode)%>"<%SimCodeUtil.getFMI3DaeResidualDependencyAttributes(simCode, row)%>/>
+  </Residual>
+  >>
+end DaeResidual3;
 
 template EventIndicatorVariables3(SimCode simCode)
  "FMI 3.0 requires event indicators to be exposed as Float64 variables that are
@@ -510,7 +594,7 @@ template TimeVariable3(SimCode simCode)
   >>
 end TimeVariable3;
 
-template Variable3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
+template Variable3(SimVar simVar, SimCode simCode, String numScalarStates)
  "Generates a typed variable element for FMI 3.0."
 ::=
 match simVar
@@ -527,7 +611,7 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
@@ -551,7 +635,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
@@ -578,7 +662,7 @@ template AliasElements3(SimVar simVar, SimCode simCode)
 ::=
 match simVar
 case SIMVAR(__) then
-  match SimCodeUtil.getFMI3VariableAliases(simCode, name)
+  match SimCodeUtil.getFMI3VariableAliases(simCode, simVar)
   case {} then ''
   case aliases then (aliases |> a => AliasElement3(a) ;separator="\n")
 end AliasElements3;
@@ -688,21 +772,17 @@ case SIMVAR(__) then
   >>
 end BinaryVariableAttributes3;
 
-template DerivativeAttribute3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
+template DerivativeAttribute3(SimVar simVar, SimCode simCode, String numScalarStates)
  "Generates the derivative attribute (FMI 3.0 references the *valueReference* of
   the state variable). For the C runtime the state value references precede the
   state derivative value references contiguously in the real block, hence the
   state value reference is the derivative value reference minus the number of
-  states."
+  states. Scalar elements, not list entries: the new backend leaves a
+  non-scalarized array state as one entry (and one `varInfo.numStateVars`)."
 ::=
 match simVar
 case SIMVAR(varKind = STATE_DER(__)) then
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(vars = SIMVARS(stateVars = stateVarsList))) then
-    // per-scalar state count, so the derivative VR minus it yields the state VR
-    // (works for non-scalarized array states too).
-    ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), SimCodeUtil.numScalarElems(stateVarsList))%>"'
-  else ''
+  ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), stringInt(numScalarStates))%>"'
 else ''
 end DerivativeAttribute3;
 
@@ -723,12 +803,20 @@ template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStru
 ::=
 match fmiModelStructure
 case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
+  // Every entry below looks its index up; without the table each lookup searches
+  // every variable the model has.
+  let _ = SimCodeUtil.cacheFMI3ValueReferences(simCode)
+  let outputs = ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)
+  let derivatives = ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)
+  let initials = ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)
+  let indicators = EventIndicators3(simCode)
+  let _ = SimCodeUtil.clearFMI3ValueReferences()
   <<
   <ModelStructure>
-    <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
-    <%ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)%>
-    <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
-    <%EventIndicators3(simCode)%>
+    <%outputs%>
+    <%derivatives%>
+    <%initials%>
+    <%indicators%>
   </ModelStructure>
   >>
 else

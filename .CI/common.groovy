@@ -491,12 +491,14 @@ void buildRustOMC() {
   standardSetup()
   // RUST_OMC_THREADS=4 parallelises the rustc front-end on the (near-serial)
   // generated-crate chain. Linking uses mold (RUST_OMC_MOLD defaults ON); the
-  // image ships a current mold.
+  // image ships a current mold. OM_ENABLE_RUST_SIM_RUNTIME is what the
+  // RUST_PARTEST_SIMCODETARGET=C+Rust partest links against.
   sh """
     cmake -S . -B build_cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -DOM_OMC_ENABLE_RUST=ON \
       -DRUST_OMC_CI=ON \
+      -DOM_ENABLE_RUST_SIM_RUNTIME=ON \
       -DOM_ENABLE_GUI_CLIENTS=OFF \
       -DRUST_OMC_SCRIPTING_API=ON \
       -DOM_USE_CCACHE=OFF \
@@ -540,7 +542,7 @@ void buildRustOMC() {
   // them there first, relative to the working copy root.
   sh """
     rm -rf rust-generated-src && mkdir -p rust-generated-src
-    cd ${rustWorkDir()}/rust-src
+    cd ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs
     find . -path '*/src/*.rs' -print0 |
       tar --null -T - -cf - | tar -C ${env.WORKSPACE}/rust-generated-src -xf -
   """
@@ -608,7 +610,7 @@ void configureWeb(String extra) {
 // (which writes a placeholder lib.rs only for the ones still missing).
 void restoreGeneratedSrc() {
   unstash 'rust-generated-src'
-  sh "mkdir -p ${rustWorkDir()}/rust-src && cp -a rust-generated-src/. ${rustWorkDir()}/rust-src/"
+  sh "mkdir -p ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs && cp -a rust-generated-src/. ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs/"
 }
 
 // Run an em++ build under sccache via the shim (see em-sccache-wrapper.sh).
@@ -664,11 +666,8 @@ void assembleWeb() {
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
 
-  // Merge the Rust-partest partition shards into one sorted failure list,
-  // archived so regressions are easy to diff between runs. Here (not a dedicated
-  // agent) since the web deliverable is already assembled. Same guard as the
-  // testsuite-rust stages, so a missing shard is a hard error rather than the
-  // normal case of those stages not having run.
+  // The testsuite-rust shards, merged and archived. Here since the web
+  // deliverable is already assembled.
   sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
   if (shouldWeRunRustTests()) {
     for (p in [1,2]) {
@@ -703,10 +702,12 @@ void buildRustGUI() {
   }
 }
 
-// One partest shard against the Rust-built omc (unstashed). Builds the test
-// libraries with that omc (cmake's libs-for-testing == omc index.mos); the repo's
-// index.json is copied into place first so omc uses it instead of downloading.
-void partestRust(partition) {
+// One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
+// Builds the test libraries with that omc (cmake's libs-for-testing == omc
+// index.mos); the repo's index.json is copied into place first so omc uses it
+// instead of downloading. An empty simCodeTarget leaves the compiler default.
+// Without registerJUnit the results are archived artifacts instead.
+void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
   standardSetup()
   unstash 'omc-cmake-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
@@ -725,18 +726,30 @@ void partestRust(partition) {
     ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
     build/bin/omc-diff -v1.4
   """
-  String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
+  boolean isWasmTarget = ['wasm-jit', 'wasm'].contains(simCodeTarget)
+  String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
+  // Properties of the Rust omc itself, so excluded for every target.
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
   // MetaModelica code generation only works against the C runtime.
-  // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow'
+  // wasm: off everywhere else - these tests select the wasm-jit/wasm target
+  // themselves, which only this build has.
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm'
+  // cSources/fmuCSources inspect generated C, which a wasm target does not write.
+  if (isWasmTarget) {
+    suites += ',-cSources,-fmuCSources'
+  }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
-  String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
-                   ? '# wasm-jit: address space is not limited, only the cgroup is'
+  String asLimit = isWasmTarget
+                   ? '# wasm: address space is not limited, only the cgroup is'
                    : 'ulimit -v 6291456 # Max 6GB per process'
+  // The 'Failed tests:' block (the only tab-indented lines); stdout rather than
+  // failed.<branch>, which dies on branch names with '/'.
+  String failureList = registerJUnit ? '' : """
+      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
+      wc -l ../partest-failed-${partition}.txt"""
   try {
     sh """#!/bin/bash
       set -o pipefail
@@ -746,28 +759,25 @@ void partestRust(partition) {
       rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/2 -nocolour -with-xml${suitesArg}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
-      # anything else, so junit below still publishes the per-test results.
-      test \$CODE = 0 -o \$CODE = 7 || exit 1
-      # This partition's failures, from the 'Failed tests:' block (the only
-      # tab-indented lines). Parsing stdout rather than failed.<branch> avoids the
-      # die on branch names with '/'. Stashed and merged in assemble-web.
-      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
-      wc -l ../partest-failed-${partition}.txt
+      # anything else, so the results below are still published.
+      test \$CODE = 0 -o \$CODE = 7 || exit 1${failureList}
     """
-    stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
-  } finally {
-    // Per-partition result.xml; disjoint shards merge into one per-test view in
-    // Jenkins. In finally so a hard shard failure still publishes what ran.
-    if (params.RUST_PARTEST_JUNIT) {
-      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    if (!registerJUnit) {
+      stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
     }
-    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
-    archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
+  } finally {
+    // In finally so a hard shard failure still publishes what ran.
+    if (registerJUnit) {
+      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    } else {
+      sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
+      archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
+    }
   }
 }
 
@@ -784,14 +794,18 @@ void ctestRust() {
   // rustWorkDir()). The whole crate tree, not the rust_src_sync manifest: that one
   // omits test fixtures. Then the stage-1 generated .rs (without them the manifest
   // load fails) and the builtin .mo openmodelica_wasi include_str!s from ../../../.
-  def work = "${rustWorkDir()}/rust-src"
+  // The tree reproduces OMCompiler/, since the compiler and simulation-runtime
+  // workspaces path-reference each other across it (cf. rust_omc.cmake).
+  def tree = "${rustWorkDir()}/rust-src"
+  def work = "${tree}/Compiler/OpenModelica.rs"
+  def simrt = "${tree}/SimulationRuntime/rust"
   sh """
-    rm -rf ${work} && mkdir -p ${work}
+    rm -rf ${tree} && mkdir -p ${work} ${simrt} ${tree}/Compiler/FrontEnd ${tree}/Compiler/NFFrontEnd
     tar -C OMCompiler/Compiler/OpenModelica.rs --exclude=./target -cf - . | tar -C ${work} -xf -
+    tar -C OMCompiler/SimulationRuntime/rust --exclude=./target -cf - . | tar -C ${simrt} -xf -
     cp -a rust-generated-src/. ${work}/
     for d in FrontEnd NFFrontEnd; do
-      mkdir -p ${rustWorkDir()}/\$d
-      cp OMCompiler/Compiler/\$d/*Builtin*.mo ${rustWorkDir()}/\$d/
+      cp OMCompiler/Compiler/\$d/*Builtin*.mo ${tree}/Compiler/\$d/
     done
   """
   // Env vars required by the openmodelica_wasi_libc and openmodelica_wasm_jit
@@ -801,6 +815,9 @@ void ctestRust() {
     "OMC_SUNDIALS_WASM_DIR=${env.WORKSPACE}/build_cmake/rust-sundials-wasm",
     "OMC_WASI_P1_ADAPTER=${env.WORKSPACE}/build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm",
     "OMC_EXTERNAL_C_SOURCES=${env.WORKSPACE}/OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources",
+    // The runtime headers openmodelica_simulation_runtime's ABI test compiles;
+    // without them it would skip rather than fail (cf. tests/abi_layout.rs).
+    "OMC_SIMRT_INCLUDE_DIRS=${env.WORKSPACE}/OMCompiler/SimulationRuntime/c|${env.WORKSPACE}/OMCompiler/3rdParty/gc/include",
   ]
   try {
     withSccache(wasmEnv) {
@@ -1019,6 +1036,7 @@ private def shouldWeEnableMacOSCMakeBuild() {
   return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
+// The extra Rust-omc partest on RUST_PARTEST_SIMCODETARGET; wasm-jit always runs.
 private def shouldWeRunRustTests() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Enable Rust Tests")) {

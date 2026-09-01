@@ -11,10 +11,14 @@ server is involved — the FMU is unpacked, compiled and run inside the page.
 The masters are OpenModelica's own, in Rust: `openmodelica_fmi_driver`, built for
 `wasm32-wasip1` as `openmodelica_fmi_web.wasm`. Model Exchange integrates with
 the same solvers a compiled Modelica model runs under (`openmodelica_solvers`:
-gbode and the fixed-step ones), so an FMU is stepped, error-controlled and
-root-searched exactly like a model; Co-Simulation drives `fmi3DoStep` and takes
-the FMU up on early return, handling each event at the time the FMU stopped at
-rather than at the next communication point.
+DASSL, gbode, the fixed-step ones, and CVODE/IDA where the module was linked
+against SUNDIALS), so an FMU is stepped, error-controlled and root-searched
+exactly like a model; Co-Simulation drives `fmi3DoStep` and takes the FMU up on
+early return, handling each event at the time the FMU stopped at rather than at
+the next communication point.
+
+The page's solver chooser is built from the list the module reports, so it can
+never offer one that build does not have.
 
 A run is one call into that module and cannot be interrupted, so it happens in a
 worker (`fmi-worker.js`); the Cancel button drops the worker, after which the
@@ -46,9 +50,9 @@ out of jco's own wrappers, so the two cannot drift.
 | `fmi-worker.js` | owns the driver and the FMU for the length of a run |
 | `driver.js` | the driver module, and the FMI calls it imports |
 | `fmu-core.js` | jco transpilation, and the core exports past its glue |
-| `fmu.js` | the ZIP and `modelDescription.xml`, for what the page displays |
+| `fmu.js` | writing an archive back out, and the documentation as DOM |
 | `wasi.js` | a WASI preview1 host, so the result file is written like any other |
-| `selftest.html` | `?fmu=<url>&interface=me|cs` — the whole path, headless |
+| `selftest.html` | `?fmu=<url>&interface=me|cs&solver=<name>` — the whole path, headless |
 
 `vendor/` holds the transpiler and the WASI preview2 shim. It is not in git: the
 CMake web target downloads both pinned npm tarballs (see
@@ -62,11 +66,52 @@ FMI logo, copied unmodified from
 usage terms forbid altering it and ask for a white background, which is why the
 launcher gives that one icon a white chip instead of recolouring the artwork.
 
+## Who opens the FMU
+
+The driver does, once. `openmodelica_fmi` unpacks the archive and parses
+`modelDescription.xml` in the worker, and `om_fmi_info` hands the page the whole
+description as JSON — variables, interfaces, the default experiment, the
+`<Alias>` map, the OpenModelica `<Figures>` and `<Visualization>` annotations.
+The page reads no XML and unpacks no ZIP to show an FMU, and anything else built
+on the crate gets the same reading.
+
+`om_fmi_icon` and `om_fmi_documentation` pull the two things that are files
+rather than metadata, and `om_fmi_select_file` fetches any other entry on demand
+— the `_visual.xml` scene and its CAD files, for instance.
+
+The one thing still opened on the page is the **native repack**, which writes a
+*new* archive out of the old one: `readZip`/`writeZip` exist for that, and
+nothing on the wasm side writes archives.
+
+The **icon** is FMI 3.0's `terminalsAndIcons/icon.png`, with `icon.svg` preferred
+when the FMU ships one, and it sits beside the FMU summary. It comes from the
+standard location, so any exporter's FMU shows one — not just OpenModelica's.
+
+The **documentation** is `documentation/index.html` (`_main.html` for FMI 1.0),
+in a third column with a chevron that collapses it to a rail, the same as the
+simulator page. Turning it into nodes stays here because it is DOM work: it may
+be a whole HTML document or a bare fragment, and only the body is used, since the
+FMU's own `<style>` would restyle the page around it and its `<script>` is not
+ours to run. Images are inlined as `data:` URIs, because nothing inside an
+archive the browser never unpacked has a URL — resolution is relative, so a page
+reaching `../terminalsAndIcons/icon.svg` gets it. Links that do not resolve — a
+`modelica://Some.Class` reference to a library that did not travel with the FMU —
+lose their href rather than pretend to work.
+
 ## Results
 
-Samples are recorded for every numeric variable that can change, and the run
-writes the usual OpenModelica `.mat` through WASI, which the page offers as a
-download — the same file OMPlot and `omc-diff` read for a simulated model.
+Samples are recorded for every numeric variable that can change. The download
+button in the header writes the usual OpenModelica `.mat` through WASI and hands
+it over — the same file OMPlot and `omc-diff` read for a simulated model. It is
+written when asked for rather than after every run, since serialising the whole
+result is the expensive part and most runs are only ever plotted.
+
+A cref in a figure or in the 3D scene often names an FMI 3.0 `<Alias>` rather
+than the variable holding the data — an alias shares its base variable's
+`valueReference`, so only the base name is recorded, and the bus signals a figure
+tends to reference (`axis1.axisControlBus.angle`) are nearly all aliases. Both
+resolve through the `aliases` map `om_fmi_info` reports before giving up on a
+name.
 
 Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated by the
 driver wherever the solver asks for a value; parameters are constants applied

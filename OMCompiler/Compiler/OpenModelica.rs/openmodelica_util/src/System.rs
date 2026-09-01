@@ -19,6 +19,10 @@
 
 #![allow(non_snake_case)]
 
+use openmodelica_regex::{posix_to_rust, regex_builder};
+/// Re-exported so the wasm-jit codegen keeps naming it `System::Regex`.
+pub use openmodelica_regex::Regex;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -243,116 +247,6 @@ pub fn regex(
             }
             (nmatch, list_forward(items))
         }
-    }
-}
-
-/// Translate a POSIX regular expression into the syntax the `regex` crate
-/// accepts, reconciling the two main incompatibilities so matches behave like
-/// the C runtime's `regcomp`/`regexec`:
-///
-///   * BRE (`extended == false`): the grouping/quantifier metacharacters are the
-///     *escaped* forms (`\(`, `\)`, `\{`, `\}`, plus the GNU extensions `\+`,
-///     `\?`, `\|`) while their bare forms are literal — the reverse of ERE/the
-///     crate. Swap them. (ERE passes through, since the crate's syntax is ERE
-///     plus extensions.)
-///   * Bracket expressions: POSIX treats a leading `]` and a bare `[` as
-///     ordinary members, but the crate requires both escaped (`[\]]`, `[\[]`).
-///     `[:class:]`/`[.coll.]`/`[=eq=]` are copied to their own close so an inner
-///     `]` doesn't end the class early.
-///
-/// Backreferences (`\1`…) aren't supported by the crate and don't occur in OMC's
-/// patterns; a literal backslash inside a bracket expression (POSIX-literal, but
-/// an escape to the crate) likewise doesn't occur and is left as-is.
-fn posix_to_rust(re: &str, extended: bool) -> String {
-    let mut out = String::with_capacity(re.len() + 8);
-    let mut chars = re.chars().peekable();
-    while let Some(c) = chars.next() {
-        match c {
-            '\\' => match chars.next() {
-                // In BRE these escapes are the operators; emit the bare form.
-                Some(m @ ('(' | ')' | '{' | '}' | '+' | '?' | '|')) if !extended => out.push(m),
-                // Any other escape (and all escapes in ERE) carry over verbatim.
-                Some(other) => {
-                    out.push('\\');
-                    out.push(other);
-                }
-                None => out.push('\\'),
-            },
-            // Bare operators are literal in BRE: escape them for the crate.
-            '(' | ')' | '{' | '}' | '+' | '?' | '|' if !extended => {
-                out.push('\\');
-                out.push(c);
-            }
-            '[' => {
-                out.push('[');
-                if chars.peek() == Some(&'^') {
-                    out.push(chars.next().unwrap());
-                }
-                // A leading ']' is a literal member; the crate needs it escaped.
-                if chars.peek() == Some(&']') {
-                    chars.next();
-                    out.push_str("\\]");
-                }
-                while let Some(c2) = chars.next() {
-                    if c2 == '[' && matches!(chars.peek(), Some(':' | '.' | '=')) {
-                        // POSIX [:class:] / [.coll.] / [=eq=]: copy to its close.
-                        out.push('[');
-                        let kind = chars.next().unwrap();
-                        out.push(kind);
-                        while let Some(c3) = chars.next() {
-                            out.push(c3);
-                            if c3 == kind && chars.peek() == Some(&']') {
-                                out.push(chars.next().unwrap());
-                                break;
-                            }
-                        }
-                    } else if c2 == '[' {
-                        // A bare '[' is a literal member to POSIX; escape it.
-                        out.push_str("\\[");
-                    } else {
-                        out.push(c2);
-                        if c2 == ']' {
-                            break;
-                        }
-                    }
-                }
-            }
-            _ => out.push(c),
-        }
-    }
-    out
-}
-
-/// The builder every pattern is compiled with, already translated by
-/// [`posix_to_rust`]. The C runtime passes no `REG_NEWLINE`, so `.` matches
-/// newline too and `^`/`$` anchor the whole subject (`multi_line` stays off).
-/// POSIX bounds a pattern only by memory, so the crate's fixed 10 MB/2 MB
-/// budgets scale with it instead — both are too small for a pattern naming every
-/// variable of a large model, the DFA cache disastrously so.
-fn regex_builder(pattern: &str) -> regex::RegexBuilder {
-    let budget = pattern.len().saturating_mul(512);
-    let mut b = regex::RegexBuilder::new(pattern);
-    b.dot_matches_new_line(true).size_limit(budget.max(10 << 20)).dfa_size_limit(budget.max(2 << 20));
-    b
-}
-
-/// A compiled POSIX ERE, so one pattern can be tested against many strings
-/// ([`regex`] compiles per call).
-pub struct Regex {
-    re: regex::Regex,
-}
-
-impl Regex {
-    /// No captures (`REG_NOSUB`); the error is the backend's own message.
-    pub fn new(re: &str) -> Result<Self, String> {
-        regex_builder(&posix_to_rust(re, true))
-            .build()
-            .map(|re| Regex { re })
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn is_match(&self, s: &str) -> bool {
-        self.re.is_match(s)
     }
 }
 
@@ -617,7 +511,14 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
     // stdout and stderr there. Returns the child's exit code, or -1 on
     // spawn failure.
+    use std::io::Write;
     use std::process::{Command, Stdio};
+    // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
+    // whatever `print()` left in the buffer has to be out first.
+    let flush = || {
+        let _ = std::io::stdout().flush();
+    };
+    flush();
     let mut cmd = Command::new("/bin/sh");
     cmd.arg("-c").arg(command.as_str());
     if !outFile.is_empty() {
@@ -633,10 +534,12 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
             Err(_) => return -1,
         }
     }
-    match cmd.status() {
+    let status = match cmd.status() {
         Ok(s) => s.code().unwrap_or(-1),
         Err(_) => -1,
-    }
+    };
+    flush();
+    status
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {
@@ -1478,22 +1381,16 @@ pub fn realtimeTick(clockIndex: i32) -> Result<()> {
 }
 
 pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
-    // The C runtime's `rt_tock(ix)` never fails: a clock that was never
-    // started has a zeroed `tick_tp[ix]` and the call returns "now minus
-    // zero" — a large, meaningless duration. Callers do tock without tick
-    // (e.g. `Tpl.textFileConvertLines` reads RT_CLOCK_BUILD_MODEL purely
-    // for optional perf logging), so failing here is wrong. Return the
-    // slot's accumulated time instead (0.0 for a never-started clock),
-    // which is harmless for the logging-only consumers and avoids the C
-    // version's garbage value.
-    let nanos = with(|s| -> u128 {
+    // Callers tock without tick, so this must not fail. -1 is what
+    // `System_realtimeTock` answers for a clock whose `rt_ncall` is zero.
+    let nanos = with(|s| -> Option<u128> {
         let slot = rt_slot_mut(s, clockIndex);
-        match slot.tick {
-            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
-            None => slot.accumulated_ns,
-        }
+        slot.tick.map(|start| openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128)
     });
-    Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
+    Ok(metamodelica::OrderedFloat(match nanos {
+        Some(n) => n as f64 / 1.0e9,
+        None => -1.0,
+    }))
 }
 
 pub fn realtimeClear(clockIndex: i32) -> Result<()> {
@@ -1501,6 +1398,8 @@ pub fn realtimeClear(clockIndex: i32) -> Result<()> {
         let slot = rt_slot_mut(s, clockIndex);
         slot.accumulated_ns = 0;
         slot.ntick = 0;
+        // C's `rt_clear` zeroes `rt_clock_ncall`; same effect.
+        slot.tick = None;
     });
     Ok(())
 }
@@ -2385,6 +2284,23 @@ pub fn isCancelled() -> bool {
     metamodelica::cancel::check_cancel()
 }
 
+/// Seconds to unwind in before the process is killed outright: a tenth of the
+/// deadline, bounded. OpenModelicaLibraryTesting/shared.py mirrors the formula,
+/// because the harness has to outwait it.
+#[cfg(unix)]
+const ALARM_GRACE_MIN: u32 = 5;
+#[cfg(unix)]
+const ALARM_GRACE_MAX: u32 = 60;
+#[cfg(unix)]
+static ALARM_GRACE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(ALARM_GRACE_MIN);
+
+/// Tracks that the alarm, rather than a host, asked for the cancellation.
+static ALARM_EXPIRED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn alarmExpired() -> bool {
+    ALARM_EXPIRED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub fn reportProgress(permille: i32, phase: i32) {
     metamodelica::cancel::report_progress(permille, phase);
 }
@@ -2459,22 +2375,36 @@ pub fn stat(filename: ArcStr) -> (bool, metamodelica::Real, metamodelica::Real, 
     }
 }
 
-/// Mirrors `SystemImpl__alarm`: schedule a SIGALRM `seconds` from now and, on
-/// the first call, install a handler that broadcasts SIGALRM to the whole
-/// process group (so child processes die too) and then restores the default
-/// disposition. Used by `--alarm=N` to force-terminate omc after a timeout.
-/// Returns the number of seconds remaining on the previously scheduled alarm.
+/// Mirrors `SystemImpl__alarm`: at `seconds` the running command is asked to
+/// unwind through the shared cancellation flag, so omc survives to report the
+/// phases it completed, and the signal goes to the process group to take any
+/// child simulation with it; [`ALARM_GRACE`] seconds later the process is killed
+/// outright. Returns the seconds left on the previous alarm, which re-arming
+/// withdraws along with its cancellation request.
 #[cfg(unix)]
 pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static HANDLER_INSTALLED: AtomicBool = AtomicBool::new(false);
 
-    extern "C" fn alarm_handler(signo: core::ffi::c_int) {
+    extern "C" fn alarm_handler(
+        signo: core::ffi::c_int,
+        si: *mut libc::siginfo_t,
+        _ctx: *mut core::ffi::c_void,
+    ) {
+        use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
-            // Forward the alarm to every process in our group, then reset
-            // SIGALRM to its default action so the signal terminates us.
-            libc::kill(-libc::getpid(), signo);
+            // Our own group broadcast coming back, not a second deadline.
+            if !si.is_null() && (*si).si_code == libc::SI_USER && (*si).si_pid() == libc::getpid() {
+                return;
+            }
+            if !ALARM_EXPIRED.swap(true, SeqCst) {
+                metamodelica::cancel::request_cancel();
+                libc::kill(-libc::getpid(), signo);
+                libc::alarm(ALARM_GRACE.load(Relaxed));
+                return;
+            }
             libc::signal(libc::SIGALRM, libc::SIG_DFL);
+            libc::raise(signo);
         }
     }
 
@@ -2483,7 +2413,20 @@ pub fn alarm(seconds: i32) -> i32 {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
         {
-            libc::signal(libc::SIGALRM, alarm_handler as *const () as libc::sighandler_t);
+            let mut sa: libc::sigaction = core::mem::zeroed();
+            sa.sa_sigaction = alarm_handler as *const () as libc::sighandler_t;
+            sa.sa_flags = libc::SA_SIGINFO;
+            libc::sigemptyset(&mut sa.sa_mask);
+            libc::sigaction(libc::SIGALRM, &sa, core::ptr::null_mut());
+        }
+        if ALARM_EXPIRED.swap(false, Ordering::SeqCst) {
+            metamodelica::cancel::clear_cancel();
+        }
+        if seconds > 0 {
+            ALARM_GRACE.store(
+                (seconds as u32 / 10).clamp(ALARM_GRACE_MIN, ALARM_GRACE_MAX),
+                Ordering::Relaxed,
+            );
         }
         libc::alarm(seconds as core::ffi::c_uint) as i32
     }

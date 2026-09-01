@@ -2597,8 +2597,9 @@ protected
   ComponentRef fc;
 algorithm
   // crefs of all flow connector members (to tell a generated zero-flow equation
-  // apart from a genuine `x = 0` model equation)
-  flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
+  // apart from a genuine `x = 0` model equation). Only public ones: a protected
+  // connector is an internal wiring node, not an FMU boundary.
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) and Variable.isPublic(v) in flatModel.variables);
   if listEmpty(flowCrefs) then return; end if;
 
   // collect and drop the `flow = 0` equations of unconnected flows.
@@ -2668,8 +2669,22 @@ algorithm
   flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in flatModel.variables);
   flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable, replacements);
   flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable, replacements);
-  // TODO: Implement evaluation for algorithm sections.
+  flatModel.algorithms := evaluateAlgorithmsConnOp(flatModel.algorithms, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialAlgorithms := evaluateAlgorithmsConnOp(flatModel.initialAlgorithms, sets, setsArray, variables, ctable, replacements);
 end evaluateConnectionOperators;
+
+function evaluateAlgorithmsConnOp
+  input output list<Algorithm> algorithms;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
+algorithm
+  algorithms := Algorithm.mapExpList(algorithms,
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
+      variables = variables, ctable = ctable, replacements = replacements));
+end evaluateAlgorithmsConnOp;
 
 function evaluateBindingConnOp
   input output Variable var;

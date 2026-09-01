@@ -45,7 +45,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmi_interpolate_cs.py", "fmi_interpolate_cs_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmi_interpolate_cs.py", "fmi_interpolate_cs_systemCall.log");
 readFile("fmi_interpolate_cs_systemCall.log");
 
 // Result:

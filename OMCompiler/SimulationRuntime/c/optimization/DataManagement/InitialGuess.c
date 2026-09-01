@@ -294,10 +294,23 @@ static inline void init_ipopt_data(OptData *optData, const short op){
   ipop->gmax =  calloc(NRes, sizeof(double));
   ipop->mult_g =  calloc(NRes, sizeof(double));
 
+  /* An OPT_LOOP_INPUT takes the value of the variable that replaced it when the
+   * guess comes from a file; the model names the pair, this applies it. */
+  int *uIdx = (int*) malloc((nv-nx)*sizeof(int));
+  int *uLoop = (int*) malloc((nv-nx)*sizeof(int));
+  data->callback->getInputVarIndicesInOptimization(data, uIdx, uLoop);
+
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-      optData->data->callback->setInputData(optData->data, op == 2);
+      if(op == 2){
+        for(l = 0; l < nv-nx; ++l){
+          if(uLoop[l] >= 0){
+            data->localData[0]->realVars[uIdx[l]] = data->localData[0]->realVars[uLoop[l]];
+          }
+        }
+      }
+      optData->data->callback->setInputData(optData->data);
       for(l = 0; l<nx; ++l){
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
       }
@@ -322,7 +335,8 @@ static inline void init_ipopt_data(OptData *optData, const short op){
     ipop->gmax[l+j] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_conf);
   }
 
-
+  free(uIdx);
+  free(uLoop);
 }
 
 static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, const double tstop){

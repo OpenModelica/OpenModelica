@@ -42,7 +42,12 @@ val(a, 1);
 val(y, 1);
 getErrorString();
 
-system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat");
+// Re-run what was just built with the parameters overridden. resimulateExecutable
+// rather than system("./<model>"): the same run for a compiled target, and the only
+// one that exists for a target with no executable.
+simulate(test_ChangeParam_me_FMU, numberOfIntervals=1,
+         simflags="-override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat",
+         resimulateExecutable="test_ChangeParam_me_FMU");
 readSimulationResult("test_ChangeParam.mat", {x,a,y});
 getErrorString();
 
@@ -73,9 +78,13 @@ getErrorString();
 // 2.0
 // 6.389089928644395
 // ""
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "test_ChangeParam.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override a=-2,i=-10,b=false,s=\\'bar\\' -r test_ChangeParam.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // {{1.0, 1.0, 1.0, 0.13533632118380395, 0.13533632118380395}, {-2.0, -2.0, -2.0, -2.0, -2.0}, {-11.0, -11.0, -11.0, -10.135336321183804, -10.135336321183804}}
 // ""
 // endResult

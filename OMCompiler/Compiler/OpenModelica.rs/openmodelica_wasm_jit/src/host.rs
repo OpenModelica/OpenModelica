@@ -353,6 +353,25 @@ pub mod array_abi {
     }
 }
 
+/// The run's `-variableFilter`, compiled. Set for a run whose result file is
+/// written inside wasm (an artifact), where the pattern cannot be applied.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+thread_local! {
+    static OUTPUT_FILTER: std::cell::RefCell<Option<openmodelica_util::System::Regex>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Install (or clear) the filter `rt_host_name_matches` answers from.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub fn set_output_filter(re: Option<openmodelica_util::System::Regex>) {
+    OUTPUT_FILTER.with(|f| *f.borrow_mut() = re);
+}
+
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+fn output_filter_keeps(name: &str) -> bool {
+    OUTPUT_FILTER.with(|f| f.borrow().as_ref().is_none_or(|re| re.is_match(name)))
+}
+
 // Native rsparse solve behind the `env.rt_host_lin_solve` import, which the native
 // interactive runtime calls from `rt_solve_lin_sparse_cached`. Symbolic analysis
 // cached per system `handle`; `count()` feeds `stats.lin_solves`.
@@ -439,7 +458,7 @@ pub mod lin_solve {
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result<()> {
     let wt = |r: std::result::Result<&mut wasmtime::Linker<T>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
-    wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32| -> i32 {
+    wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
         assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
     }))?;
     wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, T>| -> std::result::Result<i32, wasmtime::Error> {
@@ -497,10 +516,28 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         },
     ))?;
     wt(linker.func_wrap("env", "rt_host_now_ms", || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }))?;
+    // The runtime's `files::write_file`: a solver's side file (the homotopy path
+    // CSV), written where C's executable writes it — the working directory.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_write_file",
+        |caller: wasmtime::Caller<'_, T>, name: u32, name_len: u32, data: u32, data_len: u32| {
+            let Some(memory) = sim_memory::get() else { return };
+            let bytes = memory.data(&caller);
+            let (Some(name), Some(data)) = (
+                bytes.get(name as usize..(name + name_len) as usize),
+                bytes.get(data as usize..(data + data_len) as usize),
+            ) else {
+                return;
+            };
+            let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(name).as_ref(), data);
+        },
+    ))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
     wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
+    wt(linker.func_wrap("env", "rt_host_note_no_throw_assert", || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }))?;
     // The external "C" libraries are the host's, so C's `RHSFinalFlag` is too.
     wt(linker.func_wrap("env", "rt_host_rhs_final", |v: i32| openmodelica_util::dynload::set_rhs_final_flag(v != 0)))?;
     // The model's violations land here even when the driver runs in-wasm; hand
@@ -531,6 +568,22 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
                 Some(dst) => take_reinits_into(dst, max as usize),
                 None => 0,
             }
+        },
+    ))?;
+    // `-variableFilter` for a runtime that serializes its own result file: it has
+    // no regex engine, so it asks here, once per variable as the file is laid out.
+    // No filter installed keeps everything, so the import is always answerable.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_name_matches",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| -> i32 {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 1 };
+            let data = mem.data(&caller);
+            let name = data
+                .get(ptr as usize..(ptr + len) as usize)
+                .map(|b| String::from_utf8_lossy(b).into_owned())
+                .unwrap_or_default();
+            output_filter_keeps(&name) as i32
         },
     ))?;
     // Solve the CSC system in the caller's (the runtime's) shared memory; the
@@ -627,7 +680,7 @@ impl HostMem {
 pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Imports) -> Result<HostMem> {
     use wasmer::Function;
     imports.define("rt", "rt_assert", Function::new_typed(store,
-        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32| -> i32 {
+        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
             assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
         }));
     imports.define("rt", "rt_assert_warning", Function::new_typed(store,
@@ -700,10 +753,29 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         ),
     );
     imports.define("env", "rt_host_now_ms", Function::new_typed(store, || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }));
+    // See the wasmtime counterpart.
+    imports.define(
+        "env",
+        "rt_host_write_file",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<HostEnv>, name: u32, name_len: u32, data: u32, data_len: u32| {
+                let Some(memory) = env.data().mem.clone() else { return };
+                let mut nbuf = vec![0u8; name_len as usize];
+                let mut dbuf = vec![0u8; data_len as usize];
+                let view = memory.view(&env);
+                if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
+                    let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
+                }
+            },
+        ),
+    );
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
     imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
+    imports.define("env", "rt_host_note_no_throw_assert", Function::new_typed(store, || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }));
     // The wasmer host has no external-library loader, so the flag has nowhere to go.
     imports.define("env", "rt_host_rhs_final", Function::new_typed(store, |_v: i32| {}));
     // See the wasmtime counterpart.
@@ -934,4 +1006,18 @@ pub mod native_stdout {
 #[cfg(target_arch = "wasm32")]
 pub mod native_stdout {
     pub fn install() {}
+}
+
+/// A guest path as the host sees it: the simulation's WASI cwd is the preopen
+/// root, so a name a flag gave relative to omc's own working directory has to be
+/// resolved before it crosses into the module.
+pub fn absolute_path(path: &str) -> String {
+    let p = std::path::Path::new(path);
+    if p.is_absolute() {
+        return path.to_string();
+    }
+    match std::env::current_dir() {
+        Ok(dir) => dir.join(p).to_string_lossy().into_owned(),
+        Err(_) => path.to_string(),
+    }
 }

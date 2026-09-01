@@ -86,10 +86,24 @@ pub trait Fmi3 {
         start_time: f64,
         stop_time: Option<f64>,
     ) -> Result<()>;
+    /// `fmi3SetDebugLogging`. A backend without it logs what it was instantiated with.
+    fn set_debug_logging(&mut self, _logging_on: bool, _categories: &[&str]) -> Result<()> {
+        Ok(())
+    }
     fn exit_initialization_mode(&mut self) -> Result<()>;
     fn enter_event_mode(&mut self) -> Result<()>;
     fn update_discrete_states(&mut self) -> Result<DiscreteStates>;
     fn terminate(&mut self) -> Result<()>;
+
+    /// `fmi3EnterConfigurationMode`/`fmi3ExitConfigurationMode`, the only place a
+    /// structural parameter may be set. An FMU without structural parameters
+    /// need not offer them.
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        Err(Error::Unsupported("fmi3EnterConfigurationMode".into()))
+    }
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        Err(Error::Unsupported("fmi3ExitConfigurationMode".into()))
+    }
 
     /// Read numeric variables as `f64`, whatever their declared type: the
     /// masters plot and record in `f64`, and the `.mat` holds nothing else.

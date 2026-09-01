@@ -5,3 +5,5 @@
 *.json
 *.libs
 *.makefile
+# hand-written external "C" sources a setup_command builds, not generated ones
+!*-f.c

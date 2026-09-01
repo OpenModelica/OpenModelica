@@ -305,7 +305,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * This function fills a buffer with all set control variable indices.
   */
-  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
+  /* `input_var_indices[k]` is the real-variable index of input `k`;
+   * `loop_input_indices[k]` is the real-variable index whose value an
+   * `OPT_LOOP_INPUT` takes when the initial guess comes from a file, -1 for an
+   * ordinary input. Both arrays hold `modelData->nInputVars` entries. */
+  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices, int* loop_input_indices);
 
   /*
   * This function is used only for optimization purpose
@@ -320,15 +324,16 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * and set simulationInfo->inputVars. In case it's not present
   * a dummy function is added which return -1.
   */
-  int (*setInputData)(DATA* data, const modelica_boolean file);
+  int (*setInputData)(DATA* data);
 
 
   /*
-  * This function is used only for optimization purpose
-  * and return the time gride. In case it's not present
-  * a dummy function is added which return -1.
+  * This function is used only for optimization purpose and returns the model's
+  * time grid as indices into simulationInfo->realParameter -- the `isTimeGrid`
+  * parameters, which the caller reads the values of. In case it's not present a
+  * dummy function is added which returns -1. The array is malloc'd by the callee.
   */
-  int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_real**t);
+  int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_integer**idx);
 
 
   /*

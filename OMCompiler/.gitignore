@@ -147,6 +147,7 @@ Compiler/OpenModelicaSetup
 Compiler/Makefile
 Compiler/OpenModelicaBootstrappingHeader.h
 Compiler/OpenModelicaBootstrappingHeader.h.log
+Compiler/OpenModelicaBootstrappingHeader.h.new
 Compiler/Script/Makefile
 Compiler/Script/OpenModelicaScriptingAPI.mo
 Compiler/Script/OpenModelicaScriptingAPIQt.cpp

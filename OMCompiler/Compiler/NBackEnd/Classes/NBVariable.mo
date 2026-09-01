@@ -1483,46 +1483,47 @@ function isJacobianResultVar
         original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        // For subscripted element crefs (partial-slice NLS iter vars), skip the
-        // base-ptr cache so each outer element gets its own scalar seed var instead
-        // of all elements sharing the first element's seed via the array ptr cache.
-        // For non-subscripted crefs, use the cache normally (check first, create if absent).
+        // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
+        // so that each outer element gets its own scalar seed var instead of all elements
+        // sharing the first element's seed via the array ptr cache.
         if ComponentRef.hasSubscripts(original_cref) then
           ovar := NONE();
         else
           ovar := getVarSeed(old_var_ptr);
+          // var_seed is a single-slot cache shared across all Jacobians; reject a hit
+          // cached under a different Jacobian's name (cref root is always $SEED_<name>).
+          if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> SEED_STR + "_" + name then
+            ovar := NONE();
+          end if;
         end if;
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
+        else
+          // prepend the seed str and the matrix name and create the new cref
+          qual.name := SEED_STR + "_" + name;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+          var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
 
-        () := match ovar
-          case SOME(var_ptr) algorithm
-            // Cache hit (non-subscripted case only): reuse existing seed
-            cref := getVarName(var_ptr);
-          then ();
-          else algorithm
-            // Cache miss OR subscripted element: create a new seed variable
-            qual.name := SEED_STR + "_" + name;
-            cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-            var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
+          // update the variable to be a seed and pass the pointer to the original variable
+          // if it is a record, clear the children instead
+          varKind := match getVarKind(old_var_ptr)
+            case varKind as VariableKind.RECORD() algorithm
+              varKind.children := {};
+            then varKind;
+            else VariableKind.SEED_VAR();
+          end match;
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
 
-            // update the variable to be a seed and pass the pointer to the original variable
-            // if it is a record, clear the children instead
-            varKind := match getVarKind(old_var_ptr)
-              case varKind as VariableKind.RECORD() algorithm
-                varKind.children := {};
-              then varKind;
-              else VariableKind.SEED_VAR();
-            end match;
-            var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-
-            // create the new variable pointer and save it to the component reference
-            (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-            // For non-subscripted crefs, connect partners to populate the cache.
-            // For subscripted element crefs, skip so the cache stays clean for other elements.
-            if not ComponentRef.hasSubscripts(original_cref) then
-              connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
-            end if;
-          then ();
-        end match;
+          // create the new variable pointer and safe it to the component reference
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          // For subscripted element crefs (partial-slice NLS iter vars), skip linking back to
+          // the base array ptr so the shared cache is not populated, allowing each element to
+          // create its own independent seed on subsequent calls.
+          if not ComponentRef.hasSubscripts(original_cref) then
+            connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          end if;
+        end if;
       then ();
 
       else algorithm
@@ -1552,6 +1553,11 @@ function isJacobianResultVar
       case qual as InstNode.VAR_NODE() algorithm
         res_ptr := getVarPointer(cref, sourceInfo());
         ovar := getVarPDer(res_ptr, isTmp);
+        // var_pder_res/tmp is a single-slot cache shared across all Jacobians; reject a hit
+        // cached under a different Jacobian's name (cref root is always $pDER_<name>).
+        if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> PARTIAL_DERIVATIVE_STR + "_" + name then
+          ovar := NONE();
+        end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
@@ -2304,7 +2310,15 @@ function isJacobianResultVar
     algorithm
       var := Pointer.access(varPointer);
       () := match UnorderedMap.get(var.name, variables.map)
-        case SOME(index) guard(index > 0) algorithm
+        case SOME(index) guard(index > 0 and (variables.scalarized or ComponentRef.isEqual(var.name, BVariable.getVarName(ExpandableArray.get(index, variables.varArr))))) algorithm
+          // In non-scalarized (stripped) mode the map key ignores subscripts, so a lookup
+          // hit here can be a DIFFERENT literal-indexed sibling of the same base array
+          // (e.g. x[1] found while adding x[2]) rather than a genuine re-add of the same
+          // variable. Overwriting that slot would silently drop x[1] from the collection
+          // (VariablePointers.toList/mapPtr only see the array, not the map, so a lost
+          // slot is a lost variable). Only take the "update in place" path when the
+          // stored variable's FULL cref actually matches -- otherwise fall through and
+          // add this as a new, separate entry, same as any other unseen variable.
           ExpandableArray.update(index, varPointer, variables.varArr);
         then ();
         else algorithm

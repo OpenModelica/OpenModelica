@@ -490,6 +490,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getVariableValue", Fallible);         // throws on lookup failure
         m.insert("System_getuid", Infallible);
         m.insert("System_isCancelled", Infallible);           // pure read of the cancel flag
+        m.insert("System_alarmExpired", Infallible);          // pure read of the alarm flag
         m.insert("System_reportProgress", Infallible);        // one-way progress store
         m.insert("System_reportProgressMessage", Infallible); // one-way progress store
         m.insert("System_initGarbageCollector", Infallible);

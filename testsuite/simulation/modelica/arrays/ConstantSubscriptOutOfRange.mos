@@ -1,0 +1,56 @@
+// name: ConstantSubscriptOutOfRange
+// keywords: array subscript scalarization
+// status: correct
+// teardown_command: rm -rf ConstantSubscriptOutOfRange_* ConstantSubscriptOutOfRange ConstantSubscriptOutOfRange.log ConstantSubscriptOutOfRange.wasm
+//
+// Scalarizing `for i in 1:n loop ... T[i-1] ...` leaves `T[0]` in the `i == 1`
+// instance, in a branch guarded so that it never runs (`i >= k` is false there,
+// and k is not evaluated at compile time so the branch survives). The C code
+// generator addresses the element relative to the first one and never executes it;
+// wasm-jit needs a storage slot per element and used to reject the model with
+// "Internal error CodegenWasmJit: simulation reference to unknown variable `T[0]`".
+// It now lowers such an access to the run-time out-of-bounds error instead, which
+// this model never reaches.
+
+loadString("
+model ConstantSubscriptOutOfRange
+  parameter Integer n = 3;
+  parameter Integer k = 2 annotation(Evaluate = false);
+  Boolean u = time > 0.5;
+  Real T[n](each start = 300, each fixed = true);
+  Real d[n];
+equation
+  for i in 1:n loop
+    if i == k and u then
+      d[i] = -T[i];
+    elseif i >= k and u then
+      d[i] = T[i - 1] - T[i];
+    else
+      d[i] = 0;
+    end if;
+  end for;
+  for i in 1:n loop
+    der(T[i]) = d[i];
+  end for;
+end ConstantSubscriptOutOfRange;
+"); getErrorString();
+
+simulate(ConstantSubscriptOutOfRange, stopTime = 1.0, numberOfIntervals = 4); getErrorString();
+
+val(T[1], 1.0);
+val(T[3], 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ConstantSubscriptOutOfRange_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 4, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ConstantSubscriptOutOfRange', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 300.0
+// 272.9381694276217
+// endResult

@@ -15,9 +15,15 @@
 
   /* FMU summary, or the drop target when nothing is loaded yet. */
   .info { padding:2px 12px 12px; }
-  .drop { margin:10px 12px; border:1.5px dashed var(--border); border-radius:8px;
-    padding:28px 16px; text-align:center; color:var(--muted); font-size:14px; }
-  .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
+  /* The FMU icon from terminalsAndIcons/, sized as the generated library
+     documentation sizes it. Floated so the summary keeps its grid. */
+  .fmu-icon { float:right; width:32px; height:32px; object-fit:contain; margin:0 0 4px 12px; }
+  /* A button, so click and Enter open the file dialog. */
+  .drop { display:block; width:calc(100% - 24px); margin:10px 12px; background:transparent;
+    border:1.5px dashed var(--border); border-radius:8px; cursor:pointer;
+    padding:28px 16px; text-align:center; white-space:normal;
+    color:var(--muted); font:inherit; font-size:14px; }
+  .drop:hover, .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
   .drop b { color:var(--fg); font-weight:600; }
   .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:13.5px; }
   .kv dt { color:var(--muted); }
@@ -26,14 +32,9 @@
     padding:0 5px; margin-right:4px; font-size:12px; color:var(--teal); }
   .tag.off { color:var(--muted); opacity:.55; }
   .grid2 .wide { grid-column:2 / -1; }
-  .grid2 label.chk:not([hidden]) { color:var(--fg); display:flex; align-items:center; gap:7px; white-space:normal; cursor:pointer; font-size:13px; }
-  .grid2 label.chk input { width:auto; margin:0; }
+  /* .chk is shared (theme.css); the settings grid only relaxes its nowrap. */
+  .grid2 label.chk { white-space:normal; font-size:13px; }
   input:disabled { color:var(--muted); }
-  #nativePanel { padding:0 2px 6px; }
-  #nativePanel .chk-group { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-  #nativePanel .chk { display:flex; align-items:center; gap:7px; color:var(--fg); font-size:13px; cursor:pointer; }
-  #nativePanel .chk input { width:auto; margin:0; }
-  #nativePanel .modal-hint { color:var(--muted); font-size:12px; margin:8px 0 0; }
 
   #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
   .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:7px 18px; }
@@ -55,6 +56,27 @@
   .log-body .error, .log-body .fatal, .log-body .host { color:var(--err); }
   .log-body .empty { color:var(--muted); font-family:inherit; }
 
+  /* Documentation column, shown only when the screen is wide enough (see below).
+     Mirrors the simulator page: a chevron collapses it, and collapsed it stays a
+     thin rail whose chevron reopens it, so it is never lost. */
+  .docs { display:none; flex-direction:column; min-height:0; border-left:1px solid var(--border); }
+  .docs-head { display:flex; align-items:center; gap:6px; padding-right:4px; flex:0 0 auto; }
+  .docs-head .section-label { flex:1 1 auto; }
+  .doc-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer;
+    padding:6px 8px; display:inline-flex; align-items:center; justify-content:center; }
+  .doc-toggle:hover { color:var(--fg); }
+  .doc-toggle svg { width:16px; height:16px; display:block; transition:transform .15s; }
+  .doc-expand { display:none; }                 /* the collapsed-rail reopen button (desktop) */
+  .doc-body { flex:1 1 auto; overflow-y:auto; padding:4px 14px 16px; font-size:13.5px; line-height:1.5; }
+  .doc-body.empty { color:var(--muted); display:grid; place-items:center; text-align:center; }
+  .doc-body img, .doc-body svg { max-width:100%; height:auto; }
+  .doc-body a { color:var(--accent); }
+  .doc-body table { border-collapse:collapse; max-width:100%; display:block; overflow-x:auto; }
+  .doc-body td, .doc-body th { border:1px solid var(--border); padding:3px 6px; }
+  .doc-body pre, .doc-body code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; }
+  .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
+  .doc-body .svgiconhead { width:24px; height:24px; object-fit:contain; vertical-align:middle; }
+
   @media (max-width:820px), (orientation:portrait) {
     main { grid-template-columns:1fr; }
     .left { border-right:0; border-bottom:1px solid var(--border); overflow:visible; }
@@ -62,6 +84,24 @@
     #icPanel { max-height:none; }
     header .status { order:3; flex-basis:100%; white-space:normal; }
     .log-pane { height:auto; max-height:40vh; }
+    /* Documentation flows at the end of the page (scroll down to reach it). */
+    .docs { display:block; border-left:0; border-top:1px solid var(--border); }
+    .doc-body { overflow:visible; }
+    .doc-body.empty { min-height:80px; }
+    /* Collapsed: keep the header strip (with its reopen chevron), hide the body. */
+    body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .docs-head .doc-toggle svg { transform:rotate(180deg); }
+  }
+
+  /* Landscape screens: a third column for the FMU's documentation. */
+  @media (min-width:821px) and (orientation:landscape) {
+    main { grid-template-columns:minmax(340px,30%) 1fr minmax(260px,22%); }
+    .docs { display:flex; }
+    /* Collapsed: the column becomes a thin rail with a reopen chevron. */
+    body.docs-hidden main { grid-template-columns:minmax(340px,38%) 1fr 34px; }
+    body.docs-hidden .docs-head, body.docs-hidden .doc-body { display:none; }
+    body.docs-hidden .doc-expand { display:flex; flex:1 1 auto; align-items:flex-start;
+      justify-content:center; width:100%; padding:10px 0; }
   }
 </style>
 <script type="importmap">
@@ -85,30 +125,21 @@
   <span class="status" id="status">Open an FMI 3.0 wasm FMU to begin.</span>
   <input type="file" id="file" accept=".fmu,application/zip" hidden />
   <button class="ghost" id="open">Open FMU…</button>
+  <button class="ghost" id="nativeBtn" title="Compile this FMU's component for native platforms and repack it" hidden disabled>Native binaries…</button>
   <button class="ghost" id="figToggle" title="Switch between the FMU's figures and all recorded variables" hidden>All variables</button>
   <button id="run" disabled>Simulate</button>
-  <a class="ghost" id="download" hidden download>Download result</a>
+  <button class="ghost icon-only" id="download" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
 </header>
 
 <main>
   <div class="left">
     <div class="section-label">FMU</div>
     <div class="info" id="info">
-      <div class="drop" id="drop">
-        <b>Drop an .fmu here</b><br />
+      <button type="button" class="drop" id="drop">
+        <b>Drop an .fmu here, or click to browse</b><br />
         FMI 3.0 Co-Simulation or Model Exchange with a<br />
         <code>binaries/wasm32-wasip2</code> component (FMI-LS-WASM).
-      </div>
-    </div>
-
-    <div class="section-label" id="nativeLabel" hidden>Add native binaries</div>
-    <div id="nativePanel" hidden>
-      <div class="chk-group" id="nativePlatforms"></div>
-      <button class="ghost" id="nativeGo" disabled>Build native FMU</button>
-      <p class="modal-hint">Compiles this FMU's component ahead of time for the
-      platforms you tick and repacks it with the matching FMI 3.0 loader library,
-      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
-      the compiler runs here.</p>
+      </button>
     </div>
 
     <div class="section-label">Inputs, parameters and start values</div>
@@ -125,12 +156,7 @@
       <label for="step" id="stepLabel">Step size</label><input id="step" value="0.1" />
       <label for="tol">Tolerance</label><input id="tol" value="1e-6" />
       <label for="solver" id="solverLabel" title="The integrator the master runs the FMU with (Model Exchange only; a Co-Simulation FMU brings its own)" hidden>Solver</label>
-      <select id="solver" class="wide" hidden>
-        <option value="dassl">dassl — BDF, the default for a model too</option>
-        <option value="gbode">gbode — Runge-Kutta, under the -gb* flags</option>
-        <option value="euler">euler — fixed step</option>
-        <option value="rungekutta">rungekutta — fixed step, RK4</option>
-      </select>
+      <select id="solver" class="wide" hidden></select>
       <label for="eventMode" id="eventModeLabel" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden>Event mode</label>
       <label class="chk wide" id="eventModeCell" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden><input type="checkbox" id="eventMode" checked /></label>
     </div>
@@ -149,13 +175,48 @@
       <div class="log-body" id="log"><span class="empty">No messages.</span></div>
     </div>
   </div>
+
+  <div class="docs" id="docs">
+    <div class="docs-head">
+      <span class="section-label">Documentation</span>
+      <button class="doc-toggle" id="docCollapse" title="Hide documentation" aria-label="Hide documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="doc-body empty" id="docBody">No FMU loaded.</div>
+    <button class="doc-toggle doc-expand" id="docExpand" title="Show documentation" aria-label="Show documentation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
 </main>
 
+<div class="modal-backdrop" id="nativeBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Add native binaries" aria-modal="true">
+    <div class="modal-head">
+      <span>Add native binaries</span>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Platforms</label>
+      <div class="chk-group" id="nativePlatforms"></div>
+      <p class="modal-hint">Compiles this FMU's component ahead of time for the
+      platforms you tick and repacks it with the matching FMI 3.0 loader library,
+      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
+      the compiler runs here.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" data-close>Cancel</button>
+      <button id="nativeGo" disabled>Build FMU</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-import { loadFmu, readResource, findComponent, writeZip } from './fmu.js';
+import { readZip, writeZip, iconDataUri, documentationHtml } from './fmu.js';
 import { loaderIndex, loaderBytes, compileForPlatform } from '../fmu-aot.js';
 import { Session } from './session.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { bindModal, downloadBlob } from '../ui.js';
 import { AnimView } from '../anim/anim-view.js';
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 
@@ -163,6 +224,7 @@ const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), openBtn = el('open'), fileEl = el('file');
 const downloadEl = el('download');
 const infoEl = el('info'), dropEl = el('drop'), icGrid = el('icGrid'), icEmpty = el('icEmpty');
+const docBody = el('docBody');
 const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty'), logEl = el('log');
 const charts = createCharts(chartsEl);
 const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
@@ -177,7 +239,8 @@ let running = false, cancelled = false, logCount = 0;
 let lastRec = null;     // the most recent simulation record, for re-rendering
 let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
 let animView = null;    // shared 3D animation panel, if the FMU carries a <Visualization>
-let downloadUrl = null; // object URL of the last result file
+let resultName = null;  // the last run's result file, or null when there is none
+let archive = null;     // the .fmu bytes, kept only for the native repack
 
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
@@ -232,6 +295,7 @@ const session = new Session({
 
 // --- loading ----------------------------------------------------------------
 openBtn.onclick = () => fileEl.click();
+dropEl.onclick = () => fileEl.click();     // a real button, so Enter works too
 fileEl.onchange = () => { if (fileEl.files[0]) openFile(fileEl.files[0]); fileEl.value = ''; };
 
 for (const ev of ['dragenter', 'dragover']) {
@@ -245,25 +309,29 @@ document.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if
 async function openFile(file) {
   if (running) return;
   runBtn.disabled = true;
+  hideResultFile();
   setStatus(`Loading ${file.name}…`, 'busy');
   try {
     const buf = await file.arrayBuffer();
     const t0 = performance.now();
     if (animView) animView.hide();
-    // The page keeps the model description (the figures, the animation, the
-    // native export read it); the driver in the worker gets the archive.
-    fmu = await loadFmu(buf, { onLog: (status, text) => log(status, text) });
-    const probe = await session.load(buf.slice(0));
+    // The driver opens the archive; this copy is only for the native repack.
+    archive = new Uint8Array(buf.slice(0));
+    const probe = await session.load(buf);
     const ms = Math.round(performance.now() - t0);
+    fmu = { md: probe };
     renderInfo(file.name, probe);
+    renderDoc(documentationHtml(probe.documentation));
     renderFields();
     applyDefaults();
     runBtn.disabled = false;
-    nativeGo.disabled = !nativeGroup.querySelector('input:checked');
+    syncNativeDialog();
     setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.fmiVersion}.`);
   } catch (e) {
-    fmu = null;
+    fmu = null; archive = null;
     runBtn.disabled = true;
+    syncNativeDialog();
+    renderDoc(null, 'No FMU loaded.');
     setStatus(`${file.name}: ${e.message}`, 'err');
     log('host', `load failed: ${e.stack || e.message}`);
   }
@@ -272,22 +340,25 @@ async function openFile(file) {
 // An interface counts as available only when the model description declares it
 // and the component actually exports it.
 const kinds = (probe) => [
-  fmu.md.cs && probe.coSimulation ? { id: 'cs', label: 'Co-Simulation' } : null,
-  fmu.md.me && probe.modelExchange ? { id: 'me', label: 'Model Exchange' } : null,
+  probe.coSimulation ? { id: 'cs', label: 'Co-Simulation' } : null,
+  probe.modelExchange ? { id: 'me', label: 'Model Exchange' } : null,
 ].filter(Boolean);
 
 function renderInfo(fileName, probe) {
   const md = fmu.md;
   const tag = (on, text) => `<span class="tag${on ? '' : ' off'}">${text}</span>`;
   const row = (k, v) => (v ? `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>` : '');
-  infoEl.innerHTML = `<dl class="kv">
+  const icon = iconDataUri(md.icon);
+  infoEl.innerHTML = `${icon ? `<img class="fmu-icon" src="${icon}" alt="">` : ''}<dl class="kv">
     ${row('Model', md.modelName || fileName)}
     ${row('Description', md.description)}
     ${row('Generated by', md.generationTool)}
     ${row('FMI', md.fmiVersion + (md.version ? ' · model version ' + md.version : ''))}
-    <dt>Interfaces</dt><dd>${tag(!!md.cs, 'Co-Simulation')}${tag(!!md.me, 'Model Exchange')}${md.se ? tag(false, 'Scheduled Execution (unsupported)') : ''}</dd>
-    <dt>Variables</dt><dd>${md.variables.length}${md.nStates ? ` · ${md.nStates} continuous states` : ''}${md.nEventIndicators ? ` · ${md.nEventIndicators} event indicators` : ''}</dd>
+    <dt>Interfaces</dt><dd>${tag(!!md.coSimulation, 'Co-Simulation')}${tag(!!md.modelExchange, 'Model Exchange')}${md.scheduledExecution ? tag(false, 'Scheduled Execution (unsupported)') : ''}</dd>
+    <dt>Variables</dt><dd>${md.variables.length}${md.numberOfContinuousStates ? ` · ${md.numberOfContinuousStates} continuous states` : ''}${md.numberOfEventIndicators ? ` · ${md.numberOfEventIndicators} event indicators` : ''}</dd>
   </dl>`;
+
+  renderSolvers(probe.solvers);
 
   const avail = kinds(probe);
   if (!avail.length) throw new Error('the component exports neither a Co-Simulation nor a Model Exchange interface');
@@ -298,6 +369,15 @@ function renderInfo(fileName, probe) {
   onIfaceChange();
 }
 
+// What the driver was built with, so the page never offers a solver the master
+// would refuse.
+function renderSolvers(solvers) {
+  const keep = solverEl.value;
+  solverEl.replaceChildren();
+  for (const s of solvers || []) solverEl.append(new Option(`${s.name} — ${s.description}`, s.name));
+  if ([...solverEl.options].some((o) => o.value === keep)) solverEl.value = keep;
+}
+
 ifaceEl.onchange = onIfaceChange;
 function onIfaceChange() {
   stepLabel.textContent = ifaceEl.value === 'me' ? 'Max step' : 'Step size';
@@ -305,7 +385,7 @@ function onIfaceChange() {
   // only; a Co-Simulation FMU integrates itself. The Event Mode toggle applies
   // to a CS FMU that advertises the capability.
   solverEl.hidden = solverLabel.hidden = ifaceEl.value !== 'me';
-  const showEventMode = ifaceEl.value === 'cs' && !!(fmu && fmu.md.cs && fmu.md.cs.hasEventMode);
+  const showEventMode = ifaceEl.value === 'cs' && !!(fmu && fmu.md.coSimulation && fmu.md.coSimulation.hasEventMode);
   eventModeLabel.hidden = eventModeCell.hidden = !showEventMode;
   // Instantiating the component for this interface takes longer than the run
   // does for a small FMU; get it out of the way while the options are set.
@@ -319,9 +399,7 @@ function renderFields() {
   const md = fmu.md;
   fields = [];
   icGrid.replaceChildren();
-  const stateVrs = new Set(md.variables
-    .filter((v) => v.derivative != null)
-    .map((v) => parseInt(v.derivative, 10)));
+  const stateVrs = new Set(md.variables.filter((v) => v.derivative != null).map((v) => v.derivative));
   const isStart = (v) => stateVrs.has(v.vr) && (v.initial === 'exact' || v.initial === 'approx');
   const wanted = md.variables.filter((v) =>
     (v.causality === 'input') ||
@@ -334,12 +412,12 @@ function renderFields() {
     const nm = document.createElement('div');
     nm.className = 'nm';
     const kindLabel = isStart(v) ? 'start value' : v.causality;
-    nm.title = `${v.name}${v.description ? ' — ' + v.description : ''} (${kindLabel}, ${v.tag})`;
+    nm.title = `${v.name}${v.description ? ' — ' + v.description : ''} (${kindLabel}, ${v.type})`;
     nm.innerHTML = escapeHtml(v.name)
       + (isInput ? '<span class="in">f(t)</span>' : isStart(v) ? '<span class="in">start</span>' : '');
     const input = document.createElement('input');
     // An input must be driven; a parameter with no declared start is left unset.
-    input.value = v.start != null ? v.start : isInput ? (v.tag === 'Boolean' ? 'false' : '0') : '';
+    input.value = v.start != null ? v.start : isInput ? (v.type === 'Boolean' ? 'false' : '0') : '';
     input.placeholder = input.value === '' ? 'unset' : '';
     input.spellcheck = false;
     const unit = document.createElement('span');
@@ -385,7 +463,7 @@ function collectFields() {
     f.input.classList.remove('bad');
     const src = f.input.value.trim();
     if (f.kind === 'parameter' && f.v.start == null && src === '') continue;
-    if (f.v.tag === 'String') {
+    if (f.v.type === 'String') {
       log('warning', `${f.v.name}: string variables cannot be set yet; ignoring.`);
       continue;
     }
@@ -408,8 +486,10 @@ runBtn.onclick = () => {
   // loaded FMU.
   if (!session.cancel()) {
     session.terminate();
-    fmu = null;
+    fmu = null; archive = null;
     runBtn.disabled = true;
+    hideResultFile();
+    syncNativeDialog();
   }
 };
 
@@ -433,6 +513,7 @@ async function run() {
   if (!(opts.stepSize > 0)) { setStatus('Step size must be positive.', 'err'); return; }
 
   running = true; cancelled = false;
+  hideResultFile();
   runBtn.textContent = 'Cancel'; runBtn.className = 'cancel';
   openBtn.disabled = true;
   setStatus('Simulating…', 'busy');
@@ -442,7 +523,7 @@ async function run() {
     const ms = Math.round(performance.now() - t0);
     renderCharts(rec);
     renderAnimation(rec);
-    await offerResultFile();
+    offerResultFile();
     if (rec.summary.cancelled) {
       setStatus(`Cancelled at t = ${(+rec.time.at(-1).toPrecision(6))} — ${rec.time.length} samples kept.`);
       return;
@@ -489,23 +570,33 @@ function toRecord(result) {
   };
 }
 
-/// Write the result file — through the driver's WASI, like every other
-/// simulation — and offer it for download.
-async function offerResultFile() {
-  const name = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
-  try {
-    const bytes = await session.mat(`/${name}`);
-    if (!bytes) return;
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    downloadUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-    downloadEl.href = downloadUrl;
-    downloadEl.download = name;
-    downloadEl.hidden = false;
-    downloadEl.textContent = `Download ${name}`;
-  } catch (e) {
-    log('warning', `the result file could not be written: ${e.message}`);
-  }
+// Written on demand: serialising the whole result is the expensive part.
+function offerResultFile() {
+  resultName = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
+  downloadEl.hidden = false;
+  downloadEl.title = downloadEl.ariaLabel = `Download ${resultName}`;
 }
+
+function hideResultFile() {
+  resultName = null;
+  downloadEl.hidden = true;
+}
+
+downloadEl.onclick = async () => {
+  if (!resultName || downloadEl.disabled) return;
+  downloadEl.disabled = true;
+  try {
+    const bytes = await session.mat(`/${resultName}`);
+    if (!bytes || !bytes.length) throw new Error('the driver wrote no result file');
+    downloadBlob(resultName, bytes);
+    setStatus(`${resultName} — ${bytes.length} bytes.`, 'ok');
+  } catch (e) {
+    setStatus(`The result file could not be written: ${e.message}`, 'err');
+    log('warning', `the result file could not be written: ${e.message}`);
+  } finally {
+    downloadEl.disabled = false;
+  }
+};
 
 // --- charts -----------------------------------------------------------------
 const haveFigures = () => !!(fmu && fmu.md.figures && fmu.md.figures.length);
@@ -517,17 +608,22 @@ function updateFigToggle() {
   figToggle.textContent = (viewMode === 'all') ? 'Figures' : 'All variables';
 }
 
+// An FMI 3.0 <Alias> is an alternative name sharing another variable's
+// valueReference, so only the base name is ever recorded. Bus signals — which is
+// what a figure or a 3D scene usually references — are nearly all aliases.
+const resolveAlias = (name, have) => (have(name) ? name : ((fmu.md.aliases || {})[name] || name));
+
 // Build the 3D scene from the FMU's <Visualization> resource and the run's data,
 // via the shared anim core. CAD shapes whose modelica:// URI isn't in the FMU are skipped.
 async function renderAnimation(rec) {
   const viz = fmu && fmu.md.visualization;
-  const xml = viz && readResource(fmu.files, viz.file);
-  if (!xml) { if (animView) animView.hide(); return; }
+  const text = viz && await session.file('resources/' + viz.file);
+  if (!text) { if (animView) animView.hide(); return; }
+  const xml = new TextDecoder().decode(text);
   const byName = new Map(rec.columns.map((c) => [c.name, c]));
-  const aliases = fmu.md.aliases || new Map();
   // A cref is a recorded column or a static parameter, possibly via an <Alias>.
   const lookup = (name) => {
-    const n = byName.has(name) || (rec.parameters && rec.parameters.has(name)) ? name : (aliases.get(name) || name);
+    const n = resolveAlias(name, (k) => byName.has(k) || !!(rec.parameters && rec.parameters.has(k)));
     const c = byName.get(n);
     if (c) return c.values;
     const p = rec.parameters && rec.parameters.get(n);
@@ -536,8 +632,16 @@ async function renderAnimation(rec) {
   try {
     const built = await buildAnimData(xml, rec.time, lookup);
     if (!built) { if (animView) animView.hide(); return; }
-    // CAD shapes: read the embedded DXF resource (basename of the type URI).
-    attachCadMeshes(built.shapes, (type) => readResource(fmu.files, type.split(/[\\/]/).pop()));
+    // CAD shapes: the embedded DXF resource, named by the basename of the type
+    // URI. Fetched up front — attachCadMeshes resolves them synchronously.
+    const cad = new Map();
+    for (const sh of built.shapes) {
+      const name = sh.type && sh.type.split(/[\\/]/).pop();
+      if (!name || cad.has(name) || !/\.(dxf|stl|obj)$/i.test(name)) continue;
+      const bytes = await session.file('resources/' + name);
+      cad.set(name, bytes ? new TextDecoder().decode(bytes) : null);
+    }
+    attachCadMeshes(built.shapes, (type) => cad.get(type.split(/[\\/]/).pop()) || null);
     if (built.missing && built.missing.length) {
       log('warning', `3D view: ${built.missing.length} shape variable(s) not found in the FMU result (rendered with 0) — e.g. ${built.missing.slice(0, 3).join(', ')}`);
     }
@@ -595,8 +699,9 @@ function renderFigures(rec, finite) {
     fig.plots.forEach((plot, pi) => {
       const curves = [];
       plot.curves.forEach((cv) => {
-        const yc = byName.get(cv.y); if (!yc) return;
-        const xc = cv.x ? byName.get(cv.x) : null;
+        const has = (k) => byName.has(k);
+        const yc = byName.get(resolveAlias(cv.y, has)); if (!yc) return;
+        const xc = cv.x ? byName.get(resolveAlias(cv.x, has)) : null;
         curves.push({ label: cv.legend || cv.y, unit: yc.unit || '', color: COLORS[curves.length % COLORS.length],
                       xs: xc ? Float64Array.from(xc.values) : xs, ys: yc.values, xName: cv.x || 'time' });
       });
@@ -635,30 +740,42 @@ const PLATFORM_NAMES = {
   'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
   'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
 };
-const nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
+const nativeBtn = el('nativeBtn'), nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
 let loaders = [];
+
+const nativeDialog = bindModal(el('nativeBackdrop'));
+nativeBtn.onclick = () => nativeDialog.open();
 
 (async () => {
   loaders = await loaderIndex();
   if (!loaders.length) return;
   nativeGroup.replaceChildren(...loaders.map((e) => {
     const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: e.platform });
-    box.onchange = () => { nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked'); };
+    box.onchange = syncNativeDialog;
     const label = Object.assign(document.createElement('label'), { className: 'chk' });
     label.append(box, ' ' + (PLATFORM_NAMES[e.platform] || e.platform));
     return label;
   }));
-  el('nativeLabel').hidden = el('nativePanel').hidden = false;
+  nativeBtn.hidden = false;
+  syncNativeDialog();
 })();
+
+function syncNativeDialog() {
+  nativeBtn.disabled = !fmu;
+  nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked');
+}
 
 nativeGo.onclick = async () => {
   const picked = [...nativeGroup.querySelectorAll('input:checked')].map((c) => c.value);
   if (!fmu || !picked.length) return;
-  nativeGo.disabled = true;
-  const id = (fmu.md.cs || fmu.md.me).modelIdentifier;
+  nativeDialog.close();
+  nativeGo.disabled = nativeBtn.disabled = true;
+  const id = (fmu.md.coSimulation || fmu.md.modelExchange).modelIdentifier;
   try {
-    const component = findComponent(fmu.files, fmu.md);
-    const files = new Map(fmu.files);
+    const files = await readZip(archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength));
+    const component = files.get(`binaries/wasm32-wasip2/${id}.wasm`)
+      || [...files.entries()].find(([n]) => n.startsWith('binaries/wasm32-wasip2/') && n.endsWith('.wasm'))?.[1];
+    if (!component) throw new Error('no wasm component found in binaries/wasm32-wasip2');
     for (const platform of picked) {
       const entry = loaders.find((e) => e.platform === platform);
       setStatus(`Compiling for ${platform}…`, 'busy');
@@ -669,21 +786,57 @@ nativeGo.onclick = async () => {
       files.set(`resources/${platform}.cwasm`, cwasm);
     }
     const blob = await writeZip(files);
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob), download: `${id}-native.fmu`,
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
-    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`);
+    downloadBlob(`${id}-native.fmu`, blob);
+    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`, 'ok');
   } catch (e) {
     setStatus(`Native build failed: ${e.message}`, 'err');
     log('host', e.stack || e.message);
   } finally {
-    nativeGo.disabled = false;
+    syncNativeDialog();
   }
 };
 
-addEventListener('resize', () => charts.redraw());
+// Documentation collapse/expand, driven from inside the widget: a chevron in the
+// doc header hides it; when collapsed it leaves a thin rail (desktop) or header
+// strip (mobile) whose chevron reopens it. Collapsing widens the charts.
+let docsUserToggled = false;   // once the user decides, stop auto-collapsing
+function reflowDocs() {
+  charts.redraw();                                   // chart width changed
+  if (animView) animView.resize();
+}
+function toggleDocs() {
+  docsUserToggled = true;
+  document.body.classList.toggle('docs-hidden');
+  reflowDocs();
+}
+// Landscape screens narrower than the full 3-column layout start with the doc
+// column collapsed to its rail (the chevron stays, so it's never lost) rather
+// than vanishing. Wide screens start expanded; the user's choice overrides both.
+function autoDocs() {
+  if (docsUserToggled) return;
+  const landscape = window.matchMedia('(orientation:landscape)').matches && window.innerWidth >= 821;
+  const wantHidden = landscape && window.innerWidth < 1300;
+  if (document.body.classList.contains('docs-hidden') === wantHidden) return;
+  document.body.classList.toggle('docs-hidden', wantHidden);
+  reflowDocs();
+}
+el('docCollapse').addEventListener('click', toggleDocs);
+el('docExpand').addEventListener('click', toggleDocs);
+autoDocs();
+
+// The FMU's own documentation, shown in the page's theme rather than its own.
+function renderDoc(html, empty = 'This FMU carries no documentation.') {
+  if (!html) {
+    docBody.className = 'doc-body empty';
+    docBody.textContent = empty;
+    return;
+  }
+  docBody.className = 'doc-body';
+  docBody.innerHTML = html;
+  docBody.scrollTop = 0;
+}
+
+addEventListener('resize', () => { charts.redraw(); autoDocs(); });
 </script>
 </body>
 </html>

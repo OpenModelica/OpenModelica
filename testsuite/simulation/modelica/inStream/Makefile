@@ -14,6 +14,7 @@ Test10.mos \
 Test11.mos \
 Test12.mos \
 Test13.mos \
+TestAlgorithmSection.mos \
 
 
 # test that currently fail. Move up when fixed.

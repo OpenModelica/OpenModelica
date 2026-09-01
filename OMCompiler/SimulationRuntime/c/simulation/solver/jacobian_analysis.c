@@ -331,6 +331,19 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
                 entries[i].value = svd_data->VT[v + i * svd_data->rows]; // VT = V^T when reading column-wise
             }
 
+            /* Same gauge as the sparse dump. */
+            {
+                int lead = 0;
+                for (i = 1; i < svd_data->cols; i++)
+                {
+                    if (fabs(entries[i].value) > fabs(entries[lead].value)) lead = i;
+                }
+                if (entries[lead].value < 0.0)
+                {
+                    for (i = 0; i < svd_data->cols; i++) entries[i].value = -entries[i].value;
+                }
+            }
+
             // sort by abs value descending O(n * log(n))
             qsort(entries, svd_data->cols, sizeof(SVD_Component), cmp_fabs_desc);
 
@@ -572,8 +585,12 @@ static primme_result_t* svd_sparse_compute(primme_handle_t* handle, primme_svds_
 {
     primme_callback_ctx_t * ctx = (primme_callback_ctx_t *)(handle->primme_svds.matrix);
 
-    /* some default values for now */
-    double eps = 1e-8; // TODO: add svdTol?
+    double eps = 1e-8;
+
+    if (omc_flag[FLAG_SVD_SPARSE_TOL])
+    {
+        eps = fabs(atof(omc_flagValue[FLAG_SVD_SPARSE_TOL]));
+    }
 
     /* ||r|| <= eps * ||matrix|| */
     handle->primme_svds.eps = eps;
@@ -582,6 +599,10 @@ static primme_result_t* svd_sparse_compute(primme_handle_t* handle, primme_svds_
     // we only need the largest for the condition
     handle->primme_svds.numSvals = (target == primme_svds_largest) ? 1 : handle->primme_svds.numSvals;
 
+    /* Normal equations resolve nothing below sqrt(DBL_EPSILON)*||A||, however tight
+       eps is. Do not "fix" that with primme_svds_hybrid (reports sigma_max as the
+       smallest when its first stage cannot resolve sigma_min) or with
+       primme_svds_augmented targeted at zero (does not terminate). */
     primme_svds_set_method(primme_svds_normalequations, PRIMME_DEFAULT_MIN_TIME,
                            PRIMME_DEFAULT_MIN_MATVECS, &handle->primme_svds);
 
@@ -784,8 +805,24 @@ static void svd_sparse_print_singular_values(primme_callback_ctx_t *ctx, primme_
     messageClose(OMC_LOG_NLS_SVD);
 }
 
+/* A triplet is defined up to a common sign, which the iteration picks by rounding.
+ * Gauge: largest entry of v positive, u follows it. */
+static modelica_real svd_sparse_vector_sign(const modelica_real *v, int size)
+{
+    int i, lead = 0;
+    for (i = 1; i < size; i++)
+    {
+        if (fabs(v[i]) > fabs(v[lead]))
+        {
+            lead = i;
+        }
+    }
+    return v[lead] < 0.0 ? -1.0 : 1.0;
+}
+
 static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t *handle, primme_result_t *res, modelica_boolean smallest)
 {
+    modelica_real sign;
     int i, u, v, var_idx, eq_idx, sing_value_idx;
     modelica_real val;
     modelica_integer size_of_torns;
@@ -804,11 +841,12 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
         sing_value_idx = smallest ? size - v : v + 1;
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "V[:,%d] (singular value %.8e)", sing_value_idx, res->svals[v]);
 
+        sign = svd_sparse_vector_sign(&res->svecs[size * (res->target_size + v)], size);
         for (i = 0; i < size; i++)
         {
             // V[i][v] = VT[v][i]
             entries[i].index = i;
-            entries[i].value = res->svecs[size * (res->target_size + v) + i];
+            entries[i].value = sign * res->svecs[size * (res->target_size + v) + i];
         }
 
         // sort by abs value descending O(n * log(n))
@@ -833,10 +871,12 @@ static void svd_sparse_print_vectors(primme_callback_ctx_t *ctx, primme_handle_t
         sing_value_idx = smallest ? size - u : u + 1;
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "U[:,%d] (singular value %.8e)", sing_value_idx, res->svals[u]);
 
+        /* Its right vector's flip, so the pair stays a triplet of A. */
+        sign = svd_sparse_vector_sign(&res->svecs[size * (res->target_size + u)], size);
         for (i = 0; i < size; i++)
         {
             entries[i].index = i;
-            entries[i].value = res->svecs[size * u + i];
+            entries[i].value = sign * res->svecs[size * u + i];
         }
 
         // sort by abs value descending O(n * log(n))

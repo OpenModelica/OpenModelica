@@ -67,6 +67,7 @@ struct Vtable {
     enter_initialization_mode: unsafe extern "C" fn(Instance, bool, f64, f64, bool, f64) -> i32,
     exit_initialization_mode: unsafe extern "C" fn(Instance) -> i32,
     enter_event_mode: unsafe extern "C" fn(Instance) -> i32,
+    set_debug_logging: Option<unsafe extern "C" fn(Instance, bool, usize, *const *const c_char) -> i32>,
     update_discrete_states: unsafe extern "C" fn(
         Instance,
         *mut bool,
@@ -102,6 +103,8 @@ struct Vtable {
     set_boolean: SetT<bool>,
     get_string: GetT<*const c_char>,
     set_string: SetT<*const c_char>,
+    enter_configuration_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
+    exit_configuration_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
 
     // Model Exchange
     enter_continuous_time_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
@@ -173,6 +176,7 @@ impl Library {
             enter_initialization_mode: required!(lib, "fmi3EnterInitializationMode"),
             exit_initialization_mode: required!(lib, "fmi3ExitInitializationMode"),
             enter_event_mode: required!(lib, "fmi3EnterEventMode"),
+            set_debug_logging: optional!(lib, "fmi3SetDebugLogging"),
             update_discrete_states: required!(lib, "fmi3UpdateDiscreteStates"),
             terminate: required!(lib, "fmi3Terminate"),
             get_float32: required!(lib, "fmi3GetFloat32"),
@@ -199,6 +203,8 @@ impl Library {
             set_boolean: required!(lib, "fmi3SetBoolean"),
             get_string: required!(lib, "fmi3GetString"),
             set_string: required!(lib, "fmi3SetString"),
+            enter_configuration_mode: optional!(lib, "fmi3EnterConfigurationMode"),
+            exit_configuration_mode: optional!(lib, "fmi3ExitConfigurationMode"),
             enter_continuous_time_mode: optional!(lib, "fmi3EnterContinuousTimeMode"),
             set_time: optional!(lib, "fmi3SetTime"),
             set_continuous_states: optional!(lib, "fmi3SetContinuousStates"),
@@ -445,6 +451,13 @@ impl Fmi3 for FmuInstance<'_> {
         check("fmi3ExitInitializationMode", unsafe { f(self.handle) })
     }
 
+    fn set_debug_logging(&mut self, logging_on: bool, categories: &[&str]) -> Result<()> {
+        let Some(f) = self.v().set_debug_logging else { return Ok(()) };
+        let owned: Vec<CString> = categories.iter().map(|c| CString::new(*c).unwrap_or_default()).collect();
+        let ptrs: Vec<*const c_char> = owned.iter().map(|c| c.as_ptr()).collect();
+        check("fmi3SetDebugLogging", unsafe { f(self.handle, logging_on, ptrs.len(), ptrs.as_ptr()) })
+    }
+
     fn enter_event_mode(&mut self) -> Result<()> {
         let f = self.v().enter_event_mode;
         check("fmi3EnterEventMode", unsafe { f(self.handle) })
@@ -469,6 +482,20 @@ impl Fmi3 for FmuInstance<'_> {
     fn terminate(&mut self) -> Result<()> {
         let f = self.v().terminate;
         check("fmi3Terminate", unsafe { f(self.handle) })
+    }
+
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        let Some(f) = self.v().enter_configuration_mode else {
+            return missing("fmi3EnterConfigurationMode");
+        };
+        check("fmi3EnterConfigurationMode", unsafe { f(self.handle) })
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        let Some(f) = self.v().exit_configuration_mode else {
+            return missing("fmi3ExitConfigurationMode");
+        };
+        check("fmi3ExitConfigurationMode", unsafe { f(self.handle) })
     }
 
     fn get_numeric(&mut self, ty: VarType, vrs: &[u32], values: &mut [f64]) -> Result<()> {

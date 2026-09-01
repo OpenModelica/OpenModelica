@@ -444,7 +444,7 @@ public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTy
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.");
 public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "Failed to load package %s (%s) using MODELICAPATH %s.");
+  "Failed to load package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s.");
 public constant ErrorTypes.Message LOAD_FILE_FAILED = ErrorTypes.MESSAGE(185, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Failed to load file %s: %s.");
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1031,7 +1031,7 @@ public constant ErrorTypes.Message MISSING_INTERFACE_TYPE = ErrorTypes.MESSAGE(5
 public constant ErrorTypes.Message CLASS_NOT_FOUND = ErrorTypes.MESSAGE(555, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   "Class %s not found inside class %s.");
 public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(556, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
-  "Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong).");
+  "Skipped loading package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s (uses-annotation may be wrong).");
 public constant ErrorTypes.Message ROOT_USER_INTERACTIVE = ErrorTypes.MESSAGE(557, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands.");
 public constant ErrorTypes.Message USES_MISSING_VERSION = ErrorTypes.MESSAGE(558, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1127,7 +1127,7 @@ public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESS
 public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "The MODELICAPATH (%s) does not contain %s, so the package index cannot be used.");
+  "OPENMODELICALIBRARY (MODELICAPATH in the language specification) (%s) does not contain %s, so the package index cannot be used.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_FOUND = ErrorTypes.MESSAGE(605, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The package index does not exist: %s.");
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_PARSED = ErrorTypes.MESSAGE(606, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1341,10 +1341,14 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
   "Duplicate elements:\n %s.");
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_NOT_SUPPORTED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Model Exchange FMU (fmuType=\"%s\") from it. Export with platforms={\"wasm\"}, whose runtime serves the residual form (as fmi-ls-dae for Model Exchange), or remove the --daeMode flag.");
 public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation cancelled by user.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
+public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Operation aborted: the time limit set by the alarm ran out.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 
@@ -1427,11 +1431,11 @@ algorithm
   end match;
 end getCurrentComponent;
 
-public function checkCancel "Fails with a USER_CANCELLED message if the user requested cancellation.
-  A coarse chokepoint for the frontend/backend driver loops."
+public function checkCancel "Fails if cancellation was requested, either by a user or by the alarm
+  running out. A coarse chokepoint for the frontend/backend driver loops."
 algorithm
   if System.isCancelled() then
-    addMessage(USER_CANCELLED, {});
+    addMessage(if System.alarmExpired() then ALARM_EXPIRED else USER_CANCELLED, {});
     fail();
   end if;
 end checkCancel;
