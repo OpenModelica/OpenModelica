@@ -5226,13 +5226,22 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     else ""
   match relation
   case exp as RELATION(__) then
-    let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e1 = daeExp(exp.exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let e2 = daeExp(exp.exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
+    let zc = match exp.operator
+      case LESS()       then '<%e2%> - <%e1%>'
+      case LESSEQ()     then '<%e2%> - <%e1%>'
+      case GREATER()    then '<%e1%> - <%e2%>'
+      case GREATEREQ()  then '<%e1%> - <%e2%>'
+      case EQUAL()      then '-(<%e1%> - <%e2%>)*(<%e1%> - <%e2%>)'
+      case NEQUAL()     then '(<%e1%> - <%e2%>)*(<%e1%> - <%e2%>)'
+      else error(sourceInfo(), 'INVALID ZERO CROSSING <%daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)%>')
     <<
     start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[start_index<%tmp_%>] = (<%e1%>) ? 1 : -1;
+    gout[start_index<%tmp_%>] = <%zc%>;
     current_index++;
     <%forTail%>
     >>
