@@ -53,6 +53,8 @@
 #include "qwt_text_label.h"
 
 #include <QtMath>
+#include <QFontMetrics>
+#include <QResizeEvent>
 
 namespace OMPlot{
 
@@ -430,12 +432,114 @@ void Plot::getUnitPrefixAndExponent(double lowerBound, double upperBound, QStrin
   }
 }
 
+/*!
+ * \brief Plot::resizeEvent
+ * Reimplementation of QWidget::resizeEvent.
+ * Recomputes the number of axis major ticks whenever the plot is resized so
+ * that the labels adapt to the available canvas size (see #15788).
+ * \param event
+ */
+void Plot::resizeEvent(QResizeEvent *event)
+{
+  QwtPlot::resizeEvent(event);
+  updateMaxMajorSteps();
+}
+
+/*!
+ * \brief Plot::minimumSizeHint
+ * Reimplementation of QWidget::minimumSizeHint().
+ * QwtPlot::sizeHint() returns a size that grows with the number of major axis
+ * ticks (the default minimumSizeHint() delegates to sizeHint()). Since the
+ * tick labels are already reduced to fit the available canvas size by
+ * updateMaxMajorSteps() (see #15788), we must not ask for extra space that is
+ * proportional to the current tick count, otherwise the plot window can not be
+ * shrunk vertically.
+ */
+QSize Plot::minimumSizeHint() const
+{
+  return QwtPlot::minimumSizeHint();
+}
+
+/*!
+ * \brief Plot::sizeHint
+ * Reimplementation of QWidget::sizeHint().
+ * QwtPlot::sizeHint() adds dh/dw proportional to the number of major axis ticks
+ * (see QwtPlot::sizeHint()), which makes the plot (and its containing window or
+ * MDI subwindow) impossible to shrink below a height driven by the tick count.
+ * Since the tick labels are already kept small enough for the canvas by
+ * updateMaxMajorSteps() (see #15788), we return the true minimum size instead
+ * so the plot can be shrunk as far as desired.
+ */
+QSize Plot::sizeHint() const
+{
+  return QwtPlot::minimumSizeHint();
+}
+
+/*!
+ * \brief Plot::updateMaxMajorSteps
+ * Reduces the number of axis tick labels in order to allow smaller plots.
+ * When the plot (and thus its canvas) is small only a few major ticks fit,
+ * so we decrease the number of major steps that Qwt uses to build the scale
+ * division. The labels are then spread further apart which lets the plot be
+ * shrunk more before labels start to overlap. See #15788.
+ */
+void Plot::updateMaxMajorSteps()
+{
+  if (!canvas()) {
+    return;
+  }
+
+  const int canvasWidth = canvas()->width();
+  const int canvasHeight = canvas()->height();
+
+  // x-axis (bottom): fit the labels horizontally.
+  int maxMajorX = 8;  // Qwt default
+  if (canvasWidth > 0) {
+    QFontMetrics xFm(axisWidget(QwtPlot::xBottom)->font());
+    // A typical numeric label is a few characters wide. Use a fixed sample to
+    // estimate the label width when no unit prefix is active, otherwise the
+    // scaled values are shorter (e.g. "12k").
+    const int sampleWidth = xFm.horizontalAdvance("1000");
+    const int labelWidth = qMax(sampleWidth, 20) + 8;  // + spacing/borders
+    maxMajorX = qBound(2, canvasWidth / labelWidth, 8);
+  }
+  if (axisMaxMajor(QwtPlot::xBottom) != maxMajorX) {
+    setAxisMaxMajor(QwtPlot::xBottom, maxMajorX);
+  }
+
+  // y-axis (left): fit the labels vertically.
+  int maxMajorY = 8;  // Qwt default
+  if (canvasHeight > 0) {
+    QFontMetrics yFm(axisWidget(QwtPlot::yLeft)->font());
+    const int labelHeight = yFm.height() + 6;  // + spacing between labels
+    maxMajorY = qBound(2, canvasHeight / labelHeight, 8);
+  }
+  if (axisMaxMajor(QwtPlot::yLeft) != maxMajorY) {
+    setAxisMaxMajor(QwtPlot::yLeft, maxMajorY);
+  }
+
+  // y-axis (right): use the same density as the left axis.
+  if (axisMaxMajor(QwtPlot::yRight) != maxMajorY) {
+    setAxisMaxMajor(QwtPlot::yRight, maxMajorY);
+  }
+}
+
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
   mpXScaleDraw->invalidateCache();
   mpYScaleDraw->invalidateCache();
   mpYRightScaleDraw->invalidateCache();
+
+  // Recompute the number of major axis ticks so that labels do not overlap
+  // when the plot is small. Disable autoscaling replot while doing this to
+  // avoid recursing back into Plot::replot() (setAxisMaxMajor triggers an
+  // autoRefresh when autoReplot is enabled).
+  const bool doAutoReplot = autoReplot();
+  setAutoReplot(false);
+  updateMaxMajorSteps();
+  setAutoReplot(doAutoReplot);
+
   QwtPlot::replot();
 
   // Now we need to again loop through curves to set the color and title.
