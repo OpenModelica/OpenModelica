@@ -53,13 +53,6 @@ pub(crate) fn throw_stream(s: &str) {
     nls::throw_stream(s)
 }
 
-/// A model error where the generated code calls `throwStreamPrint` -- an invalid
-/// root, a zero divisor, an index out of range.
-pub(crate) fn model_error() {
-    install_hooks();
-    nls::model_error()
-}
-
 /// A string literal the module's pool owns, borrowed for the length of the call.
 fn borrowed_str<'a>(h: u32) -> &'a str {
     core::str::from_utf8(unsafe { crate::str_bytes(h) }).unwrap_or("")
