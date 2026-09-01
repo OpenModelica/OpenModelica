@@ -108,6 +108,7 @@ public:
   bool isLoggingEnabled() {return mIsLoggingEnabled;}
   bool isLoadModelError() const {return mLoadModelError;}
   QString getErrorString(bool warningsAsErrors = false);
+  QString evaluateConstant(const QString &name);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
   void setCurrentError(int errorIndex);
