@@ -342,10 +342,21 @@ namespace FlatModelica
           readDigits();
         }
 
-        if (_next != _str.cend() && *_next == 'e') {
-          _token.type = Token::REAL;
-          ++_next;
-          readDigits();
+        if (_next != _str.cend() && (*_next == 'e' || *_next == 'E')) {
+          /* The exponent may be signed, e.g. 1e-10. Only take the e if an exponent
+           * really follows it, so that a name starting with an e stays a name.
+           */
+          auto exponent = _next + 1;
+
+          if (exponent != _str.cend() && (*exponent == '+' || *exponent == '-')) {
+            ++exponent;
+          }
+
+          if (exponent != _str.cend() && std::isdigit(*exponent)) {
+            _token.type = Token::REAL;
+            _next = exponent;
+            readDigits();
+          }
         }
 
         _token.data = std::string(start, _next);
