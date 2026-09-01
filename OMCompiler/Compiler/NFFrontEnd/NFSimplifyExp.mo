@@ -62,6 +62,9 @@ import Array;
 import MetaModelica.Dangerous.listReverseInPlace;
 import UnorderedMap;
 
+constant Integer MAX_CHAIN_TERMS = 32
+  "Same limit as Expression.MAX_SUM_CHAIN, for the n-ary node.";
+
 public
 
 function simplifyDump
@@ -474,13 +477,9 @@ algorithm
       if listEmpty(args) then
         exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
       else
-        exp :: args := args;
         op := if isSum then Operator.makeAdd(ty) else
                             Operator.makeMul(ty);
-
-        for e in args loop
-          exp := Expression.BINARY(exp, op, e);
-        end for;
+        exp := Expression.MULTARY(args, {}, op);
       end if;
 
       return;
@@ -1579,60 +1578,94 @@ end combineBinaries;
 
 public function splitMultary
   "inverse functionality to combineBinaries.
-  returns a multary to its original binary representation."
+  returns a multary to its binary representation, as a balanced tree."
   input output Expression exp;
 algorithm
   exp := match exp
     local
-      Expression new_exp;
+      Expression new_exp, rhs;
       list<Expression> args, inv_args;
-      Operator inv_op, fixed_op;
+      Operator inv_op;
+      Boolean is_add;
 
     case Expression.MULTARY() algorithm
-      if not listEmpty(exp.arguments) then
-        // it has arguments, take the first one and start with it
-        new_exp :: args := exp.arguments;
-        inv_args    := exp.inv_arguments;
-      elseif not listEmpty(exp.inv_arguments) then
-        // it has no arguments but inverse arguments
-        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
-          // take the first one out and negate it
-          new_exp :: inv_args := exp.inv_arguments;
-          args      := exp.arguments;
-          new_exp   := Expression.negate(new_exp);
+      args := exp.arguments;
+      inv_args := exp.inv_arguments;
+      inv_op := Operator.invert(exp.operator);
+      is_add := Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION;
+
+      if listEmpty(args) then
+        if listEmpty(inv_args) then
+          new_exp := if is_add then Expression.makeZero(Operator.typeOf(exp.operator))
+                               else Expression.makeOne(Operator.typeOf(exp.operator));
+        elseif is_add then
+          // -a - b becomes -(a + b)
+          new_exp := Expression.negate(chainBinaries(inv_args, exp.operator));
+          inv_args := {};
         else
           // create an artificial 1 to divide by the inverse arguments
-          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
-          args      := exp.arguments;
-          inv_args  := exp.inv_arguments;
+          new_exp := Expression.makeOne(Operator.typeOf(exp.operator));
         end if;
       else
-        // empty, make either 0 or 1 depending on math classification
-        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
-          new_exp   := Expression.makeZero(Operator.typeOf(exp.operator));
-        else
-          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
-        end if;
-        args        := exp.arguments;
-        inv_args    := exp.inv_arguments;
+        new_exp := chainBinaries(args, exp.operator);
       end if;
 
-      inv_op := Operator.invert(exp.operator);
-      // chain all arguments
-      for arg in args loop
-        fixed_op := Operator.repairBinary(exp.operator, Expression.typeOf(new_exp), Expression.typeOf(arg));
-        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
-      end for;
-      // chain all inverse arguments
-      for arg in inv_args loop
-        fixed_op := Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg));
-        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
-      end for;
+      if listLength(inv_args) > MAX_CHAIN_TERMS then
+        // a - b - c becomes a - (b + c): one level, not one per term
+        rhs := chainBinaries(inv_args, exp.operator);
+        new_exp := Expression.BINARY(new_exp,
+          Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(rhs)), rhs);
+      else
+        for arg in inv_args loop
+          new_exp := Expression.BINARY(new_exp,
+            Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg)), arg);
+        end for;
+      end if;
     then new_exp;
 
     else exp;
   end match;
 end splitMultary;
+
+public function chainBinaries
+  "Chains the expressions with the given operator. A chain of more than
+  MAX_CHAIN_TERMS is instead paired up level by level, keeping their order, so
+  that the result is log2(N) deep instead of N."
+  input list<Expression> args;
+  input Operator op;
+  output Expression exp;
+protected
+  list<Expression> level = args, next;
+  Expression e1, e2;
+  Operator fixed_op;
+algorithm
+  if listLength(args) <= MAX_CHAIN_TERMS then
+    exp :: level := args;
+
+    for e in level loop
+      exp := Expression.BINARY(exp,
+        Operator.repairBinary(op, Expression.typeOf(exp), Expression.typeOf(e)), e);
+    end for;
+
+    return;
+  end if;
+
+  while not listEmpty(level) and not listEmpty(listRest(level)) loop
+    next := {};
+    while not listEmpty(level) loop
+      e1 :: level := level;
+      if listEmpty(level) then
+        next := e1 :: next;
+      else
+        e2 :: level := level;
+        fixed_op := Operator.repairBinary(op, Expression.typeOf(e1), Expression.typeOf(e2));
+        next := Expression.BINARY(e1, fixed_op, e2) :: next;
+      end if;
+    end while;
+    level := listReverseInPlace(next);
+  end while;
+  exp := listHead(level);
+end chainBinaries;
 
 protected function combineBinariesExp
   "author: kabdelhak 09-2020

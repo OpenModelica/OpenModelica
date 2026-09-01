@@ -920,46 +920,36 @@ algorithm
 end buildRootedTable;
 
 protected function setRootDistance
+  "Breadth-first walk from the roots."
   input list<ComponentRef> finalRoots;
   input CrefRootsTable table;
   input Integer distance;
   input list<ComponentRef> nextLevel;
   input CrefIndexTable rooted;
+protected
+  list<ComponentRef> level = finalRoots, next = nextLevel, neighbors;
+  Integer dist = distance;
+  ComponentRef cr;
 algorithm
-  () := match(finalRoots,nextLevel)
-    local
-      list<ComponentRef> rest,next;
-      ComponentRef cr;
-    case({},{}) then ();
-    case({},_)
-      algorithm
-        setRootDistance(nextLevel,table,distance+1,{},rooted);
-      then
-        ();
-    case(cr::rest,_)
-      guard not UnorderedMap.contains(cr, rooted)
-      algorithm
-        UnorderedMap.addNew(cr,distance,rooted);
-        //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
-        //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
+  while true loop
+    if listEmpty(level) then
+      if listEmpty(next) then
+        return;
+      end if;
+      level := next;
+      next := {};
+      dist := dist + 1;
+    else
+      cr::level := level;
+      if not UnorderedMap.contains(cr, rooted) then
+        UnorderedMap.addNew(cr, dist, rooted);
         next := match UnorderedMap.get(cr, table)
-          case SOME(next)
-            //algorithm
-              //print("- NFOCConnectionGraph.setRootDistance: Add " +
-              //   stringDelimitList(List.map(next,ComponentRef.toString),"\n") + " to the queue\n");
-            then listAppend(nextLevel,next);
-          else nextLevel;
+          case SOME(neighbors) then listAppend(next, neighbors);
+          else next;
         end match;
-        setRootDistance(rest,table,distance,next,rooted);
-      then
-        ();
-    case (_::rest,_)
-      algorithm
-        //print("- NFOCConnectionGraph.setRootDistance: found " + ComponentRef.toString(cr) + "\n");
-        setRootDistance(rest,table,distance,nextLevel,rooted);
-      then
-        ();
-  end match;
+      end if;
+    end if;
+  end while;
 end setRootDistance;
 
 protected function addBranches

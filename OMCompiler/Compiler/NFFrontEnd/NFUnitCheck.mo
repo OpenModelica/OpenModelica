@@ -61,6 +61,7 @@ import Component = NFComponent;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Operator = NFOperator;
+import SimplifyExp = NFSimplifyExp;
 import Type = NFType;
 import Unit = NFUnit;
 import Variable = NFVariable;
@@ -396,6 +397,10 @@ algorithm
       list<ComponentRef> vars;
       Integer i;
       Boolean b;
+
+    // n-ary sums and products are checked in their binary form
+    case Expression.MULTARY()
+      then insertUnitInEquation(SimplifyExp.splitMultary(eq), unit, htCr2U, htS2U, htU2S, fnCache);
 
     // SUB equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)

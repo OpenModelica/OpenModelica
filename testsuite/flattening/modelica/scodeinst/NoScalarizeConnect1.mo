@@ -27,11 +27,11 @@ end NoScalarizeConnect1;
 //   Real[3] m.c2.f;
 // equation
 //   m[3].c1.e = m[3].c2.e;
-//   -(m[3].c1.f + m[3].c2.f) = 0.0;
+//   -(m[3].c2.f + m[3].c1.f) = 0.0;
 //   m[2].c1.e = m[2].c2.e;
-//   -(m[2].c1.f + m[2].c2.f) = 0.0;
+//   -(m[2].c2.f + m[2].c1.f) = 0.0;
 //   m[1].c1.e = m[1].c2.e;
-//   -(m[1].c1.f + m[1].c2.f) = 0.0;
+//   -(m[1].c2.f + m[1].c1.f) = 0.0;
 //   for $i2 in 1:3 loop
 //     m[$i2].c1.f = 0.0;
 //   end for;

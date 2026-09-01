@@ -217,20 +217,21 @@ public function isEqual<T>
   input list<T> inList2;
   input Boolean inEqualLength;
   output Boolean outIsEqual;
+protected
+  list<T> rest1 = inList1, rest2 = inList2;
+  T e1, e2;
 algorithm
-  outIsEqual := match(inList1, inList2, inEqualLength)
-    local
-      T e1, e2;
-      list<T> rest1, rest2;
+  while not (listEmpty(rest1) or listEmpty(rest2)) loop
+    e1 :: rest1 := rest1;
+    e2 :: rest2 := rest2;
 
-    case (e1 :: rest1, e2 :: rest2, _) guard(valueEq(e1, e2))
-      then isEqual(rest1, rest2, inEqualLength);
+    if not valueEq(e1, e2) then
+      outIsEqual := false;
+      return;
+    end if;
+  end while;
 
-    case ({}, {}, _) then true;
-    case ({}, _, false) then true;
-    case (_, {}, false) then true;
-    else false;
-  end match;
+  outIsEqual := if listEmpty(rest1) and listEmpty(rest2) then true else not inEqualLength;
 end isEqual;
 
 public function isEqualOnTrue<T1, T2>
@@ -246,20 +247,23 @@ public function isEqualOnTrue<T1, T2>
     input T2 inElement2;
     output Boolean outIsEqual;
   end CompFunc;
+protected
+  list<T1> rest1 = inList1;
+  list<T2> rest2 = inList2;
+  T1 e1;
+  T2 e2;
 algorithm
-  outIsEqual := match(inList1, inList2)
-    local
-      T1 e1;
-      T2 e2;
-      list<T1> rest1;
-      list<T2> rest2;
+  while not (listEmpty(rest1) or listEmpty(rest2)) loop
+    e1 :: rest1 := rest1;
+    e2 :: rest2 := rest2;
 
-    case (e1 :: rest1, e2 :: rest2) guard(inCompFunc(e1, e2))
-      then isEqualOnTrue(rest1, rest2, inCompFunc);
+    if not inCompFunc(e1, e2) then
+      outIsEqual := false;
+      return;
+    end if;
+  end while;
 
-    case ({}, {}) then true;
-    else false;
-  end match;
+  outIsEqual := listEmpty(rest1) and listEmpty(rest2);
 end isEqualOnTrue;
 
 public function allEqual<T>
@@ -296,13 +300,16 @@ public function compareLength<T1, T2>
   input list<T1> list1;
   input list<T2> list2;
   output Integer res;
+protected
+  list<T1> rest1 = list1;
+  list<T2> rest2 = list2;
 algorithm
-  res := match (list1, list2)
-    case ({}, {}) then 0;
-    case ({}, _)  then -1;
-    case (_, {})  then 1;
-    else compareLength(listRest(list1), listRest(list2));
-  end match;
+  while not (listEmpty(rest1) or listEmpty(rest2)) loop
+    rest1 := listRest(rest1);
+    rest2 := listRest(rest2);
+  end while;
+
+  res := if listEmpty(rest1) then (if listEmpty(rest2) then 0 else -1) else 1;
 end compareLength;
 
 public function compare<T1, T2>
@@ -354,20 +361,28 @@ public function isPrefixOnTrue<T1, T2>
     input T2 inElement2;
     output Boolean outIsEqual;
   end CompFunc;
+protected
+  list<T1> rest1 = inList1;
+  list<T2> rest2 = inList2;
+  T1 e1;
+  T2 e2;
 algorithm
-  outIsPrefix := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
+  while not listEmpty(rest1) loop
+    if listEmpty(rest2) then
+      outIsPrefix := false;
+      return;
+    end if;
 
-    case (e1 :: rest1, e2 :: rest2) guard(inCompFunc(e1, e2))
-      then isPrefixOnTrue(rest1, rest2, inCompFunc);
+    e1 :: rest1 := rest1;
+    e2 :: rest2 := rest2;
 
-    case ({}, _) then true;
-    else false;
-  end match;
+    if not inCompFunc(e1, e2) then
+      outIsPrefix := false;
+      return;
+    end if;
+  end while;
+
+  outIsPrefix := true;
 end isPrefixOnTrue;
 
 public function consr<T>
@@ -924,30 +939,23 @@ protected function merge<T>
     input T inElement2;
     output Boolean outRes;
   end CompareFunc;
+protected
+  list<T> left = inLeft, right = inRight, res = acc;
+  T el;
 algorithm
-  outList := match (inLeft, inRight)
-    local
-      T l, r, el;
-      list<T> l_rest, r_rest;
+  while not (listEmpty(left) or listEmpty(right)) loop
+    if inCompFunc(listHead(right), listHead(left)) then
+      el :: left := left;
+    else
+      el :: right := right;
+    end if;
 
-    /* Tail recursive version */
-    case (l :: l_rest, r :: r_rest)
-      algorithm
-        if inCompFunc(r, l) then
-          r_rest := inRight;
-          el := l;
-        else
-          l_rest := inLeft;
-          el := r;
-        end if;
-      then
-        merge(l_rest, r_rest, inCompFunc, el :: acc);
+    res := el :: res;
+  end while;
 
-    case ({}, {}) then listReverseInPlace(acc);
-    case ({}, _) then append_reverse(acc,inRight);
-    case (_, {}) then append_reverse(acc,inLeft);
-
-  end match;
+  outList := if listEmpty(left) then
+               (if listEmpty(right) then listReverseInPlace(res) else append_reverse(res, right))
+             else append_reverse(res, left);
 end merge;
 
 public function mergeSorted<T>
@@ -3393,22 +3401,16 @@ public function threadMap1_0<T1, T2, ArgT1>
     input T2 inElement2;
     input ArgT1 inArg1;
   end MapFunc;
+protected
+  list<T2> rest2 = inList2;
+  T2 e2;
 algorithm
-  () := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
+  for e1 in inList1 loop
+    e2 :: rest2 := rest2;
+    inMapFunc(e1, e2, inArg1);
+  end for;
 
-    case ({}, {}) then ();
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        inMapFunc(e1, e2, inArg1);
-        threadMap1_0(rest1, rest2, inMapFunc, inArg1);
-      then
-        ();
-  end match;
+  true := listEmpty(rest2);
 end threadMap1_0;
 
 public function threadMap2<T1, T2, TO, ArgT1, ArgT2>
@@ -3501,7 +3503,7 @@ public function threadFold1<T1, T2, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inArg1;
   input FT inFoldArg;
-  output FT outFoldArg;
+  output FT outFoldArg = inFoldArg;
 
   partial function FoldFunc
     input T1 inElement1;
@@ -3510,24 +3512,16 @@ public function threadFold1<T1, T2, FT, ArgT1>
     input FT inFoldArg;
     output FT outFoldArg;
   end FoldFunc;
+protected
+  list<T2> rest2 = inList2;
+  T2 e2;
 algorithm
-  outFoldArg := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      FT res;
+  for e1 in inList1 loop
+    e2 :: rest2 := rest2;
+    outFoldArg := inFoldFunc(e1, e2, inArg1, outFoldArg);
+  end for;
 
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        res := inFoldFunc(e1, e2, inArg1, inFoldArg);
-      then
-        threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
-
-    case ({}, {}) then inFoldArg;
-
-  end match;
+  true := listEmpty(rest2);
 end threadFold1;
 
 public function threadFold2<T1, T2, FT, ArgT1, ArgT2>
@@ -3540,7 +3534,7 @@ public function threadFold2<T1, T2, FT, ArgT1, ArgT2>
   input ArgT1 inArg1;
   input ArgT2 inArg2;
   input FT inFoldArg;
-  output FT outFoldArg;
+  output FT outFoldArg = inFoldArg;
 
   partial function FoldFunc
     input T1 inElement1;
@@ -3550,24 +3544,16 @@ public function threadFold2<T1, T2, FT, ArgT1, ArgT2>
     input FT inFoldArg;
     output FT outFoldArg;
   end FoldFunc;
+protected
+  list<T2> rest2 = inList2;
+  T2 e2;
 algorithm
-  outFoldArg := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      FT res;
+  for e1 in inList1 loop
+    e2 :: rest2 := rest2;
+    outFoldArg := inFoldFunc(e1, e2, inArg1, inArg2, outFoldArg);
+  end for;
 
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        res := inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
-      then
-        threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
-
-    case ({}, {}) then inFoldArg;
-
-  end match;
+  true := listEmpty(rest2);
 end threadFold2;
 
 public function threadFold3<T1, T2, FT, ArgT1, ArgT2, ArgT3>
@@ -3581,7 +3567,7 @@ public function threadFold3<T1, T2, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inArg2;
   input ArgT3 inArg3;
   input FT inFoldArg;
-  output FT outFoldArg;
+  output FT outFoldArg = inFoldArg;
 
   partial function FoldFunc
     input T1 inElement1;
@@ -3592,24 +3578,16 @@ public function threadFold3<T1, T2, FT, ArgT1, ArgT2, ArgT3>
     input FT inFoldArg;
     output FT outFoldArg;
   end FoldFunc;
+protected
+  list<T2> rest2 = inList2;
+  T2 e2;
 algorithm
-  outFoldArg := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      FT res;
+  for e1 in inList1 loop
+    e2 :: rest2 := rest2;
+    outFoldArg := inFoldFunc(e1, e2, inArg1, inArg2, inArg3, outFoldArg);
+  end for;
 
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        res := inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
-      then
-        threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
-
-    case ({}, {}) then inFoldArg;
-
-  end match;
+  true := listEmpty(rest2);
 end threadFold3;
 
 public function threadFold<T1, T2, FT>
@@ -3619,7 +3597,7 @@ public function threadFold<T1, T2, FT>
   input list<T2> inList2;
   input FoldFunc inFoldFunc;
   input FT inFoldArg;
-  output FT outFoldArg;
+  output FT outFoldArg = inFoldArg;
 
   partial function FoldFunc
     input T1 inElement1;
@@ -3627,24 +3605,16 @@ public function threadFold<T1, T2, FT>
     input FT inFoldArg;
     output FT outFoldArg;
   end FoldFunc;
+protected
+  list<T2> rest2 = inList2;
+  T2 e2;
 algorithm
-  outFoldArg := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      FT res;
+  for e1 in inList1 loop
+    e2 :: rest2 := rest2;
+    outFoldArg := inFoldFunc(e1, e2, outFoldArg);
+  end for;
 
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        res := inFoldFunc(e1, e2, inFoldArg);
-      then
-        threadFold(rest1, rest2, inFoldFunc, res);
-
-    case ({}, {}) then inFoldArg;
-
-  end match;
+  true := listEmpty(rest2);
 end threadFold;
 
 public function threadMapFold<T1, T2, TO, FT>
@@ -4983,18 +4953,21 @@ public function allReferenceEq<T>
   input list<T> inList1;
   input list<T> inList2;
   output Boolean outEqual;
+protected
+  list<T> rest1 = inList1, rest2 = inList2;
+  T e1, e2;
 algorithm
-  outEqual := match(inList1, inList2)
-    local
-      T el1,el2;
-      list<T> rest1,rest2;
+  while not (listEmpty(rest1) or listEmpty(rest2)) loop
+    e1 :: rest1 := rest1;
+    e2 :: rest2 := rest2;
 
-    case (el1 :: rest1, el2 :: rest2)
-      then if referenceEq(el1,el2) then allReferenceEq(rest1,rest2) else false;
+    if not referenceEq(e1, e2) then
+      outEqual := false;
+      return;
+    end if;
+  end while;
 
-    case ({},{}) then true;
-    else false;
-  end match;
+  outEqual := listEmpty(rest1) and listEmpty(rest2);
 end allReferenceEq;
 
 public function listIsLonger<T>

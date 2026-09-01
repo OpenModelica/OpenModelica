@@ -316,9 +316,7 @@ public
     input Expression otherExp;
     input output list<FlowAlias> aliases;
   protected
-    Expression e;
-    list<FlowAlias> aliases1, aliases2;
-    FlowAlias alias1, alias2;
+    Expression e, e1, e2;
   algorithm
     aliases := match exp
       // a
@@ -334,22 +332,46 @@ public
       // a + b = 0 => a = -b;
       case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.ADD))
         guard Expression.isZero(otherExp)
-        algorithm
-          aliases1 := getAliasVarsFromExp(exp.exp1, exp.exp2, {});
-          aliases2 := getAliasVarsFromExp(exp.exp2, exp.exp1, {});
+        then getAliasVarsFromSum(exp.exp1, false, exp.exp2, false, aliases);
 
-          if listLength(aliases1) == 1 and listLength(aliases2) == 1 then
-            {alias1} := aliases1;
-            {alias2} := aliases2;
-            alias2.negative := not alias2.negative;
-            aliases := alias1 :: alias2 :: aliases;
-          end if;
-        then
-          aliases;
+      // the same sum as an n-ary node, with the subtracted terms in inv_arguments
+      case Expression.MULTARY()
+        guard Expression.isZero(otherExp) and
+              Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION
+        then match (exp.arguments, exp.inv_arguments)
+          case ({e1, e2}, {}) then getAliasVarsFromSum(e1, false, e2, false, aliases);
+          case ({e1}, {e2})   then getAliasVarsFromSum(e1, false, e2, true, aliases);
+          case ({}, {e1, e2}) then getAliasVarsFromSum(e1, true, e2, true, aliases);
+          else aliases;
+        end match;
 
       else aliases;
     end match;
   end getAliasVarsFromExp;
+
+  function getAliasVarsFromSum
+    "Returns the alias variables for a two-term sum that is equated to zero.
+     inv1/inv2 tell whether the respective term is subtracted rather than added."
+    input Expression exp1;
+    input Boolean inv1;
+    input Expression exp2;
+    input Boolean inv2;
+    input output list<FlowAlias> aliases;
+  protected
+    list<FlowAlias> aliases1, aliases2;
+    FlowAlias alias1, alias2;
+  algorithm
+    aliases1 := getAliasVarsFromExp(exp1, exp2, {});
+    aliases2 := getAliasVarsFromExp(exp2, exp1, {});
+
+    if listLength(aliases1) == 1 and listLength(aliases2) == 1 then
+      {alias1} := aliases1;
+      {alias2} := aliases2;
+      alias1.negative := alias1.negative <> inv1;
+      alias2.negative := not (alias2.negative <> inv2);
+      aliases := alias1 :: alias2 :: aliases;
+    end if;
+  end getAliasVarsFromSum;
 
   function isStreamConnectorFlow
     "Checks if the given flow alias refers to a flow variable inside a stream connector."

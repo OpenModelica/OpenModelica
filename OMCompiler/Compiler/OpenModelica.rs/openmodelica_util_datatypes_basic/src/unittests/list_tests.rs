@@ -67,14 +67,14 @@ fn test_all_reference_eq_true() -> Result<()> {
     // Empty lists are trivially equal
     let lst: Arc<List<Arc<List<i32>>>> = nil();
     let lst2: Arc<List<Arc<List<i32>>>> = nil();
-    assert!(L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2)));
+    assert!(L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2))?);
     Ok(())
 }
 #[test]
 fn test_all_reference_eq_false() -> Result<()> {
     let lst = list![list![1i32], list![1i32]];
     let lst2 = list![list![1i32, 2], list![1i32]];
-    assert!(!L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2)));
+    assert!(!L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2))?);
     Ok(())
 }
 
@@ -864,12 +864,12 @@ fn test_intersection_on_true() {
 // ── IsEqual ──
 #[test]
 fn test_is_equal_true() -> Result<()> {
-    assert!(L::isEqual(list![1i32, 2], list![1i32, 2], true));
+    assert!(L::isEqual(list![1i32, 2], list![1i32, 2], true)?);
     Ok(())
 }
 #[test]
 fn test_is_equal_false() -> Result<()> {
-    assert!(!L::isEqual(list![1i32, 2], list![1i32, 3], true));
+    assert!(!L::isEqual(list![1i32, 2], list![1i32, 3], true)?);
     Ok(())
 }
 

@@ -194,8 +194,8 @@ algorithm
       then
         evalBinaryOp(exp1, exp.operator, exp2, target);
 
-    // TODO
-    // case Expression.MULTARY()
+    case Expression.MULTARY()
+      then evalExp(SimplifyExp.splitMultary(exp), target);
 
     case Expression.UNARY()
       algorithm
