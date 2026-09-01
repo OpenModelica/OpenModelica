@@ -919,6 +919,40 @@ pub fn log_init_assert_notice() {
     }
 }
 
+/// The assertion `rt_assert` recorded, as `[msg, file, sline, scol, eline, ecol,
+/// read_only, cond, initial]` String handles and flags.
+fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
+    let info = AssertInfo {
+        msg: read_rt_string(e, pa[0]).unwrap_or_default(),
+        file: read_rt_string(e, pa[1]).unwrap_or_default(),
+        read_only: pa[6] != 0,
+        line_start: pa[2],
+        col_start: pa[3],
+        line_end: pa[4],
+        col_end: pa[5],
+    };
+    (info, read_rt_string(e, pa[7]).unwrap_or_default())
+}
+
+/// C's residual catch (`MMC_CATCH_INTERNAL` in `functionODE_residual` /
+/// `residualFunctionIDA`): a model error unwinding through the residual is
+/// recoverable, and `omc_assert_simulation` logs it in the integrator stage only
+/// under `LOG_SOLVER`. Consumes what the throw left; false for an engine failure.
+fn residual_model_throw(e: &mut dyn SimEngine, err: &str, t: f64) -> bool {
+    let pending = e.take_pending_assert();
+    if !is_model_throw(err) && pending.is_none() {
+        return false;
+    }
+    clear_runtime_error();
+    if let Some(pa) = pending
+        && omclog::active(omclog::SOLVER)
+    {
+        let (info, cond) = assert_info(e, &pa);
+        log_assert_block(&info, &cond, t, pa[8] != 0);
+    }
+    true
+}
+
 fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
     THROW_PAST_STEP.store(false, Ordering::Relaxed);
     if RUNTIME_ERROR.swap(false, Ordering::Relaxed) {
@@ -935,16 +969,7 @@ fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<
         }
         return err;
     };
-    let cond = read_rt_string(e, pa[7]).unwrap_or_default();
-    let info = AssertInfo {
-        msg: read_rt_string(e, pa[0]).unwrap_or_default(),
-        file: read_rt_string(e, pa[1]).unwrap_or_default(),
-        read_only: pa[6] != 0,
-        line_start: pa[2],
-        col_start: pa[3],
-        line_end: pa[4],
-        col_end: pa[5],
-    };
+    let (info, cond) = assert_info(e, &pa);
     if let Some(t) = init_time {
         log_assert_block(&info, &cond, t, pa[8] != 0);
         log_init_assert_notice();
@@ -5112,6 +5137,7 @@ unsafe fn dassl_res(
     let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
+        Err(err) if residual_model_throw(e, err, unsafe { *t }) => unsafe { *ires = -1 },
         Err(err) => {
             ctx.err = Some(err);
             unsafe { *ires = -2 };
@@ -9674,6 +9700,7 @@ unsafe extern "C" fn ida_res(
     })();
     ctx.nfe += 1;
     match run {
+        Err(err) if residual_model_throw(e, err, t) => 1,
         Err(err) => {
             ctx.err = Some(err);
             -1
