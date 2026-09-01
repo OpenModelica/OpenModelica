@@ -1919,7 +1919,13 @@ algorithm
         newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
         newVar := BackendVariable.copyVarNewName(newCref, v);
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
-        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        /* A discrete output's alias stays discrete; as a continuous variable it
+         * also gets "$PRE.alias = alias", which over-specifies the initial system.
+         */
+        newVar := match v.varKind
+          case BackendDAE.DISCRETE() then newVar;
+          else BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        end match;
         /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15311
          * force StateSelect.never on the alias variable so that state selection never picks the alias
          * instead of original state variable, which would cause wrong code generation and simulation results.
