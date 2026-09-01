@@ -6682,6 +6682,12 @@ fn build_sim_model(
     }
     module.section(&name_section);
     let wasm = module.finish();
+    // `OMC_WASM_DUMP_DIR=<dir>`: the lowered module as `<dir>/<prefix>.wasm`, for
+    // `wasm-objdump` on a trap the backtrace names only by function index.
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Ok(dir) = std::env::var("OMC_WASM_DUMP_DIR") {
+        let _ = std::fs::write(format!("{dir}/{}.wasm", sim_code.fileNamePrefix), &wasm);
+    }
 
     // Kick off the (cranelift) JIT compile of this model module on a background
     // thread now, while the rest of the OMC pipeline (remaining templates,
