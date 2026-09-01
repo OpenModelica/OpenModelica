@@ -6972,14 +6972,11 @@ template genSPColors(list<list<Integer>> colorList, String patternName)
   const unsigned int index[<%nElements%>] = {<%colorList |> color => (color |> i => i; separator=","); separator=","%>};
   memcpy(<%patternName%>->color_index, index, <%nElements%> * sizeof(unsigned int));
 
-  // Convert to coloring storage
-  unsigned int i = 0;
+  // Convert to colorCols
   for (unsigned int color = 0; color < <%patternName%>->maxColors; ++color) {
-    <%patternName%>->color_leadindex[color] = i;
-    for (unsigned int column = 0; column < nCols; ++column) {
-      if (<%patternName%>->colorCols[column] - 1 == color) {
-        <%patternName%>->color_index[i++] = column;
-      }
+    for (unsigned int ci = <%patternName%>->color_leadindex[color]; ci < <%patternName%>->color_leadindex[color+1]; ++ci) {
+      unsigned int column = <%patternName%>->color_index[ci];
+      <%patternName%>->colorCols[column] = color;
     }
   }
   >>
