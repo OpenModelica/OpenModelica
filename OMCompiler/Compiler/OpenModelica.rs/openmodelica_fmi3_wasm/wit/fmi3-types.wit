@@ -47,7 +47,8 @@ interface types {
     ok,
     /// Non-fatal issue; result may still be used.
     warning,
-    /// Step was discarded; do not use results (only from fmi3DoStep).
+    /// The FMU cannot answer for the point it was given; the master may retry
+    /// elsewhere -- a shorter step, another trial point.
     discard,
     /// Unrecoverable error; instance must be freed.
     error,

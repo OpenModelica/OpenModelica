@@ -330,10 +330,14 @@ unsafe fn residual(
             }
         }
         Err(e) => {
-            // IRES = -1 asks DASKR to retry with a smaller step; a model that
-            // cannot be evaluated at all is reported once the call returns.
-            ctx.failed.get_or_insert(e);
-            unsafe { *ires = -1 };
+            // IRES = -1 asks DASKR to retry with a smaller step; a model that cannot
+            // be evaluated at all is IRES = -2, reported once the call returns.
+            if ctx.ode.take_discard() {
+                unsafe { *ires = -1 };
+            } else {
+                ctx.failed.get_or_insert(e);
+                unsafe { *ires = -2 };
+            }
         }
     }
 }
@@ -445,19 +449,26 @@ unsafe fn jacobian(
             ctx.step[ci] = step;
             y[ci] += step;
         }
-        if let Err(e) = ctx.ode.eval(time, y, ctx.residual) {
-            ctx.failed.get_or_insert(e);
-            break;
-        }
+        let evaluated = ctx.ode.eval(time, y, ctx.residual);
         for &col in group {
             let ci = col as usize;
-            for &row in rows_by_col.get(ci).map(Vec::as_slice).unwrap_or(&[]) {
-                let ri = row as usize;
-                // G at the perturbed point, less the base residual DASKR passed.
-                let g = yprime[ri] - ctx.residual[ri];
-                matrix[ci * n + ri] = (g - base[ri]) / ctx.step[ci];
+            if evaluated.is_ok() {
+                for &row in rows_by_col.get(ci).map(Vec::as_slice).unwrap_or(&[]) {
+                    let ri = row as usize;
+                    // G at the perturbed point, less the base residual DASKR passed.
+                    let g = yprime[ri] - ctx.residual[ri];
+                    matrix[ci * n + ri] = (g - base[ri]) / ctx.step[ci];
+                }
             }
             y[ci] = ctx.saved[ci];
+        }
+        // No IRES here: a discarded point leaves its columns as they stand, as C's
+        // assembly does.
+        if let Err(e) = evaluated
+            && !ctx.ode.take_discard()
+        {
+            ctx.failed.get_or_insert(e);
+            break;
         }
     }
     ctx.ode.set_context_algebraic();

@@ -53,8 +53,15 @@ unsafe extern "C" fn roots(t: f64, y: NVector, gout: *mut f64, user: *mut c_void
     let (y, g) = unsafe {
         (core::slice::from_raw_parts(nv_data(y), n), core::slice::from_raw_parts_mut(gout, n_zc))
     };
-    let r = c.ode.eval_zc(t, y, g);
-    fail(c, r)
+    // A root function has no recoverable answer.
+    match c.ode.eval_zc(t, y, g) {
+        Ok(()) => 0,
+        Err(e) => {
+            c.ode.take_discard();
+            c.failed = Some(e);
+            -1
+        }
+    }
 }
 
 unsafe extern "C" fn ida_res(
@@ -73,9 +80,9 @@ unsafe extern "C" fn ida_res(
             core::slice::from_raw_parts_mut(nv_data(rr), n),
         )
     };
-    if let Err(e) = c.ode.eval(t, y, c.f) {
-        c.failed = Some(e);
-        return -1;
+    let evaluated = c.ode.eval(t, y, c.f);
+    if evaluated.is_err() {
+        return fail(c, evaluated);
     }
     for i in 0..n {
         r[i] = yp[i] - c.f[i];
@@ -93,10 +100,15 @@ unsafe extern "C" fn ida_roots(
     unsafe { roots(t, yy, gout, user) }
 }
 
+/// SUNDIALS' right-hand-side convention: 0 success, positive a point to retry from,
+/// negative a failure that ends the run.
 fn fail(c: &mut Ctx, r: Result<()>) -> c_int {
     match r {
         Ok(()) => 0,
         Err(e) => {
+            if c.ode.take_discard() {
+                return 1;
+            }
             c.failed = Some(e);
             -1
         }
@@ -419,6 +431,9 @@ unsafe extern "C" fn dae_res(t: f64, yy: NVector, yp: NVector, rr: NVector, user
     match c.dae.residual(t, y, yp, r) {
         Ok(()) => 0,
         Err(e) => {
+            if c.dae.take_discard() {
+                return 1;
+            }
             c.failed = Some(e);
             -1
         }
@@ -438,6 +453,7 @@ unsafe extern "C" fn dae_roots(t: f64, yy: NVector, yp: NVector, gout: *mut f64,
     match c.dae.eval_zc(t, y, yp, g) {
         Ok(()) => 0,
         Err(e) => {
+            c.dae.take_discard();
             c.failed = Some(e);
             -1
         }

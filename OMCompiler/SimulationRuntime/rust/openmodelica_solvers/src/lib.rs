@@ -118,6 +118,13 @@ pub trait Ode {
     /// Count one evaluation. Solvers call this; an implementation that does not
     /// track evaluations can ignore it.
     fn note_call(&mut self) {}
+
+    /// Whether the error the last [`Ode::eval`] returned is that trial point's
+    /// rather than the run's (C's `IRES = -1`, FMI's `fmi3Discard`), so a solver
+    /// that can shorten its step retries instead of failing.
+    fn take_discard(&mut self) -> bool {
+        false
+    }
 }
 
 /// A model in residual form, `F(t, y, y') = 0` over `y = [states | algebraic
@@ -136,6 +143,11 @@ pub trait Dae {
     }
 
     fn note_call(&mut self) {}
+
+    /// As [`Ode::take_discard`], for the last [`Dae::residual`].
+    fn take_discard(&mut self) -> bool {
+        false
+    }
 }
 
 /// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it
