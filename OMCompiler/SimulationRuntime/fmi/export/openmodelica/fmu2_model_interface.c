@@ -848,6 +848,8 @@ void fmi2FreeInstance(fmi2Component c)
     free(comp->fmiDerJac->sparsePattern->leadindex); comp->fmiDerJac->sparsePattern->leadindex = NULL;
     free(comp->fmiDerJac->sparsePattern->index); comp->fmiDerJac->sparsePattern->index = NULL;
     free(comp->fmiDerJac->sparsePattern->colorCols); comp->fmiDerJac->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJac->sparsePattern->color_leadindex); comp->fmiDerJac->sparsePattern->color_leadindex = NULL;
+    free(comp->fmiDerJac->sparsePattern->color_index); comp->fmiDerJac->sparsePattern->color_index = NULL;
     free(comp->fmiDerJac->sparsePattern); comp->fmiDerJac->sparsePattern = NULL;
 
     freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
@@ -865,6 +867,8 @@ void fmi2FreeInstance(fmi2Component c)
     free(comp->fmiDerJacInitialization->sparsePattern->leadindex); comp->fmiDerJacInitialization->sparsePattern->leadindex = NULL;
     free(comp->fmiDerJacInitialization->sparsePattern->index); comp->fmiDerJacInitialization->sparsePattern->index = NULL;
     free(comp->fmiDerJacInitialization->sparsePattern->colorCols); comp->fmiDerJacInitialization->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->color_leadindex); comp->fmiDerJacInitialization->sparsePattern->color_leadindex = NULL;
+    free(comp->fmiDerJacInitialization->sparsePattern->color_index); comp->fmiDerJacInitialization->sparsePattern->color_index = NULL;
     free(comp->fmiDerJacInitialization->sparsePattern); comp->fmiDerJacInitialization->sparsePattern = NULL;
 
     freeMemory(comp->fmiDerJacInitialization); comp->fmiDerJacInitialization=NULL;
