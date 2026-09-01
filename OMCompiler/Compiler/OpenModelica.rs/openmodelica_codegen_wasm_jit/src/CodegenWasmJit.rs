@@ -6820,6 +6820,25 @@ impl NlsJacPattern {
         sparsity_sanity_check(&self.colptr, &self.rowidx, self.colptr.len() - 1, n)
     }
 
+    /// C's `colorCols`, 0-based. A column the backend left out of the colouring gets
+    /// one of its own.
+    fn color_of_column(&self, n: usize) -> Vec<i32> {
+        let mut of = vec![-1i32; n];
+        for (c, cols) in self.colors.iter().enumerate() {
+            for &col in cols {
+                if let Some(slot) = of.get_mut(col as usize) {
+                    *slot = c as i32;
+                }
+            }
+        }
+        let mut next = self.colors.len() as i32;
+        for slot in of.iter_mut().filter(|s| **s < 0) {
+            *slot = next;
+            next += 1;
+        }
+        of
+    }
+
     /// C keeps a pattern that is not `n × n`; no solver here could use one.
     fn is_square(&self, n: usize) -> bool {
         self.colptr.len() == n + 1 && self.rowidx.iter().all(|&r| (r as usize) < n)
@@ -9364,7 +9383,6 @@ fn collect_nls_jobs(
                     }
                 });
                 let pat = pat.filter(|p| p.is_square(n as usize));
-                let pat = if has_jac { pat } else { None };
                 let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
                 let sparse_default = nnz != 0 && nls_use_sparse(n as usize, nnz as usize);
                 if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
@@ -9379,10 +9397,11 @@ fn collect_nls_jobs(
                 if let Some(p) = &pat {
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
+                    patterns.extend_from_slice(&p.color_of_column(n as usize));
                 }
                 jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport, casual });
                 if nnz != 0 {
-                    pat_off += 4 * (n + 1 + nnz);
+                    pat_off += 4 * (2 * n + 1 + nnz);
                 }
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;

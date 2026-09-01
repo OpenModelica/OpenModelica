@@ -232,10 +232,19 @@ pub struct NlsSpec<'a> {
     pub nominal: &'a [f64],
     /// The `min`/`max` pairs a restart point is held inside.
     pub bounds: &'a [f64],
-    /// `colptr[size+1] ++ rowidx[nnz]`; empty without a pattern.
+    /// `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; empty without a pattern.
+    /// The colours are 0-based, unlike C's.
     pub pattern: &'a [u32],
     /// C's `analyticalJacobianColumn != NULL`.
     pub has_jacobian: bool,
+}
+
+impl NlsSpec<'_> {
+    /// The pattern's `colorCols` tail; empty where the host emitted no colouring.
+    fn colors(&self) -> &[u32] {
+        let base = self.size + 1 + self.nnz as usize;
+        self.pattern.get(base..base + self.size).unwrap_or(&[])
+    }
 }
 
 /// The model side of one nonlinear system: C's `NONLINEAR_SYSTEM_DATA` function
@@ -285,6 +294,10 @@ pub struct NlsRequest<'a> {
     pub eq_index: u32,
     pub time: f64,
     pub has_jacobian: bool,
+    /// C's `colorCols`, 0-based; empty leaves every column its own colour.
+    pub colors: &'a [u32],
+    /// C's `nlsData->max`.
+    pub max: &'a [f64],
 }
 
 /// The nonlinear solvers a runtime supplies beyond the core's own dense ladder:
@@ -3603,7 +3616,9 @@ pub fn solve_nls(
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = solverflags::nls();
-    let sparse = has_jac
+    // C's `initializeNonlinearSystemData` hands a patterned sparse system to KINSOL
+    // whatever `analyticalJacobianColumn` is; `nlsSparseJac` differences the pattern.
+    let sparse = !lambda_unknown
         && nnz != 0
         && backend.has_sparse()
         && match pick {
@@ -3615,6 +3630,8 @@ pub fn solve_nls(
     // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
     let scatter = !sparse && jac_csc;
     let pat: &[u32] = if scatter { spec.pattern } else { &[] };
+    let colors: &[u32] = if lambda_unknown { &[] } else { spec.colors() };
+    let max: alloc::vec::Vec<f64> = bounds.chunks_exact(2).map(|b| b[1]).collect();
     let mut jaceval = |xs: &[f64], fj: &mut [f64]| {
         stat_inc(STAT_NLS_JAC);
         note_jac_eval();
@@ -3840,7 +3857,7 @@ pub fn solve_nls(
                 backend.solve_kinsol_dense(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
                     },
                     &mut load_guess,
                     &mut eval,
@@ -3850,7 +3867,7 @@ pub fn solve_nls(
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,
-                        eq_index, time, has_jacobian: has_jac,
+                        eq_index, time, has_jacobian: has_jac, colors, max: &max,
                     },
                     &mut load_guess,
                     &mut eval,
