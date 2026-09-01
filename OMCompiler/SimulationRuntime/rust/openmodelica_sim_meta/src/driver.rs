@@ -2875,10 +2875,10 @@ fn store_operators_at(
     store_operators(e, sim_data, layout)
 }
 
-/// C's `findRoot`/`findRoot_gb` tail: the pre-event operator history is recorded at
-/// the bracket's *left* end. Storing only at the root leaves both rows of the jump at
-/// the same time, and `delayImpl` then reads the post-event value a step early.
-fn store_operators_left(
+/// C's `findRoot` tail: evaluate at the bracket's left end, record the operator
+/// history and freeze `relationsPre` there. The caller restores the right end
+/// without re-evaluating, so the pre-event row carries the left end's algebraics.
+fn eval_event_left(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
@@ -2886,17 +2886,19 @@ fn store_operators_left(
     time: f64,
     y: &[f64],
 ) -> Result<()> {
-    // Nothing to record: the `relationsPre` this freezes is overwritten by the
-    // discrete update that follows.
-    if !layout.has_history_ops {
-        return Ok(());
-    }
     write_time(e, sim_data, time)?;
     if !y.is_empty() {
         write_f64s(e, states_base, y)?;
     }
-    eval_continuous(e, sim_data, layout)?;
-    store_operators(e, sim_data, layout)?;
+    // As `capture_pre`: a when-model's `functionAlgebraics` runs the discrete update.
+    if layout.has_history_ops || !layout.has_when {
+        eval_continuous(e, sim_data, layout)?;
+    } else {
+        eval_ode(e, sim_data, layout)?;
+    }
+    if layout.has_history_ops {
+        store_operators(e, sim_data, layout)?;
+    }
     update_relations_pre(e, sim_data, layout)
 }
 
@@ -7840,12 +7842,16 @@ impl SolverCore {
                         self.state_events += 1;
                         self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
                     }
-                    if let Some((t_l, y_l)) = self.event_left() {
-                        store_operators_left(e, sim_data, layout, self.states_base, t_l, &y_l)?;
+                    let left = self.event_left();
+                    if let Some((t_l, y_l)) = &left {
+                        eval_event_left(e, sim_data, layout, self.states_base, *t_l, y_l)?;
                         // C restores `time_right`/`states_right`.
                         write_time(e, sim_data, troot)?;
                         self.write_states(e)?;
                     }
+                    // gbode re-evaluates at the root before the pre-event row (C's
+                    // `simulationUpdate`); a fixed-step method's `findRoot` tail does not.
+                    let bisected = left.is_some() && !self.solver_root_finding();
                     if self.solver_root_finding() {
                         store_operators_at(e, sim_data, layout, troot)?;
                     }
@@ -7854,7 +7860,11 @@ impl SolverCore {
                     if let Some(r) = rows.as_deref_mut()
                         && !no_event_emit()
                     {
-                        capture_pre(e, r, sim_data, layout, troot)?;
+                        if bisected {
+                            capture_row(e, r, sim_data, layout)?;
+                        } else {
+                            capture_pre(e, r, sim_data, layout, troot)?;
+                        }
                     }
                     let _ = save_zero_crossings(e, sim_data, layout)?;
                     if defers(troot) {
@@ -8155,7 +8165,7 @@ impl CsDriver {
                     }
                 }
                 if let Some((tleft, tr)) = troot {
-                    store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                    eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
@@ -8513,12 +8523,13 @@ impl Driver for EventsDriver {
                     }
                     if let Some((tleft, tr)) = troot {
                         supersede(e, &mut evaluated);
-                        store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                         log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
+                        eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                        write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
-                            capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
+                            capture_row(e, &mut self.rows, sim_data, layout)?; // pre-event row
                         }
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
