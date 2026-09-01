@@ -44,6 +44,9 @@ roxmltree = "0.21"
 # file with a hand-rolled scanner).
 serde_json = "1"
 libc = "0.2"
+# `variableFilter`, the same POSIX-over-`regex` the omc builtin and the wasm-jit
+# target use -- C compiles it with `regcomp`, which is POSIX-only.
+openmodelica_regex = { path = "../openmodelica_regex" }
 # `dgesv` for the dense linear systems -- the same LAPACK the wasm-jit runtime
 # factors with, so a system gets the same pivot order and `INFO` either way.
 # Without `fortran-abi`: the executable already links the system liblapack, and

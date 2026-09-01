@@ -507,7 +507,7 @@ impl SimEngine for CEngine {
         } else {
             (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
         };
-        let i = ((addr - base) / 4) as i64;
+        let i = ((addr - base) / 4) as c_long;
         if i >= count || arr.is_null() {
             return Err("string slot out of range");
         }

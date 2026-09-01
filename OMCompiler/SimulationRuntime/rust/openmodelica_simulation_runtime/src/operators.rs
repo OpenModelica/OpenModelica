@@ -8,7 +8,7 @@
 //! through these three functions.
 
 use core::cell::UnsafeCell;
-use core::ffi::{c_int, c_uint};
+use core::ffi::{c_int, c_long, c_uint};
 
 use openmodelica_sim_meta::delay::DelayState;
 
@@ -56,7 +56,7 @@ pub extern "C" fn storeDelayedExpression(
     delayMax: f64,
 ) {
     let n = unsafe { (*(*data).modelData).nDelayExpressions };
-    if exprNumber < 0 || exprNumber as i64 >= n {
+    if exprNumber < 0 || exprNumber as c_long >= n {
         crate::throw(
             threadData,
             &format!("storeDelayedExpression: invalid expression number {exprNumber}"),
@@ -77,7 +77,7 @@ pub extern "C" fn delayImpl(
     delayMax: f64,
 ) -> f64 {
     let n = unsafe { (*(*data).modelData).nDelayExpressions };
-    if exprNumber < 0 || exprNumber as i64 >= n {
+    if exprNumber < 0 || exprNumber as c_long >= n {
         crate::throw(threadData, &format!("invalid exprNumber = {exprNumber}"));
     }
     let time = unsafe { (**(*data).localData).timeValue };

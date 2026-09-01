@@ -28,13 +28,14 @@
 /* setjmp/longjmp and va_list formatting for the Rust simulation runtime.
  *
  * Two things Rust cannot express: `setjmp`, whose frame must be a C frame the
- * jump can return into, and `va_copy` around a double `vsnprintf`. Everything
- * else -- including the `omc_assert_*` entry points the generated code names --
- * is Rust; nothing here is exported from the library.
+ * jump can return into, and C varargs. The `omc_assert_*` entry points are
+ * therefore defined here and hand the formatted message to Rust
+ * (src/support.rs); build.rs names them for the linker, since a cdylib exports
+ * only the symbols Rust itself defines.
  *
- * Deliberately includes no OpenModelica header: the one layout it needs comes
- * from Rust as offsets (`omr_td_off_*`, filled from `offset_of!` in abi.rs, which
- * tests/abi_layout.rs checks against the real headers).
+ * Deliberately includes no OpenModelica header: the layouts it needs come from
+ * Rust as offsets (`omr_td_off_*`, filled from `offset_of!` in abi.rs) or, for
+ * `FILE_INFO`, as a copy of the mirror. tests/abi_layout.rs checks both.
  */
 
 #include <setjmp.h>
@@ -82,8 +83,12 @@ void omr_jump(void *threadData, int where) {
   longjmp(*(jmp_buf *)buf, 1);
 }
 
-/* `vsnprintf` into a fresh buffer the caller frees with `omr_free`. */
-char *omr_vformat(const char *msg, va_list ap) {
+/* The `stdout` the generated code and libOpenModelicaRuntimeC buffer through: a
+ * macro over a differently-named object on each libc, so Rust cannot name it. */
+FILE *omr_stdout(void) { return stdout; }
+
+/* `vsnprintf` into a fresh buffer the caller frees. */
+static char *omr_vformat(const char *msg, va_list ap) {
   va_list copy;
   va_copy(copy, ap);
   int n = vsnprintf(NULL, 0, msg, copy);
@@ -94,8 +99,6 @@ char *omr_vformat(const char *msg, va_list ap) {
   vsnprintf(buf, (size_t)n + 1, msg, ap);
   return buf;
 }
-
-void omr_free(void *p) { free(p); }
 
 /* Call `f(data, threadData)` with `threadData`'s simulation jump buffer pointed
  * here, so an assertion inside the model returns control rather than unwinding
@@ -263,4 +266,96 @@ int omr_protected_global(void (*thunk)(void *), void *ctx, void *threadData) {
   }
   TD_PTR(threadData, omr_td_off_global_jumper) = saved_jb;
   return rc;
+}
+
+/* The `omc_assert_*` entry points, split the way C's own
+ * simulation/simulation_omc_assert.c splits them. */
+
+/* Mirrors `FILE_INFO` in src/abi.rs; the entry points take it by value. */
+typedef struct {
+  const char *filename;
+  int lineStart;
+  int colStart;
+  int lineEnd;
+  int colEnd;
+  int readonly;
+} omr_file_info;
+
+void omr_file_info_layout(size_t *out) {
+  out[0] = sizeof(omr_file_info);
+  out[1] = offsetof(omr_file_info, filename);
+  out[2] = offsetof(omr_file_info, lineStart);
+  out[3] = offsetof(omr_file_info, colStart);
+  out[4] = offsetof(omr_file_info, lineEnd);
+  out[5] = offsetof(omr_file_info, colEnd);
+  out[6] = offsetof(omr_file_info, readonly);
+}
+
+/* Rust: report the message, and -- for an assertion -- which buffer to jump to. */
+extern int omr_assert_report(void *threadData, const omr_file_info *info, const char *text);
+extern void omr_assert_warning_report(const omr_file_info *info, const char *text);
+extern void omr_terminate_report(const omr_file_info *info, const char *text);
+
+#ifdef _WIN32
+#define OMR_EXPORT __declspec(dllexport)
+#else
+#define OMR_EXPORT
+#endif
+
+static void omr_va_assert(void *threadData, const omr_file_info *info, const char *msg, va_list ap) {
+  char *text = omr_vformat(msg, ap);
+  int target = omr_assert_report(threadData, info, text ? text : msg);
+  free(text);
+  omr_jump(threadData, target);
+}
+
+static void omr_va_assert_warning(const omr_file_info *info, const char *msg, va_list ap) {
+  char *text = omr_vformat(msg, ap);
+  omr_assert_warning_report(info, text ? text : msg);
+  free(text);
+}
+
+OMR_EXPORT void omc_assert_simulation(void *threadData, omr_file_info info, const char *msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  omr_va_assert(threadData, &info, msg, ap);
+  va_end(ap);
+  abort(); /* omr_jump does not return; silences the noreturn warning */
+}
+
+OMR_EXPORT void omc_assert_simulation_withEquationIndexes(void *threadData, omr_file_info info,
+                                                          const int *indexes, const char *msg, ...) {
+  va_list ap;
+  (void)indexes;
+  va_start(ap, msg);
+  omr_va_assert(threadData, &info, msg, ap);
+  va_end(ap);
+  abort();
+}
+
+OMR_EXPORT void omc_assert_warning_simulation(omr_file_info info, const char *msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+  omr_va_assert_warning(&info, msg, ap);
+  va_end(ap);
+}
+
+OMR_EXPORT void omc_assert_warning_simulation_withEquationIndexes(omr_file_info info,
+                                                                  const int *indexes,
+                                                                  const char *msg, ...) {
+  va_list ap;
+  (void)indexes;
+  va_start(ap, msg);
+  omr_va_assert_warning(&info, msg, ap);
+  va_end(ap);
+}
+
+OMR_EXPORT void omc_terminate_simulation(omr_file_info info, const char *msg, ...) {
+  va_list ap;
+  char *text;
+  va_start(ap, msg);
+  text = omr_vformat(msg, ap);
+  va_end(ap);
+  omr_terminate_report(&info, text ? text : msg);
+  free(text);
 }

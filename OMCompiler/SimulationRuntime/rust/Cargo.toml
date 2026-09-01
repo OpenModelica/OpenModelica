@@ -29,6 +29,7 @@ exclude = [
   "openmodelica_mat_writer",
   "openmodelica_nls",
   "openmodelica_plt_writer",
+  "openmodelica_regex",
   "openmodelica_sim_meta",
   "openmodelica_simulation_runtime",
   "openmodelica_solvers",

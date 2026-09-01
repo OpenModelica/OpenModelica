@@ -397,17 +397,17 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
 
     array_index_maps(md, si);
 
-    md.nStates = unsafe { *si.realVarsIndex.add(md.nStatesArray as usize) } as i64;
-    md.nVariablesReal = unsafe { *si.realVarsIndex.add(md.nVariablesRealArray as usize) } as i64;
-    md.nVariablesInteger = unsafe { *si.integerVarsIndex.add(md.nVariablesIntegerArray as usize) } as i64;
-    md.nVariablesBoolean = unsafe { *si.booleanVarsIndex.add(md.nVariablesBooleanArray as usize) } as i64;
-    md.nVariablesString = unsafe { *si.stringVarsIndex.add(md.nVariablesStringArray as usize) } as i64;
-    md.nParametersReal = unsafe { *si.realParamsIndex.add(md.nParametersRealArray as usize) } as i64;
+    md.nStates = unsafe { *si.realVarsIndex.add(md.nStatesArray as usize) } as c_long;
+    md.nVariablesReal = unsafe { *si.realVarsIndex.add(md.nVariablesRealArray as usize) } as c_long;
+    md.nVariablesInteger = unsafe { *si.integerVarsIndex.add(md.nVariablesIntegerArray as usize) } as c_long;
+    md.nVariablesBoolean = unsafe { *si.booleanVarsIndex.add(md.nVariablesBooleanArray as usize) } as c_long;
+    md.nVariablesString = unsafe { *si.stringVarsIndex.add(md.nVariablesStringArray as usize) } as c_long;
+    md.nParametersReal = unsafe { *si.realParamsIndex.add(md.nParametersRealArray as usize) } as c_long;
     md.nParametersInteger =
-        unsafe { *si.integerParamsIndex.add(md.nParametersIntegerArray as usize) } as i64;
+        unsafe { *si.integerParamsIndex.add(md.nParametersIntegerArray as usize) } as c_long;
     md.nParametersBoolean =
-        unsafe { *si.booleanParamsIndex.add(md.nParametersBooleanArray as usize) } as i64;
-    md.nParametersString = unsafe { *si.stringParamsIndex.add(md.nParametersStringArray as usize) } as i64;
+        unsafe { *si.booleanParamsIndex.add(md.nParametersBooleanArray as usize) } as c_long;
+    md.nParametersString = unsafe { *si.stringParamsIndex.add(md.nParametersStringArray as usize) } as c_long;
     md.nAliasReal = md.nAliasRealArray;
     md.nAliasInteger = md.nAliasIntegerArray;
     md.nAliasBoolean = md.nAliasBooleanArray;
@@ -473,7 +473,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.mathEventsValuePre = calloc((md.nMathEvents as usize).max(1));
     si.zeroCrossingIndex = calloc(n_zc.max(1));
     for i in 0..n_zc {
-        unsafe { *si.zeroCrossingIndex.add(i) = i as i64 };
+        unsafe { *si.zeroCrossingIndex.add(i) = i as c_long };
     }
     si.states_left = calloc(n_states.max(1));
     si.states_right = calloc(n_states.max(1));
@@ -911,7 +911,7 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
         }
     }
 
-    let index = |data: *const u8, stride: usize, n: i64| -> *mut usize {
+    let index = |data: *const u8, stride: usize, n: c_long| -> *mut usize {
         let out: *mut usize = calloc(n as usize + 1);
         let mut acc = 0usize;
         unsafe {
@@ -924,7 +924,7 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
         }
         out
     };
-    let identity = |n: i64| -> *mut usize {
+    let identity = |n: c_long| -> *mut usize {
         let out: *mut usize = calloc(n as usize + 1);
         for i in 0..=n as usize {
             unsafe { *out.add(i) = i };
@@ -945,7 +945,7 @@ fn array_index_maps(md: &mut MODEL_DATA, si: &mut SIMULATION_INFO) {
     si.booleanAliasIndex = identity(md.nAliasBooleanArray);
     si.stringAliasIndex = identity(md.nAliasStringArray);
 
-    let reverse = |vars_index: *const usize, n_array: i64| -> *mut array_index_t {
+    let reverse = |vars_index: *const usize, n_array: c_long| -> *mut array_index_t {
         let total = if n_array > 0 { unsafe { *vars_index.add(n_array as usize) } } else { 0 };
         let out: *mut array_index_t = calloc(total.max(1));
         for a in 0..n_array as usize {
@@ -983,7 +983,7 @@ fn calculate_length(dim: &mut DIMENSION_INFO, md: &MODEL_DATA) -> usize {
             let mut found = None;
             for i in 0..md.nParametersIntegerArray as usize {
                 let p = unsafe { &*md.integerParameterData.add(i) };
-                if p.info.id as i64 == d.valueReference {
+                if p.info.id as modelica_integer == d.valueReference {
                     found = Some(p.attribute.start);
                     break;
                 }

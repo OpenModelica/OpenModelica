@@ -7,7 +7,7 @@
 //! the same defaults and the same ordering (`rSta`, `rDer`, `rAlg`, then the
 //! parameters), so a model sees identical `modelData` under either runtime.
 
-use core::ffi::{c_char, c_int, c_void};
+use core::ffi::{c_char, c_int, c_long, c_void};
 use std::collections::HashMap;
 
 use crate::abi::*;
@@ -118,7 +118,7 @@ pub fn read_real(s: &str, default: f64) -> f64 {
 
 /// C's `read_value_long`, an `atol`: the leading integer of the text, so an
 /// Integer written as `2.0` reads 2 and anything else 0.
-pub fn read_long(s: &str, default: c_long_t) -> c_long_t {
+pub fn read_long(s: &str, default: modelica_integer) -> modelica_integer {
     match s {
         "" => default,
         "true" => 1,
@@ -140,13 +140,12 @@ pub fn read_bool(s: &str) -> c_int {
     (s == "true" || s == "1") as c_int
 }
 
-type c_long_t = core::ffi::c_long;
 
 /// C's `REAL_MIN`/`REAL_MAX` attribute defaults.
 const REAL_MIN: f64 = -f64::MAX;
 const REAL_MAX: f64 = f64::MAX;
-const INTEGER_MIN: c_long_t = c_long_t::MIN / 2;
-const INTEGER_MAX: c_long_t = c_long_t::MAX / 2;
+const INTEGER_MIN: modelica_integer = modelica_integer::MIN / 2;
+const INTEGER_MAX: modelica_integer = modelica_integer::MAX / 2;
 
 // ---------------------------------------------------------------------------
 // Allocation helpers.
@@ -431,23 +430,23 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
 
 /// `read_model_description_sizes`: the array-variable counts.
 pub fn read_sizes(xml: &InitXml, md: &mut MODEL_DATA) {
-    md.nStatesArray = read_long(xml.md("numberOfContinuousStates"), 0);
-    let n_alg = read_long(xml.md("numberOfRealAlgebraicVariables"), 0);
+    md.nStatesArray = read_long(xml.md("numberOfContinuousStates"), 0) as c_long;
+    let n_alg = read_long(xml.md("numberOfRealAlgebraicVariables"), 0) as c_long;
     md.nVariablesRealArray = 2 * md.nStatesArray + n_alg;
-    md.nAliasRealArray = read_long(xml.md("numberOfRealAlgebraicAliasVariables"), 0);
-    md.nParametersRealArray = read_long(xml.md("numberOfRealParameters"), 0);
+    md.nAliasRealArray = read_long(xml.md("numberOfRealAlgebraicAliasVariables"), 0) as c_long;
+    md.nParametersRealArray = read_long(xml.md("numberOfRealParameters"), 0) as c_long;
 
-    md.nParametersIntegerArray = read_long(xml.md("numberOfIntegerParameters"), 0);
-    md.nVariablesIntegerArray = read_long(xml.md("numberOfIntegerAlgebraicVariables"), 0);
-    md.nAliasIntegerArray = read_long(xml.md("numberOfIntegerAliasVariables"), 0);
+    md.nParametersIntegerArray = read_long(xml.md("numberOfIntegerParameters"), 0) as c_long;
+    md.nVariablesIntegerArray = read_long(xml.md("numberOfIntegerAlgebraicVariables"), 0) as c_long;
+    md.nAliasIntegerArray = read_long(xml.md("numberOfIntegerAliasVariables"), 0) as c_long;
 
-    md.nParametersBooleanArray = read_long(xml.md("numberOfBooleanParameters"), 0);
-    md.nVariablesBooleanArray = read_long(xml.md("numberOfBooleanAlgebraicVariables"), 0);
-    md.nAliasBooleanArray = read_long(xml.md("numberOfBooleanAliasVariables"), 0);
+    md.nParametersBooleanArray = read_long(xml.md("numberOfBooleanParameters"), 0) as c_long;
+    md.nVariablesBooleanArray = read_long(xml.md("numberOfBooleanAlgebraicVariables"), 0) as c_long;
+    md.nAliasBooleanArray = read_long(xml.md("numberOfBooleanAliasVariables"), 0) as c_long;
 
-    md.nParametersStringArray = read_long(xml.md("numberOfStringParameters"), 0);
-    md.nVariablesStringArray = read_long(xml.md("numberOfStringAlgebraicVariables"), 0);
-    md.nAliasStringArray = read_long(xml.md("numberOfStringAliasVariables"), 0);
+    md.nParametersStringArray = read_long(xml.md("numberOfStringParameters"), 0) as c_long;
+    md.nVariablesStringArray = read_long(xml.md("numberOfStringAlgebraicVariables"), 0) as c_long;
+    md.nAliasStringArray = read_long(xml.md("numberOfStringAliasVariables"), 0) as c_long;
 }
 
 /// `read_experiment`: the `<DefaultExperiment>` settings, which the command line
@@ -461,7 +460,7 @@ pub fn read_experiment(xml: &InitXml, si: &mut SIMULATION_INFO) {
     si.outputFormat = strdup(xml.experiment("outputFormat"));
     si.variableFilter = strdup(xml.experiment("variableFilter"));
     si.numSteps = if si.stepSize > 0.0 {
-        ((si.stopTime - si.startTime) / si.stepSize).round() as c_long_t
+        ((si.stopTime - si.startTime) / si.stepSize).round() as modelica_integer
     } else {
         0
     };
@@ -573,20 +572,19 @@ pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases
     if pattern == "^(.*)$" {
         return;
     }
-    let Ok(c_pattern) = std::ffi::CString::new(pattern.clone()) else { return };
-    let mut re: libc::regex_t = unsafe { core::mem::zeroed() };
-    let rc = unsafe { libc::regcomp(&mut re, c_pattern.as_ptr(), libc::REG_EXTENDED) };
-    if rc != 0 {
-        let mut buf = [0 as c_char; 2048];
-        unsafe { libc::regerror(rc, &re, buf.as_mut_ptr(), buf.len()) };
-        let err = unsafe { core::ffi::CStr::from_ptr(buf.as_ptr()) }.to_string_lossy();
-        eprintln!(
-            "Failed to compile regular expression: {pattern} with error: {err}. Defaulting to outputting all variables."
-        );
-        return;
-    }
+    let re = match openmodelica_regex::Regex::new(&pattern) {
+        Ok(re) => re,
+        Err(err) => {
+            eprintln!(
+                "Failed to compile regular expression: {pattern} with error: {err}. Defaulting to outputting all variables."
+            );
+            return;
+        }
+    };
+    // A name the model description could not decode is one no pattern matches.
     let dropped = |name: *const c_char| -> modelica_boolean {
-        (unsafe { libc::regexec(&re, name, 0, core::ptr::null_mut(), 0) } != 0) as modelica_boolean
+        let name = unsafe { core::ffi::CStr::from_ptr(name) };
+        !name.to_str().is_ok_and(|n| re.is_match(n)) as modelica_boolean
     };
     macro_rules! filter_group {
         ($n:expr, $vars:expr, $n_alias:expr, $aliases:expr, $params:expr) => {{
@@ -641,5 +639,4 @@ pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases
         md.stringAlias,
         md.stringParameterData
     );
-    unsafe { libc::regfree(&mut re) };
 }

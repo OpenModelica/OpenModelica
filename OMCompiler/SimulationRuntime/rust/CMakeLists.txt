@@ -45,7 +45,32 @@ else()
   set(_simrt_profile_dir debug)
 endif()
 
-set(_simrt_so ${_simrt_target_dir}/${_simrt_profile_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}SimulationRuntimeRust${CMAKE_SHARED_LIBRARY_SUFFIX})
+# Cross-compiling (RUST_OMC_TARGET, as the omc's own cross build uses): cargo
+# needs a driver that knows the target's toolchain, and the same MSVC/macOS SDK
+# the C libraries here were built against.
+set(_simrt_cargo_cmd build)
+set(_simrt_target_flag "")
+set(_simrt_artifact_subdir ${_simrt_profile_dir})
+if(RUST_OMC_TARGET)
+  set(_simrt_target_flag --target ${RUST_OMC_TARGET})
+  set(_simrt_artifact_subdir ${RUST_OMC_TARGET}/${_simrt_profile_dir})
+  if(RUST_OMC_TARGET MATCHES "windows-msvc$")
+    set(_simrt_cargo_cmd xwin build)
+  elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
+    set(_simrt_cargo_cmd zigbuild)
+    # Both cargo-zigbuild and build.rs read the SDK from SDKROOT; handed over
+    # below, where _simrt_env exists.
+    set(_simrt_sdkroot ${CMAKE_OSX_SYSROOT})
+  else()
+    message(WARNING
+      "RUST_OMC_TARGET=${RUST_OMC_TARGET}: libSimulationRuntimeRust will be built "
+      "with a plain `cargo build --target`, which needs a linker for that target "
+      "on PATH. Only *-windows-msvc (cargo-xwin) and *-apple-darwin "
+      "(cargo-zigbuild) are wired.")
+  endif()
+endif()
+
+set(_simrt_so ${_simrt_target_dir}/${_simrt_artifact_subdir}/${CMAKE_SHARED_LIBRARY_PREFIX}SimulationRuntimeRust${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 # The headers tests/abi_layout.rs compiles to check the ABI mirror against the
 # real `simulation_data.h`; the test cannot find them from a mirrored working
@@ -54,6 +79,9 @@ set(_simrt_so ${_simrt_target_dir}/${_simrt_profile_dir}/${CMAKE_SHARED_LIBRARY_
 set(_simrt_headers "${CMAKE_CURRENT_SOURCE_DIR}/../c|${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/gc/include")
 
 set(_simrt_env ${CMAKE_COMMAND} -E env "OMC_SIMRT_INCLUDE_DIRS=${_simrt_headers}")
+if(_simrt_sdkroot)
+  list(APPEND _simrt_env "SDKROOT=${_simrt_sdkroot}")
+endif()
 # The archives native_solver_archives.cmake collected, so the driver gets
 # CVODE/IDA. Both or neither: openmodelica_solvers' build script needs the index
 # size whenever the archive directory is given.
@@ -81,11 +109,27 @@ if(TARGET primme)
        "OMC_PRIMME_INCLUDE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/primme-3.2.3/include")
 endif()
 
+# libOpenModelicaRuntimeC, which owns the state both runtimes share with the
+# generated code (see build.rs). libSimulationRuntimeC links it too.
+if(TARGET OpenModelicaRuntimeC)
+  list(APPEND _simrt_env "OMC_RUNTIME_C_DIR=$<TARGET_FILE_DIR:OpenModelicaRuntimeC>")
+  # A static archive (MSVC) carries none of its own dependencies, so name them
+  # too. `|`-separated: a `;` would split the env assignment into arguments.
+  get_target_property(_simrt_rtc_type OpenModelicaRuntimeC TYPE)
+  if(_simrt_rtc_type STREQUAL "STATIC_LIBRARY")
+    set(_simrt_rtc_link "$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>|$<TARGET_LINKER_FILE:omcgc>")
+    if(TARGET PThreads4W::PThreads4W)
+      string(APPEND _simrt_rtc_link "|$<TARGET_LINKER_FILE:PThreads4W::PThreads4W>")
+    endif()
+    list(APPEND _simrt_env "OMC_RUNTIME_C_LINK=${_simrt_rtc_link}")
+  endif()
+endif()
+
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
   JOB_SERVER_AWARE TRUE
-  COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} build --target-dir ${_simrt_target_dir}
-          ${_simrt_profile_flag} -p openmodelica_simulation_runtime
+  COMMAND ${_simrt_env} ${CARGO_EXECUTABLE} ${_simrt_cargo_cmd} --target-dir ${_simrt_target_dir}
+          ${_simrt_target_flag} ${_simrt_profile_flag} -p openmodelica_simulation_runtime
   BYPRODUCTS ${_simrt_so}
   COMMENT "Rust: building libSimulationRuntimeRust (${OM_RUST_SIM_RUNTIME_PROFILE})"
   VERBATIM)
@@ -100,6 +144,9 @@ if(TARGET rust_ipopt_native_collect)
 endif()
 if(TARGET primme)
   add_dependencies(SimulationRuntimeRust primme)
+endif()
+if(TARGET OpenModelicaRuntimeC)
+  add_dependencies(SimulationRuntimeRust OpenModelicaRuntimeC)
 endif()
 
 install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)

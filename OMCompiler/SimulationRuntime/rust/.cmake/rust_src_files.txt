@@ -33,6 +33,8 @@ openmodelica_nls/src/nls_c_trace.rs
 openmodelica_nls/src/primme_svds.c
 openmodelica_plt_writer/Cargo.toml
 openmodelica_plt_writer/src/lib.rs
+openmodelica_regex/Cargo.toml
+openmodelica_regex/src/lib.rs
 openmodelica_sim_meta/Cargo.toml
 openmodelica_sim_meta/build.rs
 openmodelica_sim_meta/gen_tableau.py
@@ -110,5 +112,4 @@ openmodelica_solvers/src/sundials.rs
 openmodelica_solvers/src/sundials_ode.rs
 openmodelica_solvers/src/symsolver.rs
 openmodelica_solvers/src/sysstat.rs
-rust-toolchain.toml
 src/lib.rs

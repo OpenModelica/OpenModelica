@@ -7274,6 +7274,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_regex"
+version = "0.1.0"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "openmodelica_revision"
 version = "0.1.0"
 
@@ -7378,6 +7385,7 @@ dependencies = [
  "openmodelica_mat_writer",
  "openmodelica_nls",
  "openmodelica_plt_writer",
+ "openmodelica_regex",
  "openmodelica_sim_meta",
  "openmodelica_solvers",
  "roxmltree",
@@ -7435,10 +7443,10 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_fmi",
  "openmodelica_lapack",
+ "openmodelica_regex",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
  "rayon",
- "regex",
  "roxmltree",
  "zip",
  "zmq",

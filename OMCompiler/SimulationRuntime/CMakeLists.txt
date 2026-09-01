@@ -32,14 +32,17 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
   if(NOT MSVC)
     omc_add_subdirectory(OMSI)
     omc_add_subdirectory(OMSIC)
-    omc_add_subdirectory(OMSICpp)
+    # The C++ OMSI runtime: same OMCpp* libraries and Boost as cpp/ above.
+    if(OM_OMC_ENABLE_CPP_RUNTIME)
+      omc_add_subdirectory(OMSICpp)
+    endif()
   endif()
 
   # omc_add_subdirectory(opc)
 
   # ParModelica
   # Disable for MSVC. There are some issues with Boost which need to be fixed.
-  if(NOT MSVC)
+  if(NOT MSVC AND OM_OMC_ENABLE_PARMODELICA)
     omc_add_subdirectory(ParModelica)
   endif()
 endif()

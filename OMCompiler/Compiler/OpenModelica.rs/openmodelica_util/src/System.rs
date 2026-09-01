@@ -19,6 +19,10 @@
 
 #![allow(non_snake_case)]
 
+use openmodelica_regex::{posix_to_rust, regex_builder};
+/// Re-exported so the wasm-jit codegen keeps naming it `System::Regex`.
+pub use openmodelica_regex::Regex;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -243,116 +247,6 @@ pub fn regex(
             }
             (nmatch, list_forward(items))
         }
-    }
-}
-
-/// Translate a POSIX regular expression into the syntax the `regex` crate
-/// accepts, reconciling the two main incompatibilities so matches behave like
-/// the C runtime's `regcomp`/`regexec`:
-///
-///   * BRE (`extended == false`): the grouping/quantifier metacharacters are the
-///     *escaped* forms (`\(`, `\)`, `\{`, `\}`, plus the GNU extensions `\+`,
-///     `\?`, `\|`) while their bare forms are literal — the reverse of ERE/the
-///     crate. Swap them. (ERE passes through, since the crate's syntax is ERE
-///     plus extensions.)
-///   * Bracket expressions: POSIX treats a leading `]` and a bare `[` as
-///     ordinary members, but the crate requires both escaped (`[\]]`, `[\[]`).
-///     `[:class:]`/`[.coll.]`/`[=eq=]` are copied to their own close so an inner
-///     `]` doesn't end the class early.
-///
-/// Backreferences (`\1`…) aren't supported by the crate and don't occur in OMC's
-/// patterns; a literal backslash inside a bracket expression (POSIX-literal, but
-/// an escape to the crate) likewise doesn't occur and is left as-is.
-fn posix_to_rust(re: &str, extended: bool) -> String {
-    let mut out = String::with_capacity(re.len() + 8);
-    let mut chars = re.chars().peekable();
-    while let Some(c) = chars.next() {
-        match c {
-            '\\' => match chars.next() {
-                // In BRE these escapes are the operators; emit the bare form.
-                Some(m @ ('(' | ')' | '{' | '}' | '+' | '?' | '|')) if !extended => out.push(m),
-                // Any other escape (and all escapes in ERE) carry over verbatim.
-                Some(other) => {
-                    out.push('\\');
-                    out.push(other);
-                }
-                None => out.push('\\'),
-            },
-            // Bare operators are literal in BRE: escape them for the crate.
-            '(' | ')' | '{' | '}' | '+' | '?' | '|' if !extended => {
-                out.push('\\');
-                out.push(c);
-            }
-            '[' => {
-                out.push('[');
-                if chars.peek() == Some(&'^') {
-                    out.push(chars.next().unwrap());
-                }
-                // A leading ']' is a literal member; the crate needs it escaped.
-                if chars.peek() == Some(&']') {
-                    chars.next();
-                    out.push_str("\\]");
-                }
-                while let Some(c2) = chars.next() {
-                    if c2 == '[' && matches!(chars.peek(), Some(':' | '.' | '=')) {
-                        // POSIX [:class:] / [.coll.] / [=eq=]: copy to its close.
-                        out.push('[');
-                        let kind = chars.next().unwrap();
-                        out.push(kind);
-                        while let Some(c3) = chars.next() {
-                            out.push(c3);
-                            if c3 == kind && chars.peek() == Some(&']') {
-                                out.push(chars.next().unwrap());
-                                break;
-                            }
-                        }
-                    } else if c2 == '[' {
-                        // A bare '[' is a literal member to POSIX; escape it.
-                        out.push_str("\\[");
-                    } else {
-                        out.push(c2);
-                        if c2 == ']' {
-                            break;
-                        }
-                    }
-                }
-            }
-            _ => out.push(c),
-        }
-    }
-    out
-}
-
-/// The builder every pattern is compiled with, already translated by
-/// [`posix_to_rust`]. The C runtime passes no `REG_NEWLINE`, so `.` matches
-/// newline too and `^`/`$` anchor the whole subject (`multi_line` stays off).
-/// POSIX bounds a pattern only by memory, so the crate's fixed 10 MB/2 MB
-/// budgets scale with it instead — both are too small for a pattern naming every
-/// variable of a large model, the DFA cache disastrously so.
-fn regex_builder(pattern: &str) -> regex::RegexBuilder {
-    let budget = pattern.len().saturating_mul(512);
-    let mut b = regex::RegexBuilder::new(pattern);
-    b.dot_matches_new_line(true).size_limit(budget.max(10 << 20)).dfa_size_limit(budget.max(2 << 20));
-    b
-}
-
-/// A compiled POSIX ERE, so one pattern can be tested against many strings
-/// ([`regex`] compiles per call).
-pub struct Regex {
-    re: regex::Regex,
-}
-
-impl Regex {
-    /// No captures (`REG_NOSUB`); the error is the backend's own message.
-    pub fn new(re: &str) -> Result<Self, String> {
-        regex_builder(&posix_to_rust(re, true))
-            .build()
-            .map(|re| Regex { re })
-            .map_err(|e| e.to_string())
-    }
-
-    pub fn is_match(&self, s: &str) -> bool {
-        self.re.is_match(s)
     }
 }
 

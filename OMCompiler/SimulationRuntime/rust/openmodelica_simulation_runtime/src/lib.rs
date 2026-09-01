@@ -6,10 +6,6 @@
 //! a [`SimEngine`](openmodelica_sim_meta::driver::SimEngine) that calls the model
 //! through `data->callback` (src/engine.rs).
 
-// The `omc_assert_*` entry points the generated code names are printf-style
-// variadics; only a `c_variadic` definition can carry their arguments to
-// `vsnprintf` with C's own formatting.
-#![feature(c_variadic)]
 #![allow(non_snake_case)]
 
 pub mod abi;
