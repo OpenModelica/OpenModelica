@@ -19,6 +19,21 @@ set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/Utilities.cpp
+                      Util/PersistentStorage.cpp
+                      Cloud/CloudTypes.cpp
+                      Cloud/CloudConfig.cpp
+                      Cloud/CloudAccount.cpp
+                      Cloud/CloudProvider.cpp
+                      Cloud/GoogleDriveProvider.cpp
+                      Cloud/OneDriveProvider.cpp
+                      Cloud/CloudManifest.cpp
+                      Cloud/CloudMount.cpp
+                      Cloud/CloudCache.cpp
+                      Cloud/CloudSyncEngine.cpp
+                      Cloud/CloudBrowserDialog.cpp
+                      Cloud/CloudConflictDialog.cpp
+                      Cloud/OAuth2Client.cpp
+                      Cloud/OAuth2RedirectLoopback.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
                       Util/DirectoryOrFileSelector.cpp
@@ -153,6 +168,21 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       resource_omedit.qrc)
 
 set(OMEDITLIB_HEADERS Util/Helper.h
+                      Util/PersistentStorage.h
+                      Cloud/CloudTypes.h
+                      Cloud/CloudConfig.h
+                      Cloud/CloudAccount.h
+                      Cloud/CloudProvider.h
+                      Cloud/GoogleDriveProvider.h
+                      Cloud/OneDriveProvider.h
+                      Cloud/CloudManifest.h
+                      Cloud/CloudMount.h
+                      Cloud/CloudCache.h
+                      Cloud/CloudSyncEngine.h
+                      Cloud/CloudBrowserDialog.h
+                      Cloud/CloudConflictDialog.h
+                      Cloud/OAuth2Client.h
+                      Cloud/OAuth2Redirect.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h

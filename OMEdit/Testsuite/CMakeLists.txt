@@ -46,6 +46,14 @@ set(OMEDIT_TEST_BROWSEMSL_SOURCES BrowseMSL/BrowseMSL.cpp
                                   BrowseMSL/BrowseMSL.h)
 add_omedit_test(BrowseMSL "${OMEDIT_TEST_BROWSEMSL_SOURCES}")
 
+# Pure: the three-way sync planner and the manifest, with no network or provider.
+set(OMEDIT_TEST_CLOUD_SOURCES Cloud/CloudSyncPlanTest.cpp)
+add_omedit_test(CloudSyncPlan "${OMEDIT_TEST_CLOUD_SOURCES}")
+
+# The sync engine end to end, against an in-memory provider.
+set(OMEDIT_TEST_CLOUD_ENGINE_SOURCES Cloud/CloudSyncEngineTest.cpp)
+add_omedit_test(CloudSyncEngine "${OMEDIT_TEST_CLOUD_ENGINE_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")

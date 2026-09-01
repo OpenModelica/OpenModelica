@@ -47,6 +47,7 @@
 #include "Modeling/ItemDelegate.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
+#include "Cloud/CloudMount.h"
 #endif
 
 #include <QApplication>
@@ -1340,7 +1341,10 @@ void SaveTotalFileDialog::saveTotalModel()
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
 #if defined(__EMSCRIPTEN__)
-    WasmLocalFiles::download(fileName);
+    // Uploaded by the sync engine when it is inside a cloud mount.
+    if (!isInsideCloudMount(fileName)) {
+      WasmLocalFiles::download(fileName);
+    }
 #endif
     accept();
   }

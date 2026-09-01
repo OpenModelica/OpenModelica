@@ -43,6 +43,14 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "Cloud/CloudTypes.h"
+#include "Cloud/CloudAccount.h"
+#include "Cloud/CloudBrowserDialog.h"
+#include "Cloud/CloudCache.h"
+#include "Cloud/CloudConflictDialog.h"
+#include "Cloud/CloudMount.h"
+#include "Cloud/CloudProvider.h"
+#include "Cloud/CloudSyncEngine.h"
 #include "Search/FindUsageWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -458,7 +466,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
-  // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActionsAndList();
   updateRecentModelActionsAndList();
@@ -1662,7 +1669,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported <b>%1</b>.").arg(fmuFileName),
                                                             Helper::scriptingKind, Helper::notificationLevel));
 #if defined(__EMSCRIPTEN__)
-      if (!WasmLocalFiles::download(fmuFileName)) {
+      if (!isInsideCloudMount(fmuFileName) && !WasmLocalFiles::download(fmuFileName)) {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Could not read the exported FMU <b>%1</b>.").arg(fmuFileName),
                                                               Helper::scriptingKind, Helper::errorLevel));
       }
@@ -2640,7 +2647,7 @@ void MainWindow::openRecentFile()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     QStringList dataList = pAction->data().toStringList();
-    mpLibraryWidget->openFile(dataList.at(0), dataList.at(1), true, true);
+    openFileFetchingFromCloud(dataList.at(0), dataList.at(1));
   }
 }
 
@@ -2682,6 +2689,39 @@ void MainWindow::showRecentModel(const QString &nameStructure, const QString &en
                                                           tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
+}
+
+/*!
+ * \brief MainWindow::openFileFetchingFromCloud
+ * Opens a file, bringing its cloud folder down first if it is not there yet.
+ *
+ * A path inside a mount can be perfectly good and still not exist: on the web
+ * target the working copy is in memory, so after a reload the recent files point
+ * at packages that have to be fetched before they can be opened.
+ */
+void MainWindow::openFileFetchingFromCloud(const QString &fileName, const QString &encoding)
+{
+  const CloudMount mount = CloudMountManager::instance()->mountForPath(fileName);
+  if (!mount.isValid() || QFile::exists(fileName)) {
+    mpLibraryWidget->openFile(fileName, encoding, true, true);
+    return;
+  }
+  CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+  if (!pAccount || !pAccount->isSignedIn()) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("%1 is in the cloud folder %2. Sign in to that account to open it.")
+                                 .arg(fileName, mount.remoteName));
+    return;
+  }
+  syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, fileName, encoding]() {
+    if (QFile::exists(fileName)) {
+      mpLibraryWidget->openFile(fileName, encoding, true, true);
+      return;
+    }
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 is no longer in the cloud folder.").arg(fileName),
+                    Helper::scriptingKind, Helper::errorLevel));
+  });
 }
 
 /*!
@@ -4451,6 +4491,14 @@ void MainWindow::createActions()
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
   connect(mpOpenDirectoryAction, SIGNAL(triggered()), SLOT(openDirectory()));
+  // open from cloud storage action
+  mpOpenFromCloudAction = new QAction(tr("Open from Cloud Storage..."), this);
+  mpOpenFromCloudAction->setStatusTip(tr("Opens a package stored in Google Drive or OneDrive"));
+  connect(mpOpenFromCloudAction, SIGNAL(triggered()), SLOT(openFromCloud()));
+  // save to cloud storage action
+  mpSaveToCloudAction = new QAction(tr("Save to Cloud Storage..."), this);
+  mpSaveToCloudAction->setStatusTip(tr("Saves the active class to Google Drive or OneDrive"));
+  connect(mpSaveToCloudAction, SIGNAL(triggered()), SLOT(saveToCloud()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -4929,9 +4977,11 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpUnloadAllAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
+  mpFileMenu->addAction(mpOpenFromCloudAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpSaveAction);
   mpFileMenu->addAction(mpSaveAsAction);
+  mpFileMenu->addAction(mpSaveToCloudAction);
   //menuFile->addAction(saveAllAction);
   mpFileMenu->addAction(mpSaveTotalAction);
   mpFileMenu->addSeparator();
@@ -5978,4 +6028,375 @@ bool MessageTab::eventFilter(QObject *pObject, QEvent *pEvent)
     }
   }
   return QObject::eventFilter(pObject, pEvent);
+}
+
+/*!
+ * \brief MainWindow::openFromCloud
+ * Mounts a cloud folder as a local working copy, brings its contents down, and
+ * opens it like any other package - everything downstream sees an ordinary path.
+ *
+ * Nothing here uses QDialog::exec() or a nested QEventLoop, and it must stay that
+ * way: on the WebAssembly build a nested event loop parks the main thread inside
+ * Asyncify, and network replies are never delivered to it - the request completes
+ * in the browser and the finished handler simply never runs. Dialogs are opened
+ * with open() and the flow continues in signal handlers.
+ */
+void MainWindow::openFromCloud()
+{
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::OpenFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+    // Remembered before the dialog goes away: a chosen file is opened on its own
+    // once its folder has come down.
+    const QString chosenFile = pBrowser->selectedFileName();
+    syncMount(mount, pAccount, tr("Fetching %1...").arg(mount.remoteName), [this, mount, chosenFile]() {
+      if (!chosenFile.isEmpty()) {
+        mpLibraryWidget->openFile(mount.localRoot + QLatin1Char('/') + chosenFile, Helper::utf8, true);
+        return;
+      }
+      openMountContents(mount);
+    });
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief Forget where the children were last saved.
+ *
+ * saveModelicaLibraryTreeItemFolder() reuses a child's existing path whenever
+ * isFilePathValid(), so without this a package's subpackages are written back to
+ * wherever they came from rather than into the folder being saved to. Cleared,
+ * each child's path is derived from its parent's, which is what puts the whole
+ * package under the new root.
+ */
+static void forgetChildFileNames(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    LibraryTreeItem *pChild = pLibraryTreeItem->child(i);
+    pChild->setFileName(QString());
+    pChild->setIsSaved(false);
+    forgetChildFileNames(pChild);
+  }
+}
+
+/*!
+ * \brief MainWindow::saveToCloud
+ * Saves the selected class into a new cloud folder and leaves it mounted, so that
+ * later saves go to the same place.
+ *
+ * The class is written to the working copy with the ordinary save path first -
+ * so package.mo, package.order and any subpackages are laid out exactly as they
+ * would be on disk - and the sync engine then pushes that tree. Nothing here
+ * knows how to upload a Modelica package; it only knows how to put one on a
+ * filesystem and let the engine mirror it.
+ *
+ * Like openFromCloud(), no exec() and no nested event loop: see the comment there.
+ */
+void MainWindow::saveToCloud()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  LibraryTreeItem *pActiveItem = pModelWidget ? pModelWidget->getLibraryTreeItem() : 0;
+  if (!pActiveItem || pActiveItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Open a Modelica class first; it is the active class that gets saved."));
+    return;
+  }
+  // Saving a class inside a package saves the whole package - that is what
+  // LibraryWidget::saveLibraryTreeItem() does with a non-top-level item - so the
+  // top-level class is what has to be redirected to the cloud folder. Redirecting
+  // the active child instead left the package saving to its old location while a
+  // stray file for the child appeared in the mount.
+  LibraryTreeItem *pLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pActiveItem);
+
+  CloudBrowserDialog *pBrowser = new CloudBrowserDialog(CloudBrowserDialog::SaveFolder, this);
+  pBrowser->setAttribute(Qt::WA_DeleteOnClose);
+  connect(pBrowser, &QDialog::accepted, this, [this, pBrowser, pLibraryTreeItem]() {
+    CloudAccount *pAccount = pBrowser->selectedAccount();
+    if (!pAccount || pBrowser->selectedFolderId().isEmpty()) {
+      return;
+    }
+    // Mount the folder the user picked. No folder is invented here: if they wanted
+    // a new one they made it in the dialog.
+    const CloudMount mount = CloudMountManager::instance()->addMount(pAccount->key(), pBrowser->selectedFolderId(),
+                                                                    pBrowser->selectedFolderName());
+    QDir().mkpath(mount.localRoot);
+
+    // The class keeps the layout it already has - a model stays one .mo file, a
+    // package saved as a directory stays a directory. Forcing a folder structure
+    // turned M.mo into M/package.mo, which is not what saving somewhere else means.
+    const QString className = pLibraryTreeItem->getName();
+    QString fileName;
+    if (pLibraryTreeItem->isSaveFolderStructure()) {
+      fileName = QStringLiteral("%1/%2/package.mo").arg(mount.localRoot, className);
+      QDir().mkpath(QStringLiteral("%1/%2").arg(mount.localRoot, className));
+    } else {
+      fileName = QStringLiteral("%1/%2.mo").arg(mount.localRoot, className);
+    }
+    // The file has to exist before the name will be honoured: isFilePathValid()
+    // tests QFileInfo::exists(), and a name pointing at nothing is treated as no
+    // name at all - whereupon the ordinary save path asks the user for a location
+    // and writes somewhere else entirely.
+    QDir().mkpath(QFileInfo(fileName).absolutePath());
+    // Truncate matters: the worker-VFS file engine only marks a file dirty - and
+    // so only creates it - when the open truncates. A plain WriteOnly open writes
+    // nothing, the file never appears, and isFilePathValid() stays false.
+    QFile placeholder(fileName);
+    if (placeholder.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      placeholder.close();
+    }
+    pLibraryTreeItem->setFileName(fileName);
+    pLibraryTreeItem->setIsSaved(false);
+    forgetChildFileNames(pLibraryTreeItem);
+    if (!mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Could not write %1 to the working copy.").arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    // The empty file created above only exists to make the save path accept the
+    // name. If the save then wrote somewhere else it is still empty, and uploading
+    // it would put a file holding no class into the user's cloud storage - which
+    // is exactly what happened before the save path was redirected correctly.
+    if (QFileInfo(fileName).size() == 0) {
+      QFile::remove(fileName);
+      cloudLog(QStringLiteral("save left %1 empty; nothing uploaded").arg(fileName));
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("%1 was not written to the cloud folder; nothing was uploaded.")
+                                .arg(pLibraryTreeItem->getNameStructure()));
+      return;
+    }
+    syncMount(mount, pAccount, tr("Uploading %1...").arg(className));
+  });
+  pBrowser->open();
+}
+
+/*!
+ * \brief MainWindow::openMountContents
+ * Loads what a freshly synchronised mount holds.
+ *
+ * A mounted folder is not itself a package unless it has a package.mo. Handing the
+ * bare directory to openFile() only got the folder names into the Libraries
+ * Browser, not the classes inside them, so each entry is opened on its own terms:
+ * a subfolder with a package.mo is a package, a loose .mo file is a class.
+ */
+void MainWindow::openMountContents(const CloudMount &mount)
+{
+  const QString packageFile = mount.localRoot + QStringLiteral("/package.mo");
+  if (QFile::exists(packageFile)) {
+    mpLibraryWidget->openFile(packageFile, Helper::utf8, true);
+    return;
+  }
+  const QStringList names = cloudListDirectory(mount.localRoot);
+  bool openedAnything = false;
+  for (const QString &raw : names) {
+    const bool isFolder = raw.endsWith(QLatin1Char('/'));
+    const QString name = isFolder ? raw.left(raw.size() - 1) : raw;
+    if (name.isEmpty() || name.startsWith(QLatin1Char('.'))) {
+      continue;
+    }
+    const QString path = mount.localRoot + QLatin1Char('/') + name;
+    if (isFolder) {
+      const QString childPackage = path + QStringLiteral("/package.mo");
+      if (QFile::exists(childPackage)) {
+        mpLibraryWidget->openFile(childPackage, Helper::utf8, true);
+        openedAnything = true;
+      }
+    } else if (name.endsWith(QStringLiteral(".mo"), Qt::CaseInsensitive)) {
+      mpLibraryWidget->openFile(path, Helper::utf8, true);
+      openedAnything = true;
+    }
+  }
+  if (!openedAnything) {
+    MessagesWidget::instance()->addGUIMessage(
+        MessageItem(MessageItem::Modelica, tr("%1 holds no Modelica classes.").arg(mount.remoteName),
+                    Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::pushMountInBackground
+ * Sends what was just saved up to the cloud, a moment later.
+ *
+ * Deferred and coalesced: a run per written file would mean several full tree
+ * comparisons for one save.
+ */
+void MainWindow::pushMountInBackground(const QString &mountId)
+{
+  QTimer *pTimer = mAutoPushTimers.value(mountId, 0);
+  if (!pTimer) {
+    pTimer = new QTimer(this);
+    pTimer->setSingleShot(true);
+    pTimer->setInterval(3000);
+    connect(pTimer, &QTimer::timeout, this, [this, mountId, pTimer]() {
+      const CloudMount mount = CloudMountManager::instance()->mount(mountId);
+      if (!mount.isValid() || !mount.autoPush) {
+        return;
+      }
+      if (mSyncingMounts.contains(mountId)) {
+        // Wait for the run in progress rather than dropping this one: it may not
+        // have seen the edit that asked for this push.
+        pTimer->start();
+        return;
+      }
+      CloudAccount *pAccount = CloudAccountManager::instance()->account(mount.accountKey);
+      if (!pAccount || !pAccount->isSignedIn()) {
+        return;
+      }
+      // Cached before the push, so an edit that cannot be uploaded now - offline,
+      // or the token gone - still survives a reload.
+      CloudCache::save(mount);
+      syncMount(mount, pAccount, tr("Saving %1 to the cloud...").arg(mount.remoteName), std::function<void()>(), true);
+    });
+    mAutoPushTimers.insert(mountId, pTimer);
+  }
+  pTimer->start();
+}
+
+/*!
+ * \brief MainWindow::syncMount
+ * Runs one synchronisation of a mount, showing progress and reporting whatever
+ * the engine decides needs a person: conflicts, and deletions large enough to
+ * want confirming.
+ *
+ * A background run - an automatic push after an ordinary save - keeps out of the
+ * way: no progress dialog, and a failure is a message rather than a box. What
+ * needs an answer still asks for one, because a conflict left unanswered is work
+ * left unsaved.
+ */
+void MainWindow::syncMount(const CloudMount &mount, CloudAccount *pAccount, const QString &title,
+                           const std::function<void()> &onSuccess, bool background)
+{
+  if (mSyncingMounts.contains(mount.mountId)) {
+    return;
+  }
+  mSyncingMounts.insert(mount.mountId);
+
+  QPointer<QProgressDialog> pProgress;
+  if (!background) {
+    pProgress = new QProgressDialog(title, Helper::cancel, 0, 0, this);
+    pProgress->setAttribute(Qt::WA_DeleteOnClose);
+    pProgress->setWindowModality(Qt::WindowModal);
+    pProgress->setMinimumDuration(0);
+    pProgress->setValue(0);
+  } else {
+    getStatusBar()->showMessage(title);
+  }
+
+  CloudSyncEngine *pEngine = new CloudSyncEngine(mount, pAccount->provider(), this);
+  if (pProgress) {
+    connect(pProgress, &QProgressDialog::canceled, pEngine, &CloudSyncEngine::cancel);
+  }
+  connect(pEngine, &CloudSyncEngine::progress, this, [this, pProgress](int done, int total, const QString &what) {
+    if (!pProgress) {
+      if (!what.isEmpty()) {
+        getStatusBar()->showMessage(what);
+      }
+      return;
+    }
+    pProgress->setMaximum(total);
+    pProgress->setValue(done);
+    if (!what.isEmpty()) {
+      pProgress->setLabelText(what);
+    }
+  });
+  connect(pEngine, &CloudSyncEngine::skipped, this, [](const QStringList &descriptions) {
+    for (const QString &description : descriptions) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, description, Helper::scriptingKind,
+                                                            Helper::notificationLevel));
+    }
+  });
+  // Deletions are never carried out on the engine's own judgement; the user sees
+  // exactly what would go.
+  connect(pEngine, &CloudSyncEngine::deletionsNeedConfirmation, this,
+          [this, pEngine, pProgress](const QList<SyncAction> &deletions) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    QStringList names;
+    for (const SyncAction &action : deletions) {
+      names << action.relativePath;
+    }
+    // open(), not the blocking QMessageBox::question: a synchronisation is half
+    // done behind this, and stalling the main thread here is what wedges the
+    // WebAssembly build.
+    QMessageBox *pQuestion = new QMessageBox(QMessageBox::Question,
+                                             QString("%1 - %2").arg(Helper::applicationName, tr("Confirm Deletions")),
+                                             tr("This will move %n file(s) to the cloud service's trash:\n\n%1\n\n"
+                                                "Continue?", "", names.size())
+                                                 .arg(names.join(QLatin1Char('\n'))),
+                                             QMessageBox::Yes | QMessageBox::No, this);
+    pQuestion->setAttribute(Qt::WA_DeleteOnClose);
+    pQuestion->setDefaultButton(QMessageBox::No);
+    connect(pQuestion, &QMessageBox::finished, pEngine, [pEngine, pProgress, pQuestion](int) {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->confirmDeletions(pQuestion->standardButton(pQuestion->clickedButton()) == QMessageBox::Yes);
+    });
+    pQuestion->open();
+  });
+  connect(pEngine, &CloudSyncEngine::conflictsDetected, this,
+          [this, pEngine, pProgress, mount](const QList<SyncAction> &conflicts) {
+    if (pProgress) {
+      pProgress->hide();
+    }
+    CloudConflictDialog *pDialog = new CloudConflictDialog(mount.remoteName, conflicts, this);
+    connect(pDialog, &QDialog::accepted, pEngine, [pEngine, pProgress, pDialog]() {
+      if (pProgress) {
+        pProgress->show();
+      }
+      pEngine->applyResolutions(pDialog->resolutions());
+    });
+    connect(pDialog, &QDialog::rejected, pEngine, &CloudSyncEngine::cancel);
+    pDialog->open();
+  });
+  connect(pEngine, &CloudSyncEngine::finished, this,
+          [this, pEngine, pProgress, mount, onSuccess, background](const CloudError &error) {
+    mSyncingMounts.remove(mount.mountId);
+    if (pProgress) {
+      pProgress->close();
+    }
+    pEngine->deleteLater();
+    // However the run ended, the manifest now describes the working copy, so the
+    // cache must come from the same state: a cache older than the manifest reads
+    // back as a local edit and uploads over the newer remote.
+    CloudCache::save(mount);
+    if (error.isError() && error.code != CloudError::Cancelled) {
+      const QString text = tr("Could not synchronise %1: %2").arg(mount.remoteName, error.message);
+      if (background) {
+        MessagesWidget::instance()->addGUIMessage(
+            MessageItem(MessageItem::Modelica, text, Helper::scriptingKind, Helper::errorLevel));
+      } else {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), text);
+      }
+      return;
+    }
+    if (error.code == CloudError::Cancelled) {
+      getStatusBar()->showMessage(tr("Synchronisation of %1 was cancelled").arg(mount.remoteName), 5000);
+      return;
+    }
+    getStatusBar()->showMessage(tr("%1 is up to date").arg(mount.remoteName), 5000);
+    if (onSuccess) {
+      onSuccess();
+    }
+  });
+
+  // On the web target the working copy is in memory and empty after a reload.
+  // Putting the cache back first turns a full re-download into a revalidation.
+  if (cloudListDirectory(mount.localRoot).isEmpty()) {
+    CloudCache::restore(mount, [pEngine](int restored) {
+      if (restored > 0) {
+        cloudLog(QStringLiteral("cache: restored %1 file(s)").arg(restored));
+      }
+      pEngine->start();
+    });
+    return;
+  }
+  pEngine->start();
 }

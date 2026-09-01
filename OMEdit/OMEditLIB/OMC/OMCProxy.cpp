@@ -106,6 +106,7 @@ static QString omcPhaseLabel(int phase) {
 #include <QEventLoop>
 #include <QTimer>
 #include <QVarLengthArray>
+#include <QPair>
 #include <QtCore/private/qwasmsuspendresumecontrol_p.h>
 
 // omc runs in the shared omc_worker.js Web Worker. Calls are posted without
@@ -261,12 +262,140 @@ EM_JS(char *, omedit_take_abi_result, (int id), {
   return stringToNewUTF8('{"error":"no response from omc worker"}');
 });
 
+/*!
+ * The pre-main-loop wait, which suspends this stack through Asyncify.
+ *
+ * Qt's DOM event handlers must be told to *only queue* while that is the case.
+ * Left alone they take the else branch of
+ *
+ *   if (control.resume) resume(); else if (control.asyncifyEnabled) {} else
+ *     Module.qtSendPendingEvents();
+ *
+ * and call synchronously into a module whose stack is unwound, which corrupts the
+ * pending-event replay - the intermittent "Cannot read properties of undefined
+ * (reading 'index')" in QWasmSuspendResumeControl::sendPendingEvents() during
+ * startup. Qt sets that flag around its own suspends but cannot know about ours.
+ * Whether it fires depends on a DOM event landing in the window, which is why it
+ * looks random and why anything that lengthens startup makes it more likely.
+ */
 EM_ASYNC_JS(void, omedit_await_call, (int id), {
-  const p = Module.__omcCallPromises[id];
-  if (p) { try { await p; } catch (e) {} }
+  const control = Module.qtSuspendResumeControl;
+  const wasEnabled = control ? control.asyncifyEnabled : false;
+  if (control) control.asyncifyEnabled = true;
+  try {
+    const p = Module.__omcCallPromises[id];
+    if (p) { try { await p; } catch (e) {} }
+  } finally {
+    if (control) control.asyncifyEnabled = wasEnabled;
+  }
 });
 
 EM_JS(void, omedit_wake_now, (), { if (Module.__omcWake) Module.__omcWake(); });
+
+/*!
+ * Work around a re-entrancy bug in Qt's WebAssembly event replay.
+ *
+ * QWasmSuspendResumeControl::sendPendingEvents() reads the queue length once and
+ * then shifts that many entries:
+ *
+ *   int count = pendingEvents["length"].as<int>();
+ *   while (count-- > 0) {
+ *       val event = pendingEvents.call<val>("shift");
+ *       auto it = m_eventHandlers.find(event["index"].as<int>());
+ *
+ * If anything drains the queue while that loop is running, shift() starts
+ * returning undefined and event["index"] throws - the intermittent "Cannot read
+ * properties of undefined (reading 'index')" that hangs startup. A DOM event
+ * arriving whenever the stack yields calls Module.qtSendPendingEvents()
+ * synchronously, which is exactly such a drain.
+ *
+ * The guard makes a nested call a no-op. Nothing is lost: entries queued during
+ * the outer loop stay in the array (its count was fixed before they arrived) and
+ * are replayed on the dispatcher's next pass.
+ *
+ * A property setter is used because Qt assigns Module.qtSendPendingEvents itself,
+ * after this runs.
+ */
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+EM_JS(void, omedit_guard_pending_events, (), {
+  if (Module.__omeditPendingEventsGuard) return;
+  Module.__omeditPendingEventsGuard = true;
+  let real = null;
+  let draining = false;
+  const wrapper = function () {
+    if (draining || !real) return;
+    draining = true;
+    try {
+      return real.apply(this, arguments);
+    } finally {
+      draining = false;
+    }
+  };
+  try {
+    Object.defineProperty(Module, "qtSendPendingEvents", {
+      configurable: true,
+      get() { return wrapper; },
+      set(fn) { real = fn; }
+    });
+  } catch (e) {
+    console.warn("[OMEdit] could not guard qtSendPendingEvents", e);
+  }
+});
+
+/*!
+ * Make an over-run of that loop harmless.
+ *
+ * The guard above only closes the JS route into a nested drain; one starting
+ * inside wasm - a handler that pumps events, reaching sendPendingEvents() through
+ * processEvents() - is invisible from there, and that is evidently what happens.
+ * So instead of preventing the over-run, make it survivable: shift() on an
+ * exhausted queue returns an entry pointing at a handler that does nothing,
+ * rather than undefined. The extra iterations then run a no-op instead of
+ * dereferencing undefined.
+ *
+ * Fixed in Qt 6.11: the loop there re-evaluates pendingEvents["length"] in its
+ * condition and splices at a bounds-checked index instead of blindly shifting.
+ * The 6.10 branch still has the old form and the fix was not backported (it comes
+ * with an m_eventFilter member 6.10.2 does not have). DELETE THIS, and
+ * omedit_guard_pending_events() with it, when the wasm kit moves to 6.11 - it
+ * compiles out there already, so nothing breaks in the meantime; this is only
+ * dead weight to be removed.
+ */
+EM_JS(void, omedit_patch_pending_shift, (int noopIndex), {
+  const control = Module.qtSuspendResumeControl;
+  if (!control || !Array.isArray(control.pendingEvents)) return;
+  const queue = control.pendingEvents;
+  if (queue.__omeditPatchedShift) return;
+  const realShift = Array.prototype.shift;
+  Object.defineProperty(queue, "__omeditPatchedShift", { value: true });
+  queue.shift = function () {
+    if (this.length > 0) {
+      return realShift.call(this);
+    }
+    return { index: noopIndex, arg: undefined };
+  };
+});
+#endif // Qt < 6.11
+
+void omcInstallPendingEventsGuard()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+  omedit_guard_pending_events();
+#endif
+}
+
+void omcInstallPendingEventsShiftGuard()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+  QWasmSuspendResumeControl *pControl = QWasmSuspendResumeControl::get();
+  if (!pControl) {
+    return;
+  }
+  // Registered once; its index is what an exhausted shift() hands back.
+  static const uint32_t noopHandler = pControl->registerEventHandler([](emscripten::val) {});
+  omedit_patch_pending_shift(int(noopHandler));
+#endif
+}
 
 // Cooperative cancel + progress control block (shared with the omc worker).
 // Available only when cross-origin isolated (SharedArrayBuffer);
@@ -460,6 +589,69 @@ bool omcWorkerWriteFile(const char *path, const QByteArray &data)
   if (!omedit_worker_ready()) return false;
   omedit_post_vfs_put(path, data.constData(), data.size());
   return true;
+}
+
+// Remove and rename, for the cloud sync engine. Unlike the write above these do
+// wait for the reply: they only run from sync code (post-exec, event loop up), and
+// a delete whose outcome is unknown cannot be reconciled against the manifest.
+EM_JS(int, omedit_post_vfs_remove, (const char *path), {
+  return Module.__omcPostCall({ cmd: "vfsRemove", path: UTF8ToString(path) });
+});
+EM_JS(int, omedit_post_vfs_rename, (const char *from, const char *to), {
+  return Module.__omcPostCall({ cmd: "vfsRename", from: UTF8ToString(from), to: UTF8ToString(to) });
+});
+EM_JS(int, omedit_take_vfs_ok, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return r && r.ok ? 1 : 0;
+});
+
+bool omcWorkerRemoveFile(const char *path)
+{
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_remove(path);
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_ok(id) != 0;
+}
+
+bool omcWorkerRenameFile(const char *from, const char *to)
+{
+  if (!omedit_worker_ready()) return false;
+  int id = omedit_post_vfs_rename(from, to);
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_ok(id) != 0;
+}
+
+// Bulk write: restoring a cached package tree in one round trip. Returns how many
+// files the worker actually wrote, so the caller can verify the restore is complete
+// before it trusts the working copy (see CloudMount::workingCopyComplete).
+EM_JS(int, omedit_post_vfs_put_many, (), {
+  const entries = Module.__omeditVfsBatch || [];
+  Module.__omeditVfsBatch = null;
+  return Module.__omcPostCall({ cmd: "vfsPutMany", entries });
+});
+EM_JS(void, omedit_vfs_batch_add, (const char *path, const char *bytes, int len), {
+  if (!Module.__omeditVfsBatch) Module.__omeditVfsBatch = [];
+  Module.__omeditVfsBatch.push({ path: UTF8ToString(path),
+                                 bytes: HEAPU8.slice(bytes, bytes + len) });
+});
+EM_JS(int, omedit_take_vfs_written, (int id), {
+  const r = Module.__omcReplies[id] || {};
+  delete Module.__omcReplies[id];
+  delete Module.__omcCallPromises[id];
+  return (r && typeof r.written === "number") ? r.written : -1;
+});
+
+int omcWorkerWriteFiles(const QList<QPair<QString, QByteArray> > &files)
+{
+  if (!omedit_worker_ready()) return -1;
+  for (const auto &file : files) {
+    omedit_vfs_batch_add(file.first.toUtf8().constData(), file.second.constData(), file.second.size());
+  }
+  int id = omedit_post_vfs_put_many();
+  omcWorkerWaitReply(id);
+  return omedit_take_vfs_written(id);
 }
 
 // Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.

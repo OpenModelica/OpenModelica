@@ -1600,10 +1600,35 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    # The OAuth callback goes at the web ROOT, not in the versioned page directory:
+    # neither Google nor Microsoft allows a wildcard redirect URI, so one page at
+    # the origin root is a single registered URI that every deployed version
+    # shares. It works because the code comes back over a BroadcastChannel, which
+    # is scoped to the origin rather than the path.
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${_qt_src}/oauth-callback.html ${_web_dir}/oauth-callback.html
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
+  # Cloud storage OAuth client registrations. Kept out of the source tree so that one
+  # deployment's applications do not become every build's default - the consent
+  # screen shows the registering organisation's name. Point this at the deployment's
+  # own file; without it the web build simply reports that cloud storage has not
+  # been set up. See OMEdit/OMEditGUI/wasm/cloud_config.json.example.
+  set(OMEDIT_CLOUD_CONFIG "" CACHE FILEPATH
+      "cloud_config.json to stage at the web root (Google/OneDrive OAuth client IDs).")
+  if(OMEDIT_CLOUD_CONFIG)
+    if(EXISTS ${OMEDIT_CLOUD_CONFIG})
+      add_custom_command(TARGET rust_omedit_qt_web POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${OMEDIT_CLOUD_CONFIG} ${_qt_pkgdir}/cloud_config.json
+        COMMENT "Staging cloud_config.json -> ${_qt_pkgdir}")
+    else()
+      message(WARNING "OMEDIT_CLOUD_CONFIG is set but ${OMEDIT_CLOUD_CONFIG} does not exist; "
+                      "the web build will report cloud storage as not set up.")
+    endif()
+  endif()
+
   if(NOT RUST_OMC_WEB_QT_STANDALONE)
     add_dependencies(rust_omedit_qt_web rust_wasm)
   endif()
