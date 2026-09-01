@@ -112,12 +112,13 @@ fn pivot(a: &mut [f64], n_rows: usize, n_cols: usize, row_ind: &mut [usize], col
 }
 
 /// Select the states for one `$STATESET` at the current point (C's
-/// `stateSelectionSet` with `switchStates=1`): evaluate the analytic Jacobian
-/// column-by-column via `functionStateSetJacobians`, pivot to choose the dummy
-/// columns, and — if the selection changed — rebuild the `A` matrix and reinit
-/// the state variables from their candidates (`setAMatrix`). Returns whether the
-/// selection changed (the caller restarts the integrator, as a state change is a
-/// discontinuity in the state vector).
+/// `stateSelectionSet`): evaluate the analytic Jacobian column-by-column via
+/// `functionStateSetJacobians`, pivot to choose the dummy columns, and — if the
+/// selection changed and `switch` — rebuild the `A` matrix and reinit the state
+/// variables from their candidates (`setAMatrix`). Returns whether the selection
+/// changed (the caller restarts the integrator, as a state change is a
+/// discontinuity in the state vector). Without `switch` the pivots are put back
+/// as they were, so the change is only reported.
 fn state_selection_set(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -125,6 +126,7 @@ fn state_selection_set(
     st: &mut StateSetPivot,
     set_index: usize,
     report_error: bool,
+    switch: bool,
 ) -> Result<bool> {
     let nc = info.n_candidates as usize;
     let nd = info.n_dummy as usize;
@@ -154,6 +156,7 @@ fn state_selection_set(
     }
 
     let old_col = st.col_pivot.clone();
+    let old_row = st.row_pivot.clone();
     if !pivot(&mut jac, nd, nc, &mut st.row_pivot, &mut st.col_pivot) && report_error {
         log_state_set_jacobian(omclog::WARNING, omclog::DSS, info, &jac, set_index);
         let t = read_f64(e, sim_data + TIME_OFF)?;
@@ -177,7 +180,7 @@ fn state_selection_set(
         old_enable[old_col[i]] = entry;
     }
     let changed = new_enable != old_enable;
-    if changed {
+    if changed && switch {
         // setAMatrix: zero A, then for each state column set A[row,col]=1 and
         // reinit the state variable to its candidate's current value.
         for &aoff in &info.a_offs {
@@ -198,6 +201,10 @@ fn state_selection_set(
             print_state_selection_info(e, sim_data, info)?;
             omclog::close(omclog::DSS);
         }
+    }
+    if !switch {
+        st.col_pivot = old_col;
+        st.row_pivot = old_row;
     }
     Ok(changed)
 }
@@ -251,69 +258,71 @@ fn log_state_set_jacobian(ty: omclog::LogType, stream: omclog::Stream, info: &St
     }
 }
 
-/// Run state selection over every `$STATESET` (C's `stateSelection` with
-/// `reportError=1`). Returns whether any set switched its selection.
-fn run_state_selection(
-    e: &mut dyn SimEngine,
-    sim_data: u32,
-    state_sets: &[StateSetInfo],
-    pivots: &mut [StateSetPivot],
-) -> Result<bool> {
-    state_selection(e, sim_data, state_sets, pivots, true)
+/// C's `data->simulationInfo->stateSetData` pivoting, carried across a run: every
+/// driver, and the FMI component the importer integrates, holds one.
+pub struct StateSelection {
+    pivots: Vec<StateSetPivot>,
 }
 
-/// The selection C runs at the end of `initialization()`: the first pass does not
-/// report a singular Jacobian, and only a second switch in a row warns.
-fn run_state_selection_initial(
-    e: &mut dyn SimEngine,
-    sim_data: u32,
-    state_sets: &[StateSetInfo],
-    pivots: &mut [StateSetPivot],
-) -> Result<bool> {
-    if !state_selection(e, sim_data, state_sets, pivots, false)? {
-        return Ok(false);
+impl StateSelection {
+    /// The identity selection, before any pivoting.
+    pub fn new(model: &SimMeta) -> Self {
+        StateSelection { pivots: init_state_pivots(&model.state_sets) }
     }
-    if state_selection(e, sim_data, state_sets, pivots, true)? {
-        omclog::warning(
-            omclog::STDOUT,
-            false,
-            "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.",
-        );
-    }
-    Ok(true)
-}
 
-/// C's `initialization()` tail: pivot once on the resolved initial point, before
-/// the first result row is emitted. C runs `stateSelection` there and `solver_main`
-/// emits row 0 afterwards, so a model whose initial selection differs from the
-/// identity has the *selected* states in that row. A switch reinits the state
-/// variables from their candidates, so the derivatives are refreshed after it.
-fn initial_state_selection(
-    e: &mut dyn SimEngine,
-    sim_data: u32,
-    model: &SimModel,
-) -> Result<Vec<StateSetPivot>> {
-    let mut pivots = init_state_pivots(&model.state_sets);
-    if !model.state_sets.is_empty()
-        && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)?
-    {
-        e.call1("functionODE", sim_data)?;
+    /// C's `initialization()` tail: pivot once on the resolved initial point, before
+    /// the first result row is emitted. C runs `stateSelection` there and `solver_main`
+    /// emits row 0 afterwards, so a model whose initial selection differs from the
+    /// identity has the *selected* states in that row. A switch reinits the state
+    /// variables from their candidates, so the derivatives are refreshed after it.
+    ///
+    /// The first pass does not report a singular Jacobian, and only a second switch
+    /// in a row warns.
+    pub fn initial(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<Self> {
+        let mut sel = StateSelection::new(model);
+        if model.state_sets.is_empty() {
+            return Ok(sel);
+        }
+        if sel.run(e, sim_data, model, false, true)? {
+            if sel.reselect(e, sim_data, model)? {
+                omclog::warning(
+                    omclog::STDOUT,
+                    false,
+                    "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.",
+                );
+            }
+            e.call1("functionODE", sim_data)?;
+        }
+        Ok(sel)
     }
-    Ok(pivots)
-}
 
-fn state_selection(
-    e: &mut dyn SimEngine,
-    sim_data: u32,
-    state_sets: &[StateSetInfo],
-    pivots: &mut [StateSetPivot],
-    report_error: bool,
-) -> Result<bool> {
-    let mut changed = false;
-    for (i, (info, st)) in state_sets.iter().zip(pivots.iter_mut()).enumerate() {
-        changed |= state_selection_set(e, sim_data, info, st, i, report_error)?;
+    /// C's `stateSelection(data, threadData, 1, 1)`: select and switch, returning
+    /// whether any set changed — the caller restarts the integrator.
+    pub fn reselect(&mut self, e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<bool> {
+        self.run(e, sim_data, model, true, true)
     }
-    Ok(changed)
+
+    /// C's `stateSelection(data, threadData, 1, 0)`: whether the selection *would*
+    /// change here, leaving it as it is. The switch belongs to the event update that
+    /// follows.
+    pub fn would_change(&mut self, e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<bool> {
+        self.run(e, sim_data, model, true, false)
+    }
+
+    fn run(
+        &mut self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        model: &SimMeta,
+        report_error: bool,
+        switch: bool,
+    ) -> Result<bool> {
+        let mut changed = false;
+        for (i, (info, st)) in model.state_sets.iter().zip(self.pivots.iter_mut()).enumerate() {
+            changed |= state_selection_set(e, sim_data, info, st, i, report_error, switch)?;
+        }
+        Ok(changed)
+    }
 }
 
 /// Every model entry point the drivers below may pass to [`SimEngine::call1`] /
@@ -2840,7 +2849,7 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
 /// C's `function_storeDelayed` + `function_storeSpatialDistribution`, the tail of
 /// `updateContinuousSystem`: the operators with an internal history record the point
 /// the model was last evaluated at. A model without any skips it entirely.
-pub(crate) fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if !layout.has_history_ops {
         return Ok(());
     }
@@ -4685,7 +4694,7 @@ struct EulerDriver {
     row: u32,
     /// Where a retried step ends, short of this row's grid point.
     pending_time: Option<f64>,
-    pivots: Vec<StateSetPivot>,
+    dss: StateSelection,
     rows: Vec<f64>,
     retry: StepRetry,
 }
@@ -4701,13 +4710,13 @@ impl EulerDriver {
         let mut retry = StepRetry::default();
         retry.store(e, sim_data, &model.layout)?;
         // The initial selection belongs to initialization, before row 0 (see
-        // `initial_state_selection`); only the per-step ones are in `advance`.
-        let pivots = initial_state_selection(e, sim_data, model)?;
+        // `StateSelection::initial`); only the per-step ones are in `advance`.
+        let dss = StateSelection::initial(e, sim_data, model)?;
         Ok(EulerDriver {
             sim_data,
             row: 0,
             pending_time: None,
-            pivots,
+            dss,
             rows: Vec::with_capacity((n_rows * n_reals) as usize),
             retry,
         })
@@ -4767,9 +4776,7 @@ impl Driver for EulerDriver {
             }
             // Re-select states before the Euler update; a switch reinits the states,
             // so refresh the derivatives it uses (see `DasslDriver`).
-            if !model.state_sets.is_empty()
-                && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)?
-            {
+            if self.dss.reselect(e, sim_data, model)? {
                 e.call1("functionODE", sim_data)?;
             }
             // Forward-Euler update of the states, over this row's own step.
@@ -5794,7 +5801,7 @@ struct DasslDriver {
     t: f64,
     /// `RES` (functionODE) eval count, accumulated across chunks.
     nfe: u64,
-    pivots: Vec<StateSetPivot>,
+    dss: StateSelection,
     rows: Vec<f64>,
     /// Target of an interval left in progress at a mid-solve yield; `None` at a
     /// row boundary. Resumed on the next `advance`.
@@ -5861,7 +5868,7 @@ impl DasslDriver {
         // Dynamic state selection, then row 0 at the start time. For an explicit ODE
         // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
         // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
-        let mut pivots = initial_state_selection(e, sim_data, model)?;
+        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?; // terminate() at the initial point
 
@@ -5928,7 +5935,7 @@ impl DasslDriver {
             idid: 0,
             t: start,
             nfe: 0,
-            pivots,
+            dss,
             rows,
             pending_tout: None,
             step_emit: StepEmit::new(),
@@ -6195,7 +6202,7 @@ impl Driver for DasslDriver {
             // Re-read y/yp and restart DASKR (INFO(1)=0). No `functionODE` in
             // between: C's `dassl_step` takes YPRIME from the ring buffer, so it
             // restarts on the derivatives of the *previous* selection.
-            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            if self.dss.reselect(e, sim_data, model)? {
                 for i in 0..n_states {
                     self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
                     self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
@@ -7002,7 +7009,7 @@ struct EventsDriver {
     /// C's `currentTime` at the end of an output row: the grid point, or the event
     /// that covered it.
     reached: f64,
-    pivots: Vec<StateSetPivot>,
+    dss: StateSelection,
     samp: Samples,
     sync: crate::sync::Sync,
     rows: Vec<f64>,
@@ -7972,7 +7979,6 @@ pub struct CsDriver {
     core: SolverCore,
     samp: Samples,
     sync: crate::sync::Sync,
-    pivots: Vec<StateSetPivot>,
     /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
     /// variable-step method, which is handed the whole interval.
     fixed_h: Option<f64>,
@@ -8072,11 +8078,7 @@ impl CsDriver {
         sync.take_fired(e, t)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         core.fmi_cs_solver_setup(defer);
-        let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
-            if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
             core.read_states(e)?;
         }
         let h = model.step_size();
@@ -8085,7 +8087,7 @@ impl CsDriver {
         if core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut zc0)?;
         }
-        Ok(CsDriver { core, samp, sync, pivots, fixed_h, resume: None, zc0 })
+        Ok(CsDriver { core, samp, sync, fixed_h, resume: None, zc0 })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -8102,6 +8104,7 @@ impl CsDriver {
         model: &SimModel,
         t_target: f64,
         defer: CsDefer,
+        dss: &mut StateSelection,
     ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
@@ -8194,7 +8197,7 @@ impl CsDriver {
         write_time(e, sim_data, t_target)?;
         e.call1("functionODE", sim_data)?;
         e.call1_if_present("functionAlgebraics", sim_data)?;
-        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+        if dss.reselect(e, sim_data, model)? {
             e.call1("functionODE", sim_data)?;
             self.core.read_states(e)?;
             self.core.restart()?;
@@ -8355,7 +8358,7 @@ impl EventsDriver {
         core.prime(e, layout)?;
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
-        let mut pivots = initial_state_selection(e, sim_data, model)?;
+        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -8370,7 +8373,7 @@ impl EventsDriver {
             core,
             row: 1,
             reached: start,
-            pivots,
+            dss,
             samp,
             sync,
             rows,
@@ -8695,7 +8698,7 @@ impl Driver for EventsDriver {
                 close_assert_window(e, sim_data)?;
             }
             // Re-select states at the accepted output point (see `DasslDriver`).
-            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            if self.dss.reselect(e, sim_data, model)? {
                 e.call1("functionODE", sim_data)?;
                 self.core.read_states(e)?;
                 self.core.restart()?;
@@ -8859,7 +8862,7 @@ struct CvodeDriver {
     /// `None` when the model has no states (nothing to integrate).
     cv: Option<crate::sundials::Cvode>,
     t: f64,
-    pivots: Vec<StateSetPivot>,
+    dss: StateSelection,
     rows: Vec<f64>,
     /// Resumes an output interval left unfinished by a work-quota return or a yield.
     work_retries: u32,
@@ -8883,7 +8886,7 @@ impl CvodeDriver {
         let start = model.start_time;
 
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut pivots = initial_state_selection(e, sim_data, model)?;
+        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -8920,7 +8923,7 @@ impl CvodeDriver {
             row: 1,
             cv,
             t: start,
-            pivots,
+            dss,
             rows,
             work_retries: 0,
             pending_terminate,
@@ -9083,7 +9086,7 @@ impl Driver for CvodeDriver {
             }
             // A state-set switch changes the meaning of the state vector, so
             // re-read it and restart CVODE (see `DasslDriver`).
-            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            if self.dss.reselect(e, sim_data, model)? {
                 e.call1("functionODE", sim_data)?;
                 for i in 0..n_states {
                     cv.y_mut()[i] = read_f64(e, states_base + (i as u32) * 8)?;
@@ -9781,7 +9784,7 @@ struct IdaDriver {
     ida: Option<crate::sundials::Ida>,
     setup: IdaSetup,
     t: f64,
-    pivots: Vec<StateSetPivot>,
+    dss: StateSelection,
     rows: Vec<f64>,
     /// Resumes an output interval left unfinished by a work-quota return or a yield.
     work_retries: u32,
@@ -9813,7 +9816,7 @@ impl IdaDriver {
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
         // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
         // row leaves in the derivative slots.
-        let mut pivots = initial_state_selection(e, sim_data, model)?;
+        let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -9846,7 +9849,7 @@ impl IdaDriver {
             ida,
             setup,
             t: start,
-            pivots,
+            dss,
             rows,
             work_retries: 0,
             step_emit: StepEmit::new(),
@@ -10043,7 +10046,7 @@ impl Driver for IdaDriver {
                 break Advance::Terminated;
             }
             // Restart IDA on the reinitialised states (see `DasslDriver`).
-            if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
+            if self.dss.reselect(e, sim_data, model)? {
                 for i in 0..n_states {
                     ida.y_mut()[i] = read_f64(e, states_base + (i as u32) * 8)?;
                     ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
