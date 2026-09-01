@@ -427,6 +427,9 @@ pub trait SimEngine {
     /// Call the exported `fn(u32, u32) -> ()` `name` — only [`MODEL_FN_DAE`],
     /// whose second argument is the evaluation stage.
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()>;
+    /// Install `mask` as the active log streams of the runtime the model links, whose
+    /// solvers log from inside it. A no-op where that runtime's store is this one.
+    fn set_log_mask(&mut self, _mask: omclog::Mask) {}
     /// [`SimEngine::call1_raw`] under the clock C's generated entry point ticks
     /// around its own body ([`model_fn_clock`]); every driver goes through here.
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
@@ -1078,6 +1081,22 @@ fn arm_alarm() {
         Some(secs) => now_ms() + secs as f64 * 1000.0,
         None => f64::INFINITY,
     });
+}
+
+/// C's per-step `-lv_time` check (`perform_simulation.c.inc`): the streams come on
+/// for a step that reaches the window and go off once past it.
+fn logging_window(e: &mut dyn SimEngine, t: f64, t_next: f64) {
+    let Some((t0, t1)) = crate::simflags::with_flags(|f| f.lv_time) else { return };
+    let before = omclog::mask();
+    if (t >= t0 || t_next >= t0) && t_next < t1 {
+        omclog::reactivate();
+    }
+    if t > t1 {
+        omclog::deactivate();
+    }
+    if omclog::mask() != before {
+        e.set_log_mask(omclog::mask());
+    }
 }
 
 pub(crate) fn check_alarm() -> Result<()> {
@@ -4470,6 +4489,19 @@ pub fn drive(
     // `+profiling` is C's other `measure_time_flag` source.
     rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
     rtclock::tick(rtclock::TOTAL);
+    let lv_time = crate::simflags::with_flags(|f| f.lv_time);
+    if let Some((t0, t1)) = lv_time {
+        omclog::info(
+            omclog::STDOUT,
+            false,
+            &format!("Time dependent logging enabled. Activate logging in interval [{t0:.6}, {t1:.6}]"),
+        );
+        // C reactivates the streams before `callSolver` when the run starts inside the window.
+        if start >= t0 {
+            omclog::reactivate();
+            e.set_log_mask(omclog::mask());
+        }
+    }
     rtclock::tick(rtclock::PREINIT);
     crate::profiling::start(e, model);
 
@@ -4599,6 +4631,9 @@ pub fn drive(
         emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
         Ok(rows)
     })();
+    if lv_time.is_some() {
+        omclog::deactivate();
+    }
     let _ = bench;
     // Before `outcome?`: a failed run is when the counters matter most.
     #[cfg(feature = "std")]
@@ -4753,6 +4788,8 @@ impl Driver for EulerDriver {
             // The last row lands exactly on `stop`: the terminal step.
             let time =
                 self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+            let t_now = read_f64(e, sim_data + TIME_OFF)?;
+            logging_window(e, t_now, time);
             self.retry.open(e, self.rows.len());
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
@@ -6011,6 +6048,7 @@ impl Driver for DasslDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                logging_window(e, self.t, time);
                 self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
@@ -6107,6 +6145,7 @@ impl Driver for DasslDriver {
             } else {
                 grid(self.row)
             });
+            logging_window(e, self.t, tout);
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
             // so emit the held state directly instead of stepping.
             if tout <= self.t {
@@ -8489,6 +8528,7 @@ impl Driver for EventsDriver {
                 }
                 did_step = true;
                 let tout = self.pending_tout.take().unwrap_or_else(|| tout_of(self.row));
+                logging_window(e, self.core.t, tout);
                 let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
                 let mut event_step = false;
@@ -8678,6 +8718,7 @@ impl Driver for EventsDriver {
                 break Advance::Cancelled;
             }
             let tout = self.pending_tout.unwrap_or_else(|| tout_of(self.row));
+            logging_window(e, self.core.t, tout);
             if !self.mid_row {
                 self.grid_covered = false;
                 self.did_event_step = false;
@@ -9005,6 +9046,7 @@ impl Driver for CvodeDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                logging_window(e, self.t, time);
                 self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
@@ -9077,6 +9119,7 @@ impl Driver for CvodeDriver {
             self.retry.open(e, self.rows.len());
             let tout =
                 self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+            logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in cv.y().iter().enumerate() {
@@ -9941,6 +9984,7 @@ impl Driver for IdaDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                logging_window(e, self.t, time);
                 self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
@@ -10014,6 +10058,7 @@ impl Driver for IdaDriver {
                 .pending_tout
                 .take()
                 .unwrap_or(if no_grid || self.row == n_steps { stop } else { grid(self.row) });
+            logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {

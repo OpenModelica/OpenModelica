@@ -1052,8 +1052,9 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         ))?;
     }
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
+    let active = openmodelica_sim_meta::omclog::mask();
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_log_streams") {
-        wts(set.call(&mut store, log_mask as u32, (log_mask >> 32) as u32))?;
+        wts(set.call(&mut store, active as u32, (active >> 32) as u32))?;
     }
     // See the wasmtime counterpart.
     if let Ok(set) = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_stats_start") {
@@ -1161,6 +1162,11 @@ impl WasmerEngine {
 }
 
 impl sim_driver::SimEngine for WasmerEngine {
+    fn set_log_mask(&mut self, mask: openmodelica_sim_meta::omclog::Mask) {
+        if let Ok(set) = self.rt_inst.exports.get_typed_function::<(u32, u32), ()>(&self.store, "rt_set_log_streams") {
+            let _ = set.call(&mut self.store, mask as u32, (mask >> 32) as u32);
+        }
+    }
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
         self.memory.view(&self.store).read(addr as u64, buf).map_err(|e| "CodegenWasmJit: mem read")
     }
