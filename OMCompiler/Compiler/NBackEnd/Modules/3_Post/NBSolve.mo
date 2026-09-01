@@ -283,7 +283,7 @@ public
                 // create the algebraic loop, already torn
                 strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
                 // ToDo: set all the booleans correctly
-                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status);
+                solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status, true);
 
                 // add new equations and new variables
                 EqData.addTypedList(eqData, tmp_eqns, NBEquation.EqData.EqType.CONTINUOUS);
