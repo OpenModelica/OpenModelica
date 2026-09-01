@@ -689,7 +689,7 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        nls::model_error();
+        nls::throw_stream(&format!("Model error. size(a, {axis}) of an array with {ndims} dimensions"));
         return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
@@ -893,7 +893,7 @@ fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
     }
     if arr_total == 0 {
         if count != 0 {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. {count} indices into an empty array"));
         }
         return (rt_alloc(0), 0);
     }
@@ -908,7 +908,7 @@ fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
             lin = lin * rt_array_dim(arr, axis as i32 + 1) + spec.coord(axis, p);
         }
         if lin >= arr_total {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. Index {} out of bounds for array of size {arr_total}", lin + 1));
             lin = arr_total - 1;
         }
         unsafe { store_u32(out + i * 4, lin) };
@@ -994,7 +994,10 @@ pub extern "C" fn rt_array_indexed_assign(dst: u32, nspec: u32, spec: u32, src: 
     let (positions, count) = spec_positions(dst, &spec);
     if count != rt_array_total(src) {
         rt_free(positions);
-        nls::model_error();
+        nls::throw_stream(&format!(
+            "Model error. Assigning {} elements to an array slice of {count}",
+            rt_array_total(src)
+        ));
         return;
     }
 
@@ -1367,7 +1370,7 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     let neg = n < 0;
     if neg {
         if base == 0.0 {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. 0^({n}) is not defined"));
             return 0.0;
         }
         n = -n;
@@ -1501,7 +1504,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64, loc: u32) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_mod_int(x: i32, y: i32) -> i32 {
     if y == 0 {
-        nls::model_error();
+        nls::throw_stream(&format!("Model error. Division by zero in mod({x}, 0)"));
         return 0;
     }
     let r = x.wrapping_rem(y);
@@ -1737,7 +1740,7 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
         OP_OR => x | y,
         _ => {
             if y == 0 {
-                nls::model_error();
+                nls::throw_stream(&format!("Model error. Division by zero in {x} div 0"));
                 return 0;
             }
             x.wrapping_div(y)
