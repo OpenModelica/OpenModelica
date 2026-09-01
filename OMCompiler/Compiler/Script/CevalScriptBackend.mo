@@ -2279,10 +2279,13 @@ algorithm
         stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
         Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
-        if numberOfIntervals == 0 then
-          numberOfIntervals := if interval > 0.0 then integer(ceil((stopTime - startTime)/interval)) else 0;
+        if numberOfIntervals == 0 and interval > 0.0 then
+          numberOfIntervals := integer(ceil((stopTime - startTime)/interval));
         else
-          interval := (stopTime-startTime) / max(numberOfIntervals,1);
+          // What simulate() runs (SimCodeMain.createSimulationSettings): an
+          // Interval annotation longer than the experiment is one step to stopTime.
+          numberOfIntervals := max(numberOfIntervals, 1);
+          interval := (stopTime-startTime) / numberOfIntervals;
         end if;
       then
         Values.TUPLE({Values.REAL(startTime), Values.REAL(stopTime), Values.REAL(tolerance), Values.INTEGER(numberOfIntervals), Values.REAL(interval)});
