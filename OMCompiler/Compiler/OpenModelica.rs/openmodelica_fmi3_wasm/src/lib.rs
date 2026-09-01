@@ -551,6 +551,8 @@ struct MeState {
     /// the point it was assembled at.
     jacobian_cache: Vec<f64>,
     jacobian_valid: bool,
+    /// C's `stateSetData`, seeded by the initial solve.
+    dss: driver::StateSelection,
     /// Sample schedule, loaded once the model's `initSample` has run.
     samples: Option<Samples>,
     /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
@@ -692,6 +694,7 @@ impl MeState {
         let start_time = self.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
         run_initialization(&mut e, self.sim_data, &self.layout, &[], start_time)?;
+        self.dss = driver::StateSelection::initial(&mut e, self.sim_data, &self.meta)?;
         // C's `initializeModel` runs `initSynchronous` too.
         if !self.meta.clocks.is_empty() {
             let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut e, &self.meta, self.sim_data)?;
@@ -820,11 +823,13 @@ fn new_state() -> Option<MeState> {
         core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
     }
     let dae_enable_vr = meta.fmi_dae_enable_vr;
+    let dss = driver::StateSelection::new(&meta);
     let st = MeState {
         sim_data,
         layout,
         vrs: Vrs::new(core::mem::take(&mut meta.fmi_vrs)),
         meta,
+        dss,
         #[cfg(feature = "cs")]
         cs: None,
         #[cfg(feature = "cs")]
@@ -994,6 +999,20 @@ macro_rules! shared_instance_methods {
         // later evaluation restores the relations and hides the next crossing.
         st.write_i32(layout.rel_fresh_off, 0);
 
+        // After the discrete update, as `perform_simulation` has it rather than before
+        // it as C's FMU export does: the state-set Jacobian is worth no more than the
+        // point it is evaluated at.
+        let reselected = {
+            let m = &mut *st;
+            match m.dss.reselect(&mut e, sim_data, &m.meta) {
+                Ok(changed) => changed,
+                Err(err) => return Err(err_status(err)),
+            }
+        };
+        if reselected {
+            st.need_update = true;
+        }
+
         // C's `internalEventUpdate`: the timers, then the earliest of the next
         // sample and the next activation.
         let mut next = up.next_event_time;
@@ -1015,7 +1034,7 @@ macro_rules! shared_instance_methods {
             new_discrete_states_needed: false,
             terminate_simulation: up.terminate,
             nominals_of_continuous_states_changed: false,
-            values_of_continuous_states_changed: up.states_changed || ticked,
+            values_of_continuous_states_changed: up.states_changed || ticked || reselected,
             next_event_time_defined: next.is_some(),
             next_event_time: next.unwrap_or(0.0),
         })
@@ -1568,9 +1587,14 @@ impl GuestModelExchangeInstance for Instance {
         let mut st = self.st.borrow_mut();
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
         st.eval().map_err(|_| Status::Error)?;
+        // The only point the importer gives us to record the accepted step.
+        driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(|_| Status::Error)?;
         st.need_update = true;
+        let sim_data = st.sim_data;
+        let m = &mut *st;
+        let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(|_| Status::Error)?;
         Ok(CompletedStepResult {
-            enter_event_mode: false,
+            enter_event_mode: switching,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,
         })
     }
@@ -1643,7 +1667,7 @@ impl GuestCoSimulationInstance for Instance {
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let outcome = driver.step_to(&mut e, &meta, target, defer);
+        let outcome = driver.step_to(&mut e, &meta, target, defer, &mut st.dss);
         let last = driver.time();
         st.cs = Some(driver);
         // C's `fmi2DoStep`: the getters now report the new time's values.
