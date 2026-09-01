@@ -194,7 +194,8 @@ public
           linear  = false,
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
         index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
@@ -207,7 +208,8 @@ public
           linear  = false,
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
         index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
@@ -220,7 +222,8 @@ public
           linear  = false,
           mixed   = false,
           homotopy = Pointer.access(homotopy),
-          status  = NBSolve.Status.IMPLICIT);
+          status  = NBSolve.Status.IMPLICIT,
+          implicitlyCreated = true);
         index := index + 1;
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 

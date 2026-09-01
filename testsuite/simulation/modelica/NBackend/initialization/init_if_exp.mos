@@ -57,13 +57,13 @@ simulate(init_if_exp); getErrorString();
 // Event Partition
 // -----------------
 //
-// ==========================================================
-//   SimCode Jacobian INI_NLS_JAC_1(idx = 1, partition = 1)
-// ==========================================================
+// ===========================================================
+//   SimCode Jacobian INI_NLS_IMPL_1(idx = 1, partition = 1)
+// ===========================================================
 //
 // SeedVars (size = 1)
 // *********************
-//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.y
+//   (0)[SEED] (1) Real $SEED_INI_NLS_IMPL_1.y
 //
 // TmpVars (size = 0)
 // ********************
@@ -73,19 +73,19 @@ simulate(init_if_exp); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (5) $pDER_INI_NLS_JAC_1.$RES_SIM_1 := $SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y
+//   (5) $pDER_INI_NLS_IMPL_1.$RES_SIM_1 := $SEED_INI_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_NLS_IMPL_1.y
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_1 ... {$pDER_INI_NLS_JAC_1.$RES_SIM_1} ... {($SEED_INI_NLS_JAC_1.y, {}, false)}
+// $RES_SIM_1 ... {$pDER_INI_NLS_IMPL_1.$RES_SIM_1} ... {($SEED_INI_NLS_IMPL_1.y, {}, false)}
 //
-// ==========================================================
-//   SimCode Jacobian INI_NLS_JAC_2(idx = 0, partition = 0)
-// ==========================================================
+// ===========================================================
+//   SimCode Jacobian INI_NLS_IMPL_2(idx = 0, partition = 0)
+// ===========================================================
 //
 // SeedVars (size = 1)
 // *********************
-//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_2.u
+//   (0)[SEED] (1) Real $SEED_INI_NLS_IMPL_2.u
 //
 // TmpVars (size = 0)
 // ********************
@@ -95,11 +95,11 @@ simulate(init_if_exp); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (2) $pDER_INI_NLS_JAC_2.$RES_SIM_0 := 3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_2.u + $SEED_INI_NLS_JAC_2.u
+//   (2) $pDER_INI_NLS_IMPL_2.$RES_SIM_0 := 3.0 * u ^ 2.0 * $SEED_INI_NLS_IMPL_2.u + $SEED_INI_NLS_IMPL_2.u
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_0 ... {$pDER_INI_NLS_JAC_2.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_2.u, {}, false)}
+// $RES_SIM_0 ... {$pDER_INI_NLS_IMPL_2.$RES_SIM_0} ... {($SEED_INI_NLS_IMPL_2.u, {}, false)}
 //
 // ==========================================================
 //   SimCode Jacobian ALG_NLS_JAC_1(idx = 2, partition = 2)
@@ -221,14 +221,14 @@ simulate(init_if_exp); getErrorString();
 // crefs: y
 // 	4: -1.0 + y + y ^ 2.0 (RESIDUAL)
 // 	Jacobian idx: 1
-// 	5: $pDER_INI_NLS_JAC_1.$RES_SIM_1=$SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y [Real]
+// 	5: $pDER_INI_NLS_IMPL_1.$RES_SIM_1=$SEED_INI_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_NLS_IMPL_1.y [Real]
 //
 //
 // 3:  (NONLINEAR) index:0 jacobian: true
 // crefs: u
 // 	1: u ^ 3.0 + u - y (RESIDUAL)
 // 	Jacobian idx: 0
-// 	2: $pDER_INI_NLS_JAC_2.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_2.u + $SEED_INI_NLS_JAC_2.u [Real]
+// 	2: $pDER_INI_NLS_IMPL_2.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_IMPL_2.u + $SEED_INI_NLS_IMPL_2.u [Real]
 //
 //
 // ========================================
@@ -274,10 +274,10 @@ simulate(init_if_exp); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 1
-// 	5: $pDER_INI_NLS_JAC_1.$RES_SIM_1=$SEED_INI_NLS_JAC_1.y + 2.0 * y * $SEED_INI_NLS_JAC_1.y [Real]
+// 	5: $pDER_INI_NLS_IMPL_1.$RES_SIM_1=$SEED_INI_NLS_IMPL_1.y + 2.0 * y * $SEED_INI_NLS_IMPL_1.y [Real]
 //
 // 	Jacobian idx: 0
-// 	2: $pDER_INI_NLS_JAC_2.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_2.u + $SEED_INI_NLS_JAC_2.u [Real]
+// 	2: $pDER_INI_NLS_IMPL_2.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_INI_NLS_IMPL_2.u + $SEED_INI_NLS_IMPL_2.u [Real]
 //
 // 	Jacobian idx: 2
 // 	10: $pDER_ALG_NLS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_NLS_JAC_1.u + $SEED_ALG_NLS_JAC_1.u - $SEED_ALG_NLS_JAC_1.y [Real]

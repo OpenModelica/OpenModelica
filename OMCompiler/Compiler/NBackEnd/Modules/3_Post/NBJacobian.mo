@@ -614,7 +614,22 @@ protected
           comps              = Array.appendList(strict.innerEquations, residual_comps),
           full               = full,
           funcMap            = funcMap,
-          name               = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          // comp.idx is assigned from two disjoint, independently-numbered sources:
+          // NBSolve.mo's Tearing.implicit() (single-equation loops promoted from an
+          // unsolvable explicit equation) and NBTearing.mo's initialize() (genuine
+          // multi-equation torn loops), each restarting its own count at 1 per
+          // partition kind. Two components from different sources can therefore
+          // share the same (kind, idx), which previously collided on the exact same
+          // generated Jacobian name (e.g. both "INI_NLS_JAC_1") -- note comp.status
+          // alone can't distinguish them, since NBSolve.mo's solveStrongComponent
+          // marks EVERY algebraic loop status=IMPLICIT, torn or not. Tag
+          // comp.implicitlyCreated components distinctly so the two numbering
+          // spaces can never collide, without changing either one's actual numbers
+          // (which existing reference test outputs depend on).
+          name               = Partition.Partition.kindToString(kind)
+                                + (if comp.implicitlyCreated then "_NLS_IMPL_"
+                                   else if comp.linear then "_LS_JAC_" else "_NLS_JAC_")
+                                + intString(comp.idx),
           staticAsContinuous = staticAsContinuous);
         comp.strict := strict;
 
@@ -1764,7 +1779,8 @@ protected
       linear   = true,
       mixed    = mixed,
       homotopy = homotopy,
-      status   = NBSolve.Status.IMPLICIT
+      status   = NBSolve.Status.IMPLICIT,
+      implicitlyCreated = false
     );
   end makeLinearAlgebraicLoop;
 
