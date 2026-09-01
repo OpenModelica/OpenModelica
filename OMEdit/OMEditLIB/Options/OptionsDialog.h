@@ -42,6 +42,7 @@
 
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
+#include "Cloud/CloudTypes.h"
 #include "Util/StringHandler.h"
 #include "Util/DirectoryOrFileSelector.h"
 
@@ -77,6 +78,7 @@ class FMIPage;
 class OMSimulatorPage;
 class SensitivityOptimizationPage;
 class TraceabilityPage;
+class CloudStoragePage;
 class TabSettings;
 class StackFramesWidget;
 class TranslationFlagsWidget;
@@ -125,6 +127,7 @@ public:
   void readOMSimulatorSettings();
   void readSensitivityOptimizationSettings();
   void readTraceabilitySettings();
+  void readCloudStorageSettings();
   void saveGeneralSettings();
   void saveNFAPISettings();
   void saveLibrariesSettings();
@@ -139,6 +142,7 @@ public:
   void saveOMSimulatorSettings();
   void saveSensitivityOptimizationSettings();
   void saveTraceabilitySettings();
+  void saveCloudStorageSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveGlobalSimulationSettings();
@@ -179,6 +183,7 @@ public:
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
+  CloudStoragePage* getCloudStoragePage() {return mpCloudStoragePage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
   void show();
@@ -233,6 +238,7 @@ private:
   OMSimulatorPage *mpOMSimulatorPage;
   SensitivityOptimizationPage *mpSensitivityOptimizationPage;
   TraceabilityPage *mpTraceabilityPage;
+  CloudStoragePage *mpCloudStoragePage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -1167,6 +1173,64 @@ private slots:
   void browseCompilerJar();
   void browseCompilerProcessFile();
   void resetCompilerProcessPath();
+};
+
+/*!
+ * \brief Cloud storage accounts, and which OAuth applications this installation
+ * talks to.
+ *
+ * The client registrations are normally supplied by the deployment through
+ * cloud_config.json; the fields here override that for a developer or a site that
+ * registered its own applications, and are the only way to configure it when no
+ * such file is deployed.
+ */
+class CloudStoragePage : public QWidget
+{
+  Q_OBJECT
+public:
+  CloudStoragePage(OptionsDialog *pOptionsDialog);
+
+  void readRegistrations();
+  void saveRegistrations();
+
+protected:
+  //! Accounts and the deployment configuration are loaded here, not in the
+  //! constructor: the options dialog is built during startup, and reaching the
+  //! network from there stalls Qt's WebAssembly event dispatcher mid suspend and
+  //! resume. Nothing cloud-related happens until the page is actually looked at.
+  void showEvent(QShowEvent *pEvent) override;
+
+private:
+  void refreshAccounts();
+  void refreshMounts();
+
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpAccountsGroupBox;
+  QListWidget *mpAccountsListWidget;
+  QPushButton *mpAddGoogleDriveButton;
+  QPushButton *mpAddOneDriveButton;
+  QPushButton *mpSignOutButton;
+  Label *mpStatusLabel;
+  QGroupBox *mpRegistrationGroupBox;
+  QLineEdit *mpGoogleClientIdTextBox;
+  QLineEdit *mpGoogleClientSecretTextBox;
+  QCheckBox *mpGoogleFullDriveScopeCheckBox;
+  QLineEdit *mpOneDriveClientIdTextBox;
+  QGroupBox *mpMountsGroupBox;
+  QListWidget *mpMountsListWidget;
+  QPushButton *mpForgetMountButton;
+  //! Set while refreshMounts() fills the list, so its own changes are not
+  //! mistaken for the user ticking a box.
+  bool mFillingMounts = false;
+
+private slots:
+  void addGoogleDriveAccount();
+  void addOneDriveAccount();
+  void signOutAccount();
+  void onAccountAdded(const QString &key);
+  void onAddAccountFailed(const CloudError &error);
+  void mountAutoPushChanged(QListWidgetItem *pItem);
+  void forgetMount();
 };
 
 #endif // OPTIONSDIALOG_H

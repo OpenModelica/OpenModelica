@@ -39,6 +39,7 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#include "PersistentStorage.h"
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
 #include "Editors/BaseEditor.h"
@@ -878,7 +879,13 @@ QSettings* Utilities::getApplicationSettings()
   static QSettings *pSettings;
   if (!init) {
     init = 1;
+#if defined(__EMSCRIPTEN__)
+    // QSettings' own location is MEMFS, which the reload throws away. Put the ini
+    // in the tree PersistentStorage mirrors to IndexedDB instead.
+    pSettings = new QSettings(QString("%1/%2.ini").arg(PersistentStorage::root(), Helper::application), QSettings::IniFormat);
+#else
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#endif
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif

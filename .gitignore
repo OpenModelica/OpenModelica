@@ -37,3 +37,11 @@ trace.txt
 
 # Claude handoffs
 **/HANDOFF*.md
+
+# Cloud storage OAuth client registrations. Not ignored because the contents are
+# secret - a browser client serves them to every visitor - but because the consent
+# screen carries the registering organisation's name, so another party's app built
+# on a committed client would appear to users as OpenModelica, and could get the
+# client suspended for everyone. Ship the .example; supply the real file at deploy
+# time. (GOCSPX- values also trip GitHub secret scanning.)
+cloud_config.json
