@@ -84,13 +84,14 @@ public function updateProgram
   input Absyn.Program inNewProgram;
   input Absyn.Program inOldProgram;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
   output Absyn.Program outProgram;
 protected
   list<Absyn.Class> cs;
   Absyn.Within w;
 algorithm
   Absyn.PROGRAM(classes=cs,within_=w) := inNewProgram;
-  outProgram := updateProgram2(listReverse(cs),w,inOldProgram, mergeAST);
+  outProgram := updateProgram2(listReverse(cs),w,inOldProgram, mergeAST, allowFilenameChange);
 end updateProgram;
 public function updateProgram2
 " This function takes an old program (second argument), i.e. the old
@@ -102,6 +103,7 @@ public function updateProgram2
   input Absyn.Within w;
   input Absyn.Program inOldProgram;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
   output Absyn.Program outProgram;
 algorithm
   outProgram := match (inNewClasses,w,inOldProgram)
@@ -121,12 +123,12 @@ algorithm
         else
           newp := Absyn.PROGRAM((c1 :: c3),w2);
         end if;
-      then updateProgram2(c2,w,newp, mergeAST);
+      then updateProgram2(c2,w,newp, mergeAST, allowFilenameChange);
 
     case ((c1 :: c2),Absyn.WITHIN(),p2)
       algorithm
-        newp := insertClassInProgram(c1, w, p2, mergeAST);
-        newp_1 := updateProgram2(c2,w,newp, mergeAST);
+        newp := insertClassInProgram(c1, w, p2, mergeAST, allowFilenameChange);
+        newp_1 := updateProgram2(c2,w,newp, mergeAST, allowFilenameChange);
       then newp_1;
 
   end match;
@@ -289,6 +291,7 @@ public function insertClassInProgram
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
   output Absyn.Program outProgram;
 algorithm
   outProgram := matchcontinue (inClass,inWithin,inProgram)
@@ -302,16 +305,16 @@ algorithm
     case (c1,(w as Absyn.WITHIN(path = Absyn.QUALIFIED(name = n1))),p as Absyn.PROGRAM())
       algorithm
         c2 := getClassInProgram(n1, p);
-        c3 := insertClassInClass(c1, w, c2, mergeAST);
-        pnew := updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST);
+        c3 := insertClassInClass(c1, w, c2, mergeAST, allowFilenameChange);
+        pnew := updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST, allowFilenameChange);
       then
         pnew;
 
     case (c1,(w as Absyn.WITHIN(path = Absyn.IDENT(name = n1))),p as Absyn.PROGRAM())
       algorithm
         c2 := getClassInProgram(n1, p);
-        c3 := insertClassInClass(c1, w, c2, mergeAST);
-        pnew := updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST);
+        c3 := insertClassInClass(c1, w, c2, mergeAST, allowFilenameChange);
+        pnew := updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, mergeAST, allowFilenameChange);
       then
         pnew;
 
@@ -341,6 +344,7 @@ public function insertClassInClass "
   input Absyn.Within inWithin2;
   input Absyn.Class inClass3;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
   output Absyn.Class outClass;
 algorithm
   outClass := match (inClass1,inWithin2,inClass3)
@@ -350,14 +354,14 @@ algorithm
       Absyn.Path path;
 
     case (c1,Absyn.WITHIN(path = Absyn.IDENT()),c2)
-      then replaceInnerClass(c1, c2, mergeAST);
+      then replaceInnerClass(c1, c2, mergeAST, allowFilenameChange);
 
     case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(path = path)),c2)
       algorithm
         name2 := AbsynUtil.pathFirstIdent(path);
         cinner := getInnerClass(c2, name2);
-        cnew := insertClassInClass(c1, Absyn.WITHIN(path), cinner, mergeAST);
-      then replaceInnerClass(cnew, c2, mergeAST);
+        cnew := insertClassInClass(c1, Absyn.WITHIN(path), cinner, mergeAST, allowFilenameChange);
+      then replaceInnerClass(cnew, c2, mergeAST, allowFilenameChange);
 
   end match;
 end insertClassInClass;
@@ -367,8 +371,12 @@ public function replaceInnerClass
   input Absyn.Class inClass1;
   input Absyn.Class inClass2;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
   output Absyn.Class outClass;
+protected
+  String enclosingFileName;
 algorithm
+  Absyn.CLASS(info = SOURCEINFO(fileName = enclosingFileName)) := inClass2;
   outClass:=
   matchcontinue (inClass1,inClass2)
     local
@@ -386,7 +394,7 @@ algorithm
     case (c1,outClass as Absyn.CLASS(body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt)))
       algorithm
         publst := getPublicList(parts);
-        (publst2, true) := replaceClassInElementitemlist(publst, c1, mergeAST);
+        (publst2, true) := replaceClassInElementitemlist(publst, c1, mergeAST, allowFilenameChange, enclosingFileName);
         parts2 := replacePublicList(parts, publst2);
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
@@ -397,7 +405,7 @@ algorithm
                          body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt)))
       algorithm
         prolst := getProtectedList(parts);
-        (prolst2, true) := replaceClassInElementitemlist(prolst, c1, mergeAST);
+        (prolst2, true) := replaceClassInElementitemlist(prolst, c1, mergeAST, allowFilenameChange, enclosingFileName);
         parts2 := replaceProtectedList(parts, prolst2);
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
@@ -418,7 +426,7 @@ algorithm
     case (c1,outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt)))
       algorithm
         publst := getPublicList(parts);
-        (publst2, true) := replaceClassInElementitemlist(publst, c1, mergeAST);
+        (publst2, true) := replaceClassInElementitemlist(publst, c1, mergeAST, allowFilenameChange, enclosingFileName);
         parts2 := replacePublicList(parts, publst2);
         outClass.body := Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
@@ -428,7 +436,7 @@ algorithm
     case (c1,outClass as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications = modif,parts = parts,ann=ann,comment = cmt)))
       algorithm
         prolst := getProtectedList(parts);
-        (prolst2, true) := replaceClassInElementitemlist(prolst, c1, mergeAST);
+        (prolst2, true) := replaceClassInElementitemlist(prolst, c1, mergeAST, allowFilenameChange, enclosingFileName);
         parts2 := replaceProtectedList(parts, prolst2);
         outClass.body := Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then
@@ -457,6 +465,8 @@ public function replaceClassInElementitemlist
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
   input Boolean mergeAST = false "when true, the new program should be merged with the old program";
+  input Boolean allowFilenameChange = false "when true, the class is allowed to move to the file it carries; only setSourceFile relocates a class";
+  input String enclosingFileName = "" "the file the enclosing class is stored in";
   output list<Absyn.ElementItem> outAbsynElementItemLst;
   output Boolean replaced "true signals a replacement, false nothing changed!";
 algorithm
@@ -465,7 +475,7 @@ algorithm
       list<Absyn.ElementItem> res,xs;
       Absyn.ElementItem e1;
       Absyn.Class c, c1, c2;
-      String name1,name;
+      String name1,name,oldFileName;
       Boolean a,e;
       Option<Absyn.RedeclareKeywords> b;
       SourceInfo info;
@@ -476,13 +486,25 @@ algorithm
       guard stringEq(name1, name)
       algorithm
         c := if mergeAST then mergeClasses(c2, c1) else c2;
+        // A class stored in the same file as the class enclosing it has to stay
+        // in that file. Letting the replacement bring its own file name along
+        // would make it invisible to listFile on the enclosing class, which
+        // dumps only the elements belonging to that class' file, and the class
+        // would silently disappear on the next listFile/loadString round trip.
+        // A class that already lives in a file of its own (a package stored with
+        // a folder structure) may be relocated, and setSourceFile relocates any
+        // class on purpose.
+        Absyn.CLASS(info = SOURCEINFO(fileName = oldFileName)) := c1;
+        if not allowFilenameChange and stringEq(oldFileName, enclosingFileName) then
+          c := AbsynUtil.setClassFilename(c, oldFileName);
+        end if;
         Absyn.CLASS(info = info) := c;
       then
         (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),info /* The new CLASS might have update info */,h)) :: xs, true);
 
     case ((e1 :: xs),c)
       algorithm
-        (res, replaced) := replaceClassInElementitemlist(xs, c, mergeAST);
+        (res, replaced) := replaceClassInElementitemlist(xs, c, mergeAST, allowFilenameChange, enclosingFileName);
       then
         (e1 :: res, replaced);
 

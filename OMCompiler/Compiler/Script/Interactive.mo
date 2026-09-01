@@ -3361,7 +3361,9 @@ algorithm
         cdef := ProgramUtil.getPathedClassInProgram(path, p);
         within_ := ProgramUtil.buildWithin(path);
         cdef_1 := AbsynUtil.setClassFilename(cdef, filename);
-        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        // relocating the class to another file is the whole point here, so the
+        // replacement must be allowed to bring the new file name along
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p, allowFilenameChange = true);
       then
         (true,newp);
     else (false,inProgram);
