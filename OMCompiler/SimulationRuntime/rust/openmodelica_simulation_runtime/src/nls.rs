@@ -342,9 +342,16 @@ impl nls::NlsBackend for CBackend<'_> {
         eval: &mut dyn FnMut(&[f64], &mut [f64]),
         jac: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {
+        let pat = nls::kinsol::Pattern {
+            nnz: self.nnz,
+            colptr: self.colptr,
+            rowidx: self.rowidx,
+            colors: req.colors,
+            max: req.max,
+        };
         nls::kinsol::solve_selected(
-            self.handle, req.n, self.nnz, self.colptr, self.rowidx, req.nominal, req.guess,
-            req.old_values, req.x, req.eq_index, req.time, req.has_jacobian, load_guess, eval, jac,
+            self.handle, req.n, &pat, req.nominal, req.guess, req.old_values, req.x, req.eq_index,
+            req.time, req.has_jacobian, load_guess, eval, jac,
         )
     }
 
@@ -445,9 +452,13 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         register_names(data, sys);
         sys.nlsMethod = si.nlsMethod;
         sys.nlsLinearSolver = si.nlsLinearSolver;
-        let (colptr, rowidx) = csc_pattern(sys, size);
-        let pattern: Vec<u32> =
-            colptr.iter().chain(rowidx.iter()).map(|v| *v as u32).collect();
+        let (colptr, rowidx, colors) = csc_pattern(sys, size);
+        let pattern: Vec<u32> = colptr
+            .iter()
+            .chain(rowidx.iter())
+            .map(|v| *v as u32)
+            .chain(colors.iter().copied())
+            .collect();
         sys.solverData = Box::into_raw(Box::new(Scratch {
             colptr,
             rowidx,
@@ -493,12 +504,13 @@ fn register_names(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) {
     );
 }
 
-/// The system's `SPARSE_PATTERN` as CSC, or empty where the backend chose a dense
-/// factorization or the pattern does not survive C's `sparsitySanityCheck`.
-fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>) {
-    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() || sys.jacobianIndex < 0
-    {
-        return (Vec::new(), Vec::new());
+/// The system's `SPARSE_PATTERN` as CSC plus its colouring, or empty where the
+/// backend chose a dense factorization or the pattern does not survive C's
+/// `sparsitySanityCheck`. A missing `analyticalJacobianColumn` is not a reason to
+/// drop it -- `nlsSparseJac` differences the pattern instead.
+fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>, Vec<u32>) {
+    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() {
+        return (Vec::new(), Vec::new(), Vec::new());
     }
     let sp = unsafe { &*sys.sparsePattern };
     let cols = (sp.sizeCols as usize).min(size);
@@ -512,7 +524,18 @@ fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i
     }
     let nnz = colptr[size] as usize;
     let rowidx = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
-    (colptr, rowidx)
+    // C's `colorCols` counts from 1; a column past `sizeCols` gets its own colour.
+    let mut next = sp.maxColors;
+    let colors = (0..size)
+        .map(|c| match c < cols {
+            true => unsafe { *sp.colorCols.add(c) }.saturating_sub(1),
+            false => {
+                next += 1;
+                next - 1
+            }
+        })
+        .collect();
+    (colptr, rowidx, colors)
 }
 
 /// C's `sparsitySanityCheck`: every column has an entry, every row is hit, and
@@ -631,7 +654,7 @@ pub extern "C" fn solve_nonlinear_system(
         sys_num: sys_number as u32,
         nominal: &nominal,
         bounds: &bounds,
-        pattern: if csc { &sd.pattern } else { &[] },
+        pattern: if csc || full_pattern { &sd.pattern } else { &[] },
         has_jacobian,
     };
 

@@ -318,6 +318,51 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
     res
 }
 
+/// [`nls::kinsol`]'s `numeric_csc` for the runtime's own sparse Newton: C's
+/// `nlsSparseJac`, one residual evaluation per colour group. `fx` is the residual at
+/// `x`; an empty `colors` leaves every column its own colour.
+#[allow(clippy::too_many_arguments)]
+fn numeric_csc(
+    n: usize,
+    colptr: &[usize],
+    rowidx: &[usize],
+    colors: &[u32],
+    max: &[f64],
+    x: &mut [f64],
+    fx: &[f64],
+    vals: &mut [f64],
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
+    const DELTA_H: f64 = 6.664001874625056e-08;
+    let n_colors = colors.iter().max().map_or(n, |&c| c as usize + 1);
+    let in_color = |c: usize, color: usize| match colors.is_empty() {
+        true => c == color,
+        false => colors[c] as usize == color,
+    };
+    let mut fres = vec![0.0f64; n];
+    let mut xsave = vec![0.0f64; n];
+    let mut inv = vec![0.0f64; n];
+    for color in 0..n_colors {
+        for c in (0..n).filter(|&c| in_color(c, color)) {
+            xsave[c] = x[c];
+            let mut dh = DELTA_H * (libm::fabs(xsave[c]) + 1.0);
+            if xsave[c] + dh >= max.get(c).copied().unwrap_or(f64::MAX) {
+                dh = -dh;
+            }
+            x[c] = xsave[c] + dh;
+            inv[c] = 1.0 / dh;
+        }
+        eval(x, &mut fres);
+        for c in (0..n).filter(|&c| in_color(c, color)) {
+            for k in colptr[c]..colptr[c + 1] {
+                vals[k] = (fres[rowidx[k]] - fx[rowidx[k]]) * inv[c];
+            }
+            x[c] = xsave[c];
+        }
+    }
+}
+
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
 /// `gather` is the pattern block where `jac` fills a dense `n×n` rather than the CSC
 /// values — a system `-nls=kinsol` solves sparsely though the codegen chose dense.
@@ -514,6 +559,8 @@ fn kinsol_sparse_solve(
     eq_index: u32,
     time: f64,
     has_jacobian: bool,
+    colors: &[u32],
+    max: &[f64],
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -525,17 +572,23 @@ fn kinsol_sparse_solve(
         let colptr: alloc::vec::Vec<i32> = pattern[..n + 1].iter().map(|v| *v as i32).collect();
         let rowidx: alloc::vec::Vec<i32> =
             pattern[n + 1..n + 1 + nnz].iter().map(|v| *v as i32).collect();
-        let gather = (!jac_csc).then(|| pattern.to_vec());
+        // Without a column function KINSOL differences the pattern itself, so
+        // `make_assemble`'s dense gather buffer is never needed.
+        let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
+        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max };
         return crate::sundials::kinsol_solve_selected(
-            handle, n, nnz, &colptr, &rowidx, nominal, guess, old_values, x, eq_index, time,
-            has_jacobian, load_guess, eval, &mut assemble,
+            handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
+            load_guess, eval, &mut assemble,
         );
     }
-    // only the KINSOL path names the system it dumps, or differences its own Jacobian
-    let _ = (eq_index, time, has_jacobian, old_values);
+    // only the KINSOL path names the system it dumps
+    let _ = (eq_index, time, old_values);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
-    newton_sparse_solve(n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, eval)
+    newton_sparse_solve(
+        n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
+        eval,
+    )
 }
 
 /// C's `-nls=experimental-kinsol` on a system with no sparsity pattern: the dense
@@ -585,6 +638,9 @@ fn newton_sparse_solve(
     nnz: usize,
     jac_csc: bool,
     handle: u32,
+    has_jacobian: bool,
+    colors: &[u32],
+    max: &[f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     let colptr: alloc::vec::Vec<usize> = (0..=n).map(|k| pattern[k] as usize).collect();
@@ -604,7 +660,7 @@ fn newton_sparse_solve(
     }
 
     let mut vals = vec![0.0f64; nnz];
-    let gather = (!jac_csc).then(|| pattern.to_vec());
+    let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
     let mut assemble = make_assemble(n, jac, gather);
 
     let mut f = vec![0.0f64; n];
@@ -633,7 +689,13 @@ fn newton_sparse_solve(
             *s = 1.0;
         }
         if scaled {
-            assemble(x, &mut vals);
+            match has_jacobian {
+                true => assemble(x, &mut vals),
+                false => {
+                    eval(x, &mut f);
+                    numeric_csc(n, &colptr, &rowidx, colors, max, x, &f, &mut vals, eval);
+                }
+            }
             let mut rowmax = vec![1.0e-12f64; n];
             for c in 0..n {
                 for k in colptr[c]..colptr[c + 1] {
@@ -658,7 +720,11 @@ fn newton_sparse_solve(
                 solved = true;
                 break;
             }
-            assemble(x, &mut vals);
+            match has_jacobian {
+                true => assemble(x, &mut vals),
+                // `f` is the residual at `x`, which the norm above just took.
+                false => numeric_csc(n, &colptr, &rowidx, colors, max, x, &f, &mut vals, eval),
+            }
             for (k, v) in vals.iter().enumerate() {
                 unsafe { store_f64(val_ptr + (k * 8) as u32, *v) };
             }
@@ -859,8 +925,8 @@ impl NlsBackend for WasmBackend<'_> {
     ) -> bool {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
-            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.old_values,
-            load_guess, eval,
+            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
+            req.max, req.old_values, load_guess, eval,
         )
     }
 
@@ -974,8 +1040,12 @@ pub extern "C" fn rt_solve_nls(
     for (i, v) in bounds.iter_mut().enumerate() {
         *v = unsafe { load_f64(bounds_addr + (i * 8) as u32) };
     }
-    let pattern: alloc::vec::Vec<u32> = if has_jacobian && nnz != 0 {
-        (0..size + 1 + nnz as usize).map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) }).collect()
+    // `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; C keeps `sparsePattern`
+    // whether or not the model carries an analytic Jacobian, and so does this.
+    let pattern: alloc::vec::Vec<u32> = if nnz != 0 {
+        (0..2 * size + 1 + nnz as usize)
+            .map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) })
+            .collect()
     } else {
         alloc::vec::Vec::new()
     };

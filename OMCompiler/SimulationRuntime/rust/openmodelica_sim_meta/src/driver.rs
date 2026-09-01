@@ -7141,11 +7141,18 @@ impl SolverCore {
     /// the discrete context, re-initialize at what they leave behind, `IDACalcIC` for
     /// the algebraic unknowns and derivatives, answer back into `SimData`. `ctx` must
     /// be the live callback context — `IDACalcIC` evaluates the residual.
-    fn dae_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
-        let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
+    fn dae_restart(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
         e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
         self.read_states(e)?;
         self.restart()?;
+        self.dae_consistent(e, ctx)
+    }
+
+    /// `ida_event_update`'s second half: `IDACalcIC`, then the consistent point back
+    /// into `SimData` (C's `IDAGetConsistentIC` + `setAlgebraicDAEVars`). `ctx` must
+    /// be the live callback context — `IDACalcIC` evaluates the residual.
+    fn dae_consistent(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
+        let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
         #[cfg(sundials)]
         if let Solver::Ida(s) = &mut self.solver
             && let Some(ida) = s.ida.as_mut()
@@ -7158,8 +7165,7 @@ impl SolverCore {
             self.yp.copy_from_slice(ida.yp());
         }
         e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
-        self.write_states(e)?;
-        Ok(())
+        self.write_states(e)
     }
 
     /// C's `didEventStep`: drop the step history at the post-event state, which in
@@ -7173,6 +7179,11 @@ impl SolverCore {
 
     /// The `IDACalcIC` C's initialization performs before the first output row —
     /// which already reports the algebraic unknowns and derivatives IDA solves for.
+    ///
+    /// C builds the solver ahead of `initializeModel` so that the initial
+    /// `updateDiscreteSystem` is already `ida_event_update` (`solver_main.c` says so).
+    /// The solver here exists only once the parameters are final, so that pass is
+    /// made good afterwards, snapshots included.
     fn prime(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> Result<()> {
         if !self.dae {
             return Ok(());
@@ -7187,6 +7198,19 @@ impl SolverCore {
         if let Solver::Ida(state) = &mut self.solver {
             let e = unsafe { &mut *ctx.engine };
             state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx_ptr)?;
+        }
+        for _ in 0..max_event_iter() {
+            let before = discrete_snapshot(e, sim_data, layout)?;
+            self.dae_consistent(e, ctx_ptr)?;
+            update_discrete_system(e, sim_data, layout)?;
+            if discrete_snapshot(e, sim_data, layout)? == before {
+                break;
+            }
+        }
+        update_relations_pre(e, sim_data, layout)?;
+        if layout.n_zc > 0 {
+            save_zc_pre(e, sim_data, layout)?;
+            e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
         }
         if let Some(err) = ctx.err.take() {
             return Err(err);
@@ -7318,7 +7342,7 @@ impl SolverCore {
     /// that moved a state behind DASKR's back. In DAE mode the algebraic unknowns
     /// follow the states in `y` (C's `getAlgebraicDAEVars`); only the states' `y'`
     /// moves, as C's `statesDer` keeps what the last `IDAGetConsistentIC` left there.
-    fn read_states(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn read_states(&mut self, e: &mut dyn SimEngine) -> Result<()> {
         self.read_y(e)?;
         self.yp.resize(self.n_unknowns, 0.0);
         for i in 0..self.n_states {
@@ -7329,7 +7353,7 @@ impl SolverCore {
 
     /// The `y` half of [`read_states`](SolverCore::read_states), for the callers
     /// that must not disturb the integrator's own `y'`.
-    fn read_y(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn read_y(&mut self, e: &mut dyn SimEngine) -> Result<()> {
         self.y = (0..self.n_states)
             .map(|i| read_f64(e, self.states_base + (i as u32) * 8))
             .collect::<Result<_>>()?;
@@ -7342,7 +7366,7 @@ impl SolverCore {
     /// The integrator's accepted point back into `SimData`. For an explicit ODE only
     /// the states move (the model computes `y'`); in DAE mode `y'` and the algebraic
     /// unknowns are solver results too.
-    fn write_states(&self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn write_states(&self, e: &mut dyn SimEngine) -> Result<()> {
         for i in 0..self.n_states {
             write_f64(e, self.states_base + (i as u32) * 8, self.y[i])?;
         }

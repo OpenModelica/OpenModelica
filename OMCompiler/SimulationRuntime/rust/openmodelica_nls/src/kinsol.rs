@@ -12,6 +12,18 @@
 //! one written in a crate that has none compiles the call *out* silently. Ask
 //! [`AVAILABLE`] instead, and take the dense ladder when it is false.
 
+/// C's `SPARSE_PATTERN` in CSC addressing, plus the bounds a difference step must
+/// not cross.
+pub struct Pattern<'a> {
+    pub nnz: usize,
+    pub colptr: &'a [i32],
+    pub rowidx: &'a [i32],
+    /// C's `colorCols`, 0-based; empty leaves every column its own colour.
+    pub colors: &'a [u32],
+    /// C's `nlsData->max`; empty leaves the columns unbounded.
+    pub max: &'a [f64],
+}
+
 /// The SUNDIALS-facing half: KINSOL over the sparse Jacobian with KLU as its
 /// linear solver (C's `kinsolSolver.c`), and the explicitly scaled variant
 /// `kinsol_b.c` runs. [`solve`] and [`b_solve`] below are what a backend calls.
@@ -115,9 +127,32 @@ pub mod sun {
         assemble: &'a mut dyn FnMut(&[f64], &mut [f64]),
         /// Difference the Jacobian rather than assemble it analytically.
         numeric: bool,
+        colors: &'a [u32],
+        max: &'a [f64],
         /// What the `LOG_NLS_DERIVATIVE_TEST` header names.
         eq_index: u32,
         time: f64,
+    }
+
+    impl Ud<'_> {
+        /// C's `sparsePattern->maxColors`, or one column at a time without a colouring.
+        fn n_colors(&self) -> usize {
+            match self.colors.iter().max() {
+                Some(&c) => c as usize + 1,
+                None => self.n,
+            }
+        }
+
+        fn in_color(&self, col: usize, color: usize) -> bool {
+            match self.colors.is_empty() {
+                true => col == color,
+                false => self.colors[col] as usize == color,
+            }
+        }
+
+        fn max_of(&self, col: usize) -> f64 {
+            self.max.get(col).copied().unwrap_or(f64::MAX)
+        }
     }
 
     /// Extract the backing array pointer from an N_Vector.
@@ -139,24 +174,38 @@ pub mod sun {
         crate::assert_hit() as c_int
     }
 
-    /// C's `nlsSparseJac`: forward differences into the pattern's CSC values. C
-    /// perturbs a whole colour group per evaluation; column at a time gives the same
-    /// entries (no row sees two columns of a group) for more evaluations, and only on
-    /// the systems whose analytic Jacobian KINSOL has already rejected.
+    /// C's `nlsSparseJac`: forward differences into the pattern's CSC values, one
+    /// residual evaluation per colour group — no row sees two columns of a group, so
+    /// the whole group can be perturbed at once.
     fn numeric_csc(ud: &mut Ud, x: &mut [f64], fx: &[f64], vals: &mut [f64]) {
         /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
         const DELTA_H: f64 = 6.664001874625056e-08;
         let mut fres = vec![0.0f64; ud.n];
-        for c in 0..ud.n {
-            let saved = x[c];
-            let dh = DELTA_H * (libm::fabs(saved) + 1.0);
-            x[c] = saved + dh;
+        let mut xsave = vec![0.0f64; ud.n];
+        let mut inv = vec![0.0f64; ud.n];
+        for color in 0..ud.n_colors() {
+            for c in 0..ud.n {
+                if !ud.in_color(c, color) {
+                    continue;
+                }
+                xsave[c] = x[c];
+                let mut dh = DELTA_H * (libm::fabs(xsave[c]) + 1.0);
+                if xsave[c] + dh >= ud.max_of(c) {
+                    dh = -dh;
+                }
+                x[c] = xsave[c] + dh;
+                inv[c] = 1.0 / dh;
+            }
             (ud.eval)(x, &mut fres);
-            x[c] = saved;
-            let inv = 1.0 / dh;
-            for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
-                let row = ud.rowidx[k] as usize;
-                vals[k] = (fres[row] - fx[row]) * inv;
+            for c in 0..ud.n {
+                if !ud.in_color(c, color) {
+                    continue;
+                }
+                for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
+                    let row = ud.rowidx[k] as usize;
+                    vals[k] = (fres[row] - fx[row]) * inv[c];
+                }
+                x[c] = xsave[c];
             }
         }
     }
@@ -408,8 +457,7 @@ pub mod sun {
             &mut self,
             guess: &[f64],
             nominal: &[f64],
-            colptr: &[i32],
-            rowidx: &[i32],
+            pat: &super::Pattern,
             x: &mut [f64],
             eq_index: u32,
             time: f64,
@@ -425,8 +473,10 @@ pub mod sun {
             let mut ud = Ud {
                 n: self.n,
                 nnz: self.nnz,
-                colptr,
-                rowidx,
+                colptr: pat.colptr,
+                rowidx: pat.rowidx,
+                colors: pat.colors,
+                max: pat.max,
                 eval,
                 assemble,
                 numeric: self.numeric_jac,
@@ -1195,9 +1245,7 @@ pub fn b_solve<'a>(
 pub fn solve(
     handle: u32,
     n: usize,
-    nnz: usize,
-    colptr: &[i32],
-    rowidx: &[i32],
+    pat: &Pattern,
     nominal: &[f64],
     guess: &[f64],
     x: &mut [f64],
@@ -1207,8 +1255,8 @@ pub fn solve(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     assemble: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
-    KIN_CACHE.with(handle, || sun::Solver::new(n, nnz), |solver| {
-        solver.solve(guess, nominal, colptr, rowidx, x, eq_index, time, has_jacobian, eval, assemble)
+    KIN_CACHE.with(handle, || sun::Solver::new(n, pat.nnz), |solver| {
+        solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
     })
 }
 
@@ -1245,9 +1293,7 @@ mod stub {
     pub fn solve(
         _handle: u32,
         _n: usize,
-        _nnz: usize,
-        _colptr: &[i32],
-        _rowidx: &[i32],
+        _pat: &super::Pattern,
         _nominal: &[f64],
         _guess: &[f64],
         _x: &mut [f64],
@@ -1271,9 +1317,7 @@ pub use stub::{b_solve, reset_caches, solve};
 pub fn solve_selected(
     handle: u32,
     n: usize,
-    nnz: usize,
-    colptr: &[i32],
-    rowidx: &[i32],
+    pat: &Pattern,
     nominal: &[f64],
     guess: &[f64],
     old_values: &[f64],
@@ -1290,12 +1334,9 @@ pub fn solve_selected(
         // which is the start point the caller already picked.
         let start = x.to_vec();
         return b_solve(
-            handle, n, nnz, Some((colptr, rowidx)), nominal, &start, old_values, x, eq_index, time,
-            load_guess, eval, has_jacobian.then_some(assemble),
+            handle, n, pat.nnz, Some((pat.colptr, pat.rowidx)), nominal, &start, old_values, x,
+            eq_index, time, load_guess, eval, has_jacobian.then_some(assemble),
         );
     }
-    solve(
-        handle, n, nnz, colptr, rowidx, nominal, guess, x, eq_index, time, has_jacobian, eval,
-        assemble,
-    )
+    solve(handle, n, pat, nominal, guess, x, eq_index, time, has_jacobian, eval, assemble)
 }
