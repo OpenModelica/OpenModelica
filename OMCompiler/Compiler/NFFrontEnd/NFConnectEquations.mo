@@ -411,6 +411,7 @@ protected
   list<Connector> c_rest;
   DAE.ElementSource src;
   Expression sum;
+  list<Expression> terms;
   list<InstNode> iterators = {};
   list<Expression> ranges = {};
   list<Subscript> subs = {};
@@ -427,12 +428,14 @@ algorithm
   if listEmpty(c_rest) then
     sum := Expression.fromCref(c.name);
   else
-    sum := makeFlowExp(c);
+    terms := {makeFlowExp(c)};
 
     for e in c_rest loop
-      sum := Expression.BINARY(sum, Operator.makeAdd(Type.REAL()), makeFlowExp(e));
+      terms := makeFlowExp(e)::terms;
       src := ElementSource.mergeSources(src, e.source);
     end for;
+
+    sum := Expression.MULTARY(listReverseInPlace(terms), {}, Operator.makeAdd(Type.REAL()));
   end if;
 
   equations := {Equation.makeEquality(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), src)};

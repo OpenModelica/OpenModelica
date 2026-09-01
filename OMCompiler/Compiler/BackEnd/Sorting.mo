@@ -95,40 +95,62 @@ protected function StrongConnect "author: lochel"
   output Integer outIndex = index;
   output list<list<Integer>> outComponents = inComponents;
 protected
-  list<Integer> SCC;
-  Integer eqn2;
+  list<tuple<Integer, list<Integer>>> callStack = {} "(eqn, successors left to visit)";
+  list<Integer> SCC, successors = {};
+  Integer current = eqn, eqn2, parent;
+  Boolean entering = true, descended;
 algorithm
-  // Set the depth index for eqn to the smallest unused index
-  arrayUpdate(number, eqn, outIndex);
-  arrayUpdate(lowlink, eqn, outIndex);
-  arrayUpdate(onStack, eqn, true);
-  outIndex := outIndex + 1;
-  outStack := eqn::outStack;
-
-  // Consider successors of eqn
-  for eqn2 in Matching.incomingEquations(eqn, m, ass1) loop
-    if number[eqn2] == -1 then
-      // Successor eqn2 has not yet been visited; recurse on it
-      (outStack, outIndex, outComponents) := StrongConnect(m, ass1, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
-    elseif onStack[eqn2] then
-      // Successor eqn2 is in the stack and hence in the current SCC
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
+  while true loop
+    if entering then
+      entering := false;
+      // Set the depth index for current to the smallest unused index
+      arrayUpdate(number, current, outIndex);
+      arrayUpdate(lowlink, current, outIndex);
+      arrayUpdate(onStack, current, true);
+      outIndex := outIndex + 1;
+      outStack := current::outStack;
+      successors := Matching.incomingEquations(current, m, ass1);
     end if;
-  end for;
 
-  // If eqn is a root node, pop the stack and generate an SCC
-  if lowlink[eqn] == number[eqn] then
-    eqn2::outStack := outStack;
-    arrayUpdate(onStack, eqn2, false);
-    SCC := {eqn2};
-    while eqn <> eqn2 loop
-      eqn2::outStack := outStack;
-      arrayUpdate(onStack, eqn2, false);
-      SCC := eqn2::SCC;
+    // Consider successors of current
+    descended := false;
+    while not listEmpty(successors) loop
+      eqn2::successors := successors;
+      if number[eqn2] == -1 then
+        // Successor eqn2 has not yet been visited; descend into it
+        callStack := (current, successors)::callStack;
+        current := eqn2;
+        entering := true;
+        descended := true;
+        break;
+      elseif onStack[eqn2] then
+        // Successor eqn2 is in the stack and hence in the current SCC
+        arrayUpdate(lowlink, current, intMin(lowlink[current], number[eqn2]));
+      end if;
     end while;
-    outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
-  end if;
+
+    if not descended then
+      // If current is a root node, pop the stack and generate an SCC
+      if lowlink[current] == number[current] then
+        eqn2::outStack := outStack;
+        arrayUpdate(onStack, eqn2, false);
+        SCC := {eqn2};
+        while current <> eqn2 loop
+          eqn2::outStack := outStack;
+          arrayUpdate(onStack, eqn2, false);
+          SCC := eqn2::SCC;
+        end while;
+        outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
+      end if;
+
+      if listEmpty(callStack) then
+        break;
+      end if;
+      (parent, successors)::callStack := callStack;
+      arrayUpdate(lowlink, parent, intMin(lowlink[parent], lowlink[current]));
+      current := parent;
+    end if;
+  end while;
 end StrongConnect;
 
 public function TarjanTransposed "author: lochel
@@ -172,45 +194,64 @@ protected function StrongConnectTransposed "author: lochel"
   output Integer outIndex = index;
   output list<list<Integer>> outComponents = inComponents;
 protected
-  list<Integer> SCC;
-  Integer var, eqn2;
+  list<tuple<Integer, list<Integer>>> callStack = {} "(eqn, successors left to visit)";
+  list<Integer> SCC, successors = {};
+  Integer current = eqn, var, eqn2, parent;
+  Boolean entering = true, descended;
 algorithm
-  // Set the depth index for eqn to the smallest unused index
-  arrayUpdate(number, eqn, outIndex);
-  arrayUpdate(lowlink, eqn, outIndex);
-  arrayUpdate(onStack, eqn, true);
-  outIndex := outIndex + 1;
-  outStack := eqn::outStack;
+  while true loop
+    if entering then
+      entering := false;
+      // Set the depth index for current to the smallest unused index
+      arrayUpdate(number, current, outIndex);
+      arrayUpdate(lowlink, current, outIndex);
+      arrayUpdate(onStack, current, true);
+      outIndex := outIndex + 1;
+      outStack := current::outStack;
 
-  // Consider successors of eqn
-  var := ass2[eqn] "get the variable that is solved in given equation";
-  if var > 0 then
-    for eqn2 in mT[var] loop
-      if eqn2 > 0 and eqn2 <> eqn then
-        if number[eqn2] == -1 then
-          // Successor eqn2 has not yet been visited; recurse on it
-          (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
-          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
-        elseif onStack[eqn2] then
-          // Successor eqn2 is in the stack and hence in the current SCC
-          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
-        end if;
+      var := ass2[current] "get the variable that is solved in given equation";
+      successors := if var > 0 then list(e for e guard(e > 0 and e <> current) in mT[var]) else {};
+    end if;
+
+    // Consider successors of current
+    descended := false;
+    while not listEmpty(successors) loop
+      eqn2::successors := successors;
+      if number[eqn2] == -1 then
+        // Successor eqn2 has not yet been visited; descend into it
+        callStack := (current, successors)::callStack;
+        current := eqn2;
+        entering := true;
+        descended := true;
+        break;
+      elseif onStack[eqn2] then
+        // Successor eqn2 is in the stack and hence in the current SCC
+        arrayUpdate(lowlink, current, intMin(lowlink[current], number[eqn2]));
       end if;
-    end for;
-  end if;
-
-  // If eqn is a root node, pop the stack and generate an SCC
-  if lowlink[eqn] == number[eqn] then
-    eqn2::outStack := outStack;
-    arrayUpdate(onStack, eqn2, false);
-    SCC := {eqn2};
-    while eqn <> eqn2 loop
-      eqn2::outStack := outStack;
-      arrayUpdate(onStack, eqn2, false);
-      SCC := eqn2::SCC;
     end while;
-    outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
-  end if;
+
+    if not descended then
+      // If current is a root node, pop the stack and generate an SCC
+      if lowlink[current] == number[current] then
+        eqn2::outStack := outStack;
+        arrayUpdate(onStack, eqn2, false);
+        SCC := {eqn2};
+        while current <> eqn2 loop
+          eqn2::outStack := outStack;
+          arrayUpdate(onStack, eqn2, false);
+          SCC := eqn2::SCC;
+        end while;
+        outComponents := MetaModelica.Dangerous.listReverseInPlace(SCC)::outComponents;
+      end if;
+
+      if listEmpty(callStack) then
+        break;
+      end if;
+      (parent, successors)::callStack := callStack;
+      arrayUpdate(lowlink, parent, intMin(lowlink[parent], lowlink[current]));
+      current := parent;
+    end if;
+  end while;
 end StrongConnectTransposed;
 
 annotation(__OpenModelica_Interface="backend");

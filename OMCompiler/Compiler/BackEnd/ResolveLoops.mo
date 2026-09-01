@@ -1062,26 +1062,26 @@ update the adjacencymatrix.
   input array<Integer> deadEndEqs; //marks all equations which are not in a loop with 1, otherwise 0
   input array<Integer> deadEndVars; //marks all variables which are not in a loop with 1, otherwise 0
 protected
-  Integer eqIdx, nextVarIdx;
+  Integer eqIdx, var = varIdx;
   list<Integer> adjEqs, adjVars;
+  Boolean walk = true;
 algorithm
-    //print("check var "+intString(varIdx)+"\n");
-  adjEqs := arrayGet(mTIn,varIdx);
-  adjEqs := List.filter1OnTrue(adjEqs,arrayIsZeroAt,deadEndEqs);  //the eqs that are not yet marked
-    //print("adjEqs: \n"+stringDelimitList(List.map(adjEqs,intString)," / ")+"\n");
-  if listLength(adjEqs) == 1 then  // the var is a dead end var
-    eqIdx := listHead(adjEqs);
-    arrayUpdate(deadEndVars,varIdx,1);
-    adjVars := arrayGet(mIn,eqIdx);
-    adjVars := List.filter1OnTrue(adjVars,arrayIsZeroAt,deadEndVars);  //the vars that are not yet marked
-      //print("check eqIdx "+intString(eqIdx)+"\n");
-    if listLength(adjVars) == 1 then //the adjacent equation is a dead end eq
-      nextVarIdx := listHead(adjVars);
-      arrayUpdate(deadEndEqs,eqIdx,1);
-        //print("check nextVarIdx: \n"+stringDelimitList(List.map({nextVarIdx},intString)," / ")+"\n");
-      markDeadEndsInBipartiteGraph(nextVarIdx,mIn,mTIn,deadEndEqs,deadEndVars);  //recursion
+  while walk loop
+    walk := false;
+    adjEqs := arrayGet(mTIn,var);
+    adjEqs := List.filter1OnTrue(adjEqs,arrayIsZeroAt,deadEndEqs);  //the eqs that are not yet marked
+    if listLength(adjEqs) == 1 then  // the var is a dead end var
+      eqIdx := listHead(adjEqs);
+      arrayUpdate(deadEndVars,var,1);
+      adjVars := arrayGet(mIn,eqIdx);
+      adjVars := List.filter1OnTrue(adjVars,arrayIsZeroAt,deadEndVars);  //the vars that are not yet marked
+      if listLength(adjVars) == 1 then //the adjacent equation is a dead end eq
+        arrayUpdate(deadEndEqs,eqIdx,1);
+        var := listHead(adjVars);
+        walk := true;
+      end if;
     end if;
-  end if;
+  end while;
 end markDeadEndsInBipartiteGraph;
 
 protected function arrayGetDeleteInLst "deletes all entries given in delEntries from the indexed list<Integer> of the array"
@@ -1137,27 +1137,18 @@ protected function getDoubles "author: Waurich TUD 2014-01
   function to get the reversed doubles in a list."
   input list<list<Integer>> elemLstIn;
   input list<list<Integer>> lstIn;
-  output list<list<Integer>> lstOut;
+  output list<list<Integer>> lstOut = lstIn;
 replaceable type ElementType subtypeof Any;
+protected
+  list<Integer> elem;
+  list<list<Integer>> elemLst = elemLstIn;
 algorithm
-  lstOut := match elemLstIn
-    local
-      list<Integer> elem;
-      list<list<Integer>> lst, elemLst;
-    case {}
-      algorithm
-      then
-        lstIn;
-    case elem::elemLst
-      algorithm
-        if listMember(elem,elemLst) then
-          lst := getDoubles(elemLst,elem::lstIn);
-        else
-          lst := getDoubles(elemLst,lstIn);
-        end if;
-      then
-        lst;
-  end match;
+  while not listEmpty(elemLst) loop
+    elem::elemLst := elemLst;
+    if listMember(elem,elemLst) then
+      lstOut := elem::lstOut;
+    end if;
+  end while;
 end getDoubles;
 
 protected function getTriples
@@ -1545,58 +1536,45 @@ protected function getPathTillNextCrossEq "author:Waurich TUD 2013-12
   input list<Integer> allEqCrossNodes;
   input list<list<Integer>> unfinPathsIn;
   input list<list<Integer>> eqPathsIn;
-  output list<list<Integer>> eqPathsOut;
+  output list<list<Integer>> eqPathsOut = eqPathsIn;
+protected
+  Integer crossEq, lastEq, prevEq;
+  list<Integer> adjVars, nextEqs, endEqs, unfinEqs, crossNodes = checkEqCrossNodes, pathStart;
+  list<list<Integer>> paths, adjEqs, unfinPaths = unfinPathsIn;
 algorithm
-  eqPathsOut := matchcontinue(checkEqCrossNodes, unfinPathsIn)
-    local
-      Integer crossEq, lastEq, prevEq;
-      list<Integer> adjVars, nextEqs, endEqs, unfinEqs, restCrossNodes, pathStart;
-      list<list<Integer>> paths, adjEqs, unfinPaths, restUnfinPaths;
-    case(crossEq::restCrossNodes, {})
-      algorithm
-        // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
-        adjVars := arrayGet(mIn,crossEq);
-        adjEqs := List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs := list(List.deleteMemberOnTrue(crossEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
-        adjEqs := List.filterOnFalse(adjEqs,listEmpty);
-        nextEqs := List.flatten(adjEqs);
-        (endEqs,unfinEqs,_) := List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
-        paths := List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
-        paths := listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
-        unfinPaths := List.map1(unfinEqs,cons1,{crossEq});
-        unfinPaths := listAppend(unfinPaths,unfinPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
-        paths := getPathTillNextCrossEq(restCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
-      then
-        paths;
-    case(_, pathStart::restUnfinPaths)
-      algorithm
-        lastEq := listHead(pathStart);
-        prevEq := List.second(pathStart);
-        adjVars := arrayGet(mIn,lastEq);
-        adjEqs := List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs := list(List.deleteMemberOnTrue(lastEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
-        adjEqs := List.filterOnFalse(adjEqs,listEmpty);
-        nextEqs := List.map(adjEqs,listHead);
-        (nextEqs,_) := List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
-        (endEqs,unfinEqs,_) := List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
-        paths := List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
-        paths := listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
-        unfinPaths := List.map1(unfinEqs,cons1,pathStart);
-        unfinPaths := listAppend(unfinPaths,restUnfinPaths) annotation(__OpenModelica_DisableListAppendWarning=true);
-        paths := getPathTillNextCrossEq(checkEqCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
-      then
-        paths;
-    case({}, {})
-      algorithm
-      then
-        eqPathsIn;
+  while true loop
+    if not listEmpty(unfinPaths) then
+      pathStart::unfinPaths := unfinPaths;
+      lastEq := listHead(pathStart);
+      prevEq := List.second(pathStart);
+      adjVars := arrayGet(mIn,lastEq);
+      adjEqs := List.map1(adjVars,Array.getIndexFirst,mTIn);
+      adjEqs := list(List.deleteMemberOnTrue(lastEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
+      adjEqs := List.filterOnFalse(adjEqs,listEmpty);
+      nextEqs := List.map(adjEqs,listHead);
+      (nextEqs,_) := List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
+      (endEqs,unfinEqs,_) := List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
+      paths := List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
+      eqPathsOut := listAppend(paths,eqPathsOut) annotation(__OpenModelica_DisableListAppendWarning=true);
+      paths := List.map1(unfinEqs,cons1,pathStart);
+      unfinPaths := listAppend(paths,unfinPaths) annotation(__OpenModelica_DisableListAppendWarning=true);
+    elseif not listEmpty(crossNodes) then
+      crossEq::crossNodes := crossNodes;
+      // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
+      adjVars := arrayGet(mIn,crossEq);
+      adjEqs := List.map1(adjVars,Array.getIndexFirst,mTIn);
+      adjEqs := list(List.deleteMemberOnTrue(crossEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
+      adjEqs := List.filterOnFalse(adjEqs,listEmpty);
+      nextEqs := List.flatten(adjEqs);
+      (endEqs,unfinEqs,_) := List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
+      paths := List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
+      eqPathsOut := listAppend(paths,eqPathsOut) annotation(__OpenModelica_DisableListAppendWarning=true);
+      paths := List.map1(unfinEqs,cons1,{crossEq});
+      unfinPaths := listAppend(paths,unfinPaths) annotation(__OpenModelica_DisableListAppendWarning=true);
     else
-      algorithm
-        Error.addInternalError("function ResolveLoops.getPathTillNextCrossEq failed", sourceInfo());
-        then
-          fail();
-  end matchcontinue;
-  //KAB2
+      return;
+    end if;
+  end while;
 end getPathTillNextCrossEq;
 
 protected function cons1
@@ -2252,62 +2230,45 @@ protected function connect2PathsToLoops "author:Waurich TUD 2014-01
   input list<list<Integer>> pathsIn;
   input list<list<Integer>> loopsIn;  //empty input
   input list<list<Integer>> restPathsIn;  // empt input
-  output list<list<Integer>> pathsOut;
-  output list<list<Integer>> restPathsOut;
+  output list<list<Integer>> pathsOut = loopsIn;
+  output list<list<Integer>> restPathsOut = restPathsIn;
+protected
+  Boolean closedALoop;
+  Integer startNode, endNode;
+  list<Integer> path;
+  list<list<Integer>> rest = pathsIn, endPaths, startPaths, newLoops;
 algorithm
-  (pathsOut,restPathsOut) := matchcontinue pathsIn
-    local
-      Boolean closedALoop;
-      Integer startNode, endNode;
-      list<Integer> path;
-      list<list<Integer>> rest, endPaths, startPaths, newLoops, loops, restPaths;
-    case {}
-      algorithm
-        then
-          ({},{});
-    case {path}
-      algorithm
-        // checks if the single path closes itself
-        startNode := listHead(path);
-        endNode := List.last(path);
-        closedALoop := intEq(startNode,endNode);
-        loops := if closedALoop then path::loopsIn else loopsIn;
-        restPaths := if closedALoop then restPathsIn else (path::restPathsIn);
-      then
-        (loops,restPaths);
-    case path::rest
-      algorithm
-        // the loop closes itself
-        startNode := listHead(path);
-        endNode := List.last(path);
-        true := intEq(startNode,endNode);
-        loops := path::loopsIn;
-        (loops,restPaths) := connect2PathsToLoops(rest,loops,restPathsIn);
-      then
-        (loops,restPaths);
-    case path::rest
-      algorithm
-        // check if there is another path that closes the Loop. if not: put the path to the restPaths
-        startNode := listHead(path);
-        endNode := List.last(path);
-        startPaths := List.filter1OnTrue(rest,firstInListIsEqual,startNode);
-        startPaths := List.filter1OnTrue(startPaths,lastInListIsEqual,endNode);
-        endPaths := List.filter1OnTrue(rest,firstInListIsEqual,endNode);
-        endPaths := List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
-        endPaths := listAppend(startPaths,endPaths);
-        closedALoop := not listEmpty(endPaths);
-        newLoops := if closedALoop then connectPaths(path,endPaths) else {};
-        restPaths := if closedALoop then restPathsIn else (path::restPathsIn);
-        loops := listAppend(newLoops,loopsIn);
-        (loops,restPaths) := connect2PathsToLoops(rest,loops,restPaths);
-      then
-        (loops,restPaths);
+  if listEmpty(pathsIn) then
+    pathsOut := {};
+    restPathsOut := {};
+    return;
+  end if;
+
+  while not listEmpty(rest) loop
+    path::rest := rest;
+    startNode := listHead(path);
+    endNode := List.last(path);
+
+    if intEq(startNode,endNode) then
+      // the loop closes itself
+      pathsOut := path::pathsOut;
+    elseif listEmpty(rest) then
+      restPathsOut := path::restPathsOut;
     else
-      algorithm
-        print("connect2PathsToLoops failed\n");
-      then
-        fail();
-  end matchcontinue;
+      // check if there is another path that closes the Loop. if not: put the path to the restPaths
+      startPaths := List.filter1OnTrue(rest,firstInListIsEqual,startNode);
+      startPaths := List.filter1OnTrue(startPaths,lastInListIsEqual,endNode);
+      endPaths := List.filter1OnTrue(rest,firstInListIsEqual,endNode);
+      endPaths := List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
+      endPaths := listAppend(startPaths,endPaths);
+      closedALoop := not listEmpty(endPaths);
+      newLoops := if closedALoop then connectPaths(path,endPaths) else {};
+      if not closedALoop then
+        restPathsOut := path::restPathsOut;
+      end if;
+      pathsOut := listAppend(newLoops,pathsOut);
+    end if;
+  end while;
 end connect2PathsToLoops;
 
 protected function connectPaths "author:Waurich TUD 2014-02

@@ -228,6 +228,7 @@ algorithm
 end BBMatching;
 
 protected function BBPathFound
+  "Searches an augmenting path starting at equation i."
   input Integer i;
   input BackendDAE.AdjacencyMatrix m;
   input array<Boolean> eMark;
@@ -238,38 +239,66 @@ protected function BBPathFound
   input array<Integer> vMarkIx;
   output Boolean success=false;
   input output Integer eMarkN, vMarkN;
+protected
+  list<tuple<Integer, Integer, list<Integer>>> stack = {} "(eqn, var descended through, vars left to try)";
+  list<Integer> vars = {};
+  Integer eqn = i, var, parent;
+  Boolean enter = true, descended;
 algorithm
-  if arrayGet(eMark, i) then
-    return;
-  end if;
-  arrayUpdate(eMark, i, true);
-  eMarkN := eMarkN+1;
-  arrayUpdate(eMarkIx, eMarkN, i);
+  while true loop
+    if enter then
+      enter := false;
+      vars := {};
+      if not arrayGet(eMark, eqn) then
+        arrayUpdate(eMark, eqn, true);
+        eMarkN := eMarkN+1;
+        arrayUpdate(eMarkIx, eMarkN, eqn);
 
-  for j in m[i] loop
-    // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and ass1[j] <= 0) then
-      success := true;
-      arrayUpdate(ass1, j, i);
-      arrayUpdate(ass2, i, j);
-      return;
-    end if;
-  end for;
+        for j in m[eqn] loop
+          // negative entries in adjacence matrix belong to states!!!
+          if (j>0 and ass1[j] <= 0) then
+            success := true;
+            arrayUpdate(ass1, j, eqn);
+            arrayUpdate(ass2, eqn, j);
+            break;
+          end if;
+        end for;
 
-  for j in m[i] loop
-    // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and not vMark[j]) then
-      arrayUpdate(vMark, j, true);
-      vMarkN := vMarkN+1;
-      arrayUpdate(vMarkIx, vMarkN, j);
-      (success, eMarkN, vMarkN) := BBPathFound(ass1[j], m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eMarkN, vMarkN);
-      if success then
-        arrayUpdate(ass1, j, i);
-        arrayUpdate(ass2, i, j);
-        return;
+        if success then
+          for frame in stack loop
+            (parent, var, _) := frame;
+            arrayUpdate(ass1, var, parent);
+            arrayUpdate(ass2, parent, var);
+          end for;
+          return;
+        end if;
+        vars := m[eqn];
       end if;
     end if;
-  end for;
+
+    descended := false;
+    while not listEmpty(vars) loop
+      var::vars := vars;
+      // negative entries in adjacence matrix belong to states!!!
+      if (var>0 and not vMark[var]) then
+        arrayUpdate(vMark, var, true);
+        vMarkN := vMarkN+1;
+        arrayUpdate(vMarkIx, vMarkN, var);
+        stack := (eqn, var, vars)::stack;
+        eqn := ass1[var];
+        enter := true;
+        descended := true;
+        break;
+      end if;
+    end while;
+
+    if not descended then
+      if listEmpty(stack) then
+        return;
+      end if;
+      (eqn, _, vars)::stack := stack;
+    end if;
+  end while;
 end BBPathFound;
 
 protected function BBCheapMatching

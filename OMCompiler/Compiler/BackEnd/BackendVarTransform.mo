@@ -433,29 +433,22 @@ in singleRepl."
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   input HashSet.HashSet inSet "to avoid double work";
-  output VariableReplacements outRepl;
+  output VariableReplacements outRepl = repl;
+protected
+  HashSet.HashSet set = inSet;
+  DAE.Exp crDst;
 algorithm
-  outRepl := matchcontinue lst
-    local
-      DAE.Exp crDst;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crs;
-      VariableReplacements repl1;
-      HashSet.HashSet set;
-    case {} then repl;
-    case cr::crs
-      algorithm
-        false := BaseHashSet.has(cr,inSet);
-        set := BaseHashSet.add(cr,inSet);
-        SOME(crDst) := UnorderedMap.getOrFail(cr,repl.hashTable);
+  for cr in lst loop
+    if not BaseHashSet.has(cr,set) then
+      try
+        set := BaseHashSet.add(cr,set);
+        SOME(crDst) := UnorderedMap.getOrFail(cr,outRepl.hashTable);
         (crDst,_) := replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
-        repl1 := addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-      then
-        makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption,set);
-    case _::crs
-      then
-        makeTransitive12(crs,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet);
-  end matchcontinue;
+        outRepl := addReplacementNoTransitive(outRepl,cr,crDst) "add updated old rule";
+      else
+      end try;
+    end if;
+  end for;
 end makeTransitive12;
 
 protected function makeTransitive2 "

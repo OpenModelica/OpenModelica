@@ -2181,37 +2181,20 @@ protected function updateZeroCrossEqnIndex
   input list<BackendDAE.ZeroCrossing> izeroCrossings;
   input list<tuple<Integer, Integer>> eqBackendSimCodeMapping;
   input Integer numEqnsinArray;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
+  output list<BackendDAE.ZeroCrossing> ozeroCrossings = {};
 protected
   array<Integer> mappingArray;
+  DAE.Exp exp;
+  list<Integer> occurEquLst;
+  Option<list<BackendDAE.SimIterator>> iter;
 algorithm
   mappingArray := convertListMappingToArray(eqBackendSimCodeMapping, numEqnsinArray);
-  ozeroCrossings := updateZeroCrossEqnIndexHelp(izeroCrossings, mappingArray, {});
+  for zc in izeroCrossings loop
+    BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst, iter=iter) := zc;
+    ozeroCrossings := BackendDAE.ZERO_CROSSING(0, exp, convertListIndx(occurEquLst, mappingArray), iter)::ozeroCrossings;
+  end for;
+  ozeroCrossings := Dangerous.listReverseInPlace(ozeroCrossings);
 end updateZeroCrossEqnIndex;
-
-protected function updateZeroCrossEqnIndexHelp
-  input list<BackendDAE.ZeroCrossing> izeroCrossings;
-  input array<Integer> eqBackendSimCodeMappingArray;
-  input list<BackendDAE.ZeroCrossing> iAccum;
-  output list<BackendDAE.ZeroCrossing> ozeroCrossings;
-algorithm
- ozeroCrossings := match izeroCrossings
- local
-    DAE.Exp exp;
-    list<Integer> occurEquLst;
-    list<BackendDAE.ZeroCrossing> rest;
-    Option<list<BackendDAE.SimIterator>> iter;
-
-   case {} then Dangerous.listReverseInPlace(iAccum);
-
-   case BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst,iter=iter)::rest
-     algorithm
-       occurEquLst := convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings := updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, iter)::iAccum);
-     then
-       ozeroCrossings;
-  end match;
-end updateZeroCrossEqnIndexHelp;
 
 protected function convertListMappingToArray
   input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,BackendEqnIndx>
