@@ -1888,6 +1888,14 @@ pub(crate) fn format_f(v: f64) -> String {
     format!("{v:.6}")
 }
 
+/// C's `perform_simulation` line after `simulationStep`, closing its `LOG_SOLVER` block.
+fn log_solver_finished(t: f64) {
+    if omclog::active(omclog::SOLVER) {
+        omclog::info(omclog::SOLVER, false, &format!("finished solver step {}", format_g(t, 6)));
+        omclog::close(omclog::SOLVER);
+    }
+}
+
 fn format_g15(v: f64) -> String {
     format_g(v, 15)
 }
@@ -6166,6 +6174,7 @@ impl Driver for DasslDriver {
             // INFO(1)=1, up to a cap. INFO(3)=1 keeps a call to one step, so this is
             // C's guard rather than a path a stiff interval takes.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
+            let fresh = self.pending_tout.is_none();
             let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
                 stop
             } else {
@@ -6184,6 +6193,19 @@ impl Driver for DasslDriver {
                 self.row += 1;
                 continue;
             }
+            // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
+            if fresh && omclog::active(omclog::SOLVER) {
+                omclog::info(
+                    omclog::SOLVER,
+                    true,
+                    &format!(
+                        "call solver from {} to {} (stepSize: {})",
+                        format_g(self.t, 6),
+                        format_g(tout, 6),
+                        format_g15(tout - self.t)
+                    ),
+                );
+            }
             let logging = log_dassl();
             if logging {
                 log_dassl_step(self.t);
@@ -6199,8 +6221,12 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
-            if logging && self.idid != -1 {
+            // C's `dassl_step` logs the statistics once its `while (idid == 1)` loop is done.
+            if logging && self.idid != -1 && self.idid != 1 {
                 log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
+            }
+            if self.idid >= 0 && self.idid != 1 {
+                log_solver_finished(self.t);
             }
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
@@ -6221,7 +6247,9 @@ impl Driver for DasslDriver {
                 for i in 0..n_states {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
                 }
-                return Err(report_dassl_failure(self.idid, self.t));
+                let err = report_dassl_failure(self.idid, self.t);
+                log_solver_finished(self.t);
+                return Err(err);
             }
             // IDID=1: one internal step with TOUT still ahead. C's `dassl_step` loops
             // on that until the interval is covered, and breaks out per step only for
