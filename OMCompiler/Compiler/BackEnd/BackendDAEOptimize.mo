@@ -852,6 +852,8 @@ end protectedParametersFinder;
 // remove equal function calls equations stuff
 //
 // =============================================================================
+protected type IntArray = array<Integer>;
+
 public function removeEqualRHS "author: Frenkel TUD 2011-04
   Detects equal expressions of the form a=<exp> and b=<exp> and substitutes
   them to get speed up."
@@ -876,6 +878,9 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<Integer> changed;
+      array<Boolean> isChanged;
+      array<Integer> degree;
+      UnorderedMap<Integer, IntArray> ranks;
       Boolean isInitial;
       BackendDAE.EqSystem syst;
       AvlTreePathFunction.Tree funcs;
@@ -885,8 +890,16 @@ algorithm
         isInitial := BackendDAEUtil.isInitializationDAE(ishared);
         funcs := BackendDAEUtil.getFunctions(ishared);
         (syst, m, mT) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
-        // check equations
-        (m, (mT,_,_,changed,_)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}, isInitial));
+        degree := arrayCreate(arrayLength(mT), 0);
+        for v in 1:arrayLength(mT) loop
+          arrayUpdate(degree, v, listLength(mT[v]));
+        end for;
+        ranks := UnorderedMap.new<IntArray>(Util.id, intEq);
+        isChanged := arrayCreate(arrayLength(m), false);
+        changed := {};
+        for pos in 1:arrayLength(m) loop
+          (eqns, changed) := removeEqualFunctionCallFinder(pos, m, mT, degree, ranks, vars, eqns, changed, isChanged, isInitial);
+        end for;
         // update arrayeqns and algorithms, collect info for wrappers
         syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
         syst := BackendDAEUtil.updateAdjacencyMatrix(syst, BackendDAE.NORMAL(), NONE(), changed, isInitial);
@@ -895,51 +908,117 @@ algorithm
 end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
-  input BackendDAE.AdjacencyMatrixElement elem;
   input Integer pos;
-  input tuple<BackendDAE.AdjacencyMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> inTpl;
-  output list<Integer> outList;
-  output tuple<BackendDAE.AdjacencyMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> outTpl;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input array<Integer> degree "of the variables";
+  input UnorderedMap<Integer, IntArray> ranks;
+  input BackendDAE.Variables vars;
+  input output BackendDAE.EquationArray eqns;
+  input output list<Integer> changed;
+  input array<Boolean> isChanged;
+  input Boolean isInitial;
+protected
+  DAE.Exp exp,e1,e2,ecr;
+  list<Integer> expvars, controleqns;
 algorithm
-  (outList,outTpl):=
-  matchcontinue inTpl
-    local
-      BackendDAE.AdjacencyMatrix mT;
-      list<Integer> changed;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns,eqns1;
-      DAE.Exp exp,e1,e2,ecr;
-      list<Integer> expvars;
-      list<Integer> controleqns,expvars1;
-      list<list<Integer>> expvarseqns;
-      Boolean isInitial;
-
-    case (mT,vars,eqns,changed,isInitial)
-      algorithm
-        // check number of vars in eqns
-        _::_ := elem;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) := BackendEquation.get(eqns,pos);
-        // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
-        (ecr,exp) := functionCallEqn(e1,e2,vars);
-        // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
-        // failure(DAE.CREF(componentRef=_) = exp);
-        // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
-        // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars := BackendDAEUtil.adjacencyRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL(),isInitial);
-        // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
-        expvars1::expvarseqns := List.map2(BackendDAEUtil.uniqueRow(expvars),varEqns,pos,mT);
-        // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
-        controleqns := getControlEqns(expvars1,expvarseqns);
-        // print("controleqns "); BackendDump.debuglst((controleqns,intString," ","\n"));
-        (eqns1,changed) := removeEqualFunctionCall(controleqns,ecr,exp,eqns,changed);
-        //print("changed1 "); BackendDump.debuglst((changed1,intString," ","\n"));
-        //print("changed2 "); BackendDump.debuglst((changed2,intString," ","\n"));
-        // print("Next\n");
-      then ({},(mT,vars,eqns1,changed,isInitial));
-    case _
-      then ({},inTpl);
-  end matchcontinue;
+  try
+    _::_ := m[pos];
+    BackendDAE.EQUATION(exp=e1,scalar=e2) := BackendEquation.get(eqns,pos);
+    (ecr,exp) := functionCallEqn(e1,e2,vars);
+    // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
+    expvars := BackendDAEUtil.uniqueRow(BackendDAEUtil.adjacencyRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL(),isInitial));
+    _::_ := expvars;
+    controleqns := controlEqns(expvars, pos, m, mT, degree, ranks);
+    (eqns,changed) := removeEqualFunctionCall(controleqns,ecr,exp,eqns,changed,isChanged);
+  else
+  end try;
 end removeEqualFunctionCallFinder;
+
+protected function controlEqns
+  "The other equations containing every variable of the expression, in the
+   order of the first variable's row, collected from the least used one's row."
+  input list<Integer> expvars;
+  input Integer pos;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input array<Integer> degree;
+  input UnorderedMap<Integer, IntArray> ranks;
+  output list<Integer> eqns = {};
+protected
+  Integer first, least, eq;
+  array<Integer> rank;
+algorithm
+  first := intAbs(listHead(expvars));
+  least := first;
+  for v in expvars loop
+    if degree[intAbs(v)] < degree[least] then
+      least := intAbs(v);
+    end if;
+  end for;
+  for i in mT[least] loop
+    eq := intAbs(i);
+    if eq <> pos and rowContainsAll(m[eq], expvars) then
+      eqns := eq :: eqns;
+    end if;
+  end for;
+  eqns := listReverse(eqns);
+  if least <> first and not listEmpty(eqns) then
+    if degree[first] <= 64 then
+      eqns := list(intAbs(i) for i guard List.isMemberOnTrue(intAbs(i), eqns, intEq) in mT[first]);
+    else
+      rank := rowRanks(first, mT, arrayLength(m), ranks);
+      eqns := List.sort(eqns, function rankGt(rank = rank));
+    end if;
+  end if;
+end controlEqns;
+
+protected function rowContainsAll
+  input list<Integer> row;
+  input list<Integer> vars;
+  output Boolean all = true;
+algorithm
+  for v in vars loop
+    if not List.isMemberOnTrue(intAbs(v), row, absIntEq) then
+      all := false;
+      return;
+    end if;
+  end for;
+end rowContainsAll;
+
+protected function absIntEq
+  input Integer a, b;
+  output Boolean eq = intAbs(a) == intAbs(b);
+end absIntEq;
+
+protected function rowRanks "the position of each equation in the row of var, built once per variable"
+  input Integer var;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input Integer numEqns;
+  input UnorderedMap<Integer, IntArray> ranks;
+  output array<Integer> rank;
+protected
+  Integer i = 1;
+algorithm
+  rank := match UnorderedMap.get(var, ranks)
+    case SOME(rank) then rank;
+    else
+      algorithm
+        rank := arrayCreate(numEqns, 0);
+        for eq in mT[var] loop
+          arrayUpdate(rank, intAbs(eq), i);
+          i := i + 1;
+        end for;
+        UnorderedMap.add(var, rank, ranks);
+      then rank;
+  end match;
+end rowRanks;
+
+protected function rankGt
+  input Integer a, b;
+  input array<Integer> rank;
+  output Boolean gt = rank[a] > rank[b];
+end rankGt;
 
 protected function functionCallEqn
 "author Frenkel TUD 2011-04"
@@ -984,75 +1063,32 @@ algorithm
   end match;
 end functionCallEqn;
 
-protected function varEqns
-"author Frenkel TUD 2011-04"
-  input Integer v;
-  input Integer pos;
-  input BackendDAE.AdjacencyMatrixT mT;
-  output list<Integer> outVarEqns;
-protected
-  list<Integer> vareqns,vareqns1;
-algorithm
-  vareqns := mT[intAbs(v)];
-  vareqns1 := List.map(vareqns, intAbs);
-  outVarEqns := List.removeOnTrue(intAbs(pos),intEq,vareqns1);
-end varEqns;
-
-protected function getControlEqns
-"author Frenkel TUD 2011-04"
-  input list<Integer> inVarsEqn;
-  input list<list<Integer>> inVarsEqns;
-  output list<Integer> outEqns;
-algorithm
-  outEqns := match(inVarsEqn,inVarsEqns)
-    local
-      list<Integer> a,b,c,d;
-      list<list<Integer>> rest;
-    case (a,{}) then a;
-    case (a,b::rest)
-      algorithm
-       c := List.intersectionOnTrue(a,b,intEq);
-       d := getControlEqns(c,rest);
-      then d;
-  end match;
-end getControlEqns;
-
 protected function removeEqualFunctionCall
 "author: Frenkel TUD 2011-04"
   input list<Integer> inEqsLst;
   input DAE.Exp inExp;
   input DAE.Exp inECr;
-  input BackendDAE.EquationArray inEqns;
-  input list<Integer> ichanged;
-  output BackendDAE.EquationArray outEqns;
-  output list<Integer> outEqsLst;
+  input output BackendDAE.EquationArray eqns;
+  input output list<Integer> changed;
+  input array<Boolean> isChanged;
+protected
+  BackendDAE.Equation eqn;
+  Integer i;
 algorithm
-  (outEqns,outEqsLst):=
-  matchcontinue inEqsLst
-    local
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Equation eqn,eqn1;
-      Integer pos,i;
-      list<Integer> rest,changed;
-    case {} then (inEqns,ichanged);
-    case pos::rest
-      algorithm
-        eqn := BackendEquation.get(inEqns,pos);
-        //BackendDump.printEquationList({eqn});
-        //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
-        (eqn1,(_,_,i)) := BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
-        //BackendDump.printEquationList({eqn1});
-        //print("i="); print(intString(i)); print("\n");
-        true := intGt(i,0);
-        eqns :=  BackendEquation.setAtIndex(inEqns,pos,eqn1);
-        changed := List.consOnTrue(not listMember(pos,ichanged),pos,ichanged);
-        (eqns,changed) := removeEqualFunctionCall(rest,inExp,inECr,eqns,changed);
-      then (eqns,changed);
-    case _::rest
-      algorithm
-        (eqns,changed) := removeEqualFunctionCall(rest,inExp,inECr,inEqns,ichanged);
-      then (eqns,changed);
-  end matchcontinue;
+  for pos in inEqsLst loop
+    try
+      eqn := BackendEquation.get(eqns,pos);
+      (eqn,(_,_,i)) := BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
+      if i > 0 then
+        eqns := BackendEquation.setAtIndex(eqns,pos,eqn);
+        if not isChanged[pos] then
+          arrayUpdate(isChanged, pos, true);
+          changed := pos::changed;
+        end if;
+      end if;
+    else
+    end try;
+  end for;
 end removeEqualFunctionCall;
 
 protected function replaceExp
