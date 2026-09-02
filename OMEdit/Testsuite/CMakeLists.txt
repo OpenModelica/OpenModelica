@@ -72,7 +72,6 @@ add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
 set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)
 add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
-target_compile_definitions(RecentModels PRIVATE RECENT_MODELS_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/RecentModels")
 
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)

@@ -45,7 +45,7 @@ OMEDITTEST_MAIN(RecentModelsTest)
 
 static QString testFile()
 {
-  return QString(RECENT_MODELS_TEST_DIR) + "/RecentModelsTest.mo";
+  return QFINDTESTDATA("RecentModelsTest.mo");
 }
 
 void RecentModelsTest::initTestCase()
