@@ -928,9 +928,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
   else ifeq ($(findstring clang,$(CC)),clang)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
+  endif
+  ifeq ($(findstring linux,$(PLATFORM))$(findstring darwin,$(PLATFORM)),)
+    $(eval LIBS=$(LIBS) -static)
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)
