@@ -384,7 +384,7 @@ pub fn omc_sim_info() -> JsValue {
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("model"), &JsValue::from_str(&sim.model_name));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
-        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.time.len() as f64));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.n_rows() as f64));
         let st = &sim.stats;
         for (k, v) in [
             ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
@@ -401,7 +401,7 @@ pub fn omc_sim_info() -> JsValue {
 /// The independent `time` column of the last run as a `Float64Array`, or `None`.
 #[wasm_bindgen]
 pub fn omc_sim_time() -> Option<Vec<f64>> {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.time.clone())
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.time())
 }
 
 /// The values of series `index` (as in [`omc_sim_series`]) as a `Float64Array`.
@@ -410,7 +410,7 @@ pub fn omc_sim_time() -> Option<Vec<f64>> {
 #[wasm_bindgen]
 pub fn omc_sim_column(index: usize) -> Option<Vec<f64>> {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
-        sim.series.get(index).map(|s| s.values.clone())
+        sim.values(index)
     })
     .flatten()
 }

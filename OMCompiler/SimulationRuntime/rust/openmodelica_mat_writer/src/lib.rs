@@ -65,6 +65,13 @@ impl Precision {
             Precision::Single => 10,
         }
     }
+
+    fn size(self) -> usize {
+        match self {
+            Precision::Double => 8,
+            Precision::Single => 4,
+        }
+    }
 }
 
 /// One signal in the result file (C-compatible order: time, states, derivatives,
@@ -238,17 +245,24 @@ pub fn write_mat4(
 
     // data_2 (n_reals2 x n_rows double, column-major): time + the varying columns.
     let n_reals2 = 1 + varying_cols.len();
-    let mut data_2: Vec<f64> = Vec::with_capacity(n_rows * n_reals2);
-    for r in 0..n_rows {
-        data_2.push(rows[r * n_reals]); // time
+    out.reserve(32 + n_rows * n_reals2 * precision.size());
+    write_mat_header(&mut out, "data_2", precision.type_code(), n_reals2, n_rows);
+    for row in rows.chunks_exact(n_reals.max(1)).take(n_rows) {
+        push_real(&mut out, row[0], precision); // time
         for &(c, neg) in &varying_cols {
-            let v = rows[r * n_reals + c];
-            data_2.push(if neg == Neg::Not { 1.0 - v } else { v });
+            let v = row[c];
+            push_real(&mut out, if neg == Neg::Not { 1.0 - v } else { v }, precision);
         }
     }
-    write_real_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2, precision);
 
     out
+}
+
+fn push_real(out: &mut Vec<u8>, v: f64, precision: Precision) {
+    match precision {
+        Precision::Double => out.extend_from_slice(&v.to_le_bytes()),
+        Precision::Single => out.extend_from_slice(&(v as f32).to_le_bytes()),
+    }
 }
 
 /// MATLAB v4 matrix type code: `1000*M + 100*O + 10*P + T`. M=0 (little-endian
@@ -271,10 +285,7 @@ fn write_mat_header(out: &mut Vec<u8>, name: &str, ty: i32, mrows: usize, ncols:
 fn write_real_matrix(out: &mut Vec<u8>, name: &str, mrows: usize, ncols: usize, data: &[f64], precision: Precision) {
     write_mat_header(out, name, precision.type_code(), mrows, ncols);
     for v in data {
-        match precision {
-            Precision::Double => out.extend_from_slice(&v.to_le_bytes()),
-            Precision::Single => out.extend_from_slice(&(*v as f32).to_le_bytes()),
-        }
+        push_real(out, *v, precision);
     }
 }
 
