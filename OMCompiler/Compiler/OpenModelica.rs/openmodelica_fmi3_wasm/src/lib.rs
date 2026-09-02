@@ -651,11 +651,28 @@ impl MeState {
 
     /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
     /// model has no such partial evaluation, so it evaluates whole.
-    fn eval_ode(&mut self) -> driver::Result<()> {
+    fn eval_ode(&mut self) -> Result<(), Status> {
         if self.layout.dae_mode() {
             return self.update_if_needed();
         }
-        Engine.call1("functionODE", self.sim_data)
+        self.evaluate(|m| Engine.call1("functionODE", m.sim_data))
+    }
+
+    /// C's try block around one FMI call: a model error or an unsolved nonlinear
+    /// system is the master's to retry in Continuous Time Mode (`fmi3Discard`,
+    /// C's `IRES = -1`) and fails the call anywhere else.
+    fn evaluate(&mut self, f: impl FnOnce(&mut Self) -> driver::Result<()>) -> Result<(), Status> {
+        let mut e = Engine;
+        self.write_i32(self.layout.nls_fail_off, 0);
+        let region = self.continuous_time.then(|| driver::open_fmi_call_region(&mut e));
+        let run = f(self);
+        let absorbed = region.is_some_and(|save| driver::close_fmi_call_region(&mut e, save));
+        let unsolved = driver::take_nls_failure(&mut e, self.sim_data, &self.layout);
+        run.map_err(err_status)?;
+        if absorbed || unsolved {
+            return Err(if self.continuous_time { Status::Discard } else { Status::Error });
+        }
+        Ok(())
     }
 
     /// The state a value reference reads, when it is one of the continuous
@@ -699,16 +716,16 @@ impl MeState {
 
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
-    fn update_if_needed(&mut self) -> driver::Result<()> {
+    fn update_if_needed(&mut self) -> Result<(), Status> {
         if !self.need_update {
             return Ok(());
         }
         // The point moved, so a Jacobian assembled at the old one is stale.
         self.jacobian_valid = false;
         if self.mode == Mode::Init {
-            self.run_init()?;
+            self.run_init().map_err(err_status)?;
         } else {
-            self.eval()?;
+            self.evaluate(|m| m.eval())?;
         }
         self.need_update = false;
         Ok(())
@@ -958,8 +975,8 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         // Only when something was set since the last solve: a get in Initialization
         // Mode has already run it otherwise.
-        if let Err(err) = st.update_if_needed() {
-            return err_status(err);
+        if let Err(status) = st.update_if_needed() {
+            return status;
         }
         st.mode = Mode::Ready;
         // `run_initialization` has run `initSample`, so the schedule is readable.
@@ -1128,9 +1145,7 @@ macro_rules! shared_instance_methods {
     }
     fn get_float64(&self, vrs: Vec<u32>) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1149,9 +1164,7 @@ macro_rules! shared_instance_methods {
     }
     fn get_int32(&self, vrs: Vec<u32>) -> Result<Vec<i32>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1168,9 +1181,7 @@ macro_rules! shared_instance_methods {
     // so widen/narrow around the i32.
     fn get_int64(&self, vrs: Vec<u32>) -> Result<Vec<i64>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1194,9 +1205,7 @@ macro_rules! shared_instance_methods {
     }
     fn get_uint64(&self, vrs: Vec<u32>) -> Result<Vec<u64>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1209,9 +1218,7 @@ macro_rules! shared_instance_methods {
     }
     fn get_boolean(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1230,9 +1237,7 @@ macro_rules! shared_instance_methods {
     }
     fn get_string(&self, vrs: Vec<u32>) -> Result<Vec<String>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
@@ -1447,9 +1452,7 @@ macro_rules! shared_instance_methods {
             return Err(Status::Error);
         }
         let mut st = self.st.borrow_mut();
-        if st.update_if_needed().is_err() {
-            return Err(Status::Error);
-        }
+        st.update_if_needed()?;
         let n = st.layout.n_states as usize;
         let rows: Vec<usize> = unknowns.iter().filter_map(|vr| st.derivative_index(*vr)).collect();
         let cols: Vec<usize> = knowns.iter().filter_map(|vr| st.state_index(*vr)).collect();
@@ -1514,9 +1517,7 @@ macro_rules! shared_instance_methods {
     /// derivative whatever order is asked for.
     fn get_output_derivatives(&self, requests: Vec<(u32, u32)>) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
-        if let Err(err) = st.update_if_needed() {
-            return Err(err_status(err));
-        }
+        st.update_if_needed()?;
         let mut out = Vec::with_capacity(requests.len());
         for (vr, _order) in requests {
             match st.vrs.resolve(vr) {
@@ -1578,21 +1579,12 @@ impl GuestModelExchangeInstance for Instance {
     /// getter. In DAE mode the derivatives are the importer's own, set as knowns
     /// of the residuals; in ODE mode a `--daeMode` model solves for them.
     ///
-    /// In Continuous Time Mode this is the master's integrator residual, so it holds
-    /// the region `dassl_res` does and answers `fmi3Discard` — C's `IRES = -1` — for
-    /// an absorbed model error.
+    /// In Continuous Time Mode this is the master's integrator residual, so it
+    /// answers `fmi3Discard` -- C's `IRES = -1` -- for a model error (see `evaluate`).
     fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
         if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
-            let region = st.continuous_time.then(|| driver::open_integrator_region(&mut Engine));
-            let evaluated = st.eval_ode();
-            let discard = region.is_some_and(|save| driver::close_integrator_region(&mut Engine, save));
-            if let Err(err) = evaluated {
-                return Err(err_status(err));
-            }
-            if discard {
-                return Err(Status::Discard);
-            }
+            st.eval_ode()?;
         }
         let n = st.layout.n_states;
         let base = REAL_OFF + n * 8;
@@ -1600,19 +1592,19 @@ impl GuestModelExchangeInstance for Instance {
     }
     fn get_event_indicators(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
-        let mut e = Engine;
         if st.need_update {
-            if let Err(err) = st.eval_ode() {
-                return Err(err_status(err));
-            }
+            st.eval_ode()?;
             st.need_update = false;
         }
         if st.layout.n_zc == 0 {
             return Ok(Vec::new());
         }
-        if e.call2(driver::MODEL_FN_ZC, st.sim_data, st.sim_data + st.layout.zc_off).is_err() {
-            return Err(Status::Error);
-        }
+        // C's root callbacks: a crossing may read an algebraic `functionODE` skips.
+        st.evaluate(|m| {
+            let mut e = Engine;
+            driver::eval_zc_equations(&mut e, m.sim_data, &m.layout)?;
+            e.call2(driver::MODEL_FN_ZC, m.sim_data, m.sim_data + m.layout.zc_off)
+        })?;
         Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect())
     }
     fn get_continuous_states(&self) -> Result<Vec<f64>, Status> {
@@ -1640,7 +1632,7 @@ impl GuestModelExchangeInstance for Instance {
     ) -> Result<CompletedStepResult, Status> {
         let mut st = self.st.borrow_mut();
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
-        st.eval().map_err(err_status)?;
+        st.evaluate(|m| m.eval())?;
         // The only point the importer gives us to record the accepted step.
         driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(err_status)?;
         st.need_update = true;

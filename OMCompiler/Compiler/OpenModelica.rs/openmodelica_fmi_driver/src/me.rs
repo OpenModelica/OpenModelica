@@ -44,6 +44,8 @@ pub struct Run {
     pub time_events: u64,
     /// When the events happened, in order — what a plot marks and a test checks.
     pub event_times: Vec<f64>,
+    /// Discarded steps taken again at half the size.
+    pub retries: u64,
 }
 
 /// The value references DAE mode works through, out of the fmi-ls-dae manifest.
@@ -248,6 +250,10 @@ impl Ode for FmuOde<'_> {
     fn take_discard(&mut self) -> bool {
         core::mem::take(&mut self.discarded)
     }
+}
+
+fn is_discard(e: &Error) -> bool {
+    matches!(e, Error::Status { status: crate::api::Status::Discard, .. })
 }
 
 impl Dae for FmuOde<'_> {
@@ -680,29 +686,77 @@ pub fn simulate(
     let mut event_times = Vec::new();
     let mut cancelled = false;
     let mut terminated_at = None;
+    // C's `storeOldValues`.
+    let mut x_old = vec![0.0; ny];
+    let mut xp_old = vec![0.0; ny];
+    let mut retries = 0u64;
 
     'grid: for target in opts.output_times().skip(1) {
+        // C's `retry`: a discarded step is taken again to half way, that end is the
+        // row, and the grid point is skipped.
+        let mut halved: Option<f64> = None;
+        let mut sampled = false;
         while t < target - grid_epsilon(opts) {
             // A time event caps the step: the FMU must be asked at exactly that
             // time, never stepped past it.
             let limit = next_event.max(t);
-            let root = integrator
-                .step(&mut ode, target, limit, &mut t, &mut x, &mut xp)
-                .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
-
-            let mut event_at = root;
-            // C's `completedIntegratorStep`: the FMU may want Event Mode for a
-            // reason the indicators do not show.
-            if needs_completed_step {
-                ode.commit_point(t, &x, &xp)?;
-                let done = ode.inst.completed_integrator_step(true)?;
-                if done.terminate {
-                    terminated_at = Some(t);
-                    break 'grid;
+            let end = halved.unwrap_or(target);
+            let t_old = t;
+            x_old.copy_from_slice(&x);
+            xp_old.copy_from_slice(&xp);
+            ode.discarded = false;
+            let stepped = (|| -> Result<(Option<f64>, bool, bool)> {
+                let root = integrator
+                    .step(&mut ode, end, limit, &mut t, &mut x, &mut xp)
+                    .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
+                let mut event_at = root;
+                let mut terminate = false;
+                // C's `completedIntegratorStep`: the FMU may want Event Mode for a
+                // reason the indicators do not show.
+                if needs_completed_step {
+                    ode.commit_point(t, &x, &xp)?;
+                    let done = ode.inst.completed_integrator_step(true)?;
+                    terminate = done.terminate;
+                    if done.enter_event_mode {
+                        event_at = Some(t);
+                    }
                 }
-                if done.enter_event_mode {
-                    event_at = Some(t);
+                // The end of an event-free step is a row (C's `simulationUpdate`).
+                let reached = event_at.is_none()
+                    && next_event > t + grid_epsilon(opts)
+                    && t >= end - grid_epsilon(opts);
+                if reached {
+                    ode.commit_point(end, &x, &xp)?;
+                    t = end;
+                    let common: &mut dyn Fmi3 = ode.inst;
+                    rec.sample(common, t)?;
                 }
+                Ok((event_at, terminate, reached))
+            })();
+            let (mut event_at, terminate, reached) = match stepped {
+                Ok(v) => v,
+                Err(e) if halved.is_none() && (ode.discarded || is_discard(&e)) => {
+                    // C's `retrySimulationStep`: back to the accepted point.
+                    retries += 1;
+                    t = t_old;
+                    x.copy_from_slice(&x_old);
+                    xp.copy_from_slice(&xp_old);
+                    ode.forget_point();
+                    integrator.restart();
+                    halved = Some(t + 0.5 * (end - t));
+                    continue;
+                }
+                Err(e) if ode.discarded || is_discard(&e) => {
+                    // C's catch with `retry` already spent.
+                    return Err(Error::Simulation(format!(
+                        "model terminate | Simulation terminated by an assert at time: {t_old}"
+                    )));
+                }
+                Err(e) => return Err(e),
+            };
+            if terminate {
+                terminated_at = Some(t);
+                break 'grid;
             }
             if event_at.is_none() && next_event <= t + grid_epsilon(opts) {
                 event_at = Some(next_event);
@@ -711,7 +765,15 @@ pub fn simulate(
                 state_events += 1;
             }
 
-            let Some(te) = event_at else { continue };
+            let Some(te) = event_at else {
+                if reached {
+                    sampled = true;
+                    break;
+                }
+                continue;
+            };
+            // C clears `retry` with every accepted step, an event step included.
+            halved = None;
             t = te;
             event_times.push(te);
             ode.commit_point(t, &x, &xp)?;
@@ -752,11 +814,13 @@ pub fn simulate(
                 break 'grid;
             }
         }
-        // The grid point itself: the solver interpolated the states onto it.
-        ode.commit_point(target, &x, &xp)?;
-        t = target;
-        let common: &mut dyn Fmi3 = ode.inst;
-        rec.sample(common, t)?;
+        if !sampled {
+            // The grid point itself: the solver interpolated the states onto it.
+            ode.commit_point(target, &x, &xp)?;
+            t = target;
+            let common: &mut dyn Fmi3 = ode.inst;
+            rec.sample(common, t)?;
+        }
         if let Some(report) = opts.progress {
             report(t, &rec);
         }
@@ -783,6 +847,7 @@ pub fn simulate(
         state_events,
         time_events,
         event_times,
+        retries,
     })
 }
 

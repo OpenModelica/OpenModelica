@@ -400,6 +400,10 @@ pub const ERROR_NONLINEARSOLVER: u32 = 2;
 pub const ERROR_SIMULATION_STEP: u32 = 3;
 /// C's `handleEvents`: a model error there is not the step's to retry.
 pub const ERROR_EVENTHANDLING: u32 = 4;
+/// An exported FMU's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around one FMI call:
+/// it catches as [`ERROR_INTEGRATOR`] does, while a violated `assert()` reports as
+/// [`ERROR_SIMULATION`]'s does — C's FMU export never raises the stage.
+pub const ERROR_FMI_CALL: u32 = 5;
 static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
 
 /// Address of [`ERROR_STAGE`], so a driver marks a region with a store rather than
@@ -596,7 +600,7 @@ fn attempt_aborted() -> bool {
 /// [`note_assert`] and bails out instead of ending the run.
 pub fn recovering() -> bool {
     NLS_DEPTH.load(Ordering::Relaxed) > 0
-        || matches!(error_stage(), ERROR_INTEGRATOR | ERROR_NONLINEARSOLVER)
+        || matches!(error_stage(), ERROR_INTEGRATOR | ERROR_NONLINEARSOLVER | ERROR_FMI_CALL)
 }
 
 /// Whether a `throwStreamPrint` model error unwinds into a catcher: the solver
