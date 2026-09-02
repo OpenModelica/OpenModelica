@@ -3282,7 +3282,7 @@ fn init_var(
     array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
     done: &mut Vec<u32>,
 ) -> Result<()> {
-    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = v else {
+    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, kind, bind_from_outside, .. } = v else {
         return Ok(());
     };
     let (vname, sty) = var_name_ty(v)?;
@@ -3292,6 +3292,19 @@ fn init_var(
     }
     done.push(slot);
     let _g = PartGuard::new(format!("the declaration of `{vname}`"));
+    // A `constant` is never assigned, so it aliases its shared literal instead of
+    // copying it on every call (C's `arrayVarConstLiteralAlias`).
+    if matches!(kind, DAE::VarKind::CONST)
+        && !*bind_from_outside
+        && let Some(val) = value
+        && shared_lits::is_shared(val)
+    {
+        array_allocs.retain(|(i, ..)| *i != slot);
+        let w = compile_exp(ctx, val)?;
+        coerce(ctx, w, sty.wty());
+        ctx.emit(we::Instruction::LocalSet(slot));
+        return Ok(());
+    }
     if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
         let (_, elem, dims) = array_allocs.remove(k);
         emit_array_alloc(ctx, slot, &elem, &dims)?;
@@ -11037,30 +11050,64 @@ fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
     Ok(())
 }
 
+/// The wasm local and rank of a whole array local (not a model variable), which
+/// a read can borrow: the local outlives the expression.
+fn array_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<(u32, u32)> {
+    if ctx.sim.is_some() {
+        return None;
+    }
+    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else { return None };
+    if !subscriptLst.is_empty() {
+        return None;
+    }
+    match ctx.locals.get(ident.as_str()) {
+        Some((idx, SigTy::Array { rank, .. })) => Some((*idx, *rank)),
+        _ => None,
+    }
+}
+
 /// Lower `size(a, d)` (a single dimension size, scalar Integer) or `size(a)`
-/// (the whole dimension vector, an `Integer[ndims]`). `a`'s owned handle is
-/// released after.
+/// (the whole dimension vector, an `Integer[ndims]`). A local `a` is borrowed;
+/// any other operand's owned handle is released after.
 fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
+    let local = array_local(ctx, exp);
     // Only the whole-vector form needs the rank statically — as well, since the
     // frontend leaves a dimension expression's operand `T_UNKNOWN`.
-    let rank = match sz {
-        Some(_) => 0,
-        None => match exp_sigty(exp)? {
+    let rank = match (sz, local) {
+        (Some(_), _) => 0,
+        (None, Some((_, rank))) => rank,
+        (None, None) => match exp_sigty(exp)? {
             SigTy::Array { rank, .. } => rank,
             _ => return Err("CodegenWasmJit: size() of a non-array expression"),
         },
     };
-    compile_exp(ctx, exp)?; // owned array handle
-    let arr_t = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(arr_t));
+    let arr_t = match local {
+        Some((idx, _)) => idx,
+        None => {
+            compile_exp(ctx, exp)?; // owned array handle
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            t
+        }
+    };
 
     if let Some(d) = sz {
-        // size(a, d): one dimension.
+        // size(a, d): one dimension; a constant axis of a local is a header load.
         ctx.emit(we::Instruction::LocalGet(arr_t));
-        let w = compile_exp(ctx, d)?;
-        coerce(ctx, w, WTy::I32);
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
-        release_temp_array(ctx, arr_t)?; // leaves the dim value
+        match (local, const_index_value(d)) {
+            (Some((_, rank)), Some(axis)) if axis >= 1 && axis as u32 <= rank => {
+                ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + 4 * (axis as u32 - 1), 2)));
+            }
+            _ => {
+                let w = compile_exp(ctx, d)?;
+                coerce(ctx, w, WTy::I32);
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+            }
+        }
+        if local.is_none() {
+            release_temp_array(ctx, arr_t)?; // leaves the dim value
+        }
         return Ok(());
     }
 
@@ -11085,7 +11132,9 @@ fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Resul
         ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
         elem_store(ctx, &SigTy::Int);
     }
-    release_temp_array(ctx, arr_t)?;
+    if local.is_none() {
+        release_temp_array(ctx, arr_t)?;
+    }
     ctx.emit(we::Instruction::LocalGet(res));
     Ok(())
 }
