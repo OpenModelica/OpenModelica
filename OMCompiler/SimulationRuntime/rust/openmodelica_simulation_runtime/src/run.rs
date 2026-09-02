@@ -395,6 +395,7 @@ fn write_result(meta: &SimMeta, result: &driver::RunResult, data: *mut DATA) -> 
         result.n_reals,
         &result.params,
         &meta.output_keep(None),
+        &result.strings,
         precision,
     ) else {
         return Ok(());

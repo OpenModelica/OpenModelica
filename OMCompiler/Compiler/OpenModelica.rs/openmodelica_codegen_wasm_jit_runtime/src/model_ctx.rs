@@ -138,6 +138,8 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
         &rows,
         model.layout.n_row_total(),
         &params,
+        // One guessed point, no run: nothing captured a String value.
+        &[],
         Precision::Double,
     );
     std::fs::write(path, bytes).map_err(|_| "cannot write the initial guess file")

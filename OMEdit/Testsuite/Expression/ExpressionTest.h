@@ -53,6 +53,7 @@ class ExpressionTest: public QObject
 private slots:
   void dynamicSelect();
   void dynamicSelect_data();
+  void dynamicSelectAuxCref();
   void operators();
   void operators_data();
   void functions();

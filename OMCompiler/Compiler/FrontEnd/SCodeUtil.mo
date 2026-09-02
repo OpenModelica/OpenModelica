@@ -4035,6 +4035,34 @@ algorithm
   end match;
 end getElementComment;
 
+public function collectModBindings
+  "Recursively collects all Absyn expression bindings in a modifier tree."
+  input SCode.Mod mod;
+  input output list<Absyn.Exp> acc;
+protected
+  list<SCode.SubMod> submods;
+  Option<Absyn.Exp> binding;
+algorithm
+  acc := match mod
+    case SCode.MOD(subModLst = submods, binding = binding)
+      algorithm
+        if isSome(binding) then
+          acc := Util.getOption(binding) :: acc;
+        end if;
+
+        for sm in submods loop
+          acc := match sm
+            case SCode.NAMEMOD() then collectModBindings(sm.mod, acc);
+            else acc;
+          end match;
+        end for;
+      then
+        acc;
+
+    else acc;
+  end match;
+end collectModBindings;
+
 public function stripAnnotationFromComment
   "Removes the annotation from a comment."
   input Option<SCode.Comment> inComment;

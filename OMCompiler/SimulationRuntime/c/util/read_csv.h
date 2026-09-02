@@ -33,6 +33,13 @@ struct csv_data {
   double *data;
   int numvars;
   int numsteps;
+  /* String result support. strdata holds the (already un-escaped) raw text of
+     the cells of the String columns, laid out like data (numvars*numsteps,
+     column-major after read_csv_all); it is NULL for numeric-only columns and
+     for readers that did not request strings. isStringVar[i] is non-zero if
+     variable i is a String column. Both are only populated by read_csv_all. */
+  char **strdata;
+  char *isStringVar;
 };
 
 #ifdef __cplusplus
@@ -43,8 +50,17 @@ int read_csv_dataset_size(const char* filename);
 
 char** read_csv_variables(FILE *fin, int *length, unsigned char delim);
 
+/* Reads a CSV result file. Non-numeric cells are an error (used e.g. for
+   numeric external input files). */
 struct csv_data* read_csv(const char *filename);
+/* Like read_csv, but tolerates String columns: non-numeric cells are kept as
+   strings (see strdata / isStringVar) and stored as NaN in the numeric matrix,
+   so numeric variables stay readable even when the file has String columns. */
+struct csv_data* read_csv_all(const char *filename);
 double* read_csv_dataset(struct csv_data *data, const char *var);
+/* Returns the numsteps un-escaped String values of a String variable, or NULL
+   if the variable is not a String column. Only valid after read_csv_all. */
+char** read_csv_dataset_str(struct csv_data *data, const char *var);
 void omc_free_csv_reader(struct csv_data *data);
 
 #ifdef __cplusplus

@@ -2073,6 +2073,43 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 }
 
 /*!
+ * \brief VariablesWidget::readVariableStringValue
+ * Reads the value of a time-varying String variable from the .mat result file
+ * at a specific time. Returns (value, true) only if the variable
+ * exists and is a string variable.
+ * \param variable
+ * \param time
+ * \return
+ */
+QPair<QString, bool> VariablesWidget::readVariableStringValue(QString variable, double time)
+{
+  if (mModelicaMatReader.file) {
+    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
+    if (var && var->isString) {
+      const char *str = omc_matlab4_read_string_val(&mModelicaMatReader, var, time);
+      if (str) {
+        return qMakePair(QString::fromUtf8(str), true);
+      }
+    }
+  } else if (mpCSVData) {
+    char **strDataSet = read_csv_dataset_str(mpCSVData, variable.toUtf8().constData());
+    double *timeDataSet = read_csv_dataset(mpCSVData, "time");
+    if (strDataSet && timeDataSet) {
+      const double tolerance = 1e-12;
+      for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
+        // relative distance. See #14959
+        double diff  = qAbs(timeDataSet[i] - time);
+        double scale = qMax(qAbs(timeDataSet[i]), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
+          return qMakePair(QString::fromUtf8(strDataSet[i] ? strDataSet[i] : ""), true);
+        }
+      }
+    }
+  }
+  return qMakePair(QString(), false);
+}
+
+/*!
  * \brief VariablesWidget::plotVariables
  * Plot/unplot the checked/unchecked index.
  * \param index
@@ -2760,7 +2797,7 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
         errorString = msg[0];
       }
     } else if (pVariablesTreeItem->getFileName().endsWith(".csv")) {
-      mpCSVData = read_csv(fileName.toUtf8().constData());
+      mpCSVData = read_csv_all(fileName.toUtf8().constData());
       if (mpCSVData) {
         //Read in timevector
         double *timeVals = read_csv_dataset(mpCSVData, "time");

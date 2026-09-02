@@ -41,6 +41,7 @@
 #include "util/rtclock.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -152,6 +153,33 @@ static void csvWriteArrayNames(FILE* fout, const char* format, const char* name,
 }
 
 /**
+ * @brief Write a String value as an escaped, quoted CSV field.
+ *
+ * A String value can be anything (it may come from a user function), so it has
+ * to be escaped just like an identifier before it is written. A stack buffer is
+ * used for short values and a heap buffer for longer ones.
+ *
+ * @param fout        Output file.
+ * @param sv          String value (may be NULL).
+ * @param threadData  Thread data for error handling.
+ */
+static void csvEmitStringValue(FILE* fout, modelica_string sv, threadData_t* threadData)
+{
+  const char* raw = sv ? MMC_STRINGDATA(sv) : "";
+  /* Worst case every character is a double-quote and gets doubled. */
+  size_t bufSize = 2 * strlen(raw) + 1;
+  char stackBuf[MAX_IDENT_LENGTH];
+  char* buf = (bufSize <= MAX_IDENT_LENGTH) ? stackBuf : (char*)malloc(bufSize);
+
+  csvEscapedString(raw, buf, bufSize, threadData);
+  fprintf(fout, ",\"%s\"", buf);
+
+  if (buf != stackBuf) {
+    free(buf);
+  }
+}
+
+/**
  * @brief Write CSV data row.
  *
  * @param self        Simulation result.
@@ -164,7 +192,6 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   const char* format = ",%.16g";
   const char* formatint = ",%i";
   const char* formatbool = ",%i";
-  const char* formatstring = ",\"%s\"";
   int i;
   modelica_real value = 0;
   double cpuTimeValue = 0;
@@ -186,8 +213,10 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   for(i = 0; i < data->modelData->nVariablesBooleanArray; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
     for(size_t k = 0; k < data->modelData->booleanVarsData[i].dimension.scalar_length; k++)
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->simulationInfo->booleanVarsIndex[i] + k]);
-  //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
-  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
+  for(i = 0; i < data->modelData->nVariablesStringArray; i++) if(!data->modelData->stringVarsData[i].filterOutput)
+    for(size_t k = 0; k < data->modelData->stringVarsData[i].dimension.scalar_length; k++) {
+      csvEmitStringValue(fout, (data->localData[0])->stringVars[data->simulationInfo->stringVarsIndex[i] + k], threadData);
+    }
 
   for(i = 0; i < data->modelData->nAliasRealArray; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME) {
@@ -217,10 +246,13 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, formatbool, negate ? (bvalue==1?0:1) : bvalue);
     }
   }
-  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-  //  /* there would no negation of a string happen */
-  //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
-  //}
+  for(i = 0; i < data->modelData->nAliasStringArray; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    /* String alias variables/parameters don't have negation */
+    const int nameID = data->modelData->stringAlias[i].nameID;
+    for(size_t k = 0; k < data->modelData->stringVarsData[nameID].dimension.scalar_length; k++) {
+      csvEmitStringValue(fout, (data->localData[0])->stringVars[data->simulationInfo->stringVarsIndex[nameID] + k], threadData);
+    }
+  }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -259,6 +291,11 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
       csvWriteArrayNames(fout, format, mData->booleanVarsData[i].info.name, &mData->booleanVarsData[i].dimension, threadData);
     }
   }
+  for(i = 0; i < mData->nVariablesStringArray; i++) {
+    if(!mData->stringVarsData[i].filterOutput) {
+      csvWriteArrayNames(fout, format, mData->stringVarsData[i].info.name, &mData->stringVarsData[i].dimension, threadData);
+    }
+  }
 
   for(i = 0; i < mData->nAliasRealArray; i++) {
     if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
@@ -275,6 +312,11 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
   for(i = 0; i < mData->nAliasBooleanArray; i++) {
     if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
       csvWriteArrayNames(fout, format, mData->booleanAlias[i].info.name, &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension, threadData);
+    }
+  }
+  for(i = 0; i < mData->nAliasStringArray; i++) {
+    if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+      csvWriteArrayNames(fout, format, mData->stringAlias[i].info.name, &mData->stringVarsData[mData->stringAlias[i].nameID].dimension, threadData);
     }
   }
   fprintf(fout, "\n");

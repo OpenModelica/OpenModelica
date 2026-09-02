@@ -1315,6 +1315,8 @@ pub struct InWasmSession {
     stat_f: wasmer::TypedFunction<u32, u64>,
     lin_ptr: wasmer::TypedFunction<(), u32>,
     lin_len: wasmer::TypedFunction<(), u32>,
+    strings_ptr: wasmer::TypedFunction<(), u32>,
+    strings_len: wasmer::TypedFunction<(), u32>,
     prof_ptr: wasmer::TypedFunction<(), u32>,
     prof_len: wasmer::TypedFunction<(), u32>,
     sys_ptr: wasmer::TypedFunction<(), u32>,
@@ -1385,6 +1387,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         stat_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_stat"))?,
         lin_ptr: gf(&store, "rt_sim_lin_ptr")?,
         lin_len: gf(&store, "rt_sim_lin_len")?,
+        strings_ptr: gf(&store, "rt_sim_strings_ptr")?,
+        strings_len: gf(&store, "rt_sim_strings_len")?,
         prof_ptr: gf(&store, "rt_sim_prof_ptr")?,
         prof_len: gf(&store, "rt_sim_prof_len")?,
         sys_ptr: gf(&store, "rt_sys_stats_ptr")?,
@@ -1481,7 +1485,19 @@ impl InWasmSession {
         stats.lin_solves = stat(7)?;
         openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
-        Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+        // The String values were captured in the module's own buffer; decode the
+        // length-prefixed blob `rt_sim_strings_ptr` points at.
+        let sn2 = wt(self.strings_len.call(&mut self.store))? as usize;
+        let mut blob = vec![0u8; sn2];
+        if sn2 > 0 {
+            let sp2 = wt(self.strings_ptr.call(&mut self.store))?;
+            self.memory
+                .view(&self.store)
+                .read(sp2 as u64, &mut blob)
+                .map_err(|_| "CodegenWasmJit: strings read")?;
+        }
+        let strings = sim_driver::decode_string_blob(&blob);
+        Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin, strings })
     }
 
     /// `+profiling`'s collected state, for the host's `profiling::adopt`: the

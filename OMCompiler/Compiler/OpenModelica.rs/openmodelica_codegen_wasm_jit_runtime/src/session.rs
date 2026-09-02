@@ -219,6 +219,10 @@ struct Session {
     stats: SolveStats,
     /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
     lin: Vec<u8>,
+    /// The captured String result values, one `u32` length prefix plus the UTF-8
+    /// bytes per value, in the driver's row-major order. Length-prefixed rather
+    /// than NUL-separated so an empty value stays unambiguous.
+    strings: Vec<u8>,
     /// `+profiling`'s collected state (`profiling::snapshot`), for the host to
     /// render into the report once it has written the result file.
     prof: Vec<u8>,
@@ -388,6 +392,12 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         Err(_) => return -2,
     };
 
+    // `drive()` arms the String capture for the host drivers; this path builds its
+    // driver directly, so it arms it here.
+    let has_strings =
+        model.vars.iter().any(|v| matches!(v.kind, openmodelica_sim_meta::MetaKind::StringColumn { .. }));
+    driver::strings::begin(if has_strings { model.layout.n_str_alg() } else { 0 });
+
     *session() = Some(Session {
         engine,
         driver,
@@ -399,6 +409,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         params: Vec::new(),
         stats: SolveStats::default(),
         lin: Vec::new(),
+        strings: Vec::new(),
         prof: Vec::new(),
     });
     // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
@@ -466,6 +477,10 @@ fn finish(s: &mut Session) {
         s.lin.push(0);
         s.lin.extend_from_slice(f.content.as_bytes());
     }
+    for v in driver::strings::take() {
+        s.strings.extend_from_slice(&(v.len() as u32).to_le_bytes());
+        s.strings.extend_from_slice(v.as_bytes());
+    }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     use openmodelica_sim_meta::rtclock;
     openmodelica_sim_meta::parmod::finish();
@@ -509,6 +524,17 @@ pub extern "C" fn rt_sim_lin_ptr() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_lin_len() -> u32 {
     session().as_ref().map_or(0, |s| s.lin.len() as u32)
+}
+
+/// The captured String result values: per value a `u32` byte length followed by
+/// its UTF-8 bytes, in the same row-major order as the numeric rows.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_strings_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.strings.as_ptr() as u32)
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_strings_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.strings.len() as u32)
 }
 
 /// `+profiling`'s collected state, valid once the run is done.

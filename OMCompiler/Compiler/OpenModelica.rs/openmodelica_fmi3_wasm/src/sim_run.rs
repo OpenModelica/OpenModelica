@@ -219,6 +219,8 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
         let precision = simflags::with_flags(|f| {
             if f.single_precision { Precision::Single } else { Precision::Double }
         });
+        let n_rows = if result.n_reals == 0 { 0 } else { result.rows.len() / result.n_reals as usize };
+        let str_cols = meta::result::string_columns(m, &keep, &result.strings, n_rows);
         openmodelica_mat_writer::write_mat4(
             &matvars,
             m.start_time,
@@ -226,6 +228,7 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             &result.rows,
             result.n_reals,
             &kept_params,
+            &str_cols,
             precision,
         )
     } else {
@@ -240,13 +243,17 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
             MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => PltKind::Const { value: *value },
+            // Filtered out below: C's plt writer has no String channel.
+            MetaKind::StringColumn { .. } => PltKind::Const { value: 0.0 },
         };
         let mut signals: Vec<PltVar> = Vec::new();
         for (v, &keep) in m.vars.iter().zip(&keep) {
             let is_param = matches!(v.kind, MetaKind::Param { .. });
             // C's plt writer omits integer/boolean parameters (`nParameters*`).
             let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });
-            let emit = keep && !is_int_bool_param;
+            // A String signal has no numeric data for the plt format to carry.
+            let is_string = matches!(v.kind, MetaKind::StringColumn { .. });
+            let emit = keep && !is_int_bool_param && !is_string;
             if is_param && emit {
                 kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
             }

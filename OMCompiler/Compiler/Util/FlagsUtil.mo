@@ -263,7 +263,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_CHECK_MODEL,
   Flags.CHECK_DEF_USE,
   Flags.TEARING_COST,
-  Flags.OMEDIT
+  Flags.OMEDIT,
+  Flags.NF_API_DYNAMIC_SELECT_AUX
 };
 
 protected

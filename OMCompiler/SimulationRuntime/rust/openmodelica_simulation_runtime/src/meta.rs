@@ -186,6 +186,22 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         }
     }
 
+    // String variables. Their text is not numeric data: the driver captures it
+    // per output row and the result writers put it in the `.mat`'s `stringData`
+    // matrix / its own quoted CSV column, as C's writers do.
+    for a in 0..md.nVariablesStringArray as usize {
+        let v = unsafe { &*md.stringVarsData.add(a) };
+        let base = unsafe { *si.stringVarsIndex.add(a) };
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+            vars.push(MetaVar {
+                name,
+                comment: cstr(v.info.comment),
+                kind: MetaKind::StringColumn { idx: (base + k) as u32 },
+                filter: filter_bits(v.filterOutput, false),
+            });
+        }
+    }
+
     // Parameters, read out of `SimData` once the run is over.
     for a in 0..md.nParametersRealArray as usize {
         let v = unsafe { &*md.realParameterData.add(a) };
@@ -307,6 +323,26 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     filter: filter_bits(al.filterOutput, true),
                 });
             }
+        }
+    }
+
+    // String aliases share the aliased variable's string slot; a String has no
+    // negation, and a String *parameter* alias is not in the result file (C's
+    // writers skip `ALIAS_TYPE_PARAMETER` there too).
+    for a in 0..md.nAliasStringArray as usize {
+        let al = unsafe { &*md.stringAlias.add(a) };
+        if al.aliasType == 1 {
+            continue;
+        }
+        let base = unsafe { *si.stringVarsIndex.add(al.nameID as usize) };
+        let dim = alias_dimension(md, al, 3);
+        for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
+            vars.push(MetaVar {
+                name,
+                comment: cstr(al.info.comment),
+                kind: MetaKind::StringColumn { idx: (base + k) as u32 },
+                filter: filter_bits(al.filterOutput, true),
+            });
         }
     }
 
@@ -452,6 +488,8 @@ fn alias_dimension(md: &MODEL_DATA, al: &DATA_ALIAS, kind: usize) -> &'static DI
             (1, 1) => &(*md.integerParameterData.add(ix)).dimension,
             (2, 0) => &(*md.booleanVarsData.add(ix)).dimension,
             (2, 1) => &(*md.booleanParameterData.add(ix)).dimension,
+            (3, 0) => &(*md.stringVarsData.add(ix)).dimension,
+            (3, 1) => &(*md.stringParameterData.add(ix)).dimension,
             _ => SCALAR,
         }
     }

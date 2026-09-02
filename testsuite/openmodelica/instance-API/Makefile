@@ -1,6 +1,11 @@
 TEST = ../../rtest -v
 
 TESTFILES = \
+DynamicSelectAuxNameConsistency.mos \
+DynamicSelectDiagram.mos \
+DynamicSelectUserFunctions.mos \
+StringResultCSV.mos \
+StringResultMat.mos \
 GetModelInstanceAlgorithm1.mos \
 GetModelInstanceAnnotation1.mos \
 GetModelInstanceAnnotation2.mos \

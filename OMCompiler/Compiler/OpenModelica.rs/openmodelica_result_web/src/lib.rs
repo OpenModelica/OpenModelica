@@ -161,7 +161,9 @@ impl ResultFile {
             }
         }
         let mat_vars: Vec<MatVar> = signals.iter().map(|(name, comment, kind)| MatVar { name, comment, kind: *kind }).collect();
-        Ok(write_mat4(&mat_vars, start, stop, &rows, n_reals as u32, &params, Precision::Double))
+        // Resampled numeric channels only; a String signal has no numeric data
+        // to resample, so it is not carried over.
+        Ok(write_mat4(&mat_vars, start, stop, &rows, n_reals as u32, &params, &[], Precision::Double))
     }
 
     /// The file as CSV with `vars` (all of them when empty): one `time` column

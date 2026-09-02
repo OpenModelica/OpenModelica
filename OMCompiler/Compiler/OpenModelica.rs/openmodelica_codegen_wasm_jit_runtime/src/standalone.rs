@@ -260,6 +260,7 @@ fn run() {
         result.n_reals,
         &result.params,
         &keep,
+        &result.strings,
         precision,
     ) else {
         return;

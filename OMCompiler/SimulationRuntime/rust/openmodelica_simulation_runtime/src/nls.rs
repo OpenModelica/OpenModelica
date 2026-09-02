@@ -867,6 +867,8 @@ fn write_state(path: &str) -> Result<(), String> {
         meta.layout.n_row_total(),
         &params,
         &meta.output_keep(None),
+        // One guessed point, no run: nothing captured a String value.
+        &[],
         openmodelica_mat_writer::Precision::Double,
     ) else {
         return Err(String::from("cannot write the initial guess file"));
