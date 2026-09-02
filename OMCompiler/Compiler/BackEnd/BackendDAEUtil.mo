@@ -2400,21 +2400,6 @@ algorithm
   outRow := List.sortedUnique(List.sort(row, intLt), intEq);
 end uniqueRow;
 
-protected function applyIndexType
-"@author: adrpo
-  Applies absolute value to all entries in the given list."
-  input list<Integer> inLst;
-  input BackendDAE.IndexType inIndexType;
-  output list<Integer> outLst;
-algorithm
-  outLst := match inIndexType
-    // transform to absolute indexes
-    case BackendDAE.ABSOLUTE() then list(intAbs(key) for key in inLst);
-    // leave as it is
-    else inLst;
-  end match;
-end applyIndexType;
-
 public function getIndexType
 "author kabdelhak FHB 10-2019
  Returns the index type of the current adjacency matrix and two Booleans:
@@ -3035,7 +3020,8 @@ public function adjacencyRowExp "author: PA
 algorithm
   outIntegerLst := match inIndexType
     local
-      list<Integer> vallst;
+      list<Integer> vallst, outLst;
+      Integer key;
 
     case BackendDAE.SPARSE() algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinderwithInput, (inVariables, inIntegerLst, isInitial));
@@ -3053,10 +3039,17 @@ algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingAdjacencyRowExpFinderSubClock, (inVariables, inIntegerLst, isInitial));
     then vallst;
 
+    // The row is absolute already; only what this expression adds needs intAbs.
+    case BackendDAE.ABSOLUTE() algorithm
+      (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, {}, isInitial));
+      outLst := inIntegerLst;
+      for key in listReverse(vallst) loop
+        outLst := intAbs(key) :: outLst;
+      end for;
+    then outLst;
+
     else algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, inIntegerLst, isInitial));
-      // only absolute indices?
-      vallst := applyIndexType(vallst, inIndexType);
     then vallst;
   end match;
 end adjacencyRowExp;
