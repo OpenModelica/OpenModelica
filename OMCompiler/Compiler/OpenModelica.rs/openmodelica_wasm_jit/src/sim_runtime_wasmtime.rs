@@ -1869,11 +1869,12 @@ impl InWasmSession {
                         ptr: &wasmtime::TypedFunc<(), u32>,
                         len: &wasmtime::TypedFunc<(), u32>|
          -> Result<Vec<f64>> {
-            let p = wt(ptr.call(&mut *store, ()))?;
+            let p = wt(ptr.call(&mut *store, ()))? as usize;
             let n = wt(len.call(&mut *store, ()))? as usize;
-            let mut bytes = vec![0u8; n * 8];
-            mem.read(&*store, p as usize, &mut bytes).map_err(|_| "CodegenWasmJit: rows read")?;
-            Ok(bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+            let bytes = mem.data(&*store).get(p..p + n * 8).ok_or("CodegenWasmJit: rows read")?;
+            let mut out = Vec::with_capacity(n);
+            out.extend(bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())));
+            Ok(out)
         };
         let n_reals = wt(self.n_reals_f.call(&mut self.store, ()))?;
         let rows = read_vec(&mut self.store, &self.memory, &self.rows_ptr, &self.rows_len)?;

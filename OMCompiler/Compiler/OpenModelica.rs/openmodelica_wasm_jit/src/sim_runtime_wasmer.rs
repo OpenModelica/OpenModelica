@@ -1459,9 +1459,13 @@ impl InWasmSession {
         let pp = wt(self.params_ptr.call(&mut self.store))?;
         let pn = wt(self.params_len.call(&mut self.store))? as usize;
         let read_vec = |mem: &wasmer::Memory, store: &Store, ptr: u32, n: usize| -> Result<Vec<f64>> {
-            let mut bytes = vec![0u8; n * 8];
-            mem.view(store).read(ptr as u64, &mut bytes).map_err(|_| "CodegenWasmJit: result read")?;
-            Ok(bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+            let bytes = mem
+                .view(store)
+                .copy_range_to_vec(ptr as u64..ptr as u64 + n as u64 * 8)
+                .map_err(|_| "CodegenWasmJit: result read")?;
+            let mut out = Vec::with_capacity(n);
+            out.extend(bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())));
+            Ok(out)
         };
         let rows = read_vec(&self.memory, &self.store, rp, rn)?;
         let params = read_vec(&self.memory, &self.store, pp, pn)?;

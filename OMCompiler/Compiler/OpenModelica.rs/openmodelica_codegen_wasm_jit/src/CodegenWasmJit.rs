@@ -164,8 +164,16 @@ fn fmu_kernels() -> &'static Mutex<HashMap<String, Arc<FmuKernel>>> {
     KERNELS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// One captured result signal: its name/description and the resolved value over
-/// the run (one f64 per output row; length 1 for a time-invariant signal).
+/// Where a captured signal's values live: a result-buffer column, or one
+/// time-invariant value.
+#[derive(Clone, Copy)]
+pub enum SeriesData {
+    Column { col: usize, negate: Neg },
+    Scalar(f64),
+}
+
+/// One captured result signal. Its values are read out of the row buffer on
+/// demand ([`CapturedSim::values`]).
 pub struct SimSeries {
     pub name: String,
     pub comment: String,
@@ -176,7 +184,7 @@ pub struct SimSeries {
     /// This signal aliases the same underlying data as an earlier series (e.g.
     /// `der(h)` and `v` when `v = der(h)`): plotting one of them suffices.
     pub alias: bool,
-    pub values: Vec<f64>,
+    pub data: SeriesData,
 }
 
 /// A parameter's value after the run, with the metadata a host needs to show it
@@ -190,15 +198,17 @@ pub struct CapturedParam {
     pub enum_names: Vec<String>,
 }
 
-/// The last run's results, resolved from the model's [`RunResult`] into per-signal
-/// value arrays so a host (the web simulator) can read them directly, without the
-/// intermediate `.mat` file. `time` is the independent column; `series` excludes
+/// The last run's results, kept as the driver's row buffer plus the per-signal
+/// metadata the `.mat` writer uses, so a host (the web simulator) can read
+/// signals directly without the intermediate `.mat` file. `series` excludes
 /// `time`.
 pub struct CapturedSim {
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
-    pub time: Vec<f64>,
+    /// Row-major, `n_reals` columns per row, column 0 = time.
+    rows: Vec<f64>,
+    n_reals: usize,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
     /// Solver counters, so a host with no stdout can tell a run that did more work
@@ -206,24 +216,59 @@ pub struct CapturedSim {
     pub stats: SolveStats,
 }
 
+impl CapturedSim {
+    pub fn n_rows(&self) -> usize {
+        if self.n_reals == 0 { 0 } else { self.rows.len() / self.n_reals }
+    }
+
+    fn column(&self, col: usize, negate: Neg) -> Vec<f64> {
+        self.rows.chunks_exact(self.n_reals.max(1)).map(|row| negate.apply_f64(row[col])).collect()
+    }
+
+    /// The independent `time` column.
+    pub fn time(&self) -> Vec<f64> {
+        self.column(0, Neg::None)
+    }
+
+    /// The values of `series[index]` over the run (length 1 for a time-invariant
+    /// signal), or `None` when out of range.
+    pub fn values(&self, index: usize) -> Option<Vec<f64>> {
+        Some(match self.series.get(index)?.data {
+            SeriesData::Column { col, negate } => self.column(col, negate),
+            SeriesData::Scalar(v) => vec![v],
+        })
+    }
+}
+
 fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
     static LAST: OnceLock<Mutex<Option<CapturedSim>>> = OnceLock::new();
     LAST.get_or_init(|| Mutex::new(None))
 }
 
-/// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
-/// (reusing the result-var metadata the `.mat` writer uses) and stash it for the
-/// host to read directly.
-fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]) {
-    let n_reals = run.n_reals as usize;
-    let n_rows = if n_reals == 0 { 0 } else { run.rows.len() / n_reals };
-    let column = |col: usize, negate: Neg| -> Vec<f64> {
-        (0..n_rows).map(|r| negate.apply_f64(run.rows[r * n_reals + col])).collect()
-    };
-    let is_const_col = |vals: &[f64]| vals.iter().all(|&v| v == vals.first().copied().unwrap_or(0.0));
+/// Stash a finished run's row buffer and per-signal metadata (reusing the
+/// result-var metadata the `.mat` writer uses) for the host to read directly.
+fn capture_last_sim(
+    model: &SimModel,
+    rows: Vec<f64>,
+    n_reals: u32,
+    params: &[f64],
+    stats: &SolveStats,
+    keep: &[bool],
+) {
+    let n_reals = n_reals as usize;
+    // One sequential pass: which columns never change after row 0.
+    let mut const_col = vec![true; n_reals];
+    if n_reals > 0 {
+        for row in rows.chunks_exact(n_reals).skip(1) {
+            for (c, (&v, first)) in row.iter().zip(&rows[..n_reals]).enumerate() {
+                if v != *first {
+                    const_col[c] = false;
+                }
+            }
+        }
+    }
 
     let unit_of = |name: &str| model.var_units.get(name).cloned().unwrap_or_default();
-    let mut time = Vec::new();
     let mut series = Vec::new();
     let mut param_idx = 0usize;
     // A signal aliases an earlier one when it reads the same underlying data: the
@@ -237,46 +282,32 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
     // Every signal is resolved (the editable parameters below read their values from
     // here regardless of the filter); `keep` is applied to `series` at the end.
     let mut series_keep: Vec<bool> = Vec::new();
+    // Row 0 of every signal, for the start values of the editable parameters.
+    let mut row0_by_name: HashMap<&str, f64> = HashMap::new();
     for (v, &keep) in model.result_vars.iter().zip(keep) {
-        if !matches!(v.kind, ResultKind::Time) {
-            series_keep.push(keep);
-        }
-        match &v.kind {
-            ResultKind::Time => time = column(0, Neg::None),
+        let (constant, alias, data) = match &v.kind {
+            ResultKind::Time => continue,
             ResultKind::Column { col, negate } => {
-                let values = column(*col as usize, *negate);
-                let constant = is_const_col(&values);
-                let alias = !seen_cols.insert(*col);
-                series.push(SimSeries { name: v.name.clone(), comment: v.comment.clone(), unit: unit_of(&v.name), constant, alias, values });
+                let col = *col as usize;
+                (const_col.get(col).copied().unwrap_or(true), !seen_cols.insert(col), SeriesData::Column { col, negate: *negate })
             }
             ResultKind::Param { off, negate, .. } => {
-                let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
+                let raw = params.get(param_idx).copied().unwrap_or(0.0);
                 param_idx += 1;
                 param_value_by_off.entry(*off).or_insert(raw);
-                let value = negate.apply_f64(raw);
-                let alias = !seen_param_offs.insert(*off);
-                series.push(SimSeries {
-                    name: v.name.clone(),
-                    comment: v.comment.clone(),
-                    unit: unit_of(&v.name),
-                    constant: true,
-                    alias,
-                    values: vec![value],
-                });
+                (true, !seen_param_offs.insert(*off), SeriesData::Scalar(negate.apply_f64(raw)))
             }
-            ResultKind::Const { value } => series.push(SimSeries {
-                name: v.name.clone(),
-                comment: v.comment.clone(),
-                unit: unit_of(&v.name),
-                constant: true,
-                alias: false,
-                values: vec![*value],
-            }),
-        }
+            ResultKind::Const { value } => (true, false, SeriesData::Scalar(*value)),
+        };
+        series_keep.push(keep);
+        let row0 = match data {
+            SeriesData::Column { col, negate } => negate.apply_f64(rows.get(col).copied().unwrap_or(0.0)),
+            SeriesData::Scalar(v) => v,
+        };
+        row0_by_name.entry(v.name.as_str()).or_insert(row0);
+        series.push(SimSeries { name: v.name.clone(), comment: v.comment.clone(), unit: unit_of(&v.name), constant, alias, data });
     }
     // A start value shows the state's t0 value; a plain parameter shows its slot.
-    let row0_by_name: HashMap<&str, f64> =
-        series.iter().map(|s| (s.name.as_str(), s.values.first().copied().unwrap_or(0.0))).collect();
     let params: Vec<CapturedParam> = model
         .editable_params
         .iter()
@@ -299,10 +330,11 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
         model_name: model.model_name.clone(),
         start_time: model.start_time,
         stop_time: model.stop_time,
-        time,
+        rows,
+        n_reals,
         series,
         params,
-        stats: run.stats.clone(),
+        stats: stats.clone(),
     });
 }
 
@@ -1170,12 +1202,13 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
             extra.push_str(&openmodelica_sim_meta::stats::log_stats_block(&run.stats));
         }
         let keep = output_selection(&model);
-        capture_last_sim(&model, &run, &keep);
         let path = result_path(&flags, &meta, result_file);
         write_result(&model, &meta, &path, &run, &keep)?;
         // C's `printModelInfo`, after the result file is closed.
         openmodelica_sim_meta::profiling::finish(&meta, &path, output_size(&path));
         post = write_lin_file(&meta, &run, &flags);
+        let mut run = run;
+        capture_last_sim(&model, core::mem::take(&mut run.rows), run.n_reals, &run.params, &run.stats, &keep);
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -1331,13 +1364,14 @@ mod session {
         model: &SimModel,
         meta: &SimMeta,
         result_file: &str,
-        run: &sim_driver::RunResult,
+        mut run: sim_driver::RunResult,
     ) -> Result<String> {
         let keep = output_selection(model);
-        capture_last_sim(model, run, &keep);
-        write_result(model, meta, result_file, run, &keep)?;
+        write_result(model, meta, result_file, &run, &keep)?;
         openmodelica_sim_meta::profiling::finish(meta, result_file, output_size(result_file));
-        Ok(write_lin_file(meta, run, &simflags::flags()))
+        let lin = write_lin_file(meta, &run, &simflags::flags());
+        capture_last_sim(model, core::mem::take(&mut run.rows), run.n_reals, &run.params, &run.stats, &keep);
+        Ok(lin)
     }
 
     /// Start a resumable run of a model already prepared by `buildModel`
@@ -1490,7 +1524,7 @@ mod session {
                                 stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                             }
                             stats_block
-                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &run)?);
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, run)?);
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
                             } else {
@@ -1514,7 +1548,7 @@ mod session {
                                 stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                             }
                             stats_block
-                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &run)?);
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, run)?);
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
                         Err(e) => Err(e),
