@@ -353,6 +353,8 @@ impl Recorder {
             &self.rows,
             self.columns.len() as u32 + 1,
             &params,
+            // An FMU recording has no String channel.
+            &[],
             mat::Precision::Double,
         )
     }

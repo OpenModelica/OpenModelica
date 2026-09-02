@@ -489,6 +489,12 @@ impl Layout {
     pub fn n_bool_alg(&self) -> u32 {
         (self.bparam_off - self.bool_off) / 4
     }
+    /// String algebraic variables (between `str_off` and `sparam_off`). They are
+    /// i32 runtime-String handles, not part of the numeric row; the result
+    /// writers capture their text separately ([`MetaKind::StringColumn`]).
+    pub fn n_str_alg(&self) -> u32 {
+        (self.sparam_off - self.str_off) / 4
+    }
     /// Total f64 columns in a result row: the real part, the integer and boolean
     /// algebraics (captured per row as f64), then the sensitivities.
     pub fn n_row_total(&self) -> u32 {
@@ -566,6 +572,11 @@ pub enum MetaKind {
     Param { off: u32, wty: WTy, negate: Neg },
     /// A compile-time constant.
     Const { value: f64 },
+    /// A time-variant String signal, `idx` being its index among the model's
+    /// string algebraic slots (`Layout::str_off + idx * 4`). Its text is captured
+    /// per output row beside the numeric row; C stores the same values in the
+    /// `.mat` `stringData` matrix and as a quoted CSV column.
+    StringColumn { idx: u32 },
 }
 
 impl MetaKind {
@@ -582,6 +593,7 @@ impl MetaKind {
             MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: neg(negate) },
             MetaKind::Param { negate, .. } => MatKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => MatKind::Const { value: *value },
+            MetaKind::StringColumn { .. } => MatKind::String,
         }
     }
 
@@ -598,6 +610,9 @@ impl MetaKind {
             MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
             MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => PltKind::Const { value: *value },
+            // C's `simulation_result_plt` writes no String signals; `result::plt`
+            // drops them before it gets here.
+            MetaKind::StringColumn { .. } => PltKind::Const { value: 0.0 },
         }
     }
 }
@@ -1548,6 +1563,10 @@ fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
             o.push(3);
             put_f64(o, *value);
         }
+        MetaKind::StringColumn { idx } => {
+            o.push(4);
+            put_u32(o, *idx);
+        }
     }
 }
 
@@ -2027,6 +2046,7 @@ impl<'a> Reader<'a> {
                 negate: Neg::from_code(self.u8()?),
             },
             3 => MetaKind::Const { value: self.f64()? },
+            4 => MetaKind::StringColumn { idx: self.u32()? },
             _ => return Err("sim_meta: bad MetaKind tag"),
         })
     }
@@ -2407,6 +2427,7 @@ mod tests {
                 MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0 },
                 MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT },
                 MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
+                MetaVar { name: "s".to_string(), comment: "a string".to_string(), kind: MetaKind::StringColumn { idx: 2 }, filter: 0 },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
@@ -2585,11 +2606,11 @@ mod tests {
             m.vars.iter().zip(keep).filter(|(_, k)| *k).map(|(v, _)| v.name.as_str()).collect()
         };
         simflags::set_flags(simflags::SimFlags::default());
-        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p"]);
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "s"]);
 
         let mut f = simflags::SimFlags { ignore_hide_result: true, ..Default::default() };
         simflags::set_flags(f.clone());
-        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
+        assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n", "s"]);
 
         // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
         // `time` is never filtered and the parameter `p` is exempt.

@@ -238,6 +238,11 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
     // here regardless of the filter); `keep` is applied to `series` at the end.
     let mut series_keep: Vec<bool> = Vec::new();
     for (v, &keep) in model.result_vars.iter().zip(keep) {
+        // A String signal has no numeric trajectory to plot, and OMPlot skips
+        // String variables in a result file for the same reason.
+        if matches!(v.kind, ResultKind::StringColumn { .. }) {
+            continue;
+        }
         if !matches!(v.kind, ResultKind::Time) {
             series_keep.push(keep);
         }
@@ -272,6 +277,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
                 alias: false,
                 values: vec![*value],
             }),
+            ResultKind::StringColumn { .. } => unreachable!("skipped above"),
         }
     }
     // A start value shows the state's t0 value; a plain parameter shows its slot.
@@ -1384,6 +1390,13 @@ mod session {
                 Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model)?))
             } else {
                 let (mut engine, sim_data) = sim_runtime::build_engine(&model, &meta)?;
+                // `drive()` arms the String capture for a one-shot run; this
+                // resumable session drives the chunks itself, so it arms it here.
+                let has_strings = meta
+                    .vars
+                    .iter()
+                    .any(|v| matches!(v.kind, ResultKind::StringColumn { .. }));
+                sim_driver::strings::begin(if has_strings { meta.layout.n_str_alg() } else { 0 });
                 let made = sim_driver::make_driver(&mut *engine, &meta, sim_data, meta.method.as_str())
                     .map_err(|err| sim_driver::enrich_trap_init(&mut *engine, err, meta.start_time));
                 let (driver, _label) = match made {
@@ -1485,6 +1498,7 @@ mod session {
                                 params,
                                 stats,
                                 lin,
+                                strings: sim_driver::strings::take(),
                             };
                             if log_stats {
                                 stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
@@ -3826,9 +3840,13 @@ fn result_name(raw: &str) -> Option<String> {
 /// The `$`-prefixed variables C's result file *does* carry: an `optimization`
 /// model's objective terms (`BackendDAE.optimization{Mayer,Lagrange}TermName`) and
 /// its constraint residuals (`DynamicOptimization`'s `$con$` / `$finalCon$` /
-/// `$EqCon$`). The rest of the `$` namespace is the backend's own bookkeeping,
-/// which C hides through `hideResult` and this port drops by name.
-const OPT_RESULT_PREFIXES: [&str; 4] = ["$OMC$object", "$con$", "$finalCon$", "$EqCon$"];
+/// `$EqCon$`), plus the `DynamicSelect` auxiliaries the frontend synthesizes for a
+/// dynamic annotation expression that calls a user function — OMEdit reads them
+/// back out of the result file by name. The rest of the `$` namespace is the
+/// backend's own bookkeeping, which C hides through `hideResult` and this port
+/// drops by name.
+const OPT_RESULT_PREFIXES: [&str; 5] =
+    ["$OMC$object", "$con$", "$finalCon$", "$EqCon$", "$DynamicSelect$"];
 
 /// Evaluate a constant variable's binding to a scalar, for the `*ConstVars`
 /// lists (which have no SimData slot). Handles the literal forms model constants
@@ -3855,7 +3873,14 @@ pub(crate) fn const_value(exp: &Option<Arc<DAE::Exp>>) -> Option<f64> {
 /// captured per row) and string variables have no numeric result column.
 fn kind_from_slot(off: u32, wty: WTy, negate: Neg, heap: bool, layout: &SimLayout) -> Option<ResultKind> {
     if heap {
-        return None; // strings are not stored as numeric result data
+        // A string *variable* is a result signal, but not a numeric one: its text
+        // is captured per output row and written to the `.mat`'s `stringData`
+        // matrix / its own quoted CSV column. String parameters and external
+        // objects are not in the result file at all, as in C.
+        if off >= layout.str_off && off < layout.sparam_off {
+            return Some(ResultKind::StringColumn { idx: (off - layout.str_off) / 4 });
+        }
+        return None;
     }
     if off >= REAL_OFF && off < layout.rparam_off {
         // realVars region (states | derivatives | algebraics) -> data_2 column.
@@ -4249,8 +4274,11 @@ fn build_var_map(
         push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
     }
+    // String variables: an i32 runtime-String handle slot, and a result signal
+    // whose text the driver captures beside the numeric row (C's `stringVars`).
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
-        insert_var(&mut map, sv, layout.str_off + (i as u32) * 4, WTy::I32, true)?;
+        let name = cref_display(&sv.name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.str_off + (i as u32) * 4, WTy::I32, true, name)?;
     }
     for (k, sv) in lst(&vars.stringParamVars).enumerate() {
         let off = layout.sparam_off + (k as u32) * 4;
@@ -4319,7 +4347,10 @@ fn build_var_map(
     let alias_lists = lst(&vars.aliasVars)
         .map(|v| (v, false))
         .chain(lst(&vars.intAliasVars).map(|v| (v, false)))
-        .chain(lst(&vars.boolAliasVars).map(|v| (v, true)));
+        .chain(lst(&vars.boolAliasVars).map(|v| (v, true)))
+        // A String alias shares the target's handle slot and its string column;
+        // there is no negation of a String.
+        .chain(lst(&vars.stringAliasVars).map(|v| (v, false)));
     for (av, is_bool) in alias_lists {
         let (target, negate) = match &av.aliasvar {
             SimCodeVar::AliasVariable::ALIAS { varName } => (varName.clone(), false),
@@ -11308,6 +11339,7 @@ fn write_result(
         run.n_reals,
         &run.params,
         keep,
+        &run.strings,
         precision,
     ) else {
         return Ok(());

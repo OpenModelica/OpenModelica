@@ -159,11 +159,17 @@ fn render(a: &PlotArgs) -> Result<String, String> {
         let all = SimulationResults::readVariables(filename.clone(), false, false)
             .map_err(|e| e.to_string())?;
         // Drop the independent variable and internal helper variables.
-        list_to_vec(&all)
+        let mut names: Vec<String> = list_to_vec(&all)
             .into_iter()
             .map(|s| s.to_string())
             .filter(|s| s != "time" && !s.starts_with('$'))
-            .collect()
+            .collect();
+        // A String variable has no numeric trajectory to draw, so it is not a
+        // curve — OMPlot skips them by `allInfo[i].isString` for the same reason.
+        if let Ok(reader) = openmodelica_result_files::ResultReader::open(filename.as_str()) {
+            names.retain(|n| !reader.is_string_var(n));
+        }
+        names
     };
     if names.is_empty() {
         return Err("no variables to plot".into());

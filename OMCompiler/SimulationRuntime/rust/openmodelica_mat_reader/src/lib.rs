@@ -29,6 +29,10 @@ pub struct MatVariable {
     pub name: String,
     pub descr: String,
     pub isParam: bool,
+    /// True for a time-varying String variable (`dataInfo` channel 3). Its value
+    /// is not numeric data: `index` is the 1-based string-signal number into the
+    /// `stringData` matrix, unrelated to data_1/data_2.
+    pub isString: bool,
     /// 1-based index into data_1 (params) or data_2 (vars); negative selects the
     /// sign-inverted alias of that column.
     pub index: i32,
@@ -54,6 +58,15 @@ pub struct MatReader {
     data2: Option<Vec<f64>>,
     startTime: Option<f64>,
     stopTime: Option<f64>,
+    /// `stringData`: a char matrix of `stringMaxLen` rows and
+    /// `nStringSignals * nStringRows` columns, column-major, so the text of
+    /// signal `s` (1-based) at row `r` starts at
+    /// `(r * nStringSignals + (s - 1)) * stringMaxLen`. Empty for a file
+    /// without String variables.
+    stringData: Vec<u8>,
+    stringMaxLen: usize,
+    nStringSignals: usize,
+    nStringRows: usize,
 }
 
 /// MATLAB v4 matrix header (5 little-endian u32 fields).
@@ -263,10 +276,16 @@ impl MatReader {
             data2: None,
             startTime: None,
             stopTime: None,
+            stringData: Vec::new(),
+            stringMaxLen: 0,
+            nStringSignals: 0,
+            nStringRows: 0,
         };
         // Parse sequentially using `file`; `reader.file` is the clone kept for
         // the lazy data_2 read.
         let mut binTrans = true;
+        // Where data_2 ends, i.e. where an optional `stringData` matrix starts.
+        let mut data2_end = 0u64;
 
         for i in 0..6 {
             let hdr = read_header(&mut file).map_err(|_| "Corrupt header (1)".to_string())?;
@@ -328,6 +347,7 @@ impl MatReader {
                             name: fixed_str(&bytes),
                             descr: String::new(),
                             isParam: false,
+                            isString: false,
                             index: -1,
                         });
                     }
@@ -361,7 +381,14 @@ impl MatReader {
                             (tmp[k], tmp[k + mrows])
                         };
                         reader.allInfo[k].isParam = isparam_cell == 1;
+                        // CHANNEL_STRING: the value lives in `stringData`, and the
+                        // index counts string signals, so the largest one is how
+                        // many there are.
+                        reader.allInfo[k].isString = isparam_cell == 3;
                         reader.allInfo[k].index = index_cell;
+                        if reader.allInfo[k].isString && index_cell > reader.nStringSignals as i32 {
+                            reader.nStringSignals = index_cell as usize;
+                        }
                     }
                     reader
                         .allInfo
@@ -412,12 +439,63 @@ impl MatReader {
                         reader.nvar = hdr.ncols as usize;
                     }
                     reader.var_offset = file.stream_position().map_err(|e| e.to_string())?;
-                    let _ = matrix_length; // data_2 is the final matrix; nothing follows.
+                    data2_end = reader.var_offset + matrix_length as u64;
                 }
                 _ => unreachable!(),
             }
         }
+        // stringData follows data_2 for a model with time-varying String
+        // variables (C appends it when the file is closed). Optional: a file
+        // whose dataInfo names no string signal has none.
+        if reader.nStringSignals > 0 {
+            reader.read_string_data(&mut file, data2_end)?;
+        }
         Ok(reader)
+    }
+
+    /// Read the `stringData` char matrix, positioned right after data_2. A file
+    /// that ends there (or carries a different matrix) simply has no string
+    /// values; only a truncated `stringData` is an error.
+    fn read_string_data(&mut self, file: &mut Src, at: u64) -> Result<(), String> {
+        if file.seek(SeekFrom::Start(at)).is_err() {
+            return Ok(());
+        }
+        let Ok(hdr) = read_header(file) else { return Ok(()) };
+        let namelen = hdr.namelen as usize;
+        let Ok(name_bytes) = read_exact_vec(file, namelen) else { return Ok(()) };
+        if namelen == 0 || name_bytes[namelen - 1] != 0 || &name_bytes[..namelen - 1] != b"stringData" {
+            return Ok(());
+        }
+        let total = hdr.mrows as usize * hdr.ncols as usize;
+        self.stringMaxLen = hdr.mrows as usize;
+        self.stringData = read_chars(hdr.ty as i32, total, file)
+            .map_err(|_| "Corrupt header: stringData matrix".to_string())?;
+        self.nStringRows = hdr.ncols as usize / self.nStringSignals;
+        Ok(())
+    }
+
+    /// The text of the String variable `varIdx` at `time`, or `None` if it is not
+    /// a String variable / the file carries no values for it. A String is a
+    /// step-like display value, so the row at or just before `time` is returned
+    /// rather than an interpolation.
+    pub fn read_string_val(&mut self, varIdx: usize, time: f64) -> Option<&str> {
+        let info = self.allInfo.get(varIdx)?;
+        let index = info.index;
+        if !info.isString || self.stringData.is_empty() || self.nStringRows == 0 {
+            return None;
+        }
+        if index < 1 || index as usize > self.nStringSignals {
+            return None;
+        }
+        let timevec = self.read_vals(1)?;
+        let (i1, _, i2, _) = find_closest_points(time, &timevec);
+        let row = if i1 >= 0 { i1 as usize } else if i2 >= 0 { i2 as usize } else { 0 };
+        let row = row.min(self.nStringRows - 1);
+        let col = row * self.nStringSignals + (index as usize - 1);
+        let at = col * self.stringMaxLen;
+        let cell = self.stringData.get(at..at + self.stringMaxLen)?;
+        let end = cell.iter().position(|&b| b == 0).unwrap_or(cell.len());
+        core::str::from_utf8(&cell[..end]).ok()
     }
 
     /// Bytes one element of data_2 occupies on disk.

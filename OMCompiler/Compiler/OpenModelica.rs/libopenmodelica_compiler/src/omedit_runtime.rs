@@ -29,6 +29,9 @@ pub struct ModelicaMatVariable_t {
     name: *mut c_char,
     descr: *mut c_char,
     isParam: c_int,
+    /// Non-zero for a time-varying String variable, whose value lives in the
+    /// `stringData` matrix and whose `index` is a string-signal number.
+    isString: c_int,
     index: c_int,
 }
 
@@ -55,6 +58,12 @@ struct ModelicaMatReader {
     readAll: c_int,
     vars: *mut *mut c_double,
     doublePrecision: c_char,
+    /// String result support; consumers reach the values through
+    /// [`omc_matlab4_read_string_val`], so these stay null/zero here.
+    stringData: *mut c_char,
+    stringMaxLen: u32,
+    nStringSignals: u32,
+    nStringRows: u32,
 }
 
 struct ReaderState {
@@ -66,6 +75,10 @@ struct ReaderState {
     /// returns a reader-owned `double*` the caller does not free), keyed by the
     /// requested column index.
     cached: HashMap<c_int, Vec<f64>>,
+    /// String values handed out by `omc_matlab4_read_string_val`, kept alive for
+    /// the reader's lifetime as the C reader's `stringData` is, keyed by
+    /// (variable, requested time).
+    strings: HashMap<(usize, u64), CString>,
 }
 
 thread_local! {
@@ -98,13 +111,19 @@ pub extern "C" fn omc_new_matlab4_reader(
                     name: unsafe { dup_cstr(&v.name) },
                     descr: unsafe { dup_cstr(&v.descr) },
                     isParam: v.isParam as c_int,
+                    isString: v.isString as c_int,
                     index: v.index,
                 })
                 .collect();
             let (nall, nparam, nvar, nrows) =
                 (vars.len() as u32, mr.nparam as u32, mr.nvar as u32, mr.nrows as u32);
             let (start, stop) = (mr.start_time(), mr.stop_time());
-            let state = Box::new(ReaderState { reader: mr, vars, cached: HashMap::new() });
+            let state = Box::new(ReaderState {
+                reader: mr,
+                vars,
+                cached: HashMap::new(),
+                strings: HashMap::new(),
+            });
             let p = Box::into_raw(state);
             // Populate exactly the fields consumers read directly; the rest is
             // reached only through the accessor functions (which use `file`).
@@ -127,6 +146,10 @@ pub extern "C" fn omc_new_matlab4_reader(
                 r.readAll = 0;
                 r.vars = ptr::null_mut();
                 r.doublePrecision = 0;
+                r.stringData = ptr::null_mut();
+                r.stringMaxLen = 0;
+                r.nStringSignals = 0;
+                r.nStringRows = 0;
             }
             ptr::null()
         }
@@ -251,6 +274,37 @@ pub extern "C" fn omc_matlab4_val(
     }
 }
 
+/// The value of a time-varying String variable at `time`, as a reader-owned C
+/// string (valid until the reader is freed, as the C reader's pointer into
+/// `stringData` is), or null when `var` is not a String variable. A String is a
+/// step-like display value, so this is the value at the row at or just before
+/// `time`, not an interpolation.
+#[unsafe(no_mangle)]
+pub extern "C" fn omc_matlab4_read_string_val(
+    reader: *mut ModelicaMatReader,
+    var: *mut ModelicaMatVariable_t,
+    time: c_double,
+) -> *const c_char {
+    let Some(st) = (unsafe { state(reader) }) else { return ptr::null() };
+    if var.is_null() {
+        return ptr::null();
+    }
+    // `var` points into `st.vars`; recover its index by offset.
+    let base = st.vars.as_ptr();
+    let i = (var as usize).wrapping_sub(base as usize)
+        / std::mem::size_of::<ModelicaMatVariable_t>();
+    if i >= st.vars.len() {
+        return ptr::null();
+    }
+    let key = (i, time.to_bits());
+    if !st.strings.contains_key(&key) {
+        let Some(s) = st.reader.read_string_val(i, time) else { return ptr::null() };
+        let Ok(c) = CString::new(s) else { return ptr::null() };
+        st.strings.insert(key, c);
+    }
+    st.strings.get(&key).unwrap().as_ptr()
+}
+
 /// Interpolate `n` variables at `time` into `res[0..n]` (libOMPlot's parametric
 /// path). Returns 0 on success, non-zero if any lookup fails.
 #[unsafe(no_mangle)]
@@ -309,15 +363,37 @@ pub extern "C" fn omc_matlab4_stopTime(reader: *mut ModelicaMatReader) -> c_doub
 
 // ─────────────────────────────── CSV reader ──────────────────────────────────
 
-/// Open a CSV result file. Returns an opaque `struct csv_data*` (a boxed
-/// [`CsvReader`]) or null on failure, matching the C `read_csv`.
-#[unsafe(no_mangle)]
-pub extern "C" fn read_csv(filename: *const c_char) -> *mut c_void {
+/// What the opaque `struct csv_data*` points at: the reader plus the `char**`
+/// arrays [`read_csv_dataset_str`] hands out, which the C ABI keeps alive for
+/// the reader's lifetime.
+struct CsvState {
+    reader: CsvReader,
+    strings: HashMap<String, (Vec<CString>, Vec<*mut c_char>)>,
+}
+
+fn csv_open(filename: *const c_char, keep_strings: bool) -> *mut c_void {
     let fname = unsafe { CStr::from_ptr(filename) }.to_string_lossy().into_owned();
-    match catch_unwind(|| CsvReader::open(&fname)) {
-        Ok(Ok(r)) => Box::into_raw(Box::new(r)) as *mut c_void,
+    let open = || if keep_strings { CsvReader::open_all(&fname) } else { CsvReader::open(&fname) };
+    match catch_unwind(open) {
+        Ok(Ok(reader)) => {
+            Box::into_raw(Box::new(CsvState { reader, strings: HashMap::new() })) as *mut c_void
+        }
         _ => ptr::null_mut(),
     }
+}
+
+/// Open a CSV result file. Returns an opaque `struct csv_data*` (a boxed
+/// [`CsvState`]) or null on failure, matching the C `read_csv`.
+#[unsafe(no_mangle)]
+pub extern "C" fn read_csv(filename: *const c_char) -> *mut c_void {
+    csv_open(filename, false)
+}
+
+/// `read_csv_all`: like [`read_csv`] but keeps the String columns readable
+/// through [`read_csv_dataset_str`] instead of failing on them.
+#[unsafe(no_mangle)]
+pub extern "C" fn read_csv_all(filename: *const c_char) -> *mut c_void {
+    csv_open(filename, true)
 }
 
 /// Return the trajectory of `var` as a reader-owned `double*` (the caller does
@@ -327,19 +403,39 @@ pub extern "C" fn read_csv_dataset(data: *mut c_void, var: *const c_char) -> *mu
     if data.is_null() {
         return ptr::null_mut();
     }
-    let reader = unsafe { &*(data as *const CsvReader) };
+    let st = unsafe { &*(data as *const CsvState) };
     let name = unsafe { CStr::from_ptr(var) }.to_string_lossy();
-    match reader.dataset(&name) {
+    match st.reader.dataset(&name) {
         Some(s) => s.as_ptr() as *mut c_double,
         None => ptr::null_mut(),
     }
 }
 
-/// Free a reader returned by [`read_csv`].
+/// The `numsteps` String values of a String column as a reader-owned `char**`
+/// (the caller frees neither), or null when `var` is not a String column or the
+/// file was opened with [`read_csv`]. Mirrors the C `read_csv_dataset_str`.
+#[unsafe(no_mangle)]
+pub extern "C" fn read_csv_dataset_str(data: *mut c_void, var: *const c_char) -> *mut *mut c_char {
+    if data.is_null() {
+        return ptr::null_mut();
+    }
+    let st = unsafe { &mut *(data as *mut CsvState) };
+    let name = unsafe { CStr::from_ptr(var) }.to_string_lossy().into_owned();
+    if !st.strings.contains_key(&name) {
+        let Some(vals) = st.reader.dataset_str(&name) else { return ptr::null_mut() };
+        let owned: Vec<CString> =
+            vals.iter().map(|v| CString::new(v.as_str()).unwrap_or_default()).collect();
+        let ptrs: Vec<*mut c_char> = owned.iter().map(|c| c.as_ptr() as *mut c_char).collect();
+        st.strings.insert(name.clone(), (owned, ptrs));
+    }
+    st.strings.get_mut(&name).unwrap().1.as_mut_ptr()
+}
+
+/// Free a reader returned by [`read_csv`] / [`read_csv_all`].
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_free_csv_reader(data: *mut c_void) {
     if !data.is_null() {
-        unsafe { drop(Box::from_raw(data as *mut CsvReader)) };
+        unsafe { drop(Box::from_raw(data as *mut CsvState)) };
     }
 }
 

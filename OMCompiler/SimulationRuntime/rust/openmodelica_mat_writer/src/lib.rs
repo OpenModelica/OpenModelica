@@ -44,6 +44,11 @@ pub enum MatKind {
     Param { negate: Neg },
     /// A compile-time constant written directly to `data_1`.
     Const { value: f64 },
+    /// A time-varying String signal. Its values are not numeric data: they go to
+    /// the `stringData` char matrix, and `dataInfo` points at them with channel 3
+    /// and the 1-based string-signal index. The values come from the `strings`
+    /// slice, in `String`-signal order, one group per output row.
+    String,
 }
 
 /// The precision of the real-valued result data (`data_1`/`data_2`). Mirrors C's
@@ -87,6 +92,7 @@ pub fn write_mat4(
     rows: &[f64],
     n_reals: u32,
     params: &[f64],
+    strings: &[&str],
     precision: Precision,
 ) -> Vec<u8> {
     let n_reals = n_reals as usize;
@@ -171,6 +177,7 @@ pub fn write_mat4(
     // dataInfo (4 x nSignals int32, column-major): [channel, index, interp, extrap].
     let mut data_info: Vec<i32> = Vec::with_capacity(signals.len() * 4);
     let mut next_scalar_row: i32 = 2;
+    let mut next_string_signal: i32 = 0;
     for v in signals {
         let info = match &v.kind {
             MatKind::Time => [0, 1, 0, -1],
@@ -198,6 +205,12 @@ pub fn write_mat4(
                 let r = next_scalar_row;
                 next_scalar_row += 1;
                 [1, r, 0, 0]
+            }
+            // Channel 3 is not a data_1/data_2 row: the index is the 1-based
+            // string-signal number, i.e. the column base in `stringData`.
+            MatKind::String => {
+                next_string_signal += 1;
+                [3, next_string_signal, 0, 0]
             }
         };
         data_info.extend_from_slice(&info);
@@ -247,6 +260,13 @@ pub fn write_mat4(
         }
     }
     write_real_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2, precision);
+
+    // stringData (maxLen x (nStringSignals * n_rows) char, column-major): one
+    // column per (row, string signal), so the value of signal `s` (1-based) at
+    // output row `r` is column `r * nStringSignals + (s - 1)`.
+    if next_string_signal > 0 && !strings.is_empty() {
+        write_char_matrix_cols(&mut out, "stringData", strings);
+    }
 
     out
 }
@@ -354,6 +374,41 @@ mod tests {
         payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
     }
 
+    /// A time-varying String signal: `dataInfo` channel 3 with the 1-based
+    /// string-signal number, and one `stringData` column per (row, signal).
+    #[test]
+    fn writes_string_signals() {
+        let vars = [
+            MatVar { name: "time", comment: "Time in s", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            MatVar { name: "s", comment: "", kind: MatKind::String },
+            MatVar { name: "t", comment: "", kind: MatKind::String },
+        ];
+        let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
+        // Row-major (row, signal): 3 rows x 2 string signals.
+        let strings = ["a", "bb", "c", "dd", "e", "ff"];
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[], &strings, Precision::Double);
+
+        let (_r, _c, di) = find_matrix(&buf, "dataInfo");
+        let di = i32s(di);
+        assert_eq!(&di[8..12], &[3, 1, 0, 0]); // s: string signal 1
+        assert_eq!(&di[12..16], &[3, 2, 0, 0]); // t: string signal 2
+
+        // stringData: maxLen ("bb"/"dd"/"ff" -> 3) rows, 3*2 columns.
+        let (mrows, ncols, sd) = find_matrix(&buf, "stringData");
+        assert_eq!((mrows, ncols), (3, 6));
+        let cell = |c: usize| {
+            let col = &sd[c * mrows..(c + 1) * mrows];
+            let end = col.iter().position(|&b| b == 0).unwrap_or(col.len());
+            core::str::from_utf8(&col[..end]).unwrap().to_string()
+        };
+        // Column (row * nStringSignals + (signal - 1)).
+        assert_eq!(cell(0), "a");
+        assert_eq!(cell(1), "bb");
+        assert_eq!(cell(4), "e");
+        assert_eq!(cell(5), "ff");
+    }
+
     /// time + one varying real state + one parameter + one constant, 3 rows.
     /// Row layout `n_reals = 2`: column 0 = time, column 1 = the state `x`.
     #[test]
@@ -367,7 +422,7 @@ mod tests {
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
         let params = [7.0]; // p = 7
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, &[], Precision::Double);
 
         // name matrix: 4 columns, one per signal, column-major null-padded.
         let (mrows, ncols, name_payload) = find_matrix(&buf, "name");
@@ -412,7 +467,7 @@ mod tests {
         ];
         // n_reals = 3: [time, x, b]; b toggles, so its column stays time-variant.
         let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
-        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
+        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], &[], Precision::Double);
 
         let (_r, _c, di) = find_matrix(&buf, "dataInfo");
         let di = i32s(di);
@@ -461,7 +516,7 @@ mod tests {
         ];
         // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
         let rows = [0.0, 0.5, 1.0, 1.5];
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], &[], Precision::Single);
 
         assert_eq!(matrix_type(&buf, "data_1"), 10);
         assert_eq!(matrix_type(&buf, "data_2"), 10);
@@ -483,7 +538,7 @@ mod tests {
         ];
         // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
         let rows = [0.0, 1.0 / 3.0];
-        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
+        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], &[], Precision::Single);
         let (_r, _c, d2) = find_matrix(&buf, "data_2");
         let d2 = f32s(d2);
         assert_eq!(d2[1], (1.0 / 3.0) as f32);
@@ -498,8 +553,8 @@ mod tests {
             MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
         ];
         let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
-        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
-        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
+        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], &[], Precision::Single);
+        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], &[], Precision::Double);
         assert!(single.len() < double.len());
     }
 }

@@ -28,7 +28,9 @@ impl ResultReader {
         } else if filename.ends_with(".plt") {
             PltReader::open(filename).map(ResultReader::Plt).map_err(OpenError::Failed)
         } else if filename.ends_with(".csv") {
-            CsvReader::open(filename).map(ResultReader::Csv).map_err(OpenError::Failed)
+            // The scripting readers tolerate String columns; a result file may
+            // carry them beside the numeric ones.
+            CsvReader::open_all(filename).map(ResultReader::Csv).map_err(OpenError::Failed)
         } else {
             Err(OpenError::UnknownSuffix)
         }
@@ -74,6 +76,18 @@ impl ResultReader {
         }
     }
 
+    /// Whether `varname` is a time-varying String variable: it has no numeric
+    /// trajectory, so a plot skips it (OMPlot's `reader.allInfo[i].isString`).
+    pub fn is_string_var(&self, varname: &str) -> bool {
+        match self {
+            ResultReader::Mat(reader) => {
+                reader.find_var(varname).is_some_and(|i| reader.allInfo[i].isString)
+            }
+            ResultReader::Csv(reader) => reader.is_string_var(varname),
+            ResultReader::Plt(_) => false,
+        }
+    }
+
     /// C `SimulationResultsImpl__readVarsFilterAliases`: for MATLAB4 the names
     /// of all real (non-negated-alias) variables and parameters, one per storage
     /// index, in `allInfo` order; the other formats fall through to
@@ -87,6 +101,13 @@ impl ResultReader {
                 for info in reader.allInfo.iter().rev() {
                     if info.index <= 0 {
                         continue; // negated aliases always have a real variable
+                    }
+                    // A String variable indexes `stringData`, not data_1/data_2,
+                    // so its index says nothing about the numeric storage it
+                    // would collide with here. It is not numerically comparable
+                    // either, which is what this list feeds.
+                    if info.isString {
+                        continue;
                     }
                     let seen = if info.isParam { &mut seen_param } else { &mut seen_var };
                     if !seen.insert(info.index) {

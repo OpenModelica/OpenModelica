@@ -1006,6 +1006,9 @@ pub struct RunResult {
     pub n_reals: u32,
     /// Parameter values (in result `Param` order), read from `SimData` after the run.
     pub params: Vec<f64>,
+    /// Captured String values, row-major `n_rows * SimLayout::n_str_alg()`, in
+    /// lockstep with `rows`. Empty for a model with no String result signal.
+    pub strings: Vec<String>,
     /// Solver statistics (steps, evaluations, events).
     pub stats: SolveStats,
     /// `-l`'s linearized model, for the caller to write out.
@@ -2781,6 +2784,99 @@ impl HomotopyPath {
     }
 }
 
+/// The String values captured beside the numeric rows. A String is an i32
+/// runtime-String handle in `SimData`, not a number, so it cannot ride in the
+/// f64 row buffer; C has the same split (`stringVars` are read straight out of
+/// `localData` by the result writer). Every driver funnels through
+/// [`capture_row`], so one buffer here stays in lockstep with `rows` without
+/// threading a second `Vec` through each of them.
+pub mod strings {
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    #[cfg(feature = "std")]
+    mod state {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static BUF: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+            static WIDTH: RefCell<u32> = const { RefCell::new(0) };
+        }
+        pub fn with<R>(f: impl FnOnce(&mut Vec<String>, &mut u32) -> R) -> R {
+            BUF.with(|b| WIDTH.with(|w| f(&mut b.borrow_mut(), &mut w.borrow_mut())))
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod state {
+        use alloc::string::String;
+        use alloc::vec::Vec;
+        use core::cell::UnsafeCell;
+        // The in-wasm runtime is single-threaded, so a plain cell is sound.
+        struct Store(UnsafeCell<(Vec<String>, u32)>);
+        unsafe impl Sync for Store {}
+        static BUF: Store = Store(UnsafeCell::new((Vec::new(), 0)));
+        pub fn with<R>(f: impl FnOnce(&mut Vec<String>, &mut u32) -> R) -> R {
+            let s = unsafe { &mut *BUF.0.get() };
+            f(&mut s.0, &mut s.1)
+        }
+    }
+
+    /// Arm the capture for a run whose result file lists String signals; `width`
+    /// is `SimLayout::n_str_alg()`. `width == 0` disarms it.
+    pub fn begin(width: u32) {
+        state::with(|buf, w| {
+            buf.clear();
+            *w = width;
+        });
+    }
+
+    /// Whether a row capture should read the String slots.
+    pub fn armed() -> bool {
+        state::with(|_, w| *w != 0)
+    }
+
+    pub(crate) fn push(values: impl Iterator<Item = String>) {
+        state::with(|buf, _| buf.extend(values));
+    }
+
+    /// Drop the values captured past `rows_mark` numeric elements, so a retried
+    /// step that rewinds `rows` rewinds the String capture with it.
+    pub fn truncate(rows_mark: usize, n_reals: u32) {
+        state::with(|buf, w| {
+            if *w == 0 || n_reals == 0 {
+                return;
+            }
+            buf.truncate(rows_mark / n_reals as usize * *w as usize);
+        });
+    }
+
+    /// Take the captured values (row-major `n_rows * width`) and disarm.
+    pub fn take() -> Vec<String> {
+        state::with(|buf, w| {
+            *w = 0;
+            core::mem::take(buf)
+        })
+    }
+}
+
+/// Decode the blob a wasm-side run exports its captured String values as: per
+/// value a little-endian `u32` byte length followed by its UTF-8 bytes, in the
+/// driver's row-major order. A truncated tail is dropped rather than guessed at.
+pub fn decode_string_blob(blob: &[u8]) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut p = 0usize;
+    while p + 4 <= blob.len() {
+        let n = u32::from_le_bytes([blob[p], blob[p + 1], blob[p + 2], blob[p + 3]]) as usize;
+        p += 4;
+        let Some(bytes) = blob.get(p..p + n) else { break };
+        out.push(String::from_utf8_lossy(bytes).into_owned());
+        p += n;
+    }
+    out
+}
+
 /// Append one trajectory row to `rows`: the real part `[time | realVars]`
 /// followed by the integer and boolean algebraic slots (converted to f64),
 /// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
@@ -2790,8 +2886,21 @@ pub fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout
     // C's `emit` — the result writer's share of the run (`SIM_TIMER_OUTPUT`).
     rtclock::tick(rtclock::OUTPUT);
     let out = capture_row_values(e, rows, sim_data, layout);
+    if out.is_ok() && strings::armed() {
+        capture_row_strings(e, sim_data, layout);
+    }
     rtclock::accumulate(rtclock::OUTPUT);
     out
+}
+
+/// The String text behind every string-algebraic slot, one group per output row.
+/// An unassigned handle reads as the empty string, as C's writer does for a NULL
+/// `stringVars` entry.
+fn capture_row_strings(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) {
+    strings::push(
+        (0..layout.n_str_alg())
+            .map(|i| e.string_at(sim_data + layout.str_off + i * 4).unwrap_or_default()),
+    );
 }
 
 fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
@@ -3128,6 +3237,9 @@ fn write_output_vars(
                     }
                 },
                 ResultKind::Const { value } => out.push_str(&format!(",{name}={}", format_g(*value, 20))),
+                // Printed by the `soti.strings` walk below, which reads the live
+                // handle rather than the captured row.
+                ResultKind::StringColumn { .. } => {}
             }
         }
         // Strings own no result column; C reads them from `stringVars`/`stringParameter`.
@@ -4556,6 +4668,10 @@ pub fn drive(
     // `+profiling` is C's other `measure_time_flag` source.
     rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
     rtclock::tick(rtclock::TOTAL);
+    // Arm the String capture only for a model whose result file lists a String
+    // signal, so a run without one costs nothing.
+    let has_strings = model.vars.iter().any(|v| matches!(v.kind, crate::MetaKind::StringColumn { .. }));
+    strings::begin(if has_strings { layout.n_str_alg() } else { 0 });
     let lv_time = crate::simflags::with_flags(|f| f.lv_time);
     if let Some((t0, t1)) = lv_time {
         omclog::info(
@@ -4635,6 +4751,10 @@ pub fn drive(
             && !csv_input_given()
             && model.prof.is_none()
             && model.parmod.is_none()
+            // The in-wasm loop returns only the numeric buffer, so a model with a
+            // String result signal keeps the row-emitting host driver, which reads
+            // the String slots as it goes.
+            && !has_strings
         {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
@@ -4751,7 +4871,7 @@ pub fn drive(
     crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
     stats.systems = e.sys_stats();
-    Ok((RunResult { rows, n_reals, params, stats, lin }, label))
+    Ok((RunResult { rows, n_reals, params, stats, lin, strings: strings::take() }, label))
 }
 
 /// In-wasm driver: initialize here (so the run initializes like every other
@@ -4902,6 +5022,7 @@ impl Driver for EulerDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
+        strings::truncate(self.retry.rows_mark, model.layout.n_row_total());
         let n_steps = model.n_output_rows() - 1;
         let target = if self.row >= n_steps {
             model.stop_time
@@ -6358,6 +6479,7 @@ impl Driver for DasslDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
+        strings::truncate(self.retry.rows_mark, model.layout.n_row_total());
         // C halves `currentStepSize` without advancing `__currStepNo`: the same output
         // step is retaken over half the interval and the next one catches up.
         let n_steps = model.n_output_rows() - 1;
@@ -8913,6 +9035,7 @@ impl Driver for EventsDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
+        strings::truncate(self.retry.rows_mark, model.layout.n_row_total());
         let n_steps = model.n_output_rows() - 1;
         let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
             model.stop_time
@@ -9301,6 +9424,7 @@ impl Driver for CvodeDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
+        strings::truncate(self.retry.rows_mark, model.layout.n_row_total());
         let n_steps = model.n_output_rows() - 1;
         let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
             model.stop_time
@@ -10264,6 +10388,7 @@ impl Driver for IdaDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
+        strings::truncate(self.retry.rows_mark, model.layout.n_row_total());
         let n_steps = model.n_output_rows() - 1;
         let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
             model.stop_time

@@ -20,13 +20,31 @@ pub struct CsvReader {
     pub variables: Vec<String>,
     /// Var-major trajectories: `data[var][step]`.
     data: Vec<Vec<f64>>,
+    /// Var-major raw text, filled only by [`CsvReader::open_all`] and only for
+    /// the String columns; empty for every numeric column, as C frees theirs.
+    strdata: Vec<Vec<String>>,
+    /// Per-variable: true where a tolerant read saw a non-numeric cell.
+    is_string: Vec<bool>,
     pub numsteps: usize,
 }
 
 impl CsvReader {
     /// `read_csv`: returns `Err` with a short reason wherever the C reader
     /// returns NULL (caller turns that into the scripting error message).
+    /// Non-numeric cells are an error, as they are for a `-csvInput` file.
     pub fn open(filename: &str) -> Result<CsvReader, String> {
+        Self::read(filename, false)
+    }
+
+    /// `read_csv_all`: like [`CsvReader::open`] but tolerates String columns —
+    /// a non-numeric cell is kept as text ([`CsvReader::dataset_str`]) and
+    /// stored as NaN in the numeric matrix, so the numeric variables of a
+    /// result file that also carries Strings stay readable.
+    pub fn open_all(filename: &str) -> Result<CsvReader, String> {
+        Self::read(filename, true)
+    }
+
+    fn read(filename: &str, keep_strings: bool) -> Result<CsvReader, String> {
         let bytes = read_result_bytes(filename)?;
         // Optional `"sep=X"` first line selects the cell delimiter; the
         // data then starts at offset 8 (`"sep=X"␊`), as in read_csv.c.
@@ -42,6 +60,9 @@ impl CsvReader {
         };
         let numvars = variables.len();
         let mut data: Vec<Vec<f64>> = vec![Vec::new(); numvars];
+        let mut strdata: Vec<Vec<String>> =
+            if keep_strings { vec![Vec::new(); numvars] } else { Vec::new() };
+        let mut is_string = vec![false; numvars];
         for (rownum, row) in rows.enumerate() {
             if row.len() != numvars {
                 // Mirrors add_row's complaint (rows are 1-based and the
@@ -50,16 +71,53 @@ impl CsvReader {
                 return Err("row length mismatch".to_owned());
             }
             for (col, cell) in row.iter().enumerate() {
-                let Some(v) = parse_csv_cell(cell) else {
-                    // add_cell prints the offending cell to stderr.
-                    eprintln!("Found non-double data in csv result-file: {cell}");
-                    return Err("non-double data".to_owned());
+                let v = match parse_csv_cell(cell) {
+                    Some(v) => v,
+                    // A non-numeric cell is a String value where the caller
+                    // allows one, and an error where it does not.
+                    None if keep_strings => {
+                        is_string[col] = true;
+                        f64::NAN
+                    }
+                    None => {
+                        // add_cell prints the offending cell to stderr.
+                        eprintln!("Found non-double data in csv result-file: {cell}");
+                        return Err("non-double data".to_owned());
+                    }
                 };
                 data[col].push(v);
+                if keep_strings {
+                    strdata[col].push(cell.clone());
+                }
+            }
+        }
+        // The text of a numeric column is not worth keeping (C frees it).
+        for (col, keep) in is_string.iter().enumerate() {
+            if !keep && col < strdata.len() {
+                strdata[col] = Vec::new();
             }
         }
         let numsteps = data.first().map(|c| c.len()).unwrap_or(0);
-        Ok(CsvReader { variables, data, numsteps })
+        Ok(CsvReader { variables, data, strdata, is_string, numsteps })
+    }
+
+    /// `read_csv_dataset_str`: the `numsteps` un-escaped String values of a
+    /// String column, or `None` when the variable is not one (or the file was
+    /// opened with [`CsvReader::open`]).
+    pub fn dataset_str(&self, var: &str) -> Option<&[String]> {
+        let idx = self.variables.iter().position(|v| v == var)?;
+        if !self.is_string.get(idx).copied().unwrap_or(false) {
+            return None;
+        }
+        self.strdata.get(idx).map(Vec::as_slice)
+    }
+
+    /// Whether `var` is a String column of this file.
+    pub fn is_string_var(&self, var: &str) -> bool {
+        self.variables
+            .iter()
+            .position(|v| v == var)
+            .is_some_and(|i| self.is_string.get(i).copied().unwrap_or(false))
     }
 
     /// `read_csv_dataset`: the trajectory of `var` (exact name match), or
