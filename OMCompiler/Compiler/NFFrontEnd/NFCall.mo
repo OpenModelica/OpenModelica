@@ -272,6 +272,16 @@ public
         outExp := Expression.CALL(ty_call);
       end if;
       outExp := Inline.inlineCallExp(outExp);
+
+      // The parameters of a partial function are boxed, so calling a functional
+      // input argument gives a boxed value. Unbox it here so the rest of the
+      // expression sees the actual type, otherwise the boxed type leaks into
+      // e.g. array constructors and reductions and gives invalid code.
+      if Type.isBoxed(ty) and Type.isScalarBuiltin(Type.unbox(ty)) and
+         Function.isFunctionPointer(typedFunction(ty_call)) then
+        ty := Type.unbox(ty);
+        outExp := Expression.UNBOX(outExp, ty);
+      end if;
     end if;
   end typeCallExp;
 

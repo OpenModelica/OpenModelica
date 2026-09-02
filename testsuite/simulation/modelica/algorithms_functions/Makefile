@@ -26,7 +26,9 @@ FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
 FunctionPointer.mos \
+FunctionPointerArray.mos \
 FunctionTupleRecord.mos \
+IntegralNewtonCotes.mos \
 Interpolation.mos \
 InverseAlgorithm1.mos \
 InverseAlgorithm2.mos \
