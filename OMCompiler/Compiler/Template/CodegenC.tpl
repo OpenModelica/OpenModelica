@@ -6337,7 +6337,7 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            if (<%v.index%> + (<%offset%>) < (unsigned int)(<%nCols%>)) { col_counts[<%v.index%> + (<%offset%>)]++; }
+            if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0 && (modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) < (modelica_integer)(<%nCols%>)) { col_counts[(modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>)]++; }
             >>
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
@@ -6753,7 +6753,7 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            if (<%v.index%> + (<%offset%>) < (unsigned int)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>; }
+            if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0 && (modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[(modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>)]++] = <%rowExpr%>; }
             >>
     else '/* resizableColFill: seed not found in jacHT */'
   else ''
