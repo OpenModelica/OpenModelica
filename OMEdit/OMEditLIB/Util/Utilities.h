@@ -317,11 +317,14 @@ protected:
  * We must register this struct as a meta type since we need to use it as a QVariant.
  * This is used to store the recent files information in omedit.ini file.
  * The QDataStream also needed to be defined for this struct.
+ * It is also used to store the recent models information where fileName holds the Modelica class
+ * name and path holds the file that has to be loaded to make the class available before it can be shown.
  */
 struct RecentFile
 {
   QString fileName;
   QString encoding;
+  QString path;
   operator QVariant() const
   {
     return QVariant::fromValue(*this);
@@ -333,6 +336,7 @@ inline QDataStream& operator<<(QDataStream& out, const RecentFile& recentFile)
 {
   out << recentFile.fileName;
   out << recentFile.encoding;
+  out << recentFile.path;
   return out;
 }
 
@@ -340,6 +344,8 @@ inline QDataStream& operator>>(QDataStream& in, RecentFile& recentFile)
 {
   in >> recentFile.fileName;
   in >> recentFile.encoding;
+  // path was added later, older entries do not have it; reading past the end yields an empty string.
+  in >> recentFile.path;
   return in;
 }
 

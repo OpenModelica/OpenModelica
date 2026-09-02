@@ -33,34 +33,29 @@
  *
  */
 
-/*
- * @author Adeel Asghar <adeel.asghar@liu.se>
+#ifndef RECENTMODELSTEST_H
+#define RECENTMODELSTEST_H
+
+#include <QObject>
+#include <QVariant>
+
+/*!
+ * \brief The RecentModelsTest class
+ * Tests that the recent models list is kept separate from the recent files list.
  */
+class RecentModelsTest : public QObject
+{
+  Q_OBJECT
+private:
+  QList<QVariant> mRecentFiles;
+  QList<QVariant> mRecentModels;
+private slots:
+  void initTestCase();
+  void openFileAddsRecentFileOnly();
+  void addRecentModelKeepsListsSeparate();
+  void showRecentModelLoadsTheLibrary();
+  void closingAddsOpenModels();
+  void cleanupTestCase();
+};
 
-QStatusBar#ModelStatusBar {
-  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
-  border: 1px solid gray;
-}
-QStatusBar#ModelStatusBar::item {
-  margin-top: -5px;
-  padding: 0px;
-  border-left: 1px solid gray;
-}
-QStatusBar#ModelStatusBar QLabel {
-  margin: 0px;
-  padding: 0px 0px 0px 1px;
-}
-
-QListWidget#RecentItemsList::item:hover, QListWidget#RecentModelItemsList::item:hover, QListWidget#LatestNewsList::item:hover {
-  border: 1px solid gray;
-  color: blue;
-}
-
-QToolButton#ShapePointsButton {
-  padding: 3px;
-}
-
-QLabel#LabelWithBorder {
-  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
-  border: 1px solid gray;
-}
+#endif // RECENTMODELSTEST_H

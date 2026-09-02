@@ -69,6 +69,10 @@ set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
 
+set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
+                                     RecentModels/RecentModelsTest.h)
+add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
+
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)
 add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")
