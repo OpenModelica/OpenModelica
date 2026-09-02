@@ -30,6 +30,8 @@ TESTFILES = \
 	FlowAlias11.mos \
 	FlowAlias12.mos \
 	FlowAlias13.mos \
+	FlowAliasFixedStart1.mos \
+	FlowAliasFixedStart2.mos \
 	Functional1.mo \
 	If1.mo \
 	If2.mo \
