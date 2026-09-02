@@ -213,6 +213,7 @@ public
 uniontype Variables
   record VARIABLES
     array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
+    array<list<PrefixIndex>> prefixIndices "HashTB, array or record cref->indices of its elements";
     VariableArray varArr "Array of variables";
     Integer bucketSize "bucket size";
     Integer numberOfVars "no. of vars";
@@ -226,6 +227,16 @@ uniontype CrefIndex "Component Reference Index"
     Integer index;
   end CREFINDEX;
 end CrefIndex;
+
+public
+uniontype PrefixIndex "Indices of the variables under one array or record prefix"
+  record PREFIXINDEX
+    .DAE.ComponentRef cref "some variable name starting with the prefix";
+    Integer depth "qualifiers of cref in the prefix";
+    Integer numSubscripts "subscripts of the last qualifier in the prefix";
+    list<Integer> indices;
+  end PREFIXINDEX;
+end PrefixIndex;
 
 public
 uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding

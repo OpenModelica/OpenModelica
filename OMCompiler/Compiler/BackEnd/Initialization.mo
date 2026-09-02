@@ -62,6 +62,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
+import ClassInf;
 import ComponentReference;
 protected import ComponentReferenceBasics;
 import Config;
@@ -793,7 +794,7 @@ protected
   array<Integer> secondary;
   BackendDAE.Var v;
   DAE.Exp bindExp;
-  HashSet.HashSet hs;
+  BackendDAE.Variables primary;
   list<DAE.ComponentRef> crefs;
   list<BackendDAE.Var> globalKnownVarList = {};
 algorithm
@@ -852,28 +853,28 @@ algorithm
     secondary := selectSecondaryParameters(flatComps, globalKnownVars, mT, secondary);
 
     // get primary and secondary parameters and variables
-    hs := HashSet.emptyHashSetSized(2*nGlobalKnownVars+1);
+    primary := BackendVariable.emptyVarsSized(nGlobalKnownVars);
     for i in flatComps loop
       v := BackendVariable.getVarAt(globalKnownVars, i);
       bindExp := BackendVariable.varBindExpStartValueNoFail(v);
-      crefs := Expression.getAllCrefsExpanded(bindExp);
+      crefs := Expression.extractCrefsFromExp(bindExp);
       //BackendDump.dumpVarList({v}, intString(i));
 
       () := match v
         // primary parameter
-        case BackendDAE.VAR(varKind=BackendDAE.PARAM()) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case BackendDAE.VAR(varKind=BackendDAE.PARAM()) guard 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             outAllPrimaryParameters := v::outAllPrimaryParameters;
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
         then ();
 
         // primary external object
-        case BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)) guard 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             outAllPrimaryParameters := v::outAllPrimaryParameters;
             v := BackendVariable.setVarFixed(v, true);
             outGlobalKnownVars := BackendVariable.addVar(v, outGlobalKnownVars);
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
         then ();
 
         // secondary parameter
@@ -886,13 +887,13 @@ algorithm
           then ();
 
         // primary variable
-        case _ guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case _ guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             otherVariables := BackendVariable.addVar(v, otherVariables);
             v := BackendVariable.setVarFixed(v, true);
             v := BackendVariable.setVarFinal(v, true);
             outGlobalKnownVars := BackendVariable.addVar(v, outGlobalKnownVars);
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
           then ();
 
         // secondary variable
@@ -918,6 +919,43 @@ algorithm
     //BackendDump.dumpVariables(otherVariables, "otherVariables");
   end if;
 end selectInitializationVariablesDAE;
+
+protected function allPrimary
+  "Whether every element of every variable the crefs name is in primary;
+   a whole array or record counts only when all its elements are."
+  input list<DAE.ComponentRef> crefs;
+  input BackendDAE.Variables primary;
+  output Boolean b = true;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  for cr in crefs loop
+    if not ComponentReferenceBasics.crefEqual(cr, DAE.crefTime) then
+      try
+        vars := BackendVariable.getVar(cr, primary);
+        b := listLength(vars) == elementCount(ComponentReference.crefTypeFull(cr));
+      else
+        b := false;
+      end try;
+      if not b then
+        return;
+      end if;
+    end if;
+  end for;
+end allPrimary;
+
+protected function elementCount
+  "The scalar variables a component of this type is made of: arrays and
+   records are expanded, anything else (an external object too) is one."
+  input DAE.Type ty;
+  output Integer n;
+algorithm
+  n := match ty
+    case DAE.T_ARRAY() then elementCount(ty.ty) * product(Expression.dimensionSize(d) for d in ty.dims);
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then sum(elementCount(v.ty) for v in ty.varLst);
+    else 1;
+  end match;
+end elementCount;
 
 function addExtObjToGlobalKnownVars "
   Sets fixed=true for external objects with binding and adds them to globalKnownVars

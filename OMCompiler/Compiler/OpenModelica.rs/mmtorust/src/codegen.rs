@@ -6437,15 +6437,62 @@ fn collect_pat_names(pat: &TypedPat, out: &mut HashSet<String>) {
 /// must be a complete module-level item with a signature compatible with every
 /// call site (the generator still resolves calls to `Module::fn`).
 fn function_source_replacement(qname: &str) -> Option<&'static str> {
-    // No replacements at present. Two used to live here, both working around
-    // referenceEq lowerings that have since been fixed properly:
+    // Two used to live here, both working around referenceEq lowerings that
+    // have since been fixed properly:
     //  * `List.allReferenceEq` — generic element compare was an always-false
     //    address compare; now lowered through `metamodelica::ReferenceEq`.
     //  * `Expression.traverseCases` — `referenceEq(cases, {})` was false for
     //    the freshly-allocated `Nil` even though MMC's `{}` is a shared
     //    singleton; the `list<T>` lowering is now List-aware (Nil == Nil).
-    None
+    match qname {
+        // The MetaModelica mergesort conses a node per merge step, cheap under
+        // MMC's bump allocator and the main cost of sorting an adjacency row
+        // here. Same halving and tie rule on a Vec: for two elements the input
+        // is kept iff comp(e2, e1); merge takes from the left iff
+        // comp(right, left).
+        "List.sort" => Some(LIST_SORT_SRC),
+        _ => None,
+    }
 }
+
+const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: Arc<metamodelica::List<T>>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<Arc<metamodelica::List<T>>> {
+    fn sort_slice<T: Clone>(v: &[T], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<T>> {
+        let n = v.len();
+        if n < 2 {
+            return Ok(v.to_vec());
+        }
+        if n == 2 {
+            return Ok(if comp(v[1].clone(), v[0].clone())? { v.to_vec() } else { vec![v[1].clone(), v[0].clone()] });
+        }
+        let (l, r) = v.split_at(n / 2);
+        let left = sort_slice(l, comp)?;
+        let right = sort_slice(r, comp)?;
+        let mut res = Vec::with_capacity(n);
+        let (mut i, mut j) = (0, 0);
+        while i < left.len() && j < right.len() {
+            if comp(right[j].clone(), left[i].clone())? {
+                res.push(left[i].clone());
+                i += 1;
+            } else {
+                res.push(right[j].clone());
+                j += 1;
+            }
+        }
+        res.extend_from_slice(&left[i..]);
+        res.extend_from_slice(&right[j..]);
+        Ok(res)
+    }
+    let v: Vec<T> = (&*inList).into_iter().cloned().collect();
+    if v.len() < 2 || (v.len() == 2 && inCompFunc(v[1].clone(), v[0].clone())?) {
+        return Ok(inList);
+    }
+    let sorted = sort_slice(&v, &*inCompFunc)?;
+    let mut out = metamodelica::nil();
+    for e in sorted.into_iter().rev() {
+        out = metamodelica::cons(e, out);
+    }
+    Ok(out)
+}"#;
 
 // ── Inherited-algorithm (`extends`) instantiation ───────────────────────────
 //

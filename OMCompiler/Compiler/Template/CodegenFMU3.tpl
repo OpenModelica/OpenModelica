@@ -507,18 +507,19 @@ template DaeModeVariables3(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__))) then
+  let daeModeVR = SimCodeUtil.getFMI3DaeModeValueReference(simCode)
   <<
-  <Boolean name="_D_daeMode" valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
-  <%dmd.residualVars |> var => DaeResidualVariable3(var, simCode) ;separator="\n"%>
+  <Boolean name="_D_daeMode" valueReference="<%daeModeVR%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
+  <%dmd.residualVars |> var => DaeResidualVariable3(var, daeModeVR) ;separator="\n"%>
   >>
 end DaeModeVariables3;
 
-template DaeResidualVariable3(SimVar simVar, SimCode simCode)
+template DaeResidualVariable3(SimVar simVar, String daeModeVR)
 ::=
 match simVar
 case SIMVAR(__) then
   let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(name),"$", "_D_"))
-  '<Float64 name="<%nm%>" valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(simVar, simCode)%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
+  '<Float64 name="<%nm%>" valueReference="<%intAdd(stringInt(daeModeVR), intAdd(1, index))%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
 end DaeResidualVariable3;
 
 template fmiLsDaeManifest(SimCode simCode)
@@ -539,7 +540,7 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
       >>
     else ''
   let indicators = EventIndicators3(simCode)
-  let residuals = (dmd.residualVars |> var hasindex i0 => DaeResidual3(simCode, var, i0) ;separator="\n")
+  let residuals = (SimCodeUtil.fmi3DaeResiduals(simCode) |> (vr, dependencyAttributes) => DaeResidual3(vr, dependencyAttributes) ;separator="\n")
   let _ = SimCodeUtil.clearFMI3ValueReferences()
   <<
   <fmi-ls-dae
@@ -561,11 +562,11 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
   >>
 end fmiLsDaeManifest;
 
-template DaeResidual3(SimCode simCode, SimVar residualVar, Integer row)
+template DaeResidual3(String vr, String dependencyAttributes)
 ::=
   <<
   <Residual>
-    <Formulation valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(residualVar, simCode)%>"<%SimCodeUtil.getFMI3DaeResidualDependencyAttributes(simCode, row)%>/>
+    <Formulation valueReference="<%vr%>"<%dependencyAttributes%>/>
   </Residual>
   >>
 end DaeResidual3;
@@ -858,12 +859,8 @@ template FmiUnknown3(SimCode simCode, FmiUnknown fmiUnknown, String element)
 ::=
 match fmiUnknown
 case FMIUNKNOWN(__) then
-  let vr = SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, index)
-  let deps = (dependencies |> d => SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, d) ;separator=" ")
-  let depsAttr = if dependencies then ' dependencies="<%deps%>"'
-  let depsKindAttr = if dependenciesKind then ' dependenciesKind="<%dependenciesKind |> k => k ;separator=" "%>"'
   <<
-  <<%element%> valueReference="<%vr%>"<%depsAttr%><%depsKindAttr%>/>
+  <<%element%> valueReference="<%SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, index)%>"<%SimCodeUtil.fmi3UnknownDependencyAttributes(simCode, fmiUnknown)%>/>
   >>
 end FmiUnknown3;
 

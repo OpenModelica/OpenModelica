@@ -498,14 +498,14 @@ template FmiUnknownDependencies(list<Integer> dependencies)
   // Note: dependencies="" means no dependencies;
   // missing dependencies means dependent on all knowns (see FMI 2.0 spec).
   <<
-   dependencies="<%dependencies |> dependency => dependency ;separator=" "%>"
+   dependencies="<%SimCodeUtil.fmiDependenciesString(dependencies)%>"
   >>
 end FmiUnknownDependencies;
 
 template FmiUnknownDependenciesKind(list<String> dependenciesKind)
 ::=
   <<
-   dependenciesKind="<%dependenciesKind |> dependencyKind => dependencyKind ;separator=" "%>"
+   dependenciesKind="<%SimCodeUtil.fmiDependenciesKindString(dependenciesKind)%>"
   >>
 end FmiUnknownDependenciesKind;
 

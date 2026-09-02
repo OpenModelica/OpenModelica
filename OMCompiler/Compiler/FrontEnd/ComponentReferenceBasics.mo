@@ -923,7 +923,7 @@ algorithm
   end for;
 end hashSubscripts;
 
-protected function hashSubscript "help function"
+public function hashSubscript "help function"
   input DAE.Subscript sub;
   output Integer hash;
 algorithm

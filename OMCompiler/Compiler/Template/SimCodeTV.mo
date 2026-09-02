@@ -1459,11 +1459,27 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReference;
 
+  function fmi3UnknownDependencyAttributes
+    input SimCode.SimCode simCode;
+    input SimCode.FmiUnknown unknown;
+    output String attributes;
+  end fmi3UnknownDependencyAttributes;
+
   function getFMI3ValueReferenceFromFMIIndex
     input SimCode.SimCode inSimCode;
     input Integer inFMIIndex;
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
+
+  function fmiDependenciesString
+    input list<Integer> dependencies;
+    output String str;
+  end fmiDependenciesString;
+
+  function fmiDependenciesKindString
+    input list<String> kinds;
+    output String str;
+  end fmiDependenciesKindString;
 
   function cacheFMI3ValueReferences
     input SimCode.SimCode simCode;
@@ -1540,17 +1556,10 @@ package SimCodeUtil
     output String vr;
   end getFMI3DaeModeValueReference;
 
-  function getFMI3DaeResidualValueReference
-    input SimCodeVar.SimVar residualVar;
+  function fmi3DaeResiduals
     input SimCode.SimCode simCode;
-    output String vr;
-  end getFMI3DaeResidualValueReference;
-
-  function getFMI3DaeResidualDependencyAttributes
-    input SimCode.SimCode simCode;
-    input Integer index;
-    output String attributes;
-  end getFMI3DaeResidualDependencyAttributes;
+    output list<tuple<String, String>> residuals;
+  end fmi3DaeResiduals;
 
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
