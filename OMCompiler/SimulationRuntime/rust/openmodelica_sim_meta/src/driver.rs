@@ -652,6 +652,9 @@ pub const ERROR_SIMULATION_STEP: i32 = 3;
 /// C's `handleEvents` stage: `getBestJumpBuffer` sends a model error raised here
 /// past the step's catch, so it ends the run instead of being retried.
 pub const ERROR_EVENTHANDLING: i32 = 4;
+/// An exported FMU's try block around one FMI call: it catches as
+/// [`ERROR_INTEGRATOR`] does, and reports as [`ERROR_SIMULATION`] does.
+pub const ERROR_FMI_CALL: i32 = 5;
 
 /// What a region displaced (C's `saveJumpState`), so regions nest.
 #[derive(Clone, Copy, Default)]
@@ -674,15 +677,15 @@ fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) -> StageSave {
     save
 }
 
-/// [`dassl_res`]'s region for a driver outside this module — an exported FMU, whose
-/// integrator is the importer's, so the callback is one FMI call.
-pub fn open_integrator_region(e: &mut dyn SimEngine) -> StageSave {
+/// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` in an exported FMU, whose integrator
+/// is the importer's — so the callback is one FMI call.
+pub fn open_fmi_call_region(e: &mut dyn SimEngine) -> StageSave {
     let addr = e.error_stage_addr();
-    set_error_stage(e, addr, ERROR_INTEGRATOR)
+    set_error_stage(e, addr, ERROR_FMI_CALL)
 }
 
 /// Close it, reporting the absorbed model error the caller answers `IRES = -1` to.
-pub fn close_integrator_region(e: &mut dyn SimEngine, save: StageSave) -> bool {
+pub fn close_fmi_call_region(e: &mut dyn SimEngine, save: StageSave) -> bool {
     let addr = e.error_stage_addr();
     took_error_stage(e, addr, save)
 }
@@ -953,13 +956,23 @@ fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
 /// recoverable, and `omc_assert_simulation` logs it in the integrator stage only
 /// under `LOG_SOLVER`. Consumes what the throw left; false for an engine failure.
 fn residual_model_throw(e: &mut dyn SimEngine, err: &str, t: f64) -> bool {
+    caught_model_throw(e, err, t, omclog::active(omclog::SOLVER))
+}
+
+/// C's `finishSimulation`: the simulation stage logs the block unconditionally, and
+/// the terminal row still follows.
+fn terminal_model_throw(e: &mut dyn SimEngine, err: &str, t: f64) -> bool {
+    caught_model_throw(e, err, t, true)
+}
+
+fn caught_model_throw(e: &mut dyn SimEngine, err: &str, t: f64, logged: bool) -> bool {
     let pending = e.take_pending_assert();
     if !is_model_throw(err) && pending.is_none() {
         return false;
     }
     clear_runtime_error();
     if let Some(pa) = pending
-        && omclog::active(omclog::SOLVER)
+        && logged
     {
         let (info, cond) = assert_info(e, &pa);
         log_assert_block(&info, &cond, t, pa[8] != 0);
@@ -1387,6 +1400,16 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
             format_g15(time),
         ),
     );
+}
+
+/// C's `equationNonlinear` throw for a host outside this module: reported and cleared.
+pub fn take_nls_failure(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> bool {
+    if read_i32(e, sim_data + layout.nls_fail_off).unwrap_or(0) == 0 {
+        return false;
+    }
+    report_nls_failure(e, sim_data, layout);
+    let _ = write_i32(e, sim_data + layout.nls_fail_off, 0);
+    true
 }
 
 /// Number of equidistant homotopy steps: C's `init_lambda_steps`, which `-ils`
@@ -3004,7 +3027,7 @@ fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 }
 
 /// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
-fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
     }
@@ -3078,7 +3101,11 @@ pub fn emit_terminal_row(
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     let updated = refresh_relations(e, sim_data, layout).and_then(|_| iterate_discrete(e, sim_data, layout));
     write_i32(e, sim_data + layout.terminal_off, 0)?;
-    updated?;
+    if let Err(err) = updated
+        && !terminal_model_throw(e, err, time)
+    {
+        return Err(err);
+    }
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
     check_asserts(e, sim_data, layout, omclog::WARNING)

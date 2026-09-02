@@ -749,8 +749,12 @@ where
     match kind {
         InterfaceKind::ModelExchange => {
             let run = me::simulate(inst, md, opts).map_err(|e| e.to_string())?;
+            let retried = match run.retries {
+                0 => String::new(),
+                n => format!(", {n} retried steps"),
+            };
             let s = format!(
-                "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events",
+                "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
             Ok((run.recorder, s))
