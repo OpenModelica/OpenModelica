@@ -88,7 +88,7 @@ set(OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
 # The Qt clients are unused in the wasm build, so force them off when OM_OMC_WASM is set.
 cmake_dependent_option(OM_ENABLE_OMSHELL    "Enable OMShell gui client"    ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
 cmake_dependent_option(OM_ENABLE_OMNOTEBOOK "Enable OMNotebook gui client" ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
-cmake_dependent_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+omc_option(OM_ENABLE_OMEDIT     "Enable OMEdit gui client"     OFF)
 cmake_dependent_option(OM_ENABLE_OMSENS_QT  "Enable OMSens_Qt gui client"  ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
 cmake_dependent_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF "NOT OM_OMC_WASM" OFF)
 omc_add_to_report(OM_ENABLE_OMSHELL)
