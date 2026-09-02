@@ -44,6 +44,7 @@ openmodelica_sim_meta/src/extinput.rs
 openmodelica_sim_meta/src/files.rs
 openmodelica_sim_meta/src/lib.rs
 openmodelica_sim_meta/src/linearize.rs
+openmodelica_sim_meta/src/lapack_dyn.rs
 openmodelica_sim_meta/src/optimization/eval.rs
 openmodelica_sim_meta/src/optimization/ipopt.rs
 openmodelica_sim_meta/src/optimization/ipopt_out.rs

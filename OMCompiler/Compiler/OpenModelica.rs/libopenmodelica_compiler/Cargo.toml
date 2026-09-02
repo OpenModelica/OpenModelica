@@ -20,6 +20,7 @@ openmodelica_scripting_qt = { workspace = true, optional = true }
 openmodelica_script_util.workspace = true
 openmodelica_result_files.workspace = true
 openmodelica_util.workspace = true
+openmodelica_sim_meta.workspace = true
 # This build's revision, reported as the compiler version (`set_revision`).
 openmodelica_revision.workspace = true
 # Provides our exported `ModelicaAllocateString` (arena-backed) so the dlopen'd

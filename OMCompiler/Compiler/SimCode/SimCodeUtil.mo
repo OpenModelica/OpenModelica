@@ -15543,6 +15543,43 @@ algorithm
   end match;
 end getSimCode;
 
+public function isContiguousArrayCref
+  "Whether the scalarized elements of an array cref occupy consecutive slots of
+   one variable array, so the C target may address them through the first one."
+  input DAE.ComponentRef inCref;
+  output Boolean outContiguous = true;
+protected
+  SimCode.SimCode simCode = getSimCode();
+  SimCodeVar.SimVar v;
+  Integer next = -1;
+  Boolean param, firstParam = false;
+algorithm
+  if not simCode.scalarized then
+    return;
+  end if;
+  for cr in ComponentReference.expandCref(inCref, true) loop
+    v := cref2simvar(cr, simCode);
+    // A cref the SimCode does not know is addressed through some other value
+    // array (a Jacobian's own), where the elements are consecutive again.
+    if v.index < 0 then
+      return;
+    end if;
+    // Parameters live in their own value array (`varArrayName`).
+    param := match v.varKind case BackendDAE.PARAM() then true; else false; end match;
+    if next == -1 then
+      firstParam := param;
+    end if;
+    outContiguous := match v.aliasvar
+      case SimCodeVar.NOALIAS() then param == firstParam and (next == -1 or v.index == next);
+      else false;
+    end match;
+    if not outContiguous then
+      return;
+    end if;
+    next := v.index + 1;
+  end for;
+end isContiguousArrayCref;
+
 public function cref2simvar
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
   input DAE.ComponentRef inCref;

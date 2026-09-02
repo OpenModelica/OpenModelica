@@ -61,5 +61,8 @@ fn primme() {
         .compile("omc_primme_svds");
     println!("cargo:rustc-link-search=native={}", std::path::Path::new(&lib).display());
     println!("cargo:rustc-link-lib=static=primme");
+    // PRIMME's dense algebra, in all four precisions.
+    println!("cargo:rustc-link-lib=dylib=lapack");
+    println!("cargo:rustc-link-lib=dylib=blas");
     println!("cargo:rustc-cfg=primme");
 }

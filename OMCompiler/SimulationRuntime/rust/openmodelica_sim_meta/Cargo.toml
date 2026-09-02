@@ -39,3 +39,6 @@ openmodelica_plt_writer = { path = "../openmodelica_plt_writer" }
 openmodelica_lapack = { path = "../../../Compiler/OpenModelica.rs/openmodelica_lapack", optional = true }
 
 [lib]
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
