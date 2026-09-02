@@ -3426,7 +3426,7 @@ function diffSimulationResults
   output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
@@ -3442,7 +3442,7 @@ function diffSimulationResultsHtml
   output String html;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResultsHtml;

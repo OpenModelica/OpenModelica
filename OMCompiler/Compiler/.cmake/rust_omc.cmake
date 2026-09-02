@@ -1662,11 +1662,11 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_ENABLE_SUNDIALS)
     set(_wasm_sundials_feature ",openmodelica_codegen_wasm_jit/sundials")
   endif()
-  # Standalone animation wasm for the browser pages, built in the same cargo pass
+  # Standalone wasm modules for the browser pages, built in the same cargo pass
   # (features package-qualified so the extra -p stays unambiguous).
   set(_anim_pkg "")
   if(_host STREQUAL "web")
-    set(_anim_pkg -p openmodelica_animation_wasm)
+    set(_anim_pkg -p openmodelica_animation_wasm -p openmodelica_result_web)
   endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
@@ -1781,6 +1781,9 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/anim/anim-core.js
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
+        ${RUST_OMC_DIR}/wasm/omplot/index.html
+        ${RUST_OMC_DIR}/openmodelica_result_web/src/lib.rs
+        ${RUST_OMC_DIR}/openmodelica_result_web/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
@@ -1826,6 +1829,12 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/anim/anim-view.js
                 ${RUST_OMC_DIR}/wasm/anim/anim-core.js
                 ${_three_js} ${_web_dir}/anim/
+        # OMPlot: the page plus its wasm-bindgen'd result-file module.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
+        COMMAND ${WASM_BINDGEN_EXECUTABLE}
+                ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_result_web.wasm
+                --out-dir ${_web_dir}/omplot --target web
+        COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/index.html ${_web_dir}/omplot/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html

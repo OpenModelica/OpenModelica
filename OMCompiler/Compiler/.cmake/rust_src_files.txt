@@ -331,6 +331,12 @@ openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_program_util/Cargo.toml
+openmodelica_result_files/Cargo.toml
+openmodelica_result_files/src/cmp.rs
+openmodelica_result_files/src/lib.rs
+openmodelica_result_files/src/readers.rs
+openmodelica_result_web/Cargo.toml
+openmodelica_result_web/src/lib.rs
 openmodelica_revision/Cargo.toml
 openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs
@@ -341,7 +347,6 @@ openmodelica_script_util/src/DynLoadExt.rs
 openmodelica_script_util/src/SimulationResults.rs
 openmodelica_script_util/src/UnitParserExt.rs
 openmodelica_script_util/src/Unzip.rs
-openmodelica_script_util/src/result_readers.rs
 openmodelica_scripting_api_gen/Cargo.toml
 openmodelica_scripting_api_gen/src/main.rs
 openmodelica_scripting_qt/.gitignore
@@ -442,6 +447,7 @@ wasm/home/index.html
 wasm/icons/fmi.svg
 wasm/icons/om.svg
 wasm/icons/omedit.png
+wasm/icons/omplot.svg
 wasm/icons/omnotebook.svg
 wasm/icons/omshell.svg
 wasm/icons/openmodelica-logo.svg
@@ -449,6 +455,8 @@ wasm/icons/simulator.svg
 wasm/index.html
 wasm/omc-cli.js
 wasm/omc-terminal/index.html
+wasm/omplot/README.md
+wasm/omplot/index.html
 wasm/plot.js
 wasm/simulator/.gitignore
 wasm/simulator/config.json

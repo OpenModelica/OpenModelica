@@ -5187,6 +5187,7 @@ dependencies = [
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
  "openmodelica_modelica_utilities",
+ "openmodelica_result_files",
  "openmodelica_revision",
  "openmodelica_script_util",
  "openmodelica_scripting_qt",
@@ -6973,10 +6974,10 @@ dependencies = [
  "openmodelica_frontend_base",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
+ "openmodelica_mat_reader",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
  "openmodelica_plt_writer",
- "openmodelica_script_util",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
@@ -7281,6 +7282,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_result_files"
+version = "0.1.0"
+dependencies = [
+ "openmodelica_mat_reader",
+ "openmodelica_wasi",
+]
+
+[[package]]
+name = "openmodelica_result_web"
+version = "0.1.0"
+dependencies = [
+ "openmodelica_mat_writer",
+ "openmodelica_result_files",
+ "openmodelica_wasi",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "openmodelica_revision"
 version = "0.1.0"
 
@@ -7299,6 +7318,7 @@ dependencies = [
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
  "openmodelica_mat_reader",
+ "openmodelica_result_files",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",

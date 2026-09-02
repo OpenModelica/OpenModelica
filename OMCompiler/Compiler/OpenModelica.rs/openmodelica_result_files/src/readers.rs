@@ -1,10 +1,8 @@
-// Manually written file.
-//
-// CSV and PLT (Ptolemy) result-file readers for `SimulationResults.rs`,
-// porting `SimulationRuntime/c/util/read_csv.c` (+ libcsv parsing rules)
-// and `Compiler/runtime/ptolemyio.cpp`. The MATLAB v4 reader lives in
-// `read_matlab4.rs`; `SimulationResults.rs` dispatches between the three
-// by file suffix exactly like `SimulationResultsImpl__openFile`.
+//! CSV and PLT (Ptolemy) result-file readers, porting
+//! `SimulationRuntime/c/util/read_csv.c` (+ libcsv parsing rules) and
+//! `Compiler/runtime/ptolemyio.cpp`. The MATLAB v4 reader is
+//! `openmodelica_mat_reader`; [`crate::ResultReader`] dispatches between the
+//! three by file suffix exactly like `SimulationResultsImpl__openFile`.
 
 fn read_result_bytes(filename: &str) -> Result<Vec<u8>, String> {
     openmodelica_wasi::fs::read(filename).map_err(|e| e.to_string())
