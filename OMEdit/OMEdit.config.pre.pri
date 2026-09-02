@@ -30,14 +30,12 @@
 #
 # See the full OSMC Public License conditions for more details.
 
-QT += network core gui xml svg opengl printsupport widgets concurrent
+QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
 equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets webenginewidgets
+  QT += core5compat openglwidgets
   greaterThan(QT_MINOR_VERSION, 4) {
     QT += httpserver
   }
-} else {
-  QT += webkit webkitwidgets
 }
 
 # Set the C++ standard.
@@ -48,14 +46,12 @@ CONFIG += warn_on
 DEFINES += OM_HAVE_PTHREADS
 
 win32 {
-  _cxx = $$(CXX)
-  contains(_cxx, clang++) {
+  equals(QMAKE_CXX, clang++) {
     message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   } else {
-    # -Wno-clobbered is not recognized by clang
     QMAKE_CXXFLAGS += -Wno-clobbered
   }
 

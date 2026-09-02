@@ -37,8 +37,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <limits>
-
 #include "Modeling/ModelicaClassDialog.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
@@ -161,15 +159,14 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax);
+  mpLibraryTreeProxyModel->setFilterRegularExpression(regExp);
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
+  QRegExp regExp = TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
- #endif
+#endif
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
@@ -884,7 +881,11 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
+#else
     connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
+#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);

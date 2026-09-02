@@ -37,60 +37,26 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef DIAGRAM_H
-#define DIAGRAM_H
+#ifndef TABBEDVIEWTEST_H
+#define TABBEDVIEWTEST_H
 
 #include <QObject>
 
 /*!
- * \brief The ModelInstanceTest class
- * Tests the Model class.
+ * \brief The TabbedViewTest class
+ * Tests the tabbed view of the ModelWidgetContainer.
  */
-class ModelInstanceTest: public QObject
+class TabbedViewTest: public QObject
 {
   Q_OBJECT
 private slots:
   void initTestCase();
   /*!
-   * \brief classAnnotations
-   * Tests the class annotations like icon, diagram etc.
+   * \brief middleClickClosesOnlyClickedTab
+   * Tests that a middle click on a tab closes only the clicked tab (issue #16264).
    */
-  void classAnnotations();
-  /*!
-   * \brief classElements
-   * Tests the class elements.
-   */
-  void classElements();
-  /*!
-   * \brief classConnections
-   * Tests the class connections.
-   */
-  void classConnections();
-  /*!
-   * \brief isParameter
-   * Tests if the element is a parameter.
-   */
-  void isParameter();
-  void isParameter_data();
-  /*!
-   * \brief isInput
-   * Tests if the element is a input.
-   */
-  void isInput();
-  void isInput_data();
-  /*!
-   * \brief modifiertoString
-   * Tests if the modifier is converted to string correctly.
-   */
-  void modifiertoString();
-  void modifiertoString_data();
-  /*!
-   * \brief subModifiertoString
-   * Tests if the sub-modifier is converted to string correctly.
-   */
-  void subModifiertoString();
-  void subModifiertoString_data();
+  void middleClickClosesOnlyClickedTab();
   void cleanupTestCase();
 };
 
-#endif // DIAGRAM_H
+#endif // TABBEDVIEWTEST_H

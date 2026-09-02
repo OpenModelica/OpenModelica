@@ -823,15 +823,15 @@ namespace ModelInstance
    * \param skipTopLevel - if true then it will skip the top level modifier each and final.
    * \param includeComment - if true then it will include the comment in the string.
    * \param onlyType - if true then it will return only the type of the modifier.
-   * \param elementPropertiesDialog - if true then it will return the string for element properties dialog.
+   * \param skipDisplayUnit - if true then skip displayUnit modifier in the string.
    * \return
    */
-  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType, bool elementPropertiesDialog) const
+  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType, bool skipDisplayUnit) const
   {
     /*! We need to return empty string for displayUnit modifier in Element Properties dialog
      *  because we are showing a drop down for the display unit in separate column.
      */
-    if (elementPropertiesDialog) {
+    if (skipDisplayUnit) {
       if (mName == QStringLiteral("displayUnit")) {
         return "";
       }
@@ -857,7 +857,7 @@ namespace ModelInstance
       }
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        QString subValue = pSubModifier->toString(false, includeComment, onlyType, elementPropertiesDialog);
+        QString subValue = pSubModifier->toString(false, includeComment, onlyType, skipDisplayUnit);
         if (!subValue.isEmpty()) {
           subModifiers.append(subValue);
         }
@@ -949,11 +949,24 @@ namespace ModelInstance
     }
   }
 
-  Modifier *Modifier::getModifier(const QString &modifier) const
+  /*!
+   * \brief Modifier::getModifier
+   * Returns the Modifier with the given name.\n
+   * \param modifier - the name of the modifier to search for.
+   * \param recursive - if true then search recursively in sub modifiers.
+   * \return
+   */
+  Modifier *Modifier::getModifier(const QString &modifier, bool recursive) const
   {
     foreach (auto *pModifier, mModifiers) {
       if (pModifier->getName().compare(modifier) == 0) {
         return pModifier;
+      }
+      if (recursive) {
+        Modifier *pSubModifier = pModifier->getModifier(modifier, recursive);
+        if (pSubModifier) {
+          return pSubModifier;
+        }
       }
     }
     return 0;
@@ -2045,6 +2058,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("groupImage")) {
+      mHasGroupImage = true;
       mGroupImage.deserialize(jsonObject.value("groupImage"));
     }
 
@@ -2077,7 +2091,6 @@ namespace ModelInstance
     if (jsonObject.contains("__Dymola_checkBox")) {
       mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
-
 
     if (jsonObject.contains("choice")) {
       const auto& choicesArray = jsonObject.value("choice").toArray();
@@ -2153,7 +2166,12 @@ namespace ModelInstance
     deserialize_impl(jsonObject);
   }
 
-  Element *Element::getTopLevelExtendElement() const
+  /*!
+   * \brief Element::getTopLevelParentElement
+   * Returns the top level parent element of the model where this element is located.
+   * \return
+   */
+  Element *Element::getTopLevelParentElement() const
   {
     Element *pElement = mpParentModel->getParentElement();
     while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
@@ -2194,13 +2212,13 @@ namespace ModelInstance
   }
 
   /*!
-   * \brief Element::getTopLevelExtendName
-   * Returns the top level extend name where the element is located.
+   * \brief Element::getTopLevelParentElementName
+   * Returns the name of the top level parent element of the model where this element is located.
    * \return
    */
-  QString Element::getTopLevelExtendName() const
+  QString Element::getTopLevelParentElementName() const
   {
-    Element *pElement = getTopLevelExtendElement();
+    Element *pElement = getTopLevelParentElement();
 
     if (pElement && pElement->getModel()) {
       return pElement->getModel()->getName();
@@ -2305,13 +2323,7 @@ namespace ModelInstance
 
   Replaceable *Element::getReplaceable() const
   {
-    if (mpPrefixes) {
-      return mpPrefixes.get()->getReplaceable();
-    } else if (mpModel) {
-      return mpModel->getReplaceable();
-    } else {
-      return nullptr;
-    }
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
   }
 
   bool Element::isRedeclare() const

@@ -149,7 +149,7 @@ void FinalEachToolButton::showParameterMenu()
 Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters)
 {
   mpModelInstanceElement = pElement;
-  mExtendName = mpModelInstanceElement->getTopLevelExtendName();
+  mExtendName = mpModelInstanceElement->getTopLevelParentElementName();
   mInherited = defaultValue;
   mpElementParameters = pElementParameters;
   auto &dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
@@ -168,7 +168,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mSaveSelectorFilter = saveSelector.getFilter();
   mSaveSelectorCaption = saveSelector.getCaption();
   mGroupImage = dialogAnnotation.getGroupImage();
-  if (!mGroupImage.isEmpty()) {
+  mHasGroupImage = dialogAnnotation.hasGroupImage();
+  if (mHasGroupImage && !mGroupImage.isEmpty()) {
     mGroupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(mGroupImage);
   }
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
@@ -912,13 +913,13 @@ void Parameter::editClassButtonClicked()
   if (mpElementParameters && mpElementParameters->hasElement()) {
     // if we fail to find the type
     if ((mpModelInstanceElement == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString())) {
+        (mpModelInstanceElement->getTopLevelParentElement() == NULL) ||
+        (mpModelInstanceElement->getTopLevelParentElement()->getParentModel() == NULL) ||
+        (mpModelInstanceElement->getTopLevelParentElement()->getParentModel()->getName() == QString())) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the redeclare class."), QMessageBox::Ok);
       return;
     }
-    classPath = mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName();
+    classPath = mpModelInstanceElement->getTopLevelParentElement()->getParentModel()->getName();
   } else {
     classPath = mpElementParameters->getElementParentClassName();
   }
@@ -957,7 +958,7 @@ void Parameter::editClassButtonClicked()
     mpModelInstanceElement->setModel(pNewModel);
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
     MainWindow::instance()->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
+    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(), true,
                                                                   true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
     MainWindow::instance()->hideProgressBar();
     MainWindow::instance()->getStatusBar()->clearMessage();
@@ -1320,9 +1321,9 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param pElementModifier
  * \param pParent
  */
-ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested,
-                                     ModelInstance::Modifier *pDefaultElementModifier,
-                                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent)
+ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool subDialog,
+                                     ModelInstance::Modifier *pDefaultElementModifier, ModelInstance::Modifier *pReplaceableConstrainedByModifier,
+                                     ModelInstance::Modifier *pElementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
   mpElement = pElement;
@@ -1335,6 +1336,7 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   }
   mInherited = inherited;
   mNested = nested;
+  mSubDialog = subDialog;
   mpDefaultElementModifier = pDefaultElementModifier;
   mpReplaceableConstrainedByModifier = pReplaceableConstrainedByModifier;
   mpElementModifier = pElementModifier;
@@ -1549,7 +1551,8 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
               index = pParameter->getUnitComboBox()->count() - 1;
             }
           }
-        } else {
+        }
+        if (index > -1) {
           /* Issue #11782.
            * Setting the display unit trigger SIGNAL currentIndexChanged and calls SLOT unitComboBoxChanged which will set the correct value.
            */
@@ -1770,8 +1773,8 @@ void ElementParameters::setUpDialog()
         }
         Label *pModifierLabel = new Label(pModifier->getName());
         mModifierLabelsVector.append(pModifierLabel);
-        QString modifierValue = pModifier->toString(true, true, false, true);
-        if (!modifierValue.startsWith("(")) {
+        QString modifierValue = pModifier->toString(true, true);
+        if (!modifierValue.isEmpty() && !modifierValue.startsWith("(")) {
           modifierValue = QLatin1String("=") % modifierValue;
         }
         QLineEdit *pModifierValueTextBox = new QLineEdit(modifierValue);
@@ -1868,22 +1871,28 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
  */
 void ElementParameters::addOrUpdateParametersScrollArea(Parameter *pParameter)
 {
-  if (!mTabsMap.contains(pParameter->getTab())) {
-    ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-    GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
-    // set the group image
-    pGroupBox->setGroupImage(pParameter->getGroupImage());
-    pParametersScrollArea->addGroupBox(pGroupBox);
-    mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
+  const QString tab = pParameter->getTab();
+  const QString group = pParameter->getGroup();
+  ParametersScrollArea *pParametersScrollArea = nullptr;
+
+  if (!mTabsMap.contains(tab)) {
+    pParametersScrollArea = new ParametersScrollArea;
+    mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
   } else {
-    ParametersScrollArea *pParametersScrollArea;
-    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
-    GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
-    if (pParametersScrollArea && !pGroupBox) {
-      pGroupBox = new GroupBox(pParameter->getGroup());
-      pParametersScrollArea->addGroupBox(pGroupBox);
-    }
-    // set the group image
+    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
+  }
+
+  if (!pParametersScrollArea) {
+    return;
+  }
+
+  GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(group);
+  if (!pGroupBox) {
+    pGroupBox = new GroupBox(group);
+    pParametersScrollArea->addGroupBox(pGroupBox);
+  }
+  // set the group image if any
+  if (pParameter->hasGroupImage()) {
     pGroupBox->setGroupImage(pParameter->getGroupImage());
   }
 }
@@ -2298,7 +2307,7 @@ void ElementParameters::updateElementParameters()
       }
     }
 
-    if (mNested) {
+    if (mSubDialog) {
       if (modifiersList.isEmpty()) {
         mModification.clear();
       } else {
@@ -2326,9 +2335,9 @@ void ElementParameters::updateElementParameters()
                 }
                 pParentElement = pParentElement->getParentModel() ? pParentElement->getParentModel()->getParentElement() : nullptr;
               }
-              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), "_", modifiers);
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelParentElementName(), "_", modifiers);
             } else {
-              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getQualifiedName(), modifiers);
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelParentElementName(), mpElement->getQualifiedName(), modifiers);
             }
           } else {
             pOMCProxy->setElementModifierValue(className, mpElement->getQualifiedName(), modifiers);

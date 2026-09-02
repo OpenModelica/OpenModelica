@@ -1545,7 +1545,7 @@ void Element::createActions()
   connect(mpShowElementAction, SIGNAL(triggered()), SLOT(showElement()));
   // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
-  mpParametersAction->setStatusTip(tr("Shows the component parameters"));
+  mpParametersAction->setStatusTip(Helper::parametersTip);
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Todo: Connect /robbr
   // Attributes Action
@@ -2242,7 +2242,7 @@ void Element::showParameters()
       && mpGraphicsView->getModelWidget()->getModelInstance() && mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()) {
     inherited = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()->isExtend();
   }
-  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, inherited, false, 0, 0, 0, pMainWindow);
+  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, inherited, false, false, 0, 0, 0, pMainWindow);
   pMainWindow->hideProgressBar();
   pMainWindow->getStatusBar()->clearMessage();
   pElementParameters->exec();

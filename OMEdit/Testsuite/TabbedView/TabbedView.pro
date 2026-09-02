@@ -30,33 +30,11 @@
 #
 # See the full OSMC Public License conditions for more details.
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
-SUBDIRS = Util \
-  BrowseMSL \
-  Diagram \
-  Transformation \
-  Homotopy \
-  Expression \
-  ModelInstance \
-  TabbedView \
-  VariableValue \
-  Utilities \
-  StringHandler \
-  DynamicAnnotation \
-  AutoCompletion \
-  MergeExtendsModifiers
+TARGET = TabbedView
 
-BrowseMSL.depends = Util
-Diagram.depends = Util
-Transformation.depends = Util
-Homotopy.depends = Util
-Expression.depends = Util
-ModelInstance.depends = Util
-TabbedView.depends = Util
-VariableValue.depends = Util
-Utilities.depends = Util
-StringHandler.depends = Util
-DynamicAnnotation.depends = Util
-AutoCompletion.depends = Util
-MergeExtendsModifiers.depends = Util
+SOURCES += TabbedViewTest.cpp
+
+HEADERS += TabbedViewTest.h

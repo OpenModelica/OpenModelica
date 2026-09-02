@@ -149,12 +149,9 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
     mContextMenuStartPositionValid(false)
 {
   setIsVisualizationView(false);
-  /* Ticket #3275
-   * Set the scroll bars policy to always on to avoid unnecessary resize events.
-   */
   setRenderHint(QPainter::SmoothPixmapTransform);
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setFrameShape(QFrame::StyledPanel);
   setDragMode(QGraphicsView::RubberBandDrag);
   setAcceptDrops(true);
@@ -635,7 +632,13 @@ bool GraphicsView::isCreatingShape()
  */
 void GraphicsView::setExtentRectangle(const QRectF rectangle, bool openingModel)
 {
-  QRectF sceneRectangle = Utilities::adjustSceneRectangle(rectangle, 0.25);
+  /* Use a very large scene rect so the user can pan/scroll freely beyond the model extent.
+   * The scrollbars are hidden but their values are still used for panning and mouse wheel scrolling.
+   * A large scene rect ensures the scrollbar range is large enough for infinite-feel navigation.
+   */
+  const qreal sceneSize = 100000.0;
+  QPointF center = rectangle.center();
+  QRectF sceneRectangle(center.x() - sceneSize, center.y() - sceneSize, sceneSize * 2, sceneSize * 2);
   if (openingModel) {
     setSceneRect(sceneRectangle);
   } else {
@@ -3200,7 +3203,7 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
       } else {
         QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
         if (pElement->isInheritedElement() && pElement->getModelComponent()) {
-          MainWindow::instance()->getOMCProxy()->setExtendsModifierValueOld(className, pElement->getModelComponent()->getTopLevelExtendName(),
+          MainWindow::instance()->getOMCProxy()->setExtendsModifierValueOld(className, pElement->getModelComponent()->getTopLevelParentElementName(),
                                                                             modifierKey, QString::number(numberOfElementConnections));
         } else {
           MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(className, modifierKey, QString::number(numberOfElementConnections));
@@ -4193,9 +4196,9 @@ void GraphicsView::showParameters()
       if (mpModelWidget->getModelInstance()->getRootParentElement()) {
         inherited = mpModelWidget->getModelInstance()->getRootParentElement()->isExtend();
       }
-      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, inherited, false, 0, 0, 0, MainWindow::instance());
+      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, inherited, false, false, 0, 0, 0, MainWindow::instance());
     } else {
-      pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
+      pElementParameters = new ElementParameters(0, this, false, false, false, 0, 0, 0, MainWindow::instance());
     }
     MainWindow::instance()->hideProgressBar();
     MainWindow::instance()->getStatusBar()->clearMessage();
@@ -4584,8 +4587,8 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
-  // if user is starting panning.
-  if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+  // if user is starting panning with middle mouse button or Ctrl+left click.
+  if (event->button() == Qt::MiddleButton || QApplication::keyboardModifiers() == Qt::ControlModifier) {
     setIsPanning(true);
     mLastMouseEventPos = event->pos();
     QGraphicsView::mousePressEvent(event);
@@ -4862,6 +4865,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
    * Issue #12049. Stop double click event when the getModelInstance API fails.
    */
   if (isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
+    return;
+  }
+  /* Only handle the double click event for the left mouse button. */
+  if (event->button() != Qt::LeftButton) {
+    QGraphicsView::mouseDoubleClickEvent(event);
     return;
   }
   const bool removeLastAddedPoint = true;
