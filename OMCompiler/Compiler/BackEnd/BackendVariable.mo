@@ -4251,32 +4251,39 @@ public function startOriginCompare
   input Option<DAE.StartOrigin> so2;
   output Integer cmp;
 protected
-  Integer a1,r1,a2,r2;
+  Integer k1,a1,r1,k2,a2,r2;
 algorithm
-  (a1,r1) := startOriginRank(so1);
-  (a2,r2) := startOriginRank(so2);
-  cmp := if a1 <> a2 then a1 - a2 else r1 - r2;
+  (k1,a1,r1) := startOriginRank(so1);
+  (k2,a2,r2) := startOriginRank(so2);
+  cmp := if k1 <> k2 then k1 - k2 elseif a1 <> a2 then a1 - a2 else r1 - r2;
 end startOriginCompare;
 
 protected function startOriginRank
-  "Rank pair for a start origin, lexicographic, lower = stronger.
-   CONFIDENCE holds instance-tree depths from the frontend (< NFBinding.NO_CONFIDENCE = 99999);
-   the legacy old-frontend origins keep their old relative order below any confidence."
+  "Rank triple for a start origin, lexicographic, lower = stronger.
+   A start set on a component (CONFIDENCE) beats one set by its type
+   (TYPE_CONFIDENCE), which beats the legacy old-frontend origins in their old
+   relative order."
   input Option<DAE.StartOrigin> so;
-  output Integer actual;
+  output Integer kind;
+  output Integer actual = 0;
   output Integer raw = 0;
 algorithm
-  actual := match so
+  kind := match so
     local
       DAE.StartOrigin origin;
     case SOME(origin as DAE.StartOrigin.CONFIDENCE())
       algorithm
+        actual := origin.actual;
         raw := origin.raw;
-      then origin.actual;
-    case SOME(DAE.StartOrigin.BINDING_ORIGIN()) then 1000000;
-    case SOME(DAE.StartOrigin.TYPE_ORIGIN()) then 1000001;
-    case SOME(DAE.StartOrigin.UNDEFINED_ORIGIN()) then 1000002;
-    case NONE() then 1000003;
+      then 0;
+    case SOME(origin as DAE.StartOrigin.TYPE_CONFIDENCE())
+      algorithm
+        actual := origin.level;
+      then 1;
+    case SOME(DAE.StartOrigin.BINDING_ORIGIN()) then 2;
+    case SOME(DAE.StartOrigin.TYPE_ORIGIN()) then 3;
+    case SOME(DAE.StartOrigin.UNDEFINED_ORIGIN()) then 4;
+    case NONE() then 5;
   end match;
 end startOriginRank;
 

@@ -202,7 +202,6 @@ protected
 
   // needed for unordered map
   type SetPtr = Pointer<AliasSet>;
-  type ConfidencePair = tuple<Integer, Integer> "(actual, raw) start confidence per MLS 8.6.2";
 
   uniontype CrefTpl "used for findCrefs()"
     record CREF_TPL
@@ -969,7 +968,7 @@ protected
     if UnorderedMap.isEmpty(fixed_start_map) and not UnorderedMap.isEmpty(attrcollector.start_map) then
       // no fixed variable in the set: select the start value with the
       // strongest confidence as computed by the frontend (MLS 8.6.2)
-      new_cref := selectStartByConfidence(attrcollector.start_map, attrcollector.start_confidence_map, set);
+      new_cref := selectStartByConfidence(attrcollector.start_map, attrcollector.start_binding_map, set);
       if isSome(new_cref) then
         new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
         Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
@@ -1012,7 +1011,7 @@ protected
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
-      UnorderedMap.new<ConfidencePair>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Binding>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
@@ -1146,24 +1145,25 @@ protected
      as computed by the frontend, per MLS 8.6.2. Warns if the choice
      is ambiguous (equal confidence, conflicting values)."
     input UnorderedMap<ComponentRef, Expression> start_map;
-    input UnorderedMap<ComponentRef, ConfidencePair> confidence_map;
+    input UnorderedMap<ComponentRef, Binding> binding_map;
     input AliasSet set;
     output Option<ComponentRef> best = NONE();
   protected
     ComponentRef cref;
     Expression val;
     Expression best_val = Expression.INTEGER(0);
-    Integer actual, raw, best_actual = 0, best_raw = 0;
+    Binding b, best_b = NFBinding.EMPTY_BINDING;
+    Integer cmp;
     Boolean tie = false;
   algorithm
     for tpl in UnorderedMap.toList(start_map) loop
       (cref, val) := tpl;
-      (actual, raw) := UnorderedMap.getSafe(cref, confidence_map, sourceInfo());
-      if isNone(best) or actual < best_actual or (actual == best_actual and raw < best_raw) then
-        (best, best_val) := (SOME(cref), val);
-        (best_actual, best_raw) := (actual, raw);
+      b := UnorderedMap.getSafe(cref, binding_map, sourceInfo());
+      cmp := if isNone(best) then -1 else Binding.compareStartConfidence(b, best_b);
+      if cmp < 0 then
+        (best, best_val, best_b) := (SOME(cref), val, b);
         tie := false;
-      elseif actual == best_actual and raw == best_raw and not Expression.isEqual(val, best_val) then
+      elseif cmp == 0 and not Expression.isEqual(val, best_val) then
         tie := true;
       end if;
     end for;
@@ -1420,7 +1420,7 @@ protected
     if isSome(attr_start) then
       SOME(start_b) := attr_start;
       UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), (Binding.actualConfidence(start_b), Binding.confidence(start_b)), attrcollector.start_confidence_map);
+      UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
     end if;
     if isSome(attr_fixed) then
       SOME(fixed_b) := attr_fixed;
@@ -1488,7 +1488,7 @@ protected
       UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values";
       UnorderedMap<ComponentRef,Expression> max_val_map             "set containing all maximum values";
       UnorderedMap<ComponentRef,Expression> start_map               "set containing all start values";
-      UnorderedMap<ComponentRef,ConfidencePair> start_confidence_map "confidence of each start value";
+      UnorderedMap<ComponentRef,Binding> start_binding_map         "start bindings, for their confidence";
       UnorderedMap<ComponentRef,Expression> fixed_map               "set containing all fixed values";
       UnorderedMap<ComponentRef,Expression> nominal_map             "set containing all nominal values";
       UnorderedMap<ComponentRef,StateSelect> stateSelect_map        "set containing all stateSelect values";

@@ -112,6 +112,7 @@ uniontype InstNodeType
     InstNode parent;
     InstNodeType originalType;
     Option<InstNode> originalNode;
+    Integer confidence "instance level of the redeclare, see Inst.classConfidence";
   end REDECLARED_CLASS;
 
   record GENERATED_INNER

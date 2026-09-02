@@ -932,6 +932,9 @@ package DAE
       Integer actual "parameter-followed confidence per MLS 8.6.2, lower = stronger";
       Integer raw "confidence of the start attribute itself, used as tie-break";
     end CONFIDENCE;
+    record TYPE_CONFIDENCE
+      Integer level "start set by the type, at the level where the type was determined";
+    end TYPE_CONFIDENCE;
   end StartOrigin;
 
   uniontype VariableAttributes

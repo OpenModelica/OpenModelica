@@ -601,6 +601,7 @@ template dumpStartOriginAttrOpt(Option<DAE.StartOrigin> startOrigin)
   case SOME(TYPE_ORIGIN(__)) then 'startOrigin = type'
   case SOME(BINDING_ORIGIN(__)) then 'startOrigin = binding'
   case SOME(CONFIDENCE(actual = actual, raw = raw)) then 'startOrigin = confidence(<%actual%>, <%raw%>)'
+  case SOME(TYPE_CONFIDENCE(level = level)) then 'startOrigin = typeConfidence(<%level%>)'
 end dumpStartOriginAttrOpt;
 
 template dumpCref(ComponentRef c)

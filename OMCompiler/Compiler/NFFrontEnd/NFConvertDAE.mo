@@ -611,8 +611,13 @@ end lookupUncertaintyMember;
 
 function convertStartOrigin
   input Binding binding;
-  output Option<DAE.StartOrigin> startOrigin =
-    SOME(DAE.StartOrigin.CONFIDENCE(Binding.actualConfidence(binding), Binding.confidence(binding)));
+  output Option<DAE.StartOrigin> startOrigin;
+algorithm
+  startOrigin := SOME(
+    if Binding.isFromType(binding) then
+      DAE.StartOrigin.TYPE_CONFIDENCE(Binding.confidence(binding))
+    else
+      DAE.StartOrigin.CONFIDENCE(Binding.actualConfidence(binding), Binding.confidence(binding)));
 end convertStartOrigin;
 
 function convertEquations

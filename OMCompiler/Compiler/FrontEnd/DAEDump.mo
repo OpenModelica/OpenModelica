@@ -659,6 +659,8 @@ algorithm
     case DAE.StartOrigin.BINDING_ORIGIN() then "binding";
     case DAE.StartOrigin.CONFIDENCE()
       then "confidence(" + intString(so.actual) + ", " + intString(so.raw) + ")";
+    case DAE.StartOrigin.TYPE_CONFIDENCE()
+      then "typeConfidence(" + intString(so.level) + ")";
   end match;
 end startOriginStr;
 
