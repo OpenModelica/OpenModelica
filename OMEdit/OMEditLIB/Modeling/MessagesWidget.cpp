@@ -51,6 +51,7 @@
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 const int fixedTabsCount = 4;
 
@@ -643,9 +644,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // suppress the unnecessary qt warning messages
   foreach (QString suppressMessage, mSuppressMessagesList) {
-    QRegExp rx(suppressMessage);
-    rx.setPatternSyntax(QRegExp::Wildcard);
-    if (rx.exactMatch(messageItem.getMessage())) {
+    QRegularExpression rx(QRegularExpression::fromWildcard(suppressMessage));
+    if (rx.match(messageItem.getMessage()).hasMatch()) {
       return;
     }
   }

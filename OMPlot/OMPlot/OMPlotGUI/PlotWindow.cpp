@@ -66,13 +66,14 @@
 #include <QPainter>
 #include <QPrinter>
 #include <QPrintDialog>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QStack>
 #include <QLineEdit>
 #include <QColorDialog>
 
 using namespace OMPlot;
 
+static const QRegularExpression DER_VARIABLE_NAME_REGEX(QRegularExpression::anchoredPattern("der\\(\\D(\\w)*\\)"));
 static const QString ERROR_INTERVAL_SIZE_NOT_SPECIFIED = QObject::tr("Interval size not specified.");
 static const QString ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH = QObject::tr("Arrays must be of the same length in array parametric plot.");
 static const QString ERROR_UNKNOWN_TIME_UNIT = QObject::tr("Unknown time unit in plotArray(Parametric).");
@@ -254,7 +255,6 @@ void PlotWindow::initializePlot(QStringList arguments)
     }
     updatePlot();
   }
-  
 }
 
 void PlotWindow::setVariablesList(QStringList variables)
@@ -994,7 +994,7 @@ void PlotWindow::readPLTArray(QTextStream &textStream, QString variable, double 
   {
     //read the values
     QString variableWithInd = variable;
-    if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(variableWithInd)){
+    if (DER_VARIABLE_NAME_REGEX.match(variableWithInd).hasMatch()){
       variableWithInd.chop(1);
       variableWithInd.append("["+QString::number(index)+"])");
     } else {
@@ -1151,7 +1151,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       int i = 1;
       do {
         QString varNameQS = (*itVarList);
-        if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+        if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
           varNameQS.chop(1);
           varNameQS.append("["+QString::number(i)+"])");
         } else {
@@ -1218,7 +1218,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         int i = 1;
         do {
           QString varNameQS = (*itVarList);
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {
@@ -1387,7 +1387,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         double *arrElement;
         for (int i = 1; ;i++){
           QString varNameQS = varPair[j];
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {
@@ -1466,7 +1466,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         int i = 1;
         do {
           QString varNameQS = varPair[j];
-          if (QRegExp("der\\(\\D(\\w)*\\)").exactMatch(varNameQS)){
+          if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()){
             varNameQS.chop(1);
             varNameQS.append("["+QString::number(i)+"])");
           } else {

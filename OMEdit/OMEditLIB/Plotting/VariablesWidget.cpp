@@ -57,8 +57,8 @@
 #include <QDockWidget>
 #include <QMessageBox>
 #include <QMenu>
+#include <QRegularExpression>
 #include <QToolBar>
-
 #include <algorithm>
 
 using namespace OMPlot;
@@ -1271,13 +1271,8 @@ void VariablesTreeModel::filterDependencies()
     foreach(QString s, uses) {
       escapedUses << s.replace("[","[[]").replace("]","[]]").replace("[[[]]","[[]").replace("(","[(]").replace(")","[)]").replace(".","[.]");
     }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QRegularExpression regexp("^" + escapedUses.join("|") + "$");
     mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegularExpression(regexp);
-#else
-    QRegExp regexp("^" + escapedUses.join("|") + "$");
-    mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegExp(regexp);
-#endif
   }
 }
 
@@ -1606,11 +1601,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   MainWindow::instance()->getStatusBar()->showMessage(tr("Loading simulation result variables"));
   // In order to improve the response time of insertVariablesItems function we should disbale sorting and clear the filter.
   mpVariablesTreeView->setSortingEnabled(false);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression(""));
-#else
-  mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
-#endif
   // insert the plot variables
   bool updateVariables = mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
   // update the plot variables tree
@@ -3091,13 +3082,8 @@ void VariablesWidget::findVariables()
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegularExpression(regExp);
-#else
-  QRegExp regExp = TreeSearchFilters::getFilterRegExp(findText, caseSensitivity, syntax);
-  mpVariableTreeProxyModel->setFilterRegExp(regExp);
-#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpVariablesTreeView->expandAll();

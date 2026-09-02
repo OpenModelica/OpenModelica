@@ -177,17 +177,17 @@ void CRMLHighlighter::initializeSettings()
   mQuotationFormat.setForeground(mpCRMLEditorPage->getColor("Quotes"));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
   mNumberFormat.setForeground(mpCRMLEditorPage->getColor("Number"));
-  rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
+  rule.mPattern = QRegularExpression("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
-  rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+  rule.mPattern = QRegularExpression("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
   // keywords
   QStringList keywordPatterns = getKeywords();
   foreach (const QString &pattern, keywordPatterns) {
     QString newPattern = QString("\\b%1\\b").arg(pattern);
-    rule.mPattern = QRegExp(newPattern);
+    rule.mPattern = QRegularExpression(newPattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
   }
@@ -195,7 +195,7 @@ void CRMLHighlighter::initializeSettings()
   QStringList typePatterns = getTypes();
   foreach (const QString &pattern, typePatterns) {
     QString newPattern = QString("\\b%1\\b").arg(pattern);
-    rule.mPattern = QRegExp(newPattern);
+    rule.mPattern = QRegularExpression(newPattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
@@ -426,12 +426,13 @@ void CRMLHighlighter::highlightBlock(const QString &text)
   setCurrentBlockState(0);
   setFormat(0, text.length(), mTextFormat.foreground().color());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
-    QRegExp expression(rule.mPattern);
-    int index = expression.indexIn(text);
-    while (index >= 0) {
-      int length = expression.matchedLength();
+    QRegularExpression expression(rule.mPattern);
+    QRegularExpressionMatch match = expression.match(text);
+    while (match.hasMatch()) {
+      int index = match.capturedStart();
+      int length = match.capturedLength();
       setFormat(index, length, rule.mFormat);
-      index = expression.indexIn(text, index + length);
+      match = expression.match(text, index + length);
     }
   }
   highlightMultiLine(text);

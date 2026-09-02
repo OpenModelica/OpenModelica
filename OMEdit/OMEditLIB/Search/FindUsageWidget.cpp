@@ -615,9 +615,5 @@ void FindUsageWidget::filterMatches()
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpClassTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
-#else
-  mpClassTreeProxyModel->setFilterRegExp(TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax));
-#endif
 }
