@@ -213,6 +213,13 @@ pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_G
     },
 };
 
+/// `@OMC_HDF5_LDFLAGS@`: the HDF5 a link line naming ModelicaMatIO needs, empty
+/// unless CMake found HDF5 (`OM_ENABLE_HDF5`).
+pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
+    Some(s) => s,
+    None => "",
+};
+
 /// Libraries linked into generated simulation code when --parmodauto
 /// (ParModelica auto) is enabled. Mirrors `Util/Autoconf.mo`, which hardcodes
 /// the pair below: the ParModelica auto runtime (`libParModelicaAuto`) ships

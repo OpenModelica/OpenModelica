@@ -29,7 +29,7 @@ members = ["mmtorust", "openmodelica", "openmodelica_util", "openmodelica_revisi
 # `openmodelica_lapack` keeps its own `[workspace]` so its `[profile.release]`
 # governs the nested `liblapack.wasm` build (profiles are ignored in a member).
 # A nested root that something path-depends on must be excluded explicitly.
-exclude = ["openmodelica_lapack"]
+exclude = ["openmodelica_lapack", "openmodelica_hdf5"]
 # The OMShell GUI crates pull modern UI frameworks (eframe/dioxus) that require a
 # recent wasm-bindgen. Since wasmer 7.2 the compiler's wasm build uses the same
 # recent wasm-bindgen, so they share one resolution and are ordinary members.

@@ -143,9 +143,10 @@ mod wasmtime_impl {
             Err(wasmtime::Error::msg("wasi proc_exit"))
         }))?;
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls
-        // in. Real: clock_res_get + fd_tell. No-op success: advisory / sync / metadata
-        // ops. EINVAL: pread/pwrite / links / poll / sockets — all off the file-read
-        // path but must exist for the module to instantiate.
+        // in. Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's sec2 driver
+        // uses for every access. No-op success: advisory / sync / metadata ops.
+        // EINVAL: links / poll / sockets — off the file path but must exist for the
+        // module to instantiate.
         wt(linker.func_wrap(m, "clock_res_get", |mut c: Caller<'_, WasiCtx>, id: i32, out: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c); ctx.clock_res_get(&mut mem, id as u32, out as u32)
         }))?;
@@ -162,8 +163,12 @@ mod wasmtime_impl {
         wt(linker.func_wrap(m, "fd_filestat_set_times", |_c: Caller<'_, WasiCtx>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }))?;
         wt(linker.func_wrap(m, "fd_renumber", |_c: Caller<'_, WasiCtx>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }))?;
         wt(linker.func_wrap(m, "path_filestat_set_times", |_c: Caller<'_, WasiCtx>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_pread", |_c: Caller<'_, WasiCtx>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "fd_pwrite", |_c: Caller<'_, WasiCtx>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "fd_pread", |mut c: Caller<'_, WasiCtx>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }))?;
+        wt(linker.func_wrap(m, "fd_pwrite", |mut c: Caller<'_, WasiCtx>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }))?;
         wt(linker.func_wrap(m, "path_link", |_c: Caller<'_, WasiCtx>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }))?;
         wt(linker.func_wrap(m, "path_readlink", |_c: Caller<'_, WasiCtx>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }))?;
         wt(linker.func_wrap(m, "path_symlink", |_c: Caller<'_, WasiCtx>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }))?;
@@ -363,9 +368,10 @@ mod wasmer_impl {
             Err(RuntimeError::new("wasi proc_exit"))
         }));
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls in
-        // (see add_to_linker). Real: clock_res_get + fd_tell. No-op success: advisory /
-        // sync / metadata ops. EINVAL: pread/pwrite / links / poll / sockets — off the
-        // file-read path but must exist or the module fails to instantiate.
+        // (see add_to_linker). Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's
+        // sec2 driver uses for every access. No-op success: advisory / sync / metadata
+        // ops. EINVAL: links / poll / sockets — off the file path but must exist or the
+        // module fails to instantiate.
         def("clock_res_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, id: i32, out: i32| -> i32 {
             view_ctx!(env, mem, ctx); ctx.clock_res_get(&mut mem, id as u32, out as u32)
         }));
@@ -382,8 +388,12 @@ mod wasmer_impl {
         def("fd_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }));
         def("fd_renumber", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }));
         def("path_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_pread", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }));
-        def("fd_pwrite", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }));
+        def("fd_pread", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            view_ctx!(env, mem, ctx); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }));
+        def("fd_pwrite", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            view_ctx!(env, mem, ctx); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }));
         def("path_link", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }));
         def("path_readlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }));
         def("path_symlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }));

@@ -5,7 +5,7 @@
 // filesystem. Only what the driver actually calls is implemented; everything
 // else reports ENOSYS rather than pretending.
 
-const ERRNO = { success: 0, badf: 8, exist: 20, inval: 28, isdir: 31, noent: 44, nosys: 52, notdir: 54 };
+const ERRNO = { success: 0, badf: 8, exist: 20, inval: 28, isdir: 31, noent: 44, nosys: 52, notdir: 54, spipe: 70 };
 const FILETYPE = { directory: 3, regular: 4 };
 const PREOPEN_FD = 3;
 const FIRST_FD = 4;
@@ -61,56 +61,87 @@ export class Wasi {
       }
       return total;
     };
+    // fd_write/fd_pwrite and fd_read/fd_pread differ only in where they start and
+    // whether the fd's offset moves afterwards: `at` undefined means the latter.
+    const writeFile = (fd, iovsPtr, iovsLen, writtenPtr, at) => {
+      const open = self.fds.get(fd);
+      if (!open) return ERRNO.badf;
+      const chunks = [];
+      const written = iovecs(iovsPtr, iovsLen, (base, len) => {
+        chunks.push(self.bytes().slice(base, base + len));
+        return len;
+      });
+      const start = at ?? open.offset;
+      const before = self.files.get(open.path) ?? new Uint8Array(0);
+      const out = new Uint8Array(Math.max(before.length, start + written));
+      out.set(before);
+      let cur = start;
+      for (const c of chunks) {
+        out.set(c, cur);
+        cur += c.length;
+      }
+      if (at === undefined) open.offset = cur;
+      self.files.set(open.path, out);
+      view().setUint32(writtenPtr, written, true);
+      return ERRNO.success;
+    };
+    const readFile = (fd, iovsPtr, iovsLen, readPtr, at) => {
+      const open = self.fds.get(fd);
+      if (!open) return ERRNO.badf;
+      const data = self.files.get(open.path) ?? new Uint8Array(0);
+      let cur = at ?? open.offset;
+      let read = 0;
+      iovecs(iovsPtr, iovsLen, (base, len) => {
+        const chunk = data.subarray(cur, cur + len);
+        self.bytes().set(chunk, base);
+        cur += chunk.length;
+        read += chunk.length;
+        return chunk.length;
+      });
+      if (at === undefined) open.offset = cur;
+      view().setUint32(readPtr, read, true);
+      return ERRNO.success;
+    };
+    // HDF5's sec2 driver identifies an open file by st_dev/st_ino, so the pair has
+    // to differ between files. From the path, so a reopen keeps it.
+    const inodeOf = (path) => {
+      let h = 0xcbf29ce484222325n;
+      for (let i = 0; i < path.length; i++) {
+        h = BigInt.asUintN(64, (h ^ BigInt(path.charCodeAt(i))) * 0x100000001b3n);
+      }
+      return h | 1n; // 0 reads as "no inode"
+    };
     return {
       proc_exit(code) {
         throw new Error(`the driver called proc_exit(${code})`);
       },
       fd_write(fd, iovsPtr, iovsLen, writtenPtr) {
-        let written = 0;
         if (fd === 1 || fd === 2) {
           const parts = [];
-          written = iovecs(iovsPtr, iovsLen, (base, len) => {
+          const written = iovecs(iovsPtr, iovsLen, (base, len) => {
             parts.push(self.bytes().slice(base, base + len));
             return len;
           });
           const text = parts.map((p) => self.decoder.decode(p)).join('');
           if (text) self.onOutput(fd === 1 ? 'stdout' : 'stderr', text.replace(/\n$/, ''));
-        } else {
-          const open = self.fds.get(fd);
-          if (!open) return ERRNO.badf;
-          const chunks = [];
-          written = iovecs(iovsPtr, iovsLen, (base, len) => {
-            chunks.push(self.bytes().slice(base, base + len));
-            return len;
-          });
-          const before = self.files.get(open.path) ?? new Uint8Array(0);
-          const out = new Uint8Array(Math.max(before.length, open.offset + written));
-          out.set(before);
-          let at = open.offset;
-          for (const c of chunks) {
-            out.set(c, at);
-            at += c.length;
-          }
-          open.offset = at;
-          self.files.set(open.path, out);
+          view().setUint32(writtenPtr, written, true);
+          return ERRNO.success;
         }
-        view().setUint32(writtenPtr, written, true);
-        return ERRNO.success;
+        return writeFile(fd, iovsPtr, iovsLen, writtenPtr, undefined);
       },
       fd_read(fd, iovsPtr, iovsLen, readPtr) {
-        const open = self.fds.get(fd);
-        if (!open) return ERRNO.badf;
-        const data = self.files.get(open.path) ?? new Uint8Array(0);
-        let read = 0;
-        iovecs(iovsPtr, iovsLen, (base, len) => {
-          const chunk = data.subarray(open.offset, open.offset + len);
-          self.bytes().set(chunk, base);
-          open.offset += chunk.length;
-          read += chunk.length;
-          return chunk.length;
-        });
-        view().setUint32(readPtr, read, true);
-        return ERRNO.success;
+        return readFile(fd, iovsPtr, iovsLen, readPtr, undefined);
+      },
+      // HDF5's sec2 driver reads and writes at an explicit offset throughout, so
+      // a MAT v7.3 result writer needs these. A stream has no offset to seek to.
+      fd_pwrite(fd, iovsPtr, iovsLen, offset, writtenPtr) {
+        if (fd === 1 || fd === 2) return ERRNO.spipe;
+        if (offset < 0) return ERRNO.inval;
+        return writeFile(fd, iovsPtr, iovsLen, writtenPtr, Number(offset));
+      },
+      fd_pread(fd, iovsPtr, iovsLen, offset, readPtr) {
+        if (offset < 0) return ERRNO.inval;
+        return readFile(fd, iovsPtr, iovsLen, readPtr, Number(offset));
       },
       fd_close(fd) {
         return self.fds.delete(fd) ? ERRNO.success : ERRNO.badf;
@@ -153,6 +184,8 @@ export class Wasi {
       fd_filestat_get(fd, statPtr) {
         const open = self.fds.get(fd);
         const size = open ? (self.files.get(open.path) ?? new Uint8Array(0)).length : 0;
+        view().setBigUint64(statPtr, 1n, true);
+        view().setBigUint64(statPtr + 8, inodeOf(open ? open.path : '/'), true);
         view().setBigUint64(statPtr + 16, BigInt(fd === PREOPEN_FD ? 0 : FILETYPE.regular), true);
         view().setBigUint64(statPtr + 32, BigInt(size), true);
         return ERRNO.success;
@@ -177,6 +210,8 @@ export class Wasi {
         const path = self.string(pathPtr, pathLen).replace(/^\.?\//, '');
         const data = self.files.get(path);
         if (!data) return ERRNO.noent;
+        view().setBigUint64(statPtr, 1n, true);
+        view().setBigUint64(statPtr + 8, inodeOf(path), true);
         view().setBigUint64(statPtr + 16, BigInt(FILETYPE.regular), true);
         view().setBigUint64(statPtr + 32, BigInt(data.length), true);
         return ERRNO.success;
@@ -229,8 +264,6 @@ export class Wasi {
       fd_datasync: () => ERRNO.success,
       fd_advise: () => ERRNO.success,
       fd_allocate: () => ERRNO.success,
-      fd_pread: () => ERRNO.nosys,
-      fd_pwrite: () => ERRNO.nosys,
       fd_renumber: () => ERRNO.nosys,
       path_link: () => ERRNO.nosys,
       path_readlink: () => ERRNO.nosys,

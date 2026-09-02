@@ -32,6 +32,8 @@ AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC)
+# HDF5 for ModelicaMatIO's MAT v7.3 paths; only the CMake build looks for it.
+AC_SUBST(OMC_HDF5_LDFLAGS)
 # Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
 PARMODELICAAUTO_LDFLAGS=" -lParModelicaAuto -ltbb "
 AC_SUBST(PARMODELICAAUTO_LDFLAGS)

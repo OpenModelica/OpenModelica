@@ -62,6 +62,8 @@ endif()
 
 
 ## ModelicaMatIO #########################################################################
+include(${CMAKE_CURRENT_SOURCE_DIR}/hdf5_native.cmake)
+
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 # Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
@@ -70,6 +72,7 @@ add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
+omc_modelica_matio_hdf5(ModelicaMatIO PRIVATE)
 
 # Shared version
 add_library(ModelicaMatIO_shared SHARED ${libModelicaMatIO_SOURCES})
@@ -79,6 +82,7 @@ set_target_properties(ModelicaMatIO_shared
 
 target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
+omc_modelica_matio_hdf5(ModelicaMatIO_shared PUBLIC)
 # See ModelicaExternalC_shared above: decouple the ffi .so from the C runtime for
 # the Rust target so ModelicaUtilities resolves to our own implementation.
 if(NOT OM_OMC_ENABLE_RUST)

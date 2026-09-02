@@ -86,7 +86,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -105,6 +105,10 @@ my %suite_enabled = (
                       # where that target exists: the Rust omc, which JIT-compiles
                       # the model in-process. The C omc's CodegenWasmJit is a stub
                       # that fails, so the suite is opt-in rather than off-by-build.
+  hdf5         => 0,  # Needs ModelicaMatIO built with HAVE_HDF5, i.e. MAT v7.3.
+                      # Only the CMake build provides HDF5 (OM_ENABLE_HDF5, Linux
+                      # for now); the autotools one never defines it, so this is
+                      # opt-in like wasm rather than off-by-build.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too
