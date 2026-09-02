@@ -2415,7 +2415,7 @@ algorithm
       SOME(v) := vars.varArr.varOptArr[i];
       idx := intMod(ComponentReferenceBasics.hashComponentRef(v.varName), buckets) + 1;
       arrayUpdate(indices, idx, BackendDAE.CREFINDEX(v.varName, i - 1) :: indices[idx]);
-      updatePrefixIndices(v.varName, i - 1, vars, true);
+      updatePrefixIndices(v.varName, i - 1, vars);
     end if;
   end for;
 end growBuckets;
@@ -2855,7 +2855,9 @@ algorithm
 end removeAliasVars;
 
 public function removeVar
-  "Removes a var from the vararray but does not scaling down the array"
+  "Removes a var from the vararray but does not scaling down the array.
+   The prefix index keeps the index: getVar skips it once the slot is empty,
+   and indices are never reused, so dropping it there would only cost a scan."
   input Integer inIndex;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
@@ -2873,7 +2875,6 @@ algorithm
   cr_indices := indices[hash_idx];
   cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
-  updatePrefixIndices(cr, inIndex - 1, inVariables, false);
   outVariables := inVariables;
   outVariables.varArr := arr;
   outVariables.numberOfVars := num_vars - 1;
@@ -3072,7 +3073,7 @@ algorithm
     end if;
     outVariables.varArr := vararrayAdd(outVariables.varArr, inVar);
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
-    updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables, true);
+    updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
   end try;
 end addVar;
@@ -3114,7 +3115,7 @@ algorithm
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
   arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
-  updatePrefixIndices(inVar.varName, num_vars, outVariables, true);
+  updatePrefixIndices(inVar.varName, num_vars, outVariables);
   outVariables.varArr := varr;
   outVariables.numberOfVars := num_vars + 1;
 end addNewVar;
@@ -3240,7 +3241,10 @@ protected
   Boolean found;
   list<DAE.ComponentRef> crlst;
   DAE.ComponentRef cr1;
-  list<Integer> indices;
+  list<Integer> indices, live = {};
+  Integer nsubs, bucket;
+  Boolean died = false;
+  Option<BackendDAE.Var> var_opt;
   DAE.Type ty;
   list<DAE.Dimension> dims;
 algorithm
@@ -3258,16 +3262,26 @@ algorithm
   end if;
 
   if isPrefixQuery(cr) then
-    (indices, depth) := getPrefixIndices(cr, hash, inVariables);
+    (indices, depth, nsubs, bucket) := getPrefixIndices(cr, hash, inVariables);
     (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
     // latest added first, as expanding cr and looking its elements up gave
     for i in listReverse(indices) loop
-      v := vararrayNth(inVariables.varArr, i + 1);
-      if isElementOf(v.varName, depth, ty, listLength(dims)) then
-        outVarLst := v :: outVarLst;
-        outIntegerLst := (i + 1) :: outIntegerLst;
+      var_opt := arrayGet(inVariables.varArr.varOptArr, i + 1);
+      if isSome(var_opt) then
+        // walking oldest first, so consing restores the stored order
+        live := i :: live;
+        SOME(v) := var_opt;
+        if isElementOf(v.varName, depth, ty, listLength(dims)) then
+          outVarLst := v :: outVarLst;
+          outIntegerLst := (i + 1) :: outIntegerLst;
+        end if;
+      else
+        died := true;
       end if;
     end for;
+    if died then
+      setPrefixIndices(cr, depth, nsubs, bucket, live, inVariables);
+    end if;
     if listEmpty(outVarLst) then
       fail();
     end if;
@@ -3379,14 +3393,18 @@ algorithm
 end isIntSubscript;
 
 protected function getPrefixIndices
-  "0-based indices of the variables cr is a proper prefix of, latest added first."
+  "0-based indices of the variables cr is a proper prefix of, latest added
+   first. Removed variables keep their index here; the caller drops the ones
+   whose slot in the variable array is gone and hands the rest back to
+   setPrefixIndices."
   input DAE.ComponentRef cr;
   input Integer hash;
   input BackendDAE.Variables vars;
   output list<Integer> indices;
   output Integer depth = 0 "qualifiers of cr";
+  output Integer nsubs = 0 "subscripts on the last qualifier";
+  output Integer bucket;
 protected
-  Integer nsubs = 0;
   DAE.ComponentRef c = cr;
   Boolean last = false;
 algorithm
@@ -3397,7 +3415,8 @@ algorithm
     end match;
     depth := depth + 1;
   end while;
-  for e in arrayGet(vars.prefixIndices, intMod(hash, vars.bucketSize) + 1) loop
+  bucket := intMod(hash, vars.bucketSize) + 1;
+  for e in arrayGet(vars.prefixIndices, bucket) loop
     if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
       indices := e.indices;
       return;
@@ -3406,25 +3425,52 @@ algorithm
   fail();
 end getPrefixIndices;
 
+protected function setPrefixIndices
+  "Narrows the entry cr names to indices, dropping the entry when none is left.
+   getVar uses it to retire the indices of removed variables it just walked
+   past, so a prefix is scanned for them at most once."
+  input DAE.ComponentRef cr;
+  input Integer depth;
+  input Integer nsubs;
+  input Integer bucket;
+  input list<Integer> indices;
+  input BackendDAE.Variables vars;
+protected
+  list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, bucket), acc = {};
+  BackendDAE.PrefixIndex e;
+algorithm
+  while not listEmpty(entries) loop
+    e :: entries := entries;
+    if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
+      e.indices := indices;
+      arrayUpdate(vars.prefixIndices, bucket, List.append_reverse(acc, if listEmpty(indices) then entries else e :: entries));
+      return;
+    end if;
+    acc := e :: acc;
+  end while;
+end setPrefixIndices;
+
 protected function updatePrefixIndices
-  "Adds (or removes) index under every proper prefix of cr: each qualifier
-   with each leading part of its subscripts. The hash of a prefix is the sum
-   ComponentReferenceBasics.hashComponentRef would give it."
+  "Adds index under every proper prefix of cr that isPrefixQuery
+   can name: each qualifier of an array or record type, with each leading part
+   of its subscripts. The hash of a prefix is the sum
+   ComponentReferenceBasics.hashComponentRef would give it, so every qualifier
+   is walked even where nothing is stored."
   input DAE.ComponentRef cr;
   input Integer index;
   input BackendDAE.Variables vars;
-  input Boolean add;
 protected
   DAE.ComponentRef c = cr;
   Integer hash = 0, depth = 0, nsubs, factor, count;
   list<DAE.Subscript> subs;
-  Boolean last, ok;
+  DAE.Type ty;
+  Boolean last, ok, store;
 algorithm
   while true loop
-    (subs, last, ok) := match c
-      case DAE.CREF_IDENT() then (c.subscriptLst, true, true);
-      case DAE.CREF_QUAL() then (c.subscriptLst, false, true);
-      else ({}, true, false);
+    (subs, ty, last, ok) := match c
+      case DAE.CREF_IDENT() then (c.subscriptLst, c.identType, true, true);
+      case DAE.CREF_QUAL() then (c.subscriptLst, c.identType, false, true);
+      else ({}, DAE.T_UNKNOWN_DEFAULT, true, false);
     end match;
     if not ok then
       return;
@@ -3434,15 +3480,16 @@ algorithm
     count := listLength(subs);
     nsubs := 0;
     factor := 1;
-    if not (last and count == 0) then
-      updatePrefixIndex(cr, depth, nsubs, hash, index, vars, add);
+    store := isExpandableType(ty);
+    if store and not (last and count == 0) then
+      updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
     end if;
     for sub in subs loop
       hash := hash + ComponentReferenceBasics.hashSubscript(sub) * factor;
       factor := factor * 1000;
       nsubs := nsubs + 1;
-      if not (last and nsubs == count) then
-        updatePrefixIndex(cr, depth, nsubs, hash, index, vars, add);
+      if store and not (last and nsubs == count) then
+        updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
       end if;
     end for;
     if last then
@@ -3459,7 +3506,6 @@ protected function updatePrefixIndex
   input Integer hash;
   input Integer index;
   input BackendDAE.Variables vars;
-  input Boolean add;
 protected
   Integer b = intMod(hash, vars.bucketSize) + 1;
   list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, b), acc = {};
@@ -3468,15 +3514,13 @@ algorithm
   while not listEmpty(entries) loop
     e :: entries := entries;
     if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
-      e.indices := if add then index :: e.indices else List.deleteMemberOnTrue(index, e.indices, intEq);
-      arrayUpdate(vars.prefixIndices, b, List.append_reverse(acc, if listEmpty(e.indices) then entries else e :: entries));
+      e.indices := index :: e.indices;
+      arrayUpdate(vars.prefixIndices, b, List.append_reverse(acc, e :: entries));
       return;
     end if;
     acc := e :: acc;
   end while;
-  if add then
-    arrayUpdate(vars.prefixIndices, b, BackendDAE.PREFIXINDEX(cr, depth, nsubs, {index}) :: arrayGet(vars.prefixIndices, b));
-  end if;
+  arrayUpdate(vars.prefixIndices, b, BackendDAE.PREFIXINDEX(cr, depth, nsubs, {index}) :: arrayGet(vars.prefixIndices, b));
 end updatePrefixIndex;
 
 protected function prefixEqual
