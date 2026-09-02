@@ -996,7 +996,7 @@ fn resolve_overrides(
 fn resolve_start_imports(meta: &SimMeta, flags: &simflags::SimFlags) -> Option<sim_driver::StartImports> {
     let file = flags.init_file.as_ref()?;
     let time = flags.init_time.unwrap_or(meta.start_time);
-    let mut reader = match openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file) {
+    let mut reader = match openmodelica_mat_reader::MatReader::open(file) {
         Ok(r) => r,
         Err(e) => {
             record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
@@ -1030,7 +1030,7 @@ fn read_result_values(
     GUESS_READER.with(|c| {
         let mut c = c.borrow_mut();
         if c.as_ref().is_none_or(|(f, _)| f != file) {
-            let r = openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file)
+            let r = openmodelica_mat_reader::MatReader::open(file)
                 .map_err(|e| format!("unable to read input-file <{file}> [{e}]"))?;
             *c = Some((file.to_string(), r));
         }
@@ -1047,7 +1047,7 @@ fn read_result_values(
 thread_local! {
     /// The result file `-ipopt_init=file` reads, opened once for the whole run.
     static GUESS_READER: std::cell::RefCell<
-        Option<(String, openmodelica_script_util::SimulationResults::read_matlab4::MatReader)>,
+        Option<(String, openmodelica_mat_reader::MatReader)>,
     > = const { std::cell::RefCell::new(None) };
     /// Model stdout captured during initialization, split from the simulation-phase
     /// output so the log stays ordered. `None` until initialization completes.

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica — OMPlot</title>
+<link rel="stylesheet" href="../theme.css" />
+<style>
+  main { flex:1 1 auto; display:grid; grid-template-columns:minmax(280px,30%) 1fr; min-height:0; }
+  .left { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--border); overflow:hidden; }
+  .right { display:flex; flex-direction:column; min-height:0; }
+
+  .files { flex:0 0 auto; max-height:34%; overflow-y:auto; }
+  .file { display:flex; align-items:center; gap:8px; padding:5px 12px; cursor:pointer; font-size:14px; }
+  .file:hover { background:#2d2d30; }
+  .file.active { background:#37373d; }
+  .file .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .file .meta { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .file .role { font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
+  .file .role.a { color:#e66767; border-color:#e66767; }
+  .file .role.r { color:#3987e5; border-color:#3987e5; }
+  .empty { color:var(--muted); font-size:13px; padding:4px 12px 10px; }
+
+  .vars-head { display:flex; align-items:center; gap:8px; padding-right:10px; }
+  .vars-head .section-label { flex:1 1 auto; }
+  .vars-head input { width:auto; flex:0 1 180px; font-size:13px; padding:3px 8px; }
+  .vars { flex:1 1 auto; overflow-y:auto; padding:0 4px 8px; }
+  .var { display:flex; align-items:center; gap:7px; padding:3px 8px; cursor:pointer; font-size:13.5px;
+    border-radius:4px; user-select:none; }
+  .var:hover { background:#2d2d30; }
+  .var.current { background:#37373d; }
+  .var input { width:auto; margin:0; }
+  .var .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .var .p { color:var(--muted); font-size:11px; }
+  .var .diff { width:8px; height:8px; border-radius:50%; background:var(--err); flex:0 0 auto; }
+  .vars-note { color:var(--muted); font-size:12px; padding:4px 12px; }
+
+  .mode { display:flex; gap:4px; padding:6px 12px 0; }
+  .mode button { padding:3px 10px; font-size:12.5px; border-radius:999px; }
+  .mode button.on { background:var(--accent-2); border-color:var(--accent-2); color:#fff; }
+  .cmp-summary { color:var(--muted); font-size:12.5px; padding:2px 12px 4px; }
+  .cmp-summary b { color:var(--fg); font-weight:600; }
+  .cmp-summary.bad b { color:var(--err); }
+  .cmp-summary.good b { color:var(--teal); }
+
+  .modal { width:min(520px,100%); }
+  .fields { grid-template-columns:auto 1fr; }
+  .fields .hint { grid-column:1 / -1; color:var(--muted); font-size:12px; margin:-4px 0 0; }
+  input[type=number] { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:14px; }
+
+  body.drop::after { content:"Drop result files"; position:fixed; inset:12px; border:2px dashed var(--accent);
+    border-radius:12px; display:grid; place-items:center; font-size:20px; color:var(--accent); background:#1e1e1ecc; z-index:40; }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">OMPlot</span>
+  <span class="status" id="status">Loading…</span>
+  <button class="ghost" id="open" disabled>Open…</button>
+  <input type="file" id="file" accept=".mat,.csv,.plt" multiple hidden />
+  <button class="ghost" id="compareBtn" disabled title="Run diffSimulationResults on two of the loaded files">Compare…</button>
+  <button class="ghost icon-only" id="saveBtn" hidden title="Save the selected file as .mat or .csv" aria-label="Save">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="left">
+    <div class="section-label">Result files</div>
+    <div class="files" id="files"></div>
+    <div class="empty" id="filesEmpty">Open .mat, .csv or .plt files, or drop them here.</div>
+
+    <div class="mode" id="mode" hidden>
+      <button class="ghost" id="modePlot">Plot</button>
+      <button class="ghost" id="modeCompare">Compare</button>
+    </div>
+    <div class="cmp-summary" id="cmpSummary" hidden></div>
+
+    <div class="vars-head">
+      <div class="section-label" id="varsLabel">Variables</div>
+      <input type="search" id="filter" placeholder="Filter…" spellcheck="false" hidden />
+    </div>
+    <div class="vars" id="vars"></div>
+    <div class="vars-note" id="varsNote" hidden></div>
+  </div>
+
+  <div class="right">
+    <div class="charts" id="charts"><div class="charts-empty" id="chartsEmpty">Open a result file to plot it.</div></div>
+  </div>
+</main>
+
+<!-- Compare dialog -->
+<div class="modal-backdrop" id="compareBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="modal-head"><span id="compareTitle">Compare results</span><button class="icon-btn" data-close aria-label="Close">✕</button></div>
+    <div class="modal-body fields">
+      <label for="cmpActual">Actual</label><select id="cmpActual"></select>
+      <label for="cmpRef">Reference</label><select id="cmpRef"></select>
+      <label for="relTol">relTol</label><input type="number" id="relTol" step="any" min="0" />
+      <p class="hint">y tolerance, relative to the signal</p>
+      <label for="relTolDiffMinMax">relTolDiffMinMax</label><input type="number" id="relTolDiffMinMax" step="any" min="0" />
+      <p class="hint">y tolerance based on the difference between the signal's maximum and minimum</p>
+      <label for="rangeDelta">rangeDelta</label><input type="number" id="rangeDelta" step="any" min="0" />
+      <p class="hint">x tolerance</p>
+    </div>
+    <div class="modal-foot"><button class="ghost" data-close>Cancel</button><button id="compareRun">Compare</button></div>
+  </div>
+</div>
+
+<!-- Save dialog -->
+<div class="modal-backdrop" id="saveBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="modal-head"><span id="saveTitle">Save result file</span><button class="icon-btn" data-close aria-label="Close">✕</button></div>
+    <div class="modal-body fields">
+      <label for="saveFormat">Format</label>
+      <select id="saveFormat"><option value="mat">MATLAB v4 (.mat)</option><option value="csv">CSV (.csv)</option></select>
+      <label for="saveVars">Variables</label>
+      <select id="saveVars"><option value="all">All</option><option value="selected">Selected only</option></select>
+      <label for="saveIntervals">Intervals</label><input type="number" id="saveIntervals" min="0" step="1" value="0" />
+      <p class="hint">0 keeps the file's own sample points; otherwise the result is resampled onto this many equidistant intervals (events are lost).</p>
+    </div>
+    <div class="modal-foot"><button class="ghost" data-close>Cancel</button><button id="saveRun">Save</button></div>
+  </div>
+</div>
+
+<script type="module">
+import init, { ResultFile, diff_all, diff_variable } from './openmodelica_result_web.js';
+import { COLORS, createCharts } from '../plot.js';
+import { bindModal, downloadBlob } from '../ui.js';
+
+const $ = (id) => document.getElementById(id);
+const statusEl = $('status'), filesEl = $('files'), filesEmpty = $('filesEmpty'), varsEl = $('vars');
+const filterEl = $('filter'), varsNote = $('varsNote'), varsLabel = $('varsLabel');
+const chartsEl = $('charts'), chartsEmpty = $('chartsEmpty');
+const cmpSummary = $('cmpSummary');
+const charts = createCharts(chartsEl);
+
+// The scripting API's diffSimulationResults defaults.
+const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002 };
+
+// --- state -----------------------------------------------------------------
+const files = [];       // { id, name, rf, vars, params:Set, nrows, selected:Set }
+let active = null;      // the file whose variables are listed
+let mode = 'plot';      // 'plot' | 'compare'
+let cmp = null;         // { actual, reference, opts, diffVars:Set, compared, current }
+let nextId = 1;
+
+function setStatus(text, cls = '') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
+function fail(e) { console.error(e); setStatus(String(e && e.message || e), 'err'); }
+
+// --- files -----------------------------------------------------------------
+function addFile(name, bytes) {
+  const rf = new ResultFile(name, new Uint8Array(bytes));
+  const vars = rf.variables();
+  const timeName = rf.time_name();
+  const params = new Set(vars.filter((v) => rf.is_parameter(v)));
+  const f = { id: nextId++, name, rf, vars, params, timeName, nrows: rf.nrows(), selected: new Set() };
+  files.push(f);
+  active = f;
+  return f;
+}
+
+function removeFile(f) {
+  const i = files.indexOf(f); if (i < 0) return;
+  files.splice(i, 1);
+  f.rf.free();
+  if (active === f) active = files[files.length - 1] || null;
+  if (cmp && (cmp.actual === f || cmp.reference === f)) { cmp = null; mode = 'plot'; }
+  render();
+}
+
+async function openFiles(list) {
+  for (const file of list) {
+    setStatus('Reading ' + file.name + '…', 'busy');
+    try { addFile(file.name, await file.arrayBuffer()); }
+    catch (e) { fail(e); return; }
+  }
+  render();
+}
+
+async function fetchFile(url) {
+  setStatus('Fetching ' + url + '…', 'busy');
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Fetching ' + url + ' failed: ' + r.status + ' ' + r.statusText);
+  const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || 'result.mat');
+  return addFile(name, await r.arrayBuffer());
+}
+
+// --- rendering -------------------------------------------------------------
+function render() {
+  renderFiles();
+  $('mode').hidden = !cmp;
+  $('modePlot').classList.toggle('on', mode === 'plot');
+  $('modeCompare').classList.toggle('on', mode === 'compare');
+  $('compareBtn').disabled = files.length < 2;
+  $('saveBtn').hidden = !active;
+  renderVars();
+  renderCharts();
+  if (cmp) {
+    const n = cmp.diffVars.size;
+    cmpSummary.hidden = false;
+    cmpSummary.className = 'cmp-summary ' + (n ? 'bad' : 'good');
+    cmpSummary.innerHTML = '<b>' + (n ? n + ' of ' + cmp.compared + ' variables differ' : 'All ' + cmp.compared + ' variables match') + '</b>';
+    setStatus(cmp.actual.name + ' vs ' + cmp.reference.name + ': ' + (n ? n + ' differ' : 'match'), n ? 'err' : 'ok');
+  } else {
+    cmpSummary.hidden = true;
+    setStatus(files.length ? files.length + ' file' + (files.length > 1 ? 's' : '') : 'No files loaded.');
+  }
+}
+
+function renderFiles() {
+  filesEl.replaceChildren();
+  filesEmpty.hidden = files.length > 0;
+  for (const f of files) {
+    const row = document.createElement('div');
+    row.className = 'file' + (f === active ? ' active' : '');
+    row.title = f.name;
+    const role = cmp ? (cmp.actual === f ? '<span class="role a">actual</span>' : cmp.reference === f ? '<span class="role r">reference</span>' : '') : '';
+    row.innerHTML = '<span class="nm"></span>' + role + '<span class="meta">' + f.vars.length + ' vars · ' + f.nrows + ' pts</span>';
+    row.querySelector('.nm').textContent = f.name;
+    const x = document.createElement('button'); x.className = 'icon-btn'; x.textContent = '✕'; x.title = 'Close file';
+    x.onclick = (e) => { e.stopPropagation(); removeFile(f); };
+    row.appendChild(x);
+    row.onclick = () => { active = f; render(); };
+    filesEl.appendChild(row);
+  }
+}
+
+// Plot mode lists the active file's variables; compare mode the compared ones, differing first.
+const MAX_ROWS = 400;
+function renderVars() {
+  varsEl.replaceChildren();
+  const f = mode === 'compare' ? cmp.reference : active;
+  filterEl.hidden = !f;
+  varsNote.hidden = true;
+  if (!f) { varsLabel.textContent = 'Variables'; return; }
+  const q = filterEl.value.trim().toLowerCase();
+  let names;
+  if (mode === 'compare') {
+    varsLabel.textContent = 'Compared variables';
+    const rest = cmp.vars.filter((v) => !cmp.diffVars.has(v));
+    names = [...cmp.diffVars, ...rest];
+  } else {
+    varsLabel.textContent = 'Variables';
+    names = f.vars;
+  }
+  const isSel = (v) => mode === 'compare' ? cmp.current === v : f.selected.has(v);
+  const chosen = names.filter(isSel);
+  const others = names.filter((v) => !isSel(v) && (!q || v.toLowerCase().includes(q)));
+  const shown = chosen.concat(others.slice(0, MAX_ROWS));
+  for (const v of shown) {
+    const row = document.createElement('label');
+    row.className = 'var' + (mode === 'compare' && cmp.current === v ? ' current' : '');
+    const d = f.rf.description(v); if (d) row.title = d;
+    if (mode === 'compare') {
+      if (cmp.diffVars.has(v)) row.innerHTML = '<span class="diff" title="Differs from the reference"></span>';
+      row.onclick = () => { showDiff(v); };
+    } else {
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = f.selected.has(v);
+      cb.onchange = () => { if (cb.checked) f.selected.add(v); else f.selected.delete(v); renderCharts(); };
+      row.appendChild(cb);
+    }
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v; row.appendChild(nm);
+    if (f.params.has(v)) { const p = document.createElement('span'); p.className = 'p'; p.textContent = 'param'; row.appendChild(p); }
+    varsEl.appendChild(row);
+  }
+  const total = chosen.length + others.length;
+  if (shown.length < total) {
+    varsNote.hidden = false;
+    varsNote.textContent = 'showing ' + shown.length + ' of ' + total + (q ? ' matching' : '') + ' — refine the filter';
+  }
+}
+filterEl.oninput = renderVars;
+
+function showEmpty(text) { chartsEl.appendChild(chartsEmpty); chartsEmpty.textContent = text; }
+
+function renderCharts() {
+  charts.clear();
+  if (mode === 'compare') { renderDiffChart(); return; }
+  const curves = [];
+  const multi = files.filter((f) => f.selected.size).length > 1;
+  for (const f of files) {
+    if (!f.selected.size) continue;
+    const time = f.rf.time();
+    for (const v of f.selected) {
+      const ys = f.rf.trajectory(v); if (!ys) continue;
+      const n = Math.min(time.length, ys.length);
+      curves.push({ label: multi ? v + ' @ ' + f.name : v, color: COLORS[curves.length % COLORS.length],
+        xs: time.subarray(0, n), ys: ys.subarray(0, n) });
+    }
+  }
+  if (!curves.length) { showEmpty(files.length ? 'Tick variables to plot them.' : 'Open a result file to plot it.'); return; }
+  charts.add({ curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'plot');
+}
+
+// --- comparison ------------------------------------------------------------
+function runCompare(actual, reference, opts) {
+  setStatus('Comparing…', 'busy');
+  const vars = reference.rf.compared_variables();
+  const diff = diff_all(actual.rf, reference.rf, [], opts.relTol, opts.relTolDiffMinMax, opts.rangeDelta);
+  cmp = { actual, reference, opts, vars, compared: vars.length, diffVars: new Set(diff), current: null };
+  mode = 'compare';
+  const wanted = new URLSearchParams(location.search).get('var');
+  const first = wanted && vars.includes(wanted) ? wanted : diff[0] || null;
+  if (first) showDiff(first); else render();
+}
+
+function showDiff(v) {
+  cmp.current = v;
+  render();
+}
+
+function renderDiffChart() {
+  const v = cmp.current;
+  if (!v) { showEmpty(cmp.diffVars.size ? 'Pick a variable to see its comparison.' : 'Every compared variable stays inside the reference tube.'); return; }
+  let d;
+  try { d = diff_variable(cmp.actual.rf, cmp.reference.rf, v, cmp.opts.relTol, cmp.opts.relTolDiffMinMax, cmp.opts.rangeDelta); }
+  catch (e) { showEmpty(String(e && e.message || e)); return; }
+  const t = d.time, at = d.actual_time;
+  const curves = [
+    { label: 'reference', color: '#3987e5', xs: t, ys: d.reference },
+    { label: 'actual', color: '#e66767', xs: t, ys: d.actual },
+    { label: 'high', color: '#199e70', xs: t, ys: d.high },
+    { label: 'low', color: '#9085e9', xs: t, ys: d.low },
+    { label: 'actual (original)', color: '#d55181', xs: at, ys: d.actual_original },
+  ];
+  const o = cmp.opts;
+  charts.add({ title: v + (d.differs ? ' — differs' : ' — inside the tube'), curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true,
+    defaultVisible: ['reference', 'actual', 'high', 'low'] }, 'cmp');
+  if (d.differs) {
+    charts.add({ title: 'error', curves: [{ label: 'error', color: '#c98500', xs: t, ys: d.error }], xText: 'time', xUnit: 's', xIsTime: true }, 'cmperr');
+  }
+  const cap = document.createElement('div'); cap.className = 'caption';
+  cap.textContent = 'Reference time ' + fmt(t[0]) + ' to ' + fmt(t[t.length - 1]) + ', actual time ' + fmt(at[0]) + ' to '
+    + fmt(at[at.length - 1]) + '. Relative tolerance ' + o.relTol + ', absolute tolerance ' + d.abstol.toPrecision(2)
+    + ' (' + o.relTolDiffMinMax + ' relative), range delta ' + o.rangeDelta + '.';
+  chartsEl.appendChild(cap);
+  d.free();
+}
+const fmt = (x) => +x.toPrecision(6);
+
+// --- dialogs ---------------------------------------------------------------
+const compareModal = bindModal($('compareBackdrop'), { onOpen: () => {
+  if (files.length < 2) return false;
+  for (const [sel, pick] of [[$('cmpActual'), cmp ? cmp.actual : files[files.length - 1]], [$('cmpRef'), cmp ? cmp.reference : files[0]]]) {
+    sel.replaceChildren();
+    for (const f of files) { const o = document.createElement('option'); o.value = f.id; o.textContent = f.name; sel.appendChild(o); }
+    sel.value = pick.id;
+  }
+  const o = cmp ? cmp.opts : optsFromUrl();
+  $('relTol').value = o.relTol; $('relTolDiffMinMax').value = o.relTolDiffMinMax; $('rangeDelta').value = o.rangeDelta;
+} });
+$('compareBtn').onclick = compareModal.open;
+$('compareRun').onclick = () => {
+  const byId = (id) => files.find((f) => f.id === +id);
+  const opts = { relTol: +$('relTol').value, relTolDiffMinMax: +$('relTolDiffMinMax').value, rangeDelta: +$('rangeDelta').value };
+  const actual = byId($('cmpActual').value), reference = byId($('cmpRef').value);
+  if (actual === reference) { setStatus('Pick two different files to compare.', 'err'); return; }
+  compareModal.close();
+  try { runCompare(actual, reference, opts); } catch (e) { fail(e); }
+};
+
+const saveModal = bindModal($('saveBackdrop'), { onOpen: () => {
+  if (!active) return false;
+  $('saveTitle').textContent = 'Save ' + active.name;
+  $('saveVars').value = active.selected.size ? 'selected' : 'all';
+} });
+$('saveBtn').onclick = saveModal.open;
+$('saveRun').onclick = () => {
+  const f = active, format = $('saveFormat').value, intervals = Math.max(0, +$('saveIntervals').value | 0);
+  const vars = $('saveVars').value === 'selected' ? [...f.selected] : [];
+  saveModal.close();
+  try {
+    const base = f.name.replace(/\.(mat|csv|plt)$/i, '');
+    const bytes = format === 'mat' ? f.rf.write_mat(vars, intervals) : new TextEncoder().encode(f.rf.write_csv(vars, intervals));
+    downloadBlob(base + '.' + format, bytes);
+  } catch (e) { fail(e); }
+};
+
+$('modePlot').onclick = () => { mode = 'plot'; render(); };
+$('modeCompare').onclick = () => { if (cmp) { mode = 'compare'; render(); } };
+
+// --- file inputs -----------------------------------------------------------
+const fileEl = $('file');
+$('open').onclick = () => fileEl.click();
+fileEl.onchange = () => { openFiles([...fileEl.files]); fileEl.value = ''; };
+let dragDepth = 0;
+document.addEventListener('dragenter', (e) => { e.preventDefault(); if (++dragDepth === 1) document.body.classList.add('drop'); });
+document.addEventListener('dragleave', () => { if (--dragDepth === 0) document.body.classList.remove('drop'); });
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('drop'); openFiles([...e.dataTransfer.files]); });
+window.addEventListener('resize', () => charts.redraw());
+
+// --- URL: ?result=<url>&reference=<url>[&var=<name>][&relTol=&relTolDiffMinMax=&rangeDelta=] or ?file=<url>… ---
+function optsFromUrl() {
+  const p = new URLSearchParams(location.search), o = { ...DEFAULTS };
+  for (const k of Object.keys(o)) if (p.has(k) && isFinite(+p.get(k))) o[k] = +p.get(k);
+  return o;
+}
+
+(async () => {
+  await init();
+  $('open').disabled = false;
+  setStatus('No files loaded.');
+  const p = new URLSearchParams(location.search);
+  try {
+    for (const url of p.getAll('file')) await fetchFile(url);
+    const result = p.get('result'), reference = p.get('reference');
+    const a = result ? await fetchFile(result) : null;
+    const r = reference ? await fetchFile(reference) : null;
+    if (a && r) runCompare(a, r, optsFromUrl());
+    else render();
+  } catch (e) { render(); fail(e); }
+})().catch(fail);
+</script>
+</body>
+</html>

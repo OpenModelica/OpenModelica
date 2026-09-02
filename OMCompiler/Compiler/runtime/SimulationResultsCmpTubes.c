@@ -708,7 +708,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   reltolDiffMaxMin,
   rangeDelta
 );
-  } else if (!isResultCmp && (error || keepEqualResults)) {
+  } else if (!isResultCmp && (error || keepEqualResults) && *prefix) {
     fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = omc_fopen(fname,"w");

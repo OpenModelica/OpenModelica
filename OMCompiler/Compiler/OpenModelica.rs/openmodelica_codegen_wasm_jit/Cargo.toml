@@ -14,8 +14,8 @@ openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
 # `-iif=<file>`: C's `importStartValues` reads the initialization file with the
-# MATLAB v4 reader, which lives with the other result readers.
-openmodelica_script_util.workspace = true
+# MATLAB v4 reader.
+openmodelica_mat_reader.workspace = true
 openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true

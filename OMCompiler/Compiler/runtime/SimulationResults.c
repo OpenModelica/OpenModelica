@@ -714,6 +714,136 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     fclose(fout);
     return 1;
   }
+  case CSV: {
+    /* No parameters and no descriptions in a CSV; a repeated name shares its column. */
+    struct csv_data *csv = simresglob.csvReader;
+    int numToFilter = listLength(vars);
+    int numUnique = 0;
+    int longestName = 0;
+    int i, j, k, nrows;
+    const char **names = omc_alloc_interface.malloc(numToFilter*sizeof(char*));
+    double **cols = omc_alloc_interface.malloc(numToFilter*sizeof(double*));
+    int *colOf = omc_alloc_interface.malloc_atomic(numToFilter*sizeof(int));
+    double *time, start_stop[2];
+    FILE *fout;
+    char *tmp;
+    for (i=0; i<numToFilter; i++) {
+      double *vals;
+      names[i] = MMC_STRINGDATA(MMC_CAR(vars));
+      vars = MMC_CDR(vars);
+      vals = read_csv_dataset(csv, names[i]);
+      if (vals == NULL || csv->numsteps < 2) {
+        msg[0] = SystemImpl__basename(inFile);
+        msg[1] = names[i];
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+        return 0;
+      }
+      for (j=0; j<numUnique && cols[j] != vals; j++);
+      if (j == numUnique) {
+        cols[numUnique++] = vals;
+      }
+      colOf[i] = j;
+      longestName = intMax(longestName, strlen(names[i]));
+    }
+    time = cols[colOf[0]];
+    start_stop[0] = time[0];
+    start_stop[1] = time[csv->numsteps-1];
+    if (endsWith(outFile,".csv")) {
+      fout = omc_fopen(outFile, "w");
+      if (fout == NULL) {
+        return failedToWriteToFile(outFile);
+      }
+      fprintf(fout, "time");
+      for (i=1; i<numToFilter; i++) {
+        fprintf(fout, ",\"%s\"", names[i]);
+      }
+      fprintf(fout, "\n");
+      for (i=0; i<csv->numsteps; i++) {
+        fprintf(fout, "%.15g", time[i]);
+        for (j=1; j<numToFilter; j++) {
+          fprintf(fout, ",%.15g", cols[colOf[j]][i]);
+        }
+        fprintf(fout, "\n");
+      }
+      fclose(fout);
+      return 1;
+    }
+    nrows = numberOfIntervals ? numberOfIntervals+1 : csv->numsteps;
+    fout = omc_fopen(outFile, "wb");
+    if (fout == NULL) {
+      return failedToWriteToFile(outFile);
+    }
+    if (writeMatVer4AclassNormal(fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    if (writeMatVer4MatrixHeader(fout, "name", numToFilter, longestName, sizeof(int8_t))) {
+      return failedToWriteToFile(outFile);
+    }
+    tmp = omc_alloc_interface.malloc(numToFilter*longestName);
+    for (i=0; i<numToFilter; i++) {
+      int len = strlen(names[i]);
+      for (j=0; j<len; j++) {
+        tmp[numToFilter*j+i] = names[i][j];
+      }
+    }
+    if (1 != fwrite(tmp, numToFilter*longestName, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    /* Width 1: the reader cannot reopen a zero-width text matrix. */
+    if (writeMatVer4MatrixHeader(fout, "description", numToFilter, 1, sizeof(int8_t))) {
+      return failedToWriteToFile(outFile);
+    }
+    memset(tmp, 0, numToFilter);
+    if (1 != fwrite(tmp, numToFilter, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    GC_free(tmp);
+    if (writeMatVer4MatrixHeader(fout, "dataInfo", numToFilter, 4, sizeof(int32_t))) {
+      return failedToWriteToFile(outFile);
+    }
+    for (k=0; k<4; k++) {
+      for (i=0; i<numToFilter; i++) {
+        int32_t x = k==0 ? 2 : k==1 ? colOf[i]+1 : k==2 ? 0 : -1; /* data_2, column, linear interpolation, not defined outside the interval */
+        if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
+          return failedToWriteToFile(outFile);
+        }
+      }
+    }
+    if (writeMatVer4MatrixHeader(fout, "data_1", 2, 1, sizeof(double))) {
+      return failedToWriteToFile(outFile);
+    }
+    if (1 != fwrite(start_stop, sizeof(double)*2, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    if (writeMatVer4MatrixHeader(fout, "data_2", nrows, numUnique, sizeof(double))) {
+      return failedToWriteToFile(outFile);
+    }
+    for (i=0; i<numUnique; i++) {
+      double *col = cols[i];
+      if (!numberOfIntervals) {
+        if (1 != fwrite(col, sizeof(double)*nrows, 1, fout)) {
+          return failedToWriteToFile(outFile);
+        }
+        continue;
+      }
+      k = 0;
+      for (j=0; j<nrows; j++) {
+        double t = j==numberOfIntervals ? start_stop[1] : start_stop[0] + (start_stop[1]-start_stop[0])*((double)j)/numberOfIntervals;
+        double t0, t1, v;
+        while (k+2 < csv->numsteps && time[k+1] < t) {
+          k++;
+        }
+        t0 = time[k];
+        t1 = time[k+1];
+        v = t1==t0 ? col[k] : col[k] + (t-t0)/(t1-t0)*(col[k+1]-col[k]);
+        if (1 != fwrite(&v, sizeof(double), 1, fout)) {
+          return failedToWriteToFile(outFile);
+        }
+      }
+    }
+    fclose(fout);
+    return 1;
+  }
   default:
     msg[0] = PlotFormatStr[simresglob.curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("filterSimulationResults not implemented for plot format: %s\n"), msg, 1);
