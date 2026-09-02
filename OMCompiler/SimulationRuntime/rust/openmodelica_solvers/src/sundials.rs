@@ -755,6 +755,20 @@ impl Ida {
         unsafe { IDAGetConsistentIC(self.mem, self.y, self.yp) == IDA_SUCCESS }
     }
 
+    /// C's `updateSolverNominals`: the tolerances again, once the nominals the block
+    /// was built with are final. `IDASVtolerances` clears `ida_edata` for
+    /// `IDAInitialSetup` to put back, which `IDACalcIC` has already run — hence the
+    /// re-initialize.
+    pub fn set_tolerances(&mut self, t: f64, rtol: f64, atol: &[f64]) -> bool {
+        unsafe {
+            core::ptr::copy_nonoverlapping(atol.as_ptr(), N_VGetArrayPointer(self.atol), atol.len());
+            if IDASVtolerances(self.mem, rtol, self.atol) != IDA_SUCCESS {
+                return false;
+            }
+        }
+        self.reinit(t)
+    }
+
     /// C's `ida_event_update`: `IDACalcIC` over the algebraic unknowns and every
     /// derivative at `t`, directed by the step IDA would take next (floored, so a
     /// zero step still gives a direction), retried at `t + tol` with the line search
