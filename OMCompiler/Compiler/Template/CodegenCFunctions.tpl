@@ -7740,7 +7740,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
-          'alloc_generic_array(&<%res%>, sizeof(<%rec_name%>), 1, (_index_t)<%length%>);'
+          // There is no alloc_generic_array, a record array is allocated with
+          // the alloc_<record>_array macro generated for the record itself.
+          'alloc_<%rec_name%>_array(&<%res%>, 1, (_index_t)<%length%>);'
         case T_ARRAY(__) then
           let dimSizes = dims |> dim => match dim
             case DIM_INTEGER(__) then ', (_index_t)<%integer%>'
@@ -8062,6 +8064,14 @@ template daeExpUnbox(Exp exp, Context context, Text &preExp, Text &varDecls, Tex
  "Generates code for a match expression."
 ::=
 match exp
+case exp as UNBOX(ty = t as T_COMPLEX(complexClassType = RECORD(__))) then
+  // A record is boxed field by field, so it has to be unboxed field by field
+  // as well. unboxRecord wants the boxed value in a variable, so put the
+  // expression in a temporary first.
+  let res = daeExp(exp.exp,context,&preExp,&varDecls, &auxFunction)
+  let boxed = tempDecl("modelica_metatype", &varDecls)
+  let &preExp += '<%boxed%> = <%res%>;<%\n%>'
+  unboxRecord(boxed, t, &preExp, &varDecls)
 case exp as UNBOX(__) then
   // An array is boxed with mmc_mk_modelica_array, see daeExpBox, so it has to
   // be unboxed as an array and not as its element type.

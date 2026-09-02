@@ -28,6 +28,7 @@ FunctionInReinit.mos \
 FunctionPointer.mos \
 FunctionPointerArray.mos \
 FunctionPointerArrayOutput.mos \
+FunctionPointerRecordOutput.mos \
 FunctionTupleRecord.mos \
 IntegralNewtonCotes.mos \
 Interpolation.mos \

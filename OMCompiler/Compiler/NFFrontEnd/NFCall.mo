@@ -277,13 +277,19 @@ public
       // input argument gives a boxed value. Unbox it here so the rest of the
       // expression sees the actual type, otherwise the boxed type leaks into
       // e.g. array constructors and reductions and gives invalid code.
-      if Type.isBoxed(ty) and Type.isScalarBuiltin(Type.unbox(ty)) and
+      if Type.isBoxed(ty) and isUnboxableType(Type.unbox(ty)) and
          Function.isFunctionPointer(typedFunction(ty_call)) then
         ty := Type.unbox(ty);
         outExp := Expression.UNBOX(outExp, ty);
       end if;
     end if;
   end typeCallExp;
+
+  function isUnboxableType
+    "Returns true for the types that the code generator knows how to unbox."
+    input Type ty;
+    output Boolean unboxable = Type.isScalarBuiltin(ty) or Type.isRecord(ty);
+  end isUnboxableType;
 
   function typeNormalCall
     input output NFCall call;
