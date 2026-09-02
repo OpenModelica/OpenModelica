@@ -83,6 +83,7 @@ import List;
 import StringUtil;
 import System;
 import UnorderedMap;
+import UnorderedSet;
 import Util;
 import Values;
 import ValuesUtil;
@@ -1182,6 +1183,7 @@ public function generateSparsePattern "author: wbraun
   input list<BackendDAE.Var> inIndependentVars "vars";
   input list<BackendDAE.Var> inDependentVars "eqns";
   input Boolean nonlinearPattern = false;
+  input Boolean withColoring = true "false gives one colour per column";
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
 protected
@@ -1320,7 +1322,7 @@ algorithm
         end if;
 
         if debug then execStat("generateSparsePattern -> coloring start "); end if;
-        if nonlinearPattern or Flags.isSet(Flags.DISABLE_COLORING) then
+        if nonlinearPattern or not withColoring or Flags.isSet(Flags.DISABLE_COLORING) then
           //without coloring
           coloring := list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
         else
@@ -1682,7 +1684,7 @@ try
     ei := backendDAE.shared.info;
     emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
 
-    (sparsePattern, sparseColoring) := generateSparsePattern(backendDAE, indepVars, depVars);
+    (sparsePattern, sparseColoring) := generateSparsePattern(backendDAE, indepVars, depVars, withColoring = false);
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
@@ -1736,9 +1738,19 @@ protected
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
   DAE.ComponentRef cr, rhsCr;
-  list<DAE.ComponentRef> crefsVarsToRemove, protectedCrefs;
+  UnorderedSet<DAE.ComponentRef> crefsVarsToRemove, protectedCrefs;
   BackendDAE.Variables newVars;
 algorithm
+  // Generate empty jacobian martices
+  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
+    cache := initDAE.shared.cache;
+    graph := initDAE.shared.graph;
+    ei := initDAE.shared.info;
+    emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
+    outJacobianMatrices := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
+    outFunctionTree := initDAE.shared.functionTree;
+    return;
+  end if;
 try
 
   backendDAE_1 := BackendDAEUtil.copyBackendDAE(initDAE);
@@ -1751,9 +1763,9 @@ try
    parameter Real x = 10;
    Real m = x; */
   BackendDAE.DAE(currentSystem::{}, shared) := backendDAE_1;
-  protectedCrefs := {};
+  protectedCrefs := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
   for var in depVars loop
-    protectedCrefs := var.varName :: protectedCrefs;
+    UnorderedSet.add(var.varName, protectedCrefs);
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
       //print("\n PARAM_CHECK: " + ComponentReferenceBasics.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
@@ -1772,7 +1784,7 @@ try
   // so keeping these variables would create derivative variables without
   // remaining equations after simplification.
   newOrderedEquationArray := BackendEquation.emptyEqns();
-  crefsVarsToRemove:= {};
+  crefsVarsToRemove := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
   for eq in BackendEquation.equationList(currentSystem.orderedEqs) loop
     if not BackendEquation.isAlgorithm(eq) then
       lhs := BackendEquation.getEquationLHS(eq);
@@ -1781,12 +1793,12 @@ try
         cr := Expression.expCref(lhs);
         // remove lhs equation of type $Start.a = ... as it does not contribute to the jacobian and create a variable a with constant binding which is not wanted
         if ComponentReference.isStartCref(cr) then
-          crefsVarsToRemove := cr :: crefsVarsToRemove;
-        elseif Expression.isExpCref(rhs) and not listMember(cr, protectedCrefs) then
+          UnorderedSet.add(cr, crefsVarsToRemove);
+        elseif Expression.isExpCref(rhs) and not UnorderedSet.contains(cr, protectedCrefs) then
           rhsCr := Expression.expCref(rhs);
           // remove equation of form a = $START.a as it does not contribute to the jacobian and create a variable a with constant binding which is not wanted
           if ComponentReference.isStartCref(rhsCr) and ComponentReferenceBasics.crefEqual(ComponentReference.popCref(rhsCr), cr) then
-            crefsVarsToRemove := cr :: crefsVarsToRemove;
+            UnorderedSet.add(cr, crefsVarsToRemove);
           else
             BackendEquation.add(eq, newOrderedEquationArray);
           end if;
@@ -1803,9 +1815,9 @@ try
 
   newVars := BackendVariable.emptyVars();
   for var in BackendVariable.varList(currentSystem.orderedVars) loop
-    if not listMember(var.varName, crefsVarsToRemove) then
+    if not UnorderedSet.contains(var.varName, crefsVarsToRemove) then
       // make depVars crefs as unreplaceable as it might be removed by removeSimpleEquation and Optimization fails for jacobians
-      if listMember(var.varName, protectedCrefs) then
+      if UnorderedSet.contains(var.varName, protectedCrefs) then
         var := BackendVariable.setVarUnreplaceable(var, true);
       end if;
       newVars := BackendVariable.addVar(var, newVars);
@@ -1846,32 +1858,22 @@ try
   //BackendDump.dumpVarList(knvarlst, "shared simulation DAE");
   inputvars := List.select(knvarlst, BackendVariable.isVarOnTopLevelAndInput);
 
-  // Generate empty jacobian martices
-  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
-    cache := initDAE.shared.cache;
-    graph := initDAE.shared.graph;
-    ei := initDAE.shared.info;
-    emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-    outJacobianMatrices := (SOME((emptyBDAE,"FMIDERINIT",{},{},{}, {})), BackendDAE.emptySparsePattern, {}, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
-    outFunctionTree := initDAE.shared.functionTree;
-  else
-    // prepare more needed variables
-    paramvars := List.select(knvarlst, BackendVariable.isParam);
-    statesarr := BackendVariable.listVar1(states);
-    inputvarsarr := BackendVariable.listVar1(inputvars);
-    paramvarsarr := BackendVariable.listVar1(paramvars);
-    depVarsArr := BackendVariable.listVar1(depVars);
+  // prepare more needed variables
+  paramvars := List.select(knvarlst, BackendVariable.isParam);
+  statesarr := BackendVariable.listVar1(states);
+  inputvarsarr := BackendVariable.listVar1(inputvars);
+  paramvarsarr := BackendVariable.listVar1(paramvars);
+  depVarsArr := BackendVariable.listVar1(depVars);
 
-    //(outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, BackendVariable.emptyVars(), BackendVariable.emptyVars(), BackendVariable.emptyVars(), depVarsArr, depVars, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
-    (outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+  //(outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, BackendVariable.emptyVars(), BackendVariable.emptyVars(), BackendVariable.emptyVars(), depVarsArr, depVars, "FMIDERINIT", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+  (outJacobian, outFunctionTree, _, _) := generateGenericJacobian(backendDAE_1, indepVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr, varlst, "FMIDERINIT", false);
 
-    if Flags.isSet(Flags.JAC_DUMP2) then
-      BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
-    end if;
-    // kabdelhak: maybe also pass nonlinearity pattern to add it here
-    outJacobianMatrices := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
-    outFunctionTree := AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    BackendDump.dumpSparsityPattern(sparsePattern_, "FMI sparsity");
   end if;
+  // kabdelhak: maybe also pass nonlinearity pattern to add it here
+  outJacobianMatrices := (outJacobian, sparsePattern_, sparseColoring_, BackendDAE.emptyNonlinearPattern)::outJacobianMatrices;
+  outFunctionTree := AvlTreePathFunction.join(initDAE.shared.functionTree, outFunctionTree);
 else
   Error.addInternalError("function createFMIModelDerivativesForInitialization failed", sourceInfo());
   outJacobianMatrices := {};

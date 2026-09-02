@@ -2500,14 +2500,13 @@ protected function getAdjacencyMatrixLevelEquations
   input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
 protected
-  AvlSetInt.Tree rowTree;
   list<Integer> row, rowindxs, negrow;
   Integer i1, rowSize, size, idx = index, sidx = sindex;
 algorithm
   for e in iEqns loop
     // compute the row
-    (rowTree, size) := BackendDAEUtil.adjacencyRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY(), isInitial);
-    row := AvlSetInt.listKeys(rowTree);
+    (row, size) := BackendDAEUtil.adjacencyRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), {}, isInitial);
+    row := BackendDAEUtil.uniqueRow(row);
     rowSize := sidx + size;
     i1 := idx+1;
     rowindxs := List.intRange2(sidx+1, rowSize);

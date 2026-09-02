@@ -13779,7 +13779,6 @@ protected
    Option<SimCode.JacobianMatrix> contPartSimDer, initPartSimDer = NONE();
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
-   list<Integer> intLst;
    BackendDAE.SymbolicJacobians fmiDerInit = {};
    list<SimCode.JacobianMatrix> symJacsInit={}, symJacFMIINIT={};
    list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {}, sortedknownCrefs = {};
@@ -13807,8 +13806,7 @@ algorithm
     allUnknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
     // get derivatives pattern
-    intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
-    derivatives := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    derivatives := fmiUnknownsOf(inModelInfo.vars.derivativeVars, allUnknowns);
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
@@ -13816,13 +13814,11 @@ algorithm
     varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar); // check for outputs in boolAlgVar
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
-    intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
-    outputs := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    outputs := fmiUnknownsOf(allOutputVars, allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    intLst := list(getVariableFMIIndex(v) for v in clockedStates);
-    discreteStates := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
+    discreteStates := fmiUnknownsOf(clockedStates, allUnknowns);
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
@@ -14137,7 +14133,7 @@ protected
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
   Boolean debug = false;
-  UnorderedSet<DAE.ComponentRef> initialUnknowns;
+  UnorderedSet<DAE.ComponentRef> initialUnknowns, indepCrefSet;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
   initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
@@ -14211,7 +14207,7 @@ algorithm
   //tmpBDAE1 := BackendDAEUtil.copyBackendDAE(tmpBDAE);
 
   // Calculate the dependecies of initialUnknowns
-  (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
+  (sparsePattern, sparseColoring) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars, withColoring = not Flags.isSet(Flags.DIS_SYMJAC_FMI20));
   if debug then
     dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
   end if;
@@ -14226,11 +14222,12 @@ algorithm
   // collect the dependency list from sparse pattern
   indepCrefs := {};
   depCrefs := {};
+  indepCrefSet := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
   for i in rowspt loop
     (cref, crefs) := i;
     depCrefs := cref :: depCrefs;
     for cr in crefs loop
-      if not listMember(cr, indepCrefs) then
+      if UnorderedSet.add(cr, indepCrefSet) then
         indepCrefs := cr :: indepCrefs;
       end if;
     end for;
@@ -14419,18 +14416,19 @@ algorithm
   end match;
 end isOutputSimVar;
 
-protected function isFmiUnknown
-  input Integer index;
-  input SimCode.FmiUnknown inFMIUnknown;
-  output Boolean out;
+protected function fmiUnknownsOf
+  "The unknowns that are one of the variables, in the unknowns' order."
+  input list<SimCodeVar.SimVar> vars;
+  input list<SimCode.FmiUnknown> unknowns;
+  output list<SimCode.FmiUnknown> selected;
+protected
+  UnorderedSet<Integer> indices = UnorderedSet.new(Util.id, intEq, Util.nextPrime(listLength(vars)));
 algorithm
-  out := match inFMIUnknown
-    local
-      Integer i;
-    case SimCode.FMIUNKNOWN(index=i) guard (intEq(i,index))  then true;
-    else false;
-  end match;
-end isFmiUnknown;
+  for v in vars loop
+    UnorderedSet.add(getVariableFMIIndex(v), indices);
+  end for;
+  selected := list(u for u guard UnorderedSet.contains(u.index, indices) in unknowns);
+end fmiUnknownsOf;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
@@ -14921,6 +14919,47 @@ algorithm
   setGlobalRoot(Global.fmi3ValueReferenceCache, NONE());
 end clearFMI3ValueReferences;
 
+public function fmi3UnknownDependencyAttributes
+  "The dependencies and dependenciesKind attributes of a <ModelStructure> entry,
+   the dependencies mapped from FMI indices to value references."
+  input SimCode.SimCode simCode;
+  input SimCode.FmiUnknown unknown;
+  output String attributes = "";
+protected
+  Option<array<String>> cache = getGlobalRoot(Global.fmi3ValueReferenceCache);
+  list<String> vrs = {};
+algorithm
+  if not listEmpty(unknown.dependencies) then
+    for d in unknown.dependencies loop
+      vrs := match cache
+        local array<String> table;
+        case SOME(table) guard d > 0 and d <= arrayLength(table) and not stringEmpty(arrayGet(table, d))
+          then arrayGet(table, d) :: vrs;
+        else getFMI3ValueReferenceFromFMIIndex(simCode, d) :: vrs;
+      end match;
+    end for;
+    attributes := " dependencies=\"" + stringDelimitList(listReverse(vrs), " ") + "\"";
+  end if;
+  if not listEmpty(unknown.dependenciesKind) then
+    attributes := attributes + " dependenciesKind=\"" + stringDelimitList(unknown.dependenciesKind, " ") + "\"";
+  end if;
+end fmi3UnknownDependencyAttributes;
+
+public function fmiDependenciesString
+  "Space separated, as the FMI 2.0 ModelStructure dependencies attribute."
+  input list<Integer> dependencies;
+  output String str;
+algorithm
+  str := stringDelimitList(list(intString(d) for d in dependencies), " ");
+end fmiDependenciesString;
+
+public function fmiDependenciesKindString
+  input list<String> kinds;
+  output String str;
+algorithm
+  str := stringDelimitList(kinds, " ");
+end fmiDependenciesKindString;
+
 public function getFMI3ValueReferenceFromFMIIndex
   "Maps an FMI variable index (the 1-based position in the ModelVariables list as
    stored in the FmiModelStructure unknowns/dependencies) to the globally unique
@@ -14968,24 +15007,13 @@ end getFMI3ValueReferenceFromFMIIndex;
 public function getFMI3TimeValueReference
   "Returns a value reference for the independent variable (time) that does not
    collide with any model variable. It is the first free value reference past the
-   real/integer/boolean/string blocks. The same value is emitted as a #define
-   (FMI3_TIME_VR) into the generated FMI 3.0 model code.
+   real/integer/boolean/string/binary/clock blocks. The same value is emitted as a
+   #define (FMI3_TIME_VR) into the generated FMI 3.0 model code.
    author: adrpo"
   input SimCode.SimCode inSimCode;
   output String outValueReference;
-protected
-  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
-  // per-scalar counts (an array variable occupies getNumElems scalar slots), so
-  // that time comes after the real/integer/boolean/string scalar blocks.
-  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
-  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
-  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
-  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
-  // external objects (FMI 3.0 Binary) and clocks occupy their own blocks before time
-  Integer numExtObj = numScalarElems(vars.extObjVars);
-  Integer numClock = listLength(inSimCode.clockedPartitions);
 algorithm
-  outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
+  outValueReference := String(getFMI3ClockVROffset(inSimCode.modelInfo) + listLength(inSimCode.clockedPartitions));
 end getFMI3TimeValueReference;
 
 public function exportDaeAlgebraicStates
@@ -15018,7 +15046,7 @@ end exportIfAlgebraicState;
 public function getFMI3DaeModeValueReference
   "fmi-ls-dae: the value reference of the structural parameter that switches a
    --daeMode FMU into DAE mode, the first one past the event indicators. The
-   residuals follow it (getFMI3DaeResidualValueReference); the wasm emitter
+   residuals follow it (fmi3DaeResiduals); the wasm emitter
    (CodegenWasmJit.build_fmi_vrs) assigns the same numbers."
   input SimCode.SimCode simCode;
   output String vr;
@@ -15026,64 +15054,64 @@ algorithm
   vr := String(stringInt(getFMI3TimeValueReference(simCode)) + simCode.modelInfo.varInfo.numZeroCrossings + 1);
 end getFMI3DaeModeValueReference;
 
-public function getFMI3DaeResidualValueReference
-  input SimCodeVar.SimVar residualVar "one of daeModeData.residualVars";
-  input SimCode.SimCode simCode;
-  output String vr;
-algorithm
-  vr := String(stringInt(getFMI3DaeModeValueReference(simCode)) + 1 + residualVar.index);
-end getFMI3DaeResidualValueReference;
-
-public function getFMI3DaeResidualDependencyAttributes
-  "fmi-ls-dae: the dependencies and dependenciesKind attributes of the residual at
-   0-based row `index` of the DAE-mode Jacobian, read off its transposed sparsity.
-   A state column stands for the state and its derivative both, since DAE-mode
-   differentiation folds der(x) into x ($cj * x.Seed); the other columns are the
-   algebraic variables. Empty without a pattern, which the standard reads as a
+public function fmi3DaeResiduals
+  "fmi-ls-dae: the residuals of a --daeMode model as (valueReference, dependency
+   attributes): the value references follow the DAE-mode switch's, and the
+   dependencies and dependenciesKind attributes of each <Formulation> are read
+   off the rows of the DAE-mode Jacobian's transposed sparsity. A state column
+   stands for the state and its derivative both, since DAE-mode differentiation
+   folds der(x) into x ($cj * x.Seed); the other columns are the algebraic
+   variables. No attributes without a pattern, which the standard reads as a
    dependency on every known."
   input SimCode.SimCode simCode;
-  input Integer index;
-  output String attributes = "";
+  output list<tuple<String, String>> residuals = {};
 protected
   SimCode.DaeModeData dmd;
-  SimCode.JacobianMatrix jm;
-  list<Integer> cols = {};
-  Integer numStates, row = 0;
-  list<Integer> colsOfRow;
-  SimCodeVar.SimVar sv;
-  String stateVR;
-  list<String> acc = {};
+  Option<list<list<Integer>>> rows;
+  list<list<Integer>> rest;
+  list<Integer> cols;
+  array<String> stateVRs, algebraicVRs;
+  Integer numStates, daeModeVR;
+  String vr, attributes;
+  list<String> acc;
 algorithm
-  if isNone(simCode.daeModeData) then
-    return;
-  end if;
   SOME(dmd) := simCode.daeModeData;
-  if isNone(dmd.sparsityPattern) then
-    return;
-  end if;
-  SOME(jm) := dmd.sparsityPattern;
-  for entry in jm.sparsityT loop
-    (_, colsOfRow) := entry;
-    if row == index then
-      cols := colsOfRow;
-    end if;
-    row := row + 1;
-  end for;
+  daeModeVR := stringInt(getFMI3DaeModeValueReference(simCode));
+  rows := match dmd.sparsityPattern
+    local SimCode.JacobianMatrix jm;
+    case SOME(jm) then SOME(list(Util.tuple22(e) for e in jm.sparsityT));
+    else NONE();
+  end match;
   numStates := numScalarElems(simCode.modelInfo.vars.stateVars);
-  for c in cols loop
-    if c < numStates then
-      sv := listGet(simCode.modelInfo.vars.stateVars, c + 1);
-      stateVR := getFMI3ValueReference(sv, simCode);
-      acc := String(stringInt(stateVR) + numStates) :: stateVR :: acc;
-    else
-      sv := listGet(dmd.algebraicVars, c - numStates + 1);
-      acc := getFMI3ValueReference(sv, simCode) :: acc;
+  stateVRs := listArray(list(getFMI3ValueReference(v, simCode) for v in simCode.modelInfo.vars.stateVars));
+  algebraicVRs := listArray(list(getFMI3ValueReference(v, simCode) for v in dmd.algebraicVars));
+  for var in dmd.residualVars loop
+    attributes := "";
+    if isSome(rows) then
+      SOME(rest) := rows;
+      if listEmpty(rest) then
+        cols := {};
+      else
+        cols := listHead(rest);
+        rows := SOME(listRest(rest));
+      end if;
+      acc := {};
+      for c in cols loop
+        if c < numStates then
+          vr := arrayGet(stateVRs, c + 1);
+          acc := String(stringInt(vr) + numStates) :: vr :: acc;
+        else
+          acc := arrayGet(algebraicVRs, c - numStates + 1) :: acc;
+        end if;
+      end for;
+      acc := listReverse(acc);
+      attributes := " dependencies=\"" + stringDelimitList(acc, " ") + "\" dependenciesKind=\""
+        + stringDelimitList(list("dependent" for s in acc), " ") + "\"";
     end if;
+    residuals := (String(daeModeVR + 1 + var.index), attributes) :: residuals;
   end for;
-  acc := listReverse(acc);
-  attributes := " dependencies=\"" + stringDelimitList(acc, " ") + "\" dependenciesKind=\""
-    + stringDelimitList(list("dependent" for s in acc), " ") + "\"";
-end getFMI3DaeResidualDependencyAttributes;
+  residuals := listReverse(residuals);
+end fmi3DaeResiduals;
 
 public function getLocalValueReference
  "returns the local value reference of current OMSIFuncton of a variable for

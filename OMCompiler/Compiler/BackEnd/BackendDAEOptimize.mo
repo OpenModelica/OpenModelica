@@ -909,7 +909,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       DAE.Exp exp,e1,e2,ecr;
-      AvlSetInt.Tree expvars;
+      list<Integer> expvars;
       list<Integer> controleqns,expvars1;
       list<list<Integer>> expvarseqns;
       Boolean isInitial;
@@ -925,9 +925,9 @@ algorithm
         // failure(DAE.CREF(componentRef=_) = exp);
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars := BackendDAEUtil.adjacencyRowExp(exp,vars,AvlSetInt.EMPTY(),NONE(),BackendDAE.NORMAL(),isInitial);
+        expvars := BackendDAEUtil.adjacencyRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL(),isInitial);
         // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
-        expvars1::expvarseqns := List.map2(AvlSetInt.listKeys(expvars),varEqns,pos,mT);
+        expvars1::expvarseqns := List.map2(BackendDAEUtil.uniqueRow(expvars),varEqns,pos,mT);
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
         controleqns := getControlEqns(expvars1,expvarseqns);
         // print("controleqns "); BackendDump.debuglst((controleqns,intString," ","\n"));
