@@ -139,6 +139,7 @@ import FindZeroCrossings;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
+import UnorderedMap;
 import UnorderedSet;
 
 protected constant String UNDERLINE = "========================================";
@@ -13887,7 +13888,8 @@ algorithm
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs)));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, sortedUnknownCrefs, sortedknownCrefs),
+          fmi3ArrayGroups(inModelInfo)));
 else
   // create empty model structure
   try
@@ -13939,7 +13941,8 @@ else
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {})));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
+          fmi3ArrayGroups(inModelInfo)));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -14214,8 +14217,8 @@ algorithm
 
   // collect all variables from sparsePattern
   (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
-  vars1 := getSimVars2Crefs(indepCrefs, crefSimVarHT);
-  vars2 := getSimVars2Crefs(depCrefs, crefSimVarHT);
+  vars1 := getSimVars2Crefs(simVarCrefs(indepCrefs, crefSimVarHT), crefSimVarHT);
+  vars2 := getSimVars2Crefs(simVarCrefs(depCrefs, crefSimVarHT), crefSimVarHT);
 
   vars2 := listAppend(vars1, vars2);
 
@@ -14255,10 +14258,58 @@ algorithm
   end if;
 
   // sort the vars with FMI Index
-  sparseInts := sortSparsePattern(vars2, rowspt, true);
+  sparseInts := sortSparsePattern(vars2, expandSparsePatternCrefs(rowspt, crefSimVarHT), true);
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
+
+protected function simVarCrefs
+  "The SimVar names of backend variables: a whole array or record the SimVars
+   are scalarized to becomes its elements."
+  input list<DAE.ComponentRef> crefs;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  output list<DAE.ComponentRef> outCrefs = {};
+protected
+  SimCodeVar.SimVar sv;
+  Boolean aggregate;
+algorithm
+  for cr in crefs loop
+    aggregate := match ComponentReference.crefLastType(cr)
+      case DAE.T_ARRAY() then true;
+      case DAE.T_COMPLEX() then true;
+      else false;
+    end match;
+    try
+      // the table maps a whole-array cref to its first element's SimVar
+      true := aggregate;
+      sv := BaseHashTable.get(cr, crefSimVarHT);
+      outCrefs := if ComponentReferenceBasics.crefEqual(sv.name, cr) then cr :: outCrefs
+                  else List.append_reverse(ComponentReference.expandCref(cr, true), outCrefs);
+    else
+      outCrefs := cr :: outCrefs;
+    end try;
+  end for;
+  outCrefs := listReverse(outCrefs);
+end simVarCrefs;
+
+protected function expandSparsePatternCrefs
+  "The rows in SimVar names: one row per element of an array unknown."
+  input BackendDAE.SparsePatternCrefs rows;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  output BackendDAE.SparsePatternCrefs outRows = {};
+protected
+  DAE.ComponentRef cref;
+  list<DAE.ComponentRef> crefs, deps;
+algorithm
+  for row in rows loop
+    (cref, crefs) := row;
+    deps := simVarCrefs(crefs, crefSimVarHT);
+    for cr in simVarCrefs({cref}, crefSimVarHT) loop
+      outRows := (cr, deps) :: outRows;
+    end for;
+  end for;
+  outRows := listReverse(outRows);
+end expandSparsePatternCrefs;
 
 protected function getDependentAndIndepentVarsForJacobian
  "function which returns the rows and columns vars for jacobian matrix which will
@@ -14312,7 +14363,7 @@ protected
   Boolean isConst = false;
 algorithm
   for var in inVar loop
-    cref := BackendVariable.varCref(var);
+    cref := listHead(simVarCrefs({BackendVariable.varCref(var)}, crefSimVarHT));
     // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
     if UnorderedSet.contains(cref, initialUnknowns) then
       outdepVars := var::outdepVars;
@@ -15877,8 +15928,349 @@ algorithm
     NONE(),
     NONE(),
     SimCode.FMIDISCRETESTATES({}),
-    SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
+    SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {}),
+    fmi3ArrayGroups(modelInfo)));
 end createMinimalFMIModelStructure;
+
+protected function fmi3ArrayGroups
+  "The arrays the FMI 3.0 modelDescription.xml lists as one variable each:
+   all elements exported, consecutive in row-major order and alike but for the
+   start value; a state array only together with its derivative array."
+  input SimCode.ModelInfo modelInfo;
+  output list<SimCode.FmiArray> arrays = {};
+protected
+  SimCodeVar.SimVars vars = modelInfo.vars;
+  UnorderedSet<DAE.ComponentRef> aliasTargets;
+  UnorderedMap<DAE.ComponentRef, SimCode.FmiArray> ders;
+  list<SimCode.FmiArray> stateArrays;
+algorithm
+  if not FMI.isFMIVersion30() or Config.simCodeTarget() == "Cpp" or Flags.getConfigBool(Flags.DAE_MODE) then
+    return;
+  end if;
+  aliasTargets := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for lst in {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars} loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        UnorderedSet.add(getAliasVarCref(v), aliasTargets);
+      end if;
+    end for;
+  end for;
+  stateArrays := fmi3ArraysOfList(vars.stateVars, aliasTargets);
+  ders := UnorderedMap.new<SimCode.FmiArray>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for a in fmi3ArraysOfList(vars.derivativeVars, aliasTargets) loop
+    UnorderedMap.add(a.first, a, ders);
+  end for;
+  for a in stateArrays loop
+    arrays := match UnorderedMap.get(ComponentReference.crefPrefixDer(a.first), ders)
+      local SimCode.FmiArray d;
+      case SOME(d) then d :: a :: arrays;
+      else arrays;
+    end match;
+  end for;
+  for lst in {vars.algVars, vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+              vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars} loop
+    arrays := List.append_reverse(fmi3ArraysOfList(lst, aliasTargets), arrays);
+  end for;
+  arrays := listReverse(arrays);
+end fmi3ArrayGroups;
+
+protected function getAliasVarCref
+  input SimCodeVar.SimVar var;
+  output DAE.ComponentRef cref;
+algorithm
+  cref := match var.aliasvar
+    local DAE.ComponentRef cr;
+    case SimCodeVar.ALIAS(varName = cr) then cr;
+    case SimCodeVar.NEGATEDALIAS(varName = cr) then cr;
+    else var.name;
+  end match;
+end getAliasVarCref;
+
+protected function fmi3ArraysOfList
+  input list<SimCodeVar.SimVar> vars;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  output list<SimCode.FmiArray> arrays = {};
+protected
+  list<SimCodeVar.SimVar> rest = vars;
+  SimCodeVar.SimVar v;
+  Integer n;
+algorithm
+  while not listEmpty(rest) loop
+    v :: rest := rest;
+    if isSome(v.arrayCref) and not listEmpty(v.numArrayElement) and not Types.isArray(v.type_) then
+      n := fmi3ArrayRun(v, rest, aliasTargets);
+      if n > 1 then
+        arrays := SimCode.FMIARRAY(v.name, getVariableFMIIndex(v), n) :: arrays;
+        rest := List.stripN(rest, n - 1);
+      end if;
+    end if;
+  end while;
+  arrays := listReverse(arrays);
+end fmi3ArraysOfList;
+
+protected function fmi3ArrayRun
+  "The size of first's array if the SimVars after it complete it, else 0."
+  input SimCodeVar.SimVar first;
+  input list<SimCodeVar.SimVar> rest;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  output Integer n = 0;
+protected
+  list<Integer> dims = list(stringInt(d) for d in first.numArrayElement);
+  list<list<DAE.Subscript>> subs = fmi3ArraySubscripts(dims);
+  list<SimCodeVar.SimVar> vars = rest;
+  SimCodeVar.SimVar v;
+  DAE.ComponentRef prefix = ComponentReferenceBasics.crefStripLastSubs(first.name);
+  Integer fmiIndex = getVariableFMIIndex(first);
+algorithm
+  if listLength(subs) < 2 or fmiIndex <= 0
+     or not ExpressionBasics.subscriptEqual(ComponentReference.crefLastSubs(first.name), listHead(subs))
+     or not fmi3ArrayElementOk(first, first, aliasTargets, fmiIndex) then
+    return;
+  end if;
+  for sub in listRest(subs) loop
+    if listEmpty(vars) then
+      return;
+    end if;
+    v :: vars := vars;
+    fmiIndex := fmiIndex + 1;
+    if isSome(v.arrayCref)
+       or not ComponentReferenceBasics.crefEqual(ComponentReferenceBasics.crefStripLastSubs(v.name), prefix)
+       or not ExpressionBasics.subscriptEqual(ComponentReference.crefLastSubs(v.name), sub)
+       or not fmi3ArrayElementOk(first, v, aliasTargets, fmiIndex) then
+      return;
+    end if;
+  end for;
+  n := listLength(subs);
+end fmi3ArrayRun;
+
+protected function fmi3ArraySubscripts
+  "The subscripts of every element of an array with these dimensions, row major."
+  input list<Integer> dims;
+  output list<list<DAE.Subscript>> subs = {};
+protected
+  Integer d;
+  list<Integer> rest;
+  list<list<DAE.Subscript>> tails;
+algorithm
+  subs := match dims
+    case {} then {{}};
+    case d :: rest
+      algorithm
+        tails := fmi3ArraySubscripts(rest);
+        for i in 1:d loop
+          for tail in tails loop
+            subs := (DAE.INDEX(DAE.ICONST(i)) :: tail) :: subs;
+          end for;
+        end for;
+      then listReverse(subs);
+  end match;
+end fmi3ArraySubscripts;
+
+protected function fmi3ArrayElementOk
+  input SimCodeVar.SimVar first;
+  input SimCodeVar.SimVar v;
+  input UnorderedSet<DAE.ComponentRef> aliasTargets;
+  input Integer fmiIndex;
+  output Boolean ok;
+algorithm
+  ok := match (first.aliasvar, v.aliasvar)
+    case (SimCodeVar.NOALIAS(), SimCodeVar.NOALIAS()) then true;
+    else false;
+  end match;
+  ok := ok and isSome(v.exportVar) and getVariableFMIIndex(v) == fmiIndex
+    and not UnorderedSet.contains(v.name, aliasTargets)
+    and valueEq(first.type_, v.type_) and fmi3SameVarKind(first.varKind, v.varKind)
+    and first.comment == v.comment and first.unit == v.unit and first.displayUnit == v.displayUnit
+    and valueEq(first.minValue, v.minValue) and valueEq(first.maxValue, v.maxValue)
+    and valueEq(first.nominalValue, v.nominalValue)
+    and first.isFixed == v.isFixed and first.isDiscrete == v.isDiscrete
+    and valueEq(first.causality, v.causality) and valueEq(first.variability, v.variability)
+    and valueEq(first.initial_, v.initial_)
+    and first.isValueChangeable == v.isValueChangeable and first.isProtected == v.isProtected
+    and valueEq(first.hideResult, v.hideResult) and first.isEncrypted == v.isEncrypted
+    and first.relativeQuantity == v.relativeQuantity and first.isConnectorFlow == v.isConnectorFlow
+    and valueEq(first.numArrayElement, v.numArrayElement)
+    and isSome(first.initialValue) == isSome(v.initialValue)
+    and fmi3ScalarStartOk(v);
+end fmi3ArrayElementOk;
+
+protected function fmi3SameVarKind
+  input BackendDAE.VarKind k1;
+  input BackendDAE.VarKind k2;
+  output Boolean same;
+algorithm
+  same := match (k1, k2)
+    case (BackendDAE.STATE(), BackendDAE.STATE()) then true;
+    case (BackendDAE.STATE_DER(), BackendDAE.STATE_DER()) then true;
+    case (BackendDAE.CLOCKED_STATE(), BackendDAE.CLOCKED_STATE()) then true;
+    else valueEq(k1, k2);
+  end match;
+end fmi3SameVarKind;
+
+protected function fmi3ScalarStartOk
+  "Where ArrayStartString3 emits a start, it must be one literal per element."
+  input SimCodeVar.SimVar v;
+  output Boolean ok = true;
+protected
+  Boolean emitted;
+algorithm
+  emitted := match (v.varKind, v.initial_)
+    case (BackendDAE.STATE(), _) then true;
+    case (_, SOME(SimCodeVar.EXACT())) then true;
+    case (_, SOME(SimCodeVar.APPROX())) then true;
+    else isCausalityInputSimVar(v);
+  end match;
+  if emitted then
+    ok := match v.initialValue
+      local DAE.Exp e;
+      case SOME(e) then listLength(getFMIArrayStartValues(e)) == 1;
+      else true;
+    end match;
+  end if;
+end fmi3ScalarStartOk;
+
+public function fmi3ArrayView
+  "The SimCode the FMI 3.0 modelDescription.xml is rendered from: one SimVar
+   and one ModelStructure entry per array of modelStructure.fmiArrays."
+  input SimCode.SimCode simCode;
+  output SimCode.SimCode view = simCode;
+protected
+  SimCode.FmiModelStructure ms;
+  SimCode.ModelInfo mi;
+  SimCodeVar.SimVars vars;
+  SimCode.FmiInitialUnknowns iu;
+  UnorderedMap<DAE.ComponentRef, Integer> firsts;
+  UnorderedMap<Integer, Integer> rep;
+algorithm
+  if isNone(simCode.modelStructure) then
+    return;
+  end if;
+  SOME(ms) := simCode.modelStructure;
+  if listEmpty(ms.fmiArrays) then
+    return;
+  end if;
+  firsts := UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  rep := UnorderedMap.new<Integer>(Util.id, intEq);
+  for a in ms.fmiArrays loop
+    UnorderedMap.add(a.first, a.numElements, firsts);
+    for k in 1:a.numElements - 1 loop
+      UnorderedMap.add(a.fmiIndex + k, a.fmiIndex, rep);
+    end for;
+  end for;
+  mi := simCode.modelInfo;
+  vars := mi.vars;
+  vars.stateVars := fmi3CollapseArrays(vars.stateVars, firsts);
+  vars.derivativeVars := fmi3CollapseArrays(vars.derivativeVars, firsts);
+  vars.algVars := fmi3CollapseArrays(vars.algVars, firsts);
+  vars.discreteAlgVars := fmi3CollapseArrays(vars.discreteAlgVars, firsts);
+  vars.paramVars := fmi3CollapseArrays(vars.paramVars, firsts);
+  vars.intAlgVars := fmi3CollapseArrays(vars.intAlgVars, firsts);
+  vars.intParamVars := fmi3CollapseArrays(vars.intParamVars, firsts);
+  vars.boolAlgVars := fmi3CollapseArrays(vars.boolAlgVars, firsts);
+  vars.boolParamVars := fmi3CollapseArrays(vars.boolParamVars, firsts);
+  vars.stringAlgVars := fmi3CollapseArrays(vars.stringAlgVars, firsts);
+  vars.stringParamVars := fmi3CollapseArrays(vars.stringParamVars, firsts);
+  mi.vars := vars;
+  view.modelInfo := mi;
+  ms.fmiOutputs := SimCode.FMIOUTPUTS(fmi3CollapseUnknowns(ms.fmiOutputs.fmiUnknownsList, rep));
+  ms.fmiDerivatives := SimCode.FMIDERIVATIVES(fmi3CollapseUnknowns(ms.fmiDerivatives.fmiUnknownsList, rep));
+  ms.fmiDiscreteStates := SimCode.FMIDISCRETESTATES(fmi3CollapseUnknowns(ms.fmiDiscreteStates.fmiUnknownsList, rep));
+  iu := ms.fmiInitialUnknowns;
+  iu.fmiUnknownsList := fmi3CollapseUnknowns(iu.fmiUnknownsList, rep);
+  ms.fmiInitialUnknowns := iu;
+  view.modelStructure := SOME(ms);
+end fmi3ArrayView;
+
+protected function fmi3CollapseArrays
+  input list<SimCodeVar.SimVar> vars;
+  input UnorderedMap<DAE.ComponentRef, Integer> firsts "first element -> number of elements";
+  output list<SimCodeVar.SimVar> outVars = {};
+protected
+  list<SimCodeVar.SimVar> rest = vars, elements;
+  SimCodeVar.SimVar v;
+  Integer n;
+algorithm
+  while not listEmpty(rest) loop
+    v :: rest := rest;
+    n := UnorderedMap.getOrDefault(v.name, firsts, 0);
+    if n > 1 then
+      (elements, rest) := List.split(rest, n - 1);
+      v := fmi3ArrayVar(v, elements);
+    end if;
+    outVars := v :: outVars;
+  end while;
+  outVars := listReverse(outVars);
+end fmi3CollapseArrays;
+
+protected function fmi3ArrayVar
+  "The array variable of first and the elements after it."
+  input SimCodeVar.SimVar first;
+  input list<SimCodeVar.SimVar> others;
+  output SimCodeVar.SimVar var = first;
+algorithm
+  var.type_ := DAE.T_ARRAY(first.type_, list(DAE.DIM_INTEGER(stringInt(d)) for d in first.numArrayElement));
+  var.exportVar := SOME(ComponentReferenceBasics.crefStripLastSubs(Util.getOption(first.exportVar)));
+  var.initialValue := match first.initialValue
+    case SOME(_) then SOME(DAE.ARRAY(var.type_, true, list(Util.getOption(v.initialValue) for v in first :: others)));
+    else NONE();
+  end match;
+end fmi3ArrayVar;
+
+protected function fmi3CollapseUnknowns
+  input list<SimCode.FmiUnknown> unknowns;
+  input UnorderedMap<Integer, Integer> rep "element FMI index -> the array's";
+  output list<SimCode.FmiUnknown> outUnknowns = {};
+protected
+  UnorderedMap<Integer, Integer> slot = UnorderedMap.new<Integer>(Util.id, intEq) "representative -> position in deps";
+  array<list<Integer>> deps = arrayCreate(listLength(unknowns), {});
+  list<Integer> order = {}, ds;
+  Integer r, i, n = 0;
+algorithm
+  for u in unknowns loop
+    r := UnorderedMap.getOrDefault(u.index, rep, u.index);
+    ds := list(UnorderedMap.getOrDefault(d, rep, d) for d in u.dependencies);
+    i := UnorderedMap.getOrDefault(r, slot, 0);
+    if i == 0 then
+      n := n + 1;
+      i := n;
+      UnorderedMap.add(r, i, slot);
+      order := r :: order;
+    end if;
+    arrayUpdate(deps, i, listAppend(ds, arrayGet(deps, i)));
+  end for;
+  for r in order loop
+    ds := List.sortedUnique(List.sort(arrayGet(deps, UnorderedMap.getOrFail(r, slot)), intGt), intEq);
+    outUnknowns := SimCode.FMIUNKNOWN(r, ds, List.fill("dependent", listLength(ds))) :: outUnknowns;
+  end for;
+end fmi3CollapseUnknowns;
+
+public function fmi3ArrayDefines
+  "The FMI 3.0 array variables as (value reference, number of elements) tables
+   for fmu3_model_interface.c, sorted by value reference."
+  input SimCode.SimCode simCode;
+  output String defines;
+protected
+  list<tuple<Integer, Integer>> arrays = {};
+  SimCode.HashTableCrefToSimVar ht;
+  SimCodeVar.SimVar v;
+algorithm
+  _ := match simCode.modelStructure
+    local SimCode.FmiModelStructure ms;
+    case SOME(ms) guard not listEmpty(ms.fmiArrays)
+      algorithm
+        ht := createCrefToSimVarHT(simCode.modelInfo);
+        for a in ms.fmiArrays loop
+          v := BaseHashTable.get(a.first, ht);
+          arrays := (stringInt(getFMI3ValueReference(v, simCode)), a.numElements) :: arrays;
+        end for;
+        arrays := List.sort(arrays, Util.compareTupleIntGt);
+      then ();
+    else ();
+  end match;
+  defines := "#define FMI3_NUMBER_OF_ARRAYS " + intString(listLength(arrays)) + "\n"
+    + "#define FMI3_ARRAY_VRS { " + stringDelimitList(list(intString(Util.tuple21(a)) for a in arrays), ", ") + " }\n"
+    + "#define FMI3_ARRAY_LENGTHS { " + stringDelimitList(list(intString(Util.tuple22(a)) for a in arrays), ", ") + " }";
+end fmi3ArrayDefines;
 
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its

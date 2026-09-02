@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 fmi3_cs_01.mos \
 fmi3_msl_clocked_drive.mos \
+fmi3_wasm_arrays.mos \
 fmi3_wasm_daemode.mos \
 fmi3_wasm_solver_absent.mos \
 fmi3_wasm_solver_libraries.mos \

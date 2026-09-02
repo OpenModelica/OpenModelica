@@ -1058,6 +1058,14 @@ end SparsityRow;
     end FMIINITIALUNKNOWNS;
   end FmiInitialUnknowns;
 
+  uniontype FmiArray
+    record FMIARRAY
+      DAE.ComponentRef first;
+      Integer fmiIndex;
+      Integer numElements;
+    end FMIARRAY;
+  end FmiArray;
+
   uniontype FmiModelStructure
     record FMIMODELSTRUCTURE
       FmiOutputs fmiOutputs;
@@ -1066,6 +1074,7 @@ end SparsityRow;
       Option<JacobianMatrix> initialPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
+      list<FmiArray> fmiArrays;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1480,6 +1489,16 @@ package SimCodeUtil
     input list<String> kinds;
     output String str;
   end fmiDependenciesKindString;
+
+  function fmi3ArrayView
+    input SimCode.SimCode simCode;
+    output SimCode.SimCode view;
+  end fmi3ArrayView;
+
+  function fmi3ArrayDefines
+    input SimCode.SimCode simCode;
+    output String defines;
+  end fmi3ArrayDefines;
 
   function cacheFMI3ValueReferences
     input SimCode.SimCode simCode;
