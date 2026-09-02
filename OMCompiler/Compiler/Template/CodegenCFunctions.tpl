@@ -8063,7 +8063,9 @@ template daeExpUnbox(Exp exp, Context context, Text &preExp, Text &varDecls, Tex
 ::=
 match exp
 case exp as UNBOX(__) then
-  let ty = expTypeShort(exp.ty)
+  // An array is boxed with mmc_mk_modelica_array, see daeExpBox, so it has to
+  // be unboxed as an array and not as its element type.
+  let ty = if isArrayType(exp.ty) then "array" else expTypeShort(exp.ty)
   let res = daeExp(exp.exp,context,&preExp,&varDecls, &auxFunction)
   'mmc_unbox_<%ty%>(<%res%>)'
 end daeExpUnbox;
