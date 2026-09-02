@@ -228,8 +228,14 @@ const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
 
 /// A runtime/driver failure. The FMI status alone tells the importer nothing, and
 /// C's FMUs report the reason through the logger, so say it before failing.
+///
+/// Those three have logged their own reason already (`LOG_ASSERT` / `LOG_INIT` /
+/// `model terminate`), as the standalone driver's reporting also assumes.
 fn err_status(msg: &str) -> Status {
-    fmi_log(Status::Error, CAT_ERROR, msg);
+    if msg != driver::ASSERT_ERR && msg != driver::INIT_FAILED_ERR && msg != driver::SOLVER_FAILED_ERR
+    {
+        fmi_log(Status::Error, CAT_ERROR, msg);
+    }
     Status::Error
 }
 
@@ -463,6 +469,16 @@ impl SimEngine for Engine {
     fn clean_nls_history(&mut self, time: f64) {
         openmodelica_codegen_wasm_jit_runtime::rt_nls_clean_history(time);
     }
+    // The adapter, the runtime and the model kernel share one linear memory.
+    fn context_addr(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::rt_context_addr()
+    }
+    fn error_stage_addr(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::rt_error_stage_addr()
+    }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::rt_no_throw_div_zero_addr()
+    }
     // `+profiling`'s clocks: the artifact links the model and the runtime into one
     // module, so they are this module's own.
     fn prof_row(&mut self) -> u32 {
@@ -529,6 +545,8 @@ struct MeState {
     defer: openmodelica_sim_meta::driver::CsDefer,
     vrs: Vrs,
     mode: Mode,
+    /// C's `model_state_me_continuous_time_mode`.
+    continuous_time: bool,
     /// fmi-ls-dae: the `EnableDAE` structural parameter's value reference (0 when
     /// the model has no DAE formulation), whether it is set, and whether the
     /// importer is in Configuration Mode, the only place it may be set.
@@ -835,6 +853,7 @@ fn new_state() -> Option<MeState> {
         #[cfg(feature = "cs")]
         defer: CsDefer::None,
         mode: Mode::Instantiated,
+        continuous_time: false,
         dae_enable_vr,
         dae_mode: false,
         configuring: false,
@@ -959,6 +978,7 @@ macro_rules! shared_instance_methods {
     }
 
     fn enter_event_mode(&self) -> Status {
+        self.st.borrow_mut().continuous_time = false;
         Status::Ok
     }
 
@@ -1056,6 +1076,7 @@ macro_rules! shared_instance_methods {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
         st.mode = Mode::Instantiated;
+        st.continuous_time = false;
         st.dae_mode = false;
         st.configuring = false;
         st.need_update = true;
@@ -1509,6 +1530,7 @@ impl GuestModelExchangeInstance for Instance {
     }
 
     fn enter_continuous_time_mode(&self) -> Status {
+        self.st.borrow_mut().continuous_time = true;
         Status::Ok
     }
 
@@ -1533,11 +1555,21 @@ impl GuestModelExchangeInstance for Instance {
     /// C's `internalGetDerivatives`, which leaves `_need_update` set for the next
     /// getter. In DAE mode the derivatives are the importer's own, set as knowns
     /// of the residuals; in ODE mode a `--daeMode` model solves for them.
+    ///
+    /// In Continuous Time Mode this is the master's integrator residual, so it holds
+    /// the region `dassl_res` does and answers `fmi3Discard` — C's `IRES = -1` — for
+    /// an absorbed model error.
     fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
         let mut st = self.st.borrow_mut();
         if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
-            if let Err(err) = st.eval_ode() {
+            let region = st.continuous_time.then(|| driver::open_integrator_region(&mut Engine));
+            let evaluated = st.eval_ode();
+            let discard = region.is_some_and(|save| driver::close_integrator_region(&mut Engine, save));
+            if let Err(err) = evaluated {
                 return Err(err_status(err));
+            }
+            if discard {
+                return Err(Status::Discard);
             }
         }
         let n = st.layout.n_states;
@@ -1586,13 +1618,13 @@ impl GuestModelExchangeInstance for Instance {
     ) -> Result<CompletedStepResult, Status> {
         let mut st = self.st.borrow_mut();
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
-        st.eval().map_err(|_| Status::Error)?;
+        st.eval().map_err(err_status)?;
         // The only point the importer gives us to record the accepted step.
-        driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(|_| Status::Error)?;
+        driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(err_status)?;
         st.need_update = true;
         let sim_data = st.sim_data;
         let m = &mut *st;
-        let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(|_| Status::Error)?;
+        let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(err_status)?;
         Ok(CompletedStepResult {
             enter_event_mode: switching,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,

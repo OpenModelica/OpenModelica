@@ -85,6 +85,8 @@ struct FmuOde<'a> {
     dae: Option<DaeVrs>,
     /// What the FMU actually said, behind the static message the solvers carry.
     failure: Option<Error>,
+    /// The last evaluation was answered `fmi3Discard`, so the solver may retry.
+    discarded: bool,
     /// `-alarm`, polled here rather than only at the output points: a solver that
     /// stops converging never reaches them.
     deadline: Deadline,
@@ -162,8 +164,13 @@ impl FmuOde<'_> {
     }
 
     /// Keep the FMU's error and hand the solvers the one static message they
-    /// carry; [`Run`] surfaces the real one.
+    /// carry; [`Run`] surfaces the real one. `fmi3Discard` answers for the trial
+    /// point, not the run, so it is flagged rather than kept.
     fn note(&mut self, e: Error) -> &'static str {
+        self.discarded = matches!(e, Error::Status { status: crate::api::Status::Discard, .. });
+        if self.discarded {
+            return "the FMU discarded the point it was asked to evaluate";
+        }
         self.failure.get_or_insert(e);
         "the FMU reported an error while being integrated"
     }
@@ -237,6 +244,10 @@ impl Ode for FmuOde<'_> {
     fn calls(&self) -> u64 {
         self.calls
     }
+
+    fn take_discard(&mut self) -> bool {
+        core::mem::take(&mut self.discarded)
+    }
 }
 
 impl Dae for FmuOde<'_> {
@@ -268,6 +279,10 @@ impl Dae for FmuOde<'_> {
 
     fn note_call(&mut self) {
         self.calls += 1;
+    }
+
+    fn take_discard(&mut self) -> bool {
+        core::mem::take(&mut self.discarded)
     }
 }
 
@@ -645,6 +660,7 @@ pub fn simulate(
         committed: None,
         dae,
         failure: None,
+        discarded: false,
         deadline: Deadline::arm(opts),
         polls: 0,
     };

@@ -655,7 +655,7 @@ pub const ERROR_EVENTHANDLING: i32 = 4;
 
 /// What a region displaced (C's `saveJumpState`), so regions nest.
 #[derive(Clone, Copy, Default)]
-struct StageSave {
+pub struct StageSave {
     stage: i32,
     hit: i32,
 }
@@ -672,6 +672,19 @@ fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) -> StageSave {
     let _ = write_i32(e, addr, stage);
     let _ = write_i32(e, addr + 4, 0);
     save
+}
+
+/// [`dassl_res`]'s region for a driver outside this module — an exported FMU, whose
+/// integrator is the importer's, so the callback is one FMI call.
+pub fn open_integrator_region(e: &mut dyn SimEngine) -> StageSave {
+    let addr = e.error_stage_addr();
+    set_error_stage(e, addr, ERROR_INTEGRATOR)
+}
+
+/// Close it, reporting the absorbed model error the caller answers `IRES = -1` to.
+pub fn close_integrator_region(e: &mut dyn SimEngine, save: StageSave) -> bool {
+    let addr = e.error_stage_addr();
+    took_error_stage(e, addr, save)
 }
 
 fn stage_hit(e: &dyn SimEngine, addr: u32) -> bool {

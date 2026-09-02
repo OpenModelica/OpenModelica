@@ -49,7 +49,9 @@ mod model_ctx;
 mod nls;
 pub mod prof;
 mod omclog;
-pub use nls::{rt_nls_clean_history, rt_set_step_size};
+pub use nls::{
+    rt_context_addr, rt_error_stage_addr, rt_nls_clean_history, rt_no_throw_div_zero_addr, rt_set_step_size,
+};
 mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
