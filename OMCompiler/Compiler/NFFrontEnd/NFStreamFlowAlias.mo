@@ -549,7 +549,7 @@ public
     output FlowAlias representative;
     output list<FlowAlias> restAliases;
   protected
-    list<tuple<ComponentRef, Binding>> start_values = {}, nominal_values = {};
+    list<tuple<ComponentRef, Binding>> start_values = {}, fixed_start_values = {}, nominal_values = {};
     list<Expression> min_values = {}, max_values = {};
     list<FlowAlias> accum_aliases = {};
     Binding start_binding, nominal_binding, min_binding, max_binding;
@@ -566,15 +566,22 @@ public
     // Evaluate the start/nominal/min/max attributes of the aliases and sort them into lists.
     for alias in representative :: restAliases loop
       negated := representative.negative <> alias.negative;
-      (alias, start_values, nominal_values, min_values, max_values) :=
-        evalAliasAttributes(alias, negated, start_values, nominal_values, min_values, max_values);
+      (alias, start_values, fixed_start_values, nominal_values, min_values, max_values) :=
+        evalAliasAttributes(alias, negated, start_values, fixed_start_values, nominal_values, min_values, max_values);
       accum_aliases := alias :: accum_aliases;
     end for;
 
     // Compute start/nominal/min/max attributes for the representative.
     // start/nominal is chosen according to 8.6.2
-    start_binding := selectValue(start_values);
+    if listEmpty(fixed_start_values) then
+      start_binding := selectValue(start_values);
+    else
+      // Prefer fixed start values over non-fixed.
+      start_binding := selectFixedStartValue(fixed_start_values);
+    end if;
+
     nominal_binding := selectValue(nominal_values);
+
     // min/max is max(min_values) and min(max_values) respectively.
     min_binding := computeLimit(min_values, Ceval.evalBuiltinMax2);
     max_binding := computeLimit(max_values, Ceval.evalBuiltinMin2);
@@ -638,6 +645,40 @@ public
     end for;
   end selectValue;
 
+  function selectFixedStartValue
+    "Selects a start value from a list of fixed start values.
+     The start values have to be equal, otherwise it's an error."
+    input list<tuple<ComponentRef, Binding>> fixedBindings;
+    output Binding value = NFBinding.EMPTY_BINDING;
+  protected
+    list<Binding> bindings;
+    String str;
+    ComponentRef cref;
+    Binding binding;
+  algorithm
+    bindings := list(Util.tuple22(b) for b in fixedBindings);
+
+    if List.allEqual(bindings, Binding.isEqual) then
+      // If all bindings are equal, then select any of them.
+      value := listHead(bindings);
+    else
+      // Otherwise print an error and fail.
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        str := "Conflicting start values for fixed states:\n";
+        for b in fixedBindings loop
+          (cref, binding) := b;
+          str := str + " * Candidate: " + ComponentRef.toString(cref) +
+            "(start = " + Binding.toString(binding) +
+            ", confidence number = " + String(Binding.actualConfidence(binding)) + ")\n";
+        end for;
+        Error.addCompilerError(str);
+      else
+        Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+      end if;
+      fail();
+    end if;
+  end selectFixedStartValue;
+
   function defineAlias
     input output FlowAlias alias;
     input Binding binding;
@@ -681,6 +722,7 @@ public
     input output FlowAlias alias;
     input Boolean negated;
     input output list<tuple<ComponentRef, Binding>> startValues;
+    input output list<tuple<ComponentRef, Binding>> fixedStartValues;
     input output list<tuple<ComponentRef, Binding>> nominalValues;
     input output list<Expression> minValues;
     input output list<Expression> maxValues;
@@ -707,7 +749,11 @@ public
                 attr_binding := Binding.mapExpShallow(attr_binding, Expression.negate);
               end if;
 
-              startValues := (var.name, attr_binding) :: startValues;
+              if Variable.isFixed(var) then
+                fixedStartValues := (var.name, attr_binding) :: fixedStartValues;
+              else
+                startValues := (var.name, attr_binding) :: startValues;
+              end if;
             then
               (attr_name, attr_binding);
 

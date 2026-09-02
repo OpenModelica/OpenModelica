@@ -392,6 +392,20 @@ public
     end if;
   end isAccessible;
 
+  function isFixed
+    input Variable var;
+    output Boolean fixed;
+  protected
+    Binding binding;
+  algorithm
+    fixed := if var.attributes.variability < Variability.DISCRETE then true else false;
+    binding := lookupTypeAttribute("fixed", var);
+
+    if Binding.hasExp(binding) then
+      fixed := Expression.isTrue(Binding.getExp(binding));
+    end if;
+  end isFixed;
+
   function lookupTypeAttribute
     input String name;
     input Variable var;
