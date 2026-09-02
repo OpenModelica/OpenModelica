@@ -44,12 +44,10 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
 #include <QWebEnginePage>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
 #include <QWebEngineNewWindowRequest>
-#endif
 #endif
 #include <QToolBar>
 #include <QComboBox>
