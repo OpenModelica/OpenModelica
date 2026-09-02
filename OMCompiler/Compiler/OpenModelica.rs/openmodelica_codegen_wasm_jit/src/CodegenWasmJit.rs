@@ -2713,6 +2713,12 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             out_der.insert(key, slot.off);
         }
     }
+    let mut lens: HashMap<String, u32> = HashMap::new();
+    if let Some(ms) = &sim_code.modelStructure {
+        for a in lst(&ms.fmiArrays) {
+            lens.insert(sim_cref_key(&a.first)?, u32::try_from(a.numElements).unwrap_or(1));
+        }
+    }
     let mut out = Vec::new();
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
@@ -2732,6 +2738,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             start_off,
             is_string: false,
             der_off,
+            len: lens.get(&key).copied().unwrap_or(1),
         });
     }
     // String variables: `is_string` marks the slot as an i32 runtime-String
@@ -2753,6 +2760,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             start_off: 0,
             is_string: true,
             der_off: 0,
+            len: lens.get(&key).copied().unwrap_or(1),
         });
     }
     // time, then the event indicators after it (`EventIndicatorVariables3`).
@@ -2767,6 +2775,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         start_off: 0,
         is_string: false,
         der_off: 0,
+        len: 1,
     });
     for k in 0..layout.n_zc {
         out.push(FmiVr {
@@ -2777,6 +2786,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             start_off: 0,
             is_string: false,
             der_off: 0,
+            len: 1,
         });
     }
     let mut dae_enable_vr = 0;
@@ -2792,6 +2802,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
                 start_off: 0,
                 is_string: false,
                 der_off: 0,
+                len: 1,
             });
         }
     }

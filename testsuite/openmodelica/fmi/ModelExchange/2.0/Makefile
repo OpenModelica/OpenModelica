@@ -49,6 +49,7 @@ issue10978.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
+InitialUnknownsArrayParameter.mos \
 ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
 RealFFT1.mos \

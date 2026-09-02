@@ -107,21 +107,22 @@ case SIMCODE(__) then
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
-    <%fmiModelVariablesAndStructure3(simCode, FMUType, modelStructure)%>
+    <%fmiModelVariablesAndStructure3(simCode, FMUType)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
 
-template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType, Option<FmiModelStructure> modelStructure)
- "<ModelVariables> and <ModelStructure>, with the two tables they are looked up
-  through built for the length of them: each variable asks which aliases nest
-  under it, and each structure entry asks which value reference its index is, and
-  both answers are a search of every variable the model has without a table."
+template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType)
+ "<ModelVariables> and <ModelStructure>, from the view with one variable per
+  array, with the alias and value reference tables built for the length of them:
+  without them each entry searches every variable the model has."
 ::=
   let _ = SimCodeUtil.cacheFMI3VariableAliases(simCode)
-  let variables = fmiModelVariables3(simCode, FMUType)
-  let structure = modelStructure3(simCode, modelStructure)
+  match SimCodeUtil.fmi3ArrayView(simCode)
+  case view as SIMCODE(modelStructure=viewStructure) then
+  let variables = fmiModelVariables3(view, FMUType)
+  let structure = modelStructure3(view, viewStructure)
   let _ = SimCodeUtil.clearFMI3VariableAliases()
   <<
   <%variables%>
@@ -612,9 +613,9 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Int32>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
       '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Boolean>'
     case T_STRING(__) then

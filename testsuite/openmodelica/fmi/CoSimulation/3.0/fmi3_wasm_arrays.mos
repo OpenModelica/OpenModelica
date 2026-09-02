@@ -1,0 +1,66 @@
+// name: fmi3_wasm_arrays.mos
+// keywords: FMI 3.0 export wasm array
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf fmi3_wasm_arrays.fmu fmi3_wasm_arrays.fmu.log fmi3_wasm_arrays_artifact plain_res.mat art_cs.mat d_cs* plain* om-wasm-include-*
+//
+// The FMI 3.0 modelDescription.xml lists the arrays x, der(x), y, p and q as one
+// variable each; the wasm component serves such a value reference with all the
+// array's values, as the C runtime does.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadString("
+package ArrPkg
+  function f
+    input Real[:] q;
+    output Real[size(q, 1)] y;
+  algorithm
+    y := 2*q;
+  end f;
+  model M
+    parameter Real q[3] = {1, 2, 3};
+    parameter Real p[3] = f(q);
+    Real x[3](start = {1, 2, 3}, each fixed = true);
+    output Real y[3] = f(x);
+  equation
+    der(x) = -p .* x;
+  end M;
+end ArrPkg;
+"); getErrorString();
+
+simulate(ArrPkg.M, stopTime=1.0, numberOfIntervals=10, fileNamePrefix="plain"); getErrorString();
+
+buildModelFMU(ArrPkg.M, fileNamePrefix="fmi3_wasm_arrays", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
+simulate(ArrPkg.M, stopTime=1.0, numberOfIntervals=10, simflags="-s fmi3:cs -r=art_cs.mat", resimulateExecutable="fmi3_wasm_arrays.fmu"); getErrorString();
+
+diffSimulationResults("art_cs.mat", "plain_res.mat", "d_cs", 1e-9, 1e-9);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "plain_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "fmi3_wasm_arrays.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "art_cs.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrPkg.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=art_cs.mat'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
+// LOG_STDOUT        | info    | CoSimulation instantiated
+// LOG_STDOUT        | info    | CoSimulation run: 500 communication steps, 0 events, 0 early returns, 501 samples
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

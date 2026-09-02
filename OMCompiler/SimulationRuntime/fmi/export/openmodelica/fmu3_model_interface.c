@@ -3175,6 +3175,36 @@ fmi3Status fmi3Reset(fmi3Instance instance)
  * and the synthetic event indicator variables occupy
  * [FMI3_EVENT_INDICATOR_VR_START, FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS).
  * ------------------------------------------------------------------------- */
+#ifndef FMI3_NUMBER_OF_ARRAYS
+#define FMI3_NUMBER_OF_ARRAYS 0
+#endif
+
+/* The values a value reference stands for: an array variable's element count
+ * (FMI3_ARRAY_VRS / FMI3_ARRAY_LENGTHS, sorted by value reference), else 1. */
+static size_t fmi3ArrayLength(fmi3ValueReference vr)
+{
+#if FMI3_NUMBER_OF_ARRAYS > 0
+  static const fmi3ValueReference vrs[FMI3_NUMBER_OF_ARRAYS] = FMI3_ARRAY_VRS;
+  static const size_t lens[FMI3_NUMBER_OF_ARRAYS] = FMI3_ARRAY_LENGTHS;
+  size_t lo = 0, hi = FMI3_NUMBER_OF_ARRAYS;
+  while (lo < hi) {
+    size_t mid = lo + (hi - lo) / 2;
+    if (vrs[mid] < vr) lo = mid + 1; else hi = mid;
+  }
+  if (lo < FMI3_NUMBER_OF_ARRAYS && vrs[lo] == vr) return lens[lo];
+#else
+  (void)vr;
+#endif
+  return 1;
+}
+
+static size_t fmi3NumValues(const fmi3ValueReference valueReferences[], size_t nValueReferences)
+{
+  size_t i, n = 0;
+  for (i = 0; i < nValueReferences; i++) n += fmi3ArrayLength(valueReferences[i]);
+  return n;
+}
+
 fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 values[], size_t nValues)
 {
@@ -3183,12 +3213,10 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   if (!comp) {
     return fmi3Error;
   }
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
-    /* Array variables occupy a contiguous block of scalar value references. When
-       a single (array) variable is requested the master passes nValues scalar
-       elements for it; otherwise there is one value per value reference. */
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
@@ -3220,8 +3248,9 @@ fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
       fmi3Int32 value;
@@ -3239,8 +3268,9 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value;
@@ -3258,8 +3288,9 @@ fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_STRING_VR_OFFSET);
       fmi3String value;
@@ -3277,11 +3308,10 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
-    /* Array variables occupy a contiguous block of scalar value references (see
-       fmi3GetFloat64). */
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       fmi3ValueReference lvr;
@@ -3305,8 +3335,9 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
       fmi3Int32 value = (fmi3Int32)values[k];
@@ -3323,8 +3354,9 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
@@ -3341,8 +3373,9 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_STRING_VR_OFFSET);
       fmi3String value = (fmi3String)values[k];
@@ -3397,8 +3430,9 @@ fmi3Status fmi3GetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
       fmi3Int32 value;
@@ -3416,8 +3450,9 @@ fmi3Status fmi3SetInt64(fmi3Instance instance, const fmi3ValueReference valueRef
   ModelInstance* c = fmu3InnerComp(instance);
   size_t i, j, k = 0;
   if (!c) return fmi3Error;
+  if (fmi3NumValues(valueReferences, nValueReferences) != nValues) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
       fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
       fmi3Int32 value = (fmi3Int32)values[k];

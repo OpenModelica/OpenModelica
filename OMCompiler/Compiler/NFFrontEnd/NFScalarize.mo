@@ -166,11 +166,10 @@ algorithm
         bind_var := Binding.variability(binding);
 
         // Avoid scalarizing the variable if it would result in indexing a
-        // function call (#6267), unless we're building an FMU or the variable
-        // has attributes that must be scalarized (#7485).
+        // function call (#6267), unless the variable has attributes that must
+        // be scalarized (#7485).
         if not forceScalarize and
            ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
-           not Flags.getConfigBool(Flags.BUILDING_FMU) and
            not variableHasForcedScalarAttribute(var) then
           vars := var :: vars;
           return;

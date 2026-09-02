@@ -1009,6 +1009,9 @@ pub struct FmiVr {
     /// `-d=fmuExperimental` adds), 0 for everything else. What
     /// `fmi2GetRealOutputDerivatives` reports.
     pub der_off: u32,
+    /// An FMI 3.0 array variable's element count (the elements follow at
+    /// `vr + 1`..), 1 for a scalar.
+    pub len: u32,
 }
 
 /// The `--parmodauto` ODE task graph C reads from `<model>_ode.json`: one task per
@@ -1596,6 +1599,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
         put_u32(&mut o, v.der_off);
+        put_u32(&mut o, v.len);
     }
     put_u32(&mut o, m.fmi_dae_enable_vr);
     put_u32(&mut o, m.zc_desc.len() as u32);
@@ -2083,7 +2087,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let start_off = r.u32()?;
         let is_string = r.u8()? != 0;
         let der_off = r.u32()?;
-        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off });
+        let len = r.u32()?;
+        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off, len });
     }
     let fmi_dae_enable_vr = r.u32()?;
     let ndesc = r.u32()? as usize;
@@ -2426,8 +2431,8 @@ mod tests {
                 candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0 },
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0, len: 1 },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0, len: 1 },
             ],
             fmi_dae_enable_vr: 9,
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],

@@ -517,6 +517,16 @@ impl Vrs {
     fn resolve(&self, vr: u32) -> Option<FmiVr> {
         *self.by_vr.get(vr as usize)?
     }
+
+    /// Each vr followed by the rest of its array's block.
+    fn expand(&self, vrs: &[u32]) -> Vec<u32> {
+        let mut out = Vec::with_capacity(vrs.len());
+        for &vr in vrs {
+            let len = self.resolve(vr).map_or(1, |e| e.len.max(1));
+            out.extend(vr..vr + len);
+        }
+        out
+    }
 }
 
 // ── Instance state ───────────────────────────────────────────────────────────
@@ -1121,6 +1131,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -1141,6 +1152,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -1159,6 +1171,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -1184,6 +1197,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -1198,6 +1212,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             if vr == st.dae_enable_vr && vr != 0 {
@@ -1218,6 +1233,7 @@ macro_rules! shared_instance_methods {
         if let Err(err) = st.update_if_needed() {
             return Err(err_status(err));
         }
+        let vrs = st.vrs.expand(&vrs);
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -1239,10 +1255,11 @@ macro_rules! shared_instance_methods {
         Status::Error
     }
     fn set_float64(&self, vrs: Vec<u32>, values: Vec<f64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::F64 && e.negate == Neg::None => {
@@ -1265,10 +1282,11 @@ macro_rules! shared_instance_methods {
         Status::Error
     }
     fn set_int32(&self, vrs: Vec<u32>, values: Vec<i32>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
@@ -1284,10 +1302,11 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
     fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
@@ -1312,10 +1331,11 @@ macro_rules! shared_instance_methods {
         Status::Error
     }
     fn set_uint64(&self, vrs: Vec<u32>, values: Vec<u64>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
@@ -1331,10 +1351,11 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
     fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             if vr == st.dae_enable_vr && vr != 0 {
                 if !st.configuring {
@@ -1361,10 +1382,11 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
     fn set_string(&self, vrs: Vec<u32>, values: Vec<String>) -> Status {
+        let mut st = self.st.borrow_mut();
+        let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
             return Status::Error;
         }
-        let mut st = self.st.borrow_mut();
         for (vr, val) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.is_string => {
