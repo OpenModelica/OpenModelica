@@ -89,7 +89,12 @@
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
 #endif
+#include "LSP/ModelicaLSPClient.h"
 #include <QtSvg/QSvgGenerator>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QDir>
+#include <QFileInfo>
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 
@@ -206,6 +211,149 @@ MainWindow *MainWindow::instance()
     mpInstance = new MainWindow;
   }
   return mpInstance;
+}
+
+/*!
+ * \brief MainWindow::startLanguageServer
+ * Starts the language server process if it is not already running.
+ * Resolves the executable from the user setting, then the bundled server,
+ * then the system PATH. Skips silently when no usable server is available.
+ */
+void MainWindow::startLanguageServer()
+{
+  if (mpLSPClient) {
+    return;
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  const QString configured = pSettings->value("languageServer/executable").toString().trimmed();
+  const QString executable = ModelicaLSPClient::resolveExecutable(configured);
+  // For .js servers, skip when Node.js is absent. The user is notified in the Options dialog.
+  bool canStart = !executable.isEmpty() &&
+                  !(executable.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty());
+  if (!canStart) {
+    return;
+  }
+  LSPClient *pLSPClient = new ModelicaLSPClient(this);
+  connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
+  connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));
+  // A library loaded while the initialize handshake is still in flight cannot be
+  // announced yet, and no further row change would announce it later. Re-sync
+  // once the server is ready; unchanged lists are dropped by updateLibraries().
+  connect(pLSPClient, &LSPClient::initialized, this, &MainWindow::syncLanguageServerLibraries);
+  QString rootUri = QUrl::fromLocalFile(QDir::homePath()).toString();
+  // Optional library roots the server loads so go-to-definition can resolve across files.
+  QStringList libraries = languageServerLibraries();
+  // Only keep the client once it actually launched, otherwise a single failed
+  // launch would block every later retry in this session.
+  if (!pLSPClient->start(executable, rootUri, libraries)) {
+    pLSPClient->deleteLater();
+    return;
+  }
+  mpLSPClient = pLSPClient;
+}
+
+/*!
+ * \brief MainWindow::languageServerLibraries
+ * Library roots the language server should know about: the ones configured in
+ * the settings, plus the source directories of the libraries currently loaded
+ * in OMC. Including the latter keeps the server in step with OMC instead of
+ * relying on a separately maintained list.
+ * \return de-duplicated list of library root directories
+ */
+QStringList MainWindow::languageServerLibraries() const
+{
+  QStringList libraries;
+  const QString librariesSetting = Utilities::getApplicationSettings()->value("languageServer/libraries").toString().trimmed();
+  const QStringList parts = librariesSetting.split(QLatin1Char(';'), Qt::SkipEmptyParts);
+  for (const QString &part : parts) {
+    const QString trimmed = part.trimmed();
+    if (!trimmed.isEmpty() && !libraries.contains(trimmed)) {
+      libraries.append(trimmed);
+    }
+  }
+
+  if (mpLibraryWidget && mpLibraryWidget->getLibraryTreeModel()) {
+    LibraryTreeItem *pRootLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
+    for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
+      LibraryTreeItem *pLibraryTreeItem = pRootLibraryTreeItem->child(i);
+      if (!pLibraryTreeItem || pLibraryTreeItem->getFileName().isEmpty()) {
+        continue;
+      }
+      // The server takes a library root directory, not the package file itself.
+      const QString libraryRoot = QFileInfo(pLibraryTreeItem->getFileName()).absolutePath();
+      if (libraryRoot.isEmpty() || libraries.contains(libraryRoot)) {
+        continue;
+      }
+      // Only a directory holding a package.mo is a library. A standalone class
+      // opened from a plain .mo file lives in an ordinary directory, and
+      // announcing that as a library makes the server warn the user about a
+      // "modelica.libraries" entry they never wrote. The server sees such a
+      // file through textDocument/didOpen anyway.
+      if (!QFileInfo::exists(libraryRoot + QStringLiteral("/package.mo"))) {
+        continue;
+      }
+      libraries.append(libraryRoot);
+    }
+  }
+  return libraries;
+}
+
+/*!
+ * \brief MainWindow::syncLanguageServerLibraries
+ * Tells a running language server about the libraries currently loaded, so a
+ * library loaded after startup can be resolved without restarting the server.
+ * Does nothing when the server is not running; startLanguageServer() already
+ * passes the initial set through the initialization options.
+ */
+void MainWindow::syncLanguageServerLibraries()
+{
+  if (!mpLSPClient || !mpLSPClient->isRunning()) {
+    return;
+  }
+  mpLSPClient->updateLibraries(languageServerLibraries());
+}
+
+/*!
+ * \brief MainWindow::onLanguageServerLogMessage
+ * Writes a language server message to the Messages Browser. All messages are
+ * prefixed with "LSP". The LSP message type (1=Error, 2=Warning, others=Info) is
+ * mapped to the OMEdit message level. Errors are always shown so that startup
+ * failures are visible; informational and warning messages require language
+ * server logging to be enabled.
+ */
+void MainWindow::onLanguageServerLogMessage(QString message, int type)
+{
+  if (message.isEmpty()) {
+    return;
+  }
+  if (type != 1) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    if (!pSettings->value("languageServer/logging", false).toBool()) {
+      return;
+    }
+  }
+  QString level = Helper::notificationLevel;
+  if (type == 1) {
+    level = Helper::errorLevel;
+  } else if (type == 2) {
+    level = Helper::warningLevel;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QStringLiteral("LSP: %1").arg(message),
+                                                        Helper::scriptingKind, level));
+}
+
+/*!
+ * \brief MainWindow::stopLanguageServer
+ * Stops and destroys the language server process if it is running.
+ */
+void MainWindow::stopLanguageServer()
+{
+  if (!mpLSPClient) {
+    return;
+  }
+  mpLSPClient->stop();
+  mpLSPClient->deleteLater();
+  mpLSPClient = nullptr;
 }
 
 /*!
@@ -326,6 +474,22 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   setStatusBar(mpStatusBar);
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
+  // Keep the language server in step with the libraries loaded in OMC. Queued so
+  // the library tree item is fully populated (it has no file name yet when the
+  // row is inserted) before the roots are collected.
+  // Coalesced: loading a library inserts a row per class, so reacting to each
+  // one would rescan the whole tree thousands of times on the GUI thread.
+  // Restarting a zero-timer collapses a burst into a single scan once it ends.
+  mpLanguageServerSyncTimer = new QTimer(this);
+  mpLanguageServerSyncTimer->setSingleShot(true);
+  mpLanguageServerSyncTimer->setInterval(0);
+  connect(mpLanguageServerSyncTimer, &QTimer::timeout, this, &MainWindow::syncLanguageServerLibraries);
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsInserted,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
+  // Unloading a library shrinks the list; since v0.3.2 the server drops the roots
+  // that disappear from the configuration instead of keeping them resolvable.
+  connect(mpLibraryWidget->getLibraryTreeModel(), &QAbstractItemModel::rowsRemoved,
+          mpLanguageServerSyncTimer, QOverload<>::of(&QTimer::start));
   // Create LibraryDockWidget
   mpLibraryDockWidget = new QDockWidget(Helper::libraries, this);
   mpLibraryDockWidget->setObjectName("Libraries");
