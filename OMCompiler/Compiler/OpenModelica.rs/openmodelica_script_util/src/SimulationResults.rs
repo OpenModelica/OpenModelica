@@ -893,6 +893,10 @@ pub fn cmpSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, mu
         }
     }
 
+    if cmpvars.len() > 1 {
+        reader_c.read_all();
+        reader_ref.read_all();
+    }
     let c_file = display_filename(runningTestsuite, &filename);
     let ref_file = display_filename(runningTestsuite, &reffilename);
     let time_name = time_var_name(&allvars);
@@ -1167,6 +1171,10 @@ pub fn diffSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, m
         }
     }
 
+    if cmpvars.len() > 1 {
+        reader_c.read_all();
+        reader_ref.read_all();
+    }
     let c_file = display_filename(runningTestsuite, &filename);
     let ref_file = display_filename(runningTestsuite, &reffilename);
     let time_name = time_var_name(&allvars);
