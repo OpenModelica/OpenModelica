@@ -164,6 +164,37 @@ static inline void addHashLongVar(hash_long_var **ht, long key, omc_ModelVariabl
   HASH_ADD_INT( *ht, id, v );
 }
 
+static inline void freeHashStringString(hash_string_string *ht)
+{
+  hash_string_string *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free((void*)c->val);
+    free(c);
+  }
+}
+
+static inline void freeHashLongVar(hash_long_var *ht)
+{
+  hash_long_var *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    freeHashStringString(c->val);
+    HASH_DEL(ht, c);
+    free(c);
+  }
+}
+
+static inline void freeHashStringLong(hash_string_long *ht)
+{
+  hash_string_long *c, *tmp;
+  HASH_ITER(hh, ht, c, tmp) {
+    HASH_DEL(ht, c);
+    free((void*)c->id);
+    free(c);
+  }
+}
+
 /* maybe use a map below {"rSta"  -> omc_ModelVariables} */
 /* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
 
@@ -875,6 +906,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
     }
   }
 
+  XML_ParserFree(parser);
   return mi;
 }
 
@@ -1136,6 +1168,26 @@ void read_input_xml(MODEL_DATA* modelData,
   calculateAllScalarLength(modelData);
 
   free((char*)filename);
+  freeHashStringString(mi->md);
+  freeHashStringString(mi->de);
+  freeHashLongVar(mi->rSta);
+  freeHashLongVar(mi->rDer);
+  freeHashLongVar(mi->rAlg);
+  freeHashLongVar(mi->rPar);
+  freeHashLongVar(mi->rAli);
+  freeHashLongVar(mi->rSen);
+  freeHashLongVar(mi->iAlg);
+  freeHashLongVar(mi->iPar);
+  freeHashLongVar(mi->iAli);
+  freeHashLongVar(mi->bAlg);
+  freeHashLongVar(mi->bPar);
+  freeHashLongVar(mi->bAli);
+  freeHashLongVar(mi->sAlg);
+  freeHashLongVar(mi->sPar);
+  freeHashLongVar(mi->sAli);
+  freeHashStringLong(mapAlias);
+  freeHashStringLong(mapAliasParam);
+  freeHashStringLong(mapAliasSen);
   free(mi);
 }
 
@@ -1526,6 +1578,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
         warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: override variable name not found in model: %s\n", it->id);
       }
     }
+    freeHashStringLong(mOverridesUses);
 
     infoStreamPrint(OMC_LOG_SOLVER, 0, "override done!");
   } else {
