@@ -526,7 +526,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
 
     let mut engine = InWasmEngine { fn_base, present_mask };
-    let sim_data = crate::rt_alloc(model.layout.total);
+    let sim_data = crate::rt_sim_data_new(model.layout.total);
     let n_reals = model.layout.n_row_total();
 
     let method = model.method.clone();
