@@ -388,6 +388,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 #endif
 
+  if (!testsuiteRunning && pSettings->contains("languageServer/enabled") &&
+      pSettings->value("languageServer/enabled").toBool()) {
+    pMainwindow->startLanguageServer();
+  }
+
   if (!testsuiteRunning) {
     // finally show the main window
     pMainwindow->show();
