@@ -5,11 +5,11 @@ project(${EulerName})
 if(DGESV_FOUND)
   include_directories (${DGESV_INCLUDE_DIR})
   add_library(${EulerName} Euler.cpp EulerSettings.cpp FactoryExport.cpp  ${DGESV_SRCS})
-  target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} )
+  target_link_libraries (${EulerName} ${SolverName} omsicpp_boost_libs )
 else()
   #use full Lapack
   add_library(${EulerName} Euler.cpp EulerSettings.cpp FactoryExport.cpp)
-  target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+  target_link_libraries (${EulerName} ${SolverName} omsicpp_boost_libs ${LAPACK_LIBRARIES})
 endif(DGESV_FOUND)
 
 if(NOT BUILD_SHARED_LIBS)
@@ -21,7 +21,7 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${EulerName} runtime/include/Core/Modelica.h )
-target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries (${EulerName} ${SolverName} omsicpp_boost_libs ${LAPACK_LIBRARIES})
 
 
 

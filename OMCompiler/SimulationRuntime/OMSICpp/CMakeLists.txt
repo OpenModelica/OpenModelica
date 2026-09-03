@@ -525,6 +525,11 @@ endif(WIN32)
 
 set(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 set(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
+
+# Wrap the resolved Boost libraries in a single INTERFACE target
+add_library(omsicpp_boost_libs INTERFACE)
+target_link_libraries(omsicpp_boost_libs INTERFACE ${Boost_LIBRARIES})
+
 message(STATUS "using boost include for omsicpp runtime: ${Boost_INCLUDE_DIR}")
 message(STATUS "Boost Libraries for omsicpp runtime")
 message(STATUS ${Boost_LIBRARIES})
