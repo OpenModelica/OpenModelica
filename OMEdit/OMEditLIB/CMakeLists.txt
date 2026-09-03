@@ -469,7 +469,10 @@ endif()
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
   target_link_libraries(OMEditLib PUBLIC zlib)
-  # PersistentStorage.cpp uses CryptProtectData/CryptUnprotectData which live in crypt32.
+endif()
+
+if(WIN32)
+  # PersistentStorage.cpp calls CryptProtectData/CryptUnprotectData.
   target_link_libraries(OMEditLib PUBLIC crypt32)
 endif()
 
