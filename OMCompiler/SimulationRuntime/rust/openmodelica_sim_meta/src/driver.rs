@@ -2231,7 +2231,7 @@ pub fn run_initialization_with_clocks(
     e: &mut dyn SimEngine,
     sim_data: u32,
     model: &SimMeta,
-    dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<crate::sync::Sync> {
     init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model), dae)?;
     let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
@@ -2251,7 +2251,7 @@ fn init_model(
     inputs: &[crate::InputVar],
     start_time: f64,
     model: Option<&SimMeta>,
-    dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
     // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
@@ -3909,8 +3909,9 @@ pub(crate) fn iterate_discrete_after_eval(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
-    iterate_discrete_from(e, sim_data, layout, true, None)
+    iterate_discrete_from(e, sim_data, layout, true, dae)
 }
 
 /// [`iterate_discrete`] where DAE mode makes `functionDAE` C's `ida_event_update`:
@@ -3929,7 +3930,7 @@ fn iterate_discrete_from(
     sim_data: u32,
     layout: &SimLayout,
     evaluated: bool,
-    mut dae: Option<&mut dyn FnMut(&mut dyn SimEngine) -> Result<()>>,
+    mut dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     rtclock::tick(rtclock::DISCRETE); // C's `callStatistics.updateDiscreteSystem`
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
@@ -4097,10 +4098,11 @@ fn fire_time_event(
     sim_data: u32,
     layout: &SimLayout,
     te: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
-    let r = fire_time_event_inner(e, samples, sim_data, layout, te);
+    let r = fire_time_event_inner(e, samples, sim_data, layout, te, dae);
     took_error_stage(e, addr, save);
     if r.is_err() {
         note_throw_past_step();
@@ -4114,12 +4116,13 @@ fn fire_time_event_inner(
     sim_data: u32,
     layout: &SimLayout,
     te: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
     samples.fire(e, sim_data, layout, te)?;
-    iterate_discrete_after_eval(e, sim_data, layout)?;
+    iterate_discrete_after_eval(e, sim_data, layout, dae)?;
     store_relations(e, sim_data, layout)
 }
 
@@ -4221,9 +4224,24 @@ pub fn event_update(
     samples: Option<&mut Samples>,
     time: f64,
 ) -> Result<EventUpdate> {
+    event_update_dae(e, sim_data, layout, samples, time, None)
+}
+
+/// [`event_update`] where DAE mode makes `functionDAE` C's `ida_event_update`:
+/// `dae` ends every event-iteration pass, so the algebraic unknowns and the
+/// derivatives are consistent with the discrete state each pass leaves behind.
+/// Without it the integrator restarts on the values of the pass before the last.
+pub fn event_update_dae(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    samples: Option<&mut Samples>,
+    time: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
+) -> Result<EventUpdate> {
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
-    let r = event_update_inner(e, sim_data, layout, samples, time);
+    let r = event_update_inner(e, sim_data, layout, samples, time, dae);
     took_error_stage(e, addr, save);
     if r.is_err() {
         note_throw_past_step();
@@ -4237,6 +4255,7 @@ fn event_update_inner(
     layout: &SimLayout,
     samples: Option<&mut Samples>,
     time: f64,
+    mut dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<EventUpdate> {
     rethrow_store::note_event();
     let n_states = layout.n_states as usize;
@@ -4254,13 +4273,13 @@ fn event_update_inner(
     let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + SAMPLE_EPS);
     if time_event {
         if let Some(s) = samples.as_deref_mut() {
-            fire_time_event(e, s, sim_data, layout, time)?;
+            fire_time_event(e, s, sim_data, layout, time, dae.as_deref_mut())?;
         }
     } else {
         // `pre(x)` of a continuous variable must be its value at the crossing.
         save_pre_real(e, sim_data, layout)?;
         refresh_relations(e, sim_data, layout)?;
-        iterate_discrete(e, sim_data, layout)?;
+        iterate_discrete_from(e, sim_data, layout, false, dae.as_deref_mut())?;
         store_relations(e, sim_data, layout)?;
         check_nls(e, sim_data, layout)?;
     }
@@ -7377,13 +7396,46 @@ impl SolverCore {
         self.write_states(e)
     }
 
-    /// C's `didEventStep`: drop the step history at the post-event state, which in
-    /// DAE mode means the whole of `dae_restart`.
+    /// C's `didEventStep`: drop the step history at the post-event state. In DAE
+    /// mode that is C's `IDAReInit` alone -- the `IDACalcIC` belongs to the event
+    /// iteration, which ran [`Self::dae_restart`] at the end of every pass.
     fn event_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
-        match self.dae {
-            true => self.dae_restart(e, ctx),
-            false => self.restart(),
+        let _ = (e, ctx);
+        self.restart()
+    }
+
+    /// C's `handleEvents`: the event iteration with `functionDAE` as DAE mode
+    /// installs it.
+    fn event_update_here(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        sim_data: u32,
+        layout: &SimLayout,
+        ctx: *mut ResCtx,
+        time: f64,
+    ) -> Result<EventUpdate> {
+        if !self.dae {
+            return event_update(e, sim_data, layout, None, time);
         }
+        let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
+        event_update_dae(e, sim_data, layout, None, time, Some(&mut dae))
+    }
+
+    /// The same for a time event, which C also ends in `updateDiscreteSystem`.
+    fn fire_time_event_here(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        samples: &mut Samples,
+        sim_data: u32,
+        layout: &SimLayout,
+        ctx: *mut ResCtx,
+        te: f64,
+    ) -> Result<()> {
+        if !self.dae {
+            return fire_time_event(e, samples, sim_data, layout, te, None);
+        }
+        let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
+        fire_time_event(e, samples, sim_data, layout, te, Some(&mut dae))
     }
 
     /// C's `ida_event_update` as the initial `updateDiscreteSystem` calls it: the IDA
@@ -7870,7 +7922,7 @@ impl SolverCore {
         {
             capture_pre(e, r, sim_data, layout, t)?;
         }
-        event_update(e, sim_data, layout, None, t)?;
+        self.event_update_here(e, sim_data, layout, ctx as *mut ResCtx, t)?;
         save_zero_crossings_after_event(e, sim_data, layout)?;
         if let Some(r) = rows.as_deref_mut() {
             if emit_post_event_row(model, t) {
@@ -8073,7 +8125,7 @@ impl SolverCore {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
-                    event_update(e, sim_data, layout, None, troot)?;
+                    self.event_update_here(e, sim_data, layout, ctx, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
@@ -8133,7 +8185,7 @@ impl SolverCore {
                     write_time(e, sim_data, te)?;
                     return Ok(Step::Event { time: te });
                 }
-                fire_time_event(e, samp, sim_data, layout, te)?;
+                self.fire_time_event_here(e, samp, sim_data, layout, ctx, te)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut()
@@ -8410,7 +8462,7 @@ impl CsDriver {
                         return Ok(CsStep::Event { time: te });
                     }
                     store_operators_at(e, sim_data, layout, te)?;
-                    fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
+                    fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                     e.clean_nls_history(te);
                     self.core.time_events += 1;
                     if terminated(e, sim_data, layout)? {
@@ -8856,7 +8908,7 @@ impl Driver for EventsDriver {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
                         store_operators_at(e, sim_data, layout, te)?;
-                        fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
+                        fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
                         self.core.walk_steps += 1;
