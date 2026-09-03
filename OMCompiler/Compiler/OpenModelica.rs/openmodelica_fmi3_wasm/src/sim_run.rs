@@ -152,8 +152,7 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
     meta::profiling::set_wall_clock(clock::epoch_secs);
     meta::profiling::set_plots_on_host(true);
 
-    let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(m.layout.total);
-    unsafe { core::ptr::write_bytes(sim_data as *mut u8, 0, m.layout.total as usize) };
+    let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_sim_data_new(m.layout.total);
     let mut engine = Engine;
     let (result, label) = driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false)
         .map_err(|e| e.to_string())?;

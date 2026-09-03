@@ -858,11 +858,7 @@ fn new_state() -> Option<MeState> {
     // From the model's own DefaultExperiment, as in C's FMU.
     openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(meta.step_size());
     apply_baked_solver_flags(&meta.fmi_solver_flags)?;
-    let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(layout.total);
-    // rt_alloc leaves the block uninitialised; zero it so unset slots read 0.
-    unsafe {
-        core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
-    }
+    let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_sim_data_new(layout.total);
     let dae_enable_vr = meta.fmi_dae_enable_vr;
     let dss = driver::StateSelection::new(&meta);
     let st = MeState {

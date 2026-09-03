@@ -522,6 +522,17 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
     raw + HEADER as u32
 }
 
+/// `SimData`: [`rt_alloc`] hands back a recycled block with the previous object's
+/// bytes in it, and the emitted code releases the old handle of every heap slot
+/// (String, array, external object) before overwriting it. Every driver allocates
+/// the block through here so no slot starts on a stale pointer.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_data_new(total: u32) -> u32 {
+    let obj = rt_alloc(total);
+    unsafe { core::ptr::write_bytes(obj as *mut u8, 0, total as usize) };
+    obj
+}
+
 /// Free an object previously returned by `rt_alloc`.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_free(obj: u32) {

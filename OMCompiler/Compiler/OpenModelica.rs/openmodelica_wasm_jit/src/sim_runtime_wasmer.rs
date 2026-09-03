@@ -1130,7 +1130,9 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
 
     let layout = &model.layout;
     // Allocate the shared SimData block.
-    let sim_data = wts(rt_alloc.call(&mut store, layout.total))?;
+    let sim_data_new =
+        wts(rt_inst.exports.get_typed_function::<u32, u32>(&store, "rt_sim_data_new"))?;
+    let sim_data = wts(sim_data_new.call(&mut store, layout.total))?;
 
     // See the wasmtime counterpart.
     if let Ok(set) =

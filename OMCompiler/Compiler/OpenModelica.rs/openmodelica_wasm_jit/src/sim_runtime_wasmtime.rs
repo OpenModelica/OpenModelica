@@ -1486,7 +1486,8 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
 
     let layout = &model.layout;
     // Allocate the shared SimData block.
-    let sim_data = wts(rt_alloc.call(&mut store, layout.total))?;
+    let sim_data_new = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_sim_data_new"))?;
+    let sim_data = wts(sim_data_new.call(&mut store, layout.total))?;
 
     // M0 proof: the driver reaches the model wasm→wasm by appending a model
     // export to the shared table and `call_indirect`ing it from the runtime

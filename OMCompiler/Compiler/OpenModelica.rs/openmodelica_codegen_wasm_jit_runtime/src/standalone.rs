@@ -214,7 +214,7 @@ fn run() {
         simflags::print_notices(f);
         m.apply_flags(f);
     });
-    let sim_data = crate::rt_alloc(m.layout.total);
+    let sim_data = crate::rt_sim_data_new(m.layout.total);
     let mut engine = StandaloneEngine;
     crate::nls::rt_set_step_size(m.step_size());
     crate::files::set_prefix(&m.prefix);
