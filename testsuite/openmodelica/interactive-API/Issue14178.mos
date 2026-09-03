@@ -18,8 +18,8 @@ xmlLog := simulate(ThermofluidStream.Examples.EspressoMachine, simflags="-logFor
 xmlText := xmlLog.messages;
 echo(true);
 writeFile("Issue14178_log.txt", xmlText);
-system("grep \"<message\" Issue14178_log.txt | grep -v \"/>\" | wc -l > Issue14178_start_tag.txt");
-system("grep \"</message\" Issue14178_log.txt | wc -l > Issue14178_end_tag.txt");
+system("grep '\">$' Issue14178_log.txt | wc -l > Issue14178_start_tag.txt");
+system("grep '</message' Issue14178_log.txt | wc -l > Issue14178_end_tag.txt");
 readFile("Issue14178_start_tag.txt") == readFile("Issue14178_end_tag.txt");
 
 
