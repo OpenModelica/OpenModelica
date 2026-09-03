@@ -22,6 +22,7 @@ type Src = openmodelica_wasi::fs::Reader;
 /// read once and every lookup is an index; over it only what the caller asks for
 /// is read, as the C reader always has.
 const MAX_CACHED_DATA2: u64 = 64 * 1024 * 1024;
+const READ_ALL_MAX: u64 = 2 * 1024 * 1024 * 1024;
 
 /// One entry from the `name`/`description`/`dataInfo` metadata tables.
 #[derive(Clone)]
@@ -447,10 +448,20 @@ impl MatReader {
     /// Load and transpose data_2 into time-major order on first access. Only for
     /// a matrix that fits in memory; past that the callers read off the disk.
     fn ensure_data2(&mut self) -> bool {
+        self.load_data2(MAX_CACHED_DATA2)
+    }
+
+    /// C's `omc_matlab4_read_all_vals`, for a caller that will read most
+    /// columns: the per-element disk path costs a seek per row.
+    pub fn read_all(&mut self) -> bool {
+        self.load_data2(READ_ALL_MAX)
+    }
+
+    fn load_data2(&mut self, max_bytes: u64) -> bool {
         if self.data2.is_some() {
             return true;
         }
-        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > MAX_CACHED_DATA2 {
+        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > max_bytes {
             return false;
         }
         let n = self.nrows * self.nvar;

@@ -44,6 +44,14 @@ impl ResultReader {
         }
     }
 
+    /// Load the whole time-variant matrix before reading many of its columns
+    /// (C's `omc_matlab4_read_all_vals`); the other formats are in memory already.
+    pub fn read_all(&mut self) {
+        if let ResultReader::Mat(reader) = self {
+            reader.read_all();
+        }
+    }
+
     /// C `getData` → `SimulationResultsImpl__readDataset` for a single
     /// variable: its full trajectory over all sample points (a constant vector
     /// for a parameter), or `None` if the variable cannot be read.
