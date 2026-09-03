@@ -1793,11 +1793,14 @@ pub(crate) fn resolve_ext_libraries(
         if !lib.ends_with(".wasm") {
             // A wasm build installed beside the native one: its functions bind
             // wasm->wasm, where the native one costs a host trampoline per call.
+            // Both are kept — the `Include` wrappers over the library are served by
+            // the host, and those link against the platform build.
+            let mut have_wasm = false;
             if let Some((path, bytes)) = find_wasm_library(&lib, &dirs) {
+                have_wasm = true;
                 if placed.insert(path.clone()) {
                     out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
                 }
-                continue;
             }
             if let Some(path) = find_source_library(&lib, &dirs) {
                 out.sources.push(format!("#include \"{}\"", path.replace('\\', "/")));
@@ -1805,11 +1808,13 @@ pub(crate) fn resolve_ext_libraries(
                 match find_native_library(&lib, &dirs) {
                     Some(NativeLib::Shared(path)) => out.native.push(path),
                     Some(NativeLib::Archive(path)) => out.archives.push(path),
-                    Some(NativeLib::System(soname)) => {
+                    // A soname no file backs is the platform's to find. Not worth
+                    // asking for when the module is already here.
+                    Some(NativeLib::System(soname)) if !have_wasm => {
                         out.native.push(soname.clone());
                         out.native_system.push(soname);
                     }
-                    None => (),
+                    _ => (),
                 }
             }
             continue;
@@ -5397,22 +5402,27 @@ fn build_sim_model(
         }
         crate::CodegenWasmJitFunctions::set_native_externals(ext_native.iter().map(|s| s.name.clone()));
         let want_native = ext_host == ExtHost::Native || !ext_native.is_empty();
-        if !ext_libs.archives.is_empty() && want_native {
-            ext_archives = Some(ExtArchives {
-                archives: std::mem::take(&mut ext_libs.archives),
-                symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
-                ccompiler: mp.ccompiler.to_string(),
-                dllext: mp.dllext.to_string(),
-                prefix: prefix.clone(),
-            });
-        }
+        let symbols: Vec<String> = ext_imports.iter().map(|s| s.name.clone()).collect();
         // Built on demand, for a symbol the loaded libraries turn out not to define.
+        // The archives are on this link too, not only on their own: a member only
+        // these sources reference is pulled in by nothing else.
         if !sources.is_empty() && want_native {
             ext_includes = Some(ExtIncludes {
                 sources,
                 include_dirs: dirs,
+                archives: ext_libs.archives.clone(),
+                symbols: symbols.clone(),
                 ccompiler: mp.ccompiler.to_string(),
                 cflags: mp.cflags.to_string(),
+                dllext: mp.dllext.to_string(),
+                prefix: prefix.clone(),
+            });
+        }
+        if !ext_libs.archives.is_empty() && want_native {
+            ext_archives = Some(ExtArchives {
+                archives: std::mem::take(&mut ext_libs.archives),
+                symbols,
+                ccompiler: mp.ccompiler.to_string(),
                 dllext: mp.dllext.to_string(),
                 prefix,
             });

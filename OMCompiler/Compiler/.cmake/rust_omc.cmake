@@ -1192,6 +1192,18 @@ function(omc_rust_setup_codegen)
             DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
+  # The toolchain omc hands a library's CMake build project when it has to build
+  # that library's external "C" for wasm. Names only, so the install relocates.
+  get_filename_component(RUST_OMC_WASI_CLANG "${_omc_wasi_clang}" NAME)
+  get_filename_component(RUST_OMC_LLVM_AR "${LLVM_AR_EXECUTABLE}" NAME)
+  get_filename_component(RUST_OMC_LLVM_RANLIB "${LLVM_RANLIB_EXECUTABLE}" NAME)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/wasm32-wasip1-toolchain.cmake.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/wasm32-wasip1.cmake @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wasm32-wasip1.cmake
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/cmake COMPONENT omc)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/wasm32-wasip1-rules.cmake
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/cmake COMPONENT omc)
+
   # The desktop egui OMShell client (omshell_egui). It links the compiler
   # in-process as an ordinary cargo dependency (omshell_omc ->
   # openmodelica_backend_main), so building it compiles the compiler crates too;

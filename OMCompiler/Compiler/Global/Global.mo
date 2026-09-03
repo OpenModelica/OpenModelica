@@ -88,6 +88,9 @@ constant Integer fmi3VariableAliasCache = 34;
 // SOME((simCode, FMUVersion, FMUType)). Lives until the next translation.
 constant Integer fmuTranslation = 35;
 
+// Build projects already run this session; a failed build installs nothing.
+constant Integer extLibraryBuildIndex = 36;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -126,6 +129,7 @@ algorithm
   setGlobalRoot(fmi3ValueReferenceCache, NONE());
   setGlobalRoot(fmi3VariableAliasCache, NONE());
   setGlobalRoot(fmuTranslation, NONE());
+  setGlobalRoot(extLibraryBuildIndex, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

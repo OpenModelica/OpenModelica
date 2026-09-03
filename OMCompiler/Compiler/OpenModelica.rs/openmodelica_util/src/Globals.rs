@@ -257,4 +257,10 @@ thread_local! {
     /// written; source: `SimCodeUtil.cacheFMI3ValueReferences`.
     pub static fmi3ValueReferenceCache: RefCell<Option<metamodelica::Array<ArcStr>>> =
         const { RefCell::new(None) };
+
+    /// Index 36 — Build projects already run this session, keyed
+    /// `<resources>\n<library>\n<forWasm>`; a failed build installs nothing.
+    /// Source: `SimCodeFunctionUtil.extLibraryBuildAttempted`.
+    pub static extLibraryBuildIndex: RefCell<Arc<metamodelica::List<ArcStr>>> =
+        RefCell::new(metamodelica::nil());
 }

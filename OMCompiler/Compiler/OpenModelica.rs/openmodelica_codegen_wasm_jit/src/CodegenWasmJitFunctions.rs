@@ -11632,6 +11632,8 @@ fn native_fallbacks(
         let inc = openmodelica_wasm_jit::model::ExtIncludes {
             sources: sources.to_vec(),
             include_dirs: dirs.to_vec(),
+            archives: archives.to_vec(),
+            symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
             ccompiler: mp.ccompiler.to_string(),
             cflags: mp.cflags.to_string(),
             dllext: mp.dllext.to_string(),
