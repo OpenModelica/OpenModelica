@@ -433,6 +433,7 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
         .map(|l| l.name.as_str())
         .chain(model.ext_native_libs.iter().map(|s| s.as_str()))
         .chain(model.ext_archives.iter().flat_map(|a| a.archives.iter().map(|s| s.as_str())))
+        .chain(model.ext_includes.iter().flat_map(|i| i.archives.iter().map(|s| s.as_str())))
         .collect();
     let mut s = if searched.is_empty() {
         format!(
@@ -538,11 +539,11 @@ impl NativeExternals {
                     .filter(|s| self.symbol(&s.name).is_none())
                     .cloned()
                     .collect();
-                let errors = self.errors.len();
                 // A wrapper for a function the sources only declare leaves an
-                // address the loader cannot resolve.
+                // address the loader cannot resolve. Both attempts' errors are kept:
+                // dropping the wrappers can leave an empty library that loads and
+                // explains nothing.
                 if !self.load_includes(inc, &missing) && !missing.is_empty() {
-                    self.errors.truncate(errors);
                     self.load_includes(inc, &[]);
                 }
                 return self.symbol(name);
@@ -562,7 +563,8 @@ impl NativeExternals {
             }
         };
         self.errors.extend(built.note);
-        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(std::slice::from_ref(&built.path));
+        let (handles, errors) =
+            openmodelica_util::dynload::load_external_libraries_bound(std::slice::from_ref(&built.path));
         let loaded = !handles.is_empty();
         if loaded {
             self.paths.insert(0, built.path);

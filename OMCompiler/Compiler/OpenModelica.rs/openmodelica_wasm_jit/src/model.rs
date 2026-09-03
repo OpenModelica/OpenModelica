@@ -186,6 +186,12 @@ pub struct ExtIncludes {
     pub sources: Vec<String>,
     /// `IncludeDirectory` annotations, already `-I"…"` strings.
     pub include_dirs: Vec<String>,
+    /// The model's static archives, in link order: this source is what references
+    /// their members, so linking them anywhere else pulls in nothing.
+    pub archives: Vec<String>,
+    /// The `external "C"` functions, forced undefined so an archive member only they
+    /// define is pulled in too.
+    pub symbols: Vec<String>,
     pub ccompiler: String,
     pub cflags: String,
     pub dllext: String,
@@ -211,10 +217,11 @@ impl ExtIncludes {
         static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<Built, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!(
-            "{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}",
             self.prefix,
             self.cflags,
             self.include_dirs.join(" "),
+            self.archives.join(" "),
             self.sources.join("\n"),
             missing.iter().map(|s| &*s.name).collect::<Vec<_>>().join(" ")
         );
@@ -232,22 +239,37 @@ impl ExtIncludes {
     #[cfg(not(target_arch = "wasm32"))]
     fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         let wrappers = ext_wrappers(missing);
-        match self.compile_tu(&wrappers) {
+        match self.build(&wrappers) {
             // Keep why they did not compile: it explains a symbol still missing.
             Err(e) if !wrappers.is_empty() => {
-                self.compile_tu("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
+                self.build("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
             }
             r => r.map(|path| Built { path, note: None }),
         }
     }
 
+    /// Retry without the archives: a non-PIC member cannot go into a shared object,
+    /// and the unit is then short only the archive's symbols.
     #[cfg(not(target_arch = "wasm32"))]
-    fn compile_tu(&self, wrappers: &str) -> std::result::Result<String, String> {
+    fn build(&self, wrappers: &str) -> std::result::Result<String, String> {
+        match self.compile_tu(wrappers, true) {
+            Err(e) if !self.archives.is_empty() => self.compile_tu(wrappers, false).map_err(|_| e),
+            r => r,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_tu(&self, wrappers: &str, archives: bool) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
         // The fallback build must not be handed the path it just failed to load.
-        let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
+        let stem = match (wrappers.is_empty(), archives) {
+            (false, true) => "includes",
+            (true, true) => "includes_exports",
+            (false, false) => "includes_nolibs",
+            (true, false) => "includes_exports_nolibs",
+        };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
         // No prologue: external C source includes what it uses. A source that needs
@@ -268,7 +290,15 @@ impl ExtIncludes {
         for inc in &self.include_dirs {
             cmd.arg(inc.trim_matches('"'));
         }
+        if archives {
+            for sym in &self.symbols {
+                cmd.arg(format!("-Wl,-u,{sym}"));
+            }
+        }
         cmd.arg("-o").arg(&out).arg(&tu);
+        if archives {
+            cmd.args(&self.archives);
+        }
         let output = cmd
             .output()
             .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;

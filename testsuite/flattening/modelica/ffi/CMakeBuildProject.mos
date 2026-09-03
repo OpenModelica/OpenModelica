@@ -1,0 +1,26 @@
+// name:     CMakeBuildProject
+// keywords: ffi external cmake BuildProjects
+// status:   correct
+// setup_command: rm -rf "$HOME/.openmodelica/binaries/BuildProjectTest" "$APPDATA/.openmodelica/binaries/BuildProjectTest"
+// teardown_command: rm -rf "$HOME/.openmodelica/binaries/BuildProjectTest" "$APPDATA/.openmodelica/binaries/BuildProjectTest"
+// depends: BuildProjectTest
+//
+// BuildProjectTest ships no Resources/Library, so Library="BuildProjectTestLib"
+// resolves only if omc runs Resources/CMakeLists.txt itself. A wasm target
+// builds the same project a second time, cross-compiled to a module.
+
+loadFile("BuildProjectTest/package.mo"); getErrorString();
+setCommandLineOptions("-d=gen,noevalfunc"); getErrorString();
+BuildProjectTest.scale(2.0);
+// The notifications name a temporary directory, so ask whether anything went
+// wrong instead of printing them.
+regex(getErrorString(), "(Error|Warning):", 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 42.0
+// (0, {""})
+// endResult

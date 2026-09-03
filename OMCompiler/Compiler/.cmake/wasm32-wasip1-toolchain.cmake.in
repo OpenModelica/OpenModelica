@@ -1,0 +1,66 @@
+# Builds a Modelica library's external "C" as a wasm module omc can load
+# (`Library="foo"` resolves to `libfoo.wasm`). omc passes this itself when it
+# runs the library's CMake build project for a wasm target.
+#
+#   cmake -DCMAKE_TOOLCHAIN_FILE=<omhome>/share/omc/cmake/wasm32-wasip1.cmake ...
+#
+# OMC_WASI_CLANG and OMC_WASI_SYSROOT override the compiler and sysroot.
+
+set(CMAKE_SYSTEM_NAME WASI)
+set(CMAKE_SYSTEM_VERSION 1)
+set(CMAKE_SYSTEM_PROCESSOR wasm32)
+
+get_filename_component(_omc_home "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+
+if(NOT OMC_WASI_SYSROOT AND DEFINED ENV{OMC_WASI_SYSROOT})
+  set(OMC_WASI_SYSROOT "$ENV{OMC_WASI_SYSROOT}")
+endif()
+if(NOT OMC_WASI_SYSROOT)
+  set(OMC_WASI_SYSROOT "${_omc_home}/lib/wasm32-wasi/omc")
+endif()
+set(CMAKE_SYSROOT "${OMC_WASI_SYSROOT}")
+
+if(NOT OMC_WASI_CLANG AND DEFINED ENV{OMC_WASI_CLANG})
+  set(OMC_WASI_CLANG "$ENV{OMC_WASI_CLANG}")
+endif()
+if(NOT OMC_WASI_CLANG)
+  find_program(OMC_WASI_CLANG NAMES "@RUST_OMC_WASI_CLANG@" clang REQUIRED)
+endif()
+set(CMAKE_C_COMPILER "${OMC_WASI_CLANG}")
+set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)
+set(CMAKE_CXX_COMPILER "${OMC_WASI_CLANG}++")
+set(CMAKE_CXX_COMPILER_TARGET wasm32-wasip1)
+
+# Distributions version the LLVM binaries, so fall back to clang's suffix.
+if(NOT CMAKE_AR OR NOT CMAKE_RANLIB)
+  execute_process(COMMAND "${CMAKE_C_COMPILER}" -dumpversion
+                  OUTPUT_VARIABLE _omc_clang_ver OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  string(REGEX MATCH "^[0-9]+" _omc_clang_major "${_omc_clang_ver}")
+  find_program(CMAKE_AR NAMES "@RUST_OMC_LLVM_AR@" llvm-ar "llvm-ar-${_omc_clang_major}")
+  find_program(CMAKE_RANLIB NAMES "@RUST_OMC_LLVM_RANLIB@" llvm-ranlib "llvm-ranlib-${_omc_clang_major}")
+  if(NOT CMAKE_AR OR NOT CMAKE_RANLIB)
+    message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; they archive wasm objects.")
+  endif()
+endif()
+
+set(CMAKE_C_FLAGS_INIT "-fPIC")
+set(CMAKE_CXX_FLAGS_INIT "-fPIC")
+
+# What a wasm module is named and how it is linked, applied after Platform/WASI.
+set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_CURRENT_LIST_DIR}/wasm32-wasip1-rules.cmake")
+
+# A PIC dylink module: its libc and ModelicaUtilities symbols are the
+# simulation's, resolved when omc instantiates it beside the model.
+set(_omc_wasi_link "-nodefaultlibs -Wl,--export-all -Wl,--allow-undefined")
+if(EXISTS "${CMAKE_SYSROOT}/lib/wasm32-wasip1/libclang_rt.builtins-wasm32.a")
+  set(_omc_wasi_link
+      "${_omc_wasi_link} \"${CMAKE_SYSROOT}/lib/wasm32-wasip1/libclang_rt.builtins-wasm32.a\"")
+endif()
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "${_omc_wasi_link}")
+
+# No host dependency, and a wasm executable cannot be run to answer a check.
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)

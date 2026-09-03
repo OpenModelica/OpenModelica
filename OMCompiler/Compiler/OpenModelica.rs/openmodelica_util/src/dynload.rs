@@ -111,9 +111,19 @@ pub(crate) mod dl {
     /// Global scope, deferred binding: for libraries that reference each other, so
     /// the order they are loaded in need not be a topological one.
     pub fn open_global_deferred(name: &str) -> std::result::Result<usize, String> {
+        open_global_mode(name, libc::RTLD_LAZY)
+    }
+
+    /// Global scope, immediate binding. A lazy bind that fails is not an error the
+    /// caller sees: the loader prints `symbol lookup error` and kills the process.
+    pub fn open_global_bound(name: &str) -> std::result::Result<usize, String> {
+        open_global_mode(name, libc::RTLD_NOW)
+    }
+
+    fn open_global_mode(name: &str, binding: c_int) -> std::result::Result<usize, String> {
         let c = CString::new(name).map_err(|_| "NUL byte in path".to_owned())?;
         unsafe { libc::dlerror() };
-        let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_LAZY) };
+        let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | binding) };
         if h.is_null() { Err(last_error()) } else { Ok(h as usize) }
     }
 
@@ -207,12 +217,16 @@ pub(crate) mod dl {
         true
     }
 
-    /// The Windows loader always binds lazily and has no global scope; a plain
-    /// `LoadLibrary` is what [`open_global_deferred`] means here.
+    /// The Windows loader resolves every import at load time and has no global
+    /// scope; a plain `LoadLibrary` is what both binding modes mean here.
     pub fn open_global_deferred(name: &str) -> std::result::Result<usize, String> {
         let c = CString::new(name).map_err(|_| "NUL byte in path".to_owned())?;
         let h = unsafe { LoadLibraryA(c.as_ptr()) };
         if h.is_null() { Err(last_error()) } else { Ok(h as usize) }
+    }
+
+    pub fn open_global_bound(name: &str) -> std::result::Result<usize, String> {
+        open_global_deferred(name)
     }
 
     pub fn sym(handle: usize, name: &str) -> Option<usize> {
@@ -511,6 +525,17 @@ fn ensure_sim_libs() {
 /// single link resolves but a loader binding one library at a time does not, so retry
 /// the ones that would not load until a pass loads nothing new.
 pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
+    load_external_libraries_mode(paths, false)
+}
+
+/// As [`load_external_libraries`], but binding immediately: for a library built
+/// here, whose dependencies are all loaded, a symbol the lazy binder later fails on
+/// takes the process down where this reports it.
+pub fn load_external_libraries_bound(paths: &[String]) -> (Vec<usize>, Vec<String>) {
+    load_external_libraries_mode(paths, true)
+}
+
+fn load_external_libraries_mode(paths: &[String], bind_now: bool) -> (Vec<usize>, Vec<String>) {
     static LOADED: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
     ensure_sim_libs();
     let mut loaded = LOADED.lock().unwrap();
@@ -522,7 +547,11 @@ pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
             if handles[i].is_some() {
                 continue;
             }
-            match dl::open_global_deferred(path) {
+            let opened = match bind_now {
+                true => dl::open_global_bound(path),
+                false => dl::open_global_deferred(path),
+            };
+            match opened {
                 Ok(h) => {
                     loaded.insert(path.clone(), h);
                     handles[i] = Some(h);
