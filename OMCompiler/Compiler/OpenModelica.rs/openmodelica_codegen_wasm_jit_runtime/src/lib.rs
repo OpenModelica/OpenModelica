@@ -473,6 +473,34 @@ pub fn reset_stats() {
 const HEADER: usize = 8;
 const ALIGN: usize = 8;
 
+/// A block held back so the out-of-memory report has room to format its message:
+/// `memory.grow` refusing means the reporting path would otherwise trap too, and
+/// the bare `unreachable` that follows reads as a codegen fault.
+struct Reserve(core::cell::UnsafeCell<u32>);
+unsafe impl Sync for Reserve {}
+static RESERVE: Reserve = Reserve(core::cell::UnsafeCell::new(0));
+static RESERVE_ARMED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+const RESERVE_BYTES: usize = 64 * 1024;
+
+fn reserve_layout() -> Layout {
+    Layout::from_size_align(RESERVE_BYTES, ALIGN).expect("bad layout")
+}
+
+/// Taken straight from `dlmalloc`, not `rt_alloc`, so arming cannot recurse.
+fn arm_reserve() {
+    if RESERVE_ARMED.swap(true, core::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    unsafe { *RESERVE.0.get() = GLOBAL.alloc(reserve_layout()) as u32 };
+}
+
+fn release_reserve() {
+    let p = core::mem::replace(unsafe { &mut *RESERVE.0.get() }, 0);
+    if p != 0 {
+        unsafe { GLOBAL.dealloc(p as *mut u8, reserve_layout()) };
+    }
+}
+
 /// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
 /// one array/record per array/record-typed function local on every call (an IF97
 /// property evaluation does hundreds), so a same-size block is nearly always
@@ -513,9 +541,16 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
         }
     }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
+    // Off the recycling path: the first allocation of a size class comes through
+    // here, so the reserve is armed long before the heap can fill.
+    arm_reserve();
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
-        // Out of memory: trap.
+        // `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
+        release_reserve();
+        note_runtime_error(&alloc::format!(
+            "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
+        ));
         trap();
     }
     unsafe { store_u32(raw, total as u32) };
