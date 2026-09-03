@@ -13675,7 +13675,7 @@ protected
   String pathToFile;
   String msg;
   String tmpName, tmpValue;
-  list<String> tmpSplitted;
+  list<String> tmpSplitted, tmpRest;
   list<tuple<String,String>> nameValueTuples = {} ;
 algorithm
   fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
@@ -13715,17 +13715,18 @@ algorithm
   // --fmiFlags=s:cvode,nls:homotopy
   else
     for flag in fmiFlagsList loop
-      // Check each flag
+      // A flag that takes no value is its name alone (`noRestart`); a value may
+      // itself contain a colon.
       tmpSplitted := Util.stringSplitAtChar(flag,":");
-      if not listLength(tmpSplitted) == 2 then
+      if listEmpty(tmpSplitted) then
         if printWarning then
-          msg := "Can't process flag \"" + flag + "\".\nSeperate flag name and flag value with \":\".\n";
+          msg := "Can't process flag \"" + flag + "\".\nIt names no simulation flag.\n";
           Error.addCompilerWarning(msg);
         end if;
-        fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
-        return;
+        continue;
       end if;
-      {tmpName, tmpValue} := tmpSplitted;
+      tmpName :: tmpRest := tmpSplitted;
+      tmpValue := stringDelimitList(tmpRest, ":");
 
       // Save value
       if stringEqual(tmpName, "s") then
