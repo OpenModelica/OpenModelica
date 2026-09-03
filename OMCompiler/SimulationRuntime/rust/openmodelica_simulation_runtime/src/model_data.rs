@@ -311,10 +311,10 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
     let raw = flags.override_raw.as_deref();
     let file = flags.override_file.as_ref();
     if let (Some(raw), Some((path, _))) = (raw, file) {
-        omclog::info(omclog::SOLVER, false, &format!("using -override={raw} and -overrideFile={path}"));
+        omclog::info!(omclog::SOLVER, false, "using -override={raw} and -overrideFile={path}");
     }
     if let Some((path, _)) = file {
-        omclog::info(omclog::SOLVER, false, &format!("read override values from file: {path}"));
+        omclog::info!(omclog::SOLVER, false, "read override values from file: {path}");
     }
     if raw.is_none() && file.is_none() {
         omclog::info(omclog::SOLVER, false, "NO override given on the command line.");
@@ -323,12 +323,8 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
     fn given(v: Option<&str>) -> &str {
         v.unwrap_or("[not given]")
     }
-    omclog::info(omclog::SOLVER, false, &format!("-override={}", given(raw)));
-    omclog::info(
-        omclog::SOLVER,
-        false,
-        &format!("-overrideFile={}", given(file.map(|(_, j)| j.as_str()))),
-    );
+    omclog::info!(omclog::SOLVER, false, "-override={}", given(raw));
+    omclog::info!(omclog::SOLVER, false, "-overrideFile={}", given(file.map(|(_, j)| j.as_str())));
 
     // C fills a hash map, so a repeated name keeps the last value and warns; the
     // insertion order is the one the unused-override warnings come out in.
@@ -338,10 +334,10 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
         match index.get(name) {
             Some(&k) => {
                 let old = &map[k].1;
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!("You are overriding variable: {name}={old} again with {name}={val}."),
+                    "You are overriding variable: {name}={old} again with {name}={val}.",
                 );
                 map[k].1 = val.clone();
             }
@@ -395,33 +391,29 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
         used[k] = true;
         let value = map[k].1.clone();
         if v.get("isValueChangeable") != "true" {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "It is not possible to override the following quantity: {name}\nIt seems to be structural, final, protected or evaluated or has a non-constant binding."
-                ),
+                "It is not possible to override the following quantity: {name}\nIt seems to be structural, final, protected or evaluated or has a non-constant binding.",
             );
             continue;
         }
-        omclog::info(omclog::SOLVER, false, &format!("override {name} = {value}"));
+        omclog::info!(omclog::SOLVER, false, "override {name} = {value}");
         if warn_small && value.parse::<f64>().map(|x| x.abs() < 1e-6).unwrap_or(false) {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "You are overriding {name} with a small value or zero.\nThis could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict."
-                ),
+                "You are overriding {name} with a small value or zero.\nThis could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.",
             );
         }
         v.attrs.insert("start".to_string(), value);
     }
     for (k, (name, _)) in map.iter().enumerate() {
         if !used[k] {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!("simulation_input_xml.c: override variable name not found in model: {name}\n"),
+                "simulation_input_xml.c: override variable name not found in model: {name}\n",
             );
         }
     }

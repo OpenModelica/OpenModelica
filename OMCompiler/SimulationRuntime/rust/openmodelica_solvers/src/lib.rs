@@ -18,6 +18,50 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// `omclog::info!(stream, indent_next, "…", args)`, the form to write: an
+/// inactive stream costs the check alone, where the function plus a `&format!`
+/// built the message either way. C's `infoStreamPrint` is variadic for the same
+/// reason.
+#[macro_export]
+macro_rules! omclog_info {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::info_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning`](omclog::warning).
+#[macro_export]
+macro_rules! omclog_warning {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning_with_limit`](omclog::warning_with_limit).
+#[macro_export]
+macro_rules! omclog_warning_with_limit {
+    ($stream:expr, $n:expr, $max:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_with_limit_fmt($stream, $n, $max, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::debug`](omclog::debug).
+#[macro_export]
+macro_rules! omclog_debug {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::debug_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::error`](omclog::error), which prints whatever the
+/// mask says and so only drops the `&format!`.
+#[macro_export]
+macro_rules! omclog_error {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::error_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
 pub mod clock;
 pub mod counters;
 pub mod dassl;

@@ -89,10 +89,10 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
         match std::fs::read_to_string(&name) {
             Ok(s) => s,
             Err(e) => {
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!("could not read {name}: {e}; equation names are unavailable"),
+                    "could not read {name}: {e}; equation names are unavailable",
                 );
                 return empty;
             }
@@ -103,11 +103,7 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
     let doc: serde_json::Value = match serde_json::from_str(&text) {
         Ok(v) => v,
         Err(e) => {
-            omclog::warning(
-                omclog::STDOUT,
-                false,
-                &format!("could not parse the model's info JSON: {e}"),
-            );
+            omclog::warning!(omclog::STDOUT, false, "could not parse the model's info JSON: {e}");
             return empty;
         }
     };

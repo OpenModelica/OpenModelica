@@ -1041,13 +1041,12 @@ pub mod sun {
             };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut BUd as *mut c_void) };
             let v = openmodelica_solvers::omclog::NLS_V;
-            openmodelica_solvers::omclog::info(
-                v, true,
-                &alloc::format!(
-                    "Start solving Non-Linear System {eq_index} (size {}) at time {} with Kinsol Solver",
-                    self.n,
-                    openmodelica_solvers::format_g(time, 6)
-                ),
+            openmodelica_solvers::omclog::info!(
+                v,
+                true,
+                "Start solving Non-Linear System {eq_index} (size {}) at time {} with Kinsol Solver",
+                self.n,
+                openmodelica_solvers::format_g(time, 6),
             );
             let mut success = false;
             let mut retries = 0;
@@ -1074,20 +1073,16 @@ pub mod sun {
                 if let Some((path, file)) = crate::host::take_initial_guess_request(eq_index) {
                     let mut f = vec![0.0f64; self.n];
                     ud.residual(data(self.u, self.n), &mut f);
-                    openmodelica_solvers::omclog::info(
+                    openmodelica_solvers::omclog::info!(
                         openmodelica_solvers::omclog::STDOUT,
                         false,
-                        &alloc::format!(
-                            "Trying to write write initial guess for NLS system with index {eq_index} to file {path}."
-                        ),
+                        "Trying to write write initial guess for NLS system with index {eq_index} to file {path}.",
                     );
                     match crate::host::write_initial_guess(&file) {
-                        Ok(()) => openmodelica_solvers::omclog::info(
+                        Ok(()) => openmodelica_solvers::omclog::info!(
                             openmodelica_solvers::omclog::STDOUT,
                             false,
-                            &alloc::format!(
-                                "Success: Initial guess has been written to disk (path = {path}). The program will terminate now."
-                            ),
+                            "Success: Initial guess has been written to disk (path = {path}). The program will terminate now.",
                         ),
                         Err(e) => openmodelica_solvers::omclog::error(openmodelica_solvers::omclog::STDOUT, false, &e),
                     }
@@ -1109,14 +1104,13 @@ pub mod sun {
                     && self.handle_error(flag, &mut ud, nominal, start, old, &mut retries);
                 retries += 1;
                 passes += 1;
-                openmodelica_solvers::omclog::info(
-                    v, false,
-                    &alloc::format!(
-                        "Next try? success = {}, retry = {}, retries = {retries} = {}\n",
-                        success as u32,
-                        retry as u32,
-                        !success && !retry && retries < B_RETRY_MAX
-                    ),
+                openmodelica_solvers::omclog::info!(
+                    v,
+                    false,
+                    "Next try? success = {}, retry = {}, retries = {retries} = {}\n",
+                    success as u32,
+                    retry as u32,
+                    !success && !retry && retries < B_RETRY_MAX,
                 );
                 if success || !retry || retries >= B_RETRY_MAX || passes >= 2 * B_RETRY_MAX {
                     break;

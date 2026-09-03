@@ -44,7 +44,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
     let si = unsafe { &mut *(*data).simulationInfo };
     // C prints the header whatever the count is; only the loop is conditional.
     omclog::info(omclog::LS, true, "initialize linear system solvers");
-    omclog::info(omclog::LS, false, &format!("{} linear systems", md.nLinearSystems));
+    omclog::info!(omclog::LS, false, "{} linear systems", md.nLinearSystems);
     for i in 0..md.nLinearSystems as usize {
         let ls = unsafe { &mut *si.linearSystemData.add(i) };
         let size = ls.size.max(0) as usize;
@@ -304,13 +304,11 @@ fn solve_default(
     // LOG_LS from then on, so a system that fails at every step says so once.
     let stream = if ls.failed != 0 { omclog::LS } else { omclog::STDOUT };
     let time = unsafe { (**(*data).localData).timeValue };
-    omclog::warning_with_limit(
+    omclog::warning_with_limit!(
         stream,
         ls.numberOfFailures as u64,
         unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
-        &format!(
-            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
-        ),
+        "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS.",
     );
     let ok = solve_total_pivot(data, thread_data, ls, sys_number, aux_x);
     ls.failed = 1;
@@ -331,10 +329,10 @@ fn warn_once_unsupported_ls(method: c_int) {
         LS_UMFPACK => "umfpack",
         _ => "the requested",
     };
-    omclog::info(
+    omclog::info!(
         omclog::LS,
         false,
-        &format!("-ls: {name} linear solver is not served by this runtime; using the default."),
+        "-ls: {name} linear solver is not served by this runtime; using the default.",
     );
 }
 
@@ -352,13 +350,11 @@ fn solve_total_pivot(
     let size = ls.size.max(0) as usize;
     let time = unsafe { (**(*data).localData).timeValue };
     let eq = ls.equationIndex;
-    omclog::info(
+    omclog::info!(
         omclog::LS,
         false,
-        &format!(
-            "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
-            openmodelica_sim_meta::driver::format_g(time, 6)
-        ),
+        "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
+        openmodelica_sim_meta::driver::format_g(time, 6),
     );
     let mut a = vec![0.0f64; (size * size).max(1)];
     let mut b = vec![0.0f64; size.max(1)];
@@ -394,10 +390,10 @@ fn solve_total_pivot(
     sysstat::mark_assembly_done();
 
     if !openmodelica_nls::total_pivot_solve(&a, &mut b, size) {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &format!("Error solving linear system of equations (no. {eq}) at time {time:.6}."),
+            "Error solving linear system of equations (no. {eq}) at time {time:.6}.",
         );
         return false;
     }
@@ -446,13 +442,11 @@ fn solve_lapack(
     let time = unsafe { (**(*data).localData).timeValue };
     let eq = ls.equationIndex;
     if omclog::active(omclog::LS) {
-        omclog::info(
+        omclog::info!(
             omclog::LS,
             false,
-            &format!(
-                "Start solving Linear System {eq} (size {size}) at time {} with Lapack Solver",
-                openmodelica_sim_meta::driver::format_g(time, 6)
-            ),
+            "Start solving Linear System {eq} (size {size}) at time {} with Lapack Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6),
         );
     }
     // C's `reuseMatrixJac`: inside a symbolic Jacobian's later columns the matrix
@@ -526,16 +520,14 @@ fn solve_lapack(
     };
     if info != 0 {
         ls.numberOfFailures += 1;
-        omclog::warning_with_limit(
+        omclog::warning_with_limit!(
             omclog::LS,
             ls.numberOfFailures as u64,
             unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
-            &format!(
-                "Failed to solve linear system of equations (no. {eq}) at time {}, system is singular for U[{}, {}].",
-                openmodelica_sim_meta::driver::format_g(time, 6),
-                info + 1,
-                info + 1
-            ),
+            "Failed to solve linear system of equations (no. {eq}) at time {}, system is singular for U[{}, {}].",
+            openmodelica_sim_meta::driver::format_g(time, 6),
+            info + 1,
+            info + 1,
         );
         return false;
     }
@@ -557,14 +549,12 @@ fn solve_lapack(
         let norm = sd.work.iter().map(|v| v * v).sum::<f64>().sqrt();
         if norm.is_nan() || norm > 1e-4 {
             ls.numberOfFailures += 1;
-            omclog::warning_with_limit(
+            omclog::warning_with_limit!(
                 omclog::LS,
                 ls.numberOfFailures as u64,
                 unsafe { (*(*data).simulationInfo).maxWarnDisplays as u64 },
-                &format!(
-                    "Failed to solve linear system of equations (no. {eq}) at time {}. Residual norm is {norm:.15}.",
-                    openmodelica_sim_meta::driver::format_g(time, 6)
-                ),
+                "Failed to solve linear system of equations (no. {eq}) at time {}. Residual norm is {norm:.15}.",
+                openmodelica_sim_meta::driver::format_g(time, 6),
             );
             return false;
         }
@@ -587,14 +577,12 @@ fn check_linear_solution(data: *mut DATA, print: c_int, sys_number: c_int) -> c_
     }
     if print != 0 {
         let time = unsafe { (**(*data).localData).timeValue };
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Solving linear system {} fails at time {}. For more information use -lv LOG_LS.",
-                ls.equationIndex,
-                openmodelica_sim_meta::driver::format_g(time, 6)
-            ),
+            "Solving linear system {} fails at time {}. For more information use -lv LOG_LS.",
+            ls.equationIndex,
+            openmodelica_sim_meta::driver::format_g(time, 6),
         );
     }
     1

@@ -950,28 +950,28 @@ fn resolve_overrides(
     let raw = flags.override_raw.as_deref();
     let file = flags.override_file.as_ref();
     if let (Some(raw), Some((path, _))) = (raw, file) {
-        omclog::info(omclog::SOLVER, false, &format!("using -override={raw} and -overrideFile={path}"));
+        omclog::info!(omclog::SOLVER, false, "using -override={raw} and -overrideFile={path}");
     }
     if let Some((path, _)) = file {
-        omclog::info(omclog::SOLVER, false, &format!("read override values from file: {path}"));
+        omclog::info!(omclog::SOLVER, false, "read override values from file: {path}");
     }
     if raw.is_none() && file.is_none() {
         omclog::info(omclog::SOLVER, false, "NO override given on the command line.");
         return (Vec::new(), Vec::new(), Vec::new());
     }
     let given = |v: Option<&str>| v.unwrap_or("[not given]").to_string();
-    omclog::info(omclog::SOLVER, false, &format!("-override={}", given(raw)));
-    omclog::info(omclog::SOLVER, false, &format!("-overrideFile={}", given(file.map(|(_, j)| j.as_str()))));
+    omclog::info!(omclog::SOLVER, false, "-override={}", given(raw));
+    omclog::info!(omclog::SOLVER, false, "-overrideFile={}", given(file.map(|(_, j)| j.as_str())));
 
     // C fills a hash map, so a repeated name keeps the last value and warns.
     let mut map: Vec<(&str, &str)> = Vec::new();
     for (name, val) in &flags.overrides {
         match map.iter_mut().find(|(n, _)| *n == name) {
             Some((_, old)) => {
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!("You are overriding variable: {name}={old} again with {name}={val}."),
+                    "You are overriding variable: {name}={old} again with {name}={val}.",
                 );
                 *old = val;
             }
@@ -990,17 +990,15 @@ fn resolve_overrides(
         let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else { continue };
         used.push(name);
         let Some(p) = model.editable_params.iter().find(|p| p.name == name) else {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "It is not possible to override the following quantity: {name}\nIt seems to be \
-                     structural, final, protected or evaluated or has a non-constant binding.",
-                ),
+                "It is not possible to override the following quantity: {name}\nIt seems to be \
+                 structural, final, protected or evaluated or has a non-constant binding.",
             );
             continue;
         };
-        omclog::info(omclog::SOLVER, false, &format!("override {name} = {val}"));
+        omclog::info!(omclog::SOLVER, false, "override {name} = {val}");
         if p.is_string {
             strings.push((p.off, val.to_string()));
             continue;
@@ -1008,13 +1006,11 @@ fn resolve_overrides(
         // C warns only for the real and integer parameters (`warn_small_override`).
         let numeric_param = !p.is_start && (p.wty == WTy::F64 || !p.is_bool);
         if numeric_param && val.parse::<f64>().is_ok_and(|v| v.abs() < 1e-6) {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "You are overriding {name} with a small value or zero.\nThis could lead to \
-                     numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.",
-                ),
+                "You are overriding {name} with a small value or zero.\nThis could lead to \
+                 numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.",
             );
         }
         let v = p.read_value(val);
@@ -1022,10 +1018,10 @@ fn resolve_overrides(
     }
     for (name, _) in &map {
         if !used.contains(name) {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!("simulation_input_xml.c: override variable name not found in model: {name}\n"),
+                "simulation_input_xml.c: override variable name not found in model: {name}\n",
             );
         }
     }
@@ -5149,9 +5145,6 @@ fn build_sim_model(
     // Jacobian scratch region: nonlinear-system slots + torn-linear slots (after).
     let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code) + lin_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
-    // `-reconcile` re-solves with C's `functionDAE`, which is these plus the local
-    // known variables; `all_eqs` itself is consumed by `functionAlgebraics` below.
-    let all_eqs_for_dae = all_eqs.clone();
     let local_known_eqs = flatten_eqs(&sim_code.localKnownVars);
     // `--daeMode`: `allEquations`/`odeEquations` are empty and the whole continuous
     // system is `daeModeData.daeEquations`, the residual `F(t, y, y') = 0`.
@@ -5463,11 +5456,6 @@ fn build_sim_model(
     let mut computed_params = assigned_cref_keys(&eqs_with_nested(&param_eqs));
     computed_params.extend(assigned_cref_keys(&eqs_with_nested(&initial_eqs)));
     let param_bindings = collect_param_bindings(vars, &computed_params);
-    // When the model has `when`-equations, the discrete update (when-bodies with
-    // edge detection) must run each step between the condition and output
-    // equations. `allEquations` is the full solved list in that order, so it is
-    // used as the per-step function (in place of `algebraicEquations`), and
-    // pre-values are saved after each step so the next step's edge test sees them.
     // C's `functionODE` and `functionDAE` both open with `functionLocalKnownVars`
     // (`--preOptModules+=removeLocalKnownVars` moves the equations that depend only
     // on states and inputs there); empty unless that module ran.
@@ -5479,11 +5467,10 @@ fn build_sim_model(
         out.extend(eqs);
         out
     };
-    let alg_eqs_raw = if has_when { Vec::new() } else { flatten_eqs_ll(&sim_code.algebraicEquations) };
-    let algebraic_eqs = with_local_known(if has_when { all_eqs } else { alg_eqs_raw.clone() });
-    let output_eqs = if has_when { flatten_eqs_ll(&sim_code.algebraicEquations) } else { Vec::new() };
-    // pre := live regions, appended to the per-step (algebraic) function when the
-    // model has `when`-equations (see `sim_save_pre_values`).
+    let alg_eqs_raw = flatten_eqs_ll(&sim_code.algebraicEquations);
+    let algebraic_eqs = with_local_known(alg_eqs_raw.clone());
+    // C's `storePreValues` at the end of `updateContinuousSystem`, which here tails
+    // `functionAlgebraics` (see `sim_save_pre_values`).
     let save_pre: Vec<(u32, u32, u32)> = if has_when {
         vec![
             (layout.pre_real_off, REAL_OFF, (2 * layout.n_states + layout.n_real_alg) * 8),
@@ -5723,14 +5710,22 @@ fn build_sim_model(
     splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
     // Three orders over one equation set, so where they agree on a run they call the
     // same chunk. Not under `--parmodauto`, whose tasks *are* the ODE chunks.
-    let shared = match parmod_info.is_none() && !has_when {
-        true => eq_segments(&ode_task_eqs, &alg_eqs_raw, &all_eqs_for_dae),
+    let shared = match parmod_info.is_none() {
+        true => eq_segments(&ode_task_eqs, &alg_eqs_raw, &all_eqs),
         false => None,
+    };
+    // A chunk of its own, so the equations before it stay shared.
+    let pre_store = |pool: &mut ChunkPool, literals: &mut Literals| -> Result<Vec<usize>> {
+        match save_pre.is_empty() {
+            true => Ok(Vec::new()),
+            false => build_chunks("storePreValues", &[], 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, literals, pool, false),
+        }
     };
     let ode_split = splits.len();
     let dae_chunks = match shared {
         Some(segs) => {
-            let (ode, alg, dae) = build_shared_eq_chunks(segs, &all_eqs_for_dae, &local_known_eqs, eqfn_type, &var_map, &eq_index, &by_name, &mut literals, &mut pool)?;
+            let (ode, mut alg, dae) = build_shared_eq_chunks(segs, &all_eqs, &local_known_eqs, eqfn_type, &var_map, &eq_index, &by_name, &mut literals, &mut pool)?;
+            alg.extend(pre_store(&mut pool, &mut literals)?);
             for chunks in [ode, alg] {
                 let slot = bodies.len();
                 bodies.push(empty_eqfn());
@@ -5745,18 +5740,12 @@ fn build_sim_model(
             } else {
                 splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
             }
-            // A `when`-model's `functionAlgebraics` is `functionDAE` plus
-            // `storePreValues`, so the pre-store gets a chunk of its own and the rest
-            // is shared. `save_pre` is empty otherwise.
             let slot = bodies.len();
             bodies.push(empty_eqfn());
-            let eqs = build_chunks("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut pool, false)?;
-            let mut chunks = eqs.clone();
-            if !save_pre.is_empty() {
-                chunks.extend(build_chunks("storePreValues", &[], 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut pool, false)?);
-            }
+            let mut chunks = build_chunks("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut pool, false)?;
+            chunks.extend(pre_store(&mut pool, &mut literals)?);
             splits.push(SplitFn { slot, chunks, n_params: 1, pre_calls: Vec::new() });
-            has_when.then_some(eqs)
+            None
         }
     };
     // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
@@ -6161,20 +6150,15 @@ fn build_sim_model(
         splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
         idx
     };
-    // C's `functionAlgebraics` + `storePreValues`. Only a `has_when` model needs its
-    // own: there `functionAlgebraics` is fused with the when-bodies a getter must not fire.
+    // The name the FMI getters call `functionAlgebraics` by.
     let outputs_idx = {
         let idx = import_base + bodies.len() as u32;
-        if has_when {
-            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
-        } else {
-            use we::Instruction as I;
-            let mut f = we::Function::new([]);
-            f.instruction(&I::LocalGet(0));
-            f.instruction(&I::Call(eqfn.algebraics));
-            f.instruction(&I::End);
-            bodies.push(f);
-        }
+        use we::Instruction as I;
+        let mut f = we::Function::new([]);
+        f.instruction(&I::LocalGet(0));
+        f.instruction(&I::Call(eqfn.algebraics));
+        f.instruction(&I::End);
+        bodies.push(f);
         idx
     };
     bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
@@ -6343,7 +6327,7 @@ fn build_sim_model(
             }
             None => {
                 let mut units = eq_units(&local_known_eqs);
-                units.extend(eq_units(&all_eqs_for_dae));
+                units.extend(eq_units(&all_eqs));
                 splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
             }
         }
@@ -8286,12 +8270,21 @@ fn build_chunks(
     Ok((first..pool.len()).collect())
 }
 
+/// `Dae` is C's `allEquationsPlusWhen` surplus: the when-equations, which only
+/// `functionDAE` runs.
+#[derive(Clone, Copy, PartialEq)]
+enum EqOwner {
+    Ode,
+    Alg,
+    Dae,
+}
+
 /// A run of `allEquations` that is also a run of the `odeEquations` or
 /// `algebraicEquations` list holding it, so its chunks serve both entry points, the
 /// way C's `eqFunction_<n>` do.
 struct EqSegment {
-    ode: bool,
-    /// Where the run starts in its own list.
+    owner: EqOwner,
+    /// Where the run starts in its own list (0 for an [`EqOwner::Dae`] run).
     pos: usize,
     /// Where it sits in `allEquations`.
     span: core::ops::Range<usize>,
@@ -8308,7 +8301,8 @@ fn eq_id_of(eq: &SimCode::SimEqSystem) -> i32 {
 }
 
 /// Cut `all` (C's `allEquations`) into runs shared with `ode`/`alg`; `None` unless
-/// the two tile it, which leaves the caller lowering a copy of its own.
+/// the two tile what they claim of it, which leaves the caller lowering a copy of
+/// its own.
 ///
 /// The orders differ by more than the interleaving -- `algebraicEquations` ends with
 /// C's `removedEquations` reversed -- so that tail comes back one equation per run.
@@ -8317,29 +8311,29 @@ fn eq_segments(
     alg: &[Arc<SimCode::SimEqSystem>],
     all: &[Arc<SimCode::SimEqSystem>],
 ) -> Option<Vec<EqSegment>> {
-    if all.len() != ode.len() + alg.len() {
-        return None;
-    }
-    let mut own: HashMap<i32, (bool, usize)> = HashMap::new();
-    for (is_ode, eqs) in [(true, ode), (false, alg)] {
+    let mut own: HashMap<i32, (EqOwner, usize)> = HashMap::new();
+    for (owner, eqs) in [(EqOwner::Ode, ode), (EqOwner::Alg, alg)] {
         for (pos, e) in eqs.iter().enumerate() {
-            if own.insert(eq_id_of(e), (is_ode, pos)).is_some() {
+            if own.insert(eq_id_of(e), (owner, pos)).is_some() {
                 return None;
             }
         }
     }
     let mut segs: Vec<EqSegment> = Vec::new();
     for (i, e) in all.iter().enumerate() {
-        let &(is_ode, pos) = own.get(&eq_id_of(e))?;
+        let (owner, pos) = own.get(&eq_id_of(e)).copied().unwrap_or((EqOwner::Dae, 0));
+        let joins = |s: &EqSegment| {
+            s.owner == owner && (owner == EqOwner::Dae || s.pos + s.span.len() == pos)
+        };
         match segs.last_mut() {
-            Some(s) if s.ode == is_ode && s.pos + s.span.len() == pos => s.span.end = i + 1,
-            _ => segs.push(EqSegment { ode: is_ode, pos, span: i..i + 1, chunks: Vec::new() }),
+            Some(s) if joins(s) => s.span.end = i + 1,
+            _ => segs.push(EqSegment { owner, pos, span: i..i + 1, chunks: Vec::new() }),
         }
     }
     // An entry point calls its own segments in its list's order, so they must tile it.
-    for (is_ode, len) in [(true, ode.len()), (false, alg.len())] {
+    for (owner, len) in [(EqOwner::Ode, ode.len()), (EqOwner::Alg, alg.len())] {
         let mut runs: Vec<(usize, usize)> =
-            segs.iter().filter(|s| s.ode == is_ode).map(|s| (s.pos, s.span.len())).collect();
+            segs.iter().filter(|s| s.owner == owner).map(|s| (s.pos, s.span.len())).collect();
         runs.sort_unstable();
         let mut next = 0;
         for (pos, n) in runs {
@@ -8383,12 +8377,12 @@ fn build_shared_eq_chunks(
     let call = |segs: &[&EqSegment]| -> Vec<usize> {
         head.iter().copied().chain(segs.iter().flat_map(|s| s.chunks.iter().copied())).collect()
     };
-    let own = |ode: bool| -> Vec<&EqSegment> {
-        let mut own: Vec<&EqSegment> = segs.iter().filter(|s| s.ode == ode).collect();
+    let own = |owner: EqOwner| -> Vec<&EqSegment> {
+        let mut own: Vec<&EqSegment> = segs.iter().filter(|s| s.owner == owner).collect();
         own.sort_by_key(|s| s.pos);
         own
     };
-    Ok((call(&own(true)), call(&own(false)), call(&segs.iter().collect::<Vec<_>>())))
+    Ok((call(&own(EqOwner::Ode)), call(&own(EqOwner::Alg)), call(&segs.iter().collect::<Vec<_>>())))
 }
 
 /// Lower `units` into one function, for entry points whose size is bounded by the

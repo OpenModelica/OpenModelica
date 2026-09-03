@@ -92,16 +92,14 @@ unsafe extern "C" fn err_handler(
         false => unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned(),
     };
     crate::omclog::info(crate::omclog::SOLVER, true, "#### SUNDIALS error message #####");
-    crate::omclog::info(
+    crate::omclog::info!(
         crate::omclog::SOLVER,
         false,
-        &alloc::format!(
-            " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
-            text(func),
-            text(file)
-        ),
+        " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
+        text(func),
+        text(file),
     );
-    crate::omclog::info(crate::omclog::SOLVER, false, &alloc::format!(" Message: {}", text(msg)));
+    crate::omclog::info!(crate::omclog::SOLVER, false, " Message: {}", text(msg));
     crate::omclog::close(crate::omclog::SOLVER);
 }
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
@@ -743,10 +741,11 @@ impl Ida {
     }
 
     fn log_calc_ic(&self, flag: c_int) {
-        crate::omclog::info(
+        crate::omclog::info!(
             crate::omclog::SOLVER,
             false,
-            &alloc::format!("##IDA## IDACalcIC run status {flag}.\nIterations : {}\n", self.nonlin_iters()),
+            "##IDA## IDACalcIC run status {flag}.\nIterations : {}\n",
+            self.nonlin_iters(),
         );
     }
 
@@ -778,10 +777,11 @@ impl Ida {
         if h < f64::EPSILON {
             h = f64::EPSILON;
             self.set_init_step(h);
-            crate::omclog::info(
+            crate::omclog::info!(
                 crate::omclog::SOLVER,
                 false,
-                &alloc::format!("##IDA## corrected step-size at {}", crate::omclog::g(h, 0, 15)),
+                "##IDA## corrected step-size at {}",
+                crate::omclog::g(h, 0, 15),
             );
         }
         let mut flag = self.calc_ic(t + h);

@@ -2702,14 +2702,12 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
             Some(k) => {
                 let count = ls_note_failure(eq_index);
                 // C prints `dgesv`'s 1-based `info` one too high; keep the text.
-                omclog::warning_with_limit(
+                omclog::warning_with_limit!(
                     omclog::LS,
                     count,
                     openmodelica_solvers::solverflags::max_warn_displays(),
-                    &alloc::format!(
-                        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
-                        p = k + 2
-                    ),
+                    "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
+                    p = k + 2,
                 );
                 // Only C's `LS_DEFAULT` has a fallback: `-ls=lapack` leaves the
                 // system unsolved, which is what `tearingStrictness` relies on to
@@ -2751,7 +2749,7 @@ fn lis_initial_guess(x_ptr: u32, n: usize) -> alloc::vec::Vec<f64> {
 fn ls_print_vector(name: &str, v: &[f64]) {
     omclog::info(omclog::LS_V, true, name);
     for (i, x) in v.iter().enumerate() {
-        omclog::info(omclog::LS_V, false, &alloc::format!("[{:2}] {}", i + 1, omclog::g(*x, 20, 12)));
+        omclog::info!(omclog::LS_V, false, "[{:2}] {}", i + 1, omclog::g(*x, 20, 12));
     }
     omclog::close(omclog::LS_V);
 }
@@ -2772,13 +2770,11 @@ fn ls_print_matrix(name: &str, a: &[f64], n: usize) {
 
 /// C's per-solver `Start solving Linear System …` line.
 fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
-    omclog::info(
+    omclog::info!(
         omclog::LS,
         false,
-        &alloc::format!(
-            "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
-            openmodelica_sim_meta::driver::format_g(time, 6)
-        ),
+        "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
+        openmodelica_sim_meta::driver::format_g(time, 6),
     );
 }
 
@@ -2788,10 +2784,10 @@ fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) 
     if nls::total_pivot_solve(a, b, n) {
         return 0;
     }
-    omclog::warning(
+    omclog::warning!(
         omclog::STDOUT,
         false,
-        &alloc::format!("Error solving linear system of equations (no. {eq_index}) at time {time:.6}."),
+        "Error solving linear system of equations (no. {eq_index}) at time {time:.6}.",
     );
     1
 }
@@ -2802,13 +2798,11 @@ fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) 
 pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
     use openmodelica_sim_meta::driver::format_g;
     if nls::throw_reports() {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             true,
-            &alloc::format!(
-                "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
-                format_g(time, 6)
-            ),
+            "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
+            format_g(time, 6),
         );
         omclog::close_warning(omclog::STDOUT);
     }
@@ -2844,14 +2838,12 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
         return 0;
     }
     let count = ls_note_failure(eq_index);
-    omclog::warning_with_limit(
+    omclog::warning_with_limit!(
         omclog::LS,
         count,
         openmodelica_solvers::solverflags::max_warn_displays(),
-        &alloc::format!(
-            "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
-            openmodelica_sim_meta::driver::format_g(norm, 15)
-        ),
+        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
+        openmodelica_sim_meta::driver::format_g(norm, 15),
     );
     if casual == 0 && dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Default) {
         ls_report_fallback(eq_index, time, count);
@@ -2902,13 +2894,11 @@ fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
     let e = ls_failure_entry(eq_index);
     let stream = if e.failed { omclog::LS } else { omclog::STDOUT };
     e.failed = true;
-    omclog::warning_with_limit(
+    omclog::warning_with_limit!(
         stream,
         count,
         openmodelica_solvers::solverflags::max_warn_displays(),
-        &alloc::format!(
-            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
-        ),
+        "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS.",
     );
 }
 

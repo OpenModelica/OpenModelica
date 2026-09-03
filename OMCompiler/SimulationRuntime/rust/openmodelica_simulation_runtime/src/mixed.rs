@@ -102,7 +102,7 @@ pub fn initialize_mixed_systems(data: *mut DATA, thread_data: *mut threadData_t)
         crate::throw(thread_data, "unrecognized mixed solver");
     }
     omclog::info(omclog::MIXED, true, "initialize mixed system solvers");
-    omclog::info(omclog::MIXED, false, &format!("{} mixed systems", md.nMixedSystems));
+    omclog::info!(omclog::MIXED, false, "{} mixed systems", md.nMixedSystems);
     for i in 0..md.nMixedSystems as usize {
         let sys = unsafe { &mut *si.mixedSystemData.add(i) };
         let size = sys.size.max(0) as usize;
@@ -148,11 +148,7 @@ fn solve_mixed_search(
     let time = unsafe { (**(*data).localData).timeValue };
     let n_rel = md.nRelations.max(0) as usize;
 
-    omclog::info(
-        omclog::MIXED,
-        true,
-        &format!("\n####  Start solver mixed equation system at time {time}."),
-    );
+    omclog::info!(omclog::MIXED, true, "\n#### Start solver mixed equation system at time {time}.");
     // C's `memset(stateofSearch, 0, systemData->size)` clears `size` *bytes* of a
     // `modelica_boolean` (an `int`) array, so its flip mask starts partly
     // uninitialised. This clears the whole thing, which is a deliberate divergence:
@@ -225,14 +221,12 @@ fn solve_mixed_search(
                 }
             } else {
                 if si.initial == 0 {
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::STDOUT,
                         false,
-                        &format!(
-                            "Error solving mixed equation system with index {} at time {}",
-                            sys.equationIndex,
-                            openmodelica_sim_meta::driver::format_e(time)
-                        ),
+                        "Error solving mixed equation system with index {} at time {}",
+                        sys.equationIndex,
+                        openmodelica_sim_meta::driver::format_e(time),
                     );
                 }
                 si.needToIterate = 1;
@@ -273,14 +267,12 @@ pub extern "C" fn check_mixed_solutions(data: *mut DATA, print: c_int) -> c_int 
             ret = 1;
             if print != 0 {
                 let time = unsafe { (**(*data).localData).timeValue };
-                omclog::warning(
+                omclog::warning!(
                     omclog::MIXED,
                     false,
-                    &format!(
-                        "mixed system fails: {} at t={}",
-                        sys.equationIndex,
-                        openmodelica_sim_meta::driver::format_g(time, 6)
-                    ),
+                    "mixed system fails: {} at t={}",
+                    sys.equationIndex,
+                    openmodelica_sim_meta::driver::format_g(time, 6),
                 );
             }
         }

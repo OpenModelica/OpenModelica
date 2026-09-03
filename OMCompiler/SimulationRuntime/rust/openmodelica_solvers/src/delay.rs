@@ -44,7 +44,7 @@ fn print_buffer(stream: omclog::Stream, buf: &VecDeque<Row>) {
     }
     omclog::info(stream, true, "Printing ring buffer:");
     for &(t, v) in buf {
-        omclog::info(stream, false, &alloc::format!("({},{})", format_e(t), format_e(v)));
+        omclog::info!(stream, false, "({},{})", format_e(t), format_e(v));
     }
     omclog::close(stream);
 }
@@ -143,15 +143,13 @@ impl DelayState {
                 buf.pop_front();
             }
         }
-        omclog::info(
+        omclog::info!(
             omclog::DELAY,
             false,
-            &alloc::format!(
-                "storeDelayed[{idx}] ({},{}) position={}",
-                format_g(time, 6),
-                format_g(value, 6),
-                buf.len()
-            ),
+            "storeDelayed[{idx}] ({},{}) position={}",
+            format_g(time, 6),
+            format_g(value, 6),
+            buf.len(),
         );
         print_buffer(omclog::DELAY, buf);
     }
@@ -161,15 +159,13 @@ impl DelayState {
     pub fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64, delay_max: f64) -> f64 {
         let buf = &self.buffers[idx];
         let length = buf.len();
-        omclog::info(
+        omclog::info!(
             omclog::DELAY,
             false,
-            &alloc::format!(
-                "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
-                format_g(value, 6),
-                format_g(time, 6),
-                format_g(delay_time, 6)
-            ),
+            "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
+            format_g(value, 6),
+            format_g(time, 6),
+            format_g(delay_time, 6),
         );
         // C's `assertStreamPrint` guards, `DASSL_STEP_EPS` being 1e-13. Each one
         // throws in C, so at most one is reported and the caller's value stands in
@@ -199,13 +195,11 @@ impl DelayState {
             return value;
         }
         if length == 0 {
-            omclog::info(
+            omclog::info!(
                 omclog::EVENTS,
                 false,
-                &alloc::format!(
-                    "delayImpl: Missing initial value, using argument value {} instead.",
-                    format_g(value, 6)
-                ),
+                "delayImpl: Missing initial value, using argument value {} instead.",
+                format_g(value, 6),
             );
             return value;
         }

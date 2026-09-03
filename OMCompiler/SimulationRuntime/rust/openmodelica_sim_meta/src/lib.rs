@@ -146,8 +146,8 @@ pub struct Layout {
     /// `algVars ++ discreteAlgVars` (the real algebraic variables emitted as
     /// time-variant result signals after the states and derivatives).
     pub n_real_alg: u32,
-    /// `functionAlgebraics` also runs the discrete update / saves `pre`, so
-    /// drivers call it only in the once-per-step order.
+    /// `functionAlgebraics` ends with C's `storePreValues`, so a driver calls it
+    /// only in the once-per-step order.
     pub has_when: bool,
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
@@ -1388,28 +1388,24 @@ impl SimMeta {
         };
         let min_step = 4.0 * f64::EPSILON * libm::fmax(libm::fabs(self.start_time), libm::fabs(self.stop_time));
         if step < min_step && span > 0.0 {
-            omclog::warning(
+            omclog::warning!(
                 STDOUT,
                 false,
-                &alloc::format!(
-                    "The step-size {} is too small. Adjust the step-size to {}.",
-                    crate::driver::format_g(step, 6),
-                    crate::driver::format_g(min_step, 6)
-                ),
+                "The step-size {} is too small. Adjust the step-size to {}.",
+                crate::driver::format_g(step, 6),
+                crate::driver::format_g(min_step, 6),
             );
             step = min_step;
         }
         if step > span + 1e-7 {
             omclog::warning(STDOUT, true, "Integrator step size greater than length of experiment");
-            omclog::info(
+            omclog::info!(
                 STDOUT,
                 false,
-                &alloc::format!(
-                    "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
-                    self.start_time,
-                    self.stop_time,
-                    step
-                ),
+                "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
+                self.start_time,
+                self.stop_time,
+                step,
             );
             omclog::close_warning(STDOUT);
         }
@@ -1430,11 +1426,7 @@ impl SimMeta {
         // C's `startNonInteractiveSimulation`, after `read_experiment`.
         if let Some(t) = f.linearize {
             self.stop_time = t;
-            omclog::info(
-                STDOUT,
-                false,
-                &alloc::format!("Linearization will be performed at point of time: {t:.6}"),
-            );
+            omclog::info!(STDOUT, false, "Linearization will be performed at point of time: {t:.6}");
         }
     }
 

@@ -1,7 +1,6 @@
 //! One Runge-Kutta step (C's `gbode_step.c`) and the loop around it that accepts,
 //! rejects and resizes steps (C's `gbode_main`).
 
-use alloc::format;
 use alloc::vec;
 
 use super::conf::CtrlMethod;
@@ -68,14 +67,12 @@ impl Gbode {
                     &nominals,
                 )?;
                 if solved != super::Solved::Ok {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
-                            stage + 1,
-                            omclog::g(stage_time, 0, 6)
-                        ),
+                        "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
+                        stage + 1,
+                        omclog::g(stage_time, 0, 6),
                     );
                     return Ok(false);
                 }
@@ -107,14 +104,12 @@ impl Gbode {
                     &mut x,
                 )?;
                 if solved != super::Solved::Ok {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
-                            stage + 1,
-                            omclog::g(stage_time, 0, 6)
-                        ),
+                        "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
+                        stage + 1,
+                        omclog::g(stage_time, 0, 6),
                     );
                     return Ok(false);
                 }
@@ -300,13 +295,11 @@ impl Gbode {
         };
         self.k = k;
         if solved? != super::Solved::Ok {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "gbode error: Failed to solve NLS in full_implicit_RK at time t={}",
-                    omclog::g(self.time, 0, 6)
-                ),
+                "gbode error: Failed to solve NLS in full_implicit_RK at time t={}",
+                omclog::g(self.time, 0, 6),
             );
             return Ok(false);
         }
@@ -377,13 +370,11 @@ impl Gbode {
             gnls.solve(ode, &mut resid, time + step_size, &[&start], &nominals, &mut guess)?
         };
         if solved != super::Solved::Ok {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "gbode error: Failed to solve NLS in full_implicit_MS at time t={}",
-                    omclog::g(self.time, 0, 6)
-                ),
+                "gbode error: Failed to solve NLS in full_implicit_MS at time t={}",
+                omclog::g(self.time, 0, 6),
             );
             return Ok(false);
         }
@@ -623,14 +614,12 @@ impl Gbode {
                 };
                 if !stepped {
                     self.stats.convergence_test_failures += 1;
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "gbode_main: Failed to calculate step at time = {} with step size h = {}.",
-                            omclog::g(self.time, 0, 6),
-                            omclog::g(self.step_size, 0, 6)
-                        ),
+                        "gbode_main: Failed to calculate step at time = {} with step size h = {}.",
+                        omclog::g(self.time, 0, 6),
+                        omclog::g(self.step_size, 0, 6),
                     );
                     if const_step {
                         return Err(GBODE_CONST_STEP_FAILED);
@@ -689,16 +678,14 @@ impl Gbode {
                 }
 
                 if err > 1.0 && !const_step {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "Reject step from {} to {}, error {}, new stepsize {}",
-                            omclog::g(self.time, 0, 16),
-                            omclog::g(self.time + self.step_size, 0, 16),
-                            omclog::g(err, 0, 16),
-                            omclog::g(self.step_size * 0.5, 0, 16)
-                        ),
+                        "Reject step from {} to {}, error {}, new stepsize {}",
+                        omclog::g(self.time, 0, 16),
+                        omclog::g(self.time + self.step_size, 0, 16),
+                        omclog::g(err, 0, 16),
+                        omclog::g(self.step_size * 0.5, 0, 16),
                     );
                     self.stats.err_test_failures += 1;
                     self.step_size *= if self.event_happened { 0.1 } else { 0.5 };
@@ -728,17 +715,15 @@ impl Gbode {
                         if self.step_size < GB_MINIMAL_STEP_SIZE {
                             return Err(GBODE_MIN_INTERP_ERROR);
                         }
-                        omclog::info(
+                        omclog::info!(
                             omclog::SOLVER,
                             false,
-                            &format!(
-                                "Reject step from {} to {}, error {}, interpolation error {}, new stepsize {}",
-                                omclog::g(self.time, 0, 16),
-                                omclog::g(self.time + self.step_size, 0, 16),
-                                omclog::g(err, 0, 16),
-                                omclog::g(self.err_int, 0, 16),
-                                omclog::g(self.step_size, 0, 16)
-                            ),
+                            "Reject step from {} to {}, error {}, interpolation error {}, new stepsize {}",
+                            omclog::g(self.time, 0, 16),
+                            omclog::g(self.time + self.step_size, 0, 16),
+                            omclog::g(err, 0, 16),
+                            omclog::g(self.err_int, 0, 16),
+                            omclog::g(self.step_size, 0, 16),
                         );
                         continue;
                     }
@@ -818,17 +803,15 @@ impl Gbode {
                 break;
             }
 
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "Accept step from {} to {}, error {} interpolation error {}, new stepsize {}",
-                    omclog::g(self.time_left, 0, 16),
-                    omclog::g(self.time_right, 0, 16),
-                    omclog::g(err, 0, 16),
-                    omclog::g(self.err_int, 0, 16),
-                    omclog::g(self.step_size, 0, 16)
-                ),
+                "Accept step from {} to {}, error {} interpolation error {}, new stepsize {}",
+                omclog::g(self.time_left, 0, 16),
+                omclog::g(self.time_right, 0, 16),
+                omclog::g(err, 0, 16),
+                omclog::g(self.err_int, 0, 16),
+                omclog::g(self.step_size, 0, 16),
             );
             self.time = self.time_right;
             self.y_old.copy_from_slice(&self.y_right);
@@ -877,20 +860,19 @@ impl Gbode {
         if !no_grid && abs(target - stop_time) < GB_MINIMAL_STEP_SIZE {
             if self.multi_rate {
                 let fast = self.gbf.as_ref().expect("multirate without gbf").conf.method_name();
-                omclog::info(
+                omclog::info!(
                     omclog::STATS,
                     false,
-                    &format!(
-                        "gbode (birate integration): slow: {} / fast: {}",
-                        self.conf.method_name(),
-                        fast
-                    ),
+                    "gbode (birate integration): slow: {} / fast: {}",
+                    self.conf.method_name(),
+                    fast,
                 );
             } else {
-                omclog::info(
+                omclog::info!(
                     omclog::STATS,
                     false,
-                    &format!("gbode (single-rate integration): {}", self.conf.method_name()),
+                    "gbode (single-rate integration): {}",
+                    self.conf.method_name(),
                 );
             }
         }

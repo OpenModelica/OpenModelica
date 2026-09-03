@@ -381,7 +381,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
-    omclog::info(omclog::NLS, false, &format!("{} non-linear systems", md.nNonLinearSystems));
+    omclog::info!(omclog::NLS, false, "{} non-linear systems", md.nNonLinearSystems);
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
         let size = sys.size.max(0) as usize;
@@ -408,13 +408,12 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             let rows = if adaptive_homotopy(data, sys) { size - 1 } else { size };
             if failed || j.sizeRows != rows || j.sizeCols != size {
                 if !failed {
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::STDOUT,
                         false,
-                        &format!(
-                            "Analytic Jacobian of non-linear system {i} is {}x{}, but the system has {size} iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.",
-                            j.sizeRows, j.sizeCols
-                        ),
+                        "Analytic Jacobian of non-linear system {i} is {}x{}, but the system has {size} iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.",
+                        j.sizeRows,
+                        j.sizeCols,
                     );
                 }
                 sys.jacobianIndex = -1;
@@ -437,12 +436,10 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         // scaling with it.
         if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size)
         {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling."
-                ),
+                "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.",
             );
             crate::support::freeSparsePattern(sys.sparsePattern);
             sys.sparsePattern = core::ptr::null_mut();
@@ -699,14 +696,12 @@ fn check_nonlinear_solution(data: *mut DATA, print: c_int, sys_number: c_int) ->
     }
     if print != 0 {
         let time = unsafe { (**(*data).localData).timeValue };
-        omclog::warning(
+        omclog::warning!(
             omclog::NLS,
             false,
-            &format!(
-                "nonlinear system {} fails: at t={}",
-                sys.equationIndex,
-                openmodelica_sim_meta::driver::format_g(time, 6)
-            ),
+            "nonlinear system {} fails: at t={}",
+            sys.equationIndex,
+            openmodelica_sim_meta::driver::format_g(time, 6),
         );
         if si.initial != 0 {
             omclog::warning(
@@ -767,7 +762,7 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
     nls::host::set_file_prefix(|| unsafe { &*PREFIX.0.get() });
     nls::host::set_write_file(|name, data| {
         if let Err(e) = std::fs::write(name, data) {
-            omclog::warning(omclog::STDOUT, false, &format!("could not write {name}: {e}"));
+            omclog::warning!(omclog::STDOUT, false, "could not write {name}: {e}");
         }
     });
     nls::host::set_note_runtime_error(|msg| omclog::debug(omclog::ASSERT, false, msg));

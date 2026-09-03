@@ -314,7 +314,7 @@ fn start_non_interactive_simulation(
             None => file.name.clone(),
         });
         if let Err(e) = std::fs::write(&path, &file.content) {
-            omclog::error(omclog::STDOUT, false, &format!("Cannot open File {path}: {e}"));
+            omclog::error!(omclog::STDOUT, false, "Cannot open File {path}: {e}");
             return -1;
         }
         if let Some(lin) = &meta.lin {
