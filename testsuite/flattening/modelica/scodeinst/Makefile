@@ -203,6 +203,7 @@ CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
 CevalRecord8.mo \
+CevalRecord9.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
