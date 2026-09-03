@@ -374,6 +374,15 @@ endif()
 # endif()
 
 
+# libOMCDLL — the omc C-API wrapper (see omcCAPI/). Needs the OpenModelicaCompiler
+# target defined above and its generated OpenModelicaScriptingAPI.h. Off by
+# default except on MinGW Windows (OM_OMC_BUILD_OMCDLL, declared in
+# OMCompiler/CMakeLists.txt); not available in the Rust omc build.
+if(OM_OMC_BUILD_OMCDLL)
+  omc_add_subdirectory(omcCAPI)
+endif()
+
+
 # Defines generate-bootstrap-sources / update-bootstrap-sources, the way to
 # refresh the pre-translated C sources bomc is built from. Neither target is part
 # of 'all'. Needs the omc target above and the interfaces of this build.
@@ -445,6 +454,15 @@ install(FILES FrontEnd/MetaModelicaBuiltin.mo
 install(FILES FrontEnd/PDEModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT omc)
+
+# Install the generated scripting-API C header so external code (and OMEdit's
+# Script/OpenModelicaScriptingAPIQt.h) can #include "OpenModelicaScriptingAPI.h"
+# against the installed tree. Generated at build time by the compile step for
+# Script/OpenModelicaScriptingAPI.mo; layout matches the old Makefile build
+# (<prefix>/include/omc/scripting-API/).
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/c_files/OpenModelicaScriptingAPI.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/scripting-API
+        COMPONENT omc)
 
 # Install the scripts to 'share' dir.
 install(DIRECTORY scripts

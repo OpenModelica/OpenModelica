@@ -233,9 +233,6 @@ OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/impl/
 OMCompiler/SimulationRuntime/OMSICpp/runtime/src/Solver/CppDASSL/ddaskr.cpp
 OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Solver/CppDASSL/dasslaux.h
 
-# [3rd-party] Pieter Hintjens / iMatix — ZeroMQ guide helper (zhelpers.hpp, MIT License)
-OMCompiler/SimulationRuntime/OMSICpp/omcWrapper/omcZeroMQ/include/zhelpers.hpp
-
 # =============================================================================
 # SimulationRuntime/ModelicaExternalC/
 # =============================================================================

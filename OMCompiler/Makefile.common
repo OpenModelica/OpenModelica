@@ -322,9 +322,6 @@ omc-and-runtimeCPPinstall:
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
-omcCAPIinstall: ModelicaExternalC
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
-
 runtimeCPP: OMSICPPinstall antlr-copy $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 

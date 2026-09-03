@@ -62,6 +62,20 @@ omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 # compiled from C. The simulation/function runtime C libraries are still built.
 omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." OFF)
 
+# libOMCDLL: the omc C-API wrapper library (Compiler/omcCAPI). Lets external
+# programs drive omc in-process (InitOMC/SendCommand/...). Windows releases used
+# to ship it; keep that the default there, opt-in elsewhere. Not built by the
+# Rust omc port. MSVC has never built the wrapper -> default OFF there too.
+if(WIN32 AND NOT MSVC)
+  set(OM_OMC_BUILD_OMCDLL_DEFAULT ON)
+else()
+  set(OM_OMC_BUILD_OMCDLL_DEFAULT OFF)
+endif()
+omc_option(OM_OMC_BUILD_OMCDLL "Build libOMCDLL, the omc C-API wrapper library (InitOMC/SendCommand/...)." ${OM_OMC_BUILD_OMCDLL_DEFAULT})
+if(OM_OMC_BUILD_OMCDLL AND OM_OMC_ENABLE_RUST)
+  message(WARNING "OM_OMC_BUILD_OMCDLL is not supported together with OM_OMC_ENABLE_RUST; libOMCDLL will not be built.")
+endif()
+
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,

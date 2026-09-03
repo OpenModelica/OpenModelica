@@ -549,10 +549,12 @@ endif()
 
 message(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
-
 if(REDUCE_DAE)
   add_definitions("-DUSE_REDUCE_DAE")
-  set(OMCCAPI_INLCUDE_HOME  omcWrapper/omcCAPI/include/)
+  # libOMCDLL / omcCAPI now lives in OMCompiler/Compiler/omcCAPI. This legacy
+  # standalone-build branch (REDUCE_DAE is OFF by default and forced OFF in the
+  # integrated build) still expects a preinstalled OMCDLL under Build_CAPI/.
+  set(OMCCAPI_INLCUDE_HOME  ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/omcCAPI/include/)
   set(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/tmp/lib)
   find_library(OMCCAPI_LIB "OMCDLL" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMCCAPI_LIBRARY_RELEASE_HOME} )
   if(NOT OMCCAPI_LIB)
