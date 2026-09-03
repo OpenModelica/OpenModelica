@@ -1349,7 +1349,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
 #ifndef OMC_HAVE_MOO
 
 int _main_OptimizationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData) {
-  errorStreamPrint(OMC_LOG_STDOUT, 0, "MOO has not been built and can not be called: Set -DOM_OMC_ENABLE_MOO=ON to build MOO.");
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Dynamic optimization has not been built and can not be called: Set -DOM_OMC_ENABLE_OPTIMIZATION=ON to build it.");
   return -1;
 }
 

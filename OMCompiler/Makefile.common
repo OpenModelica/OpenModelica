@@ -39,6 +39,7 @@ $(builddir_inc)/c/gc/ \
 $(builddir_inc)/c/linearization/ \
 $(builddir_inc)/c/dataReconciliation/ \
 $(builddir_inc)/c/optimization/ \
+$(builddir_inc)/c/moo/ \
 $(builddir_inc)/c/simulation/ \
 $(builddir_inc)/c/simulation/results/ \
 $(builddir_inc)/c/simulation/solver/ \
@@ -72,7 +73,7 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN) simdjson
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN) optimization simdjson
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
@@ -128,7 +129,7 @@ interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(PRIMME_TARGET) $(COLPACK_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB) simdjson
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(OPTIMIZATION_TARGET) $(PRIMME_TARGET) $(COLPACK_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB) simdjson
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -170,26 +171,29 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && mkdir -p m4 libatomic_ops/m4 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-shared --disable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
-# TODO or DISCARD: for now, we only build static ipopt and dmumps (not MOO) directy into the runtime
-moo:
+# Build optimization dependencies; MOO itself is compiled into SimulationRuntimeC.
+optimization:
 	mkdir -p $(OMC_MOO_ROOT)/build
 	cd $(OMC_MOO_ROOT)/build && $(CMAKE) \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
 		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
 		-DMUMPS_USE_METIS=OFF \
+		-DENABLE_SHARED_LIBRARIES=OFF \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
 		-DCMAKE_C_FLAGS="$(CFLAGS)" \
 		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
 		-DCMAKE_Fortran_FLAGS="$(FCFLAGS)" \
 		-DCMAKE_Fortran_COMPILER="$(FC)" \
 		..
 
-	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
-	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
+	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target fmt radau ipopt dmumps
 
-moo-clean:
+optimization-clean:
 	if test -f $(OMC_MOO_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_MOO_ROOT)/build/ clean; fi
 	rm -rf $(OMC_MOO_ROOT)/build
 
@@ -589,7 +593,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean primme-clean colpack-clean ModelicaExternalC-clean zlib-clean simdjson-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean optimization-clean primme-clean colpack-clean ModelicaExternalC-clean zlib-clean simdjson-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))

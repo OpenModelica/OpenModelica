@@ -199,12 +199,7 @@ endif()
 if(OM_OMC_ENABLE_OPTIMIZATION)
   target_link_libraries(OpenModelicaRuntimeCSimulation
     PUBLIC
-      omc::simrt::simruntime::optimization)
-endif()
-
-if(OM_OMC_ENABLE_MOO)
-  target_link_libraries(OpenModelicaRuntimeCSimulation
-    PUBLIC
+      omc::simrt::simruntime::optimization
       omc::simrt::simruntime::moo)
 endif()
 
