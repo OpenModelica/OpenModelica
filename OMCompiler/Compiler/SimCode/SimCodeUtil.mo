@@ -9212,13 +9212,13 @@ algorithm
     case SimCode.SES_GENERIC_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
-        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, List.Style.CURLY_SHORT) + "\n";
     then s;
 
     case SimCode.SES_ENTWINED_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_ENTWINED_ASSIGN)\n";
-        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, List.Style.CURLY_SHORT) + "\n";
         s := s + List.toString(eqSysIn.single_calls, simEqSystemString, List.Style.NEWLINE_TAB);
         s := s + "\n";
     then s;

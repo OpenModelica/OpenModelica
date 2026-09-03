@@ -1556,7 +1556,7 @@ public
       String str1, str2;
     algorithm
       str1 := Array.toString(dep.skips, function List.toString(
-        inPrintFunc = intString, style = List.Style.FLAT_CURLY), "", "", ", ", "");
+        inPrintFunc = intString, style = List.Style.CURLY), "", "", ", ", "");
       str2 := List.toString(dep.kinds, kindString, List.Style.FLAT);
       str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
       str := "{" + str + "}";
