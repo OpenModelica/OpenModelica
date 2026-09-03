@@ -837,11 +837,7 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
             Ok(f)
         })
         .map_err(|e| {
-            omclog::error(
-                omclog::ASSERT,
-                false,
-                &alloc::format!("this FMU was exported with `{flags}`: {e}"),
-            )
+            omclog::error!(omclog::ASSERT, false, "this FMU was exported with `{flags}`: {e}")
         })
         .ok()?;
     openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&parsed);

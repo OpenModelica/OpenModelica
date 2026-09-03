@@ -12,7 +12,6 @@
 //! selection — where C routes it through the T-transformation code it shares
 //! with the single-rate solve ([`super::nls`] has that for the outer systems).
 
-use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -826,10 +825,11 @@ impl GbodeF {
         let internal = conf.nls_method == NlsMethod::Internal;
         let two_step_fallback =
             super::tableau::finalize_error(&mut t, internal).map_err(String::from)?;
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!("Step control factor is set to {}", omclog::g(t.fac, 0, 6)),
+            "Step control factor is set to {}",
+            omclog::g(t.fac, 0, 6),
         );
         let nls = (!is_explicit).then(|| GbfNls::new(&t, tol, sym_jac, internal));
         // C demotes dense output to Hermite when the method has no formula.
@@ -1147,16 +1147,14 @@ impl Gbode {
                         return Err(super::step::GBODE_MIN_STEP_ERROR);
                     }
                     gbf.cache.invalidate_keep_left();
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "Reject step from {} to {}, error {}, new stepsize {}",
-                            omclog::g(gbf.time, 0, 6),
-                            omclog::g(gbf.time + gbf.last_step_size, 0, 6),
-                            omclog::g(err, 0, 6),
-                            omclog::g(gbf.step_size, 0, 6)
-                        ),
+                        "Reject step from {} to {}, error {}, new stepsize {}",
+                        omclog::g(gbf.time, 0, 6),
+                        omclog::g(gbf.time + gbf.last_step_size, 0, 6),
+                        omclog::g(err, 0, 6),
+                        omclog::g(gbf.step_size, 0, 6),
                     );
                     continue;
                 }
@@ -1265,16 +1263,14 @@ impl Gbode {
                 gbf.kv[..n].copy_from_slice(&kr);
                 let y = gbf.y.clone();
                 gbf.y_old.copy_from_slice(&y);
-                omclog::info(
+                omclog::info!(
                     omclog::SOLVER,
                     false,
-                    &format!(
-                        "Accept step from {} to {}, error {}, new stepsize {}",
-                        omclog::g(gbf.time - gbf.last_step_size, 0, 6),
-                        omclog::g(gbf.time, 0, 6),
-                        omclog::g(err_now, 0, 6),
-                        omclog::g(gbf.step_size, 0, 6)
-                    ),
+                    "Accept step from {} to {}, error {}, new stepsize {}",
+                    omclog::g(gbf.time - gbf.last_step_size, 0, 6),
+                    omclog::g(gbf.time, 0, 6),
+                    omclog::g(err_now, 0, 6),
+                    omclog::g(gbf.step_size, 0, 6),
                 );
             }
 
@@ -1660,14 +1656,12 @@ impl Gbode {
                 )?
             };
             if solved != Solved::Ok {
-                omclog::info(
+                omclog::info!(
                     omclog::SOLVER,
                     false,
-                    &format!(
-                        "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage {} at time t={}",
-                        stage + 1,
-                        omclog::g(stage_time, 0, 6)
-                    ),
+                    "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage {} at time t={}",
+                    stage + 1,
+                    omclog::g(stage_time, 0, 6),
                 );
                 return Ok(false);
             }
@@ -1780,13 +1774,11 @@ impl Gbode {
             )?
         };
         if solved != Solved::Ok {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "gbode error: Failed to solve NLS in full_implicit_RK_MR at time t={}",
-                    omclog::g(time, 0, 6)
-                ),
+                "gbode error: Failed to solve NLS in full_implicit_RK_MR at time t={}",
+                omclog::g(time, 0, 6),
             );
             return Ok(false);
         }
@@ -1908,13 +1900,11 @@ impl Gbode {
             )?
         };
         if solved != Solved::Ok {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t={}",
-                    omclog::g(time, 0, 6)
-                ),
+                "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t={}",
+                omclog::g(time, 0, 6),
             );
             return Ok(false);
         }

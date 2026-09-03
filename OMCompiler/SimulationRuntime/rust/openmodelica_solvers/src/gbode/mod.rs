@@ -183,7 +183,7 @@ impl Gbode {
         let tol = if tolerance > 0.0 { tolerance } else { 1e-6 };
         // C's `gbode_allocateData` logging, in its order (`getGB_method` first, then
         // `initButcherTableau` and `analyseButcherTableau`).
-        omclog::info(omclog::SOLVER, false, &format!("Chosen gbode method: {}", conf.method_name()));
+        omclog::info!(omclog::SOLVER, false, "Chosen gbode method: {}", conf.method_name());
         let (mut t, _nls_size) = tableau::init(conf.method, conf.err_method, n_states);
         if t.richardson {
             omclog::info(
@@ -203,16 +203,18 @@ impl Gbode {
         );
         let is_explicit = t.gm_type == GmType::Explicit;
         if !is_explicit {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!("Chosen gbode NLS method: {}", conf.nls_method_name()),
+                "Chosen gbode NLS method: {}",
+                conf.nls_method_name(),
             );
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!("Chosen gbode step size control: {}", conf.ctrl_method_name()),
+            "Chosen gbode step size control: {}",
+            conf.ctrl_method_name(),
         );
         let internal_nls = !is_explicit && conf.nls_method == NlsMethod::Internal;
         let two_step_fallback = tableau::finalize_error(&mut t, internal_nls).map_err(String::from)?;
@@ -294,21 +296,20 @@ impl Gbode {
                 String::from("initial step size not set")
             },
         );
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!(
-                "gbode performs a restart after an event occurs {}",
-                if no_restart { "NO" } else { "YES" }
-            ),
+            "gbode performs a restart after an event occurs {}",
+            if no_restart { "NO" } else { "YES" },
         );
         if let Some(msg) = jac_warning {
             omclog::warning(omclog::STDOUT, false, msg);
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!("Chosen gbode interpolation method: {}", conf.interpolation_name()),
+            "Chosen gbode interpolation method: {}",
+            conf.interpolation_name(),
         );
         omclog::info(
             omclog::SOLVER,
@@ -331,15 +332,13 @@ impl Gbode {
             t.k_right = false;
             let i = (libm::round(n_states as f64 * conf.ratio).max(1.0) as usize)
                 .min(n_states.saturating_sub(1));
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "Number of states {} ({} slow states, {} fast states)",
-                    n_states,
-                    n_states - i,
-                    i
-                ),
+                "Number of states {} ({} slow states, {} fast states)",
+                n_states,
+                n_states - i,
+                i,
             );
             Some(alloc::boxed::Box::new(gbf))
         } else {
@@ -525,14 +524,12 @@ impl Gbode {
         if self.did_event_step && !self.conf.evnt_reinit {
             self.step_size = (old_step * 1e-1).max(self.step_size);
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!(
-                "Initial step size = {} at time {}",
-                omclog::g(self.step_size, 0, 6),
-                omclog::g(self.time, 0, 6)
-            ),
+            "Initial step size = {} at time {}",
+            omclog::g(self.step_size, 0, 6),
+            omclog::g(self.time, 0, 6),
         );
         self.initial_failures = -1;
         Ok(())

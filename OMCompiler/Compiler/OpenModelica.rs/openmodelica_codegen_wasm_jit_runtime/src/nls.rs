@@ -191,14 +191,12 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if note_no_throw_assert() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::info(
+        crate::omclog::info!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if msg != 0 {
             crate::rt_release(msg as u32);
@@ -209,14 +207,12 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if nls::throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if nls::throw_logged() {
             crate::omclog::debug(crate::omclog::ASSERT, false, &rt_string(msg));
@@ -277,13 +273,11 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
         // domain check somewhere downstream.
         return 0.0;
     } else if no_throw_div_zero() {
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::DIVISION,
             false,
-            &alloc::format!(
-                "solver will try to handle division by zero at time {}: {s}",
-                format_g(time, 16)
-            ),
+            "solver will try to handle division by zero at time {}: {s}",
+            format_g(time, 16),
         );
         a / b
     } else {

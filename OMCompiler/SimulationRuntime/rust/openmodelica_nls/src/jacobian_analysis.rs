@@ -96,24 +96,22 @@ pub fn derivative_test(
         }
     }
 
-    omclog::info(
+    omclog::info!(
         stream,
         true,
-        &format!(
-            "{}: Derivative test (atol={}, rtol={}, scaled = {}, Caller: {}):",
-            caller.solver(),
-            omclog::e(atol, 0, 5),
-            omclog::e(rtol, 0, 5),
-            scaled,
-            caller.full()
-        ),
+        "{}: Derivative test (atol={}, rtol={}, scaled = {}, Caller: {}):",
+        caller.solver(),
+        omclog::e(atol, 0, 5),
+        omclog::e(rtol, 0, 5),
+        scaled,
+        caller.full(),
     );
     omclog::info(stream, true, "Matrix Info");
-    omclog::info(stream, false, &format!("NLS index = {eq_index}"));
-    omclog::info(stream, false, &format!("Columns   = {n}"));
-    omclog::info(stream, false, &format!("Rows      = {n}"));
-    omclog::info(stream, false, &format!("NNZ       = {}", sym.len()));
-    omclog::info(stream, false, &format!("Curr Time = {:<11}", omclog::e(time, 0, 5)));
+    omclog::info!(stream, false, "NLS index = {eq_index}");
+    omclog::info!(stream, false, "Columns = {n}");
+    omclog::info!(stream, false, "Rows = {n}");
+    omclog::info!(stream, false, "NNZ = {}", sym.len());
+    omclog::info!(stream, false, "Curr Time = {:<11}", omclog::e(time, 0, 5));
     omclog::close(stream);
 
     omclog::info(stream, true, "Anomalies");
@@ -127,11 +125,17 @@ pub fn derivative_test(
                 return;
             }
             let name = names.get(col).map(String::as_str).unwrap_or_default();
-            omclog::info(stream, true, &format!("Column / Variable: {}, Name: {name}", col + 1));
-            omclog::info(
+            omclog::info!(stream, true, "Column / Variable: {}, Name: {name}", col + 1);
+            omclog::info!(
                 stream,
                 false,
-                &format!("{:<12} {:<6} {:<6} {:<15}  {:<15}  {:<8}", "Type", "Col", "Row", "Symbolic", "Numerical", "RelError"),
+                "{:<12} {:<6} {:<6} {:<15}  {:<15}  {:<8}",
+                "Type",
+                "Col",
+                "Row",
+                "Symbolic",
+                "Numerical",
+                "RelError",
             );
             *found = true;
         };
@@ -154,35 +158,31 @@ pub fn derivative_test(
                 }
                 if rel_error > rtol {
                     open_column(&mut found);
-                    omclog::info(
+                    omclog::info!(
                         stream,
                         false,
-                        &format!(
-                            "{:<12} {:<6} {:<6} {}  {}  {}",
-                            "Numerical",
-                            col + 1,
-                            row + 1,
-                            sgn_e(sym_value, 8),
-                            sgn_e(num_value, 8),
-                            sgn_e(rel_error, 8)
-                        ),
+                        "{:<12} {:<6} {:<6} {}  {}  {}",
+                        "Numerical",
+                        col + 1,
+                        row + 1,
+                        sgn_e(sym_value, 8),
+                        sgn_e(num_value, 8),
+                        sgn_e(rel_error, 8),
                     );
                     numerical += 1;
                 }
             } else if libm::fabs(num_value) > atol {
                 open_column(&mut found);
-                omclog::info(
+                omclog::info!(
                     stream,
                     false,
-                    &format!(
-                        "{:<12} {:<6} {:<6} {}  {}  {}",
-                        "Structural",
-                        col + 1,
-                        row + 1,
-                        sgn_e(0.0, 8),
-                        sgn_e(num_value, 8),
-                        sgn_e(1.0, 8)
-                    ),
+                    "{:<12} {:<6} {:<6} {}  {}  {}",
+                    "Structural",
+                    col + 1,
+                    row + 1,
+                    sgn_e(0.0, 8),
+                    sgn_e(num_value, 8),
+                    sgn_e(1.0, 8),
                 );
                 structural += 1;
             }
@@ -194,14 +194,14 @@ pub fn derivative_test(
     omclog::close(stream);
 
     omclog::info(stream, true, "Summary");
-    omclog::info(stream, false, &format!("Numerical errors:  {numerical} (value mismatch w.r.t. reference)"));
-    omclog::info(stream, false, &format!("Structural errors: {structural} (non-zero not in sparsity pattern)"));
-    omclog::info(stream, false, &format!("Max relative error: {}", omclog::e(max_error, 0, 3)));
+    omclog::info!(stream, false, "Numerical errors: {numerical} (value mismatch w.r.t. reference)");
+    omclog::info!(stream, false, "Structural errors: {structural} (non-zero not in sparsity pattern)");
+    omclog::info!(stream, false, "Max relative error: {}", omclog::e(max_error, 0, 3));
     if numerical + structural > 0 {
-        omclog::warning(
+        omclog::warning!(
             stream,
             false,
-            &format!("Derivative test failed ({numerical} numerical, {structural} structural errors)"),
+            "Derivative test failed ({numerical} numerical, {structural} structural errors)",
         );
     }
     omclog::close(stream);
@@ -244,11 +244,11 @@ fn dense(n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64]) -> vec::Vec<f64
 fn print_matrix_info(eq_index: u32, time: f64, n: usize, nnz: usize) {
     let s = omclog::NLS_SVD;
     omclog::info(s, true, "Matrix Info");
-    omclog::info(s, false, &format!("NLS eq index = {eq_index}"));
-    omclog::info(s, false, &format!("Columns      = {n}"));
-    omclog::info(s, false, &format!("Rows         = {n}"));
-    omclog::info(s, false, &format!("NNZ          = {nnz}"));
-    omclog::info(s, false, &format!("Curr Time    = {:<11}", omclog::e(time, 0, 5)));
+    omclog::info!(s, false, "NLS eq index = {eq_index}");
+    omclog::info!(s, false, "Columns = {n}");
+    omclog::info!(s, false, "Rows = {n}");
+    omclog::info!(s, false, "NNZ = {nnz}");
+    omclog::info!(s, false, "Curr Time = {:<11}", omclog::e(time, 0, 5));
     omclog::close(s);
 }
 
@@ -257,21 +257,25 @@ fn print_cond(cond: f64) {
     let s = omclog::NLS_SVD;
     let c = |v: f64| omclog::e(v, 0, 8);
     omclog::info(s, true, "Matrix condition");
-    omclog::info(s, false, &format!("Cond(M) = {}", c(cond)));
+    omclog::info!(s, false, "Cond(M) = {}", c(cond));
     if cond > 1e12 {
-        omclog::warning(s, false, &format!("Matrix is very ill-conditioned: 1e12 < Cond(M) = {}", c(cond)));
+        omclog::warning!(s, false, "Matrix is very ill-conditioned: 1e12 < Cond(M) = {}", c(cond));
     } else if cond > 1e8 {
-        omclog::warning(
-            s, false,
-            &format!("Matrix is fairly ill-conditioned: 1e8 < Cond(M) = {} < 1e12", c(cond)),
+        omclog::warning!(
+            s,
+            false,
+            "Matrix is fairly ill-conditioned: 1e8 < Cond(M) = {} < 1e12",
+            c(cond),
         );
     } else if cond > 1e4 {
-        omclog::warning(
-            s, false,
-            &format!("Matrix is moderately ill-conditioned: 1e4 < Cond(M) = {} < 1e8", c(cond)),
+        omclog::warning!(
+            s,
+            false,
+            "Matrix is moderately ill-conditioned: 1e4 < Cond(M) = {} < 1e8",
+            c(cond),
         );
     } else {
-        omclog::info(s, false, &format!("Matrix is well conditioned: Cond(M) = {} < 1e4", c(cond)));
+        omclog::info!(s, false, "Matrix is well conditioned: Cond(M) = {} < 1e4", c(cond));
     }
     omclog::close(s);
 }
@@ -314,7 +318,7 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
 
     omclog::info(s, true, "Smallest right singular vectors (variable space)");
     omclog::info(s, false, "Found 1 singular vectors.");
-    omclog::info(s, true, &format!("V[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8)));
+    omclog::info!(s, true, "V[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8));
     for (i, val) in by_magnitude(&scaled_by(sign, v)) {
         let name = names.get(i).map(String::as_str).unwrap_or_default();
         let line = format!(
@@ -330,7 +334,7 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
 
     omclog::info(s, true, "Smallest left singular vectors (function space)");
     omclog::info(s, false, "Found 1 singular vectors.");
-    omclog::info(s, true, &format!("U[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8)));
+    omclog::info!(s, true, "U[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8));
     for (i, val) in by_magnitude(&scaled_by(sign, u)) {
         let eq = eqns.get(i).copied().unwrap_or(0);
         let line = format!(
@@ -392,13 +396,12 @@ fn sparse_svd(
             return;
         }
         let found = (found as usize).min(want);
-        omclog::info(
-            s, true,
-            &format!(
-                "{}: sparse SVD analysis (scaled = {scaled}, Caller: {}).",
-                caller.solver(),
-                caller.full()
-            ),
+        omclog::info!(
+            s,
+            true,
+            "{}: sparse SVD analysis (scaled = {scaled}, Caller: {}).",
+            caller.solver(),
+            caller.full(),
         );
         print_matrix_info(eq_index, time, n, vals.len());
         // C's `cond`: infinite where the smallest singular value vanished.
@@ -418,9 +421,14 @@ fn sparse_svd(
         }
         omclog::close(s);
         omclog::info(s, true, "Largest Singular values");
-        omclog::info(
-            s, false,
-            &format!("sigma_{:<3} =  {}, rnorm_{:<3} =  {}", 1, omclog::e(sval_top, 0, 8), 1, omclog::e(rnorm_top, 0, 8)),
+        omclog::info!(
+            s,
+            false,
+            "sigma_{:<3} =  {}, rnorm_{:<3} =  {}",
+            1,
+            omclog::e(sval_top, 0, 8),
+            1,
+            omclog::e(rnorm_top, 0, 8),
         );
         omclog::close(s);
 
@@ -446,33 +454,31 @@ fn dense_svd(
     if openmodelica_lapack::dgesvd("A", "A", n, n, &mut a, n, &mut sv, &mut u, n, &mut vt, n) != 0 {
         return;
     }
-    omclog::info(
-        s, true,
-        &format!(
-            "{}: dense SVD analysis (scaled = {scaled}, Caller: {}).",
-            caller.solver(),
-            caller.full()
-        ),
+    omclog::info!(
+        s,
+        true,
+        "{}: dense SVD analysis (scaled = {scaled}, Caller: {}).",
+        caller.solver(),
+        caller.full(),
     );
     print_matrix_info(eq_index, time, n, vals.len());
     let sigma_min = sv[n - 1];
     print_cond(if sigma_min > 0.0 { sv[0] / sigma_min } else { f64::INFINITY });
     omclog::info(s, true, "Singular values");
     for (i, v) in sv.iter().enumerate() {
-        omclog::info(s, false, &format!("sigma_{:<3} =  {}", i + 1, omclog::e(*v, 0, 8)));
+        omclog::info!(s, false, "sigma_{:<3} = {}", i + 1, omclog::e(*v, 0, 8));
     }
     omclog::close(s);
     let tol = n as f64 * f64::EPSILON * sv[0];
     let rank = sv.iter().filter(|v| **v > tol).count();
     omclog::info(s, true, "Rank estimation");
-    omclog::info(s, false, &format!("estimated = {rank}"));
-    omclog::info(s, false, &format!("actual    = {n}"));
-    omclog::info(
-        s, false,
-        &format!(
-            "estimation tolerance = {} (= sigma_max * max(rows, cols) * DBL_EPSILON)",
-            omclog::e(tol, 0, 8)
-        ),
+    omclog::info!(s, false, "estimated = {rank}");
+    omclog::info!(s, false, "actual = {n}");
+    omclog::info!(
+        s,
+        false,
+        "estimation tolerance = {} (= sigma_max * max(rows, cols) * DBL_EPSILON)",
+        omclog::e(tol, 0, 8),
     );
     omclog::info(
         s, false,
@@ -484,9 +490,11 @@ fn dense_svd(
     if first_below == n {
         for what in ["Smallest right singular vectors (variable space)", "Smallest left singular vectors (function space)"] {
             omclog::info(s, true, what);
-            omclog::info(
-                s, false,
-                &format!("No singular values below {} (1% of max)", omclog::e(threshold, 0, 8)),
+            omclog::info!(
+                s,
+                false,
+                "No singular values below {} (1% of max)",
+                omclog::e(threshold, 0, 8),
             );
             omclog::close(s);
         }

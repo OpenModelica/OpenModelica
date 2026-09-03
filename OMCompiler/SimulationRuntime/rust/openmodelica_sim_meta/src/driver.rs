@@ -160,12 +160,10 @@ fn state_selection_set(
     if !pivot(&mut jac, nd, nc, &mut st.row_pivot, &mut st.col_pivot) && report_error {
         log_state_set_jacobian(omclog::WARNING, omclog::DSS, info, &jac, set_index);
         let t = read_f64(e, sim_data + TIME_OFF)?;
-        omclog::error(
+        omclog::error!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Error, singular Jacobian for dynamic state selection at time {t:.6}\nUse -lv LOG_DSS_JAC to get the Jacobian"
-            ),
+            "Error, singular Jacobian for dynamic state selection at time {t:.6}\nUse -lv LOG_DSS_JAC to get the Jacobian",
         );
         return Err("CodegenWasmJit: singular Jacobian for dynamic state selection");
     }
@@ -197,7 +195,7 @@ fn state_selection_set(
         }
         if omclog::active(omclog::DSS) {
             let t = read_f64(e, sim_data + TIME_OFF)?;
-            omclog::info(omclog::DSS, true, &format!("StateSelection Set {set_index} at time = {t:.6}"));
+            omclog::info!(omclog::DSS, true, "StateSelection Set {set_index} at time = {t:.6}");
             print_state_selection_info(e, sim_data, info)?;
             omclog::close(omclog::DSS);
         }
@@ -215,17 +213,17 @@ fn print_state_selection_info(e: &mut dyn SimEngine, sim_data: u32, info: &State
     let ns = info.n_states as usize;
     let name = |i: usize| info.candidate_names.get(i).map(String::as_str).unwrap_or("?");
     let plural = if ns == 1 { "" } else { "s" };
-    omclog::info(omclog::DSS, false, &format!("Select {ns} state{plural} from {nc} candidates."));
+    omclog::info!(omclog::DSS, false, "Select {ns} state{plural} from {nc} candidates.");
     omclog::info(omclog::DSS, true, "State candidates:");
     for k in 0..nc {
-        omclog::info(omclog::DSS, false, &format!("[{}] {}", k + 1, name(k)));
+        omclog::info!(omclog::DSS, false, "[{}] {}", k + 1, name(k));
     }
     omclog::close(omclog::DSS);
-    omclog::info(omclog::DSS, true, &format!("Selected state{plural}"));
+    omclog::info!(omclog::DSS, true, "Selected state{plural}");
     for row in 0..ns {
         for col in 0..nc {
             if read_i32(e, sim_data + info.a_offs[row * nc + col])? == 1 {
-                omclog::info(omclog::DSS, false, &format!("[{}] {}", col + 1, name(col)));
+                omclog::info!(omclog::DSS, false, "[{}] {}", col + 1, name(col));
                 break;
             }
         }
@@ -596,12 +594,6 @@ pub trait SimEngine {
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         0
     }
-    /// Whether [`eval_discrete`] should call the model's own `functionDAE` (C's
-    /// generated one, `allEquations` with `discreteCall` raised). A wasm-jit module
-    /// always exports one, so there `has_when` decides instead.
-    fn has_discrete_entry(&self) -> bool {
-        false
-    }
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
@@ -804,10 +796,11 @@ impl StepRetry {
         if self.armed {
             // C's catch with `retry` already spent: the run ends here.
             let t = read_f64(e, sim_data + TIME_OFF).unwrap_or(f64::NAN);
-            omclog::info(
+            omclog::info!(
                 omclog::STDOUT,
                 false,
-                &format!("model terminate | Simulation terminated by an assert at time: {}", format_g(t, 6)),
+                "model terminate | Simulation terminated by an assert at time: {}",
+                format_g(t, 6),
             );
             return Ok(None);
         }
@@ -1442,14 +1435,12 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
         return;
     }
     let time = read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
-    omclog::debug(
+    omclog::debug!(
         omclog::ASSERT,
         false,
-        &format!(
-            "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
-            failed - 1,
-            format_g15(time),
-        ),
+        "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
+        failed - 1,
+        format_g15(time),
     );
 }
 
@@ -1641,16 +1632,18 @@ fn overridden_on_command_line(name: &str) -> bool {
 /// a parameter is overwritten rather than the other way round.
 fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     let Some(imports) = imports_store::get() else { return Ok(()) };
-    omclog::info(
+    omclog::info!(
         omclog::INIT,
         false,
-        &format!("import start values\nfile: {}\ntime: {}", imports.file, format_g(imports.time, 6)),
+        "import start values\nfile: {}\ntime: {}",
+        imports.file,
+        format_g(imports.time, 6),
     );
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
     for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
-        omclog::info(omclog::INIT, false, &format!("import {group}"));
+        omclog::info!(omclog::INIT, false, "import {group}");
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
         for (name, off, wty) in entries {
@@ -1660,20 +1653,20 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
             }
             flat += 1;
             if overridden_on_command_line(name) {
-                omclog::info(
+                omclog::info!(
                     omclog::INIT_V,
                     false,
-                    &format!("| skip import of {one} {name}: overridden on command line"),
+                    "| skip import of {one} {name}: overridden on command line",
                 );
                 continue;
             }
             let Some(v) = found else {
                 // C reports a missing quantity, except for the backend's own variables.
                 if !(group.ends_with("variables") && is_generated(name)) {
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::INIT,
                         false,
-                        &format!("unable to import {one} {name} from given file"),
+                        "unable to import {one} {name} from given file",
                     );
                 }
                 continue;
@@ -1681,16 +1674,16 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
             match wty {
                 WTy::F64 => {
                     write_f64(e, sim_data + off, v)?;
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", format_g(v, 6)));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={})", format_g(v, 6));
                 }
                 WTy::I32 if group.starts_with("boolean") => {
                     write_i32(e, sim_data + off, (v != 0.0) as i32)?;
                     let b = if v != 0.0 { "true" } else { "false" };
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={b})"));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={b})");
                 }
                 WTy::I32 => {
                     write_i32(e, sim_data + off, v as i32)?;
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", v as i32));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={})", v as i32);
                 }
             }
         }
@@ -1979,7 +1972,7 @@ pub(crate) fn format_f(v: f64) -> String {
 /// C's `perform_simulation` line after `simulationStep`, closing its `LOG_SOLVER` block.
 fn log_solver_finished(t: f64) {
     if omclog::active(omclog::SOLVER) {
-        omclog::info(omclog::SOLVER, false, &format!("finished solver step {}", format_g(t, 6)));
+        omclog::info!(omclog::SOLVER, false, "finished solver step {}", format_g(t, 6));
         omclog::close(omclog::SOLVER);
     }
 }
@@ -2369,7 +2362,7 @@ fn log_static_data_update(e: &mut dyn SimEngine) {
 
 /// C's `INIT_METHOD_NAME`/`INIT_METHOD_DESC` line.
 fn log_init_method(name: &str, desc: &str) {
-    omclog::info(omclog::INIT, false, &format!("initialization method: {name:<15} [{desc}]"));
+    omclog::info!(omclog::INIT, false, "initialization method: {name:<15} [{desc}]");
 }
 
 /// C's `symbolic_initialization`: solve, then check the equations the backend
@@ -2501,13 +2494,11 @@ fn check_removed_initial_equations(
         .and_then(|m| m.removed_init_desc.get(idx as usize - 1))
         .map(String::as_str)
         .unwrap_or_default();
-    omclog::error(
+    omclog::error!(
         omclog::INIT,
         false,
-        &format!(
-            "The initialization problem is inconsistent due to the following equation: 0 != {} = {desc}",
-            format_g(res, 6)
-        ),
+        "The initialization problem is inconsistent due to the following equation: 0 != {} = {desc}",
+        format_g(res, 6),
     );
     Err(report_init_failure())
 }
@@ -2616,7 +2607,7 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
             "start" => "primary start-values".to_string(),
             _ => format!("{name}-values"),
         };
-        omclog::info(omclog::INIT, true, &format!("updating {header}"));
+        omclog::info!(omclog::INIT, true, "updating {header}");
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
@@ -2760,17 +2751,18 @@ fn run_homotopy_continuation(
     for step in 0..=steps {
         let lambda = (step as f64 / steps as f64).min(1.0);
         write_f64(e, sim_data + layout.lambda_off, lambda)?;
-        omclog::info(omclog::INIT_HOMOTOPY, false, &format!("homotopy parameter lambda = {}", format_g(lambda, 6)));
+        omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
         if step == 0 {
             call_initial_equations_lambda0(e, sim_data, layout)?;
         } else {
             write_i32(e, sim_data + layout.nls_fail_off, 0)?;
             e.call1("functionInitialEquations", sim_data)?;
         }
-        omclog::info(
+        omclog::info!(
             omclog::INIT_HOMOTOPY,
             false,
-            &format!("homotopy parameter lambda = {} done\n---------------------------", format_g(lambda, 6)),
+            "homotopy parameter lambda = {} done\n---------------------------",
+            format_g(lambda, 6),
         );
         path.row(e, sim_data, layout, lambda);
     }
@@ -2804,10 +2796,10 @@ impl HomotopyPath {
             let file = match model {
                 Some(m) if omclog::active(omclog::INIT_HOMOTOPY) => {
                     let path = format!("{}_{name}", m.prefix);
-                    omclog::info(
+                    omclog::info!(
                         omclog::INIT_HOMOTOPY,
                         false,
-                        &format!("The homotopy path will be exported to {path}."),
+                        "The homotopy path will be exported to {path}.",
                     );
                     Some((path, String::new()))
                 }
@@ -2949,7 +2941,7 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
     }
     let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
     let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
-    omclog::info(omclog::STDOUT, false, &format!("Simulation call terminate() {at}\nMessage : {msg}"));
+    omclog::info!(omclog::STDOUT, false, "Simulation call terminate() {at}\nMessage : {msg}");
     Ok(())
 }
 
@@ -2975,16 +2967,14 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
         return Ok(false);
     }
     steady_report::mark();
-    omclog::info(
+    omclog::info!(
         omclog::STDOUT,
         false,
-        &format!(
-            "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
-             relative tolerance = {}",
-            format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
-            format_g(max_der, 6),
-            format_g(tol, 6),
-        ),
+        "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
+         relative tolerance = {}",
+        format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+        format_g(max_der, 6),
+        format_g(tol, 6),
     );
     Ok(true)
 }
@@ -3064,17 +3054,12 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
     e.call1("functionODE", sim_data)
 }
 
-/// One pass of C's `functionDAE`, which evaluates `allEquations` once. A
-/// `when`-model takes it through `functionAlgebraics`, which is that list plus
-/// `storePreValues`.
+/// One pass of C's `functionDAE`, which evaluates `allEquations` once.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
-    if e.has_discrete_entry() || !layout.has_when {
-        return e.call1("functionDAE", sim_data);
-    }
-    e.call1("functionAlgebraics", sim_data)
+    e.call1("functionDAE", sim_data)
 }
 
 /// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
@@ -3145,7 +3130,7 @@ pub fn emit_terminal_row(
     }
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_time(e, sim_data, time)?;
-    omclog::info(omclog::EVENTS_V, false, &format!("terminal event at stop time {}", format_g(time, 6)));
+    omclog::info!(omclog::EVENTS_V, false, "terminal event at stop time {}", format_g(time, 6));
     write_i32(e, sim_data + layout.terminal_off, 1)?;
     // A discrete call, so relations are live (C's `updateDiscreteSystem`
     // prologue): a condition that only becomes true at `stop` flips here.
@@ -3579,12 +3564,12 @@ fn log_state_event(time: f64, roots: &[usize], model: &SimMeta) {
     if !omclog::active(omclog::EVENTS) {
         return;
     }
-    omclog::info(omclog::EVENTS, true, &format!("state event at time={}", format_g(time, 12)));
+    omclog::info!(omclog::EVENTS, true, "state event at time={}", format_g(time, 12));
     // Highest index first: C's `checkForStateEvent` pushes each crossing onto the
     // front of the event list it then walks, so simultaneous ones come out reversed.
     for &i in roots.iter().rev() {
         let desc = model.zc_desc.get(i).map(String::as_str).unwrap_or_default();
-        omclog::info(omclog::EVENTS, false, &format!("[{}] {desc}", i + 1));
+        omclog::info!(omclog::EVENTS, false, "[{}] {desc}", i + 1);
     }
 }
 
@@ -3596,7 +3581,7 @@ fn log_reinits(e: &mut dyn SimEngine) {
         }
         let i = off.saturating_sub(REAL_OFF) as usize / 8;
         let name = event_dump_store::with(|d| d.real_names.get(i).cloned().unwrap_or_default());
-        omclog::info(omclog::EVENTS, false, &format!("reinit {name} = {}", format_g(value, 6)));
+        omclog::info!(omclog::EVENTS, false, "reinit {name} = {}", format_g(value, 6));
     }
 }
 
@@ -3605,16 +3590,18 @@ fn log_time_event(e: &dyn SimEngine, time: f64, samples: &Samples, model: &SimMe
     if !omclog::active(omclog::EVENTS) {
         return;
     }
-    omclog::info(omclog::EVENTS, true, &format!("time event at time={}", format_g(time, 12)));
+    omclog::info!(omclog::EVENTS, true, "time event at time={}", format_g(time, 12));
     for (k, start, interval) in samples.due(time) {
         let index = e
             .sample_index(k)
             .or_else(|| model.sample_index.get(k).copied())
             .unwrap_or(k as i32 + 1);
-        omclog::info(
+        omclog::info!(
             omclog::EVENTS,
             false,
-            &format!("[{index}] sample({}, {})", format_g(start, 6), format_g(interval, 6)),
+            "[{index}] sample({}, {})",
+            format_g(start, 6),
+            format_g(interval, 6),
         );
     }
 }
@@ -3707,20 +3694,20 @@ pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, st
     }
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     event_dump_store::with(|d| {
-        omclog::info(stream, true, &format!("status of relations at time={time}"));
+        omclog::info!(stream, true, "status of relations at time={time}");
         for i in 0..layout.n_rel {
             let flag = |off: u32| if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 { " true" } else { "false" };
             let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
             let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
-            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
         }
         omclog::close(stream);
-        omclog::info(stream, true, &format!("status of zero crossings at time={time}"));
+        omclog::info!(stream, true, "status of zero crossings at time={time}");
         for i in 0..layout.n_zc {
             let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
             let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
             let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
-            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
         }
         omclog::close(stream);
     });
@@ -3747,7 +3734,7 @@ fn discrete_pre_values(e: &dyn SimEngine, sim_data: u32) -> Result<(Vec<f64>, Ve
 /// [`discrete_snapshot`], which compares the same regions in bulk.
 fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Vec<i32>)) -> Result<()> {
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
-    omclog::info(omclog::EVENTS_V, true, &format!("check for discrete changes at time={time}"));
+    omclog::info!(omclog::EVENTS_V, true, "check for discrete changes at time={time}");
     event_dump_store::with(|d| {
         for ((name, live, _), v1) in d.reals.iter().zip(&before.0) {
             let v2 = read_f64(e, sim_data + live)?;
@@ -3760,7 +3747,7 @@ fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Ve
         for ((name, live, _), v1) in d.ints.iter().zip(&before.1) {
             let v2 = read_i32(e, sim_data + live)?;
             if *v1 != v2 {
-                omclog::info(omclog::EVENTS_V, false, &format!("discrete var changed: {name} from {v1} to {v2}"));
+                omclog::info!(omclog::EVENTS_V, false, "discrete var changed: {name} from {v1} to {v2}");
             }
         }
         for ((name, live, _), v1) in d.bools.iter().zip(&before.1[n_int..]) {
@@ -3977,12 +3964,10 @@ fn iterate_discrete_from(
         }
         iter += 1;
         if iter > max {
-            omclog::debug(
+            omclog::debug!(
                 omclog::ASSERT,
                 false,
-                &format!(
-                    "Simulation terminated due to too many, i.e. {max}, event iterations.\n                     This could either indicate an inconsistent system or an undersized limit of                      event iterations.\nThe limit of event iterations can be specified using the                      runtime flag '\u{2013}mei=<value>'."
-                ),
+                "Simulation terminated due to too many, i.e. {max}, event iterations.\n                     This could either indicate an inconsistent system or an undersized limit of                      event iterations.\nThe limit of event iterations can be specified using the                      runtime flag '\u{2013}mei=<value>'.",
             );
             return Err(ASSERT_ERR);
         }
@@ -4311,10 +4296,11 @@ pub fn set_zc_tolerance(
 ) -> Result<()> {
     let rtol = if tolerance > 0.0 { tolerance } else { 1e-6 };
     let tol_zc = 1e-4 * rtol.max(1e-12);
-    omclog::info(
+    omclog::info!(
         omclog::EVENTS_V,
         false,
-        &format!("Set tolerance for zero-crossing hysteresis to: {}", omclog::e(tol_zc, 0, 6)),
+        "Set tolerance for zero-crossing hysteresis to: {}",
+        omclog::e(tol_zc, 0, 6),
     );
     write_f64(e, sim_data + layout.zctol_off, tol_zc)
 }
@@ -4467,14 +4453,10 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
     // which a host that runs those functions itself has already made.
     if !e.host_logs_system_init() {
         omclog::info(omclog::LS, true, "initialize linear system solvers");
-        omclog::info(omclog::LS, false, &format!("{} linear systems", model.n_lin_systems));
+        omclog::info!(omclog::LS, false, "{} linear systems", model.n_lin_systems);
         omclog::close(omclog::LS);
         omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
-        omclog::info(
-            omclog::NLS,
-            false,
-            &format!("{} non-linear systems", model.nls_vars.len()),
-        );
+        omclog::info!(omclog::NLS, false, "{} non-linear systems", model.nls_vars.len());
         omclog::close(omclog::NLS);
     }
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
@@ -4583,15 +4565,13 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
     if let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol)
         && !steady_report::hit()
     {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Steady state has not been reached.\nThis may be due to too restrictive relative \
-                 tolerance ({}) or short stopTime ({}).",
-                format_g(tol, 6),
-                format_g(model.stop_time, 6),
-            ),
+            "Steady state has not been reached.\nThis may be due to too restrictive relative \
+             tolerance ({}) or short stopTime ({}).",
+            format_g(tol, 6),
+            format_g(model.stop_time, 6),
         );
     }
     signal_teardown();
@@ -4641,10 +4621,10 @@ pub fn drive(
     rtclock::tick(rtclock::TOTAL);
     let lv_time = crate::simflags::with_flags(|f| f.lv_time);
     if let Some((t0, t1)) = lv_time {
-        omclog::info(
+        omclog::info!(
             omclog::STDOUT,
             false,
-            &format!("Time dependent logging enabled. Activate logging in interval [{t0:.6}, {t1:.6}]"),
+            "Time dependent logging enabled. Activate logging in interval [{t0:.6}, {t1:.6}]",
         );
         // C reactivates the streams before `callSolver` when the run starts inside the window.
         if start >= t0 {
@@ -4761,13 +4741,11 @@ pub fn drive(
                             open_assert_window();
                             let updated = emit_row(e, &mut last, sim_data, layout, t, stop);
                             let _ = close_assert_window(e, sim_data).and(updated);
-                            omclog::info(
+                            omclog::info!(
                                 omclog::STDOUT,
                                 false,
-                                &format!(
-                                    "model terminate | Integrator failed. | Simulation terminated at time {}",
-                                    format_g(t, 6)
-                                ),
+                                "model terminate | Integrator failed. | Simulation terminated at time {}",
+                                format_g(t, 6),
                             );
                         }
                         return Err(enrich_trap(e, err));
@@ -5340,7 +5318,7 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
         JacAvail::Available => requested.unwrap_or(M::ColoredSymJac),
     };
     if log {
-        omclog::info(omclog::JAC, false, &format!("Using Jacobian method: {}", method.desc()));
+        omclog::info!(omclog::JAC, false, "Using Jacobian method: {}", method.desc());
     }
     // Without an adjoint C's `evalJacobian` degenerates to the colored evaluation.
     match method {
@@ -5618,16 +5596,23 @@ unsafe fn dassl_log_jacobian(
     };
     let name = |i: usize| names.get(i).map(String::as_str).unwrap_or("");
     let value = |col: usize, row: usize| -(unsafe { *pd.add(col * n + row) });
-    omclog::info(omclog::JAC, true, &format!(
+    omclog::info!(
+        omclog::JAC,
+        true,
         "DASSL-Solver: analytical Jacobian pd (column-major) at time={}",
-        format_g(t, 6)
-    ));
+        format_g(t, 6),
+    );
     for col in 0..n {
         for row in 0..n {
-            omclog::info(omclog::JAC, false, &format!(
+            omclog::info!(
+                omclog::JAC,
+                false,
                 "J(row={row}:'{}', col={col}:'{}') = {} [flat={}]",
-                name(row), name(col), format_g(value(col, row), 16), col * n + row
-            ));
+                name(row),
+                name(col),
+                format_g(value(col, row), 16),
+                col * n + row,
+            );
         }
     }
     omclog::close(omclog::JAC);
@@ -5680,14 +5665,26 @@ unsafe fn dassl_log_jacobian(
         }
     }
     omclog::info(omclog::JAC, true, "Jacobian verification: analytical vs. numerical");
-    omclog::info(omclog::JAC, false, &format!(
+    omclog::info!(
+        omclog::JAC,
+        false,
         "Max absolute difference: {} at (row={}:'{}', col={}:'{}')",
-        format_g(max_abs, 6), abs_at.0, name(abs_at.0), abs_at.1, name(abs_at.1)
-    ));
-    omclog::info(omclog::JAC, false, &format!(
+        format_g(max_abs, 6),
+        abs_at.0,
+        name(abs_at.0),
+        abs_at.1,
+        name(abs_at.1),
+    );
+    omclog::info!(
+        omclog::JAC,
+        false,
         "Max relative difference: {} at (row={}:'{}', col={}:'{}')",
-        format_g(max_rel, 6), rel_at.0, name(rel_at.0), rel_at.1, name(rel_at.1)
-    ));
+        format_g(max_rel, 6),
+        rel_at.0,
+        name(rel_at.0),
+        rel_at.1,
+        name(rel_at.1),
+    );
     omclog::close(omclog::JAC);
     Ok(())
 }
@@ -5883,7 +5880,7 @@ fn log_dassl() -> bool {
 }
 
 fn log_dassl_step(t: f64) {
-    omclog::info(omclog::DASSL, false, &format!("new step at time = {}", format_g(t, 15)));
+    omclog::info!(omclog::DASSL, false, "new step at time = {}", format_g(t, 15));
 }
 
 /// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
@@ -5906,7 +5903,7 @@ fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
     if !msg.is_empty() {
         omclog::warning(omclog::STDOUT, false, msg);
     }
-    omclog::warning(omclog::STDOUT, false, &format!("can't continue. time = {t:.6}"));
+    omclog::warning!(omclog::STDOUT, false, "can't continue. time = {t:.6}");
     solver_fail_store::set(t);
     SOLVER_FAILED_ERR
 }
@@ -6322,15 +6319,13 @@ impl Driver for DasslDriver {
             }
             // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
             if fresh && omclog::active(omclog::SOLVER) {
-                omclog::info(
+                omclog::info!(
                     omclog::SOLVER,
                     true,
-                    &format!(
-                        "call solver from {} to {} (stepSize: {})",
-                        format_g(self.t, 6),
-                        format_g(tout, 6),
-                        format_g15(tout - self.t)
-                    ),
+                    "call solver from {} to {} (stepSize: {})",
+                    format_g(self.t, 6),
+                    format_g(tout, 6),
+                    format_g15(tout - self.t),
                 );
             }
             let logging = log_dassl();
@@ -6671,10 +6666,12 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
     // C's compatibility warning, before the banner it belongs to.
     let (lmm, iter) = config;
     if (lmm == CvodeLmm::Adams) != (iter == CvodeIter::FixedPoint) {
-        omclog::warning(
+        omclog::warning!(
             omclog::SOLVER,
             true,
-            &format!("Combination of {} and {} not recommended.", lmm.name(), iter.name()),
+            "Combination of {} and {} not recommended.",
+            lmm.name(),
+            iter.name(),
         );
         for line in [
             "Use simflags -cvodeLinearMultistepMethod and -cvodeNonlinearSolverIteration to set.",
@@ -6692,17 +6689,14 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
     ] {
         omclog::info(omclog::SOLVER, false, &line);
     }
-    omclog::info(
-        omclog::SOLVER,
-        false,
-        &format!("CVODE Using relative error tolerance {}", format_e(rtol)),
-    );
+    omclog::info!(omclog::SOLVER, false, "CVODE Using relative error tolerance {}", format_e(rtol));
     omclog::info(omclog::SOLVER, false, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
     omclog::info(omclog::SOLVER, false, "CVODE Use internal dense numeric jacobian method.");
-    omclog::info(
+    omclog::info!(
         omclog::SOLVER,
         false,
-        &format!("CVODE uses internal root finding method {}", if root_finding { "YES" } else { "NO" }),
+        "CVODE uses internal root finding method {}",
+        if root_finding { "YES" } else { "NO" },
     );
     for line in [
         "CVODE maximum absolut step size 0".to_string(),
@@ -6854,32 +6848,32 @@ impl IdaState {
             {
                 if self.setup.ramp_recovers(flag, *t) {
                     self.setup.arm_ramp(ida, self.stop_time);
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
-                             activating homotopy ramp",
-                            format_g(*t, 15)
-                        ),
+                        "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
+                         activating homotopy ramp",
+                        format_g(*t, 15),
                     );
                 }
                 ida.reinit(*t);
                 self.restarted = true;
-                omclog::warning(
+                omclog::warning!(
                     omclog::SOLVER,
                     false,
-                    &format!("##IDA## solver failed, try once again at time = {}", format_g(*t, 15)),
+                    "##IDA## solver failed, try once again at time = {}",
+                    format_g(*t, 15),
                 );
                 Progress::WorkQuota
             }
             crate::sundials::Stop::Failed(crate::sundials::IDA_RTFUNC_FAIL) => Progress::RootThrew,
             crate::sundials::Stop::Failed(flag) => {
                 // C's last word before it gives up (`ida_solver.c`).
-                omclog::info(
+                omclog::info!(
                     omclog::STDOUT,
                     false,
-                    &format!("##IDA## {flag} error occurred at time = {}", format_g(*t, 15)),
+                    "##IDA## {flag} error occurred at time = {}",
+                    format_g(*t, 15),
                 );
                 Progress::Failed("CodegenWasmJit: IDA failed")
             }
@@ -7463,15 +7457,13 @@ impl SolverCore {
             return Ok(());
         };
         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
-        omclog::info(
+        omclog::info!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
-                 with a total time delta less than the step size {step_size}). This can be a \
-                 performance bottleneck. Use -lv LOG_EVENTS for more information. The \
-                 zero-crossing was: {desc}"
-            ),
+            "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
+             with a total time delta less than the step size {step_size}). This can be a \
+             performance bottleneck. Use -lv LOG_EVENTS for more information. The \
+             zero-crossing was: {desc}",
         );
         if chatter_store::abort() {
             omclog::debug(
@@ -7968,20 +7960,18 @@ impl SolverCore {
             if target - self.t > step_eps {
                 // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
                 if omclog::active(omclog::SOLVER) {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         true,
-                        &format!(
-                            "call solver from {} to {} (stepSize: {})",
-                            format_g(self.t, 6),
-                            format_g(target, 6),
-                            format_g15(target - self.t)
-                        ),
+                        "call solver from {} to {} (stepSize: {})",
+                        format_g(self.t, 6),
+                        format_g(target, 6),
+                        format_g15(target - self.t),
                     );
                 }
                 let solved = self.solve_toward(target, ctx, deadline, did_step)?;
                 if omclog::active(omclog::SOLVER) {
-                    omclog::info(omclog::SOLVER, false, &format!("finished solver step {}", format_g(self.t, 6)));
+                    omclog::info!(omclog::SOLVER, false, "finished solver step {}", format_g(self.t, 6));
                     omclog::close(omclog::SOLVER);
                 }
                 let rooted = match solved {
@@ -9535,7 +9525,7 @@ struct DaeSolve {
 
 #[cfg(sundials)]
 fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64, tol: f64) -> Result<()> {
-    omclog::info(omclog::SOLVER, false, &format!("##IDA## do event update at {}", format_g(t, 15)));
+    omclog::info!(omclog::SOLVER, false, "##IDA## do event update at {}", format_g(t, 15));
     match ida.calc_ic_at(t, tol) {
         true => Ok(()),
         false => Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)"),
@@ -10454,13 +10444,11 @@ impl GuessStepper {
                 Ok(Solved::RootThrew(err)) | Err(err) => {
                     iter += 1;
                     if iter > 10 {
-                        omclog::warning(
+                        omclog::warning!(
                             omclog::STDOUT,
                             false,
-                            &format!(
-                                "Initial guess failure at time {}",
-                                format_g(self.core.t, 12)
-                            ),
+                            "Initial guess failure at time {}",
+                            format_g(self.core.t, 12),
                         );
                         return Err(err);
                     }

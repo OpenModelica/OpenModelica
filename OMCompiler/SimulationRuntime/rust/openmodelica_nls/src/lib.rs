@@ -510,13 +510,11 @@ pub fn dt_solving(index: i32, strict: i32, time: f64, linear: bool) {
     } else {
         alloc::format!("(CASUAL TEARING SET, strict: {strict})")
     };
-    omclog::info(
+    omclog::info!(
         omclog::DT,
         false,
-        &alloc::format!(
-            "Solving {kind} system {index} {what} at time = {}",
-            format_g(time, 6)
-        ),
+        "Solving {kind} system {index} {what} at time = {}",
+        format_g(time, 6),
     );
 }
 
@@ -1145,10 +1143,11 @@ fn homotopy_algorithm(
 
     // C's `pFile`: header (`"lambda"` then the unknowns) and the start row.
     let mut csv = export.map(|e| {
-        omclog::info(
+        omclog::info!(
             omclog::INIT_HOMOTOPY,
             false,
-            &alloc::format!("The homotopy path will be exported to {}.", e.name),
+            "The homotopy path will be exported to {}.",
+            e.name,
         );
         let mut s = alloc::string::String::from("\"sep=,\"\n\"lambda\"");
         // C names the `n` residual coordinates; lambda has its own column.
@@ -1178,7 +1177,7 @@ fn homotopy_algorithm(
     let mut tangent_pos: i32 = -1;
 
     while y0[n] < 1.0 {
-        omclog::info(log, false, &alloc::format!("homotopy parameter lambda = {}", fmt_g6(y0[n])));
+        omclog::info!(log, false, "homotopy parameter lambda = {}", fmt_g6(y0[n]));
         if iter >= max_tries {
             return Err(if pre_tau == tau { HomFail::TauStuck } else { HomFail::MaxTries(iter) });
         }
@@ -1328,7 +1327,7 @@ fn homotopy_algorithm(
             }
         }
     }
-    omclog::info(log, false, &alloc::format!("homotopy parameter lambda = {}", fmt_g6(y0[n])));
+    omclog::info!(log, false, "homotopy parameter lambda = {}", fmt_g6(y0[n]));
     if let Some((name, s)) = csv {
         host::write_file(&name, &s);
     }
@@ -1894,7 +1893,7 @@ fn hybrd_c(
     let print_vector = |name: &str, v: &[f64]| {
         omclog::info(omclog::NLS_V, true, name);
         for (i, x) in v.iter().enumerate() {
-            omclog::info(omclog::NLS_V, false, &alloc::format!("[{i:>2}] {}", omclog::g(*x, 20, 12)));
+            omclog::info!(omclog::NLS_V, false, "[{i:>2}] {}", omclog::g(*x, 20, 12));
         }
         omclog::close(omclog::NLS_V);
     };
@@ -1904,27 +1903,23 @@ fn hybrd_c(
         }
     };
     if log_v {
-        omclog::info(
+        omclog::info!(
             omclog::NLS_V,
             true,
-            &alloc::format!(
-                "Start solving Non-Linear System {} (size {n}) at time {} with Hybrd Solver",
-                t.eq_index,
-                fmt_g6(t.time)
-            ),
+            "Start solving Non-Linear System {} (size {n}) at time {} with Hybrd Solver",
+            t.eq_index,
+            fmt_g6(t.time),
         );
         for i in 0..n {
             let name = names.get(i).map_or("", |s| s.as_str());
-            omclog::info(omclog::NLS_V, true, &alloc::format!("{}. {name} = {}", i + 1, omclog::f(x_start[i], 0, 6)));
-            omclog::info(
+            omclog::info!(omclog::NLS_V, true, "{}. {name} = {}", i + 1, omclog::f(x_start[i], 0, 6));
+            omclog::info!(
                 omclog::NLS_V,
                 false,
-                &alloc::format!(
-                    "    nominal = {}\nold = {}\nextrapolated = {}",
-                    omclog::f(nominal[i], 0, 6),
-                    omclog::f(warm[i], 0, 6),
-                    omclog::f(extrapolation[i], 0, 6)
-                ),
+                "    nominal = {}\nold = {}\nextrapolated = {}",
+                omclog::f(nominal[i], 0, 6),
+                omclog::f(warm[i], 0, 6),
+                omclog::f(extrapolation[i], 0, 6),
             );
             omclog::close(omclog::NLS_V);
         }
@@ -2060,8 +2055,8 @@ fn hybrd_c(
             if log_v {
                 omclog::info(omclog::NLS_V, true, "scaling factors for residual vector");
                 for i in 0..n {
-                    omclog::info(omclog::NLS_V, true, &alloc::format!("scaled residual [{i}] : {}", omclog::e(scaled[i], 0, 20)));
-                    omclog::info(omclog::NLS_V, false, &alloc::format!("scaling factor [{i}] : {}", omclog::e(res_scaling[i], 0, 20)));
+                    omclog::info!(omclog::NLS_V, true, "scaled residual [{i}] : {}", omclog::e(scaled[i], 0, 20));
+                    omclog::info!(omclog::NLS_V, false, "scaling factor [{i}] : {}", omclog::e(res_scaling[i], 0, 20));
                     omclog::close(omclog::NLS_V);
                 }
                 omclog::close(omclog::NLS_V);
@@ -2085,7 +2080,7 @@ fn hybrd_c(
             if !attempt_aborted() {
                 if log_v {
                     omclog::info(omclog::NLS_V, true, "System solved");
-                    omclog::info(omclog::NLS_V, false, &alloc::format!("{retries} retries\n{} restarts", retries2 + retries3));
+                    omclog::info!(omclog::NLS_V, false, "{retries} retries\n{} restarts", retries2 + retries3);
                     omclog::close(omclog::NLS_V);
                 }
                 set_continuous(true);
@@ -2286,10 +2281,10 @@ fn fmt_g6(v: f64) -> alloc::string::String {
 /// C's opening of the local adaptive approach's lambda0 pre-solve.
 fn log_local_adaptive_start(sys_num: u32) {
     let s = omclog::INIT_HOMOTOPY;
-    omclog::info(
+    omclog::info!(
         s,
         false,
-        &alloc::format!("Local homotopy with adaptive step size started for nonlinear system {sys_num}."),
+        "Local homotopy with adaptive step size started for nonlinear system {sys_num}.",
     );
     omclog::info(s, true, "homotopy process\n---------------------------");
     omclog::info(s, false, "solve lambda0-system");
@@ -2525,26 +2520,22 @@ fn diag_info(eq_index: u32) -> Option<&'static newton_diagnostics::DiagInfo> {
 /// C's `printNonLinearInitialInfo`, under the `solve_nonlinear_system` header.
 fn log_nls_enter(eq_index: u32, time: f64, x: &[f64], nominal: &[f64]) {
     use omclog;
-    omclog::info(
+    omclog::info!(
         omclog::NLS,
         true,
-        &alloc::format!(
-            "############ Solve nonlinear system {eq_index} at time {} ############",
-            format_g(time, 6)
-        ),
+        "############ Solve nonlinear system {eq_index} at time {} ############",
+        format_g(time, 6),
     );
     omclog::info(omclog::NLS, true, "initial variable values:");
     let names = var_names(eq_index);
     for i in 0..x.len() {
-        omclog::info(
+        omclog::info!(
             omclog::NLS,
             false,
-            &alloc::format!(
-                "{}{}\t\t nom = {}",
-                var_label(names, i),
-                omclog::g(x[i], 16, 8),
-                omclog::g(nominal[i], 16, 8)
-            ),
+            "{}{}\t\t nom = {}",
+            var_label(names, i),
+            omclog::g(x[i], 16, 8),
+            omclog::g(nominal[i], 16, 8),
         );
     }
     omclog::close(omclog::NLS);
@@ -2560,17 +2551,13 @@ fn log_nls_leave(eq_index: u32, solved: bool, x: &[f64]) {
         true,
         if solved { "Solution status: SOLVED" } else { "Solution status: FAILED" },
     );
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of iterations           : {}", c[0]));
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of function evaluations : {}", c[1]));
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of jacobian evaluations : {}", c[2]));
+    omclog::info!(omclog::NLS, false, " number of iterations : {}", c[0]);
+    omclog::info!(omclog::NLS, false, " number of function evaluations : {}", c[1]);
+    omclog::info!(omclog::NLS, false, " number of jacobian evaluations : {}", c[2]);
     omclog::info(omclog::NLS, false, "solution values:");
     let names = var_names(eq_index);
     for i in 0..x.len() {
-        omclog::info(
-            omclog::NLS,
-            false,
-            &alloc::format!("{}{}", var_label(names, i), omclog::g(x[i], 16, 8)),
-        );
+        omclog::info!(omclog::NLS, false, "{}{}", var_label(names, i), omclog::g(x[i], 16, 8));
     }
     omclog::close(omclog::NLS);
     omclog::close(omclog::NLS);
@@ -2619,14 +2606,12 @@ fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], nominal: &[f64], x
     if !omclog::active(omclog::NLS_V) {
         return;
     }
-    omclog::info(
+    omclog::info!(
         omclog::NLS_V,
         true,
-        &alloc::format!(
-            "Start solving Non-Linear System {} (size {n}) at time {} with Mixed (Newton/Homotopy) Solver",
-            t.eq_index,
-            format_g(t.time, 6)
-        ),
+        "Start solving Non-Linear System {} (size {n}) at time {} with Mixed (Newton/Homotopy) Solver",
+        t.eq_index,
+        format_g(t.time, 6),
     );
     let label = if t.discrete { "System values" } else { "System extrapolation" };
     omclog::debug_vector_double(omclog::NLS_V, label, x);
@@ -2652,17 +2637,15 @@ fn log_nls_status(t: &HomotopyTrace, x: &[f64], xscaling: &[f64], bounds: &[f64]
     omclog::info(omclog::NLS_V, true, "nls status");
     omclog::info(omclog::NLS_V, false, "variables");
     for i in 0..x.len() {
-        omclog::info(
+        omclog::info!(
             omclog::NLS_V,
             false,
-            &alloc::format!(
-                "{}{}\t\t nom = {}\t\t min = {}\t\t max = {}",
-                var_label(names, i),
-                omclog::g(x[i], 16, 8),
-                omclog::g(xscaling[i], 16, 8),
-                omclog::g(bounds[2 * i], 16, 8),
-                omclog::g(bounds[2 * i + 1], 16, 8)
-            ),
+            "{}{}\t\t nom = {}\t\t min = {}\t\t max = {}",
+            var_label(names, i),
+            omclog::g(x[i], 16, 8),
+            omclog::g(xscaling[i], 16, 8),
+            omclog::g(bounds[2 * i], 16, 8),
+            omclog::g(bounds[2 * i + 1], 16, 8),
         );
     }
     omclog::close(omclog::NLS_V);
@@ -2678,16 +2661,14 @@ fn log_newton_step(t: &HomotopyTrace, x1: &[f64], step: &[f64], x: &[f64]) {
     omclog::info(omclog::NLS_V, true, "newton step");
     omclog::info(omclog::NLS_V, false, "variables");
     for i in 0..x.len() {
-        omclog::info(
+        omclog::info!(
             omclog::NLS_V,
             false,
-            &alloc::format!(
-                "{}{}\t\t step = {}\t\t old = {}",
-                var_label(names, i),
-                omclog::g(x1[i], 16, 8),
-                omclog::g(step[i], 16, 8),
-                omclog::g(x[i], 16, 8)
-            ),
+            "{}{}\t\t step = {}\t\t old = {}",
+            var_label(names, i),
+            omclog::g(x1[i], 16, 8),
+            omclog::g(step[i], 16, 8),
+            omclog::g(x[i], 16, 8),
         );
     }
     omclog::close(omclog::NLS_V);
@@ -3073,12 +3054,10 @@ fn newton_c(
                 } else {
                     alloc::format!("at time {:.6}", t.time)
                 };
-                omclog::warning(
+                omclog::warning!(
                     omclog::NLS_V,
                     false,
-                    &alloc::format!(
-                        "Homotopy solver Newton iteration: Maximum number of iterations reached {when}, but no root found."
-                    ),
+                    "Homotopy solver Newton iteration: Maximum number of iterations reached {when}, but no root found.",
                 );
                 omclog::debug_string(omclog::NLS_V, NO_CONVERGE);
                 omclog::debug_string(omclog::NLS_V, BAR);
@@ -3573,13 +3552,11 @@ pub fn solve_nls(
         // Not a model throw — see [`NLS_EVAL_THREW`].
         if xs.iter().any(|v| !v.is_finite()) {
             if let Some(i) = xs[..n.min(xs.len())].iter().position(|v| !v.is_finite()) {
-                omclog::error(
+                omclog::error!(
                     omclog::NLS,
                     false,
-                    &alloc::format!(
-                        "residualFunc{eq_index}: Iteration variable `{}` is inf or nan.",
-                        var_names(eq_index).get(i).map_or("", |s| s.as_str())
-                    ),
+                    "residualFunc{eq_index}: Iteration variable `{}` is inf or nan.",
+                    var_names(eq_index).get(i).map_or("", |s| s.as_str()),
                 );
             }
             note_eval_hit(true, false);
@@ -3807,10 +3784,10 @@ pub fn solve_nls(
             return;
         }
         let name = alloc::format!("{}_nonlinsys{sys_num}_equidistant_local_homotopy.csv", host::file_prefix());
-        omclog::info(
+        omclog::info!(
             omclog::INIT_HOMOTOPY,
             false,
-            &alloc::format!("The homotopy path of system {sys_num} will be exported to {name}."),
+            "The homotopy path of system {sys_num} will be exported to {name}.",
         );
         let mut head = alloc::string::String::from("\"sep=,\"\n\"lambda\"");
         for v in var_names(eq_index) {
@@ -3839,10 +3816,11 @@ pub fn solve_nls(
         if attempt >= 0 {
             let lambda = (attempt as f64 / hom_steps as f64).min(1.0);
             state.borrow_mut().set_lambda(lambda);
-            omclog::info(
+            omclog::info!(
                 omclog::INIT_HOMOTOPY,
                 false,
-                &alloc::format!("[system {sys_num}] homotopy parameter lambda = {}", fmt_g6(lambda)),
+                "[system {sys_num}] homotopy parameter lambda = {}",
+                fmt_g6(lambda),
             );
         }
         settled = false;
@@ -4068,13 +4046,11 @@ pub fn solve_nls(
         // attempt falls through to the sweep.
         if attempt == -2 {
             lambda0_ok = attempt_converged;
-            omclog::info(
+            omclog::info!(
                 omclog::INIT_HOMOTOPY,
                 false,
-                &alloc::format!(
-                    "solving lambda0-system done with{} success\n---------------------------",
-                    if attempt_converged { "" } else { "no" }
-                ),
+                "solving lambda0-system done with{} success\n---------------------------",
+                if attempt_converged { "" } else { "no" },
             );
             omclog::close(omclog::INIT_HOMOTOPY);
             break 'attempts false;
@@ -4084,12 +4060,10 @@ pub fn solve_nls(
                 break 'attempts true;
             }
             if adaptive_homotopy {
-                omclog::warning(
+                omclog::warning!(
                     omclog::ASSERT,
                     false,
-                    &alloc::format!(
-                        "Failed to solve the initial system {sys_num} without homotopy method."
-                    ),
+                    "Failed to solve the initial system {sys_num} without homotopy method.",
                 );
                 if pre_lambda0 {
                     log_local_adaptive_start(sys_num);
@@ -4110,13 +4084,11 @@ pub fn solve_nls(
             counters::stat_add(counters::STAT_HOMOTOPY_STEPS, hom_steps as u64);
             break 'attempts false;
         }
-        omclog::info(
+        omclog::info!(
             omclog::INIT_HOMOTOPY,
             false,
-            &alloc::format!(
-                "[system {sys_num}] homotopy parameter lambda = {} done\n---------------------------",
-                fmt_g6((attempt as f64 / hom_steps as f64).min(1.0))
-            ),
+            "[system {sys_num}] homotopy parameter lambda = {} done\n---------------------------",
+            fmt_g6((attempt as f64 / hom_steps as f64).min(1.0)),
         );
         if let Some((_, csv)) = hom_csv.as_mut() {
             csv.push_str(&omclog::g((attempt as f64 / hom_steps as f64).min(1.0), 0, 16));
