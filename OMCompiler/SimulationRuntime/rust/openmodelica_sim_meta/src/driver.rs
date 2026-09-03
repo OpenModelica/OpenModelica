@@ -8288,6 +8288,9 @@ impl CsDriver {
     /// Build over an already-initialized model at time `t`, integrating with the
     /// method the FMU was exported with ([`SimMeta::cs_method`]).
     ///
+    /// The driver takes over `sync` so the instance has exactly one clock schedule,
+    /// and builds its own only for a caller with none.
+    ///
     /// The integrator watches event indicators only under [`CsDefer::Any`], the one
     /// mode whose master can be handed the crossing time (Event Mode with early
     /// return). Otherwise the FMU resolves the event itself, and does it as C's
@@ -8299,6 +8302,7 @@ impl CsDriver {
         sim_data: u32,
         t: f64,
         defer: CsDefer,
+        sync: Option<crate::sync::Sync>,
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
@@ -8310,8 +8314,14 @@ impl CsDriver {
         }
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout, t)?;
-        let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
-        sync.take_fired(e, t)?;
+        let sync = match sync {
+            Some(s) => s,
+            None => {
+                let mut s = crate::sync::Sync::new(e, model, sim_data)?;
+                s.take_fired(e, t)?;
+                s
+            }
+        };
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         core.fmi_cs_solver_setup(defer);
         if core.n_states > 0 {
@@ -8344,8 +8354,9 @@ impl CsDriver {
     ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
-        // No continuous states: samples, and zero crossings on `time` bracketed and
-        // bisected between the communication points as `EventsDriver` does.
+        // No continuous states: samples, clock activations, and zero crossings on
+        // `time` bracketed and bisected between the communication points as
+        // `EventsDriver` does.
         if self.core.n_states == 0 {
             self.resume = None;
             let eps = reached_eps(t_target, model.stop_time - model.start_time);
@@ -8358,7 +8369,14 @@ impl CsDriver {
             loop {
                 rotate_old_real(e, sim_data, layout)?;
                 let te = self.samp.next_time();
-                let subtarget = if te >= self.core.t && te <= t_target + SAMPLE_EPS { te } else { t_target };
+                let tc = self.sync.next_time();
+                let mut subtarget = t_target;
+                if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
+                    subtarget = tc;
+                }
+                if te >= self.core.t && te <= subtarget + SAMPLE_EPS {
+                    subtarget = te;
+                }
                 let mut troot = None;
                 if layout.n_zc > 0 && subtarget - self.core.t > eps {
                     update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, false)?;
@@ -8399,9 +8417,29 @@ impl CsDriver {
                         return Ok(CsStep::Terminated);
                     }
                     self.after_walk_event(e, layout)?;
-                    continue;
                 }
-                break;
+                // C's `handleTimers`, plus any event clock the update above fired.
+                if !self.sync.is_empty() {
+                    write_time(e, sim_data, subtarget)?;
+                    self.sync.take_fired(e, subtarget)?;
+                }
+                if self.sync.next_time() <= subtarget + SYNC_EPS {
+                    self.core.t = subtarget;
+                    if defers(subtarget) {
+                        write_time(e, sim_data, subtarget)?;
+                        return Ok(CsStep::Event { time: subtarget });
+                    }
+                    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                    eval_continuous(e, sim_data, layout)?;
+                    if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, SYNC_EPS, None)? {
+                        if terminated(e, sim_data, layout)? {
+                            return Ok(CsStep::Terminated);
+                        }
+                        self.after_walk_event(e, layout)?;
+                    }
+                } else if te > subtarget + SAMPLE_EPS {
+                    break;
+                }
             }
             self.core.t = t_target;
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -8459,6 +8497,9 @@ impl CsDriver {
     /// The master's `update-discrete-states` at the event `step_to` stopped on: the
     /// discrete update and bookkeeping [`integrate_to`](SolverCore::integrate_to)
     /// runs for an event it resolves itself, the restart left to the next step.
+    ///
+    /// C's `internalEventUpdate` runs `handleTimersFMI` here too, and on this
+    /// schedule: it is the one `step_to` cut its step onto.
     pub fn do_event_update(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
@@ -8467,20 +8508,28 @@ impl CsDriver {
     ) -> Result<EventUpdate> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
-        let time_event = self.samp.next_time() <= time + SAMPLE_EPS;
-        if time_event {
+        let sample_due = self.samp.next_time() <= time + SAMPLE_EPS;
+        let clock_due = self.sync.next_time() <= time + SYNC_EPS;
+        if sample_due {
             self.core.time_events += 1;
-        } else {
+        } else if !clock_due {
             self.core.state_events += 1;
         }
-        let up = event_update(e, sim_data, layout, Some(&mut self.samp), time)?;
+        let mut up = event_update(e, sim_data, layout, Some(&mut self.samp), time)?;
+        let ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
+        up.states_changed |= ticked;
+        let tc = self.sync.next_time();
+        if tc.is_finite() {
+            up.next_event_time = Some(up.next_event_time.map_or(tc, |n: f64| n.min(tc)));
+        }
         save_zero_crossings_after_event(e, sim_data, layout)?;
         store_operators(e, sim_data, layout)?;
         if self.core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
         }
         omclog::close(omclog::EVENTS);
-        self.resume = Some(if time_event { MasterEvent::Time } else { MasterEvent::State });
+        self.resume =
+            Some(if sample_due || clock_due { MasterEvent::Time } else { MasterEvent::State });
         Ok(up)
     }
 
