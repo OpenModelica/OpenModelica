@@ -308,7 +308,23 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   QRegularExpression regExp;
   switch (syntax) {
     case TreeSearchFilters::Wildcard:
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+#else
+      QString pattern = QRegularExpression::wildcardToRegularExpression(filterText);
+      /* Qt 5 has no UnanchoredWildcardConversion option, and wildcardToRegularExpression()
+       * always returns a fully anchored pattern wrapped as "\A(?:...)\z" (i.e. exact-match
+       * behavior). Strip the \A and \z anchors so the pattern can match anywhere in the
+       * string, matching the behavior of UnanchoredWildcardConversion on Qt 6.
+       */
+      if (pattern.startsWith("\\A")) {
+        pattern.remove(0, 2);
+      }
+      if (pattern.endsWith("\\z")) {
+        pattern.chop(2);
+      }
+      regExp = QRegularExpression(pattern, caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
+#endif
       break;
     case TreeSearchFilters::FixedString:
       regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
