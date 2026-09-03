@@ -49,10 +49,21 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
+#include "Util/NetworkAccessManager.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "LSP/ModelicaLSPClient.h"
+#include "LSP/LSPSetupDialog.h"
 #include <limits>
 
+#include <QDir>
+#include <QFileInfo>
+#include <QEventLoop>
+#include <QFile>
+#include <QNetworkReply>
+#include <QProgressDialog>
+#include <QStandardPaths>
+#include <QSysInfo>
 #include <QStringBuilder>
 #include <QMessageBox>
 #include <QColorDialog>
@@ -132,6 +143,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
+  mpLanguageServerPage = new LanguageServerPage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
   if (!MainWindow::instance()->isTestsuiteRunning()) {
@@ -183,6 +195,7 @@ void OptionsDialog::readSettings()
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
   readTraceabilitySettings();
+  readLanguageServerSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -3151,6 +3164,89 @@ void OptionsDialog::saveTraceabilitySettings()
     mpSettings->setValue("traceability/Port", port);
   }
 }
+
+/*!
+ * \brief OptionsDialog::readLanguageServerSettings
+ * Reads language server settings from omedit.ini.
+ */
+void OptionsDialog::readLanguageServerSettings()
+{
+  if (mpSettings->contains("languageServer/enabled")) {
+    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
+  } else {
+    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
+  }
+  if (mpSettings->contains("languageServer/executable")) {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
+  } else {
+    mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
+  }
+  mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
+  mpLanguageServerPage->getLibrariesTextBox()->setText(mpSettings->value("languageServer/libraries").toString());
+  // Restart applies to the saved configuration, so offer it only when the saved
+  // configuration has the server enabled.
+  mpLanguageServerPage->setServerRestartEnabled(mpSettings->value("languageServer/enabled", false).toBool());
+}
+
+/*!
+ * \brief OptionsDialog::saveLanguageServerSettings
+ * Saves language server settings to omedit.ini.
+ */
+void OptionsDialog::saveLanguageServerSettings()
+{
+  // Capture previous LSP-relevant settings to decide whether a running server must restart.
+  const bool wasEnabled = mpSettings->value("languageServer/enabled", false).toBool();
+  const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
+  const QString oldLibraries = mpSettings->value("languageServer/libraries").toString().trimmed();
+
+  bool enabled = mpLanguageServerPage->getLanguageServerGroupBox()->isChecked();
+  QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
+
+  // When enabling, check that Node.js is present for .js-based servers
+  if (enabled) {
+    const QString resolved = ModelicaLSPClient::resolveExecutable(executable);
+    if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
+      LSPSetupDialog setupDialog(this);
+      setupDialog.exec();
+      if (setupDialog.result() == QDialog::Rejected) {
+        // User chose to disable — uncheck the groupbox before saving
+        mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
+        enabled = false;
+      }
+    }
+  }
+
+  if (!enabled) {
+    mpSettings->remove("languageServer/enabled");
+  } else {
+    mpSettings->setValue("languageServer/enabled", enabled);
+  }
+  if (executable.isEmpty()) {
+    mpSettings->remove("languageServer/executable");
+  } else {
+    mpSettings->setValue("languageServer/executable", executable);
+  }
+  mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
+  QString libraries = mpLanguageServerPage->getLibrariesTextBox()->text().trimmed();
+  if (libraries.isEmpty()) {
+    mpSettings->remove("languageServer/libraries");
+  } else {
+    mpSettings->setValue("languageServer/libraries", libraries);
+  }
+
+  // Apply the change to the running session without requiring a restart.
+  if (enabled) {
+    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable) || (oldLibraries != libraries);
+    if (settingsChanged) {
+      // Restart so a new executable or library set is picked up.
+      MainWindow::instance()->stopLanguageServer();
+    }
+    MainWindow::instance()->startLanguageServer();
+  } else {
+    MainWindow::instance()->stopLanguageServer();
+  }
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -3298,6 +3394,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
   pTraceabilityItem->setText(tr("Traceability"));
+  // Language Server Item
+  QListWidgetItem *pLanguageServerItem = new QListWidgetItem(mpOptionsList);
+  pLanguageServerItem->setIcon(QIcon(":/Resources/icons/language-server.svg"));
+  pLanguageServerItem->setText(tr("Language Server"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -3328,6 +3428,7 @@ void OptionsDialog::createPages()
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
+  addPage(mpLanguageServerPage);
 }
 
 void OptionsDialog::addPage(QWidget* pPage)
@@ -3435,6 +3536,7 @@ void OptionsDialog::saveSettings()
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
+  saveLanguageServerSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -6969,4 +7071,364 @@ void CRMLPage::browseCompilerProcessFile()
 void CRMLPage::resetCompilerProcessPath()
 {
   mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+/*!
+ * \brief LanguageServerPage::LanguageServerPage
+ * \param pOptionsDialog
+ */
+LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpLanguageServerGroupBox = new QGroupBox(tr("Language Server Protocol (LSP)"));
+  mpLanguageServerGroupBox->setCheckable(true);
+  mpLanguageServerGroupBox->setToolTip(tr("When enabled, OMEdit uses an external language server for hover information and go-to-definition."));
+  // Enable logging checkbox
+  mpEnableLoggingCheckBox = new QCheckBox(tr("Log language server messages to the Messages Browser"));
+  mpEnableLoggingCheckBox->setToolTip(tr("When enabled, messages from the language server are shown in the Messages Browser, prefixed with \"LSP\"."));
+  // Server executable
+  mpServerExecutableLabel = new Label(tr("Server Executable:"));
+  mpServerExecutableTextBox = new QLineEdit;
+  mpServerExecutableTextBox->setPlaceholderText(tr("e.g. modelica-language-server"));
+  mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
+  mpBrowseServerExecutableButton->setAutoDefault(false);
+  connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
+  mpAutoDetectButton = new QPushButton(tr("Auto Detect"));
+  mpAutoDetectButton->setAutoDefault(false);
+  connect(mpAutoDetectButton, SIGNAL(clicked()), SLOT(autoDetectServerExecutable()));
+  // Restarting reloads the libraries from scratch. The library list is kept in
+  // step automatically, so this is for the cases that leaves out: a server that
+  // gave up after repeated crashes, or libraries changed on disk behind OMEdit.
+  mpRestartServerButton = new QPushButton(tr("Restart Server"));
+  mpRestartServerButton->setAutoDefault(false);
+  mpRestartServerButton->setToolTip(tr("Stops the language server and starts it again with the saved settings. "
+                                       "Takes effect immediately; settings edited above apply when you click OK."));
+  // Deliberately not tied to the group box's check state: that state is not
+  // saved until the dialog is accepted, and restarting from it would start a
+  // server the settings still say is disabled, which nothing would then stop.
+  mpRestartServerButton->setEnabled(false);
+  connect(mpRestartServerButton, SIGNAL(clicked()), SLOT(restartServer()));
+  // Offers the standalone server for platforms where OMEdit does not bundle one,
+  // so a language server can be obtained without installing Node.js.
+  //
+  // The version is a choice rather than always the newest release: the language
+  // server is released independently of OMEdit, so "latest" can be a version this
+  // OMEdit has never been tried against. The default is the release OMEdit bundles
+  // and was built against; "Latest release" is there for users who want a fix or a
+  // feature that landed after it.
+  mpDownloadVersionComboBox = new QComboBox;
+  mpDownloadVersionComboBox->addItem(tr("%1 (recommended)").arg(testedServerVersion()), testedServerVersion());
+  mpDownloadVersionComboBox->addItem(tr("Latest release"), QString());
+  mpDownloadVersionComboBox->setToolTip(tr("Which modelica-language-server release to download. %1 is the version "
+                                           "this OMEdit was built against; the latest release may be newer than that.")
+                                        .arg(testedServerVersion()));
+  mpDownloadServerButton = new QPushButton(tr("Download..."));
+  mpDownloadServerButton->setAutoDefault(false);
+  mpDownloadServerButton->setToolTip(tr("Downloads the standalone Modelica language server for this platform "
+                                        "from the selected GitHub release. No Node.js is required to run it."));
+  mpDownloadServerButton->setEnabled(!platformServerAsset().isEmpty());
+  mpDownloadVersionComboBox->setEnabled(!platformServerAsset().isEmpty());
+  connect(mpDownloadServerButton, SIGNAL(clicked()), SLOT(downloadServerExecutable()));
+  // Library roots loaded by the server (enables cross-file go-to-definition)
+  mpLibrariesLabel = new Label(tr("Library Paths:"));
+  mpLibrariesTextBox = new QLineEdit;
+  mpLibrariesTextBox->setPlaceholderText(tr("Semicolon-separated library roots, e.g. /path/to/Modelica 4.0.0"));
+  mpLibrariesTextBox->setToolTip(tr("Modelica library root directories (each containing a package.mo) the language server loads "
+                                    "so go-to-definition can resolve across files. Loading large libraries "
+                                    "such as the MSL can take several seconds at startup."));
+  // Layout inside group box
+  QGridLayout *pGroupBoxLayout = new QGridLayout;
+  pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGroupBoxLayout->addWidget(mpServerExecutableLabel, 0, 0);
+  pGroupBoxLayout->addWidget(mpServerExecutableTextBox, 0, 1);
+  pGroupBoxLayout->addWidget(mpBrowseServerExecutableButton, 0, 2);
+  QHBoxLayout *pDetectLayout = new QHBoxLayout;
+  pDetectLayout->setContentsMargins(0, 0, 0, 0);
+  pDetectLayout->addWidget(mpAutoDetectButton);
+  pDetectLayout->addWidget(mpRestartServerButton);
+  pDetectLayout->addStretch();
+  pDetectLayout->addWidget(mpDownloadVersionComboBox);
+  pGroupBoxLayout->addLayout(pDetectLayout, 1, 1);
+  pGroupBoxLayout->addWidget(mpDownloadServerButton, 1, 2);
+  pGroupBoxLayout->addWidget(mpLibrariesLabel, 2, 0);
+  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 2, 1, 1, 2);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 3, 0, 1, 3);
+  mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
+  // Main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpLanguageServerGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief LanguageServerPage::browseServerExecutable
+ * Opens a file browser to select the language server executable.
+ */
+void LanguageServerPage::browseServerExecutable()
+{
+  mpServerExecutableTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
+}
+
+/*!
+ * \brief LanguageServerPage::autoDetectServerExecutable
+ * Searches PATH for the modelica-language-server executable.
+ */
+/*!
+ * \brief LanguageServerPage::restartServer
+ * Stops the running language server and starts it again.
+ *
+ * Uses the saved settings rather than the fields above, which are applied when
+ * the dialog is accepted; restarting is a separate action from changing them.
+ */
+void LanguageServerPage::restartServer()
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  pMainWindow->stopLanguageServer();
+  pMainWindow->startLanguageServer();
+  if (!pMainWindow->getLSPClient()) {
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("The language server could not be started.\n\n"
+                             "Check the server executable above, and the Messages Browser for details."));
+  }
+}
+
+/*!
+ * \brief LanguageServerPage::testedServerVersion
+ * Tag of the modelica-language-server release this OMEdit is built against,
+ * kept in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt so the
+ * download offer and the bundled server cannot drift apart.
+ */
+QString LanguageServerPage::testedServerVersion()
+{
+#ifdef MODELICA_LS_VERSION
+  return QStringLiteral("v") % QStringLiteral(MODELICA_LS_VERSION);
+#else
+  // The qmake build has no bundling step and so does not define it.
+  return QStringLiteral("v0.3.3");
+#endif
+}
+
+/*!
+ * \brief LanguageServerPage::selectedReleaseTag
+ * Release tag chosen in the version combo box, or an empty string for the
+ * latest release.
+ */
+QString LanguageServerPage::selectedReleaseTag() const
+{
+  return mpDownloadVersionComboBox->currentData().toString();
+}
+
+/*!
+ * \brief LanguageServerPage::platformServerAsset
+ * Name of the standalone server asset published for this platform, or an empty
+ * string when the release does not build one for it.
+ */
+QString LanguageServerPage::platformServerAsset()
+{
+#if defined(Q_OS_WIN)
+  return QStringLiteral("modelica-language-server-windows-x64.exe");
+#elif defined(Q_OS_MACOS)
+  return QSysInfo::currentCpuArchitecture() == QStringLiteral("arm64")
+      ? QStringLiteral("modelica-language-server-macos-arm64")
+      : QStringLiteral("modelica-language-server-macos-x64");
+#elif defined(Q_OS_LINUX)
+  const QString architecture = QSysInfo::currentCpuArchitecture();
+  if (architecture == QStringLiteral("x86_64")) {
+    return QStringLiteral("modelica-language-server-linux-x64");
+  } else if (architecture == QStringLiteral("arm64")) {
+    return QStringLiteral("modelica-language-server-linux-arm64");
+  }
+  return QString();
+#else
+  return QString();
+#endif
+}
+
+/*!
+ * \brief LanguageServerPage::downloadReleaseAsset
+ * Downloads one asset of a modelica-language-server release. An empty \p tag
+ * means the latest release.
+ * \return true on success; on failure the partial file is removed and the
+ *     reason is shown to the user.
+ */
+bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination,
+                                              QProgressDialog *pProgressDialog)
+{
+  const QString url = tag.isEmpty()
+      ? QStringLiteral("https://github.com/OpenModelica/modelica-language-server/releases/latest/download/%1").arg(asset)
+      : QStringLiteral("https://github.com/OpenModelica/modelica-language-server/releases/download/%1/%2").arg(tag, asset);
+  QNetworkRequest request((QUrl(url)));
+  // Both the /releases/latest/ and the tagged URL redirect to the asset itself.
+  request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+  NetworkAccessManager networkAccessManager;
+  // This download ends up as an executable OMEdit runs, so a certificate error
+  // must fail it rather than be ignored the way ordinary page fetches do.
+  networkAccessManager.setIgnoreSslErrors(false);
+  QNetworkReply *pReply = networkAccessManager.get(request);
+
+  QEventLoop eventLoop;
+  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  connect(pReply, &QNetworkReply::downloadProgress, pProgressDialog, [pProgressDialog, asset](qint64 received, qint64 total) {
+    pProgressDialog->setLabelText(tr("Downloading %1 (%2 MB)...").arg(asset).arg(received / 1024 / 1024));
+    if (total > 0) {
+      pProgressDialog->setMaximum(static_cast<int>(total / 1024));
+      pProgressDialog->setValue(static_cast<int>(received / 1024));
+    }
+  });
+  eventLoop.exec();
+
+  if (pReply->error() != QNetworkReply::NoError) {
+    const QNetworkReply::NetworkError error = pReply->error();
+    const QString errorString = pReply->errorString();
+    pReply->deleteLater();
+    if (pProgressDialog->wasCanceled()) {
+      return false;
+    }
+    if (error == QNetworkReply::ContentNotFoundError) {
+      // The release does not publish this asset. Standalone binaries are not
+      // built for every platform yet, so say so instead of reporting a bare 404.
+      QMessageBox::information(this, Helper::applicationName,
+                               tr("Release %1 does not provide %2.\n\n"
+                                  "A standalone server is not published for this platform in that release. "
+                                  "Try another version, or install Node.js (https://nodejs.org) to use the bundled "
+                                  "server instead.").arg(tag.isEmpty() ? tr("latest") : tag, asset));
+    } else if (error >= QNetworkReply::SslHandshakeFailedError && error <= QNetworkReply::UnknownNetworkError) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to download %1 securely:\n%2\n\n"
+                               "The connection to github.com could not be verified. The download was not used.")
+                            .arg(asset, errorString));
+    } else {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to download %1:\n%2").arg(asset, errorString));
+    }
+    return false;
+  }
+
+  QFile file(destination);
+  if (!file.open(QIODevice::WriteOnly)) {
+    pReply->deleteLater();
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("Failed to write %1:\n%2").arg(destination, file.errorString()));
+    return false;
+  }
+  file.write(pReply->readAll());
+  file.close();
+  pReply->deleteLater();
+  return true;
+}
+
+/*!
+ * \brief LanguageServerPage::downloadServerExecutable
+ * Fetches the standalone server for this platform into the user's application
+ * data directory and points the executable setting at it.
+ *
+ * The tree-sitter WASM files are downloaded too: they are not embedded in the
+ * binary, which loads them from its own directory and aborts on startup without
+ * them.
+ */
+void LanguageServerPage::downloadServerExecutable()
+{
+  const QString asset = platformServerAsset();
+  if (asset.isEmpty()) {
+    QMessageBox::information(this, Helper::applicationName,
+                             tr("No standalone language server is published for this platform.\n\n"
+                                "Install Node.js (https://nodejs.org) to use the bundled server instead."));
+    return;
+  }
+
+  // A user-writable location, so no administrator rights are needed.
+  const QString directory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/languageserver");
+  if (!QDir().mkpath(directory)) {
+    QMessageBox::critical(this, Helper::applicationName, tr("Failed to create directory %1.").arg(directory));
+    return;
+  }
+#if defined(Q_OS_WIN)
+  const QString serverPath = directory + QStringLiteral("/modelica-language-server.exe");
+#else
+  const QString serverPath = directory + QStringLiteral("/modelica-language-server");
+#endif
+
+  // Pinned to one release for the whole download: the WASM files must be the
+  // ones the binary was built with, so mixing releases would break it.
+  const QString tag = selectedReleaseTag();
+
+  // Download into a staging directory and only replace the installed server
+  // once every file has arrived. Writing in place would leave a user who
+  // already had a working server with nothing when a download fails, which is
+  // an ordinary outcome: a release need not publish an asset for every
+  // platform.
+  const QString stagingDirectory = directory + QStringLiteral("/.download");
+  QDir(stagingDirectory).removeRecursively();
+  if (!QDir().mkpath(stagingDirectory)) {
+    QMessageBox::critical(this, Helper::applicationName, tr("Failed to create directory %1.").arg(stagingDirectory));
+    return;
+  }
+
+  QProgressDialog progressDialog(tr("Downloading the Modelica language server..."), Helper::cancel, 0, 0, this);
+  progressDialog.setWindowTitle(Helper::applicationName);
+  progressDialog.setWindowModality(Qt::WindowModal);
+  progressDialog.show();
+
+  const QString stagedServerPath = stagingDirectory + QStringLiteral("/") + QFileInfo(serverPath).fileName();
+  const QStringList wasmFiles = {QStringLiteral("tree-sitter-modelica.wasm"), QStringLiteral("web-tree-sitter.wasm")};
+  if (!downloadReleaseAsset(tag, asset, stagedServerPath, &progressDialog)) {
+    QDir(stagingDirectory).removeRecursively();
+    return;
+  }
+  // The server aborts at startup unless both WASM files sit next to the binary.
+  for (const QString &wasm : wasmFiles) {
+    if (!downloadReleaseAsset(tag, wasm, stagingDirectory + QStringLiteral("/") + wasm, &progressDialog)) {
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+  }
+
+  // Everything arrived; now replace the installed files.
+  QStringList installed;
+  installed << QFileInfo(serverPath).fileName() << wasmFiles;
+  for (const QString &name : installed) {
+    const QString target = directory + QStringLiteral("/") + name;
+    QFile::remove(target);
+    if (!QFile::rename(stagingDirectory + QStringLiteral("/") + name, target)) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Failed to install %1 into %2.").arg(name, directory));
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+  }
+  QDir(stagingDirectory).removeRecursively();
+
+  QFile::setPermissions(serverPath, QFile::permissions(serverPath) | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+  progressDialog.close();
+  mpServerExecutableTextBox->setText(serverPath);
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("The Modelica language server (%1) was downloaded to:\n%2\n\n"
+                              "Click OK to start using it.").arg(tag.isEmpty() ? tr("latest release") : tag, serverPath));
+}
+
+void LanguageServerPage::autoDetectServerExecutable()
+{
+  // Resolves the bundled server, or a standalone one on PATH when the bundled
+  // server.js cannot run because Node.js is missing.
+  const QString found = ModelicaLSPClient::resolveExecutable(QString());
+  if (!found.isEmpty()) {
+    mpServerExecutableTextBox->setText(found);
+    // Only a server.js needs Node.js; a standalone server runs on its own.
+    if (found.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
+      QMessageBox::information(this, Helper::applicationName,
+                               tr("Found the bundled language server at:\n%1\n\n"
+                                  "Node.js is required to run it but was not found on the PATH.\n"
+                                  "Install Node.js from https://nodejs.org, then click OK to start "
+                                  "the language server.")
+                               .arg(found));
+    }
+    return;
+  }
+  QMessageBox::information(this, Helper::applicationName,
+                           tr("No language server found.\n\n"
+                              "Install Node.js (https://nodejs.org) — OMEdit will use the "
+                              "bundled server automatically."));
 }

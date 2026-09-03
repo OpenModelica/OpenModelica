@@ -53,11 +53,20 @@ class NetworkAccessManager : public QNetworkAccessManager
   Q_OBJECT
 public:
   NetworkAccessManager(QObject *parent = 0);
+  /*!
+   * \brief setIgnoreSslErrors
+   * Certificate errors are ignored by default, which is how this class has
+   * always behaved. Turn it off for a transfer whose contents are trusted on
+   * the strength of the connection, such as an executable that will be run.
+   * \param ignore
+   */
+  void setIgnoreSslErrors(bool ignore) {mIgnoreSslErrors = ignore;}
 private:
   /*!
    * \brief mProxyAuthenticationAlreadyCalled used to check if QNetworkAccessManager::proxyAuthenticationRequired() SIGNAL is raised more than once.
    */
   bool mProxyAuthenticationAlreadyCalled;
+  bool mIgnoreSslErrors;
 private slots:
   /*!
    * \brief proxyAuthentication
