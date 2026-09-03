@@ -8567,7 +8567,7 @@ impl CsDriver {
         } else if !clock_due {
             self.core.state_events += 1;
         }
-        let mut up = event_update(e, sim_data, layout, Some(&mut self.samp), time)?;
+        let mut up = self.event_update_master(e, layout, time)?;
         let ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
         up.states_changed |= ticked;
         let tc = self.sync.next_time();
@@ -8583,6 +8583,31 @@ impl CsDriver {
         self.resume =
             Some(if sample_due || clock_due { MasterEvent::Time } else { MasterEvent::State });
         Ok(up)
+    }
+
+    /// [`SolverCore::event_update_here`] for the event the master resolves: the
+    /// residual context `IDACalcIC` reads through is live only for the call.
+    fn event_update_master(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        layout: &SimLayout,
+        time: f64,
+    ) -> Result<EventUpdate> {
+        let sim_data = self.core.sim_data;
+        if !self.core.dae {
+            return event_update(e, sim_data, layout, Some(&mut self.samp), time);
+        }
+        let mut ctx = self.core.res_ctx(e, layout);
+        let ctx_ptr = &mut ctx as *mut ResCtx;
+        RES_CTX.store(ctx_ptr, Ordering::Relaxed);
+        let _guard = ResCtxGuard;
+        let Self { core, samp, .. } = self;
+        let mut dae = |e: &mut dyn SimEngine| core.dae_restart(e, ctx_ptr);
+        let up = event_update_dae(e, sim_data, layout, Some(samp), time, Some(&mut dae));
+        match ctx.err.take() {
+            Some(err) => Err(err),
+            None => up,
+        }
     }
 
     /// C's `fmi2DoStep` reads the derivatives at the start of every step, after the
