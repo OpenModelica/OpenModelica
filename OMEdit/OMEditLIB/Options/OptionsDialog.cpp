@@ -64,6 +64,10 @@
 #include <QProgressDialog>
 #include <QStandardPaths>
 #include <QSysInfo>
+#include <QCryptographicHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QStringBuilder>
 #include <QMessageBox>
 #include <QColorDialog>
@@ -7247,14 +7251,79 @@ QString LanguageServerPage::platformServerAsset()
 }
 
 /*!
+ * \brief LanguageServerPage::fetchAssetDigests
+ * Reads the SHA256 that the release publishes for each of its assets, so a
+ * downloaded file can be checked against it before OMEdit ever runs it.
+ *
+ * The digests are taken from the GitHub release API rather than pinned in
+ * OMEdit: a pin only covers the one release OMEdit was built against, and the
+ * user may pick any published version here.
+ * \return false when the release could not be read at all. A release that
+ *     publishes no digest yields an empty entry, which the caller reports.
+ */
+bool LanguageServerPage::fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog)
+{
+  const QString url = tag.isEmpty()
+      ? QStringLiteral("https://api.github.com/repos/OpenModelica/modelica-language-server/releases/latest")
+      : QStringLiteral("https://api.github.com/repos/OpenModelica/modelica-language-server/releases/tags/%1").arg(tag);
+  QNetworkRequest request((QUrl(url)));
+  request.setRawHeader("Accept", "application/vnd.github+json");
+  // The GitHub API answers 403 to a request without a User-Agent.
+  request.setHeader(QNetworkRequest::UserAgentHeader, Helper::applicationName);
+  request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+  NetworkAccessManager networkAccessManager;
+  // The answer decides what OMEdit accepts as its language server, so an
+  // unverified certificate must fail it rather than be ignored.
+  networkAccessManager.setIgnoreSslErrors(false);
+  QNetworkReply *pReply = networkAccessManager.get(request);
+
+  pProgressDialog->setLabelText(tr("Checking the release contents..."));
+  QEventLoop eventLoop;
+  connect(pReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+  connect(pProgressDialog, SIGNAL(canceled()), pReply, SLOT(abort()));
+  eventLoop.exec();
+
+  if (pReply->error() != QNetworkReply::NoError) {
+    const QString errorString = pReply->errorString();
+    pReply->deleteLater();
+    if (pProgressDialog->wasCanceled()) {
+      return false;
+    }
+    QMessageBox::critical(this, Helper::applicationName,
+                          tr("Failed to read release %1 of the Modelica language server:\n%2\n\n"
+                             "The checksums it publishes could not be fetched, so nothing was downloaded.")
+                          .arg(tag.isEmpty() ? tr("latest") : tag, errorString));
+    return false;
+  }
+  const QByteArray body = pReply->readAll();
+  pReply->deleteLater();
+
+  const QJsonArray assets = QJsonDocument::fromJson(body).object().value(QStringLiteral("assets")).toArray();
+  for (const QJsonValue &value : assets) {
+    const QJsonObject asset = value.toObject();
+    // "digest" is of the form "sha256:<hex>"; anything else is a hash OMEdit
+    // cannot check, and is left out so the caller treats it as unpublished.
+    const QString digest = asset.value(QStringLiteral("digest")).toString();
+    if (digest.startsWith(QStringLiteral("sha256:"), Qt::CaseInsensitive)) {
+      pDigests->insert(asset.value(QStringLiteral("name")).toString(), digest.mid(7).toLower());
+    }
+  }
+  return true;
+}
+
+/*!
  * \brief LanguageServerPage::downloadReleaseAsset
  * Downloads one asset of a modelica-language-server release. An empty \p tag
  * means the latest release.
- * \return true on success; on failure the partial file is removed and the
- *     reason is shown to the user.
+ *
+ * \p expectedSha256 is the digest the release publishes for the asset; the
+ * download is written out only if it hashes to that. An empty value means the
+ * release publishes no digest and the user chose to continue without one.
+ * \return true on success; on failure nothing is written and the reason is
+ *     shown to the user.
  */
 bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination,
-                                              QProgressDialog *pProgressDialog)
+                                              const QString &expectedSha256, QProgressDialog *pProgressDialog)
 {
   const QString url = tag.isEmpty()
       ? QStringLiteral("https://github.com/OpenModelica/modelica-language-server/releases/latest/download/%1").arg(asset)
@@ -7290,11 +7359,14 @@ bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString 
     if (error == QNetworkReply::ContentNotFoundError) {
       // The release does not publish this asset. Standalone binaries are not
       // built for every platform yet, so say so instead of reporting a bare 404.
+      const QString bundled = ModelicaLSPClient::findBundledServer();
+      const QString alternative = bundled.endsWith(QStringLiteral(".js"))
+          ? tr("Try another version, or install Node.js (https://nodejs.org) to use the server installed with OMEdit.")
+          : tr("Try another version, or point Server Executable at a server you built yourself.");
       QMessageBox::information(this, Helper::applicationName,
                                tr("Release %1 does not provide %2.\n\n"
-                                  "A standalone server is not published for this platform in that release. "
-                                  "Try another version, or install Node.js (https://nodejs.org) to use the bundled "
-                                  "server instead.").arg(tag.isEmpty() ? tr("latest") : tag, asset));
+                                  "A standalone server is not published for this platform in that release. %3")
+                               .arg(tag.isEmpty() ? tr("latest") : tag, asset, alternative));
     } else if (error >= QNetworkReply::SslHandshakeFailedError && error <= QNetworkReply::UnknownNetworkError) {
       QMessageBox::critical(this, Helper::applicationName,
                             tr("Failed to download %1 securely:\n%2\n\n"
@@ -7307,16 +7379,31 @@ bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString 
     return false;
   }
 
+  const QByteArray content = pReply->readAll();
+  pReply->deleteLater();
+
+  // Hash before writing: a file that fails the check is never put on disk, so
+  // there is nothing for a later run to pick up and execute.
+  if (!expectedSha256.isEmpty()) {
+    const QString actualSha256 = QString::fromLatin1(QCryptographicHash::hash(content, QCryptographicHash::Sha256).toHex());
+    if (actualSha256 != expectedSha256) {
+      QMessageBox::critical(this, Helper::applicationName,
+                            tr("Checksum mismatch for %1.\n\n"
+                               "Expected SHA256:\n%2\n\nGot:\n%3\n\n"
+                               "The download was discarded and nothing was installed.")
+                            .arg(asset, expectedSha256, actualSha256));
+      return false;
+    }
+  }
+
   QFile file(destination);
   if (!file.open(QIODevice::WriteOnly)) {
-    pReply->deleteLater();
     QMessageBox::critical(this, Helper::applicationName,
                           tr("Failed to write %1:\n%2").arg(destination, file.errorString()));
     return false;
   }
-  file.write(pReply->readAll());
+  file.write(content);
   file.close();
-  pReply->deleteLater();
   return true;
 }
 
@@ -7328,14 +7415,21 @@ bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString 
  * The tree-sitter WASM files are downloaded too: they are not embedded in the
  * binary, which loads them from its own directory and aborts on startup without
  * them.
+ *
+ * Every file is checked against the SHA256 its release publishes before being
+ * installed. Nothing is downloaded during the OMEdit build; getting a server is
+ * this, and only when the user asks for it.
  */
 void LanguageServerPage::downloadServerExecutable()
 {
   const QString asset = platformServerAsset();
   if (asset.isEmpty()) {
+    const QString bundled = ModelicaLSPClient::findBundledServer();
     QMessageBox::information(this, Helper::applicationName,
-                             tr("No standalone language server is published for this platform.\n\n"
-                                "Install Node.js (https://nodejs.org) to use the bundled server instead."));
+                             tr("No standalone language server is published for this platform.\n\n%1")
+                             .arg(bundled.endsWith(QStringLiteral(".js"))
+                                  ? tr("Install Node.js (https://nodejs.org) to use the server installed with OMEdit instead.")
+                                  : tr("Build a server yourself and point Server Executable at it.")));
     return;
   }
 
@@ -7374,13 +7468,45 @@ void LanguageServerPage::downloadServerExecutable()
 
   const QString stagedServerPath = stagingDirectory + QStringLiteral("/") + QFileInfo(serverPath).fileName();
   const QStringList wasmFiles = {QStringLiteral("tree-sitter-modelica.wasm"), QStringLiteral("web-tree-sitter.wasm")};
-  if (!downloadReleaseAsset(tag, asset, stagedServerPath, &progressDialog)) {
+
+  // Fetch the checksums first: each file is checked against the digest its own
+  // release publishes before it is written, so a corrupted or substituted
+  // download never becomes the executable OMEdit starts.
+  QHash<QString, QString> digests;
+  if (!fetchAssetDigests(tag, &digests, &progressDialog)) {
+    QDir(stagingDirectory).removeRecursively();
+    return;
+  }
+  QStringList unverifiable;
+  for (const QString &name : QStringList({asset}) + wasmFiles) {
+    if (!digests.contains(name)) {
+      unverifiable << name;
+    }
+  }
+  if (!unverifiable.isEmpty()) {
+    // Older releases predate the digests, so this is a decision for the user
+    // rather than a hard failure — but it defaults to not downloading.
+    progressDialog.hide();
+    const QMessageBox::StandardButton answer =
+        QMessageBox::question(this, Helper::applicationName,
+                              tr("Release %1 publishes no checksum for:\n%2\n\n"
+                                 "What is downloaded cannot be verified. Download it anyway?")
+                              .arg(tag.isEmpty() ? tr("latest") : tag, unverifiable.join(QStringLiteral("\n"))),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer != QMessageBox::Yes) {
+      QDir(stagingDirectory).removeRecursively();
+      return;
+    }
+    progressDialog.show();
+  }
+
+  if (!downloadReleaseAsset(tag, asset, stagedServerPath, digests.value(asset), &progressDialog)) {
     QDir(stagingDirectory).removeRecursively();
     return;
   }
   // The server aborts at startup unless both WASM files sit next to the binary.
   for (const QString &wasm : wasmFiles) {
-    if (!downloadReleaseAsset(tag, wasm, stagingDirectory + QStringLiteral("/") + wasm, &progressDialog)) {
+    if (!downloadReleaseAsset(tag, wasm, stagingDirectory + QStringLiteral("/") + wasm, digests.value(wasm), &progressDialog)) {
       QDir(stagingDirectory).removeRecursively();
       return;
     }
@@ -7427,8 +7553,10 @@ void LanguageServerPage::autoDetectServerExecutable()
     }
     return;
   }
+  // A default OMEdit build installs no server at all, so pointing at Node.js
+  // would be advice for a file that is not there: the download is the way in.
   QMessageBox::information(this, Helper::applicationName,
                            tr("No language server found.\n\n"
-                              "Install Node.js (https://nodejs.org) — OMEdit will use the "
-                              "bundled server automatically."));
+                              "Use Download... to fetch one, or point Server Executable at a "
+                              "server you already have."));
 }
