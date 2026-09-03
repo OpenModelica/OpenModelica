@@ -843,6 +843,29 @@ algorithm
   end try;
 end getModelInstanceReference;
 
+function getModelInstanceIconReference
+  "Like getModelInstanceReference, but stores only what an icon renderer reads:
+   the class' Icon with its extends chain, and the locally declared connector
+   components' Placement and type Icon. A lookup and an expand per class,
+   against an instantiation and a dump of every component."
+  input Absyn.Path classPath;
+  output Values.Value res;
+protected
+  JSON json;
+  Integer handle;
+algorithm
+  try
+    json := buildModelInstanceIconJSON(classPath);
+    json := JSON.toListForm(json);
+    handle := storeModelInstanceReference(json);
+    res := Values.INTEGER(handle);
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
+end getModelInstanceIconReference;
+
 function getModelInstanceAnnotation
   input Absyn.Path classPath;
   input list<String> filter;
@@ -962,6 +985,23 @@ algorithm
 
   json := dumpJSONInstanceAnnotation(cls_node, filter);
 end buildModelInstanceAnnotationJSON;
+
+function buildModelInstanceIconJSON
+  input Absyn.Path classPath;
+  output JSON json;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := InstNode.resolveInner(cls_node);
+
+  json := dumpJSONInstanceAnnotation(cls_node, {"Icon"}, dumpConnectors = true, dumpDerivedBase = true);
+end buildModelInstanceIconJSON;
 
 function storeModelInstanceReference
   "Stores a boxed JSON value and returns a 1-based handle (0 on failure)."
@@ -1219,16 +1259,19 @@ end dumpJSONInstanceTree;
 function dumpJSONInstanceAnnotation
   input InstNode node;
   input list<String> filter;
+  input Boolean dumpConnectors = false "the class' own connector components";
+  input Boolean dumpDerivedBase = false "a short class definition's base class";
   output JSON json = JSON.makeNull();
 protected
   Option<SCode.Comment> cmt;
   SCode.Annotation ann;
-  array<InstNode> exts;
   JSON j;
   InstNode scope = node;
   InstContext.Type context;
   Boolean annotation_is_literal = true;
+  Boolean any_element = false;
   SCode.Element def;
+  Class cls;
 algorithm
   Inst.expand(node, NFInstContext.RELAXED);
   def := InstNode.definition(node);
@@ -1239,15 +1282,41 @@ algorithm
 
   json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(def, InstNode.parent(node)), json);
 
-  exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(node)));
+  cls := InstNode.getClass(node);
+  j := JSON.emptyArray();
 
-  if not arrayEmpty(exts) then
-    j := JSON.emptyArray();
+  // Class.classTree looks through a derived class, so its extends array is the
+  // base's: listing both would count the base's chain twice.
+  if dumpDerivedBase then
+    () := match cls
+      case Class.EXPANDED_DERIVED()
+        algorithm
+          j := JSON.addElement(dumpJSONInstanceAnnotationExtends(cls.baseClass, filter, true), j);
+          any_element := true;
+        then ();
 
-    for ext in exts loop
-      j := JSON.addElement(dumpJSONInstanceAnnotationExtends(ext, filter), j);
+      case Class.TYPED_DERIVED()
+        algorithm
+          j := JSON.addElement(dumpJSONInstanceAnnotationExtends(cls.baseClass, filter, true), j);
+          any_element := true;
+        then ();
+
+      else ();
+    end match;
+  end if;
+
+  if not any_element then
+    for ext in ClassTree.getExtends(Class.classTree(cls)) loop
+      j := JSON.addElement(dumpJSONInstanceAnnotationExtends(ext, filter, dumpDerivedBase), j);
+      any_element := true;
     end for;
+  end if;
 
+  if dumpConnectors then
+    (j, any_element) := dumpJSONInstanceAnnotationConnectors(node, j, any_element);
+  end if;
+
+  if any_element then
     json := JSON.addPair("elements", j, json);
   end if;
 
@@ -1286,13 +1355,53 @@ algorithm
   json := dumpJSONCommentOpt(cmt, scope, json, failOnError = true);
 end dumpJSONInstanceAnnotation;
 
+function dumpJSONInstanceAnnotationConnectors
+  "One element per locally declared connector component: name, Placement and
+   the type's icon annotation. A model instance nests the inherited ones under
+   the extends element, so only the class' own belong here."
+  input InstNode node;
+  input output JSON json;
+  input output Boolean any;
+protected
+  InstContext.Type context = InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  InstNode ty_node;
+  JSON e;
+algorithm
+  for el in SCodeUtil.getClassElements(InstNode.definition(node)) loop
+    () := match el
+      case SCode.Element.COMPONENT()
+        algorithm
+          try
+            ty_node := Lookup.lookupClassName(AbsynUtil.typeSpecPath(el.typeSpec), node, context, el.info);
+
+            if SCodeUtil.isConnector(SCodeUtil.getClassRestriction(InstNode.definition(ty_node))) then
+              ty_node := Inst.expand(ty_node, context);
+              e := JSON.addPair("$kind", JSON.STRING("component"), JSON.makeNull());
+              e := JSON.addPair("name", JSON.makeString(el.name), e);
+              e := dumpJSONAnnotationOpt(el.comment.annotation_, node, {"Placement"}, false, e);
+              e := JSON.addPair("type",
+                dumpJSONInstanceAnnotation(ty_node, {"Icon"}, dumpDerivedBase = true), e);
+              json := JSON.addElement(e, json);
+              any := true;
+            end if;
+          else
+          end try;
+        then ();
+
+      else ();
+    end match;
+  end for;
+end dumpJSONInstanceAnnotationConnectors;
+
 function dumpJSONInstanceAnnotationExtends
   input InstNode ext;
   input list<String> filter;
+  input Boolean dumpDerivedBase = false;
   output JSON json = JSON.makeNull();
 algorithm
   json := JSON.addPair("$kind", JSON.STRING("extends"), json);
-  json := JSON.addPair("baseClass", dumpJSONInstanceAnnotation(ext, filter), json);
+  json := JSON.addPair("baseClass",
+    dumpJSONInstanceAnnotation(ext, filter, dumpDerivedBase = dumpDerivedBase), json);
 end dumpJSONInstanceAnnotationExtends;
 
 function dumpJSONNodePath

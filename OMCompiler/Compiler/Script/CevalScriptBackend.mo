@@ -4486,8 +4486,8 @@ algorithm
 end callTranslateModelFMU;
 
 public function generateFMI3GraphicalRepresentation
-  "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
-   model instance (issue #15219) for the *graphical* side only, this renders the
+  "FMI 3.0 graphical user annotations (issue #15686 task 9). From an in-memory
+   structure holding the model's graphics alone (issue #15219), this renders the
    model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
    <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
    connector component renders its port icon to terminalsAndIcons/<iconBaseName>.png
@@ -4510,9 +4510,7 @@ protected
   list<String> parts;
 algorithm
   try
-    // Full in-memory model instance: the model Icon plus the connector components
-    // (placement + connector-type icons). Graphics only.
-    Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
+    Values.INTEGER(handle) := NFApi.getModelInstanceIconReference(className);
     if handle > 0 then
       // Inner try so the model-instance handle is released on EVERY exit path
       // (a failure in the graphics work below must not leak the reference).

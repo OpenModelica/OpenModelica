@@ -1725,11 +1725,11 @@ public function createFMIModelDerivativesForInitialization
   output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
   output AvlTreePathFunction.Tree outFunctionTree "may contain functions created by the differentiation, e.g. partial derivatives";
 protected
-  BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
-  BackendDAE.EqSystem eqSyst, currentSystem;
+  BackendDAE.BackendDAE backendDAE_1, emptyBDAE;
+  BackendDAE.EqSystem currentSystem;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
-  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, paramvars;
-  BackendDAE.Variables v, globalKnownVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr;
+  list<BackendDAE.Var> varlst, knvarlst, states, clockedStates, inputvars, paramvars;
+  BackendDAE.Variables statesarr, inputvarsarr, paramvarsarr, depVarsArr;
   BackendDAE.ExtraInfo ei;
   FCore.Cache cache;
   FCore.Graph graph;
@@ -1841,16 +1841,18 @@ try
 
   //BackendDump.printBackendDAE(backendDAE_1);
 
-  //prepare simulation DAE
-  backendDAE := BackendDAEUtil.copyBackendDAE(simDAE);
-  backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
-
-  eqSyst::{} := backendDAE.eqs;
-  v := eqSyst.orderedVars;
-  // get state var from simulation DAE
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
-    BackendVariable.getAllClockedStatesFromVariables(v) else {};
-  states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
+  // Only the state variables are read from the simulation DAE, so it needs
+  // neither a copy nor a collapse. The finders cons and collapsing folds the
+  // systems in reverse, so reading them forwards keeps the old order.
+  states := {};
+  clockedStates := {};
+  for syst in simDAE.eqs loop
+    states := List.append_reverse(BackendVariable.getAllStateVarFromVariables(syst.orderedVars), states);
+    if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+      clockedStates := List.append_reverse(BackendVariable.getAllClockedStatesFromVariables(syst.orderedVars), clockedStates);
+    end if;
+  end for;
+  states := listAppend(listReverse(states), listReverse(clockedStates));
 
   // prepare all needed variables from initialization DAE
   varlst := BackendVariable.varList(currentSystem.orderedVars);
