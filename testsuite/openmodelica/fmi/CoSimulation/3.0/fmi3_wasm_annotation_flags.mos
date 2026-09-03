@@ -1,0 +1,41 @@
+// name: fmi3_wasm_annotation_flags.mos
+// keywords: FMI 3.0 export wasm Co-Simulation simulation flags annotation
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf M_annflags* om-wasm-include-*
+//
+// A wasm FMU folds the class's __OpenModelica_simulationFlags into its
+// `_flags.json`, which is what its Co-Simulation face integrates with. A flag
+// that takes no value is an entry with an empty value; it used to be rejected,
+// and the rejection dropped the whole set for the `s:euler` default -- putting
+// the FMU on explicit Euler where the model asked for dassl.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit --fmuDirectory=true"); getErrorString();
+loadString("model AnnFlags
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -x;
+  annotation(experiment(StopTime = 1),
+    __OpenModelica_simulationFlags(s = \"dassl\", nls = \"kinsol\", noRestart = \"()\"));
+end AnnFlags;"); getErrorString();
+
+buildModelFMU(AnnFlags, fileNamePrefix="M_annflags", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+readFile("M_annflags.fmu/resources/M_annflags_flags.json"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "M_annflags.fmu"
+// "Warning: Adding unknown FMU simulation flag \"nls\" .
+// Warning: Adding unknown FMU simulation flag \"noRestart\" .
+// Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// "{
+//   \"s\" : \"dassl\",
+//   \"nls\" : \"kinsol\",
+//   \"noRestart\" : \"\"
+// }"
+// ""
+// endResult
