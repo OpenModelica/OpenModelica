@@ -644,12 +644,6 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // suppress the unnecessary qt warning messages
   foreach (QString suppressMessage, mSuppressMessagesList) {
-    QRegularExpression rx(QRegularExpression::fromWildcard(suppressMessage));
-    if (rx.match(messageItem.getMessage()).hasMatch()) {
-      return;
-    }
-  }
-  foreach (QString suppressMessage, mSuppressMessagesList) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QRegularExpression rx(QRegularExpression::fromWildcard(suppressMessage));
 #else
