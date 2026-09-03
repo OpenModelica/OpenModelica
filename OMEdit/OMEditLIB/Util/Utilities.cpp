@@ -307,7 +307,7 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
   QRegularExpression regExp;
   switch (syntax) {
-    case TreeSearchFilters::Wildcard:
+    case TreeSearchFilters::Wildcard: {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
 #else
@@ -326,6 +326,7 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
       regExp = QRegularExpression(pattern, caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
 #endif
       break;
+    }
     case TreeSearchFilters::FixedString:
       regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
       break;
