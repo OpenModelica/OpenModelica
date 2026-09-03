@@ -17,7 +17,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(OMEDITLIB_SOURCES Util/Helper.cpp
+set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
+                      LSP/ModelicaLSPClient.cpp
+                      LSP/LSPSetupDialog.cpp
+                      Util/Helper.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
@@ -152,7 +155,11 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
 
-set(OMEDITLIB_HEADERS Util/Helper.h
+set(OMEDITLIB_HEADERS LSP/LSPClient.h
+                      LSP/ModelicaLSPClient.h
+                      LSP/LSPSetupDialog.h
+                      LSP/LSPProtocol.h
+                      Util/Helper.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
@@ -447,3 +454,4 @@ target_include_directories(OMEditLib PUBLIC ${OMC_SCRIPTING_API_QT_DIR})
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
         FILES_MATCHING PATTERN "*.qm")
+
