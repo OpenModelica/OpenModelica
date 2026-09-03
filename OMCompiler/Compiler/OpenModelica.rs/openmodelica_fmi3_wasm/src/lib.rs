@@ -963,7 +963,7 @@ macro_rules! shared_instance_methods {
         let mut e = Engine;
         match set_zc_tolerance(&mut e, sim_data, &layout, tolerance.unwrap_or(0.0)) {
             Ok(()) => Status::Ok,
-            Err(_) => Status::Error,
+            Err(err) => err_status(err),
         }
     }
 
@@ -980,7 +980,7 @@ macro_rules! shared_instance_methods {
             let start_time = st.read_f64(TIME_OFF);
             match Samples::load(&Engine, st.sim_data, &st.layout, start_time) {
                 Ok(s) => st.samples = Some(s),
-                Err(_) => return Status::Error,
+                Err(err) => return err_status(err),
             }
         }
         // The CS driver is built lazily on the first `do-step` (see there): a me_cs
@@ -992,9 +992,10 @@ macro_rules! shared_instance_methods {
         if st.defer != CsDefer::None {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             let (meta, defer) = (st.meta.clone(), st.defer);
-            match CsDriver::new(&mut Engine, &meta, sim_data, t, defer) {
+            let sync = st.sync.take();
+            match CsDriver::new(&mut Engine, &meta, sim_data, t, defer, sync) {
                 Ok(d) => st.cs = Some(d),
-                Err(_) => return Status::Error,
+                Err(err) => return err_status(err),
             }
         }
         Status::Ok
@@ -1014,27 +1015,28 @@ macro_rules! shared_instance_methods {
         let time = st.read_f64(TIME_OFF);
         let mut e = Engine;
 
+        // The CS driver owns the instance's clock schedule and fires the timers
+        // itself, so `fmi_handle_timers` below must not fire them a second time.
         #[cfg(feature = "cs")]
-        let up = if st.defer != CsDefer::None {
-            // Route through the driver so its sample schedule advances in step with
-            // the integrator (see `CsDriver::do_event_update`).
+        let (up, clocks_handled) = if let Some(mut d) = st.cs.take() {
+            // Route through the driver so its sample and clock schedules advance in
+            // step with the integrator (see `CsDriver::do_event_update`).
             let meta = st.meta.clone();
-            let mut d = st.cs.take().ok_or(Status::Error)?;
             let r = d.do_event_update(&mut e, &meta, time);
             st.cs = Some(d);
             match r {
-                Ok(up) => up,
+                Ok(up) => (up, true),
                 Err(err) => return Err(err_status(err)),
             }
         } else {
             match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
-                Ok(up) => up,
+                Ok(up) => (up, false),
                 Err(err) => return Err(err_status(err)),
             }
         };
         #[cfg(not(feature = "cs"))]
-        let up = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
-            Ok(up) => up,
+        let (up, clocks_handled) = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
+            Ok(up) => (up, false),
             Err(err) => return Err(err_status(err)),
         };
 
@@ -1060,7 +1062,8 @@ macro_rules! shared_instance_methods {
         // sample and the next activation.
         let mut next = up.next_event_time;
         let mut ticked = false;
-        if let Some(mut sync) = st.sync.take() {
+        let pending_sync = if clocks_handled { None } else { st.sync.take() };
+        if let Some(mut sync) = pending_sync {
             let r = driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time);
             let tc = sync.next_time();
             st.sync = Some(sync);
@@ -1703,7 +1706,8 @@ impl GuestCoSimulationInstance for Instance {
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            match CsDriver::new(&mut e, &meta, sim_data, t, defer) {
+            let sync = st.sync.take();
+            match CsDriver::new(&mut e, &meta, sim_data, t, defer, sync) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
