@@ -467,6 +467,42 @@ public
       end if;
     end createFull;
 
+    function subFull
+      "creates the full matrix of a subset of equations and variables from an
+      existing one, sharing its per-equation maps. eqn_indices are the indices
+      of eqns in full, in the order of eqns."
+      input Matrix full;
+      input list<Integer> eqn_indices;
+      input EquationPointers eqns;
+      input VariablePointers vars;
+      output Matrix sub;
+    protected
+      Integer size = listLength(eqn_indices), j = 1;
+      array<ComponentRef> equation_names;
+      array<UnorderedSet<ComponentRef>> occurrences, repetitions;
+      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
+      array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+    algorithm
+      sub := match full
+        case FULL() guard(size > 0) algorithm
+          equation_names  := arrayCreate(size, ComponentRef.EMPTY());
+          occurrences     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
+          solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
+          repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          for i in eqn_indices loop
+            equation_names[j] := full.equation_names[i];
+            occurrences[j]    := full.occurrences[i];
+            dependencies[j]   := full.dependencies[i];
+            solvabilities[j]  := full.solvabilities[i];
+            repetitions[j]    := full.repetitions[i];
+            j := j + 1;
+          end for;
+        then FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, Mapping.create(eqns, vars));
+        else EMPTY(MatrixStrictness.FULL);
+      end match;
+    end subFull;
+
     function fullToFinal
       input Matrix full;
       input UnorderedMap<ComponentRef, Integer> vars_map;

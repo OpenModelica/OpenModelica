@@ -431,11 +431,12 @@ protected
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
-    list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
-    Adjacency.Matrix adj;
+    list<Slice<VariablePointer>> iteration_vars = {};
+    Adjacency.Matrix adj, sub;
     Matching matching;
     list<StrongComponent> inner_comps;
-    UnorderedMap<ComponentRef, Integer> v, e;
+    VariablePointers disc_variables;
+    EquationPointers disc_equations;
     UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     comp := match comp
@@ -476,23 +477,25 @@ protected
           end for;
 
           if not listEmpty(disc_eqns) then
-            // the sets of discrete variables (exclude alg-implied vars already handled) and discrete equations
-            v := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(var) for var guard(not UnorderedSet.contains(BVariable.getVarName(var), matched_set)) in disc_vars));
-            e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
+            // local system of the discrete variables and equations, in the order of the full system
+            disc_vars := sortByIndex(list(var for var guard(not UnorderedSet.contains(BVariable.getVarName(var), matched_set)) in disc_vars), BVariable.getVarName, variables.map);
+            disc_eqns := sortByIndex(disc_eqns, Equation.getEqnName, equations.map);
+            disc_variables := VariablePointers.fromList(disc_vars);
+            disc_equations := EquationPointers.fromList(disc_eqns);
+            sub := Adjacency.Matrix.subFull(full, list(UnorderedMap.getSafe(Equation.getEqnName(eqn), equations.map, sourceInfo()) for eqn in disc_eqns), disc_equations, disc_variables);
 
             // match the discretes to create inner components
-            adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
+            adj         := Adjacency.Matrix.fullToFinal(sub, disc_variables.map, disc_equations.map, disc_equations, NBAdjacency.MatrixStrictness.MATCHING);
             matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
 
-            // get matched vars and build the matched variables set
-            (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
-            for var in matched_vars loop
-              UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+            // build the matched variables set
+            for var in Matching.getMatchedVars(matching, Adjacency.Matrix.getMappingOpt(adj), disc_variables.map, disc_variables) loop
+              UnorderedSet.add(BVariable.getVarName(var), matched_set);
             end for;
 
             // upgrade adjacency matrix and sort the system creating inner equation components
-            adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
-            inner_comps := listAppend(Sorting.tarjan(adj, matching, variables, equations), inner_comps);
+            adj         := Adjacency.Matrix.upgrade(adj, sub, disc_variables.map, disc_equations.map, disc_equations, NBAdjacency.MatrixStrictness.SORTING);
+            inner_comps := listAppend(Sorting.tarjan(adj, matching, disc_variables, disc_equations), inner_comps);
           end if;
 
           // only take variables that are not in the matched set
@@ -511,6 +514,23 @@ protected
       else comp;
     end match;
   end minimal;
+
+  function sortByIndex<T>
+    "sorts the elements by their index in the map"
+    input list<T> lst;
+    input getName func;
+    input UnorderedMap<ComponentRef, Integer> map;
+    output list<T> sorted;
+    partial function getName
+      input T t;
+      output ComponentRef name;
+    end getName;
+  protected
+    list<tuple<Integer, T>> indexed = list((UnorderedMap.getSafe(func(t), map, sourceInfo()), t) for t in lst);
+  algorithm
+    indexed := List.sort(indexed, function Util.compareTupleIntGt());
+    sorted := list(Util.tuple22(tpl) for tpl in indexed);
+  end sortByIndex;
 
   function guru extends Module.tearingInterface;
   protected
