@@ -656,7 +656,8 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     /* Qt 5 has no QRegularExpression::fromWildcard(). Use wildcardToRegularExpression()
      * instead, which returns a fully anchored pattern
      * by default — matching fromWildcard()'s default (anchored) behavior here, so no
-     */ anchor-stripping is needed in this case.
+     * anchor-stripping is needed in this case.
+     */
     QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(suppressMessage));
 #endif
     if (rx.match(messageItem.getMessage()).hasMatch()) {
