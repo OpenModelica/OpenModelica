@@ -824,13 +824,14 @@ impl StepRetry {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 25;
+pub const RT_STATS: usize = 32;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
     "nls_vary_start", "nls_stale", "newton_irregular", "newton_lambda", "newton_negstep",
     "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular", "homotopy_steps",
+    "free", "alloc_bytes", "free_bytes", "live_rc1", "live_rc2", "live_rcn", "live_maxrc",
 ];
 
 /// Lambda steps the runtime's locally-continued systems took, part of the same

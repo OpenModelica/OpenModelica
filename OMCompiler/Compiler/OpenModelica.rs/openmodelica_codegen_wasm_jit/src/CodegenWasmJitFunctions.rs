@@ -2755,6 +2755,9 @@ fn emit_shared_external_call(
         F77Array { handle: u32, ptr: u32, is_out: bool },
         /// C's `<record>_external`: copy its fields into `out`, then free it.
         CRecord { ptr: u32, fields: Arc<Vec<(ArcStr, SigTy)>>, out: Target },
+        /// A String argument: the callee got a `rt_str_data` pointer into it, so
+        /// this side still owns the handle and releases it once the call is done.
+        Owned { handle: u32 },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -2853,6 +2856,9 @@ fn emit_shared_external_call(
             }
             SigTy::Str if !is_out => {
                 push_value(ctx, "a String", WTy::I32)?;
+                let handle = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalTee(handle));
+                cleanups.push(Cleanup::Owned { handle });
                 if !native {
                     ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
                 }
@@ -2942,6 +2948,10 @@ fn emit_shared_external_call(
                 Cleanup::CRecord { ptr, .. } => {
                     ctx.emit(we::Instruction::LocalGet(*ptr));
                     ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                }
+                Cleanup::Owned { handle } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
                 }
             }
         }
@@ -3036,6 +3046,10 @@ fn emit_shared_external_call(
                 }
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+            Cleanup::Owned { handle } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
             }
         }
     }
@@ -3203,17 +3217,38 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         ));
     }
 
+    // A heap argument reaches the host as an owned reference (reading a String
+    // local retains), and the trampoline only copies out of it — so this side
+    // owns it still and must release it after the call, as `str_binop` does.
+    // `Strings.compare` takes two per call, which is why `Strings.find` leaked one
+    // substring per position it tried.
+    let mut arg_temps: Vec<(u32, &'static str)> = Vec::new();
     for (a, p) in args.iter().zip(params.iter()) {
         let w = compile_exp(ctx, a)?;
         coerce(ctx, w, p.wty());
+        if let Some(release_fn) = p.release_fn() {
+            let t = ctx.alloc_temp(p.wty());
+            ctx.emit(we::Instruction::LocalTee(t));
+            arg_temps.push((t, release_fn));
+        }
     }
     ctx.emit(we::Instruction::Call(index));
+    // The results sit on the stack (or in `temps`); `rt_release` leaves nothing
+    // behind, so releasing here does not disturb them.
+    let release_args = |ctx: &mut FnCtx| -> Result<()> {
+        for (t, release_fn) in &arg_temps {
+            ctx.emit(we::Instruction::LocalGet(*t));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+        Ok(())
+    };
     if catch.is_some() {
         // Out of the `try_table` region: the results travel through locals so every
         // block here is empty-typed but the one the caught `exnref` lands in.
         for t in temps.iter().rev() {
             ctx.emit(we::Instruction::LocalSet(*t));
         }
+        release_args(ctx)?;
         ctx.emit(we::Instruction::End); // try_table
         ctx.emit(we::Instruction::Br(1)); // done
         ctx.emit(we::Instruction::End); // handler: the exception is on the stack
@@ -3222,6 +3257,7 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         ctx.emit(we::Instruction::LocalGet(saved_stack));
         ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
         ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        release_args(ctx)?;
         release_heap_locals(ctx)?;
         push_outputs(ctx);
         ctx.emit(we::Instruction::Return);
@@ -3232,6 +3268,8 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         for t in &temps {
             ctx.emit(we::Instruction::LocalGet(*t));
         }
+    } else {
+        release_args(ctx)?;
     }
     Ok(results)
 }

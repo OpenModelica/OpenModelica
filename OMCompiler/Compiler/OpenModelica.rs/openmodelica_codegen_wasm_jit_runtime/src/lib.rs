@@ -455,7 +455,58 @@ pub use openmodelica_solvers::counters::*;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_stat(kind: u32) -> u64 {
+    // The live-block histogram is only knowable by walking the list, and the
+    // reader asks for `live_rc1` first (slot order), so scan there.
+    #[cfg(feature = "heap_stats")]
+    if kind == STAT_LIVE_RC1 {
+        scan_live();
+    }
     openmodelica_solvers::counters::stat(kind)
+}
+
+/// Walk the live-block list, bucketing each object by its reference count (the
+/// first word of every object). Idempotent: the slots are set, not added to.
+#[cfg(feature = "heap_stats")]
+fn scan_live() {
+    let (mut rc1, mut rc2, mut rcn, mut maxrc) = (0u64, 0u64, 0u64, 0u64);
+    let mut raw = unsafe { *LIVE.0.get() };
+    while raw != 0 {
+        let rc = unsafe { load_u32(raw + HEADER as u32) } as u64;
+        match rc {
+            1 => rc1 += 1,
+            2 => rc2 += 1,
+            _ => rcn += 1,
+        }
+        if rc > maxrc {
+            maxrc = rc;
+        }
+        raw = unsafe { load_u32(raw + LIVE_NEXT) };
+    }
+    for (slot, v) in [(STAT_LIVE_RC1, rc1), (STAT_LIVE_RC2, rc2), (STAT_LIVE_RCN, rcn), (STAT_LIVE_MAXRC, maxrc)] {
+        openmodelica_solvers::counters::stat_set(slot, v);
+    }
+    // What the survivors *are*: the first few that read as `[rc][len][utf8]`.
+    let mut shown = 0;
+    let mut raw = unsafe { *LIVE.0.get() };
+    while raw != 0 && shown < 8 {
+        let obj = raw + HEADER as u32;
+        let (total, rc, len) =
+            unsafe { (load_u32(raw) as usize, load_u32(obj), load_u32(obj + STR_LEN_OFF) as usize) };
+        if rc == 1 && len > 0 && len + HEADER + STR_DATA_OFF as usize + 1 <= total + 8 {
+            let bytes = unsafe {
+                core::slice::from_raw_parts((obj + STR_DATA_OFF) as *const u8, len.min(60))
+            };
+            if bytes.iter().all(|b| *b >= 0x20 && *b < 0x7f) {
+                omclog::info(
+                    omclog::STDOUT,
+                    false,
+                    &alloc::format!("live string rc=1 len={len}: {}", core::str::from_utf8(bytes).unwrap_or("?")),
+                );
+                shown += 1;
+            }
+        }
+        raw = unsafe { load_u32(raw + LIVE_NEXT) };
+    }
 }
 
 /// Called per run (`rt_sim_start`), so the counters are per-run.
@@ -470,8 +521,55 @@ pub fn reset_stats() {
 /// Bytes reserved before every object for the allocation size (used by
 /// `rt_free`). 8 rather than 4 so the returned object is 8-byte aligned, which
 /// keeps `f64` array/record elements naturally aligned.
+/// `[size:u32][spare:u32]` before every object. With `heap_stats` the spare pair
+/// grows to `[size][pad][prev][next]` so every live block is on one list and the
+/// run can be asked what is still holding memory, and at what reference count.
+#[cfg(not(feature = "heap_stats"))]
 const HEADER: usize = 8;
+#[cfg(feature = "heap_stats")]
+const HEADER: usize = 16;
 const ALIGN: usize = 8;
+#[cfg(feature = "heap_stats")]
+const LIVE_PREV: u32 = 8;
+#[cfg(feature = "heap_stats")]
+const LIVE_NEXT: u32 = 12;
+
+/// Head of the live-block list (`raw` pointers), newest first.
+#[cfg(feature = "heap_stats")]
+struct LiveHead(core::cell::UnsafeCell<u32>);
+#[cfg(feature = "heap_stats")]
+unsafe impl Sync for LiveHead {}
+#[cfg(feature = "heap_stats")]
+static LIVE: LiveHead = LiveHead(core::cell::UnsafeCell::new(0));
+
+#[cfg(feature = "heap_stats")]
+fn live_link(raw: u32) {
+    let head = unsafe { &mut *LIVE.0.get() };
+    unsafe {
+        store_u32(raw + LIVE_PREV, 0);
+        store_u32(raw + LIVE_NEXT, *head);
+        if *head != 0 {
+            store_u32(*head + LIVE_PREV, raw);
+        }
+    }
+    *head = raw;
+}
+
+#[cfg(feature = "heap_stats")]
+fn live_unlink(raw: u32) {
+    let head = unsafe { &mut *LIVE.0.get() };
+    let (prev, next) = unsafe { (load_u32(raw + LIVE_PREV), load_u32(raw + LIVE_NEXT)) };
+    unsafe {
+        if prev != 0 {
+            store_u32(prev + LIVE_NEXT, next);
+        } else if *head == raw {
+            *head = next;
+        }
+        if next != 0 {
+            store_u32(next + LIVE_PREV, prev);
+        }
+    }
+}
 
 /// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
 /// one array/record per array/record-typed function local on every call (an IF97
@@ -503,12 +601,16 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
     if total <= CACHE_MAX {
         total = (total + ALIGN - 1) & !(ALIGN - 1);
     }
+    #[cfg(feature = "heap_stats")]
+    stat_add(STAT_ALLOC_BYTES, total as u64);
     if let Some(class) = cache_class(total) {
         let lists = unsafe { &mut *FREE.0.get() };
         let head = lists[class];
         if head != 0 {
             lists[class] = unsafe { load_u32(head + HEADER as u32) };
             unsafe { store_u32(head, total as u32) };
+            #[cfg(feature = "heap_stats")]
+            live_link(head);
             return head + HEADER as u32;
         }
     }
@@ -519,6 +621,8 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
         trap();
     }
     unsafe { store_u32(raw, total as u32) };
+    #[cfg(feature = "heap_stats")]
+    live_link(raw);
     raw + HEADER as u32
 }
 
@@ -530,6 +634,12 @@ pub extern "C" fn rt_free(obj: u32) {
     }
     let raw = obj - HEADER as u32;
     let total = unsafe { load_u32(raw) } as usize;
+    #[cfg(feature = "heap_stats")]
+    {
+        stat_inc(STAT_FREE);
+        stat_add(STAT_FREE_BYTES, total as u64);
+        live_unlink(raw);
+    }
     if let Some(class) = cache_class(total) {
         let lists = unsafe { &mut *FREE.0.get() };
         unsafe { store_u32(raw + HEADER as u32, lists[class]) };
