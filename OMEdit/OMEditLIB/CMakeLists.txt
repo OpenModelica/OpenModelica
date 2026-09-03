@@ -455,3 +455,70 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
         FILES_MATCHING PATTERN "*.qm")
 
+# Install the bundled Modelica language server (optional — skipped when not available).
+#
+# By default this is fetched from a pinned modelica-language-server GitHub release and
+# verified against a known SHA256 (basic protection against a corrupted/tampered download).
+# Set MODELICA_LS_DIR to a local build directory (containing server.js and the WASM files)
+# to bundle that instead of downloading, e.g. for local development against an unreleased version.
+set(MODELICA_LS_DIR ""
+    CACHE PATH "Directory containing a locally built modelica-language-server (server.js and WASM files). Overrides the downloaded release when set.")
+set(MODELICA_LS_VERSION "0.3.3" CACHE STRING "modelica-language-server release version to download")
+set(MODELICA_LS_TGZ_SHA256 "e80cbde0feec2182066f9624e25c37d07010063604c6bd6641ee6baceec5c085"
+    CACHE STRING "Expected SHA256 of the openmodelica-modelica-language-server-${MODELICA_LS_VERSION}.tgz release asset")
+
+# The Options dialog offers this same version for download, so it knows which
+# release OMEdit is tested with rather than always taking the newest one.
+target_compile_definitions(OMEditLib PRIVATE MODELICA_LS_VERSION="${MODELICA_LS_VERSION}")
+
+if(MODELICA_LS_DIR AND EXISTS "${MODELICA_LS_DIR}/server.js")
+  set(MODELICA_LS_SERVER_DIR "${MODELICA_LS_DIR}")
+else()
+  set(MODELICA_LS_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/modelica-language-server-${MODELICA_LS_VERSION}")
+  set(MODELICA_LS_SERVER_DIR "${MODELICA_LS_DOWNLOAD_DIR}/package/out")
+  if(NOT EXISTS "${MODELICA_LS_SERVER_DIR}/server.js")
+    set(MODELICA_LS_TGZ "${CMAKE_CURRENT_BINARY_DIR}/modelica-language-server-${MODELICA_LS_VERSION}.tgz")
+    file(DOWNLOAD
+         "https://github.com/OpenModelica/modelica-language-server/releases/download/v${MODELICA_LS_VERSION}/openmodelica-modelica-language-server-${MODELICA_LS_VERSION}.tgz"
+         "${MODELICA_LS_TGZ}"
+         STATUS MODELICA_LS_DOWNLOAD_STATUS)
+    list(GET MODELICA_LS_DOWNLOAD_STATUS 0 MODELICA_LS_DOWNLOAD_CODE)
+    if(MODELICA_LS_DOWNLOAD_CODE EQUAL 0)
+      file(SHA256 "${MODELICA_LS_TGZ}" MODELICA_LS_TGZ_ACTUAL_SHA256)
+      if(MODELICA_LS_TGZ_ACTUAL_SHA256 STREQUAL MODELICA_LS_TGZ_SHA256)
+        file(MAKE_DIRECTORY "${MODELICA_LS_DOWNLOAD_DIR}")
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf "${MODELICA_LS_TGZ}"
+                         WORKING_DIRECTORY "${MODELICA_LS_DOWNLOAD_DIR}")
+      else()
+        message(WARNING "modelica-language-server-${MODELICA_LS_VERSION}.tgz SHA256 mismatch "
+                         "(expected ${MODELICA_LS_TGZ_SHA256}, got ${MODELICA_LS_TGZ_ACTUAL_SHA256}) — skipping bundled install")
+        file(REMOVE "${MODELICA_LS_TGZ}")
+      endif()
+    else()
+      list(GET MODELICA_LS_DOWNLOAD_STATUS 1 MODELICA_LS_DOWNLOAD_ERROR)
+      message(STATUS "Could not download modelica-language-server v${MODELICA_LS_VERSION}: ${MODELICA_LS_DOWNLOAD_ERROR} — skipping bundled install")
+    endif()
+  endif()
+endif()
+
+# All three files are installed, so all three must be present: a configure that
+# checked only server.js reported success and then failed at install time.
+if(EXISTS "${MODELICA_LS_SERVER_DIR}/server.js"
+   AND EXISTS "${MODELICA_LS_SERVER_DIR}/tree-sitter-modelica.wasm"
+   AND EXISTS "${MODELICA_LS_SERVER_DIR}/web-tree-sitter.wasm")
+  set(MODELICA_LS_FILES
+      "${MODELICA_LS_SERVER_DIR}/server.js"
+      "${MODELICA_LS_SERVER_DIR}/tree-sitter-modelica.wasm"
+      "${MODELICA_LS_SERVER_DIR}/web-tree-sitter.wasm")
+  if(WIN32)
+    # On Windows, place next to OMEdit.exe so findBundledServer() finds it
+    install(FILES ${MODELICA_LS_FILES}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}/languageserver)
+  else()
+    install(FILES ${MODELICA_LS_FILES}
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit/languageserver)
+  endif()
+  message(STATUS "Bundled Modelica language server will be installed from ${MODELICA_LS_SERVER_DIR}")
+else()
+  message(STATUS "Modelica language server not available — skipping bundled install")
+endif()
