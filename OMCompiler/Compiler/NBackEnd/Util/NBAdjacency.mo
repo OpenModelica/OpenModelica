@@ -2524,7 +2524,7 @@ public
 
           // only save the x -> x.start dependency not the other way around
           case SOME(start) guard(BVariable.isStart(start)) algorithm
-            start_cref := BVariable.getVarName(start);
+            start_cref := ComponentRef.copySubscripts(cref, BVariable.getVarName(start));
             // add the start cref dependency in the same way the original variable occured
             // but with UNSOLVABLE as it is only relevant for sorting and cannot be solved
             UnorderedSet.add(start_cref, occs);
