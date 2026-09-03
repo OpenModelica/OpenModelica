@@ -533,6 +533,23 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
             let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(name).as_ref(), data);
         },
     ))?;
+    // The in-wasm session's result file (`session.rs`'s `HostOut`).
+    wt(linker.func_wrap("env", "rt_host_result_open", |caller: wasmtime::Caller<'_, T>, path: u32, len: u32| -> i32 {
+        let Some(memory) = sim_memory::get() else { return -1 };
+        let Some(path) = memory.data(&caller).get(path as usize..(path + len) as usize) else { return -1 };
+        result_file::open(&String::from_utf8_lossy(path))
+    }))?;
+    wt(linker.func_wrap("env", "rt_host_result_write", |caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| -> i32 {
+        let Some(memory) = sim_memory::get() else { return -1 };
+        let Some(bytes) = memory.data(&caller).get(ptr as usize..(ptr + len) as usize) else { return -1 };
+        result_file::write(bytes)
+    }))?;
+    wt(linker.func_wrap("env", "rt_host_result_write_at", |caller: wasmtime::Caller<'_, T>, pos: u64, ptr: u32, len: u32| -> i32 {
+        let Some(memory) = sim_memory::get() else { return -1 };
+        let Some(bytes) = memory.data(&caller).get(ptr as usize..(ptr + len) as usize) else { return -1 };
+        result_file::write_at(pos, bytes)
+    }))?;
+    wt(linker.func_wrap("env", "rt_host_result_close", || result_file::close()))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
@@ -771,6 +788,44 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
             },
         ),
     );
+    // The in-wasm session's result file (`session.rs`'s `HostOut`).
+    let guest_bytes = |env: &wasmer::FunctionEnvMut<HostEnv>, ptr: u32, len: u32| -> Option<Vec<u8>> {
+        let memory = env.data().mem.clone()?;
+        let mut buf = vec![0u8; len as usize];
+        memory.view(env).read(ptr as u64, &mut buf).ok()?;
+        Some(buf)
+    };
+    imports.define(
+        "env",
+        "rt_host_result_open",
+        Function::new_typed_with_env(store, &mem_env, move |env: wasmer::FunctionEnvMut<HostEnv>, path: u32, len: u32| -> i32 {
+            match guest_bytes(&env, path, len) {
+                Some(p) => result_file::open(&String::from_utf8_lossy(&p)),
+                None => -1,
+            }
+        }),
+    );
+    imports.define(
+        "env",
+        "rt_host_result_write",
+        Function::new_typed_with_env(store, &mem_env, move |env: wasmer::FunctionEnvMut<HostEnv>, ptr: u32, len: u32| -> i32 {
+            match guest_bytes(&env, ptr, len) {
+                Some(b) => result_file::write(&b),
+                None => -1,
+            }
+        }),
+    );
+    imports.define(
+        "env",
+        "rt_host_result_write_at",
+        Function::new_typed_with_env(store, &mem_env, move |env: wasmer::FunctionEnvMut<HostEnv>, pos: u64, ptr: u32, len: u32| -> i32 {
+            match guest_bytes(&env, ptr, len) {
+                Some(b) => result_file::write_at(pos, &b),
+                None => -1,
+            }
+        }),
+    );
+    imports.define("env", "rt_host_result_close", Function::new_typed(store, || result_file::close()));
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
@@ -1019,5 +1074,47 @@ pub fn absolute_path(path: &str) -> String {
     match std::env::current_dir() {
         Ok(dir) => dir.join(p).to_string_lossy().into_owned(),
         Err(_) => path.to_string(),
+    }
+}
+
+/// The file behind `env.rt_host_result_*`: the in-wasm session's result stream,
+/// one per thread (a session runs one model at a time).
+pub mod result_file {
+    use std::cell::RefCell;
+
+    thread_local! {
+        static FILE: RefCell<Option<openmodelica_wasi::fs::Writer>> = const { RefCell::new(None) };
+    }
+
+    pub fn open(path: &str) -> i32 {
+        match openmodelica_wasi::fs::Writer::create(path) {
+            Ok(w) => {
+                FILE.with(|f| *f.borrow_mut() = Some(w));
+                0
+            }
+            Err(_) => -1,
+        }
+    }
+
+    pub fn write(bytes: &[u8]) -> i32 {
+        FILE.with(|f| match f.borrow_mut().as_mut() {
+            Some(w) => -(w.write_all(bytes).is_err() as i32),
+            None => -1,
+        })
+    }
+
+    pub fn write_at(pos: u64, bytes: &[u8]) -> i32 {
+        FILE.with(|f| match f.borrow_mut().as_mut() {
+            Some(w) => -(w.write_at(pos, bytes).is_err() as i32),
+            None => -1,
+        })
+    }
+
+    pub fn close() {
+        FILE.with(|f| {
+            if let Some(mut w) = f.borrow_mut().take() {
+                let _ = w.flush();
+            }
+        });
     }
 }

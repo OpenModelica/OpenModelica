@@ -120,6 +120,7 @@ pub fn split_lin_blob(bytes: &[u8]) -> Option<openmodelica_sim_meta::linearize::
 // A thin facade over openmodelica_sim_meta::driver; present even in the no-jit
 // stub build, which reads its result types.
 pub mod sim_driver;
+pub mod result_sink;
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 #[path = "sim_runtime_wasmtime.rs"]
 pub mod sim_runtime;

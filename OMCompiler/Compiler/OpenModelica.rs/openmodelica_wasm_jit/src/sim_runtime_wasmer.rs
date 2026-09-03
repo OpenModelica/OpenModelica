@@ -835,19 +835,25 @@ fn read_side_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, off: u3
     Ok(out)
 }
 
-pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::RunResult, String> {
+pub fn run(
+    model: &SimModel,
+    meta: &SimMeta,
+    result: crate::result_sink::ResultTarget,
+) -> std::result::Result<(sim_driver::RunResult, crate::result_sink::Written), String> {
     let bench = crate::model::sim_bench_enabled();
     if crate::model::inwasm_driver_enabled() {
-        return run_inwasm(model, bench);
+        return run_inwasm(model, bench, result);
     }
+    crate::result_sink::arm(result);
     let (mut engine, sim_data) = build_engine(model, meta)?;
     // `OMC_WASM_SIM_DRIVER=host` forces the native Euler loop over the in-wasm one.
     let host_driven = std::env::var("OMC_WASM_SIM_DRIVER").map(|v| v == "host").unwrap_or(false);
     let n_steps = meta.n_intervals;
     let n_rows = n_steps + 1;
     let t0 = Instant::now();
-    let (mut result, driver_label) =
-        sim_driver::drive(&mut *engine, meta, sim_data, meta.method.as_str(), host_driven, bench)?;
+    let driven = sim_driver::drive(&mut *engine, meta, sim_data, meta.method.as_str(), host_driven, bench);
+    let written = crate::result_sink::take();
+    let (mut result, driver_label) = driven?;
     // The solves ran in-wasm, where the driver's stats cannot see them.
     result.stats.lin_solves = engine.lin_solves();
     if bench {
@@ -857,14 +863,18 @@ pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::
             driver_label, elapsed, n_steps, elapsed.as_secs_f64() * 1e6 / (n_rows.max(1) as f64),
         );
     }
-    Ok(result)
+    Ok((result, written))
 }
 
 /// One-shot in-wasm run (used by [`run`] under `OMC_WASM_INWASM_DRIVER`): start,
 /// pump to completion with an unbounded budget, read the result.
-fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::RunResult, String> {
+fn run_inwasm(
+    model: &SimModel,
+    bench: bool,
+    target: crate::result_sink::ResultTarget,
+) -> std::result::Result<(sim_driver::RunResult, crate::result_sink::Written), String> {
     let t0 = Instant::now();
-    let mut sess = build_inwasm_session(model)?;
+    let mut sess = build_inwasm_session(model, Some(&target))?;
     loop {
         match sess.advance(f64::INFINITY)? {
             0 => continue,
@@ -873,6 +883,7 @@ fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::
         }
     }
     let result = sess.take_result()?;
+    let written = sess.take_written()?;
     // The traces were collected in-wasm; the report is rendered here, once the
     // result file the run reports on has been written.
     let prof = sess.take_prof()?;
@@ -885,7 +896,7 @@ fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::
             t0.elapsed(), model.n_intervals, result.stats.steps, result.stats.res_evals
         );
     }
-    Ok(result)
+    Ok((result, written))
 }
 
 /// A runtime+model pair instantiated into one store, sharing the runtime's linear
@@ -1309,6 +1320,9 @@ pub struct InWasmSession {
     advance: wasmer::TypedFunction<f64, i32>,
     rows_ptr: wasmer::TypedFunction<(), u32>,
     rows_len: wasmer::TypedFunction<(), u32>,
+    n_rows_f: wasmer::TypedFunction<(), u32>,
+    layout_ptr: wasmer::TypedFunction<(), u32>,
+    layout_len: wasmer::TypedFunction<(), u32>,
     n_reals_f: wasmer::TypedFunction<(), u32>,
     params_ptr: wasmer::TypedFunction<(), u32>,
     params_len: wasmer::TypedFunction<(), u32>,
@@ -1324,7 +1338,10 @@ pub struct InWasmSession {
 
 /// Instantiate, populate the shared table with the model's exports, write the
 /// metadata blob, and `rt_sim_start` a resumable in-wasm run.
-pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSession, String> {
+pub fn build_inwasm_session(
+    model: &SimModel,
+    result: Option<&crate::result_sink::ResultTarget>,
+) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
     let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
 
@@ -1366,6 +1383,18 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
     if wts(set_args.call(&mut store, args_ptr, args.len() as u32))? < 0 {
         return Err("CodegenWasmJit: the runtime rejected the simulation flags".to_string());
     }
+    if let Some(t) = result {
+        let keep: Vec<u8> = t.keep.iter().map(|&k| k as u8).collect();
+        let path_ptr = wts(rt_alloc.call(&mut store, t.path.len().max(1) as u32))?;
+        wts(memory.view(&store).write(path_ptr as u64, t.path.as_bytes()))?;
+        let keep_ptr = wts(rt_alloc.call(&mut store, keep.len().max(1) as u32))?;
+        wts(memory.view(&store).write(keep_ptr as u64, &keep))?;
+        let set_result: wasmer::TypedFunction<(u32, u32, u32, u32, i32), i32> =
+            wts(rt_inst.exports.get_typed_function(&store, "rt_sim_set_result"))?;
+        if wts(set_result.call(&mut store, path_ptr, t.path.len() as u32, keep_ptr, keep.len() as u32, t.single as i32))? < 0 {
+            return Err("CodegenWasmJit: rt_sim_set_result failed".to_string());
+        }
+    }
 
     let start: wasmer::TypedFunction<(u32, u32, u32, u64), i32> =
         wts(rt_inst.exports.get_typed_function(&store, "rt_sim_start"))?;
@@ -1379,6 +1408,9 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         advance: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_advance"))?,
         rows_ptr: gf(&store, "rt_sim_rows_ptr")?,
         rows_len: gf(&store, "rt_sim_rows_len")?,
+        n_rows_f: gf(&store, "rt_sim_n_rows")?,
+        layout_ptr: gf(&store, "rt_sim_layout_ptr")?,
+        layout_len: gf(&store, "rt_sim_layout_len")?,
         n_reals_f: gf(&store, "rt_sim_n_reals")?,
         params_ptr: gf(&store, "rt_sim_params_ptr")?,
         params_len: gf(&store, "rt_sim_params_len")?,
@@ -1486,6 +1518,21 @@ impl InWasmSession {
         openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+    }
+
+    /// What the runtime wrote to the result file it was given.
+    pub fn take_written(&mut self) -> Result<crate::result_sink::Written> {
+        let n_rows = wt(self.n_rows_f.call(&mut self.store))? as usize;
+        let p = wt(self.layout_ptr.call(&mut self.store))?;
+        let n = wt(self.layout_len.call(&mut self.store))? as usize;
+        let mut bytes = vec![0u8; n];
+        if n > 0 {
+            self.memory.view(&self.store).read(p as u64, &mut bytes).map_err(|_| "CodegenWasmJit: layout read")?;
+        }
+        Ok(crate::result_sink::Written {
+            n_rows,
+            layout: openmodelica_sim_meta::result::MatLayout::decode(&bytes),
+        })
     }
 
     /// `+profiling`'s collected state, for the host's `profiling::adopt`: the

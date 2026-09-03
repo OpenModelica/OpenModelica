@@ -2,16 +2,16 @@
 //!
 //! Produces the `Aclass`/`name`/`description`/`dataInfo`/`data_1`/`data_2`
 //! matrices the OpenModelica C runtime writes (so OMPlot / `omc-diff` read the
-//! file unchanged), as a `Vec<u8>`. It performs no I/O and uses no wasm
-//! intrinsics, so the same code serves the host (writes the bytes to the VFS or
-//! disk) and the standalone `wasm32-wasip1` runtime's `_start` (writes them via
-//! WASI) — one serializer, no drift.
+//! file unchanged). [`Mat4Stream`] writes the file incrementally, one batch of
+//! rows at a time, into any [`Out`]; [`write_mat4`] is the one-shot form over a
+//! `Vec<u8>`. No I/O and no wasm intrinsics, so the same code serves the host,
+//! the in-wasm session runtimes and the standalone `wasm32-wasip1` module.
 //!
 //! The caller supplies the per-signal metadata ([`MatVar`]), the time-variant
-//! result buffer (`rows`, row-major `n_reals` columns: `[time | realVars | ...]`)
-//! and the scalar parameter values (`params`, in `MatKind::Param` order). How a
-//! signal sources its value — a result-buffer column, a parameter slot, or a
-//! literal constant — is [`MatKind`].
+//! result rows (row-major, `n_reals` columns: `[time | realVars | ...]`) and the
+//! scalar parameter values (`params`, in `MatKind::Param` order). How a signal
+//! sources its value — a result-buffer column, a parameter slot, or a literal
+//! constant — is [`MatKind`].
 
 #![cfg_attr(not(test), no_std)]
 
@@ -66,7 +66,7 @@ impl Precision {
         }
     }
 
-    fn size(self) -> usize {
+    pub fn size(self) -> usize {
         match self {
             Precision::Double => 8,
             Precision::Single => 4,
@@ -76,17 +76,282 @@ impl Precision {
 
 /// One signal in the result file (C-compatible order: time, states, derivatives,
 /// algebraics, then parameters). `name`/`comment` borrow the caller's strings.
+/// `unvarying` is C's `time_unvarying`: a `Column` signal computed once during
+/// initialization, stored in `data_1` rather than `data_2`.
 pub struct MatVar<'a> {
     pub name: &'a str,
     pub comment: &'a str,
     pub kind: MatKind,
+    pub unvarying: bool,
 }
 
-/// Serialize the MATLAB v4 result file for `signals`. `rows` is the row-major
-/// time-variant buffer (`n_reals` columns per row, column 0 = time); `params`
-/// holds the scalar parameter values in `MatKind::Param` order. `precision`
-/// selects the storage width of the real data (`data_1`/`data_2`). Returns the
-/// file bytes.
+/// Where a [`Mat4Stream`] puts its bytes.
+pub trait Out {
+    fn write(&mut self, bytes: &[u8]);
+    /// Overwrite `bytes` at absolute byte position `pos` (the `data_2` row count,
+    /// patched once the last row is in).
+    fn write_at(&mut self, pos: u64, bytes: &[u8]);
+}
+
+impl Out for Vec<u8> {
+    fn write(&mut self, bytes: &[u8]) {
+        self.extend_from_slice(bytes);
+    }
+    fn write_at(&mut self, pos: u64, bytes: &[u8]) {
+        let p = pos as usize;
+        if let Some(dst) = self.get_mut(p..p + bytes.len()) {
+            dst.copy_from_slice(bytes);
+        }
+    }
+}
+
+/// An incremental `.mat` writer: [`Mat4Stream::begin`] writes every matrix up to
+/// and including the `data_2` header, [`Mat4Stream::push_rows`] appends rows to
+/// `data_2`, and [`Mat4Stream::finish`] patches the row count into that header,
+/// as C's `updateHeader_matVer4` does.
+pub struct Mat4Stream {
+    /// The `data_2` columns after time: `(row column, negation)`.
+    varying: Vec<(usize, Neg)>,
+    n_reals: usize,
+    precision: Precision,
+    n_rows: usize,
+    /// Absolute position of the `data_2` header's `ncols` field.
+    ncols_pos: u64,
+    /// Absolute position of the first `data_2` element.
+    data2_pos: u64,
+    /// `dataInfo` per signal: `[channel, index, interp, extrap]`.
+    data_info: Vec<[i32; 4]>,
+    /// `data_1`'s first column (row 1 = start time).
+    data_1: Vec<f64>,
+    buf: Vec<u8>,
+}
+
+impl Mat4Stream {
+    /// Write the leading matrices for `signals`. `first_row` (the initial result
+    /// row, `n_reals` values; empty when the run produced none) gives the
+    /// `unvarying` columns their `data_1` value; `params` holds the scalar
+    /// parameter values in `MatKind::Param` order.
+    #[allow(clippy::too_many_arguments)]
+    pub fn begin(
+        out: &mut dyn Out,
+        signals: &[MatVar],
+        start_time: f64,
+        stop_time: f64,
+        first_row: &[f64],
+        n_reals: u32,
+        params: &[f64],
+        precision: Precision,
+    ) -> Mat4Stream {
+        let n_reals = n_reals as usize;
+        let mut head: Vec<u8> = Vec::new();
+
+        // Aclass (4 x 11 char), rows: "Atrajectory","1.1","","binTrans".
+        let aclass_rows = ["Atrajectory", "1.1", "", "binTrans"];
+        write_char_matrix_rows(&mut head, "Aclass", &aclass_rows, 11);
+
+        // name / description: each signal occupies one column.
+        let names: Vec<&str> = signals.iter().map(|v| v.name).collect();
+        let descs: Vec<&str> = signals.iter().map(|v| v.comment).collect();
+        write_char_matrix_cols(&mut head, "name", &names);
+        write_char_matrix_cols(&mut head, "description", &descs);
+
+        // Names can share a column, an arithmetic negation reading it through a
+        // negative dataInfo index; a Boolean one needs the `1 - v` row C's
+        // `mat4_emit4` adds.
+        let mut referenced = vec![false; n_reals];
+        let mut referenced_not = vec![false; n_reals];
+        let mut col_unvarying = vec![false; n_reals];
+        for v in signals {
+            if let MatKind::Column { col, negate } = &v.kind {
+                let c = *col as usize;
+                if c < n_reals {
+                    match negate {
+                        Neg::Not => referenced_not[c] = true,
+                        _ => referenced[c] = true,
+                    }
+                    col_unvarying[c] |= v.unvarying;
+                }
+            }
+        }
+        // data_1 holds (after the reserved [start,stop] row) one row per scalar
+        // signal — `Param` and `Const` — in signal order, then one row per
+        // unvarying column.
+        let n_scalars = signals
+            .iter()
+            .filter(|v| matches!(v.kind, MatKind::Param { .. } | MatKind::Const { .. }))
+            .count();
+
+        // Assign data_2 rows to varying referenced columns; data_1 rows to
+        // unvarying referenced columns (after [start,stop] and the scalar signals).
+        let mut col_data2_row = vec![0i32; n_reals];
+        let mut col_data1_row = vec![0i32; n_reals];
+        let mut not_data2_row = vec![0i32; n_reals];
+        let mut not_data1_row = vec![0i32; n_reals];
+        let mut varying: Vec<(usize, Neg)> = Vec::new();
+        let mut const_cols: Vec<(usize, Neg)> = Vec::new();
+        let mut next_const_row: i32 = 2 + n_scalars as i32;
+        for c in 1..n_reals {
+            for neg in [Neg::None, Neg::Not] {
+                let (wanted, d1, d2) = if neg == Neg::Not {
+                    (referenced_not[c], &mut not_data1_row, &mut not_data2_row)
+                } else {
+                    (referenced[c], &mut col_data1_row, &mut col_data2_row)
+                };
+                if !wanted {
+                    continue; // filtered-out variable
+                }
+                if col_unvarying[c] {
+                    const_cols.push((c, neg));
+                    d1[c] = next_const_row;
+                    next_const_row += 1;
+                } else {
+                    varying.push((c, neg));
+                    d2[c] = 1 + varying.len() as i32;
+                }
+            }
+        }
+
+        // dataInfo (4 x nSignals int32, column-major): [channel, index, interp, extrap].
+        let mut data_info: Vec<[i32; 4]> = Vec::with_capacity(signals.len());
+        let mut next_scalar_row: i32 = 2;
+        for v in signals {
+            let info = match &v.kind {
+                MatKind::Time => [0, 1, 0, -1],
+                MatKind::Column { col, negate } => {
+                    let c = *col as usize;
+                    let (d1, d2, sgn) = match negate {
+                        Neg::Not => (&not_data1_row, &not_data2_row, 1),
+                        Neg::Arith => (&col_data1_row, &col_data2_row, -1),
+                        Neg::None => (&col_data1_row, &col_data2_row, 1),
+                    };
+                    if c < n_reals && d1[c] != 0 {
+                        [1, sgn * d1[c], 0, 0]
+                    } else if c < n_reals && d2[c] != 0 {
+                        [2, sgn * d2[c], 0, 0]
+                    } else {
+                        [0, 1, 0, -1] // unreachable (every Column is referenced); alias time
+                    }
+                }
+                MatKind::Param { negate } => {
+                    let r = next_scalar_row;
+                    next_scalar_row += 1;
+                    [1, if *negate == Neg::Arith { -r } else { r }, 0, 0]
+                }
+                MatKind::Const { .. } => {
+                    let r = next_scalar_row;
+                    next_scalar_row += 1;
+                    [1, r, 0, 0]
+                }
+            };
+            data_info.push(info);
+        }
+        let flat: Vec<i32> = data_info.iter().flatten().copied().collect();
+        write_int_matrix(&mut head, "dataInfo", 4, signals.len(), &flat);
+
+        // data_1 (nData1 x 2 double, column-major): row 1 = [start, stop]; then the
+        // scalar signals (Param values, Const literals), then the unvarying
+        // columns. `params` is in `Param`-signal order.
+        let n_data1 = 1 + n_scalars + const_cols.len();
+        let mut data_1: Vec<f64> = vec![0.0; n_data1 * 2];
+        data_1[0] = start_time;
+        data_1[n_data1] = stop_time;
+        let mut row_idx = 1usize; // 0-based index of data_1 row 2
+        let mut param_idx = 0usize;
+        for v in signals {
+            let val = match &v.kind {
+                MatKind::Param { negate } => {
+                    let v = params.get(param_idx).copied().unwrap_or(0.0);
+                    param_idx += 1;
+                    if *negate == Neg::Not { 1.0 - v } else { v }
+                }
+                MatKind::Const { value } => *value,
+                _ => continue,
+            };
+            data_1[row_idx] = val;
+            data_1[n_data1 + row_idx] = val;
+            row_idx += 1;
+        }
+        for &(c, neg) in &const_cols {
+            let row = if neg == Neg::Not { not_data1_row[c] } else { col_data1_row[c] };
+            let idx = (row - 1) as usize;
+            let v = first_row.get(c).copied().unwrap_or(0.0);
+            let v = if neg == Neg::Not { 1.0 - v } else { v };
+            data_1[idx] = v;
+            data_1[n_data1 + idx] = v;
+        }
+        write_real_matrix(&mut head, "data_1", n_data1, 2, &data_1, precision);
+        data_1.truncate(n_data1);
+
+        // data_2 (n_reals2 x n_rows, column-major): time + the varying columns. The
+        // row count is patched in by `finish`.
+        let n_reals2 = 1 + varying.len();
+        let ncols_pos = head.len() as u64 + 8;
+        write_mat_header(&mut head, "data_2", precision.type_code(), n_reals2, 0);
+        let data2_pos = head.len() as u64;
+        out.write(&head);
+
+        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new() }
+    }
+
+    /// Append `rows` (row-major, `n_reals` values each) to `data_2`.
+    pub fn push_rows(&mut self, out: &mut dyn Out, rows: &[f64]) {
+        let n_reals = self.n_reals.max(1);
+        let n = rows.len() / n_reals;
+        if n == 0 {
+            return;
+        }
+        self.buf.clear();
+        self.buf.reserve(n * (1 + self.varying.len()) * self.precision.size());
+        for row in rows.chunks_exact(n_reals) {
+            push_real(&mut self.buf, row[0], self.precision); // time
+            for &(c, neg) in &self.varying {
+                let v = row[c];
+                push_real(&mut self.buf, if neg == Neg::Not { 1.0 - v } else { v }, self.precision);
+            }
+        }
+        out.write(&self.buf);
+        self.n_rows += n;
+    }
+
+    /// Patch the `data_2` row count. Safe to call more than once.
+    pub fn finish(&mut self, out: &mut dyn Out) {
+        out.write_at(self.ncols_pos, &(self.n_rows as i32).to_le_bytes());
+    }
+
+    pub fn n_rows(&self) -> usize {
+        self.n_rows
+    }
+
+    /// Columns per `data_2` row (time included).
+    pub fn n_reals2(&self) -> usize {
+        1 + self.varying.len()
+    }
+
+    /// Absolute byte position of the first `data_2` element.
+    pub fn data2_pos(&self) -> u64 {
+        self.data2_pos
+    }
+
+    pub fn precision(&self) -> Precision {
+        self.precision
+    }
+
+    /// `dataInfo` per signal: `[channel, index, interp, extrap]`, channel 1 =
+    /// `data_1`, 2 = `data_2`, a negative index a negated alias.
+    pub fn data_info(&self) -> &[[i32; 4]] {
+        &self.data_info
+    }
+
+    /// `data_1`'s values (its first column): index `dataInfo` channel-1 entries
+    /// with `index - 1`.
+    pub fn data_1(&self) -> &[f64] {
+        &self.data_1
+    }
+}
+
+/// Serialize the whole MATLAB v4 result file for `signals`. `rows` is the
+/// row-major time-variant buffer (`n_reals` columns per row, column 0 = time);
+/// `params` holds the scalar parameter values in `MatKind::Param` order.
 pub fn write_mat4(
     signals: &[MatVar],
     start_time: f64,
@@ -96,165 +361,12 @@ pub fn write_mat4(
     params: &[f64],
     precision: Precision,
 ) -> Vec<u8> {
-    let n_reals = n_reals as usize;
-    let n_rows = if n_reals == 0 { 0 } else { rows.len() / n_reals };
-
     let mut out: Vec<u8> = Vec::new();
-
-    // Aclass (4 x 11 char), rows: "Atrajectory","1.1","","binTrans".
-    let aclass_rows = ["Atrajectory", "1.1", "", "binTrans"];
-    write_char_matrix_rows(&mut out, "Aclass", &aclass_rows, 11);
-
-    // name / description: each signal occupies one column.
-    let names: Vec<&str> = signals.iter().map(|v| v.name).collect();
-    let descs: Vec<&str> = signals.iter().map(|v| v.comment).collect();
-    write_char_matrix_cols(&mut out, "name", &names);
-    write_char_matrix_cols(&mut out, "description", &descs);
-
-    // Names can share a column, an arithmetic negation reading it through a negative
-    // dataInfo index; a Boolean one needs the `1 - v` row C's `mat4_emit4` adds.
-    let demote = n_rows >= 2;
-
-    let mut referenced = vec![false; n_reals];
-    let mut referenced_not = vec![false; n_reals];
-    for v in signals {
-        if let MatKind::Column { col, negate } = &v.kind {
-            let c = *col as usize;
-            if c < n_reals {
-                match negate {
-                    Neg::Not => referenced_not[c] = true,
-                    _ => referenced[c] = true,
-                }
-            }
-        }
-    }
-    let mut col_is_const = vec![false; n_reals];
-    if demote {
-        for c in 1..n_reals {
-            if referenced[c] || referenced_not[c] {
-                let first = rows[c];
-                col_is_const[c] = (1..n_rows).all(|r| rows[r * n_reals + c] == first);
-            }
-        }
-    }
-    // data_1 holds (after the reserved [start,stop] row) one row per scalar
-    // signal — `Param` and `Const` — in signal order, then one row per demoted
-    // constant column.
-    let n_scalars = signals
-        .iter()
-        .filter(|v| matches!(v.kind, MatKind::Param { .. } | MatKind::Const { .. }))
-        .count();
-
-    // Assign data_2 rows to varying referenced columns; data_1 rows to constant
-    // referenced columns (after [start,stop] and the scalar signals).
-    let mut col_data2_row = vec![0i32; n_reals];
-    let mut col_data1_row = vec![0i32; n_reals];
-    let mut not_data2_row = vec![0i32; n_reals];
-    let mut not_data1_row = vec![0i32; n_reals];
-    let mut varying_cols: Vec<(usize, Neg)> = Vec::new();
-    let mut const_cols: Vec<(usize, Neg)> = Vec::new();
-    let mut next_const_row: i32 = 2 + n_scalars as i32;
-    for c in 1..n_reals {
-        for neg in [Neg::None, Neg::Not] {
-            let (wanted, d1, d2) = if neg == Neg::Not {
-                (referenced_not[c], &mut not_data1_row, &mut not_data2_row)
-            } else {
-                (referenced[c], &mut col_data1_row, &mut col_data2_row)
-            };
-            if !wanted {
-                continue; // filtered-out variable
-            }
-            if col_is_const[c] {
-                const_cols.push((c, neg));
-                d1[c] = next_const_row;
-                next_const_row += 1;
-            } else {
-                varying_cols.push((c, neg));
-                d2[c] = 1 + varying_cols.len() as i32;
-            }
-        }
-    }
-
-    // dataInfo (4 x nSignals int32, column-major): [channel, index, interp, extrap].
-    let mut data_info: Vec<i32> = Vec::with_capacity(signals.len() * 4);
-    let mut next_scalar_row: i32 = 2;
-    for v in signals {
-        let info = match &v.kind {
-            MatKind::Time => [0, 1, 0, -1],
-            MatKind::Column { col, negate } => {
-                let c = *col as usize;
-                let (d1, d2, sgn) = match negate {
-                    Neg::Not => (&not_data1_row, &not_data2_row, 1),
-                    Neg::Arith => (&col_data1_row, &col_data2_row, -1),
-                    Neg::None => (&col_data1_row, &col_data2_row, 1),
-                };
-                if c < n_reals && d1[c] != 0 {
-                    [1, sgn * d1[c], 0, 0]
-                } else if c < n_reals && d2[c] != 0 {
-                    [2, sgn * d2[c], 0, 0]
-                } else {
-                    [0, 1, 0, -1] // unreachable (every Column is referenced); alias time
-                }
-            }
-            MatKind::Param { negate } => {
-                let r = next_scalar_row;
-                next_scalar_row += 1;
-                [1, if *negate == Neg::Arith { -r } else { r }, 0, 0]
-            }
-            MatKind::Const { .. } => {
-                let r = next_scalar_row;
-                next_scalar_row += 1;
-                [1, r, 0, 0]
-            }
-        };
-        data_info.extend_from_slice(&info);
-    }
-    write_int_matrix(&mut out, "dataInfo", 4, signals.len(), &data_info);
-
-    // data_1 (nData1 x 2 double, column-major): row 1 = [start, stop]; then the
-    // scalar signals (Param values, Const literals), then the demoted constant
-    // columns. `params` is in `Param`-signal order.
-    let n_data1 = 1 + n_scalars + const_cols.len();
-    let mut data_1: Vec<f64> = vec![0.0; n_data1 * 2];
-    data_1[0] = start_time;
-    data_1[n_data1] = stop_time;
-    let mut row_idx = 1usize; // 0-based index of data_1 row 2
-    let mut param_idx = 0usize;
-    for v in signals {
-        let val = match &v.kind {
-            MatKind::Param { negate } => {
-                let v = params.get(param_idx).copied().unwrap_or(0.0);
-                param_idx += 1;
-                if *negate == Neg::Not { 1.0 - v } else { v }
-            }
-            MatKind::Const { value } => *value,
-            _ => continue,
-        };
-        data_1[row_idx] = val;
-        data_1[n_data1 + row_idx] = val;
-        row_idx += 1;
-    }
-    for &(c, neg) in &const_cols {
-        let row = if neg == Neg::Not { not_data1_row[c] } else { col_data1_row[c] };
-        let idx = (row - 1) as usize;
-        let v = if neg == Neg::Not { 1.0 - rows[c] } else { rows[c] };
-        data_1[idx] = v;
-        data_1[n_data1 + idx] = v;
-    }
-    write_real_matrix(&mut out, "data_1", n_data1, 2, &data_1, precision);
-
-    // data_2 (n_reals2 x n_rows double, column-major): time + the varying columns.
-    let n_reals2 = 1 + varying_cols.len();
-    out.reserve(32 + n_rows * n_reals2 * precision.size());
-    write_mat_header(&mut out, "data_2", precision.type_code(), n_reals2, n_rows);
-    for row in rows.chunks_exact(n_reals.max(1)).take(n_rows) {
-        push_real(&mut out, row[0], precision); // time
-        for &(c, neg) in &varying_cols {
-            let v = row[c];
-            push_real(&mut out, if neg == Neg::Not { 1.0 - v } else { v }, precision);
-        }
-    }
-
+    let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
+    let mut s = Mat4Stream::begin(&mut out, signals, start_time, stop_time, first_row, n_reals, params, precision);
+    out.reserve(rows.len() / (n_reals as usize).max(1) * s.n_reals2() * precision.size());
+    s.push_rows(&mut out, rows);
+    s.finish(&mut out);
     out
 }
 
@@ -327,6 +439,10 @@ fn write_char_matrix_rows(out: &mut Vec<u8>, name: &str, rows: &[&str], ncols: u
 mod tests {
     use super::*;
 
+    fn var<'a>(name: &'a str, comment: &'a str, kind: MatKind) -> MatVar<'a> {
+        MatVar { name, comment, kind, unvarying: false }
+    }
+
     /// Locate a named matrix in the v4 stream and return (mrows, ncols, payload).
     fn find_matrix<'a>(buf: &'a [u8], want: &str) -> (usize, usize, &'a [u8]) {
         let mut p = 0;
@@ -370,10 +486,10 @@ mod tests {
     #[test]
     fn writes_expected_matrices() {
         let vars = [
-            MatVar { name: "time", comment: "Time in s", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
-            MatVar { name: "p", comment: "a param", kind: MatKind::Param { negate: Neg::None } },
-            MatVar { name: "k", comment: "", kind: MatKind::Const { value: 9.0 } },
+            var("time", "Time in s", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var("p", "a param", MatKind::Param { negate: Neg::None }),
+            var("k", "", MatKind::Const { value: 9.0 }),
         ];
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
@@ -410,18 +526,64 @@ mod tests {
         assert_eq!(d2, vec![0.0, 0.0, 0.5, 1.0, 1.0, 2.0]);
     }
 
+    /// Rows pushed in several batches produce the same file as one batch, and the
+    /// row count lands in the header only at `finish`.
+    #[test]
+    fn streams_in_batches() {
+        let vars = [
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+        ];
+        let rows = [0.0, 0.0, 0.5, 1.0, 1.0, 2.0, 1.5, 3.0];
+        let whole = write_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
+
+        let mut out: Vec<u8> = Vec::new();
+        let mut s = Mat4Stream::begin(&mut out, &vars, 0.0, 1.5, &rows[..2], 2, &[], Precision::Double);
+        s.push_rows(&mut out, &rows[..2]);
+        s.push_rows(&mut out, &rows[2..6]);
+        assert_eq!(find_matrix(&out, "data_2").1, 0);
+        s.push_rows(&mut out, &rows[6..]);
+        s.finish(&mut out);
+        assert_eq!(out, whole);
+        assert_eq!(s.n_rows(), 4);
+        assert_eq!(s.data2_pos() as usize, out.len() - 4 * 2 * 8);
+    }
+
+    /// An `unvarying` column goes to `data_1` with its initial value; an alias of
+    /// it follows.
+    #[test]
+    fn unvarying_column_in_data_1() {
+        let vars = [
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            MatVar { name: "c", comment: "", kind: MatKind::Column { col: 2, negate: Neg::None }, unvarying: true },
+            var("mc", "", MatKind::Column { col: 2, negate: Neg::Arith }),
+        ];
+        let rows = [0.0, 0.0, 4.0, /*r1*/ 1.0, 1.0, 4.0];
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
+        let di = i32s(find_matrix(&buf, "dataInfo").2);
+        assert_eq!(&di[4..8], &[2, 2, 0, 0]);
+        assert_eq!(&di[8..12], &[1, 2, 0, 0]);
+        assert_eq!(&di[12..16], &[1, -2, 0, 0]);
+        let (m1, _, d1) = find_matrix(&buf, "data_1");
+        assert_eq!(m1, 2);
+        assert_eq!(f64s(d1), vec![0.0, 4.0, 1.0, 4.0]);
+        let (m2, n2, _) = find_matrix(&buf, "data_2");
+        assert_eq!((m2, n2), (2, 2));
+    }
+
     /// Arithmetic negation shares the target's row; a Boolean one gets its own.
     #[test]
     fn negated_aliases() {
         let vars = [
-            MatVar { name: "time", comment: "", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
-            MatVar { name: "mx", comment: "", kind: MatKind::Column { col: 1, negate: Neg::Arith } },
-            MatVar { name: "b", comment: "", kind: MatKind::Column { col: 2, negate: Neg::None } },
-            MatVar { name: "nb", comment: "", kind: MatKind::Column { col: 2, negate: Neg::Not } },
-            MatVar { name: "np", comment: "", kind: MatKind::Param { negate: Neg::Not } },
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var("mx", "", MatKind::Column { col: 1, negate: Neg::Arith }),
+            var("b", "", MatKind::Column { col: 2, negate: Neg::None }),
+            var("nb", "", MatKind::Column { col: 2, negate: Neg::Not }),
+            var("np", "", MatKind::Param { negate: Neg::Not }),
         ];
-        // n_reals = 3: [time, x, b]; b toggles, so its column stays time-variant.
+        // n_reals = 3: [time, x, b].
         let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
         let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
 
@@ -466,9 +628,9 @@ mod tests {
     #[test]
     fn single_precision() {
         let vars = [
-            MatVar { name: "time", comment: "", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
-            MatVar { name: "p", comment: "", kind: MatKind::Param { negate: Neg::None } },
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var("p", "", MatKind::Param { negate: Neg::None }),
         ];
         // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
         let rows = [0.0, 0.5, 1.0, 1.5];
@@ -489,8 +651,8 @@ mod tests {
     #[test]
     fn single_precision_rounds() {
         let vars = [
-            MatVar { name: "time", comment: "", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
         ];
         // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
         let rows = [0.0, 1.0 / 3.0];
@@ -505,8 +667,8 @@ mod tests {
     #[test]
     fn single_precision_is_smaller() {
         let vars = [
-            MatVar { name: "time", comment: "", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            var("time", "", MatKind::Time),
+            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
         ];
         let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
         let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);

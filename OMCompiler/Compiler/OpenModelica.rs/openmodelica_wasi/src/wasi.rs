@@ -92,6 +92,8 @@ pub const ERRNO_FAULT: i32 = 21;
 pub const ERRNO_INVAL: i32 = 28;
 pub const ERRNO_EXIST: i32 = 20;
 pub const ERRNO_NOENT: i32 = 44;
+pub const ERRNO_ACCES: i32 = 2;
+pub const ERRNO_IO: i32 = 29;
 
 // filetype (`__wasi_filetype_t`).
 pub const FILETYPE_CHARACTER_DEVICE: u8 = 2;
@@ -130,7 +132,10 @@ enum Fd {
     PreopenDir { name: String },
     /// A directory opened by name, enumerated by `fd_readdir` against `vfs_path`.
     Dir { vfs_path: String },
-    /// A regular file, held whole in `buf` and written back as it grows.
+    /// A host file (native: the store is the filesystem itself).
+    Native { file: std::fs::File, path: String },
+    /// A regular file of the in-memory store, held whole in `buf` and written
+    /// back as it grows.
     File {
         vfs_path: String,
         buf: Vec<u8>,
@@ -200,7 +205,11 @@ impl WasiCtx {
         fds.insert(1, Fd::Stdout);
         fds.insert(2, Fd::Stderr);
         fds.insert(PREOPEN_FD, Fd::PreopenDir { name: ".".to_string() });
-        WasiCtx { cwd: cwd.into(), next_fd: PREOPEN_FD + 1, fds, args, exit_code: None }
+        // Natively a second preopen, "/", lets the guest name a host file outright.
+        if !crate::fs::IN_MEMORY {
+            fds.insert(PREOPEN_FD + 1, Fd::PreopenDir { name: "/".to_string() });
+        }
+        WasiCtx { cwd: cwd.into(), next_fd: PREOPEN_FD + 2, fds, args, exit_code: None }
     }
 
     /// The file a guest-supplied path names; a relative one is taken against the
@@ -220,6 +229,7 @@ impl WasiCtx {
         }
         let base = match self.fds.get(&dirfd) {
             Some(Fd::Dir { vfs_path }) => vfs_path.as_str(),
+            Some(Fd::PreopenDir { name }) if name == "/" => "/",
             _ => self.cwd.as_str(),
         };
         if base.is_empty() {
@@ -278,6 +288,11 @@ impl WasiCtx {
         match self.fds.get_mut(&fd) {
             Some(Fd::Stdout) => write_std(&gathered, false),
             Some(Fd::Stderr) => write_std(&gathered, true),
+            Some(Fd::Native { file, .. }) => {
+                if std::io::Write::write_all(file, &gathered).is_err() {
+                    return ERRNO_IO;
+                }
+            }
             Some(Fd::File { vfs_path, buf, pos, writable: true, dirty, append, flushed }) => {
                 if *append {
                     *pos = buf.len();
@@ -306,6 +321,27 @@ impl WasiCtx {
 
     /// `fd_read`: scatter from the fd's buffer at its position into the iovecs.
     pub fn fd_read<M: GuestMem>(&mut self, mem: &mut M, fd: u32, iovs: u32, iovs_len: u32, nread: u32) -> i32 {
+        if let Some(Fd::Native { file, .. }) = self.fds.get_mut(&fd) {
+            let mut total = 0u32;
+            for i in 0..iovs_len {
+                let base = iovs + i * 8;
+                let Some(dst) = Self::rd_u32(mem, base) else { return ERRNO_FAULT };
+                let Some(len) = Self::rd_u32(mem, base + 4) else { return ERRNO_FAULT };
+                let mut tmp = vec![0u8; len as usize];
+                let Ok(n) = std::io::Read::read(file, &mut tmp) else { return ERRNO_IO };
+                if n == 0 {
+                    break;
+                }
+                if !mem.write(dst, &tmp[..n]) {
+                    return ERRNO_FAULT;
+                }
+                total += n as u32;
+                if n < len as usize {
+                    break;
+                }
+            }
+            return if Self::wr_u32(mem, nread, total) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+        }
         let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else { return ERRNO_BADF };
         let mut total = 0u32;
         for i in 0..iovs_len {
@@ -331,6 +367,17 @@ impl WasiCtx {
 
     /// `fd_seek`: reposition the fd and report the new offset.
     pub fn fd_seek<M: GuestMem>(&mut self, mem: &mut M, fd: u32, offset: i64, whence: i32, newoffset: u32) -> i32 {
+        if let Some(Fd::Native { file, .. }) = self.fds.get_mut(&fd) {
+            use std::io::{Seek, SeekFrom};
+            let from = match whence {
+                WHENCE_SET if offset >= 0 => SeekFrom::Start(offset as u64),
+                WHENCE_CUR => SeekFrom::Current(offset),
+                WHENCE_END => SeekFrom::End(offset),
+                _ => return ERRNO_INVAL,
+            };
+            let Ok(np) = file.seek(from) else { return ERRNO_INVAL };
+            return if Self::wr_u64(mem, newoffset, np) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+        }
         let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else { return ERRNO_BADF };
         let base = match whence {
             WHENCE_SET => 0i64,
@@ -395,7 +442,26 @@ impl WasiCtx {
 
         let writable = (fs_rights_base & RIGHTS_FD_WRITE) != 0
             || (oflags & (OFLAGS_CREAT | OFLAGS_TRUNC)) != 0;
-        let file = if writable {
+        let file = if !crate::fs::IN_MEMORY {
+            let mut o = std::fs::OpenOptions::new();
+            o.read(true);
+            if writable {
+                o.write(true).create(oflags & OFLAGS_CREAT != 0).truncate(oflags & OFLAGS_TRUNC != 0);
+                if fdflags & FDFLAGS_APPEND != 0 {
+                    o.append(true);
+                }
+            }
+            match o.open(&vfs_path) {
+                Ok(file) => Fd::Native { file, path: vfs_path },
+                Err(e) => {
+                    return match e.kind() {
+                        std::io::ErrorKind::NotFound => ERRNO_NOENT,
+                        std::io::ErrorKind::PermissionDenied => ERRNO_ACCES,
+                        _ => ERRNO_IO,
+                    };
+                }
+            }
+        } else if writable {
             let buf = match oflags & OFLAGS_TRUNC {
                 0 => crate::fs::read(&vfs_path).unwrap_or_default(),
                 _ => Vec::new(),
@@ -445,7 +511,7 @@ impl WasiCtx {
         let filetype = match self.fds.get(&fd) {
             Some(Fd::Stdout | Fd::Stderr) => FILETYPE_CHARACTER_DEVICE,
             Some(Fd::PreopenDir { .. } | Fd::Dir { .. }) => FILETYPE_DIRECTORY,
-            Some(Fd::File { .. }) => FILETYPE_REGULAR_FILE,
+            Some(Fd::File { .. } | Fd::Native { .. }) => FILETYPE_REGULAR_FILE,
             None => return ERRNO_BADF,
         };
         if !Self::wr_u8(mem, buf, filetype) {
@@ -463,6 +529,9 @@ impl WasiCtx {
     pub fn fd_filestat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
         let (filetype, size, mtime) = match self.fds.get(&fd) {
             Some(Fd::File { buf, vfs_path, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64, file_mtime(vfs_path)),
+            Some(Fd::Native { file, path }) => {
+                (FILETYPE_REGULAR_FILE, file.metadata().map(|m| m.len()).unwrap_or(0), file_mtime(path))
+            }
             Some(Fd::PreopenDir { .. } | Fd::Dir { .. }) => (FILETYPE_DIRECTORY, 0, 0),
             Some(Fd::Stdout | Fd::Stderr) => (FILETYPE_CHARACTER_DEVICE, 0, 0),
             None => return ERRNO_BADF,

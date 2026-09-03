@@ -78,6 +78,70 @@ pub fn read_to_string(path: &str) -> io::Result<String> {
     }
 }
 
+/// A sequential writer with one seek-back: a buffered `std::fs::File` natively,
+/// the in-memory store on the web target.
+pub enum Writer {
+    Disk(io::BufWriter<std::fs::File>),
+    Mem(String),
+}
+
+impl Writer {
+    /// Create or truncate `path`.
+    pub fn create(path: &str) -> io::Result<Writer> {
+        if IN_MEMORY {
+            crate::write(path, Vec::new());
+            Ok(Writer::Mem(path.to_string()))
+        } else {
+            let f = std::fs::File::create(path)?;
+            Ok(Writer::Disk(io::BufWriter::with_capacity(1 << 20, f)))
+        }
+    }
+
+    pub fn write_all(&mut self, bytes: &[u8]) -> io::Result<()> {
+        match self {
+            Writer::Disk(w) => io::Write::write_all(w, bytes),
+            Writer::Mem(p) => {
+                crate::append(p, bytes);
+                Ok(())
+            }
+        }
+    }
+
+    /// Overwrite `bytes` at byte offset `pos`, then continue at the end.
+    pub fn write_at(&mut self, pos: u64, bytes: &[u8]) -> io::Result<()> {
+        match self {
+            Writer::Disk(w) => {
+                let end = w.seek(SeekFrom::End(0))?;
+                w.seek(SeekFrom::Start(pos))?;
+                io::Write::write_all(w, bytes)?;
+                w.seek(SeekFrom::Start(end.max(pos + bytes.len() as u64)))?;
+                Ok(())
+            }
+            Writer::Mem(p) => {
+                crate::write_at(p, pos as usize, bytes);
+                Ok(())
+            }
+        }
+    }
+
+    pub fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Writer::Disk(w) => io::Write::flush(w),
+            Writer::Mem(_) => Ok(()),
+        }
+    }
+}
+
+/// Run `f` over the bytes of `path` without a copy on the web target (natively the
+/// file is read whole).
+pub fn with_bytes<R>(path: &str, f: impl FnOnce(&[u8]) -> R) -> io::Result<R> {
+    if IN_MEMORY {
+        crate::with_bytes(path, f).ok_or_else(|| not_found(path))
+    } else {
+        Ok(f(&std::fs::read(path)?))
+    }
+}
+
 pub fn write(path: &str, bytes: &[u8]) -> io::Result<()> {
     if IN_MEMORY {
         crate::write(path, bytes.to_vec());

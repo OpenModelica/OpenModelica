@@ -615,6 +615,9 @@ pub struct MetaVar {
     pub kind: MetaKind,
     /// C's `filterOutput`, split into its reasons ([`var_filter`]).
     pub filter: u8,
+    /// C's `time_unvarying`: a `Column` computed once during initialization
+    /// (a literal parameter equation), which the `.mat` stores in `data_1`.
+    pub unvarying: bool,
 }
 
 /// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
@@ -1577,6 +1580,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, &v.comment);
         put_kind(&mut o, &v.kind);
         o.push(v.filter);
+        o.push(v.unvarying as u8);
     }
     put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
@@ -2060,7 +2064,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nvars = r.u32()? as usize;
     let mut vars = Vec::with_capacity(nvars);
     for _ in 0..nvars {
-        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
+        vars.push(MetaVar {
+            name: r.string()?,
+            comment: r.string()?,
+            kind: r.kind()?,
+            filter: r.u8()?,
+            unvarying: r.u8()? != 0,
+        });
     }
     let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
@@ -2405,12 +2415,12 @@ mod tests {
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0 },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0, unvarying: false },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED, unvarying: false },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS, unvarying: false },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0, unvarying: false },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT, unvarying: false },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED, unvarying: false },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,

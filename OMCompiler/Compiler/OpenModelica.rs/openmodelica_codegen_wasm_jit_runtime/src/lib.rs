@@ -403,6 +403,9 @@ mod ext_report_hosted {
 #[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
 
+#[cfg(all(target_os = "wasi", any(feature = "standalone", feature = "session")))]
+mod result_out;
+
 // The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
 // in-wasm so the model is reached wasm->wasm via the shared table. Both JIT
 // runtimes (unknown-unknown for web, wasip1 for native) enable it via the

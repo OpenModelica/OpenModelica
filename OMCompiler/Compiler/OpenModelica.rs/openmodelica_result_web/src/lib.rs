@@ -160,7 +160,7 @@ impl ResultFile {
                 rows.push(c[r]);
             }
         }
-        let mat_vars: Vec<MatVar> = signals.iter().map(|(name, comment, kind)| MatVar { name, comment, kind: *kind }).collect();
+        let mat_vars: Vec<MatVar> = signals.iter().map(|(name, comment, kind)| MatVar { name, comment, kind: *kind, unvarying: false }).collect();
         Ok(write_mat4(&mat_vars, start, stop, &rows, n_reals as u32, &params, Precision::Double))
     }
 

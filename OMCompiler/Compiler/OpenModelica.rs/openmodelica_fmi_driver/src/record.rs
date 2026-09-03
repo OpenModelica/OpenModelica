@@ -311,12 +311,14 @@ impl Recorder {
             name: "time",
             comment: "Simulation time [s]",
             kind: mat::MatKind::Time,
+            unvarying: false,
         }];
         for (i, c) in self.columns.iter().enumerate() {
             signals.push(mat::MatVar {
                 name: &c.name,
                 comment: &c.description,
                 kind: mat::MatKind::Column { col: i as u32 + 1, negate: mat::Neg::None },
+                unvarying: false,
             });
         }
         for (name, description, col, negated) in &self.aliases {
@@ -327,6 +329,7 @@ impl Recorder {
                     col: *col as u32,
                     negate: if *negated { mat::Neg::Arith } else { mat::Neg::None },
                 },
+                unvarying: false,
             });
         }
         let mut params: Vec<f64> = Vec::with_capacity(self.parameters.len() + self.param_aliases.len());
@@ -335,6 +338,7 @@ impl Recorder {
                 name,
                 comment: description,
                 kind: mat::MatKind::Param { negate: mat::Neg::None },
+                unvarying: false,
             });
             params.push(*value);
         }
@@ -343,6 +347,7 @@ impl Recorder {
                 name,
                 comment: description,
                 kind: mat::MatKind::Param { negate: if *negated { mat::Neg::Arith } else { mat::Neg::None } },
+                unvarying: false,
             });
             params.push(self.parameters[*index].2);
         }

@@ -38,7 +38,11 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
     Ok(())
 }
 
-pub fn run(_model: &SimModel, _meta: &openmodelica_sim_meta::SimMeta) -> std::result::Result<RunResult, String> {
+pub fn run(
+    _model: &SimModel,
+    _meta: &openmodelica_sim_meta::SimMeta,
+    _result: crate::result_sink::ResultTarget,
+) -> std::result::Result<(RunResult, crate::result_sink::Written), String> {
     return Err(NO_ENGINE.to_string())
 }
 
