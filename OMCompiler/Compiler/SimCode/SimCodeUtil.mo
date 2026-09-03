@@ -15791,21 +15791,41 @@ end filterScalarLiteralAssignments;
 
 public function sortSimpleAssignmentBasedOnLhs
   input output list<SimCode.SimEqSystem> eqs;
+protected
+  SimCode.SimCode simCode = getSimCode();
 algorithm
-  eqs := List.sort(eqs, function lhsGreaterThan(simCode=getSimCode()));
+  eqs := list(Util.tuple21(e) for e in List.sort(list((eq, lhsSortKey(eq, simCode)) for eq in eqs), keyedLhsGreaterThan));
 end sortSimpleAssignmentBasedOnLhs;
 
-protected function lhsGreaterThan
-  input SimCode.SimEqSystem eq1,eq2;
+protected function lhsSortKey
+  "Type, kind and index of a simple assignment's variable; none for other equations."
+  input SimCode.SimEqSystem eq;
   input SimCode.SimCode simCode;
+  output Option<tuple<Integer, Integer, Integer>> key;
+algorithm
+  key := match eq
+    local
+      SimCodeVar.SimVar v;
+    case SimCode.SES_SIMPLE_ASSIGN()
+      algorithm
+        v := cref2simvar(eq.cref, simCode);
+      then SOME((valueConstructor(v.type_), valueConstructor(v.varKind), v.index));
+    else NONE();
+  end match;
+end lhsSortKey;
+
+protected function keyedLhsGreaterThan
+  input tuple<SimCode.SimEqSystem, Option<tuple<Integer, Integer, Integer>>> e1, e2;
   output Boolean b;
 algorithm
-  b := match (eq1,eq2)
-    case (SimCode.SES_SIMPLE_ASSIGN(),SimCode.SES_SIMPLE_ASSIGN())
-      then simvarGraterThan(cref2simvar(eq1.cref, simCode), cref2simvar(eq2.cref, simCode));
+  b := match (e1, e2)
+    local
+      Integer t1, k1, i1, t2, k2, i2;
+    case ((_, SOME((t1, k1, i1))), (_, SOME((t2, k2, i2))))
+      then if t1 == t2 then (if k1 == k2 then i1 > i2 else k1 > k2) else t1 > t2;
     else false;
   end match;
-end lhsGreaterThan;
+end keyedLhsGreaterThan;
 
 protected function simvarGraterThan
   input SimCodeVar.SimVar v1,v2;
