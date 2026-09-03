@@ -1410,6 +1410,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
     let sysroot = std::env::var("OMC_WASI_PIC_SYSROOT")
         .expect("OMC_WASI_PIC_SYSROOT not set (CMake provides it)");
+    let hdf5 = wasm_hdf5();
 
     let all_srcs: Vec<_> = src_paths.iter().chain(zlib_srcs.iter()).collect();
     let hash = {
@@ -1420,6 +1421,9 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         }
         mix(clang.as_bytes());
         mix(sysroot.as_bytes());
+        if let Some((_, archive)) = &hdf5 {
+            if let Ok(b) = std::fs::read(archive) { mix(&b); }
+        }
         for s in HOST_PROVIDED { mix(s.as_bytes()); }
         for s in EXTRA_LINK_ARGS { mix(s.as_bytes()); }
         format!("{h:016x}")
@@ -1449,8 +1453,13 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
         .args(&all_srcs).arg(&stubs).arg(&callbacks)
-        .arg("-lc")
-        .arg(&builtins)
+        .arg("-lc");
+    if let Some((include, archive)) = &hdf5 {
+        // HDF5's plugin loader's dlopen/dlsym are stubbed in
+        // external_c_callbacks.c, so they never reach HOST_PROVIDED.
+        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include).arg(archive);
+    }
+    cmd.arg(&builtins)
         .args(EXTRA_LINK_ARGS)
         .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
         .arg("-o").arg(&dest);
@@ -1468,6 +1477,20 @@ fn collect_c_files(dir: &Path) -> Vec<PathBuf> {
     rd.flatten().map(|e| e.path())
         .filter(|p| p.extension().map(|x| x == "c").unwrap_or(false))
         .collect()
+}
+
+/// The HDF5 wasm install tree (`OMC_WASM_HDF5_DIR`, from CMake's
+/// rust_hdf5_wasm) that gives ModelicaMatIO its MAT v7.3 support. Absent, v7.3
+/// files are rejected at `Mat_Open`.
+fn wasm_hdf5() -> Option<(PathBuf, PathBuf)> {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_HDF5_DIR");
+    let dir = PathBuf::from(std::env::var("OMC_WASM_HDF5_DIR").ok()?);
+    let archive = dir.join("lib/libhdf5.a");
+    println!("cargo:rerun-if-changed={}", archive.display());
+    if !archive.exists() {
+        panic!("OMC_WASM_HDF5_DIR={} has no lib/libhdf5.a", dir.display());
+    }
+    Some((dir.join("include"), archive))
 }
 
 /// Locate the clang wasm builtins archive (`libclang_rt.builtins-wasm32.a`).

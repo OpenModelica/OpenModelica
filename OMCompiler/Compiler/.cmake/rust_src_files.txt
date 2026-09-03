@@ -278,6 +278,10 @@ openmodelica_fmi_web/Cargo.lock
 openmodelica_fmi_web/Cargo.toml
 openmodelica_fmi_web/build.rs
 openmodelica_fmi_web/src/lib.rs
+openmodelica_hdf5/Cargo.lock
+openmodelica_hdf5/Cargo.toml
+openmodelica_hdf5/build.rs
+openmodelica_hdf5/src/lib.rs
 openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
 openmodelica_frontend_base/Cargo.toml

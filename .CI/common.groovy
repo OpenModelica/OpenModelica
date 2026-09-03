@@ -735,7 +735,9 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm'
+  // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
+  // works.
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   if (isWasmTarget) {
     suites += ',-cSources,-fmuCSources'
@@ -1200,7 +1202,9 @@ void partestCMakeStashed(stashName, partition, partitionmodulo) {
   // Susan's generated *.mo files are in the build tree
   def ws = sh(script: 'pwd', returnStdout: true).trim()
   withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
-    partest(partition, partitionmodulo)
+    // hdf5: unlike the autotools build, this one links the system HDF5, which
+    // gives it MAT v7.3.
+    partest(partition, partitionmodulo, true, '-suites=+hdf5')
   }
 }
 

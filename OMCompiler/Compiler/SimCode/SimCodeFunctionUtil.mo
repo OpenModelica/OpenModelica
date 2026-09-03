@@ -2397,6 +2397,12 @@ algorithm
         Error.addCompilerNotification("X11 library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
+    // The installed archive carries the MAT v7.3 paths, so a link line naming
+    // it needs HDF5 too, ahead of the zlib that follows in the expansion below:
+    // HDF5's deflate filter calls compress2.
+    case Absyn.STRING("ModelicaMatIO") guard Autoconf.hdf5Libs <> ""
+      then ({"-lModelicaMatIO", Autoconf.hdf5Libs},{});
+
     case Absyn.STRING(str as "omcruntime")
       algorithm
         if "Windows_NT" == Autoconf.os then

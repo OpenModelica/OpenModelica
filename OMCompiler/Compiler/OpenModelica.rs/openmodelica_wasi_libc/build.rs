@@ -73,6 +73,20 @@ fn ensure_pic_wasi_sysroot() -> PathBuf {
     panic!("OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());
 }
 
+/// The HDF5 wasm install tree (`OMC_WASM_HDF5_DIR`, from CMake's
+/// rust_hdf5_wasm) that gives ModelicaMatIO its MAT v7.3 support. Absent, v7.3
+/// files are rejected at `Mat_Open`.
+fn wasm_hdf5() -> Option<(PathBuf, PathBuf)> {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_HDF5_DIR");
+    let dir = PathBuf::from(std::env::var("OMC_WASM_HDF5_DIR").ok()?);
+    let archive = dir.join("lib/libhdf5.a");
+    println!("cargo:rerun-if-changed={}", archive.display());
+    if !archive.exists() {
+        panic!("OMC_WASM_HDF5_DIR={} has no lib/libhdf5.a", dir.display());
+    }
+    Some((dir.join("include"), archive))
+}
+
 /// Compile ModelicaExternalC (+ `external_c_callbacks.c`,
 /// `external_c_stubs.c`) to a PIC dylink side module, then strip its
 /// `_initialize` export: reactor mode emits both `_initialize` and
@@ -109,14 +123,20 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let raw = out_dir.join("modelicaexternalc_dylink_raw.wasm");
     let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
-    let status = Command::new(&clang)
-        .arg(format!("--target={triple}"))
+    let mut cmd = Command::new(&clang);
+    cmd.arg(format!("--target={triple}"))
         .arg(format!("--sysroot={}", sysroot.display()))
         .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", POSIX_VERSION,
                "-DNO_MUTEX", "-DHAVE_ZLIB", "-Wno-error=implicit-function-declaration"])
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
-        .args(&srcs).arg(&stubs).arg(&callbacks)
+        .args(&srcs).arg(&stubs).arg(&callbacks);
+    if let Some((include, archive)) = wasm_hdf5() {
+        // HDF5's plugin loader's dlopen/dlsym are stubbed in
+        // external_c_callbacks.c under the same HAVE_HDF5.
+        cmd.arg("-DHAVE_HDF5=1").arg("-I").arg(include).arg(archive);
+    }
+    let status = cmd
         .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
                "-Wl,--export-all", "-Wl,--allow-undefined"])
         .arg(&builtins)

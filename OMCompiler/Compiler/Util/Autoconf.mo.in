@@ -26,6 +26,7 @@ encapsulated package Autoconf
   constant String ldflags_runtime_sim_rust = "@RT_LDFLAGS_GENERATED_CODE_SIM_RUST@";
   constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";
   constant String ldflags_runtime_fmu_static = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC@";
+  constant String hdf5Libs = "@OMC_HDF5_LDFLAGS@";
 
   // Libraries linked into generated simulation code when --parmodauto (ParModelica auto) is enabled.
   constant String parModelicaAutoLibs = "@PARMODELICAAUTO_LDFLAGS@";

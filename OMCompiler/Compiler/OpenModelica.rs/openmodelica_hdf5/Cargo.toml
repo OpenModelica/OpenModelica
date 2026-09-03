@@ -1,0 +1,23 @@
+[package]
+name = "openmodelica_hdf5"
+version = "0.1.0"
+edition = "2024"
+
+# hdf5-metno-src is the HDF5 C library itself; its build script hands the
+# install tree to direct dependents as DEP_HDF5SRC_*. Everything needing HDF5
+# comes through this crate, so there is one HDF5 in the tree.
+#
+# Optional so a bare `cargo build --workspace` does not spend a minute building
+# it. CMake's rust_hdf5_wasm passes `--features library`.
+[dependencies]
+hdf5-metno-src = { version = "0.10", optional = true }
+
+[features]
+library = ["dep:hdf5-metno-src"]
+
+[lib]
+path = "src/lib.rs"
+
+# Its own [workspace], like openmodelica_lapack: the enclosing one only resolves
+# after mmtorust has generated the crates that have no committed src/.
+[workspace]
