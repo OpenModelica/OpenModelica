@@ -509,7 +509,7 @@ void LSPClient::processMessage(const QJsonObject &message)
         const QJsonObject error = message["error"].toObject();
         emit serverError(tr("Language server request '%1' failed: %2").arg(method, error["message"].toString()));
       } else {
-        handleResponse(id, message["result"]);
+        handleResponse(id, method, message["result"]);
       }
     }
   } else if (message.contains("method")) {
@@ -534,10 +534,8 @@ void LSPClient::processMessage(const QJsonObject &message)
  * \brief LSPClient::handleResponse
  * Handles a JSON-RPC response for a previously sent request.
  */
-void LSPClient::handleResponse(int id, const QJsonValue &result)
+void LSPClient::handleResponse(int id, const QString &method, const QJsonValue &result)
 {
-  QString method = mPendingRequests.value(id);
-
   if (method == QStringLiteral("initialize")) {
     // Complete the handshake
     QJsonObject initializedNotif;

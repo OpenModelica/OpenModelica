@@ -41,6 +41,7 @@
 #include <QProcess>
 #include <QByteArray>
 #include <QHash>
+#include <QMap>
 #include <QJsonObject>
 
 /*!
@@ -98,7 +99,7 @@ private:
   QByteArray mReadBuffer;
   int mNextId;
   bool mInitialized;
-  QHash<int, QString> mPendingRequests; // id -> method name
+  QMap<int, QString> mPendingRequests; // id -> method name, ordered so the oldest id is begin()
   QHash<QString, DocumentState> mOpenDocuments; // uri -> open state
 
   // Arguments of the most recent start(), reused to auto-restart after a crash.
@@ -114,7 +115,7 @@ private:
   void sendMessage(const QJsonObject &message);
   int sendRequest(const QString &method, const QJsonObject &params);
   void processMessage(const QJsonObject &message);
-  void handleResponse(int id, const QJsonValue &result);
+  void handleResponse(int id, const QString &method, const QJsonValue &result);
   void handleNotification(const QString &method, const QJsonObject &params);
   int nextId() { return mNextId++; }
   void logCrashEvent(const QString &line);
