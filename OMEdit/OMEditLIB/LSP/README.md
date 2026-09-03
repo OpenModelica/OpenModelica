@@ -19,7 +19,9 @@ capabilities inside the text editor.
 Open *Tools > Options > Language Server* and:
 
 1. Check the *Language Server Protocol (LSP)* group.
-2. Leave *Server Executable* blank — OMEdit will use the bundled server automatically.
+2. Leave *Server Executable* blank — OMEdit uses a bundled server automatically if one
+   was installed with it (see [Bundled server](#bundled-server)); otherwise use
+   *Download...* to fetch one.
 3. Click *OK*. The language server starts immediately.
 
 If Node.js is not installed, a setup dialog appears offering the two ways to get
@@ -48,6 +50,14 @@ platform into OMEdit's application data directory and points *Server Executable*
 at it. The Node.js runtime is built into that executable, so nothing else has to
 be installed. The drop-down beside the button chooses between the release OMEdit
 was built against and the latest one published.
+
+The download is verified: OMEdit reads the SHA256 the GitHub release publishes for
+each asset, hashes what it received, and writes the files out only if they match —
+so a corrupted or substituted download never becomes the executable it starts. The
+server binary and both WASM files are staged in a temporary directory and only
+replace an installed server once all three have arrived and passed. If a release
+publishes no checksums (older ones do not), OMEdit says which files cannot be
+verified and asks before downloading them, defaulting to no.
 
 ### Bundled server (needs Node.js)
 
@@ -86,21 +96,26 @@ Set *Server Executable* to any LSP-compatible Modelica server executable:
 
 ## Bundled server
 
-OMEdit ships with a pre-built copy of the
+A build can install a copy of the
 [Modelica Language Server](https://github.com/OpenModelica/modelica-language-server)
 in `<install_prefix>/share/omedit/languageserver/` (Linux/macOS) or
-`<install_prefix>/bin/languageserver/` (Windows).
+`<install_prefix>/bin/languageserver/` (Windows). **The build never downloads one.** A
+default build installs no server; the user gets one from *Download...* on the options
+page, or points *Server Executable* at a server they already have.
 
 The bundle consists of three files that must stay together:
 - `server.js` — the language server bundle
 - `tree-sitter-modelica.wasm` — Modelica grammar for tree-sitter
 - `web-tree-sitter.wasm` — the tree-sitter WebAssembly runtime
 
-At build time, CMake downloads a pinned `modelica-language-server` release
-(`MODELICA_LS_VERSION`) and verifies it against a known SHA256
-(`MODELICA_LS_TGZ_SHA256`) before extracting these three files. Set
-`MODELICA_LS_DIR` to a local build directory to bundle that instead, e.g. when
-developing against an unreleased server version.
+To install a server with OMEdit, build one yourself and configure with
+`-DMODELICA_LS_DIR=<dir>`, where `<dir>` holds those three files — mainly useful when
+developing against an unreleased server version. CMake copies them into the install tree
+and warns (without failing) if any is missing. Nothing is fetched at configure time.
+
+`MODELICA_LS_VERSION` is unrelated to installing: it names the release the options page
+offers to download, and is passed to `OMEditLib` as a compile definition so the version
+OMEdit was tested with is the one it offers.
 
 ## Architecture
 

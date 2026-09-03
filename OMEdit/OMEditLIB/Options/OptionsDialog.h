@@ -53,6 +53,7 @@
 #include <QTreeWidget>
 #include <QDialog>
 #include <QLineEdit>
+#include <QHash>
 
 class GeneralSettingsPage;
 class LibrariesPage;
@@ -1208,7 +1209,9 @@ private:
   static QString platformServerAsset();
   static QString testedServerVersion();
   QString selectedReleaseTag() const;
-  bool downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination, QProgressDialog *pProgressDialog);
+  bool fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog);
+  bool downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination, const QString &expectedSha256,
+                            QProgressDialog *pProgressDialog);
 private slots:
   void browseServerExecutable();
   void autoDetectServerExecutable();
