@@ -469,6 +469,8 @@ endif()
 if(MINGW)
   target_link_libraries(OMEditLib PUBLIC binutils::bfd)
   target_link_libraries(OMEditLib PUBLIC zlib)
+  # PersistentStorage.cpp uses CryptProtectData/CryptUnprotectData which live in crypt32.
+  target_link_libraries(OMEditLib PUBLIC crypt32)
 endif()
 
 target_include_directories(OMEditLib PUBLIC ${OMC_SCRIPTING_API_QT_DIR})

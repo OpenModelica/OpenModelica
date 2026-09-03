@@ -44,10 +44,10 @@ LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
 msystem_prefix = $$(MSYSTEM_PREFIX)
 contains(msystem_prefix, .*ucrt64.*) {
   BFD_PATH = $$(MSYSTEM_PREFIX)/lib
-  BFD_LIBS = -lbfd -lintl -liberty -lsframe -lzstd -lzlib
+  BFD_LIBS = -lbfd -lintl -liberty -lsframe -lzstd -lzlib -lcrypt32
 } else {
   BFD_PATH = $$(MSYSTEM_PREFIX)/lib/binutils
-  BFD_LIBS = -lbfd -lintl -liberty -lzlib
+  BFD_LIBS = -lbfd -lintl -liberty -lzlib -lcrypt32
 }
 
 CONFIG(release, debug|release) { # release
