@@ -168,6 +168,7 @@ pub struct JACOBIAN {
     pub evalColumn: jacobianColumn_func_ptr,
     pub constantEqns: jacobianColumn_func_ptr,
     pub isRowEval: modelica_boolean,
+    pub cscPattern: *mut SPARSE_PATTERN,
     pub isBidirectional: modelica_boolean,
     pub adjointJacobian: *mut JACOBIAN,
     pub recoverMask: *mut u8,
@@ -765,6 +766,7 @@ pub struct SIMULATION_INFO {
     pub sensitivityParList: *mut c_int,
 
     pub analyticJacobians: *mut JACOBIAN,
+    pub odeJacobian: *mut JACOBIAN,
 
     pub nonlinearSystemData: *mut NONLINEAR_SYSTEM_DATA,
     pub linearSystemData: *mut LINEAR_SYSTEM_DATA,
