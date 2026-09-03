@@ -1,0 +1,166 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+
+QWidget {
+  background-color: #202124;
+  color: #e8eaed;
+  selection-background-color: #3b82f6;
+  selection-color: #ffffff;
+}
+
+QMainWindow, QMenuBar, QMenu, QToolBar, QDockWidget, QStatusBar, QTabWidget::pane {
+  background-color: #202124;
+  color: #e8eaed;
+}
+
+QDockWidget::title {
+  background-color: #2b2d31;
+  color: #e8eaed;
+  padding: 4px;
+}
+
+QMenu {
+  border: 1px solid #4b5563;
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+  background-color: #3a3f44;
+}
+
+QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QTreeView, QTreeWidget, QListView, QListWidget, QTableView, QTableWidget,
+QGraphicsView, QMdiArea, QScrollArea {
+  background-color: #111827;
+  color: #f3f4f6;
+  border: 1px solid #4b5563;
+}
+
+QTextEdit:disabled, QTextBrowser:disabled, QPlainTextEdit:disabled {
+  background-color: #1f2937;
+  color: #cbd5e1;
+}
+
+QTextEdit[readOnly="true"], QTextBrowser[readOnly="true"], QPlainTextEdit[readOnly="true"] {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+QTextBrowser {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+QAbstractItemView::item:selected {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+QHeaderView::section {
+  background-color: #374151;
+  color: #f3f4f6;
+  border: 1px solid #4b5563;
+}
+
+QPushButton, QToolButton, QComboBox, QSpinBox, QDoubleSpinBox {
+  background-color: #374151;
+  color: #f3f4f6;
+  border: 1px solid #6b7280;
+  padding: 4px;
+}
+
+QPushButton:hover, QToolButton:hover, QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover {
+  background-color: #4b5563;
+}
+
+QPushButton:disabled, QToolButton:disabled, QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled {
+  background-color: #2b2d31;
+  color: #9ca3af;
+  border: 1px solid #4b5563;
+}
+
+QComboBox QAbstractItemView {
+  background-color: #111827;
+  color: #f3f4f6;
+  selection-background-color: #1d4ed8;
+  selection-color: #ffffff;
+}
+
+QTabBar::tab {
+  background-color: #374151;
+  color: #f3f4f6;
+  padding: 6px 10px;
+  border: 1px solid #4b5563;
+}
+
+QTabBar::tab:selected {
+  background-color: #111827;
+}
+
+QTabBar::tab:disabled {
+  color: #9ca3af;
+}
+
+QGroupBox {
+  border: 1px solid #4b5563;
+  margin-top: 8px;
+}
+
+QGroupBox::title {
+  subcontrol-origin: margin;
+  left: 8px;
+  padding: 0 3px;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+  background: #111827;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+  background: #6b7280;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+  background: #9ca3af;
+}
+
+QSplitter::handle {
+  background-color: #4b5563;
+}
+
+QToolTip {
+  background-color: #111827;
+  color: #f3f4f6;
+  border: 1px solid #6b7280;
+}

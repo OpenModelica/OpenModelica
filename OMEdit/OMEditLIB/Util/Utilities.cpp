@@ -1070,7 +1070,7 @@ void Utilities::highlightCurrentLine(QPlainTextEdit *pPlainTextEdit)
 {
   QList<QTextEdit::ExtraSelection> selections = pPlainTextEdit->extraSelections();
   QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
+  QColor lineColor = qApp->property("omeditDarkMode").toBool() ? QColor(38, 47, 61) : QColor(232, 242, 254);
   selection.format.setBackground(lineColor);
   selection.format.setProperty(QTextFormat::FullWidthSelection, true);
   selection.cursor = pPlainTextEdit->textCursor();

@@ -47,6 +47,7 @@
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
 
+#include <QApplication>
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
@@ -753,8 +754,13 @@ bool PlainTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
   QWidget *pCompleterToolTipWidget = qobject_cast<QWidget*>(pObject);
   if (pCompleterToolTipWidget && pEvent->type() == QEvent::Paint) {
     QPainter painter (pCompleterToolTipWidget);
-    painter.setPen(Qt::black);
-    painter.setBrush(Qt::white);
+    if (qApp->property("omeditDarkMode").toBool()) {
+      painter.setPen(QColor(107, 114, 128));
+      painter.setBrush(QColor(17, 24, 39));
+    } else {
+      painter.setPen(Qt::black);
+      painter.setBrush(Qt::white);
+    }
     QRect rectangle = pCompleterToolTipWidget->rect();
     rectangle.setWidth(pCompleterToolTipWidget->rect().width() - 1);
     rectangle.setHeight(pCompleterToolTipWidget->rect().height() - 1);
@@ -921,7 +927,8 @@ int PlainTextEdit::lineNumberAreaWidth()
 void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
   QPainter painter(mpLineNumberArea);
-  painter.fillRect(event->rect(), QColor(240, 240, 240));
+  const bool darkMode = qApp->property("omeditDarkMode").toBool();
+  painter.fillRect(event->rect(), darkMode ? QColor(31, 41, 55) : QColor(240, 240, 240));
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
@@ -979,9 +986,9 @@ void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       }
       // make the current highlighted line number darker
       if (blockNumber == textCursor().blockNumber()) {
-        painter.setPen(QColor(64, 64, 64));
+        painter.setPen(darkMode ? QColor(229, 231, 235) : QColor(64, 64, 64));
       } else {
-        painter.setPen(Qt::gray);
+        painter.setPen(darkMode ? QColor(156, 163, 175) : QColor(Qt::gray));
       }
       painter.setFont(document()->defaultFont());
       painter.drawText(0, top, lineNumbersWidth, fm.height(), Qt::AlignRight, number);
@@ -991,7 +998,7 @@ void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     if (pTextEditorPage->getSyntaxHighlightingGroupBox()->isChecked() && pTextEditorPage->getCodeFoldingCheckBox()->isChecked()) {
       painter.save();
       painter.setRenderHint(QPainter::Antialiasing, false);
-      painter.setPen(Qt::gray);
+      painter.setPen(darkMode ? QColor(156, 163, 175) : QColor(Qt::gray));
 
       TextBlockUserData *nextBlockUserData = BaseEditorDocumentLayout::testUserData(nextBlock);
       bool drawFoldingControl = nextBlockUserData && BaseEditorDocumentLayout::foldingIndent(block) < nextBlockUserData->foldingIndent();
@@ -3022,8 +3029,13 @@ InfoBar::InfoBar(QWidget *pParent)
   : QFrame(pParent)
 {
   QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor(255, 255, 225));
-  pal.setColor(QPalette::WindowText, Qt::black);
+  if (qApp->property("omeditDarkMode").toBool()) {
+    pal.setColor(QPalette::Window, QColor(31, 41, 55));
+    pal.setColor(QPalette::WindowText, QColor(232, 234, 237));
+  } else {
+    pal.setColor(QPalette::Window, QColor(255, 255, 225));
+    pal.setColor(QPalette::WindowText, Qt::black);
+  }
   setPalette(pal);
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -3065,8 +3077,13 @@ ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
   : QFrame(pBaseEditor)
 {
   QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor(255, 255, 225));
-  pal.setColor(QPalette::WindowText, Qt::black);
+  if (qApp->property("omeditDarkMode").toBool()) {
+    pal.setColor(QPalette::Window, QColor(31, 41, 55));
+    pal.setColor(QPalette::WindowText, QColor(232, 234, 237));
+  } else {
+    pal.setColor(QPalette::Window, QColor(255, 255, 225));
+    pal.setColor(QPalette::WindowText, Qt::black);
+  }
   setPalette(pal);
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);

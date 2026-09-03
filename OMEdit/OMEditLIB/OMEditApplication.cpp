@@ -127,6 +127,16 @@ namespace {
     return false;
   }
 
+  bool darkModeArgumentValue(const QString &argument, bool *pEnabled)
+  {
+    const QString optionPrefix = "--DarkMode=";
+    if (argument.startsWith(optionPrefix)) {
+      *pEnabled = argument.mid(optionPrefix.length()) == "true";
+      return true;
+    }
+    return false;
+  }
+
   bool readStyleSheetFile(const QString &fileName, QString *pStyleSheet, QString *pErrorString)
   {
     QFile styleSheetFile(fileName);
@@ -185,12 +195,23 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
 
-/* We need a better handling of ligth and dark themes.
- * For now just force light theme for Qt 6.8
- * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
+  bool darkMode = false;
+  if (arguments().size() > 1 && !testsuiteRunning) {
+    for (int i = 1; i < arguments().size(); i++) {
+      bool argumentDarkMode = false;
+      if (darkModeArgumentValue(arguments().at(i), &argumentDarkMode)) {
+        darkMode = argumentDarkMode;
+      }
+    }
+  }
+  setProperty("omeditDarkMode", darkMode);
+
+/* Qt 6.8 defaults to the system color scheme. Keep OMEdit in light mode unless
+ * dark mode is explicitly requested so the built-in stylesheets remain
+ * deterministic.
  */
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-  styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
+  styleHints()->setColorScheme(darkMode ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);  // must be before setStyleSheet
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // set the stylesheet
   QString applicationStyleSheet;
@@ -199,6 +220,15 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
   if (!defaultStyleSheetLoaded) {
     styleSheetLoadErrors.append(defaultStyleSheetLoadError);
+  }
+  if (defaultStyleSheetLoaded && darkMode) {
+    QString darkStyleSheet;
+    QString darkStyleSheetLoadError;
+    if (readStyleSheetFile(":/Resources/css/stylesheet-dark.qss", &darkStyleSheet, &darkStyleSheetLoadError)) {
+      appendStyleSheet(&applicationStyleSheet, darkStyleSheet);
+    } else {
+      styleSheetLoadErrors.append(darkStyleSheetLoadError);
+    }
   }
   if (defaultStyleSheetLoaded && arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
@@ -287,6 +317,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       QString styleSheetFileName;
+      bool darkModeEnabled = false;
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
@@ -309,6 +340,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         dumpQtPaths();
       } else if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
         // The stylesheet option is handled before MainWindow initialization.
+      } else if (darkModeArgumentValue(arguments().at(i), &darkModeEnabled)) {
+        // The dark mode option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {
