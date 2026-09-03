@@ -167,6 +167,8 @@ typedef struct SPARSE_PATTERN
                                    * Length of array is sizeCols/nRows */
   unsigned int maxColors;         /* Number of colors */
   unsigned int sizeCols;          /* Allocated number of columns (= n_leadIndex passed to allocSparsePattern) */
+  unsigned int* color_leadindex;  /* Array with start indices for color, size: nColors+1 */
+  unsigned int* color_index;      /* Array with column/row indices, size: nCols/nRows */
 } SPARSE_PATTERN;
 
 /* NONLINEAR_PATTERN
@@ -213,7 +215,7 @@ typedef struct JACOBIAN
                                            uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
   /* Bidirectional (star bicoloring) support */
   modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
-  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  JACOBIAN* adjointJacobian;            /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
 } JACOBIAN;

@@ -3798,6 +3798,7 @@ algorithm
 end isMemberOnTrue;
 
 public function exist1<T, ArgT1>
+  // FIXME duplicate of isMemberOnTrue?
   "Returns true if a certain element exists in the given list as indicated by
    the given predicate function. Also takes an extra argument that is passed to
    the predicate function."
@@ -5264,6 +5265,7 @@ algorithm
 end allCombinations4;
 
 public function contains<T>
+  // FIXME duplicate of any?
   input list<T> lst;
   input T elem;
   input equalityFunc eqFunc;

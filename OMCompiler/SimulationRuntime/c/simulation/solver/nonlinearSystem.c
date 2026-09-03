@@ -428,7 +428,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
      * columns would not be the iteration variables either. */
     else if(jacobian->sizeRows != (adaptiveHomotopy(data, nonlinsys) ? size - 1 : size) || jacobian->sizeCols != size)
     {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Analytic Jacobian of non-linear system %d is %ux%u, but the system has " OMC_INT_FORMAT " iteration variables. "
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Analytic Jacobian of non-linear system %d is %zux%zu, but the system has " OMC_INT_FORMAT " iteration variables. "
                                             "This indicates that something went wrong during Jacobian generation. "
                                             "Using a numeric Jacobian instead.",
                          sysNum, jacobian->sizeRows, jacobian->sizeCols, size);

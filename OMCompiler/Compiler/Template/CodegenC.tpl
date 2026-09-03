@@ -3397,9 +3397,9 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
   case _ then
     let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
-    let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
-    let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-    let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
+    let colPtr = genSPCRSPtr(sparsepattern, "colPtrIndex")
+    let rowIndex = genSPCRSRows(sparsepattern, "rowIndex")
+    let colorString = genSPColors(colorList, "inSysData->sparsePattern")
     <<
 
     OMC_DISABLE_OPT
@@ -3449,10 +3449,10 @@ template generateStaticNonlinearData(String indexName, String systemType, Nonlin
     let number_vars = listLength(nonlinearpatternT)
     let number_eqns = listLength(nonlinearpattern)
     let number_nonlinear = lengthListElements(unzipSecond(nonlinearpattern))
-    let index_var = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_var")
-    let index_eqn = genSPCRSPtr(listLength(nonlinearpatternT), nonlinearpatternT, "index_eqn")
-    let columns = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpatternT)), nonlinearpatternT, "columns")
-    let rows = genSPCRSRows(lengthListElements(unzipSecond(nonlinearpattern)), nonlinearpattern, "rows")
+    let index_var = genSPCRSPtr(nonlinearpatternT, "index_var")
+    let index_eqn = genSPCRSPtr(nonlinearpatternT, "index_eqn")
+    let columns = genSPCRSRows(nonlinearpatternT, "columns")
+    let rows = genSPCRSRows(nonlinearpattern, "rows")
     <<
     OMC_DISABLE_OPT
     void initializeNonlinearPattern<%indexName%>(<%systemType%>* inSysData)
@@ -4944,9 +4944,9 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   let nAlgVars = listLength(algVars)
   let sizeCols = listLength(sparsepattern)
   let sizeNNZ = lengthListElements(unzipSecond(sparsepattern))
-  let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
-  let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-  let colorString = genSPColors(colorList, "daeModeData->sparsePattern->colorCols")
+  let colPtr = genSPCRSPtr(sparsepattern, "colPtrIndex")
+  let rowIndex = genSPCRSRows(sparsepattern, "rowIndex")
+  let colorString = genSPColors(colorList, "daeModeData->sparsePattern")
   let algIndexes = genVarIndexes(algVars, "algIndexes")
   <<
   /* initialize the daeMode variables */
@@ -6823,8 +6823,7 @@ match sparsepattern
         throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern. Expected %d, got %zu", <%sp_size_index%>, count);
       }
 
-      /* write color array */
-      <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
+      readSparsePatternColoring(threadData, pFile, jacobian->sparsePattern);
 
       omc_fclose(pFile);
 
@@ -6942,67 +6941,46 @@ template functionJac_DAG(list<SimEqSystem> eqs, String name, String modelNamePre
 end functionJac_DAG;
 
 // function for sparsity pattern generation
-template genSPCRSPtr(Integer sizeColPtr, SparsityPattern sparsepattern, String constArrayName)
+template genSPCRSPtr(SparsityPattern sparsepattern, String constArrayName)
 "This template generates colPtr of the CRS format"
 ::=
-  let colPtrindex = (sparsepattern |> (i, indexes) =>
   <<
-  <%listLength(indexes)%>
-  >>
-  ;separator=",")
-  <<
-  const int <%constArrayName%>[1+<%sizeColPtr%>] = {0,<%colPtrindex%>};
+  const int <%constArrayName%>[1+<%listLength(sparsepattern)%>] = {0,<%sparsepattern |> (_, indexes) => listLength(indexes); separator=","%>};
   >>
 end genSPCRSPtr;
 
-template genSPCRSRows(Integer nonZeroElems, SparsityPattern sparsepattern, String constArrayName)
+template genSPCRSRows(SparsityPattern sparsepattern, String constArrayName)
 "This template generates row of the CRS format"
 ::=
-  let rowsIndex = ( sparsepattern |> (i, indexes) hasindex index0 =>
-    ( indexes |> indexrow =>
-    <<
-    <%indexrow%>
-    >>
-    ;separator=",")
-  ;separator=",")
   <<
-  const int <%constArrayName%>[<%nonZeroElems%>] = {<%rowsIndex%>};
+  const int <%constArrayName%>[<%lengthListElements(unzipSecond(sparsepattern))%>] = {<%sparsepattern |> (_, indexes) => (indexes |> indexrow => indexrow; separator=","); separator=","%>};
   >>
 end genSPCRSRows;
 
-template genSPColors(list<list<Integer>> colorList, String arrayName)
-"This template generates row of the CRS format"
+template genSPColors(list<list<Integer>> colorList, String patternName)
+"This template generates coloring in CRS format"
 ::=
-  let colorArray = (colorList |> (indices) hasindex index0 =>
-    let length = '<%listLength(indices)%>'
-    let index = '<%intAdd(index0,1)%>'
-    let ind_name = 'indices_<%index%>'
+  let nColors = listLength(colorList)
+  let nElements = lengthListElements(colorList)
   <<
-  /* color <%index%> with <%length%> columns */
-  const int <%ind_name%>[<%length%>] = {<%(indices |> i_index =>
-    '<%i_index%>' ;separator=", ")%>};
-  for(i=0; i<<%length%>; i++)
-    <%arrayName%>[<%ind_name%>[i]] = <%index%>;
-  >>;separator="\n\n")
-  <<
-  <%colorArray%>
+  const unsigned int colorSizes[<%nColors%> + 1] = {0,<%colorList |> color => listLength(color); separator=","%>};
+  <%patternName%>->color_leadindex[0] = 0;
+  for (size_t i = 0; i < <%nColors%>; ++i) {
+    <%patternName%>->color_leadindex[i+1] = <%patternName%>->color_leadindex[i] + colorSizes[i];
+  }
+
+  const unsigned int index[<%nElements%>] = {<%colorList |> color => (color |> i => i; separator=","); separator=","%>};
+  memcpy(<%patternName%>->color_index, index, <%nElements%> * sizeof(unsigned int));
+
+  // Convert to colorCols
+  for (unsigned int color = 0; color < <%patternName%>->maxColors; ++color) {
+    for (unsigned int ci = <%patternName%>->color_leadindex[color]; ci < <%patternName%>->color_leadindex[color+1]; ++ci) {
+      unsigned int column = <%patternName%>->color_index[ci];
+      <%patternName%>->colorCols[column] = color;
+    }
+  }
   >>
 end genSPColors;
-
-template readSPColors(list<list<Integer>> colorList, String arrayName, String maxIndex)
-"This template generates row of the CRS format"
-::=
-  let colorArray = (colorList |> (indices) hasindex index0 =>
-    let length = '<%listLength(indices)%>'
-    let index = '<%intAdd(index0,1)%>'
-  <<
-  /* color <%index%> with <%length%> columns */
-  readSparsePatternColor(threadData, pFile, <%arrayName%>, <%index%>, <%length%>, <%maxIndex%>);
-  >>;separator="\n")
-  <<
-  <%colorArray%>
-  >>
-end readSPColors;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &eqArray, Text &eqfuncs, String modelNamePrefix, Boolean init)
  "Generates an equation.

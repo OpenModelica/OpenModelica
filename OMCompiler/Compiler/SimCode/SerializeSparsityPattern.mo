@@ -43,10 +43,16 @@ function serialize
   input SimCode.SimCode code;
   output String dummy = "";
 protected
-  array<Integer> columnPointers, rowIndices, columns;
+  array<Integer> columnPointers, rowIndices, colorPointers, colorIndices;
   String fname;
   list<tuple<Integer, list<Integer>>> pattern;
   list<list<Integer>> colorList;
+
+  function headGt
+    input list<Integer> lst1;
+    input list<Integer> lst2;
+    output Boolean b = listHead(lst1) > listHead(lst2);
+  end headGt;
 algorithm
   for jac in code.jacobianMatrices loop
     // NBackEnd jacobians carry sparsity in sparsityMatrix (SPARSITY) and use
@@ -74,10 +80,11 @@ algorithm
         columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in pattern));
         rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in pattern)));
         serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
-        for color in colorList loop
-          columns := listArray(color);
-          serializeColor(fname, arrayLength(columns), columns);
-        end for;
+        colorList := list(List.sort(color, intGt) for color in colorList) "sort columns in each color";
+        colorList := List.sort(colorList, headGt) "sort colors based on first column";
+        colorPointers := listArray(0 :: list(listLength(color) for color in colorList));
+        colorIndices := listArray(List.flatten(colorList));
+        serializeColoring(fname, arrayLength(colorPointers), arrayLength(colorIndices), colorPointers, colorIndices);
       end if;
     end if;
   end for;
@@ -131,36 +138,48 @@ protected
   ");
   end serializeJacobian;
 
-  function serializeColor
+  function serializeColoring
     input String name;
-    input Integer size;
-    input array<Integer> columns;
-  external "C" serializeC(name, size, columns) annotation(Include="
+    input Integer nColors;
+    input Integer nIndices;
+    input array<Integer> leadindex;
+    input array<Integer> index;
+  external "C" serializeC(name, nColors, nIndices, leadindex, index) annotation(Include="
   extern FILE* omc_fopen(const char *filename, const char *mode);
   extern size_t omc_fwrite(void *buffer, size_t size, size_t count, FILE *stream);
 
-  static void serializeC(const char* name, int size, modelica_metatype columns)
+  static void serializeC(const char* name, int nColors, int nIndices, modelica_metatype leadindex, modelica_metatype index)
   {
     unsigned int i, j;
     size_t count;
-    FILE* pFile = fopen(name, \"ab\");
+    FILE* pFile = omc_fopen(name, \"ab\");
     if (pFile == NULL) {
       throwStreamPrint(NULL, \"Could not open sparsity pattern file %s.\", name);
     }
 
-    /* write sparsePattern->colorCols */
-    for (i = 0; i < size; i++) {
-      j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(columns)[i]);
+    /* compute and write sparsePattern->color_leadindex */
+    j = 0;
+    for (i = 0; i < nColors; i++) {
+      j += (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(leadindex)[i]);
       count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
       if (count != 1) {
-        throwStreamPrint(NULL, \"Error while writing sparsePattern->colorCols. Expected %d, got %zu\", 1, count);
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->color_leadindex. Expected %d, got %zu\", 1, count);
+      }
+    }
+
+    /* write sparsePattern->color_index */
+    for (i = 0; i < nIndices; i++) {
+      j = (unsigned int) MMC_UNTAGFIXNUM(MMC_STRUCTDATA(index)[i]);
+      count = omc_fwrite(&j, sizeof(unsigned int), 1, pFile);
+      if (count != 1) {
+        throwStreamPrint(NULL, \"Error while writing sparsePattern->color_index. Expected %d, got %zu\", 1, count);
       }
     }
 
     fclose(pFile);
   }
   ");
-  end serializeColor;
+  end serializeColoring;
 
 annotation(__OpenModelica_Interface="backend_tools");
 end SerializeSparsityPattern;

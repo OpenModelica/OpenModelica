@@ -146,46 +146,35 @@ static void gbInternal_evalJacobianMR(DATA* data,
                                       GB_INTERNAL_NLS_DATA *nls,
                                       double* smallJac)
 {
-  const SPARSE_PATTERN* smallSp = gbData->gbfData->sparsePattern_ODE;
-
+  const SPARSE_PATTERN* sp = gbData->gbfData->sparsePattern_ODE;
   int* fast_idx = gbData->fastStatesIdx;
-  unsigned int  size_fast = gbData->nFastStates;
 
   fullJac->evalSelection = NULL;
   memset(fullJac->seedVars, 0, fullJac->sizeCols * sizeof(modelica_real));
 
-  int color, col, nz;
+  unsigned int color, ci, col, big_col, nz, small_row, full_row;
 
-  for (color = 0; color < smallSp->maxColors; color++)
-  {
-    for (col = 0; col < size_fast; col++)
-    {
-      unsigned int big_col = fast_idx[col];
-
-      if (smallSp->colorCols[col] - 1 == color)
-      {
-        fullJac->seedVars[big_col] = 1.0;
-      }
+  for (color = 0; color < sp->maxColors; color++) {
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color + 1]; ci++) {
+      col = sp->color_index[ci];
+      big_col = fast_idx[col];
+      fullJac->seedVars[big_col] = 1.0;
     }
 
     fullJac->evalColumn(data, threadData, fullJac, NULL);
 
-    for (col = 0; col < size_fast; col++)
-    {
-      unsigned int big_col = fast_idx[col];
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color + 1]; ci++) {
+      col = sp->color_index[ci];
+      big_col = fast_idx[col];
 
-      if (smallSp->colorCols[col] - 1 == color)
-      {
-        for (nz = smallSp->leadindex[col]; nz < smallSp->leadindex[col + 1]; nz++)
-        {
-          unsigned int small_row = smallSp->index[nz];
-          unsigned int full_row = fast_idx[small_row];
+      for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+        small_row = sp->index[nz];
+        full_row = fast_idx[small_row];
 
-          smallJac[nz] = fullJac->resultVars[full_row];
-        }
-
-        fullJac->seedVars[big_col] = 0.0;
+        smallJac[nz] = fullJac->resultVars[full_row];
       }
+
+      fullJac->seedVars[big_col] = 0.0;
     }
   }
 
@@ -225,58 +214,49 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
 
   memcpy(der_x_ref, der_x, full_size * sizeof(double));
 
-  for (unsigned int color = 0; color < sparsity->maxColors; color++)
-  {
+  for (unsigned int color = 0; color < sparsity->maxColors; color++) {
     // careful perturbation of the variables (a la DASSL interface)
-    for (unsigned int col = 0; col < size; col++)
-    {
+    for (unsigned int ci = sparsity->color_leadindex[color]; ci < sparsity->color_leadindex[color+1]; ci++) {
+      unsigned int col = sparsity->color_index[ci];
       unsigned int big_col = state_map ? state_map[col] : col;
 
-      if (sparsity->colorCols[col] - 1 == color)
-      {
-        // we follow the procedure of the DASSL interface for the selection of perturbation h_i
+      // we follow the procedure of the DASSL interface for the selection of perturbation h_i
 
-        // h * f(x)_i
-        double delta_hhh = delta_h * der_x_ref[big_col];
+      // h * f(x)_i
+      double delta_hhh = delta_h * der_x_ref[big_col];
 
-        // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-        double raw_weight = nls->integrator_tol * nominals[big_col] + nls->integrator_tol * fabs(x[big_col]);
+      // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
+      double raw_weight = nls->integrator_tol * nominals[big_col] + nls->integrator_tol * fabs(x[big_col]);
 
-        // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
-        delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
-        delta_hh[big_col] = x[big_col] + delta_hh[big_col] - x[big_col];
+      // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
+      delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
+      delta_hh[big_col] = x[big_col] + delta_hh[big_col] - x[big_col];
 
-        if (x[big_col] + delta_hh[big_col] >= maxs[big_col])
-        {
-          delta_hh[big_col] *= -1;
-        }
-
-        x_save[big_col] = x[big_col];
-        x[big_col] += delta_hh[big_col];
-        delta_hh[big_col] = 1.0 / delta_hh[big_col];
+      if (x[big_col] + delta_hh[big_col] >= maxs[big_col]) {
+        delta_hh[big_col] *= -1;
       }
+
+      x_save[big_col] = x[big_col];
+      x[big_col] += delta_hh[big_col];
+      delta_hh[big_col] = 1.0 / delta_hh[big_col];
     }
 
     // eval f(x + h)
     gbode_fODE(data, threadData, NULL, selection);
 
     // do forward finite differencing (f(x + h) - f(x)) / h and reset states
-    for (unsigned int col = 0; col < size; col++)
-    {
+    for (unsigned int ci = sparsity->color_leadindex[color]; ci < sparsity->color_leadindex[color+1]; ci++) {
+      unsigned int col = sparsity->color_index[ci];
       unsigned int big_col = state_map ? state_map[col] : col;
 
-      if (sparsity->colorCols[col] - 1 == color)
-      {
-        for (unsigned int nz = sparsity->leadindex[col]; nz < sparsity->leadindex[col + 1]; nz++)
-        {
-          unsigned int small_row = sparsity->index[nz];
-          unsigned int big_row   = state_map ? state_map[small_row] : small_row;
+      for (unsigned int nz = sparsity->leadindex[col]; nz < sparsity->leadindex[col + 1]; nz++) {
+        unsigned int small_row = sparsity->index[nz];
+        unsigned int big_row   = state_map ? state_map[small_row] : small_row;
 
-          nls->jacobian_callback[nz] = (der_x[big_row] - der_x_ref[big_row]) * delta_hh[big_col];
-        }
-
-        x[big_col] = x_save[big_col];
+        nls->jacobian_callback[nz] = (der_x[big_row] - der_x_ref[big_row]) * delta_hh[big_col];
       }
+
+      x[big_col] = x_save[big_col];
     }
   }
 }
@@ -1558,6 +1538,8 @@ void *gbInternalNlsAllocate(int size,
 void gbInternalNlsFree(void *nls_ptr)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) nls_ptr;
+  if (!nls) return;
+
   gbInternal_KLU_free(&nls->klu);
   free(nls->jacobian_callback);
   free(nls->ode_to_nls);

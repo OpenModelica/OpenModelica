@@ -946,7 +946,7 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   const double delta_h = sqrt(DBL_EPSILON * 2e1);
 
   modelica_real result;
-  long int i, j, ii;
+  long int i, j, ii, ci;
   int nth;
 
   modelica_boolean stored_nominal_jac;
@@ -983,46 +983,44 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* Approximate Jacobian */
   for (i = 0; i < sparsePattern->maxColors; i++) {
-    for (ii = 0; ii < kinsolData->size; ii++) {
-      if (sparsePattern->colorCols[ii] - 1 == i) {
-        xsave[ii] = x[ii];
-        delta_hh[ii] = delta_h * (fabs(xsave[ii]) + 1.0);
-        if ((xsave[ii] + delta_hh[ii] >= nlsData->max[ii])) {
-          delta_hh[ii] *= -1;
-        }
-        x[ii] += delta_hh[ii];
-
-        /* Calculate scaled difference quotient */
-        delta_hh[ii] = 1. / delta_hh[ii];
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
+      xsave[ii] = x[ii];
+      delta_hh[ii] = delta_h * (fabs(xsave[ii]) + 1.0);
+      if ((xsave[ii] + delta_hh[ii] >= nlsData->max[ii])) {
+        delta_hh[ii] *= -1;
       }
+      x[ii] += delta_hh[ii];
+
+      /* Calculate scaled difference quotient */
+      delta_hh[ii] = 1. / delta_hh[ii];
     }
     /* Evaluate residual function */
     B_nlsKinsolResiduals(vecX, kinsolData->fRes, userData);
 
     /* Save column in Jac and unset seed variables */
-    for (ii = 0; ii < kinsolData->size; ii++) {
-      if (sparsePattern->colorCols[ii] - 1 == i) {
-        nth = sparsePattern->leadindex[ii];
-        while (nth < sparsePattern->leadindex[ii + 1]) {
-          j = sparsePattern->index[nth];
+    for (ci = sparsePattern->color_leadindex[i]; ci < sparsePattern->color_leadindex[i+1]; ci++) {
+      ii = sparsePattern->color_index[ci];
+      nth = sparsePattern->leadindex[ii];
+      while (nth < sparsePattern->leadindex[ii + 1]) {
+        j = sparsePattern->index[nth];
 
-          // TODO: investigate NaN values stemming from residual functions
-          // Hypothesis: lambda = 0 system forces variables to be 0, while for lambda = eps, we divide by them?!
-          result = (fRes[j] - fx[j]) * delta_hh[ii];
+        // TODO: investigate NaN values stemming from residual functions
+        // Hypothesis: lambda = 0 system forces variables to be 0, while for lambda = eps, we divide by them?!
+        result = (fRes[j] - fx[j]) * delta_hh[ii];
 
-          // (IN)SANITY CHECK
-          if (isnan(result) || isinf(result)) {
-            warningStreamPrint(OMC_LOG_STDOUT, 0,
-                "WARNING: NaN (%d) or Inf (%d) detected at col %ld row %ld: fRes=%g, fx=%g, delta_hh=%g, x=%g, xsave=%g\n"
-                "ACTION: setting Jacobian entry := 0.0 and trying to recover...",
-                isnan(result), isinf(result), ii, j, fRes[j], fx[j], delta_hh[ii], x[ii], xsave[ii]);
-            result = 0.0;
-          }
-          setJacElementSundialsSparse(j, ii, nth, result, Jac, SM_CONTENT_S(Jac)->M);
-          nth++;
+        // (IN)SANITY CHECK
+        if (isnan(result) || isinf(result)) {
+          warningStreamPrint(OMC_LOG_STDOUT, 0,
+              "WARNING: NaN (%d) or Inf (%d) detected at col %ld row %ld: fRes=%g, fx=%g, delta_hh=%g, x=%g, xsave=%g\n"
+              "ACTION: setting Jacobian entry := 0.0 and trying to recover...",
+              isnan(result), isinf(result), ii, j, fRes[j], fx[j], delta_hh[ii], x[ii], xsave[ii]);
+          result = 0.0;
         }
-        x[ii] = xsave[ii];
+        setJacElementSundialsSparse(j, ii, nth, result, Jac, SM_CONTENT_S(Jac)->M);
+        nth++;
       }
+      x[ii] = xsave[ii];
     }
   }
   /* Finish sparse matrix */
