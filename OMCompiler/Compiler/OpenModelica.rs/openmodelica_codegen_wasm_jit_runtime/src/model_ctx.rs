@@ -128,7 +128,7 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
             });
         }
         if keep {
-            vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
+            vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
         }
     }
     let bytes = openmodelica_mat_writer::write_mat4(

@@ -207,6 +207,7 @@ openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
 openmodelica_codegen_wasm_jit_runtime/src/prof.rs
+openmodelica_codegen_wasm_jit_runtime/src/result_out.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
@@ -419,6 +420,7 @@ openmodelica_wasm_jit/src/engine_config.rs
 openmodelica_wasm_jit/src/host.rs
 openmodelica_wasm_jit/src/lib.rs
 openmodelica_wasm_jit/src/model.rs
+openmodelica_wasm_jit/src/result_sink.rs
 openmodelica_wasm_jit/src/sig.rs
 openmodelica_wasm_jit/src/sim_driver.rs
 openmodelica_wasm_jit/src/sim_runtime_stub.rs
@@ -447,8 +449,8 @@ wasm/home/index.html
 wasm/icons/fmi.svg
 wasm/icons/om.svg
 wasm/icons/omedit.png
-wasm/icons/omplot.svg
 wasm/icons/omnotebook.svg
+wasm/icons/omplot.svg
 wasm/icons/omshell.svg
 wasm/icons/openmodelica-logo.svg
 wasm/icons/simulator.svg

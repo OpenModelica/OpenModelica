@@ -85,6 +85,8 @@ use openmodelica_sim_meta::{
 // guards). The `SimModel` below stores compiled modules as `sim_runtime::Module`.
 // Engine, model data and driver flags live in `openmodelica_wasm_jit`; the
 // orchestration below keeps its `sim_runtime::`/`SimModel` paths via these.
+use openmodelica_sim_meta::result::MatLayout;
+use openmodelica_wasm_jit::result_sink::{ResultTarget, Written};
 use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
 use openmodelica_wasm_jit::wasi_shim;
@@ -164,22 +166,22 @@ fn fmu_kernels() -> &'static Mutex<HashMap<String, Arc<FmuKernel>>> {
     KERNELS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// Where a captured signal's values live: a result-buffer column, or one
-/// time-invariant value.
+/// Where a captured signal's values live: a `data_2` column of the result file
+/// (negated for a `-v` alias), or one time-invariant value.
 #[derive(Clone, Copy)]
 pub enum SeriesData {
-    Column { col: usize, negate: Neg },
+    Column { col: usize, negate: bool },
     Scalar(f64),
 }
 
-/// One captured result signal. Its values are read out of the row buffer on
+/// One captured result signal. Its values are read out of the result file on
 /// demand ([`CapturedSim::values`]).
 pub struct SimSeries {
     pub name: String,
     pub comment: String,
     pub unit: String,
-    /// Time-invariant (parameter/constant) or constant over the whole run — the
-    /// web simulator hides these from the default plot ("all non-constant vars").
+    /// Time-invariant (parameter, constant, or computed once at initialization) —
+    /// the web simulator hides these from the default plot ("all non-constant vars").
     pub constant: bool,
     /// This signal aliases the same underlying data as an earlier series (e.g.
     /// `der(h)` and `v` when `v = der(h)`): plotting one of them suffices.
@@ -198,17 +200,16 @@ pub struct CapturedParam {
     pub enum_names: Vec<String>,
 }
 
-/// The last run's results, kept as the driver's row buffer plus the per-signal
-/// metadata the `.mat` writer uses, so a host (the web simulator) can read
-/// signals directly without the intermediate `.mat` file. `series` excludes
-/// `time`.
+/// The last run's results: the per-signal metadata plus where each kept signal
+/// sits in the `.mat` the run wrote, so a host (the web simulator) reads a column
+/// straight out of that file. `series` excludes `time`.
 pub struct CapturedSim {
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
-    /// Row-major, `n_reals` columns per row, column 0 = time.
-    rows: Vec<f64>,
-    n_reals: usize,
+    pub result_file: String,
+    n_rows: usize,
+    layout: Option<MatLayout>,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
     /// Solver counters, so a host with no stdout can tell a run that did more work
@@ -218,16 +219,17 @@ pub struct CapturedSim {
 
 impl CapturedSim {
     pub fn n_rows(&self) -> usize {
-        if self.n_reals == 0 { 0 } else { self.rows.len() / self.n_reals }
+        self.n_rows
     }
 
-    fn column(&self, col: usize, negate: Neg) -> Vec<f64> {
-        self.rows.chunks_exact(self.n_reals.max(1)).map(|row| negate.apply_f64(row[col])).collect()
+    fn column(&self, col: usize, negate: bool) -> Vec<f64> {
+        let Some(l) = &self.layout else { return Vec::new() };
+        openmodelica_wasi::fs::with_bytes(&self.result_file, |b| l.column(b, col, negate)).unwrap_or_default()
     }
 
     /// The independent `time` column.
     pub fn time(&self) -> Vec<f64> {
-        self.column(0, Neg::None)
+        self.column(0, false)
     }
 
     /// The values of `series[index]` over the run (length 1 for a time-invariant
@@ -245,32 +247,23 @@ fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
     LAST.get_or_init(|| Mutex::new(None))
 }
 
-/// Stash a finished run's row buffer and per-signal metadata (reusing the
-/// result-var metadata the `.mat` writer uses) for the host to read directly.
+/// Stash a finished run's per-signal metadata and the result file's layout for
+/// the host to read directly.
 fn capture_last_sim(
     model: &SimModel,
-    rows: Vec<f64>,
-    n_reals: u32,
+    written: Written,
     params: &[f64],
     stats: &SolveStats,
     keep: &[bool],
+    result_file: &str,
 ) {
-    let n_reals = n_reals as usize;
-    // One sequential pass: which columns never change after row 0.
-    let mut const_col = vec![true; n_reals];
-    if n_reals > 0 {
-        for row in rows.chunks_exact(n_reals).skip(1) {
-            for (c, (&v, first)) in row.iter().zip(&rows[..n_reals]).enumerate() {
-                if v != *first {
-                    const_col[c] = false;
-                }
-            }
-        }
-    }
-
+    let Written { n_rows, layout } = written;
+    let first_row: &[f64] = layout.as_ref().map_or(&[], |l| &l.first_row);
     let unit_of = |name: &str| model.var_units.get(name).cloned().unwrap_or_default();
     let mut series = Vec::new();
     let mut param_idx = 0usize;
+    // The kept signals are the file's, in order; `file_ix` is the next one's index.
+    let mut file_ix = 0usize;
     // A signal aliases an earlier one when it reads the same underlying data: the
     // same result column, or the same parameter slot (the `.mat`'s `dataInfo`
     // aliasing — several names, one stored column). Distinct columns are distinct
@@ -279,33 +272,44 @@ fn capture_last_sim(
     let mut seen_cols = HashSet::new();
     let mut seen_param_offs = HashSet::new();
     let mut param_value_by_off: HashMap<u32, f64> = HashMap::new();
-    // Every signal is resolved (the editable parameters below read their values from
-    // here regardless of the filter); `keep` is applied to `series` at the end.
-    let mut series_keep: Vec<bool> = Vec::new();
     // Row 0 of every signal, for the start values of the editable parameters.
     let mut row0_by_name: HashMap<&str, f64> = HashMap::new();
-    for (v, &keep) in model.result_vars.iter().zip(keep) {
-        let (constant, alias, data) = match &v.kind {
+    for (v, &kept) in model.result_vars.iter().zip(keep) {
+        let k = kept.then(|| {
+            file_ix += 1;
+            file_ix - 1
+        });
+        let (alias, row0, data) = match &v.kind {
             ResultKind::Time => continue,
             ResultKind::Column { col, negate } => {
                 let col = *col as usize;
-                (const_col.get(col).copied().unwrap_or(true), !seen_cols.insert(col), SeriesData::Column { col, negate: *negate })
+                let row0 = negate.apply_f64(first_row.get(col).copied().unwrap_or(0.0));
+                let data = k.zip(layout.as_ref()).and_then(|(k, l)| match l.data2_col(k) {
+                    Some((col, negate)) => Some(SeriesData::Column { col, negate }),
+                    None => l.data1_value(k).map(SeriesData::Scalar),
+                });
+                (!seen_cols.insert(col), row0, data)
             }
             ResultKind::Param { off, negate, .. } => {
                 let raw = params.get(param_idx).copied().unwrap_or(0.0);
                 param_idx += 1;
                 param_value_by_off.entry(*off).or_insert(raw);
-                (true, !seen_param_offs.insert(*off), SeriesData::Scalar(negate.apply_f64(raw)))
+                let value = negate.apply_f64(raw);
+                (!seen_param_offs.insert(*off), value, Some(SeriesData::Scalar(value)))
             }
-            ResultKind::Const { value } => (true, false, SeriesData::Scalar(*value)),
-        };
-        series_keep.push(keep);
-        let row0 = match data {
-            SeriesData::Column { col, negate } => negate.apply_f64(rows.get(col).copied().unwrap_or(0.0)),
-            SeriesData::Scalar(v) => v,
+            ResultKind::Const { value } => (false, *value, Some(SeriesData::Scalar(*value))),
         };
         row0_by_name.entry(v.name.as_str()).or_insert(row0);
-        series.push(SimSeries { name: v.name.clone(), comment: v.comment.clone(), unit: unit_of(&v.name), constant, alias, data });
+        if let (true, Some(data)) = (kept, data) {
+            series.push(SimSeries {
+                name: v.name.clone(),
+                comment: v.comment.clone(),
+                unit: unit_of(&v.name),
+                constant: matches!(data, SeriesData::Scalar(_)),
+                alias,
+                data,
+            });
+        }
     }
     // A start value shows the state's t0 value; a plain parameter shows its slot.
     let params: Vec<CapturedParam> = model
@@ -324,14 +328,13 @@ fn capture_last_sim(
             enum_names: p.enum_names.clone(),
         })
         .collect();
-    let mut kept = series_keep.into_iter();
-    series.retain(|_| kept.next().unwrap_or(true));
     *last_sim().lock().unwrap_or_else(|e| e.into_inner()) = Some(CapturedSim {
         model_name: model.model_name.clone(),
         start_time: model.start_time,
         stop_time: model.stop_time,
-        rows,
-        n_reals,
+        result_file: result_file.to_string(),
+        n_rows,
+        layout,
         series,
         params,
         stats: stats.clone(),
@@ -922,6 +925,16 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
     }
 }
 
+/// The result file of a run: its resolved path, the `-variableFilter` decision
+/// per signal, and `-single`.
+fn result_target(model: &SimModel, meta: &SimMeta, flags: &simflags::SimFlags, derived: &str) -> ResultTarget {
+    ResultTarget {
+        path: result_path(flags, meta, derived),
+        keep: output_selection(model),
+        single: flags.single_precision,
+    }
+}
+
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
 /// Returns `(param_overrides, start_overrides, string_overrides)`: plain parameters
 /// vs. state start values, applied at different points of initialization (see
@@ -1196,19 +1209,17 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         // `empty` (and `-noemit`) runs the integration but writes no result file —
         // useful for benchmarking the solver in isolation from the `.mat` writer.
         check_output_format(&meta)?;
-        let run = sim_runtime::run(&model, &meta)?;
+        let target = result_target(&model, &meta, &flags, result_file);
+        let (path, keep) = (target.path.clone(), target.keep.clone());
+        let (run, written) = sim_runtime::run(&model, &meta, target)?;
         // The driver already printed the `-output` line that precedes this block.
         if log_stats {
             extra.push_str(&openmodelica_sim_meta::stats::log_stats_block(&run.stats));
         }
-        let keep = output_selection(&model);
-        let path = result_path(&flags, &meta, result_file);
-        write_result(&model, &meta, &path, &run, &keep)?;
         // C's `printModelInfo`, after the result file is closed.
         openmodelica_sim_meta::profiling::finish(&meta, &path, output_size(&path));
         post = write_lin_file(&meta, &run, &flags);
-        let mut run = run;
-        capture_last_sim(&model, core::mem::take(&mut run.rows), run.n_reals, &run.params, &run.stats, &keep);
+        capture_last_sim(&model, written, &run.params, &run.stats, &keep, &path);
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -1309,6 +1320,8 @@ mod session {
         /// This run's scalars: the model's metadata with the run's flags applied.
         meta: SimMeta,
         result_file: String,
+        /// The `-variableFilter` decision per result signal.
+        keep: Vec<bool>,
         backend: SessionBackend,
         /// Wall-clock inside `advance`, summed over chunks: excludes the yields
         /// between them, so it stays comparable to the one-shot `run()` timing.
@@ -1359,18 +1372,18 @@ mod session {
         static SIM_SESSION: std::cell::RefCell<Option<SimSession>> = const { std::cell::RefCell::new(None) };
     }
 
-    /// Capture results for the `omc_sim_*` getters and write the `.mat`.
+    /// Capture results for the `omc_sim_*` getters once the result file is written.
     fn finalize_and_capture(
         model: &SimModel,
         meta: &SimMeta,
         result_file: &str,
-        mut run: sim_driver::RunResult,
+        keep: &[bool],
+        run: sim_driver::RunResult,
+        written: Written,
     ) -> Result<String> {
-        let keep = output_selection(model);
-        write_result(model, meta, result_file, &run, &keep)?;
         openmodelica_sim_meta::profiling::finish(meta, result_file, output_size(result_file));
         let lin = write_lin_file(meta, &run, &simflags::flags());
-        capture_last_sim(model, core::mem::take(&mut run.rows), run.n_reals, &run.params, &run.stats, &keep);
+        capture_last_sim(model, written, &run.params, &run.stats, keep, result_file);
         Ok(lin)
     }
 
@@ -1413,9 +1426,11 @@ mod session {
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
         let inwasm = inwasm_driver_enabled();
+        let target = result_target(&model, &meta, &flags, result_file);
+        let (path, keep) = (target.path.clone(), target.keep.clone());
         let built = (|| -> std::result::Result<SessionBackend, String> {
             if inwasm {
-                Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model)?))
+                Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model, Some(&target))?))
             } else {
                 let (mut engine, sim_data) = sim_runtime::build_engine(&model, &meta)?;
                 let made = sim_driver::make_driver(&mut *engine, &meta, sim_data, meta.method.as_str())
@@ -1426,6 +1441,10 @@ mod session {
                         return Err(e.to_string());
                     }
                 };
+                // `make_driver` initialized, so the file opens here rather than from
+                // inside `drive`.
+                openmodelica_wasm_jit::result_sink::arm(target);
+                sim_driver::open_result(&mut *engine, &meta, sim_data).map_err(|e| e.to_string())?;
                 Ok(SessionBackend::Host { engine, driver, sim_data })
             }
         })();
@@ -1448,7 +1467,8 @@ mod session {
         SIM_SESSION.with(|s| {
             *s.borrow_mut() = Some(SimSession {
                 model,
-                result_file: result_path(&flags, &meta, result_file),
+                result_file: path,
+                keep,
                 meta,
                 backend,
                 integrate_ms: 0.0,
@@ -1472,6 +1492,7 @@ mod session {
             // touch `guard` again (to clear it on completion/error).
             let model = sess.model.clone();
             let result_file = sess.result_file.clone();
+            let keep = sess.keep.clone();
             let log_stats = sess.log_stats;
             let n_intervals = sess.meta.n_intervals;
             // Stopped before the finalize/`.mat` work in each arm below.
@@ -1496,7 +1517,9 @@ mod session {
                             Ok(SimStatus::Cancelled)
                         }
                         Ok(done) => {
-                            let rows = driver.take_rows();
+                            let mut rows = driver.take_rows();
+                            sim_driver::finish_rows(&mut rows);
+                            let written = openmodelica_wasm_jit::result_sink::take();
                             let mut stats = SolveStats::default();
                             driver.fill_stats(&sess.meta, &mut stats);
                             // C's order: the `-reconcile*` procedures, then `-l`.
@@ -1524,7 +1547,7 @@ mod session {
                                 stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                             }
                             stats_block
-                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, run)?);
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &keep, run, written)?);
                             Ok(if matches!(done, sim_driver::Advance::Terminated) {
                                 SimStatus::Terminated
                             } else {
@@ -1544,11 +1567,12 @@ mod session {
                         Ok(rc) => {
                             // 1 done, 2 terminated
                             let run = inwasm.take_result()?;
+                            let written = inwasm.take_written()?;
                             if log_stats {
                                 stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                             }
                             stats_block
-                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, run)?);
+                                .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &keep, run, written)?);
                             Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
                         }
                         Err(e) => Err(e),
@@ -1600,6 +1624,7 @@ mod session {
                 let SimSession { meta, backend, .. } = &mut sess;
                 if let SessionBackend::Host { engine, sim_data, .. } = backend {
                     let _ = sim_driver::finalize_run(&mut **engine, meta, *sim_data);
+                    openmodelica_wasm_jit::result_sink::take();
                 }
             }
         });
@@ -3856,6 +3881,30 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
 /// to the name it carries in the result file, or `None` to drop it. `$`-prefixed
 /// names are backend-internal auxiliaries (`$cse*`, `$whenCondition*`, …) and are
 /// not output.
+/// C's `time_unvarying`: a variable a literal parameter equation assigns is
+/// computed once at initialization, so the `.mat` stores it with the parameters
+/// (`CodegenC.functionUpdateBoundParameters`, `Expression.isSimpleLiteralValue`).
+fn mark_unvarying(result_vars: &mut [ResultVar], param_eqs: &[Arc<SimCode::SimEqSystem>]) -> Result<()> {
+    let mut literal: HashSet<String> = HashSet::new();
+    for eq in param_eqs {
+        if let SimCode::SimEqSystem::SES_SIMPLE_ASSIGN { cref, exp, .. } = &**eq
+            && matches!(
+                &**exp,
+                DAE::Exp::ICONST { .. } | DAE::Exp::RCONST { .. } | DAE::Exp::BCONST { .. } | DAE::Exp::ENUM_LITERAL { .. }
+            )
+            && let Some(name) = result_name(&cref_display(cref)?)
+        {
+            literal.insert(name);
+        }
+    }
+    for v in result_vars.iter_mut() {
+        if matches!(v.kind, ResultKind::Column { .. }) && v.filter & var_filter::ALIAS == 0 && literal.contains(&v.name) {
+            v.unvarying = true;
+        }
+    }
+    Ok(())
+}
+
 fn result_name(raw: &str) -> Option<String> {
     if raw.starts_with('$') && !OPT_RESULT_PREFIXES.iter().any(|p| raw.starts_with(p)) {
         None
@@ -4116,6 +4165,7 @@ fn push_sensitivity_vars(
             comment: sv.comment.to_string(),
             kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: Neg::None },
             filter: filter_bits(sv),
+            unvarying: false,
         });
     }
     Ok(offs)
@@ -4195,6 +4245,7 @@ fn build_var_map(
         comment: "Simulation time [s]".to_string(),
         kind: ResultKind::Time,
         filter: 0,
+        unvarying: false,
     });
 
     let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
@@ -4214,6 +4265,7 @@ fn build_var_map(
                         comment: sv.comment.to_string(),
                         kind,
                         filter: filter_bits(sv),
+                        unvarying: false,
                     });
                 }
             }
@@ -4348,6 +4400,7 @@ fn build_var_map(
                 comment: sv.comment.to_string(),
                 kind: ResultKind::Const { value },
                 filter: filter_bits(sv),
+                unvarying: false,
             });
         }
     }
@@ -4379,6 +4432,7 @@ fn build_var_map(
                         comment: av.comment.to_string(),
                         kind: ResultKind::Const { value },
                         filter: filter_bits(av) | var_filter::ALIAS,
+                        unvarying: false,
                     });
                 }
             }
@@ -4412,6 +4466,7 @@ fn build_var_map(
                 comment: av.comment.to_string(),
                 kind,
                 filter: filter_bits(av) | var_filter::ALIAS,
+                unvarying: false,
             });
         }
     }
@@ -5403,6 +5458,7 @@ fn build_sim_model(
     // the type/import sections, which need to know whether the model has any
     // nonlinear systems) and consumed by the equation-function builders below. ---
     let param_eqs = flatten_eqs(&sim_code.parameterEquations);
+    mark_unvarying(&mut result_vars, &param_eqs)?;
     let initial_eqs = flatten_eqs(&sim_code.initialEquations);
     let mut computed_params = assigned_cref_keys(&eqs_with_nested(&param_eqs));
     computed_params.extend(assigned_cref_keys(&eqs_with_nested(&initial_eqs)));
@@ -11285,38 +11341,6 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
 // ===========================================================================
 
 /// Write the simulation result as an OpenModelica MATLAB v4 (`.mat`) file.
-/// `rows` is the row-major result buffer (`n_rows * n_reals` f64: per row,
-/// `[time, realVars...]`); `params` come from the [`SimModel`] result vars. The
-/// serialization itself lives in `openmodelica_mat_writer` (`no_std` + `alloc`,
-/// shared with the standalone wasip1 runtime's `_start`); here we only map the
-/// Write the run's results in the format `-outputFormat` settled on; `empty`
-/// writes none. The serialization is `openmodelica_sim_meta::result`, shared with
-/// the C+Rust runtime and the standalone wasip1 runtime.
-fn write_result(
-    _model: &SimModel,
-    meta: &SimMeta,
-    path: &str,
-    run: &sim_driver::RunResult,
-    keep: &[bool],
-) -> Result<()> {
-    use openmodelica_mat_writer::Precision;
-    // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
-    let precision =
-        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-    let Some(bytes) = openmodelica_sim_meta::result::write(
-        meta,
-        &meta.output_format,
-        &run.rows,
-        run.n_reals,
-        &run.params,
-        keep,
-        precision,
-    ) else {
-        return Ok(());
-    };
-    write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
-}
-
 /// Which result variables this run emits, one flag per [`SimModel::result_vars`]
 /// entry. An uncompilable `-variableFilter` is C's "Defaulting to outputting all
 /// variables": it has already replaced the model's filter, so nothing remains to

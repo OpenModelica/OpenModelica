@@ -214,7 +214,7 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             if !keep {
                 continue;
             }
-            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
+            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
         }
         let precision = simflags::with_flags(|f| {
             if f.single_precision { Precision::Single } else { Precision::Double }

@@ -741,9 +741,12 @@ struct StepRetry {
 }
 
 impl StepRetry {
-    fn open(&mut self, e: &mut dyn SimEngine, rows: usize) {
+    /// Open a step. The rows so far are final: they go to the row sink, if one is
+    /// installed, before the mark is taken.
+    fn open(&mut self, e: &mut dyn SimEngine, rows: &mut Vec<f64>) {
+        commit_rows(rows);
         let addr = e.error_stage_addr();
-        self.rows_mark = rows;
+        self.rows_mark = rows.len();
         self.in_step = true;
         self.threw = false;
         THROW_PAST_STEP.store(false, Ordering::Relaxed);
@@ -1163,6 +1166,54 @@ pub(crate) fn check_alarm() -> Result<()> {
 // only polls it, so a host installs a hook; unset means "never cancelled". The
 // host re-exports `request_cancel`/`clear_cancel`/`set_cancel_poll` from
 // `metamodelica::cancel` and wires `check_cancel` in here.
+// Where a run's result rows go. A driver commits its buffer at every step
+// boundary (`StepRetry::open`) and `drive` commits the rest before the run's
+// clock stops, so a sink sees every row exactly once, in order, while the run is
+// still timed. The sink returns `false` while it has nowhere to put them yet (its
+// file opens after initialization, see `set_result_opener`); the rows then stay
+// in the buffer. Unset, they stay there until `take_rows`.
+static ROW_SINK: AtomicUsize = AtomicUsize::new(0);
+static ROW_SINK_FINISH: AtomicUsize = AtomicUsize::new(0);
+pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
+    ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
+    ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+/// Hand `rows` to the sink and empty the buffer; nothing without a sink.
+pub fn commit_rows(rows: &mut Vec<f64>) {
+    let p = ROW_SINK.load(Ordering::Relaxed);
+    if p == 0 || rows.is_empty() {
+        return;
+    }
+    let f: fn(&[f64]) -> bool = unsafe { core::mem::transmute(p) };
+    if f(rows) {
+        rows.clear();
+    }
+}
+// Opens the embedder's result file: called once initialization is done (C's
+// `writeParameterData`), with the engine, so the file's parameter section can be
+// read out of `SimData`.
+static RESULT_OPENER: AtomicUsize = AtomicUsize::new(0);
+pub fn set_result_opener(f: Option<fn(&mut dyn SimEngine, &SimModel, u32) -> Result<()>>) {
+    RESULT_OPENER.store(f.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+pub fn open_result(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<()> {
+    let p = RESULT_OPENER.load(Ordering::Relaxed);
+    if p == 0 {
+        return Ok(());
+    }
+    let f: fn(&mut dyn SimEngine, &SimModel, u32) -> Result<()> = unsafe { core::mem::transmute(p) };
+    f(e, model, sim_data)
+}
+/// Commit `rows` and close the sink's file, inside the run's total time.
+pub fn finish_rows(rows: &mut Vec<f64>) {
+    commit_rows(rows);
+    let p = ROW_SINK_FINISH.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
+}
+
 static CANCEL_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_cancel_hook(f: fn() -> bool) {
     CANCEL_HOOK.store(f as usize, Ordering::Relaxed);
@@ -4545,6 +4596,11 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
     }
     signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
+    read_params(e, model, sim_data)
+}
+
+/// The `Param` signals' values, in signal order (C's `writeParameterData`).
+pub fn read_params(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<Vec<f64>> {
     let mut params = Vec::new();
     for v in &model.vars {
         if let ResultKind::Param { off, wty, .. } = &v.kind {
@@ -4618,6 +4674,7 @@ pub fn drive(
                 label = "euler-host";
                 let (mut driver, _) = make_driver_resolved(e, model, sim_data, "euler")
                     .map_err(|err| enrich_trap_init(e, err, model.start_time))?;
+                open_result(e, model, sim_data)?;
                 loop {
                     match driver.advance(e, model, f64::INFINITY).map_err(|err| enrich_trap(e, err))? {
                         Advance::Done | Advance::Terminated => break,
@@ -4642,6 +4699,7 @@ pub fn drive(
                 solver_setup(e, model, sim_data)?;
                 run_initialization_model(e, sim_data, model)
                     .map_err(|err| enrich_trap_init(e, err, start))?;
+                open_result(e, model, sim_data)?;
                 return crate::optimization::run_optimizer(e, model, sim_data)
                     .map_err(|err| enrich_trap(e, err));
             }
@@ -4667,6 +4725,7 @@ pub fn drive(
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
             let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
+            open_result(e, model, sim_data)?;
             emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, None)?;
             return Ok(rows);
         }
@@ -4674,6 +4733,7 @@ pub fn drive(
         let (mut driver, l) =
             make_driver_resolved(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
         label = l;
+        open_result(e, model, sim_data)?;
         // C's bracket up to `externalInputFree`: from here on the file drives the
         // inputs. Initialization got its one application in `apply_external_input`.
         #[cfg(feature = "std")]
@@ -4743,7 +4803,7 @@ pub fn drive(
             eprintln!("wasm-jit sim [{label}]: {}", line.join(" "));
         }
     }
-    let rows = match outcome {
+    let mut rows = match outcome {
         Ok(rows) => rows,
         // C's `dataReconciliation(data, threadData, status)` with a non-zero status:
         // the run failed, so the procedure writes its error report and exits.
@@ -4774,6 +4834,7 @@ pub fn drive(
     }
     recon_res?;
     crate::parmod::finish();
+    finish_rows(&mut rows);
     rtclock::accumulate(rtclock::TOTAL);
     crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
@@ -4884,7 +4945,7 @@ impl Driver for EulerDriver {
                 self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
             let t_now = read_f64(e, sim_data + TIME_OFF)?;
             logging_window(e, t_now, time);
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
@@ -6149,7 +6210,7 @@ impl Driver for DasslDriver {
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 logging_window(e, self.t, time);
-                self.retry.open(e, self.rows.len());
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -6235,7 +6296,7 @@ impl Driver for DasslDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
             // INFO(1)=1, up to a cap. INFO(3)=1 keeps a call to one step, so this is
             // C's guard rather than a path a stiff interval takes.
@@ -8675,7 +8736,7 @@ impl Driver for EventsDriver {
                 let mut grid_covered = false;
                 let mut event_step = false;
                 // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around the whole step.
-                self.retry.open(e, self.rows.len());
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 // C's `updateContinuousSystem` landed on the grid point and nothing
                 // has moved the state since: the row is emitted from it, as C's is.
@@ -8867,7 +8928,7 @@ impl Driver for EventsDriver {
             }
             // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`: the whole step, the
             // integration included, falls back to the last accepted point.
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             // C's `simulationUpdate` window: until this row's events are handled,
             // the state the model is evaluated at may still be discarded.
             open_assert_window();
@@ -9189,7 +9250,7 @@ impl Driver for CvodeDriver {
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 logging_window(e, self.t, time);
-                self.retry.open(e, self.rows.len());
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -9258,7 +9319,7 @@ impl Driver for CvodeDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             let tout =
                 self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
             logging_window(e, self.t, tout);
@@ -10128,7 +10189,7 @@ impl Driver for IdaDriver {
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 logging_window(e, self.t, time);
-                self.retry.open(e, self.rows.len());
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -10196,7 +10257,7 @@ impl Driver for IdaDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             let tout = self
                 .pending_tout
                 .take()

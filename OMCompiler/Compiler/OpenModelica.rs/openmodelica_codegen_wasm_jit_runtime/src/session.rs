@@ -8,15 +8,19 @@
 //! `call_indirect` (wasm->wasm, no host boundary per residual) instead of the
 //! host calling each `functionODE`/Jacobian column through the wasm engine.
 //!
-//! Rows/params are captured into `rt_alloc`'d buffers (no WASI, no `.mat` here);
-//! the host reads them back via the accessor exports.
+//! The result file is written here as the rows arrive (`rt_sim_set_result`):
+//! through WASI on wasip1, through the `rt_host_result_*` imports on
+//! `wasm32-unknown-unknown`. Params/stats are read back via the accessor exports.
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
+use alloc::string::String;
+use openmodelica_mat_writer::Precision;
 use openmodelica_sim_meta::WTy;
 use openmodelica_sim_meta::driver::{self, Advance, Driver, SimEngine};
+use openmodelica_sim_meta::result::ResultStream;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{SimMeta, SolveStats};
 
@@ -215,6 +219,8 @@ struct Session {
     n_reals: u32,
     finished: bool,
     rows: Vec<f64>,
+    /// Rows the result stream took (0 when the host keeps the rows).
+    rows_written: u32,
     params: Vec<f64>,
     stats: SolveStats,
     /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
@@ -222,6 +228,146 @@ struct Session {
     /// `+profiling`'s collected state (`profiling::snapshot`), for the host to
     /// render into the report once it has written the result file.
     prof: Vec<u8>,
+    /// The written `.mat`'s [`openmodelica_sim_meta::result::MatLayout`].
+    layout: Vec<u8>,
+}
+
+/// The result file the next [`rt_sim_start`] writes.
+struct ResultCfg {
+    path: String,
+    keep: Vec<bool>,
+    precision: Precision,
+}
+
+struct ResultCell(UnsafeCell<(Option<ResultCfg>, Option<ResultStream>)>);
+unsafe impl Sync for ResultCell {}
+static RESULT: ResultCell = ResultCell(UnsafeCell::new((None, None)));
+
+fn result_cfg() -> &'static mut Option<ResultCfg> {
+    unsafe { &mut (*RESULT.0.get()).0 }
+}
+fn result_stream() -> &'static mut Option<ResultStream> {
+    unsafe { &mut (*RESULT.0.get()).1 }
+}
+
+fn sink_rows(rows: &[f64]) -> bool {
+    match result_stream() {
+        Some(s) => {
+            s.push_rows(rows);
+            true
+        }
+        None => false,
+    }
+}
+fn sink_finish() {
+    if let Some(s) = result_stream() {
+        s.finish();
+    }
+}
+
+#[cfg(target_os = "wasi")]
+use crate::result_out::open as open_result;
+
+#[cfg(not(target_os = "wasi"))]
+use openmodelica_sim_meta::result::ResultOut;
+
+#[cfg(not(target_os = "wasi"))]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    fn rt_host_result_open(path: u32, len: u32) -> i32;
+    fn rt_host_result_write(ptr: u32, len: u32) -> i32;
+    fn rt_host_result_write_at(pos: u64, ptr: u32, len: u32) -> i32;
+    fn rt_host_result_close();
+}
+
+/// The host's file, fed through `rt_host_result_*`; the buffer keeps the host
+/// crossings to one per few hundred KB.
+#[cfg(not(target_os = "wasi"))]
+struct HostOut {
+    buf: Vec<u8>,
+    ok: bool,
+    closed: bool,
+}
+
+#[cfg(not(target_os = "wasi"))]
+impl HostOut {
+    fn flush(&mut self) {
+        if !self.buf.is_empty() {
+            self.ok &= unsafe { rt_host_result_write(self.buf.as_ptr() as u32, self.buf.len() as u32) } == 0;
+            self.buf.clear();
+        }
+    }
+}
+
+#[cfg(not(target_os = "wasi"))]
+impl ResultOut for HostOut {
+    fn write(&mut self, bytes: &[u8]) -> bool {
+        self.buf.extend_from_slice(bytes);
+        if self.buf.len() >= 1 << 18 {
+            self.flush();
+        }
+        self.ok
+    }
+    fn write_at(&mut self, pos: u64, bytes: &[u8]) -> bool {
+        self.flush();
+        self.ok &= unsafe { rt_host_result_write_at(pos, bytes.as_ptr() as u32, bytes.len() as u32) } == 0;
+        self.ok
+    }
+    fn close(&mut self) -> bool {
+        if !self.closed {
+            self.flush();
+            unsafe { rt_host_result_close() };
+            self.closed = true;
+        }
+        self.ok
+    }
+}
+
+#[cfg(not(target_os = "wasi"))]
+impl Drop for HostOut {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
+#[cfg(not(target_os = "wasi"))]
+fn open_result(path: &str) -> Option<Box<dyn ResultOut>> {
+    (unsafe { rt_host_result_open(path.as_ptr() as u32, path.len() as u32) } == 0).then(|| {
+        Box::new(HostOut { buf: Vec::with_capacity(1 << 18), ok: true, closed: false }) as Box<dyn ResultOut>
+    })
+}
+
+/// Have the next [`rt_sim_start`] write the result file to `path` (`-outputFormat`
+/// picks the format): `keep` is one byte per result signal (the host's
+/// `-variableFilter` decision), `single` selects 4-byte reals.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_set_result(path: u32, path_len: u32, keep: u32, keep_len: u32, single: i32) -> i32 {
+    let path = unsafe { core::slice::from_raw_parts(path as *const u8, path_len as usize) };
+    let keep = unsafe { core::slice::from_raw_parts(keep as *const u8, keep_len as usize) };
+    *result_cfg() = Some(ResultCfg {
+        path: String::from_utf8_lossy(path).into_owned(),
+        keep: keep.iter().map(|&k| k != 0).collect(),
+        precision: if single != 0 { Precision::Single } else { Precision::Double },
+    });
+    0
+}
+
+/// Open the run's result file once initialization has left `SimData` consistent
+/// (C's `writeParameterData` point), and route the rows to it.
+fn open_result_stream(engine: &mut InWasmEngine, model: &SimMeta, sim_data: u32) -> i32 {
+    *result_stream() = None;
+    let Some(cfg) = result_cfg().take() else {
+        driver::set_row_sink(None, None);
+        return 0;
+    };
+    match openmodelica_sim_meta::result::open_stream(engine, model, sim_data, &cfg.keep, cfg.precision, || {
+        open_result(&cfg.path)
+    }) {
+        Ok(st) => *result_stream() = Some(st),
+        Err(_) => return -3,
+    }
+    driver::set_row_sink(Some(sink_rows), Some(sink_finish));
+    0
 }
 
 struct SessionCell(UnsafeCell<Option<Session>>);
@@ -241,7 +387,7 @@ fn session() -> &'static mut Option<Session> {
 pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
     let argv = simflags::argv_from_bytes(bytes);
-    // The host writes the result file for a session run, so it serves `-variableFilter`.
+    // The host resolves `-variableFilter` (`rt_sim_set_result`'s `keep`).
     match simflags::parse(&argv).and_then(|f| {
         let cap = simflags::Capabilities { variable_filter: true, ..crate::sundials::capabilities() };
         simflags::check(&f, cap).map(|()| f)
@@ -328,6 +474,7 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
 pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u64) -> i32 {
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
+    *result_stream() = None;
     crate::reset_lin_solves();
     crate::reset_ls_failures();
     crate::nls::set_no_throw_div_zero(false); // C's `initializeModel`
@@ -388,6 +535,11 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         Err(_) => return -2,
     };
 
+    let rc = open_result_stream(&mut engine, &model, sim_data);
+    if rc != 0 {
+        return rc;
+    }
+
     *session() = Some(Session {
         engine,
         driver,
@@ -396,10 +548,12 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         n_reals,
         finished: false,
         rows: Vec::new(),
+        rows_written: 0,
         params: Vec::new(),
         stats: SolveStats::default(),
         lin: Vec::new(),
         prof: Vec::new(),
+        layout: Vec::new(),
     });
     // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
     // for the analyses the nonlinear solver runs from inside a solve.
@@ -469,6 +623,11 @@ fn finish(s: &mut Session) {
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     use openmodelica_sim_meta::rtclock;
     openmodelica_sim_meta::parmod::finish();
+    driver::finish_rows(&mut s.rows);
+    if let Some(st) = result_stream().take() {
+        s.layout = st.layout_blob();
+        s.rows_written = st.n_rows() as u32;
+    }
     rtclock::accumulate(rtclock::TOTAL);
     openmodelica_sim_meta::profiling::end_of_run(&mut s.engine);
     s.prof = openmodelica_sim_meta::profiling::snapshot();
@@ -480,6 +639,9 @@ fn finish(s: &mut Session) {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_free() {
     *session() = None;
+    if let Some(mut st) = result_stream().take() {
+        st.finish();
+    }
 }
 
 // Result accessors — valid only once `rt_sim_advance` returned done/terminated
@@ -499,6 +661,21 @@ pub extern "C" fn rt_sim_rows_len() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_n_reals() -> u32 {
     session().as_ref().map_or(0, |s| s.n_reals)
+}
+/// Rows the run produced, whether streamed to the result file or kept in the buffer.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_n_rows() -> u32 {
+    session().as_ref().map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
+}
+/// The written `.mat`'s layout blob (`result::MatLayout::decode`); empty when this
+/// run wrote no `.mat`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_layout_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.layout.as_ptr() as u32)
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_layout_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.layout.len() as u32)
 }
 /// `-l`'s linearized model as `<file name>\0<content>`; the host writes the file
 /// (this runtime's WASI is the browser's VFS).

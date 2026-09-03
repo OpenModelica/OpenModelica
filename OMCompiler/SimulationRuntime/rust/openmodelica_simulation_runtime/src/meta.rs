@@ -102,6 +102,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         comment: "Simulation time [s]".into(),
         kind: MetaKind::Time,
         filter: 0,
+        unvarying: false,
     });
 
     // Real variables: states, derivatives, then the algebraic ones. Their result
@@ -130,6 +131,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: description(&cstr(v.info.comment), &unit),
                 kind: MetaKind::Column { col: (base + k) as u32 + 1, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -155,6 +157,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 kind: MetaKind::Column { col: layout.sens_col0() + (i - n_sens_par) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -169,6 +172,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 kind: MetaKind::Column { col: int_col0 + (base + k) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -182,6 +186,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 kind: MetaKind::Column { col: bool_col0 + (base + k) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -201,6 +206,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     negate: Neg::None,
                 },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -217,6 +223,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     negate: Neg::None,
                 },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -233,6 +240,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     negate: Neg::None,
                 },
                 filter: filter_bits(v.filterOutput, false),
+                unvarying: v.time_unvarying != 0,
             });
         }
     }
@@ -264,6 +272,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(al.info.comment),
                 kind: real_alias_kind(al, k),
                 filter: filter_bits(al.filterOutput, true),
+                unvarying: false,
             });
         }
     }
@@ -305,6 +314,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     comment: cstr(al.info.comment),
                     kind: kind(k),
                     filter: filter_bits(al.filterOutput, true),
+                    unvarying: false,
                 });
             }
         }
