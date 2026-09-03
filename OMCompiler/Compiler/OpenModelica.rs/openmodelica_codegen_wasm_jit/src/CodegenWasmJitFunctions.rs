@@ -6790,6 +6790,11 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
         }
     }
+    if sim_cref_key(cref).is_err() {
+        if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
+            return Ok(Some(wty));
+        }
+    }
     let key = sim_cref_key_fatal(cref)?;
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
@@ -6815,6 +6820,9 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
             if try_emit_empty_sim_array(ctx, cref)? {
                 return Ok(Some(WTy::I32));
+            }
+            if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
+                return Ok(Some(wty));
             }
             if let Some(wty) = emit_sim_const_index_error(ctx, cref, &key)? {
                 return Ok(Some(wty));
@@ -7210,6 +7218,199 @@ fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result
     emit_array_alloc(ctx, obj, &elem, &dims)?;
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(true)
+}
+
+/// A whole array or slice whose elements have slots but no group (mixed variable
+/// kinds, Jacobian seed/pDER scratch): C's `daeExpCrefRhsArrayBox`. A constant
+/// selection is boxed directly; run-time subscripts box the whole array and index
+/// or slice it at run time.
+fn try_emit_sim_array_box(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
+    let Some((leaf_ty, leaf_subs)) = cref_leaf(cref) else { return Ok(None) };
+    let Ok(dims) = const_dims(leaf_ty) else { return Ok(None) };
+    let elem = match sig_ty_quiet(array_elem_type(leaf_ty)) {
+        Ok(s @ (SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Record { .. })) => s,
+        _ => return Ok(None),
+    };
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**leaf_subs).into_iter().collect();
+    if dims.is_empty() || subs.len() > dims.len() {
+        return Ok(None);
+    }
+    // Per axis: the selected 1-based indices, and whether the axis survives.
+    let mut axes: Vec<(Vec<i32>, bool)> = Vec::with_capacity(dims.len());
+    for (k, &d) in dims.iter().enumerate() {
+        let whole = ((1..=d as i32).collect(), true);
+        axes.push(match subs.get(k).map(|s| &***s) {
+            None | Some(DAE::Subscript::WHOLEDIM) | Some(DAE::Subscript::WHOLE_NONEXP { .. }) => whole,
+            Some(DAE::Subscript::INDEX { exp }) => match const_index_value(exp) {
+                Some(i) => (vec![i], false),
+                None => return box_then_select(ctx, cref, &dims, &elem, leaf_subs),
+            },
+            Some(DAE::Subscript::SLICE { exp }) => match const_index_list(exp) {
+                Some(v) => (v, true),
+                None => return box_then_select(ctx, cref, &dims, &elem, leaf_subs),
+            },
+        });
+    }
+    if axes.iter().all(|(_, keep)| !keep) {
+        return Ok(None);
+    }
+    emit_sim_array_box(ctx, cref, &axes, &elem)?;
+    Ok(Some(WTy::I32))
+}
+
+/// Box the whole array, then apply the run-time subscripts to the boxed value.
+fn box_then_select(
+    ctx: &mut FnCtx,
+    cref: &DAE::ComponentRef,
+    dims: &[u32],
+    elem: &SigTy,
+    subs: &Arc<List<Arc<DAE::Subscript>>>,
+) -> Result<Option<WTy>> {
+    let axes: Vec<(Vec<i32>, bool)> = dims.iter().map(|&d| ((1..=d as i32).collect(), true)).collect();
+    emit_sim_array_box(ctx, cref, &axes, elem)?;
+    let rank = dims.len() as u32;
+    if !is_scalar_index(subs, rank) {
+        return slice_loaded(ctx, subs).map(Some);
+    }
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(obj));
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_sim_flat_index(ctx, dims, &index_subscripts(subs, rank)?)?;
+    let (_, stride) = sim_array_elem_kind_stride(elem.wty());
+    ctx.emit(we::Instruction::I32Const(stride as i32));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add);
+    let wty = elem.wty();
+    match wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(0, 2))),
+    }
+    emit_retain_top(ctx, elem.is_heap())?;
+    release_temp_array(ctx, obj)?;
+    Ok(Some(wty))
+}
+
+/// A fresh array of the elements `axes` select, row-major, each read through its
+/// own cref (a record element gathers its fields). Leaves the owned handle.
+fn emit_sim_array_box(
+    ctx: &mut FnCtx,
+    cref: &DAE::ComponentRef,
+    axes: &[(Vec<i32>, bool)],
+    elem: &SigTy,
+) -> Result<()> {
+    let out_dims: Vec<u32> = axes.iter().filter(|(_, keep)| *keep).map(|(v, _)| v.len() as u32).collect();
+    let total: u32 = out_dims.iter().product();
+    let (ek, stride) = (elem.elem_kind(), sim_array_elem_kind_stride(elem.wty()).1);
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(out_dims.len() as i32));
+    ctx.emit(we::Instruction::I32Const(total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in out_dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    let data = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::LocalSet(data));
+    for k in 0..total {
+        let mut rem = k as usize;
+        let mut index = vec![0i32; axes.len()];
+        for (axis, (sel, _)) in axes.iter().enumerate().rev() {
+            index[axis] = sel[rem % sel.len()];
+            rem /= sel.len();
+        }
+        let elem_cref = cref_with_leaf_subs(cref, &index);
+        ctx.emit(we::Instruction::LocalGet(data));
+        let w = if matches!(elem, SigTy::Record { .. }) {
+            if !try_emit_sim_record_gather(ctx, &elem_cref)? {
+                return Err("CodegenWasmJit: array element is not a record variable");
+            }
+            WTy::I32
+        } else {
+            compile_sim_cref_read(ctx, &elem_cref)?
+                .ok_or("CodegenWasmJit: array element is not a simulation variable")?
+        };
+        coerce(ctx, w, elem.wty());
+        let off = k * stride;
+        match elem.wty() {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(off, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(off, 2))),
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+fn cref_leaf(cr: &DAE::ComponentRef) -> Option<(&DAE::Type, &Arc<List<Arc<DAE::Subscript>>>)> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_QUAL { componentRef, .. } => cref_leaf(componentRef),
+        C::CREF_IDENT { identType, subscriptLst, .. } => Some((identType, subscriptLst)),
+        _ => None,
+    }
+}
+
+fn array_elem_type(ty: &DAE::Type) -> &DAE::Type {
+    match ty {
+        DAE::Type::T_ARRAY { ty, .. } => array_elem_type(ty),
+        other => other,
+    }
+}
+
+/// `cr` with its leaf subscripts replaced by the constant element index.
+fn cref_with_leaf_subs(cr: &DAE::ComponentRef, index: &[i32]) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_IDENT { ident, identType, .. } => Arc::new(C::CREF_IDENT {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: Arc::new(
+                index
+                    .iter()
+                    .map(|i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: *i }) }))
+                    .collect(),
+            ),
+        }),
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: cref_with_leaf_subs(componentRef, index),
+        }),
+        other => Arc::new(other.clone()),
+    }
+}
+
+/// The 1-based indices a constant `SLICE` subscript selects: `lo:hi`, `lo:s:hi`
+/// or `{i, j, …}` of literals.
+fn const_index_list(exp: &DAE::Exp) -> Option<Vec<i32>> {
+    match exp {
+        DAE::Exp::RANGE { start, step, stop, .. } => {
+            let lo = const_index_value(start)?;
+            let hi = const_index_value(stop)?;
+            let step = step.as_ref().map_or(Some(1), |e| const_index_value(e))?;
+            if step == 0 {
+                return None;
+            }
+            let mut out = Vec::new();
+            let mut i = lo;
+            while if step > 0 { i <= hi } else { i >= hi } {
+                out.push(i);
+                i += step;
+            }
+            Some(out)
+        }
+        DAE::Exp::ARRAY { array, .. } => (&**array).into_iter().map(|e| const_index_value(e)).collect(),
+        _ => None,
+    }
 }
 
 /// C's `Expression.hasZeroDimension` for one dimension: a size known to be zero.

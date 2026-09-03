@@ -1798,6 +1798,13 @@ pub(crate) fn compile_include_library(
     }
 }
 
+const INCLUDE_PREAMBLE: &str = "\
+/* No preamble: the Modelica specification gives an external \"C\" translation unit
+   nothing beyond what its own Include sources bring in, so omc must not add headers
+   or declarations here. A library that fails to compile is fixed upstream, or gets
+   `-std=`/`-include` flags in the library-testing configuration. */
+";
+
 #[cfg(not(target_arch = "wasm32"))]
 fn compile_include_tu(
     prefix: &str,
@@ -1814,7 +1821,7 @@ fn compile_include_tu(
     std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
-    std::fs::write(&tu, includes.join("\n") + "\n" + wrappers)
+    std::fs::write(&tu, [INCLUDE_PREAMBLE, &includes.join("\n"), "\n", wrappers].concat())
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);
@@ -9575,39 +9582,6 @@ fn jac_listed_vars(jm: &SimCode::JacobianMatrix) -> Vec<SimCodeVar::SimVar> {
     columns.chain(ht).collect()
 }
 
-/// The Jacobian variables with a scratch slot each, and the array bases those slots
-/// scalarize from (`u.$pDER.dummyVar` for `u.$pDER.dummyVar[1]`, `[2]`).
-struct JacSlots {
-    keys: HashSet<String>,
-    bases: HashSet<String>,
-}
-
-impl JacSlots {
-    fn of(jm: &SimCode::JacobianMatrix) -> JacSlots {
-        let mut out = JacSlots { keys: HashSet::new(), bases: HashSet::new() };
-        for sv in lst(&jm.seedVars).chain(jac_column_vars(jm).iter()) {
-            if let Ok(key) = sim_cref_key(&sv.name) {
-                out.keys.insert(key);
-            }
-            if let Ok(Some((base, _))) = array_element_of(&sv.name) {
-                out.bases.insert(base);
-            }
-        }
-        out
-    }
-
-    /// Whether the emitter can name `cr`. A Jacobian variable has to *be* one of the
-    /// slots: the whole array whose elements hold them has none of its own (no
-    /// scratch array group exists), nor has an element behind a loop index.
-    /// Anything else is a model variable, which lowering resolves by itself.
-    fn resolvable(&self, cr: &Arc<DAE::ComponentRef>) -> bool {
-        match sim_cref_key(cr) {
-            Ok(key) => self.keys.contains(&key) || !self.bases.contains(&key) || self.bases.contains(&key),
-            Err(_) => true,
-        }
-    }
-}
-
 /// A cref's name with its final subscripts dropped, spelled as [`array_element_of`]
 /// spells an element's base.
 fn cref_base_name(cr: &Arc<DAE::ComponentRef>) -> Option<String> {
@@ -9643,16 +9617,15 @@ pub(crate) fn jac_lowerable(jm: &SimCode::JacobianMatrix) -> bool {
     if lst(&jm.seedVars).chain(listed.iter()).any(|sv| sim_cref_key(&sv.name).is_err()) {
         return false;
     }
-    let slots = JacSlots::of(jm);
-    lst(&col.constantEqns).chain(lst(&col.columnEqns)).all(|eq| jac_eq_lowerable(eq, &slots))
+    lst(&col.constantEqns).chain(lst(&col.columnEqns)).all(jac_eq_lowerable)
 }
 
 /// One column equation of a symbolic Jacobian, against what [`lower_equation`]
 /// accepts: a differentiated algebraic loop is a `SES_LINEAR`, a differentiated
 /// external or table call a `SES_ALGORITHM`.
-fn jac_eq_lowerable(eq: &SimCode::SimEqSystem, slots: &JacSlots) -> bool {
+fn jac_eq_lowerable(eq: &Arc<SimCode::SimEqSystem>) -> bool {
     use SimCode::SimEqSystem as E;
-    match eq {
+    match &**eq {
         // `lower_linear_system` needs either a usable `simJac` or the residuals of a
         // torn system; the inner equations run through `lower_equation` too.
         E::SES_LINEAR { lSystem, .. } => {
@@ -9661,13 +9634,14 @@ fn jac_eq_lowerable(eq: &SimCode::SimEqSystem, slots: &JacSlots) -> bool {
                 && lst(&lSystem.simJac).all(|(_, _, e)| matches!(&**e, E::SES_RESIDUAL { .. }))
                 && count(&lSystem.beqs) == count(&lSystem.vars);
             (torn || sim_jac)
-                && lst(&lSystem.residual).all(|e| jac_eq_lowerable(e, slots))
-                && lst(&lSystem.simJac).all(|(_, _, e)| jac_eq_lowerable(e, slots))
-                && lst(&lSystem.beqs).all(|e| exp_crefs_resolvable(e, slots))
+                && lst(&lSystem.residual).all(jac_eq_lowerable)
+                && lst(&lSystem.simJac).all(|(_, _, e)| jac_eq_lowerable(e))
+                && lst(&lSystem.beqs)
+                    .all(|e| openmodelica_frontend_base::Expression::extractCrefsFromExp(e.clone()).is_ok())
         }
         // The aliased equation is a model equation, which lowering handles anyway.
         E::SES_ALIAS { .. } => true,
-        _ => jac_eq_crefs(eq).is_some_and(|crs| crs.iter().all(|c| slots.resolvable(c))),
+        _ => jac_eq_crefs(eq).is_some(),
     }
 }
 
@@ -9731,12 +9705,6 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<Arc<DAE::ComponentRef>>
         }
         _ => None,
     }
-}
-
-/// [`JacSlots::resolvable`] for every cref of an expression.
-fn exp_crefs_resolvable(e: &Arc<DAE::Exp>, slots: &JacSlots) -> bool {
-    openmodelica_frontend_base::Expression::extractCrefsFromExp(e.clone())
-        .is_ok_and(|crs| lst(&crs).all(|c| slots.resolvable(c)))
 }
 
 /// The residual rows of the Jacobian's `JAC_VAR` result variables, in

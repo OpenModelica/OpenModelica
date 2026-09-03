@@ -724,6 +724,10 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
+  // OpenBLAS sizes its thread pool from the environment when it loads.
+  if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
+    System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+  end if;
   setDefaultCC();
   SymbolTable.reset();
   BackendInterfaceImplementation.initializeBackendInterface();

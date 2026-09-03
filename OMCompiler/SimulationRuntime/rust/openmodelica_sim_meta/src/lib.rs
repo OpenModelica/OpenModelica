@@ -50,6 +50,10 @@ pub mod rtclock;
 /// The `LOG_STATS` block a finished run prints.
 pub mod stats;
 pub mod sync;
+#[cfg(all(feature = "std", unix, ipopt))]
+pub mod lapack_dyn;
+#[cfg(not(all(feature = "std", unix, ipopt)))]
+pub mod lapack_dyn {}
 #[cfg(sundials)]
 pub use openmodelica_solvers::sundials;
 

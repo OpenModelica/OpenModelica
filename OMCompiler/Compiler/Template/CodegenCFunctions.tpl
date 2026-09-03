@@ -5632,10 +5632,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
               let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
               let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
               '((modelica_<%type%>*)&(<%nosubname%>))'
-            else
+            else if isContiguousArrayCref(cr) then
               let &sub = buffer ""
               let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
               '((modelica_<%type%>*)&(<%nosubname%>))'
+            else
+              '((modelica_<%type%>*)<%daeExpCrefRhsArrayElems(cr, type, context, &preExp, &varDecls, &auxFunction)%>.data)'
           '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
@@ -5643,8 +5645,11 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       let &sub = buffer ""
       let dimsLenStr = listLength(crefDims(cr))
       let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
-      let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let arrData = if isContiguousArrayCref(crefStripSubs(cr)) then
+          '&<%contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)%>'
+        else
+          '<%daeExpCrefRhsArrayElems(crefStripSubs(cr), type, context, &preExp, &varDecls, &auxFunction)%>.data'
+      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)<%arrData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let slicedArray = tempDecl(arrayType, &varDecls)
       let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
       let &preExp += 'index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
@@ -5652,10 +5657,15 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithVariableSubs(cr) then
-      let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-      let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-      // let cast = typeCastContextInt(context, ty)
-      '<%nosubname%>'
+      if isContiguousArrayCref(crefStripSubs(cr)) then
+        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+        '<%nosubname%>'
+      else
+        let type = expTypeShort(ty)
+        let elems = daeExpCrefRhsArrayElems(crefStripSubs(cr), type, context, &preExp, &varDecls, &auxFunction)
+        let flat = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(cr))), listReverse(crefSubs(crefArrayGetFirstCref(cr))), context, &preExp, &varDecls, &auxFunction)
+        '<%type%>_get(<%elems%>, <%flat%>)'
     else if boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))) then
       // Without sim code scalarization array elements like arr[2] are not
       // standalone simvars and have to be addressed relative to the first
@@ -5677,6 +5687,20 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     else
       error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;
+
+template daeExpCrefRhsArrayElems(ComponentRef cr, String type, Context context,
+                                 Text &preExp, Text &varDecls, Text &auxFunction)
+ "A fresh 1-D array of the elements of array cref cr, for elements that are not
+  consecutive in the variable arrays (a state beside an algebraic, an alias)."
+::=
+  let elems = (expandCref(cr, true) |> e =>
+      let &sub = buffer ""
+      contextCref(e, context, &preExp, &varDecls, &auxFunction, &sub)
+    ;separator=", ")
+  let tmp = tempDecl(type + "_array", &varDecls)
+  let &preExp += 'array_alloc_scalar_<%type%>_array(&<%tmp%>, <%listLength(expandCref(cr, true))%>, <%elems%>);<%\n%>'
+  tmp
+end daeExpCrefRhsArrayElems;
 
 template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
