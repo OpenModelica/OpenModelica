@@ -4769,7 +4769,7 @@ algorithm
   end matchcontinue;
 end fillincAdjacencyMatrixTEnhanced;
 
-protected function adjacencyRowEnhanced
+public function adjacencyRowEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
   in the matrix for one equation."
