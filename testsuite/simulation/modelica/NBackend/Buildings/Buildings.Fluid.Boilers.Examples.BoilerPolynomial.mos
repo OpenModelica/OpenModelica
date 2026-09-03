@@ -19,6 +19,6 @@ simulate(Buildings.Fluid.Boilers.Examples.BoilerPolynomial); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// "Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.
 // "
 // endResult

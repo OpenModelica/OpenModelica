@@ -190,7 +190,7 @@ public
       case SCode.MOD()
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
-          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, confidence, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, is_each, scope, confidence, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope, confidence)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
@@ -511,6 +511,34 @@ public
       else ();
     end match;
   end propagateSubMod;
+
+  function setSource
+    "Sets the source and confidence of all bindings in a modifier."
+    input output Modifier mod;
+    input NFBinding.Source source;
+    input Integer confidence;
+  algorithm
+    () := match mod
+      case MODIFIER()
+        algorithm
+          mod.binding := Binding.setConfidence(confidence, Binding.setSource(source, mod.binding));
+          mod.subModifiers := ModTable.map(mod.subModifiers,
+            function setSourceSubMod(source = source, confidence = confidence));
+        then
+          ();
+
+      else ();
+    end match;
+  end setSource;
+
+  function setSourceSubMod
+    input String name;
+    input output Modifier submod;
+    input NFBinding.Source source;
+    input Integer confidence;
+  algorithm
+    submod := setSource(submod, source, confidence);
+  end setSourceSubMod;
 
   function isEmpty
     input Modifier mod;

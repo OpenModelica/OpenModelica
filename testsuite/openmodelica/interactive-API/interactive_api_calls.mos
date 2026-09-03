@@ -723,19 +723,6 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getMessagesStringInternal()
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "",
-//     readonly = false,
-//     lineStart = 0,
-//     columnStart = 0,
-//     lineEnd = 0,
-//     columnEnd = 0
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.",
-//     kind = .OpenModelica.Scripting.ErrorKind.symbolic,
-//     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 7017
-// end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
 //     filename = "ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,
 //     lineStart = 8,
@@ -947,19 +934,6 @@ getMessagesStringInternal(unique = false); // not unique
 // true
 // Evaluating: getMessagesStringInternal(unique = false)
 // {record OpenModelica.Scripting.ErrorMessage
-//     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "",
-//     readonly = false,
-//     lineStart = 0,
-//     columnStart = 0,
-//     lineEnd = 0,
-//     columnEnd = 0
-// end OpenModelica.Scripting.SourceInfo;,
-//     message = "The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.",
-//     kind = .OpenModelica.Scripting.ErrorKind.symbolic,
-//     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 7017
-// end OpenModelica.Scripting.ErrorMessage;, record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
 //     filename = "ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo",
 //     readonly = false,

@@ -91,6 +91,7 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 redundantInitialEquations.mos \
 conflictingStartValues.mos \
 conflictingStartValues2.mos \
+startAttributePriority.mos \
 Ticket5340.mos \
 
 
