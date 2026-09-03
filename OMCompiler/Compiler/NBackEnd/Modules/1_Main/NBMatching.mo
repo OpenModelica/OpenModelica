@@ -49,6 +49,7 @@ protected
   // NF import
   import NFFunction.Function;
   import Variable = NFVariable;
+  import ComponentRef = NFComponentRef;
 
   // NB import
   import Adjacency = NBAdjacency;
@@ -317,6 +318,32 @@ public
       end for;
     end if;
   end getMatches;
+
+  function getMatchedVars
+    "returns the variables from the map that have at least one matched scalar element"
+    input Matching matching;
+    input Option<Adjacency.Mapping> mapping_opt;
+    input UnorderedMap<ComponentRef, Integer> vars_map;
+    input VariablePointers variables;
+    output list<VariablePointer> matched = {};
+  protected
+    Integer start, size;
+  algorithm
+    for arr_idx in UnorderedMap.valueList(vars_map) loop
+      (start, size) := match mapping_opt
+        local
+          Adjacency.Mapping mapping;
+        case SOME(mapping) then mapping.var_AtS[arr_idx];
+        else (arr_idx, 1);
+      end match;
+      for scal_idx in start:start+size-1 loop
+        if scal_idx <= arrayLength(matching.var_to_eqn) and matching.var_to_eqn[scal_idx] > 0 then
+          matched := ExpandableArray.get(arr_idx, variables.varArr) :: matched;
+          break;
+        end if;
+      end for;
+    end for;
+  end getMatchedVars;
 
 protected
   function toStringSingle
