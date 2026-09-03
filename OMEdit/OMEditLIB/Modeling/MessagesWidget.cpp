@@ -51,6 +51,7 @@
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 const int fixedTabsCount = 4;
 
@@ -643,9 +644,17 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // suppress the unnecessary qt warning messages
   foreach (QString suppressMessage, mSuppressMessagesList) {
-    QRegExp rx(suppressMessage);
-    rx.setPatternSyntax(QRegExp::Wildcard);
-    if (rx.exactMatch(messageItem.getMessage())) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QRegularExpression rx(QRegularExpression::fromWildcard(suppressMessage));
+#else
+    /* Qt 5 has no QRegularExpression::fromWildcard(). Use wildcardToRegularExpression()
+     * instead, which returns a fully anchored pattern
+     * by default — matching fromWildcard()'s default (anchored) behavior here, so no
+     * anchor-stripping is needed in this case.
+     */
+    QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(suppressMessage));
+#endif
+    if (rx.match(messageItem.getMessage()).hasMatch()) {
       return;
     }
   }

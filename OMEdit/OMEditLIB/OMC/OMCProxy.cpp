@@ -83,6 +83,7 @@ const char* System_progressMessage();                   // label of the step in 
 #include <QMessageBox>
 #include <QStringBuilder>
 #include <QCoreApplication>
+#include <QRegularExpression>
 
 // Progress phase (compiler PHASE_* / metamodelica::cancel) → user-facing label.
 // Shared by the wasm worker-wait UI and the native pump-driven progress bar.
@@ -3380,33 +3381,30 @@ bool OMCProxy::disableNewInstantiation()
 QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
 {
   // get img src tags
-  QRegExp imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  imgRegExp.setMinimal(true);
+  QRegularExpression imgRegExp("\\<img[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator imgIterator = imgRegExp.globalMatch(documentation);
   QStringList attributeMatches;
   QStringList tagMatches;
-  int offset = 0;
-  while((offset = imgRegExp.indexIn(documentation, offset)) != -1) {
-    offset += imgRegExp.matchedLength();
-    tagMatches.append(imgRegExp.cap(0)); // complete tag
-    attributeMatches.append(imgRegExp.cap(1)); // attribute
+  while (imgIterator.hasNext()) {
+    QRegularExpressionMatch match = imgIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1)); // attribute
   }
   // get script src tags
-  QRegExp scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  scriptRegExp.setMinimal(true);
-  offset = 0;
-  while((offset = scriptRegExp.indexIn(documentation, offset)) != -1) {
-    offset += scriptRegExp.matchedLength();
-    tagMatches.append(scriptRegExp.cap(0)); // complete tag
-    attributeMatches.append(scriptRegExp.cap(1));
+  QRegularExpression scriptRegExp("\\<script[^\\>]*src\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator scriptIterator = scriptRegExp.globalMatch(documentation);
+  while (scriptIterator.hasNext()) {
+    QRegularExpressionMatch match = scriptIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1));
   }
   // get link href tags
-  QRegExp linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", Qt::CaseInsensitive);
-  linkRegExp.setMinimal(true);
-  offset = 0;
-  while((offset = linkRegExp.indexIn(documentation, offset)) != -1) {
-    offset += linkRegExp.matchedLength();
-    tagMatches.append(linkRegExp.cap(0)); // complete tag
-    attributeMatches.append(linkRegExp.cap(1));
+  QRegularExpression linkRegExp("\\<link[^\\>]*href\\s*=\\s*\"([^\"]*)\"[^\\>]*\\>", QRegularExpression::CaseInsensitiveOption);
+  QRegularExpressionMatchIterator linkIterator = linkRegExp.globalMatch(documentation);
+  while (linkIterator.hasNext()) {
+    QRegularExpressionMatch match = linkIterator.next();
+    tagMatches.append(match.captured(0)); // complete tag
+    attributeMatches.append(match.captured(1));
   }
   // go through the list of links and convert them if needed.
   foreach (QString attribute, attributeMatches) {

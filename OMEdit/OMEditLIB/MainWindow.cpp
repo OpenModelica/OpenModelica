@@ -92,6 +92,7 @@
 #include <QtSvg/QSvgGenerator>
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
+#include <QRegularExpression>
 
 namespace {
 /*!
@@ -1084,8 +1085,8 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
     QFileInfo fileInfo(fileUrl.toLocalFile());
     mpProgressBar->setValue(++progressValue);
     // check the file extension
-    QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
-    if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
+    QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
+    if (resultFilesRegExp.match(fileInfo.suffix()).hasMatch()) {
       openResultFile(fileInfo.absoluteFilePath());
     } else {
       mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);

@@ -56,7 +56,7 @@
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QMessageBox>
-
+#include <QRegularExpression>
 #include <limits>
 
 /*!
@@ -797,8 +797,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpOutputVariablesTextBox->setText(value);
           } else if (simulationFlag.compare("r") == 0) {
             mpResultFileNameTextBox->setText(value);
-            QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
-            if (resultFilesRegExp.indexIn(value) != -1) {
+            QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
+            if (resultFilesRegExp.match(value).hasMatch()) {
               int currentIndex = mpOutputFormatComboBox->findText(StringHandler::getLastWordAfterDot(value));
               if (currentIndex > -1) {
                 mpOutputFormatComboBox->setCurrentIndex(currentIndex);
@@ -2007,8 +2007,8 @@ OpcUaClient* SimulationDialog::getOpcUaClient(int port)
 void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
   QString workingDirectory = simulationOptions.getWorkingDirectory();
-  QRegExp regExp(Helper::omResultFileTypesRegExp);
-  bool resultFileKnown = regExp.indexIn(simulationOptions.getFullResultFileName()) != -1;
+  QRegularExpression regExp(Helper::omResultFileTypesRegExp);
+  bool resultFileKnown = regExp.match(simulationOptions.getFullResultFileName()).hasMatch();
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getFullResultFileName()));
   resultFileInfo.setCaching(false);

@@ -147,7 +147,6 @@ protected:
 };
 
 class LineEdit;
-class QRegExp;
 class QRegularExpression;
 class TreeSearchFilters : public QWidget
 {
@@ -156,8 +155,7 @@ public:
   /*!
    * \brief The FilterSyntax enum
    * The filter syntax used for the filter search. The values must stay in sync
-   * with QRegExp::PatternSyntax (RegExp=0, Wildcard=1, FixedString=2) so that
-   * the stored combo box data remains compatible between Qt5 and Qt6.
+   * with the combo box item data (RegExp=0, Wildcard=1, FixedString=2).
    */
   enum FilterSyntax {
     Regexp = 0,
@@ -174,11 +172,7 @@ public:
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
   FilterSyntax getFilterSyntax() const {return FilterSyntax(mpSyntaxComboBox->itemData(mpSyntaxComboBox->currentIndex()).toInt());}
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-  static QRegExp getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, FilterSyntax syntax);
-#else
   static QRegularExpression getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, FilterSyntax syntax);
-#endif
 private:
   LineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
