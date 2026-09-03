@@ -91,6 +91,10 @@ private:
   QStringList mLibrariesBrowserAdditionCommandsList;
   QStringList mLibrariesBrowserDeletionCommandsList;
   bool mLoadModelError;
+  // One-shot cache filled by prefetchClassInformationList and drained by
+  // getClassInformation, so a whole subtree loads in one bulk call.
+  QHash<QString, OMCInterface::getClassInformation_res> mClassInformationCache;
+  void fixClassInformationComment(OMCInterface::getClassInformation_res &classInformation);
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
@@ -129,6 +133,7 @@ public:
                             bool sort = false, bool builtin = false, bool showProtected = true, bool includeConstants = false);
   QStringList searchClassNames(QString searchText, bool findInText = false);
   OMCInterface::getClassInformation_res getClassInformation(QString className);
+  void prefetchClassInformationList(const QStringList &classNames);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);

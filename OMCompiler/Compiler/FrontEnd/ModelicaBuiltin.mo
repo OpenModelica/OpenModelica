@@ -5324,6 +5324,32 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
+function getClassInformationList
+  "Like getClassInformation, but for several classes in a single call."
+  input String classNames[:];
+  output ClassInformation classInformation[:];
+  record ClassInformation
+    String restriction, comment;
+    Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
+    String fileName;
+    Boolean fileReadOnly;
+    Integer lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd;
+    String dimensions[:];
+    Boolean isProtectedClass;
+    Boolean isDocumentationClass;
+    String version;
+    String preferredView;
+    Boolean state;
+    String access;
+    String versionDate;
+    String versionBuild;
+    String dateModified;
+    String revisionId;
+  end ClassInformation;
+external "builtin";
+annotation(preferredView="text");
+end getClassInformationList;
+
 function getCrefInfo
   "Deprecated; use getClassInformation instead."
   input TypeName cl;

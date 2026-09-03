@@ -59,6 +59,10 @@
 #endif
 #include "FlatModelica/Expression.h"
 
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+
 extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
@@ -1509,7 +1513,20 @@ QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
   */
 OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString className)
 {
+  if (mClassInformationCache.contains(className)) {
+    return mClassInformationCache.take(className);
+  }
   OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
+  fixClassInformationComment(classInformation);
+  return classInformation;
+}
+
+/*!
+  Rewrites the class comment so tooltips and the documentation view can render it:
+  unescapes quotes, resolves modelica:// URIs to files, and drops the file:// scheme.
+  */
+void OMCProxy::fixClassInformationComment(OMCInterface::getClassInformation_res &classInformation)
+{
   QString comment = classInformation.comment.replace("\\\"", "\"");
   comment = makeDocumentationUriToFileName(comment);
   // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
@@ -1519,7 +1536,71 @@ OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString clas
   comment.replace("src=\"file://", "src=\"");
 #endif
   classInformation.comment = comment;
-  return classInformation;
+}
+
+/*!
+  Prefetches getClassInformation for many classes in one call and caches the
+  results, so later getClassInformation() lookups avoid a round-trip each. Goes
+  through the JSON interactive format since records are not in the typed ABI; the
+  result is positional. On any mismatch the cache is left empty and callers fall
+  back to per-class calls.
+  \param classNames - fully qualified class names.
+  */
+void OMCProxy::prefetchClassInformationList(const QStringList &classNames)
+{
+  if (classNames.isEmpty()) {
+    return;
+  }
+  QStringList quoted;
+  for (QString name : classNames) {
+    name.replace("\\", "\\\\").replace("\"", "\\\"");
+    quoted.append("\"" + name + "\"");
+  }
+  setCommandLineOptions("--interactiveDumpFormat=json");
+  sendCommand("getClassInformationList({" + quoted.join(",") + "})");
+  QString resultJson = getResult();
+  setCommandLineOptions("--interactiveDumpFormat=default");
+
+  QJsonParseError jsonParserError;
+  QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8(), &jsonParserError);
+  if (jsonParserError.error != QJsonParseError::NoError || !doc.isArray()) {
+    return;
+  }
+  QJsonArray classInformationArray = doc.array();
+  if (classInformationArray.size() != classNames.size()) {
+    return;
+  }
+  for (int i = 0; i < classInformationArray.size(); ++i) {
+    QJsonObject o = classInformationArray.at(i).toObject();
+    OMCInterface::getClassInformation_res r;
+    r.restriction = o.value("restriction").toString();
+    r.comment = o.value("comment").toString();
+    r.partialPrefix = o.value("partialPrefix").toBool();
+    r.finalPrefix = o.value("finalPrefix").toBool();
+    r.encapsulatedPrefix = o.value("encapsulatedPrefix").toBool();
+    r.fileName = o.value("fileName").toString();
+    r.fileReadOnly = o.value("fileReadOnly").toBool();
+    r.lineNumberStart = o.value("lineNumberStart").toInteger();
+    r.columnNumberStart = o.value("columnNumberStart").toInteger();
+    r.lineNumberEnd = o.value("lineNumberEnd").toInteger();
+    r.columnNumberEnd = o.value("columnNumberEnd").toInteger();
+    const QJsonArray dimensions = o.value("dimensions").toArray();
+    for (const QJsonValue &dimension : dimensions) {
+      r.dimensions.append(dimension.toString());
+    }
+    r.isProtectedClass = o.value("isProtectedClass").toBool();
+    r.isDocumentationClass = o.value("isDocumentationClass").toBool();
+    r.version = o.value("version").toString();
+    r.preferredView = o.value("preferredView").toString();
+    r.state = o.value("state").toBool();
+    r.access = o.value("access").toString();
+    r.versionDate = o.value("versionDate").toString();
+    r.versionBuild = o.value("versionBuild").toString();
+    r.dateModified = o.value("dateModified").toString();
+    r.revisionId = o.value("revisionId").toString();
+    fixClassInformationComment(r);
+    mClassInformationCache.insert(classNames.at(i), r);
+  }
 }
 
 /*!
