@@ -3936,7 +3936,7 @@ pub fn solve_nls(
                             if !converged {
                                 stat_inc(STAT_NLS_RETRY);
                                 converged = hybrd_c(
-                                    n, &mut x, &nlsx, &warm, &guess, &nominal, &bounds, &t, &mut eval,
+                                    n, &mut x, &nlsx, &nlsx_old, &guess, &nominal, &bounds, &t, &mut eval,
                                     has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])),
                                     &mut set_cont, use_xscaling,
                                 );
@@ -3968,7 +3968,7 @@ pub fn solve_nls(
                 if !homotopy_solver && !converged {
                     stat_inc(STAT_NLS_RETRY);
                     converged = hybrd_c(
-                        n, &mut x, &nlsx, &warm, &guess, &nominal, &bounds, &t, &mut eval,
+                        n, &mut x, &nlsx, &nlsx_old, &guess, &nominal, &bounds, &t, &mut eval,
                         has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])), &mut set_cont,
                         use_xscaling,
                     );
@@ -3980,7 +3980,7 @@ pub fn solve_nls(
                 if !converged && homotopy_solver && !strict_used {
                     stat_inc(STAT_NLS_RETRY);
                     converged = hybrd_c(
-                        n, &mut x, &best, &warm, &guess, &nominal, &bounds, &t, &mut eval,
+                        n, &mut x, &best, &nlsx_old, &guess, &nominal, &bounds, &t, &mut eval,
                         has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])), &mut set_cont,
                         use_xscaling,
                     );
