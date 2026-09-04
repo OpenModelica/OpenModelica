@@ -511,6 +511,39 @@ QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJs
         }
         QJsonArray variables = arguments.value("variables").toArray();
         QString fileName = foundResultFile->getFilePath() + "/" + foundResultFile->getFileName();
+#ifndef OM_LEGACY_RESULT_READERS
+        omc::ResultFile reader;
+        try {
+            reader.open(fileName.toStdString());
+        } catch (const omc::ResultError &e) {
+            return makeMCPError(id, QString("Could not read result file %1: %2").arg(fileName).arg(e.what()));
+        }
+        if (reader.rows() <= 0) {
+            return makeMCPError(id, QString("Could not read result file %1: no rows").arg(fileName));
+        }
+        QJsonObject parameters, vars_result;
+        variables.append("time"); // always include time
+        for (const auto &variable : variables) {
+            QString plotName = variable.toString();
+            std::string name = plotName.toStdString();
+            if (!reader.hasVariable(name)) {
+                return makeMCPError(id, QString("Could not find variable %1 in result file %2").arg(plotName).arg(fileName));
+            }
+            std::vector<double> d = reader.values(name);
+            if (d.empty()) {
+                return makeMCPError(id, QString("Could not read variable %1 from result file %2").arg(plotName).arg(fileName));
+            }
+            if (reader.isParameter(name)) {
+                parameters.insert(plotName, d[0]);
+            } else {
+                QJsonArray values;
+                for (double v : d) {
+                    values.append(v);
+                }
+                vars_result.insert(plotName, values);
+            }
+        }
+#else
         if (!fileName.endsWith(".mat")) {
             return makeMCPError(id, QString("Simulation result file is not a .mat file: %1").arg(fileName));
         }
@@ -544,6 +577,7 @@ QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJs
                 vars_result.insert(plotName, values);
             }
         }
+#endif
         QJsonObject result;
         result.insert("parameters", parameters);
         result.insert("variables", vars_result);

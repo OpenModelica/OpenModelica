@@ -197,6 +197,8 @@ pub struct DATA_ALIAS {
     pub aliasType: c_int,
     pub info: VAR_INFO,
     pub filterOutput: modelica_boolean,
+    pub unit: modelica_string,
+    pub displayUnit: modelica_string,
 }
 
 #[repr(C)]

@@ -39,6 +39,9 @@ impl ResultOut for FileOut {
     fn write_at(&mut self, pos: u64, bytes: &[u8]) -> bool {
         self.0.write_at(pos, bytes).is_ok()
     }
+    fn flush(&mut self) -> bool {
+        self.0.flush().is_ok()
+    }
     fn close(&mut self) -> bool {
         self.0.flush().is_ok()
     }

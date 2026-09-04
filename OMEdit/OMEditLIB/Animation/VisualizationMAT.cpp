@@ -51,17 +51,26 @@ VisualizationMAT::VisualizationMAT(const std::string& modelFile, const std::stri
  */
 VisualizationMAT::~VisualizationMAT()
 {
+#ifdef OM_LEGACY_RESULT_READERS
   if (_matReader.file) {
     omc_free_matlab4_reader(&_matReader);
   }
+#endif
 }
 
 void VisualizationMAT::initData()
 {
   VisualizationAbstract::initData();
   readMat(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
+#ifdef OM_LEGACY_RESULT_READERS
   mpTimeManager->setStartTime(omc_matlab4_startTime(&_matReader));
   mpTimeManager->setEndTime(omc_matlab4_stopTime(&_matReader));
+#else
+  if (_matReader.isOpen()) {
+    mpTimeManager->setStartTime(_matReader.startTime());
+    mpTimeManager->setEndTime(_matReader.stopTime());
+  }
+#endif
 }
 
 void VisualizationMAT::initializeVisAttributes(const double time)
@@ -88,7 +97,15 @@ void VisualizationMAT::readMat(const std::string& modelFile, const std::string& 
   else
   {
     // Read mat file.
+#ifdef OM_LEGACY_RESULT_READERS
     omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
+#else
+    try {
+      _matReader.open(resFileName);
+    } catch (const omc::ResultError &e) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString(e.what()), Helper::scriptingKind, Helper::errorLevel));
+    }
+#endif
     //auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
     // Check return value.
 //    if (0 != ret)
@@ -127,6 +144,7 @@ void VisualizationMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, c
   }
 }
 
+#ifdef OM_LEGACY_RESULT_READERS
 double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, const double time)
 {
   double val = 0.0;
@@ -142,3 +160,18 @@ double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* v
 
   return val;
 }
+#else
+double VisualizationMAT::omcGetVarValue(omc::ResultFile* reader, const char* varName, const double time)
+{
+  double val = 0.0;
+  if (!reader->isOpen() || !reader->hasVariable(varName)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString(QObject::tr("Did not get variable from result file. Variable name is %1."))
+                                                          .arg(varName), Helper::scriptingKind, Helper::errorLevel));
+  } else {
+    reader->valueAt(varName, time, val);
+  }
+
+  return val;
+}
+#endif

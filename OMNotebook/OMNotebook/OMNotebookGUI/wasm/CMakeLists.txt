@@ -68,7 +68,8 @@ add_library(OMPlotLib STATIC
   ${SIMRT}/util/libcsv.c
   ${SIMRT}/util/omc_numbers.c
   ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
-target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
+target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE
+                                    PUBLIC OM_LEGACY_RESULT_READERS)
 target_include_directories(OMPlotLib PUBLIC ${OMPLOT} PRIVATE ${SIMRT})
 target_link_libraries(OMPlotLib PUBLIC
   Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt)

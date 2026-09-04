@@ -534,6 +534,8 @@ fn read_alias(out: *mut DATA_ALIAS, vars: &[Option<XmlVar>], count: usize, maps:
         let slot = unsafe { &mut *out.add(i) };
         read_var_info(v, &mut slot.info);
         slot.filterOutput = should_filter(v);
+        slot.unit = mk_scon_persist(v.get("unit"));
+        slot.displayUnit = mk_scon_persist(v.get("displayUnit"));
         let alias = v.get("alias");
         slot.negate = (alias == "negatedAlias") as c_int;
         let target = v.get("aliasVariable");

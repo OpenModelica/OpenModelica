@@ -77,6 +77,7 @@
 #include "simulation/results/simulation_result_csv.h"
 #include "simulation/results/simulation_result_mat4.h"
 #include "simulation/results/simulation_result_ia.h"
+#include "simulation/results/simulation_result_rust.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
@@ -721,6 +722,17 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
   sim_result.cpuTime = cpuTime;
   if (sim_noemit || 0 == strcmp("empty", simData->simulationInfo->outputFormat)) {
     /* Default is set to noemit */
+#ifdef OM_RUST_RESULT_WRITERS
+  } else if(0 == strcmp("csv", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("mat", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("plt", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("arrow", simData->simulationInfo->outputFormat)) {
+    sim_result.init = rust_result_init;
+    sim_result.emit = rust_result_emit;
+    sim_result.writeParameterData = rust_result_writeParameterData;
+    sim_result.free = rust_result_free;
+    resultFormatHasCheapAliasesAndParameters = 1;
+#else
   } else if(0 == strcmp("csv", simData->simulationInfo->outputFormat)) {
     sim_result.init = omc_csv_init;
     sim_result.emit = omc_csv_emit;
@@ -738,9 +750,10 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
     sim_result.emit = plt_emit;
     /* sim_result.writeParameterData = plt_writeParameterData; */
     sim_result.free = plt_free;
-  }
-  //NEW interactive
-  else if(0 == strcmp("ia", simData->simulationInfo->outputFormat)) {
+#endif
+#endif
+#if !defined(OMC_MINIMAL_RUNTIME)
+  } else if(0 == strcmp("ia", simData->simulationInfo->outputFormat)) {
     sim_result.init = ia_init;
     sim_result.emit = ia_emit;
     //sim_result.writeParameterData = ia_writeParameterData;

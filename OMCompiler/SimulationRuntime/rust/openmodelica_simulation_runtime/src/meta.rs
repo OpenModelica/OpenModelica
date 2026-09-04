@@ -8,6 +8,7 @@
 
 use core::ffi::{c_char, c_long};
 
+use openmodelica_sim_meta::VarTy;
 use openmodelica_sim_meta::{
     InputVar, Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter,
 };
@@ -78,13 +79,20 @@ struct Units<'a> {
 }
 
 impl Units<'_> {
-    fn get(&self, class_type: &str, index: usize) -> String {
+    fn attr(&self, class_type: &str, index: usize, attr: &str) -> String {
         self.xml
             .group(class_type)
             .get(index)
             .and_then(|o| o.as_ref())
-            .map(|v| v.attrs.get("unit").cloned().unwrap_or_default())
+            .map(|v| v.attrs.get(attr).cloned().unwrap_or_default())
             .unwrap_or_default()
+    }
+    fn get(&self, class_type: &str, index: usize) -> String {
+        self.attr(class_type, index, "unit")
+    }
+    /// `(unit, displayUnit, isDiscrete)` of a variable.
+    fn meta(&self, class_type: &str, index: usize) -> (String, String, bool) {
+        (self.get(class_type, index), self.attr(class_type, index, "displayUnit"), self.attr(class_type, index, "isDiscrete") == "true")
     }
 }
 
@@ -100,9 +108,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     vars.push(MetaVar {
         name: "time".into(),
         comment: "Simulation time [s]".into(),
+        unit: "s".into(),
+        display_unit: String::new(),
+        ty: VarTy::Real,
+        discrete: false,
         kind: MetaKind::Time,
         filter: 0,
         unvarying: false,
+        enumeration: None,
     });
 
     // Real variables: states, derivatives, then the algebraic ones. Their result
@@ -121,7 +134,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             "rAlg"
         };
         let index = if group == "rAlg" { a - 2 * md.nStatesArray as usize } else { a % md.nStatesArray.max(1) as usize };
-        let unit = units.get(group, index);
+        let (unit, display_unit, discrete) = units.meta(group, index);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, is_der).into_iter().enumerate() {
             if let Some(slot) = real_names.get_mut(base + k) {
                 *slot = name.clone();
@@ -129,9 +142,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             vars.push(MetaVar {
                 name,
                 comment: description(&cstr(v.info.comment), &unit),
+                unit: unit.clone(),
+                display_unit: display_unit.clone(),
+                ty: VarTy::Real,
+                discrete,
                 kind: MetaKind::Column { col: (base + k) as u32 + 1, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -155,9 +173,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             vars.push(MetaVar {
                 name: cstr(v.info.name),
                 comment: cstr(v.info.comment),
+                unit: String::new(),
+                display_unit: String::new(),
+                ty: VarTy::Real,
+                discrete: false,
                 kind: MetaKind::Column { col: layout.sens_col0() + (i - n_sens_par) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -166,13 +189,19 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     for a in 0..md.nVariablesIntegerArray as usize {
         let v = unsafe { &*md.integerVarsData.add(a) };
         let base = unsafe { *si.integerVarsIndex.add(a) };
+        let (unit, display_unit, _) = units.meta("iAlg", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
+                unit: unit.clone(),
+                display_unit: display_unit.clone(),
+                ty: VarTy::Integer,
+                discrete: true,
                 kind: MetaKind::Column { col: int_col0 + (base + k) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -184,9 +213,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
+                unit: String::new(),
+                display_unit: String::new(),
+                ty: VarTy::Boolean,
+                discrete: true,
                 kind: MetaKind::Column { col: bool_col0 + (base + k) as u32, negate: Neg::None },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -195,11 +229,15 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     for a in 0..md.nParametersRealArray as usize {
         let v = unsafe { &*md.realParameterData.add(a) };
         let base = unsafe { *si.realParamsIndex.add(a) };
-        let unit = units.get("rPar", a);
+        let (unit, display_unit, _) = units.meta("rPar", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: description(&cstr(v.info.comment), &unit),
+                unit: unit.clone(),
+                display_unit: display_unit.clone(),
+                ty: VarTy::Real,
+                discrete: false,
                 kind: MetaKind::Param {
                     off: layout.rparam_off + (base + k) as u32 * 8,
                     wty: WTy::F64,
@@ -207,16 +245,22 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
     for a in 0..md.nParametersIntegerArray as usize {
         let v = unsafe { &*md.integerParameterData.add(a) };
         let base = unsafe { *si.integerParamsIndex.add(a) };
+        let (unit, display_unit, _) = units.meta("iPar", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
+                unit: unit.clone(),
+                display_unit: display_unit.clone(),
+                ty: VarTy::Integer,
+                discrete: false,
                 kind: MetaKind::Param {
                     off: layout.iparam_off + (base + k) as u32 * 4,
                     wty: WTy::I32,
@@ -224,6 +268,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -234,6 +279,10 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
+                unit: String::new(),
+                display_unit: String::new(),
+                ty: VarTy::Boolean,
+                discrete: false,
                 kind: MetaKind::Param {
                     off: layout.bparam_off + (base + k) as u32 * 4,
                     wty: WTy::I32,
@@ -241,6 +290,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
+                enumeration: None,
             });
         }
     }
@@ -250,7 +300,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     let real_alias_kind = |al: &DATA_ALIAS, k: usize| -> MetaKind {
         let neg = if al.negate != 0 { Neg::Arith } else { Neg::None };
         match al.aliasType {
-            2 => MetaKind::Time,
+            2 => MetaKind::Column { col: 0, negate: neg },
             1 => {
                 let base = unsafe { *si.realParamsIndex.add(al.nameID as usize) } + k;
                 MetaKind::Param { off: layout.rparam_off + base as u32 * 8, wty: WTy::F64, negate: neg }
@@ -266,13 +316,19 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         let is_der = al.aliasType == 0
             && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
         let dim = alias_dimension(md, al, 0);
+        let (unit, display_unit, discrete) = units.meta("rAli", a);
         for (k, name) in scalar_names(&cstr(al.info.name), dim, is_der).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: cstr(al.info.comment),
+                unit: unit.clone(),
+                display_unit: display_unit.clone(),
+                ty: VarTy::Real,
+                discrete,
                 kind: real_alias_kind(al, k),
                 filter: filter_bits(al.filterOutput, true),
                 unvarying: false,
+                enumeration: None,
             });
         }
     }
@@ -308,13 +364,19 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 }
             };
             let dim = alias_dimension(md, al, kind_ix + 1);
+            let (unit, display_unit, _) = units.meta(if kind_ix == 0 { "iAli" } else { "bAli" }, a);
             for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
                 vars.push(MetaVar {
                     name,
                     comment: cstr(al.info.comment),
+                    unit: unit.clone(),
+                    display_unit: display_unit.clone(),
+                    ty: if kind_ix == 0 { VarTy::Integer } else { VarTy::Boolean },
+                    discrete: true,
                     kind: kind(k),
                     filter: filter_bits(al.filterOutput, true),
                     unvarying: false,
+                    enumeration: None,
                 });
             }
         }

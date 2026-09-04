@@ -21,6 +21,8 @@ minpack/LICENSE
 minpack/src/lib.rs
 openmodelica_mat_reader/Cargo.toml
 openmodelica_mat_reader/src/lib.rs
+openmodelica_arrow_writer/Cargo.toml
+openmodelica_arrow_writer/src/lib.rs
 openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
 openmodelica_nls/Cargo.toml
@@ -33,6 +35,17 @@ openmodelica_nls/src/nls_c_trace.rs
 openmodelica_nls/src/primme_svds.c
 openmodelica_plt_writer/Cargo.toml
 openmodelica_plt_writer/src/lib.rs
+openmodelica_result_capi/Cargo.toml
+openmodelica_result_capi/include/omc_result.h
+openmodelica_result_capi/src/lib.rs
+openmodelica_result_cli/Cargo.toml
+openmodelica_result_cli/src/main.rs
+openmodelica_result_files/Cargo.toml
+openmodelica_result_files/src/arrow.rs
+openmodelica_result_files/src/cmp.rs
+openmodelica_result_files/src/file.rs
+openmodelica_result_files/src/lib.rs
+openmodelica_result_files/src/readers.rs
 openmodelica_regex/Cargo.toml
 openmodelica_regex/src/lib.rs
 openmodelica_sim_meta/Cargo.toml
@@ -57,6 +70,7 @@ openmodelica_sim_meta/src/qss.rs
 openmodelica_sim_meta/src/result.rs
 openmodelica_sim_meta/src/rtclock.rs
 openmodelica_sim_meta/src/stats.rs
+openmodelica_sim_meta/src/strings.rs
 openmodelica_sim_meta/src/sync.rs
 openmodelica_simulation_runtime/Cargo.toml
 openmodelica_simulation_runtime/build.rs

@@ -1007,6 +1007,10 @@ void read_alias_var(DATA_ALIAS* alias,
   {
     read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
 
+    /* Empty for the types that have no unit, and for an alias that declares none. */
+    alias[i].unit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "unit"));
+    alias[i].displayUnit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "displayUnit"));
+
     aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {
       alias[i].negate = 1;

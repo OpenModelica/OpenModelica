@@ -291,7 +291,7 @@ struct HostOut {
 
 #[cfg(not(target_os = "wasi"))]
 impl HostOut {
-    fn flush(&mut self) {
+    fn send(&mut self) {
         if !self.buf.is_empty() {
             self.ok &= unsafe { rt_host_result_write(self.buf.as_ptr() as u32, self.buf.len() as u32) } == 0;
             self.buf.clear();
@@ -304,18 +304,22 @@ impl ResultOut for HostOut {
     fn write(&mut self, bytes: &[u8]) -> bool {
         self.buf.extend_from_slice(bytes);
         if self.buf.len() >= 1 << 18 {
-            self.flush();
+            self.send();
         }
         self.ok
     }
     fn write_at(&mut self, pos: u64, bytes: &[u8]) -> bool {
-        self.flush();
+        self.send();
         self.ok &= unsafe { rt_host_result_write_at(pos, bytes.as_ptr() as u32, bytes.len() as u32) } == 0;
+        self.ok
+    }
+    fn flush(&mut self) -> bool {
+        self.send();
         self.ok
     }
     fn close(&mut self) -> bool {
         if !self.closed {
-            self.flush();
+            self.send();
             unsafe { rt_host_result_close() };
             self.closed = true;
         }

@@ -23,6 +23,9 @@ impl ResultOut for FileOut {
         })()
         .is_ok()
     }
+    fn flush(&mut self) -> bool {
+        self.0.flush().is_ok()
+    }
     fn close(&mut self) -> bool {
         self.0.flush().is_ok()
     }

@@ -45,6 +45,7 @@ use openmodelica_util::Error;
 use openmodelica_error::ErrorTypes;
 
 use openmodelica_result_files::cmp::{almost_equal_default, cmp_data_tubes, format_g, format_g_prec15, tube_html};
+use openmodelica_result_files::ResultTable;
 use openmodelica_result_files::{
     drop_leading_dups, leading_dup_count, time_var_name, CsvReader, OpenError, PltVal, ResultReader,
 };
@@ -296,7 +297,8 @@ pub fn val(mut filename: ArcStr, mut varname: ArcStr, mut timeStamp: metamodelic
     };
     let t = timeStamp.into_inner();
     match &mut guard.as_mut().unwrap().reader {
-        ResultReader::Mat(reader) => {
+        r @ (ResultReader::Mat(_) | ResultReader::Arrow(_)) => {
+            let reader = r.table_mut().unwrap();
             let var = match reader.find_var(varname.as_str()) {
                 Some(v) => v,
                 None => {
@@ -369,8 +371,8 @@ pub fn readVariables(mut filename: ArcStr, mut readParameters: bool, mut openmod
     };
     let mut names: Vec<ArcStr> = Vec::new();
     match &guard.as_ref().unwrap().reader {
-        ResultReader::Mat(reader) => {
-            for info in &reader.allInfo {
+        r @ (ResultReader::Mat(_) | ResultReader::Arrow(_)) => {
+            for info in r.table().unwrap().all_info() {
                 if readParameters || !info.isParam {
                     names.push(omc_style(&info.name));
                 }
@@ -402,11 +404,12 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
         None => return Err("readDataset: could not open {filename}"),
     };
     match &mut guard.as_mut().unwrap().reader {
-        ResultReader::Mat(reader) => {
+        r @ (ResultReader::Mat(_) | ResultReader::Arrow(_)) => {
+            let reader = r.table_mut().unwrap();
             let mut dim = dimsize;
             if dim == 0 {
-                dim = reader.nrows as i32;
-            } else if reader.nrows as i32 != dim {
+                dim = reader.nrows() as i32;
+            } else if reader.nrows() as i32 != dim {
                 drop(guard);
                 err(&ERROR_DIMSIZE_MISMATCH, [])?;
                 return Err("readDataset: dimension size mismatch for {filename}");
@@ -422,11 +425,11 @@ pub fn readDataset(mut filename: ArcStr, mut vars: Arc<metamodelica::List<ArcStr
                         return Err("readDataset: variable {var} not found in {filename}");
                     }
                 };
-                let info = &reader.allInfo[idx];
+                let info = &reader.all_info()[idx];
                 let isParam = info.isParam;
                 let index = info.index;
                 let col: Vec<Arc<Values::Value>> = if isParam {
-                    let p = reader.params[(index.unsigned_abs() as usize) - 1];
+                    let p = reader.params()[(index.unsigned_abs() as usize) - 1];
                     let p = if index < 0 { -p } else { p };
                     (0..dim).map(|_| mk_real(p)).collect()
                 } else {
@@ -1328,6 +1331,8 @@ pub fn diffSimulationResultsHtml(mut runningTestsuite: bool, mut filename: ArcSt
 struct FilterVar {
     name: String,
     descr: String,
+    /// Position in the reader's variable table.
+    idx: usize,
     isParam: bool,
     /// 1-based data_1 (param) / data_2 (var) index in the *input* file; the sign
     /// selects the negated alias.
@@ -1497,22 +1502,24 @@ fn filter_csv_input(
 pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars: Arc<metamodelica::List<ArcStr>>, mut numberOfIntervals: i32, mut removeDescription: bool, mut hintReadAllVars: bool) -> Result<bool> {
     // C: SimulationResults_filterSimulationResults — copy a result file keeping
     // only the requested variables (optionally resampled to `numberOfIntervals`
-    // intervals). Only MATLAB v4 input is supported, matching the C switch.
+    // intervals). MATLAB v4 and Arrow input (the C switch has only the former);
+    // the output format follows the suffix: `.csv`, `.arrow`, else MATLAB v4.
     //
     // `hintReadAllVars` is a performance hint in the C reader (pre-read every
     // column); the Rust reader always loads data_2 in one pass, so it is a no-op.
-    let mut reader = match open_reporting(&inFile)? {
-        Some(ResultReader::Mat(r)) => r,
+    let mut opened = open_reporting(&inFile)?;
+    let reader: &mut dyn ResultTable = match opened.as_mut() {
         Some(ResultReader::Csv(r)) => {
             let mut names: Vec<ArcStr> = Vec::with_capacity(1 + vars.as_ref().into_iter().count());
             names.push(ArcStr::from("time"));
             names.extend(vars.as_ref().into_iter().cloned());
-            return filter_csv_input(&inFile, &outFile, &r, &names, numberOfIntervals, removeDescription);
+            return filter_csv_input(&inFile, &outFile, r, &names, numberOfIntervals, removeDescription);
         }
         Some(ResultReader::Plt(_)) => {
             err(&ERROR_FILTER_FORMAT, [ArcStr::from("PLT")])?;
             return Ok(false);
         }
+        Some(r) => r.table_mut().unwrap(),
         None => return Ok(false),
     };
 
@@ -1530,10 +1537,11 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
             err(&ERROR_COULD_NOT_READ_VAR, [name.clone(), openmodelica_util::System::basename(inFile.clone())])?;
             return Ok(false);
         };
-        let info = &reader.allInfo[idx];
+        let info = &reader.all_info()[idx];
         fvars.push(FilterVar {
             name: info.name.clone(),
             descr: info.descr.clone(),
+            idx,
             isParam: info.isParam,
             index: info.index,
         });
@@ -1563,7 +1571,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
             text.push('"');
         }
         text.push('\n');
-        for row in 0..reader.nrows {
+        for row in 0..reader.nrows() {
             text.push_str(&format_g_prec15(cols[0][row]));
             for col in &cols[1..] {
                 text.push(',');
@@ -1578,11 +1586,15 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
         return Ok(true);
     }
 
+    if outFile.ends_with(".arrow") {
+        return filter_to_arrow(reader, &fvars, numberOfIntervals, removeDescription, &inFile, &outFile, start, stop);
+    }
+
     // MATLAB v4 output. Tally which input data_1/data_2 columns are referenced
     // and build the old-index -> new-index remap, reserving data_1 column 1 for
     // the synthetic time start/stop pair.
-    let nvar = reader.nvar;
-    let nparam = reader.nparam;
+    let nvar = reader.nvar();
+    let nparam = reader.nparam();
     let mut indexes = vec![0i32; nvar];
     let mut parameter_indexes = vec![0i32; nparam];
     if nparam > 0 {
@@ -1676,7 +1688,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     out.extend_from_slice(&stop.to_le_bytes());
     for i in 1..num_unique_param {
         let param_index = parameter_indexes_to_output[i];
-        let p = reader.params[(param_index.unsigned_abs() as usize) - 1];
+        let p = reader.params()[(param_index.unsigned_abs() as usize) - 1];
         out.extend_from_slice(&p.to_le_bytes());
         out.extend_from_slice(&p.to_le_bytes());
     }
@@ -1703,7 +1715,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
         }
         err(&NOTIFY_RESAMPLING, [
             inFile.clone(),
-            ArcStr::from(reader.nrows.to_string()),
+            ArcStr::from(reader.nrows().to_string()),
             ArcStr::from(numberOfIntervals.to_string()),
             ArcStr::from(nevents.to_string()),
             ArcStr::from(neventpoints.to_string()),
@@ -1712,7 +1724,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
 
     // data_2: (numberOfIntervals+1 | nrows) rows x numUnique cols, each column a
     // variable trajectory written contiguously (column-major).
-    let out_rows = if numberOfIntervals != 0 { (numberOfIntervals + 1) as usize } else { reader.nrows };
+    let out_rows = if numberOfIntervals != 0 { (numberOfIntervals + 1) as usize } else { reader.nrows() };
     push_mat_header(&mut out, "data_2", out_rows as u32, num_unique as u32, 8);
     for &col in &indexes_to_output {
         if numberOfIntervals != 0 {
@@ -1745,6 +1757,113 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
 
     if write_output_file(outFile.as_str(), &out).is_err() {
         err(&ERROR_FILTER_WRITE_FAILED, [outFile.clone()])?;
+        return Ok(false);
+    }
+    Ok(true)
+}
+
+/// `filterSimulationResults` into an `.arrow` file: the selected variables over
+/// the distinct stored columns they read, resampled onto `n_intervals` when
+/// nonzero; units and types travel from the input where it has them.
+#[allow(clippy::too_many_arguments)]
+fn filter_to_arrow(
+    reader: &mut dyn ResultTable,
+    fvars: &[FilterVar],
+    n_intervals: i32,
+    remove_description: bool,
+    in_file: &ArcStr,
+    out_file: &ArcStr,
+    start: f64,
+    stop: f64,
+) -> Result<bool> {
+    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, VarTy, write_arrow};
+    // Output column of each input column (1-based); time is output column 0.
+    let mut out_col = vec![u32::MAX; reader.nvar() + 1];
+    let mut src_cols: Vec<i32> = vec![1];
+    out_col[1] = 0;
+    for fv in fvars.iter().filter(|fv| !fv.isParam) {
+        let slot = fv.index.unsigned_abs() as usize;
+        if out_col[slot] == u32::MAX {
+            out_col[slot] = src_cols.len() as u32;
+            src_cols.push(slot as i32);
+        }
+    }
+    let grid: Option<Vec<f64>> = (n_intervals != 0).then(|| {
+        (0..=n_intervals)
+            .map(|j| if j == n_intervals { stop } else { start + (stop - start) * (j as f64) / (n_intervals as f64) })
+            .collect()
+    });
+    let n_reals = src_cols.len();
+    let mut columns: Vec<Vec<f64>> = Vec::with_capacity(n_reals);
+    for &src in &src_cols {
+        let vals = match &grid {
+            Some(g) => {
+                let mut v = Vec::with_capacity(g.len());
+                for &t in g {
+                    let Some(x) = reader.interp_val(src, t) else {
+                        err(&ERROR_RESAMPLE_FAILED, [in_file.clone(), ArcStr::from(src.to_string()), ArcStr::from(format_g_prec15(t))])?;
+                        return Ok(false);
+                    };
+                    v.push(x);
+                }
+                v
+            }
+            None => match reader.read_vals(src) {
+                Some(v) => v,
+                None => {
+                    err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from("data_2"), openmodelica_util::System::basename(in_file.clone())])?;
+                    return Ok(false);
+                }
+            },
+        };
+        columns.push(vals);
+    }
+    let n_rows = columns.first().map_or(0, Vec::len);
+    let mut rows = vec![0.0f64; n_rows * n_reals];
+    for (c, col) in columns.iter().enumerate() {
+        for (r, v) in col.iter().enumerate() {
+            rows[r * n_reals + c] = *v;
+        }
+    }
+    let mut col_types = vec![ColTy::F64; n_reals];
+    let mut params: Vec<f64> = Vec::new();
+    let enums: Vec<Option<Vec<String>>> = fvars.iter().map(|fv| reader.enumeration(fv.idx)).collect();
+    let mut vars: Vec<ArrowVar> = Vec::with_capacity(fvars.len());
+    for (fv, enumeration) in fvars.iter().zip(&enums) {
+        let ty = VarTy::from_name(reader.var_type(fv.idx));
+        let (unit, display_unit) = reader.unit(fv.idx);
+        let affine = if fv.index < 0 { Affine::NEGATE } else { Affine::IDENTITY };
+        let kind = if fv.isParam {
+            params.push(reader.params()[fv.index.unsigned_abs() as usize - 1]);
+            ArrowKind::Param { affine }
+        } else if fv.index == 1 {
+            ArrowKind::Time
+        } else {
+            let col = out_col[fv.index.unsigned_abs() as usize];
+            if fv.index > 0 {
+                col_types[col as usize] = match ty {
+                    VarTy::Integer => ColTy::I32,
+                    VarTy::Boolean => ColTy::Bool,
+                    _ => ColTy::F64,
+                };
+            }
+            ArrowKind::Column { col, affine }
+        };
+        vars.push(ArrowVar {
+            name: &fv.name,
+            comment: if remove_description { "" } else { &fv.descr },
+            unit,
+            display_unit,
+            ty,
+            discrete: false,
+            kind,
+            unvarying: false,
+            enumeration: enumeration.as_deref(),
+        });
+    }
+    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), Some((start, stop)));
+    if write_output_file(out_file.as_str(), &bytes).is_err() {
+        err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
         return Ok(false);
     }
     Ok(true)

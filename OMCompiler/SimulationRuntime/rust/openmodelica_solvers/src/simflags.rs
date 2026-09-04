@@ -159,6 +159,9 @@ pub struct SimFlags {
     /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
     /// in double; this only narrows the result file.
     pub single_precision: bool,
+    /// `-mat_sync=<n>`: rewrite the `.mat` header (flush a record batch of an
+    /// `.arrow`) every `n` emitted rows, so the file is readable during the run.
+    pub mat_sync: Option<u32>,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
     /// `-measureTimePlotFormat=<fmt>`: the `+profiling` plots' gnuplot terminal.
@@ -787,6 +790,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
             "single" => f.single_precision = true,
+            "mat_sync" => f.mat_sync = Some(int(name, &value(name)?)?.max(0) as u32),
             "outputPath" => f.output_path = Some(value(name)?),
             "measureTimePlotFormat" => f.measure_time_plot_format = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),

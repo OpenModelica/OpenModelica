@@ -20,6 +20,8 @@ edition = "2024"
 
 [dependencies]
 openmodelica_simulation_runtime = { path = "openmodelica_simulation_runtime" }
+# The result-file reader library for OMEdit/OMPlot (cargo build -p openmodelica_result_capi).
+openmodelica_result_capi = { path = "openmodelica_result_capi" }
 
 [workspace]
 exclude = [
@@ -27,9 +29,13 @@ exclude = [
   "minpack",
   "openmodelica_mat_reader",
   "openmodelica_mat_writer",
+  "openmodelica_arrow_writer",
   "openmodelica_nls",
   "openmodelica_plt_writer",
   "openmodelica_regex",
+  "openmodelica_result_capi",
+  "openmodelica_result_cli",
+  "openmodelica_result_files",
   "openmodelica_sim_meta",
   "openmodelica_simulation_runtime",
   "openmodelica_solvers",

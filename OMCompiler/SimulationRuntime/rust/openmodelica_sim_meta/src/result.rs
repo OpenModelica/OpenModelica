@@ -3,31 +3,39 @@
 //! simulation executable share one serialization of each format.
 //!
 //! [`ResultStream`] writes the file as the rows arrive (C's `sim_result.emit`):
-//! `.mat` and `.csv` row by row, `.plt` at the end (its blocks are per variable).
+//! `.mat` and `.csv` row by row, `.arrow` in record batches of
+//! [`openmodelica_arrow_writer::DEFAULT_BLOCK_ROWS`] rows, `.plt` at the end
+//! (its blocks are per variable).
 
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
+use openmodelica_arrow_writer::{ArrowStream, ArrowVar, ColTy};
 use openmodelica_mat_writer::{Mat4Stream, MatVar};
 pub use openmodelica_mat_writer::Precision;
 use openmodelica_plt_writer::{PltKind, PltVar};
 
-use crate::{MetaKind, Neg, SimMeta, WTy};
+use crate::{MetaKind, Neg, SimMeta, VarTy, WTy};
 
 /// The `-outputFormat` values a run can produce. `empty` is accepted and writes
 /// nothing; the check happens before the run so a typo fails early, as C does.
 pub fn known(format: &str) -> bool {
-    matches!(format, "mat" | "csv" | "plt" | "empty")
+    matches!(format, "mat" | "csv" | "plt" | "arrow" | "empty")
 }
 
 /// Where a streamed result file's bytes go: a file, the web store, or a host
 /// import from inside wasm. `false` reports a failed write.
 pub trait ResultOut {
     fn write(&mut self, bytes: &[u8]) -> bool;
-    /// Overwrite `bytes` at absolute position `pos` (the `.mat` row count).
+    /// Overwrite `bytes` at absolute position `pos` (the `.mat` row count) and
+    /// flush, so the file is consistent afterwards.
     fn write_at(&mut self, pos: u64, bytes: &[u8]) -> bool;
+    /// Push buffered bytes to the file (an `.arrow` block under `-mat_sync`).
+    fn flush(&mut self) -> bool {
+        true
+    }
     /// Flush and close; the file is complete once this returns.
     fn close(&mut self) -> bool;
 }
@@ -60,7 +68,7 @@ pub fn open_stream(
 ) -> crate::driver::Result<ResultStream> {
     let format = model.output_format.as_str();
     let out: Box<dyn ResultOut> = match format {
-        "mat" | "csv" | "plt" => out().ok_or("CodegenWasmJit: cannot open the result file")?,
+        "mat" | "csv" | "plt" | "arrow" => out().ok_or("CodegenWasmJit: cannot open the result file")?,
         _ => Box::new(NullOut),
     };
     let params = crate::driver::read_params(e, model, sim_data)?;
@@ -83,8 +91,23 @@ impl openmodelica_mat_writer::Out for MatOut<'_> {
     }
 }
 
+struct ArrowOut<'a> {
+    out: &'a mut dyn ResultOut,
+    ok: &'a mut bool,
+}
+
+impl openmodelica_arrow_writer::Out for ArrowOut<'_> {
+    fn write(&mut self, bytes: &[u8]) {
+        *self.ok &= self.out.write(bytes);
+    }
+    fn flush(&mut self) {
+        *self.ok &= self.out.flush();
+    }
+}
+
 enum Kind {
     Mat(Mat4Stream),
+    Arrow(ArrowStream),
     /// `(column, negation, integer-valued)` per kept signal.
     Csv(Vec<(u32, Neg, bool)>),
     Plt { signals: Vec<(String, PltKind)>, params: Vec<f64>, rows: Vec<f64> },
@@ -118,12 +141,15 @@ impl ResultStream {
         mut out: Box<dyn ResultOut>,
     ) -> ResultStream {
         let mut ok = true;
+        let sync = crate::simflags::with_flags(|f| f.mat_sync).unwrap_or(0) as usize;
+        // The numeric formats have no place for a String signal or parameter.
+        let keep_num = numeric_keep(meta, keep);
         let kind = match format {
             "mat" => {
-                let kept = kept_params(meta, params, |i, _| keep[i]);
-                let vars = mat_vars(meta, keep);
+                let kept = kept_params(meta, params, |i, _| keep_num[i]);
+                let vars = mat_vars(meta, &keep_num);
                 let mut mo = MatOut { out: &mut *out, ok: &mut ok };
-                Kind::Mat(Mat4Stream::begin(
+                let mut s = Mat4Stream::begin(
                     &mut mo,
                     &vars,
                     meta.start_time,
@@ -132,10 +158,30 @@ impl ResultStream {
                     n_reals,
                     &kept,
                     precision,
-                ))
+                );
+                s.set_sync(sync);
+                Kind::Mat(s)
+            }
+            "arrow" => {
+                let kept = kept_params(meta, params, |i, _| keep[i]);
+                let vars = arrow_vars(meta, keep);
+                let mut ao = ArrowOut { out: &mut *out, ok: &mut ok };
+                let mut s = ArrowStream::begin(
+                    &mut ao,
+                    &vars,
+                    &kept,
+                    first_row,
+                    n_reals,
+                    &col_types(meta, precision),
+                    openmodelica_arrow_writer::block_rows(sync),
+                    resolve_strings(),
+                    Some((meta.start_time, meta.stop_time)),
+                );
+                s.set_sync(sync > 0);
+                Kind::Arrow(s)
             }
             "csv" => {
-                let cols = csv_cols(meta, keep);
+                let cols = csv_cols(meta, &keep_num);
                 let mut line = String::from("\"time\"");
                 for (name, ..) in &cols {
                     line.push_str(&format!(",\"{}\"", name.replace('"', "\"\"")));
@@ -145,7 +191,7 @@ impl ResultStream {
                 Kind::Csv(cols.into_iter().map(|(_, c, n, i)| (c, n, i)).collect())
             }
             "plt" => {
-                let emit = plt_emit(keep);
+                let emit = plt_emit(&keep_num);
                 Kind::Plt {
                     signals: meta
                         .vars
@@ -172,6 +218,10 @@ impl ResultStream {
                 let mut mo = MatOut { out: &mut *self.out, ok: &mut self.ok };
                 s.push_rows(&mut mo, rows);
             }
+            Kind::Arrow(s) => {
+                let mut ao = ArrowOut { out: &mut *self.out, ok: &mut self.ok };
+                s.push_rows(&mut ao, rows);
+            }
             Kind::Csv(cols) => {
                 let mut text = String::new();
                 for row in rows.chunks_exact(n_reals) {
@@ -190,6 +240,10 @@ impl ResultStream {
             Kind::Mat(s) => {
                 let mut mo = MatOut { out: &mut *self.out, ok: &mut self.ok };
                 s.finish(&mut mo);
+            }
+            Kind::Arrow(s) => {
+                let mut ao = ArrowOut { out: &mut *self.out, ok: &mut self.ok };
+                s.finish(&mut ao);
             }
             Kind::Plt { signals, params, rows } => {
                 let vars: Vec<PltVar> = signals.iter().map(|(n, k)| PltVar { name: n, kind: *k }).collect();
@@ -296,7 +350,7 @@ impl MatLayout {
     /// The `data_2` column (0-based) `data_info` entry `i` reads, with its sign.
     pub fn data2_col(&self, i: usize) -> Option<(usize, bool)> {
         let [ch, ix, ..] = *self.data_info.get(i)?;
-        (ch == 2 && ix != 0).then(|| ((ix.unsigned_abs() - 1) as usize, ix < 0))
+        ((ch == 2 || ch == 0) && ix != 0).then(|| ((ix.unsigned_abs() - 1) as usize, ix < 0))
     }
 
     /// The time-invariant value `data_info` entry `i` holds in `data_1`.
@@ -339,10 +393,12 @@ pub fn write(
     keep: &[bool],
     precision: Precision,
 ) -> Option<Vec<u8>> {
+    let keep_num = numeric_keep(meta, keep);
     match format {
-        "mat" => Some(mat(meta, rows, n_reals, params, keep, precision)),
-        "csv" => Some(csv(meta, rows, n_reals, keep).into_bytes()),
-        "plt" => Some(plt(meta, rows, n_reals, params, keep)),
+        "mat" => Some(mat(meta, rows, n_reals, params, &keep_num, precision)),
+        "arrow" => Some(arrow(meta, rows, n_reals, params, keep, precision)),
+        "csv" => Some(csv(meta, rows, n_reals, &keep_num).into_bytes()),
+        "plt" => Some(plt(meta, rows, n_reals, params, &keep_num)),
         _ => None,
     }
 }
@@ -382,6 +438,57 @@ pub fn mat(
     let kept = kept_params(meta, params, |i, _| keep[i]);
     let vars = mat_vars(meta, keep);
     openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept, precision)
+}
+
+/// `keep` without the String signals, for the formats that cannot hold them.
+fn numeric_keep(meta: &SimMeta, keep: &[bool]) -> Vec<bool> {
+    meta.vars.iter().zip(keep).map(|(v, &k)| k && v.ty != VarTy::String).collect()
+}
+
+fn resolve_strings() -> openmodelica_arrow_writer::Resolve {
+    Box::new(|id| crate::strings::lookup(id).unwrap_or_default())
+}
+
+fn arrow_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<ArrowVar<'a>> {
+    meta.vars
+        .iter()
+        .zip(keep)
+        .filter(|(_, k)| **k)
+        .map(|(v, _)| ArrowVar {
+            name: &v.name,
+            comment: &v.comment,
+            unit: &v.unit,
+            display_unit: &v.display_unit,
+            ty: v.ty,
+            discrete: v.discrete,
+            kind: v.kind.arrow(),
+            unvarying: v.unvarying,
+            enumeration: v.enumeration.as_deref(),
+        })
+        .collect()
+}
+
+/// The storage type of each result-row column: reals, then the integer and
+/// boolean algebraics, then the sensitivities. `-single` stores the reals as f32.
+fn col_types(meta: &SimMeta, precision: Precision) -> Vec<ColTy> {
+    let real = match precision {
+        Precision::Double => ColTy::F64,
+        Precision::Single => ColTy::F32,
+    };
+    let l = &meta.layout;
+    let mut t = Vec::with_capacity(l.n_row_total() as usize);
+    t.extend(core::iter::repeat_n(real, l.n_reals_row() as usize));
+    t.extend(core::iter::repeat_n(ColTy::I32, l.n_int_alg() as usize));
+    t.extend(core::iter::repeat_n(ColTy::Bool, l.n_bool_alg() as usize));
+    t.extend(core::iter::repeat_n(real, l.n_sens as usize));
+    t.extend(core::iter::repeat_n(ColTy::Str, l.n_str_alg() as usize));
+    t
+}
+
+pub fn arrow(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[bool], precision: Precision) -> Vec<u8> {
+    let kept = kept_params(meta, params, |i, _| keep[i]);
+    let vars = arrow_vars(meta, keep);
+    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), Some((meta.start_time, meta.stop_time)))
 }
 
 /// C's `simulation_result_plt` omits integer and boolean parameters.

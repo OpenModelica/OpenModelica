@@ -206,6 +206,8 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
     if m.output_format == "mat" {
         let mut matvars: Vec<MatVar> = Vec::new();
         for (v, &keep) in m.vars.iter().zip(&keep) {
+            // The numeric formats cannot hold a String signal or parameter.
+            let keep = keep && v.ty != openmodelica_sim_meta::VarTy::String;
             let is_param = matches!(v.kind, MetaKind::Param { .. });
             if is_param && keep {
                 kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
@@ -243,6 +245,8 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
         };
         let mut signals: Vec<PltVar> = Vec::new();
         for (v, &keep) in m.vars.iter().zip(&keep) {
+            // The numeric formats cannot hold a String signal or parameter.
+            let keep = keep && v.ty != openmodelica_sim_meta::VarTy::String;
             let is_param = matches!(v.kind, MetaKind::Param { .. });
             // C's plt writer omits integer/boolean parameters (`nParameters*`).
             let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });

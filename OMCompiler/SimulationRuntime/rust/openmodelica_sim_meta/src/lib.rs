@@ -31,6 +31,7 @@ pub mod linearize;
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
 // (and the paths the codegen already uses) still name them.
 pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
+pub use openmodelica_arrow_writer::VarTy;
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
@@ -41,6 +42,7 @@ pub mod datarecon;
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
 pub mod result;
+pub mod strings;
 /// The writer every file a run leaves beside its result goes through.
 pub mod files;
 pub mod optimization;
@@ -493,10 +495,19 @@ impl Layout {
     pub fn n_bool_alg(&self) -> u32 {
         (self.bparam_off - self.bool_off) / 4
     }
+    /// String algebraic variables (between `str_off` and `sparam_off`).
+    pub fn n_str_alg(&self) -> u32 {
+        (self.sparam_off - self.str_off) / 4
+    }
     /// Total f64 columns in a result row: the real part, the integer and boolean
-    /// algebraics (captured per row as f64), then the sensitivities.
+    /// algebraics (captured per row as f64), the sensitivities, then the String
+    /// algebraics as interned ids ([`crate::strings`]).
     pub fn n_row_total(&self) -> u32 {
-        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens
+        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens + self.n_str_alg()
+    }
+    /// First result-row column of the String block.
+    pub fn str_col0(&self) -> u32 {
+        self.sens_col0() + self.n_sens
     }
     /// First result-row column of the sensitivity block.
     pub fn sens_col0(&self) -> u32 {
@@ -589,6 +600,22 @@ impl MetaKind {
         }
     }
 
+    /// Project onto the `.arrow` writer's kind.
+    pub fn arrow(&self) -> openmodelica_arrow_writer::ArrowKind {
+        use openmodelica_arrow_writer::{Affine, ArrowKind};
+        let affine = |n: &Neg| match n {
+            Neg::None => Affine::IDENTITY,
+            Neg::Arith => Affine::NEGATE,
+            Neg::Not => Affine::NOT,
+        };
+        match self {
+            MetaKind::Time => ArrowKind::Time,
+            MetaKind::Column { col, negate } => ArrowKind::Column { col: *col, affine: affine(negate) },
+            MetaKind::Param { negate, .. } => ArrowKind::Param { affine: affine(negate) },
+            MetaKind::Const { value } => ArrowKind::Const { value: *value },
+        }
+    }
+
     /// Project onto the `.plt` writer's kind.
     pub fn plt(&self) -> openmodelica_plt_writer::PltKind {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
@@ -612,12 +639,19 @@ impl MetaKind {
 pub struct MetaVar {
     pub name: String,
     pub comment: String,
+    pub unit: String,
+    pub display_unit: String,
+    pub ty: VarTy,
+    /// A discrete-time variable (changes only at events).
+    pub discrete: bool,
     pub kind: MetaKind,
     /// C's `filterOutput`, split into its reasons ([`var_filter`]).
     pub filter: u8,
     /// C's `time_unvarying`: a `Column` computed once during initialization
     /// (a literal parameter equation), which the `.mat` stores in `data_1`.
     pub unvarying: bool,
+    /// The literals of an enumeration variable (`ty` is `Integer`).
+    pub enumeration: Option<Vec<String>>,
 }
 
 /// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
@@ -1447,7 +1481,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 18;
+const VERSION: u32 = 20;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1570,9 +1604,23 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for v in &m.vars {
         put_str(&mut o, &v.name);
         put_str(&mut o, &v.comment);
+        put_str(&mut o, &v.unit);
+        put_str(&mut o, &v.display_unit);
+        o.push(v.ty.code());
+        o.push(v.discrete as u8);
         put_kind(&mut o, &v.kind);
         o.push(v.filter);
         o.push(v.unvarying as u8);
+        match &v.enumeration {
+            None => o.push(0),
+            Some(literals) => {
+                o.push(1);
+                put_u32(&mut o, literals.len() as u32);
+                for l in literals {
+                    put_str(&mut o, l);
+                }
+            }
+        }
     }
     put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
@@ -2017,6 +2065,12 @@ impl<'a> Reader<'a> {
         l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
+    fn enumeration(&mut self) -> Result<Option<Vec<String>>, &'static str> {
+        if self.u8()? == 0 {
+            return Ok(None);
+        }
+        (0..self.u32()?).map(|_| self.string()).collect::<Result<Vec<_>, _>>().map(Some)
+    }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
             0 => MetaKind::Time,
@@ -2059,9 +2113,14 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         vars.push(MetaVar {
             name: r.string()?,
             comment: r.string()?,
+            unit: r.string()?,
+            display_unit: r.string()?,
+            ty: VarTy::from_code(r.u8()?),
+            discrete: r.u8()? != 0,
             kind: r.kind()?,
             filter: r.u8()?,
             unvarying: r.u8()? != 0,
+            enumeration: r.enumeration()?,
         });
     }
     let jac_a = r.jac()?;
@@ -2407,12 +2466,12 @@ mod tests {
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0, unvarying: false },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED, unvarying: false },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS, unvarying: false },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0, unvarying: false },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT, unvarying: false },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED, unvarying: false },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::ALIAS, unvarying: false, enumeration: None },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::HIDE_RESULT, unvarying: false, enumeration: None },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::FILTERED, unvarying: false, enumeration: None },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,

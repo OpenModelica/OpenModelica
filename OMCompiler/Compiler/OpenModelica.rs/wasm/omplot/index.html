@@ -57,9 +57,9 @@
   <span class="title">OMPlot</span>
   <span class="status" id="status">Loading…</span>
   <button class="ghost" id="open" disabled>Open…</button>
-  <input type="file" id="file" accept=".mat,.csv,.plt" multiple hidden />
+  <input type="file" id="file" accept=".mat,.arrow,.csv,.plt" multiple hidden />
   <button class="ghost" id="compareBtn" disabled title="Run diffSimulationResults on two of the loaded files">Compare…</button>
-  <button class="ghost icon-only" id="saveBtn" hidden title="Save the selected file as .mat or .csv" aria-label="Save">
+  <button class="ghost icon-only" id="saveBtn" hidden title="Save the selected file as .mat, .arrow or .csv" aria-label="Save">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>
   </button>
 </header>
@@ -68,7 +68,7 @@
   <div class="left">
     <div class="section-label">Result files</div>
     <div class="files" id="files"></div>
-    <div class="empty" id="filesEmpty">Open .mat, .csv or .plt files, or drop them here.</div>
+    <div class="empty" id="filesEmpty">Open .mat, .arrow, .csv or .plt files, or drop them here.</div>
 
     <div class="mode" id="mode" hidden>
       <button class="ghost" id="modePlot">Plot</button>
@@ -113,7 +113,7 @@
     <div class="modal-head"><span id="saveTitle">Save result file</span><button class="icon-btn" data-close aria-label="Close">✕</button></div>
     <div class="modal-body fields">
       <label for="saveFormat">Format</label>
-      <select id="saveFormat"><option value="mat">MATLAB v4 (.mat)</option><option value="csv">CSV (.csv)</option></select>
+      <select id="saveFormat"><option value="mat">MATLAB v4 (.mat)</option><option value="arrow">Arrow IPC (.arrow)</option><option value="csv">CSV (.csv)</option></select>
       <label for="saveVars">Variables</label>
       <select id="saveVars"><option value="all">All</option><option value="selected">Selected only</option></select>
       <label for="saveIntervals">Intervals</label><input type="number" id="saveIntervals" min="0" step="1" value="0" />
@@ -251,7 +251,7 @@ function renderVars() {
   for (const v of shown) {
     const row = document.createElement('label');
     row.className = 'var' + (mode === 'compare' && cmp.current === v ? ' current' : '');
-    const d = f.rf.description(v); if (d) row.title = d;
+    const d = f.rf.description(v), u = f.rf.unit(v); if (d || u) row.title = u ? d + ' [' + u + ']' : d;
     if (mode === 'compare') {
       if (cmp.diffVars.has(v)) row.innerHTML = '<span class="diff" title="Differs from the reference"></span>';
       row.onclick = () => { showDiff(v); };
@@ -371,8 +371,9 @@ $('saveRun').onclick = () => {
   const vars = $('saveVars').value === 'selected' ? [...f.selected] : [];
   saveModal.close();
   try {
-    const base = f.name.replace(/\.(mat|csv|plt)$/i, '');
-    const bytes = format === 'mat' ? f.rf.write_mat(vars, intervals) : new TextEncoder().encode(f.rf.write_csv(vars, intervals));
+    const base = f.name.replace(/\.(mat|arrow|csv|plt)$/i, '');
+    const bytes = format === 'mat' ? f.rf.write_mat(vars, intervals) : format === 'arrow' ? f.rf.write_arrow(vars, intervals)
+      : new TextEncoder().encode(f.rf.write_csv(vars, intervals));
     downloadBlob(base + '.' + format, bytes);
   } catch (e) { fail(e); }
 };

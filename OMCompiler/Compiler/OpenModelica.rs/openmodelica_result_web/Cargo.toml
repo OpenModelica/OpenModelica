@@ -1,5 +1,5 @@
-# The OMPlot web page's module: result files as bytes in, trajectories, the
-# diffSimulationResults comparison, and .mat/.csv out. wasm-bindgen'd into web/omplot/.
+# The OMPlot web page's module (wasm-bindgen'd into web/omplot/): the JS
+# bindings over `openmodelica_result_files::ResultFile`.
 [package]
 name = "openmodelica_result_web"
 version = "0.1.0"
@@ -10,6 +10,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 openmodelica_result_files.workspace = true
-openmodelica_mat_writer.workspace = true
 openmodelica_wasi.workspace = true
 wasm-bindgen = "=0.2.125"
