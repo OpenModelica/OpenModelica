@@ -68,14 +68,14 @@ public
   constant Type IF              = intBitLShift(1, 14); // In an if equation/statement.
   constant Type WHILE           = intBitLShift(1, 15); // In a while loop.
   constant Type NONEXPANDABLE   = intBitLShift(1, 16); // In non-parameter if/for.
-  constant Type ITERATION_RANGE = intBitLShift(1, 17); // In range used for iteration.
-  constant Type DIMENSION       = intBitLShift(1, 18); // In dimension.
-  constant Type BINDING         = intBitLShift(1, 19); // In binding.
-  constant Type CONDITION       = intBitLShift(1, 20); // In conditional expression.
-  constant Type SUBSCRIPT       = intBitLShift(1, 21); // In subscript.
-  constant Type SUBEXPRESSION   = intBitLShift(1, 22); // Part of a larger expression.
-  constant Type CONNECT         = intBitLShift(1, 23); // Part of connect argument.
-  constant Type NOEVENT         = intBitLShift(1, 24); // Part of noEvent argument.
+  constant Type NOEVENT         = intBitLShift(1, 17); // Wrapped by noEvent.
+  constant Type ITERATION_RANGE = intBitLShift(1, 18); // In range used for iteration.
+  constant Type DIMENSION       = intBitLShift(1, 19); // In dimension.
+  constant Type BINDING         = intBitLShift(1, 20); // In binding.
+  constant Type CONDITION       = intBitLShift(1, 21); // In conditional expression.
+  constant Type SUBSCRIPT       = intBitLShift(1, 22); // In subscript.
+  constant Type SUBEXPRESSION   = intBitLShift(1, 23); // Part of a larger expression.
+  constant Type CONNECT         = intBitLShift(1, 24); // Part of connect argument.
   constant Type ASSERT          = intBitLShift(1, 25); // Part of assert argument.
   constant Type ANNOTATION      = intBitLShift(1, 26); // Part of an annotation.
 
