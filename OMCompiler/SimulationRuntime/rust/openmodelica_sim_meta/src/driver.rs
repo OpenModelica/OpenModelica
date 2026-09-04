@@ -459,12 +459,13 @@ pub trait SimEngine {
         out
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        if name != MODEL_FN_DAE {
-            return self.call2_raw(name, a, b);
-        }
-        rtclock::tick(rtclock::DAE);
+        // `functionZeroCrossings` takes `gout`, so it lands here rather than in
+        // [`SimEngine::call1`]; C clocks it just the same.
+        let ix = model_fn_clock(name).or((name == MODEL_FN_DAE).then_some(rtclock::DAE));
+        let Some(ix) = ix else { return self.call2_raw(name, a, b) };
+        rtclock::tick(ix);
         let out = self.call2_raw(name, a, b);
-        rtclock::accumulate(rtclock::DAE);
+        rtclock::accumulate(ix);
         out
     }
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
