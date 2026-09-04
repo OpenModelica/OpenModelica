@@ -78,5 +78,6 @@ readFile("DualMassOscillator_me_systemCall.log");
 // info:    Simulation
 // info:      system1.s1: 0.9112806323947867
 // info:      system2.s2: 1.9556329052714192
+// info:    Logging information has been saved to \"DualMassOscillator_me_oms.log\"
 // "
 // endResult
