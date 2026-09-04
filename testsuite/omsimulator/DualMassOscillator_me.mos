@@ -73,13 +73,13 @@ readFile("DualMassOscillator_me_systemCall.log");
 // "info:    maximum step size for 'model.root': 0.001000
 // info:    No result file will be created
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 1230 NumRhsEvals  = 1468 NumLinSolvSetups = 125
-//          NumNonlinSolvIters = 1467 NumNonlinSolvConvFails = 0 NumErrTestFails = 45
+//          NumSteps = 1233 NumRhsEvals  = 1457 NumLinSolvSetups = 117
+//          NumNonlinSolvIters = 1456 NumNonlinSolvConvFails = 0 NumErrTestFails = 39
 // info:    Initialization
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.9112809433500815
-// info:      system2.s2: 1.9556325804043238
+// info:      system1.s1: 0.9112806323947867
+// info:      system2.s2: 1.9556329052714192
 // "
 // endResult
