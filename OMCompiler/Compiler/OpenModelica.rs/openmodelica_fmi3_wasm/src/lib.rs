@@ -1075,7 +1075,9 @@ macro_rules! shared_instance_methods {
         Ok(DiscreteStatesInfo {
             new_discrete_states_needed: false,
             terminate_simulation: up.terminate,
-            nominals_of_continuous_states_changed: false,
+            // C's `updateSolverNominals`: a pivoted state set integrates other
+            // variables, with other nominals.
+            nominals_of_continuous_states_changed: reselected,
             values_of_continuous_states_changed: up.states_changed || ticked || reselected,
             next_event_time_defined: next.is_some(),
             next_event_time: next.unwrap_or(0.0),
@@ -1608,7 +1610,7 @@ impl GuestModelExchangeInstance for Instance {
     }
     fn get_nominals_of_continuous_states(&self) -> Result<Vec<f64>, Status> {
         let st = self.st.borrow();
-        Ok(vec![1.0; st.layout.n_states as usize])
+        driver::state_nominals(&Engine, st.sim_data, &st.layout).map_err(err_status)
     }
     fn get_number_of_event_indicators(&self) -> Result<u64, Status> {
         Ok(self.st.borrow().layout.n_zc as u64)

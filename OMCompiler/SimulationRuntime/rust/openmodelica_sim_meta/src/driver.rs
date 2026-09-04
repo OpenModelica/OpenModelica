@@ -5953,22 +5953,25 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states; in DAE mode the algebraic
-/// unknowns' nominals follow (C's `getAlgebraicDAEVarNominals`), one per extra
-/// component of IDA's `y`. Length ≥ 1 so daskr never sees an empty array.
-///
-/// `fmax(fabs(n), 1e-32)` as `ida_solver_setNominals` does: read before
-/// `initializeModel` has floored them, a zero nominal is a zero `atol` and so an
-/// infinite error weight.
+/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
+/// answers. Floored as `ida_solver_setNominals` does: read before
+/// `initializeModel` has floored them, a zero nominal is an infinite error
+/// weight.
+pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
+    (0..layout.n_states)
+        .map(|i| Ok(libm::fmax(libm::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?), 1e-32)))
+        .collect()
+}
+
+/// [`state_nominals`], with the algebraic unknowns' nominals after them in DAE
+/// mode (C's `getAlgebraicDAEVarNominals`), one per extra component of IDA's `y`.
+/// Length ≥ 1 so daskr never sees an empty array.
 fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
-    let mut nominals: Vec<f64> = (0..layout.n_states)
-        .map(|i| read_f64(e, sim_data + layout.state_nom_off + i * 8))
-        .collect::<Result<_>>()?;
+    let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
-        nominals.push(read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?);
-    }
-    for n in nominals.iter_mut() {
-        *n = libm::fmax(libm::fabs(*n), 1e-32);
+        let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
+        nominals.push(libm::fmax(libm::fabs(n), 1e-32));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
