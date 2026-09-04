@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <math.h>
 #include "fmu3_model_interface.h"
 #include "../simulation/arrayIndex.h"
 #include "../simulation/solver/initialization/initialization.h"
@@ -2286,11 +2287,16 @@ fmi3Status internalGetNominalsOfContinuousStates(ModelInstance* c, fmi3Float64 x
     return fmi3Error;
   if (nullPointer(comp, "omcGetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
     return fmi3Error;
-  if (nx > 0) {
-    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
-  }
+#if NUMBER_OF_STATES > 0
+  DATA* fmudata = (DATA *) comp->fmuData;
   for (i = 0; i < nx; i++)
-    x_nominal[i] = 1;
+  {
+    /* Floored as ida_solver_setNominals floors it. */
+    modelica_real nominal = getNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
+    x_nominal[i] = fmax(fabs(nominal), 1e-32);
+    FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetNominalsOfContinuousStates: x_nominal[%d] = %.16g", i, x_nominal[i])
+  }
+#endif
   return fmi3OK;
 }
 

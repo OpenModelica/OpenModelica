@@ -60,7 +60,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     inst.get_continuous_state_derivatives(&mut dx)?;
     let mut z = vec![0.0; nz];
     inst.get_event_indicators(&mut z)?;
-    println!("t = {start}\nx  = {x:?}\ndx = {dx:?}\nz  = {z:?}");
+    let mut nom = vec![1.0; nx];
+    inst.get_nominals_of_continuous_states(&mut nom)?;
+    println!("t = {start}\nx  = {x:?}\ndx = {dx:?}\nz  = {z:?}\nnominal = {nom:?}");
 
     // Does the FMU answer `fmi3GetDirectionalDerivative`, and with what?
     let states = md.continuous_states();

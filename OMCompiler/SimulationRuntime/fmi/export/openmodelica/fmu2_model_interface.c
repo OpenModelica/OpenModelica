@@ -25,6 +25,8 @@
  *
  */
 
+#include <math.h>
+
 #include "fmu2_model_interface.h"
 #include "fmu_read_flags.h"
 #include "../simulation/arrayIndex.h"
@@ -2248,11 +2250,16 @@ fmi2Status internalGetNominalsOfContinuousStates(fmi2Component c, fmi2Real x_nom
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetNominalsOfContinuousStates", "x_nominal[]", x_nominal))
     return fmi2Error;
-  if (nx > 0) {
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetNominalsOfContinuousStates: x_nominal[0..%zu] = 1.0", nx-1)
-  }
+#if NUMBER_OF_STATES > 0
+  DATA* fmudata = (DATA *) comp->fmuData;
   for (i = 0; i < nx; i++)
-    x_nominal[i] = 1;
+  {
+    /* Floored as ida_solver_setNominals floors it. */
+    modelica_real nominal = getNominalFromScalarIdx(fmudata->simulationInfo, fmudata->modelData, VAR_KIND_STATE, i);
+    x_nominal[i] = fmax(fabs(nominal), 1e-32);
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetNominalsOfContinuousStates: x_nominal[%d] = %.16g", i, x_nominal[i])
+  }
+#endif
   return fmi2OK;
 }
 
