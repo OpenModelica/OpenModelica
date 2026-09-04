@@ -492,7 +492,12 @@ impl Integrator {
         }
     }
 
-    /// DASKR carries its own history, which an event invalidates.
+    /// The derivatives DASKR sizes its first step against.
+    fn set_derivatives(&mut self, yp: &[f64]) {
+        if let Integrator::Dassl(d) = self {
+            d.set_derivatives(yp);
+        }
+    }
 
     fn set_nominals(&mut self, nominals: &[f64]) {
         match self {
@@ -711,6 +716,9 @@ pub fn simulate(
         ode.read_dae_point(&mut x, &mut xp)?;
         integrator.make_consistent(&mut ode, t, &mut x, &mut xp)?;
         ode.commit_point(t, &x, &xp)?;
+    } else if nx > 0 {
+        ode.inst.get_continuous_state_derivatives(&mut xp[..nx])?;
+        integrator.set_derivatives(&xp[..nx]);
     }
     {
         let common: &mut dyn Fmi3 = ode.inst;
@@ -741,7 +749,13 @@ pub fn simulate(
             x_old.copy_from_slice(&x);
             xp_old.copy_from_slice(&xp);
             ode.discarded = false;
+            // DASKR refuses a `tout` it is standing on, so a time event already
+            // due is handled where it stands.
+            let due = next_event <= t + grid_epsilon(opts);
             let stepped = (|| -> Result<(Option<f64>, bool, bool)> {
+                if due {
+                    return Ok((None, false, false));
+                }
                 let root = integrator
                     .step(&mut ode, end, limit, &mut t, &mut x, &mut xp)
                     .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
@@ -844,6 +858,9 @@ pub fn simulate(
                 ode.commit_point(t, &x, &xp)?;
                 let common: &mut dyn Fmi3 = ode.inst;
                 rec.sample(common, t)?;
+            } else if nx > 0 {
+                ode.inst.get_continuous_state_derivatives(&mut xp[..nx])?;
+                integrator.set_derivatives(&xp[..nx]);
             }
             if info.terminate {
                 terminated_at = Some(t);
