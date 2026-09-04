@@ -2472,6 +2472,16 @@ impl DylinkFmu {
         let str_new = wts(fused_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_new"))?;
         let str_data = wts(fused_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data"))?;
         crate::host::define_uri_import(&mut linker, memory, str_new, str_data)?;
+        // The artifact reports its own assertions: `add_host_builtins` binds these
+        // to omc's simulation-path recorder, which only the host driver drains.
+        linker.allow_shadowing(true);
+        for name in ["rt_assert", "rt_assert_warning"] {
+            let f = fused_inst
+                .get_func(&mut store, name)
+                .ok_or_else(|| format!("CodegenWasmJit: the fused runtime has no `{name}` export"))?;
+            wts(linker.define(&store, "rt", name, f))?;
+        }
+        linker.allow_shadowing(false);
         // `rt` for the model, one export at a time rather than `Linker::instance`,
         // which would collide with those.
         let exports: Vec<(String, wasmtime::Extern)> = fused_inst

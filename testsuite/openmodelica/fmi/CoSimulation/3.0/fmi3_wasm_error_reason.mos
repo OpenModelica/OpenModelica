@@ -1,0 +1,22 @@
+// name: fmi3_wasm_error_reason.mos
+// keywords: FMI 3.0 export wasm Co-Simulation error reporting assert
+// status: correct
+// suite: wasm
+// depends: fmi3_wasm_error_reason_sub.mos
+// teardown_command: rm -rf M_reason* reason.log count.log om-wasm-include-*
+//
+// A model error inside an artifact FMU has to reach the log; the FMI status alone
+// tells the importer nothing. The message names the library function that raised
+// it by absolute path, so grep the sub-run's log instead of comparing it.
+
+system(getInstallationDirectoryPath() + "/bin/omc fmi3_wasm_error_reason_sub.mos > reason.log 2>&1"); getErrorString();
+system("grep -c 'logStatusError.*boom from ModelicaError' reason.log > count.log"); getErrorString();
+readFile("count.log");
+// Result:
+// 0
+// ""
+// 0
+// ""
+// "1
+// "
+// endResult
