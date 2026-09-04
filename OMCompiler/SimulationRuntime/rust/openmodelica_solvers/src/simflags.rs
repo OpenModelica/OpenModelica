@@ -705,7 +705,7 @@ impl JacobianMethod {
             JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
             JacobianMethod::NumJac => "Numerical Jacobian.",
             JacobianMethod::SymJac => "Symbolical Jacobian.",
-            JacobianMethod::BicoloredSymJac => "Bicolored (bidirectional) symbolical Jacobian.",
+            JacobianMethod::BicoloredSymJac => "Bicolored symbolical bidirectional Jacobian.",
         }
     }
 }

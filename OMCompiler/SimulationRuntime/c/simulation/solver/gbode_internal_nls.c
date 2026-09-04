@@ -131,7 +131,7 @@ typedef struct GB_INTERNAL_NLS_DATA
 
 static inline SPARSE_PATTERN *getODEPattern(DATA *data, DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls)
 {
-  return nls->multirate ? gbData->gbfData->sparsePattern_ODE : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
+  return nls->multirate ? gbData->gbfData->sparsePattern_ODE : getJacobianCscPattern(getSymbolicOdeJacobian(data));
 }
 
 static inline SPARSE_PATTERN *getNLSPattern(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls)
@@ -304,7 +304,13 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 #endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  /* The multi-rate path drives a sub-set of the columns with its own coloring, so it
+   * always needs the forward Jacobian. All other paths use the Jacobian selected by
+   * the `-jacobian` flag, which may be evaluated forward, adjoint or bidirectionally.
+   * Its currently disabled so its fine but its the safe option */
+  JACOBIAN* jacobian_ODE = nls->multirate
+                         ? &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A])
+                         : getSymbolicOdeJacobian(data);
 
   if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
@@ -1400,7 +1406,7 @@ void *gbInternalNlsAllocate(int size,
   DATA_GBODEF *gbfData = isFast ? (DATA_GBODEF *) userData->solverData : NULL;
   BUTCHER_TABLEAU *tabl = isFast ? gbfData->tableau : gbData->tableau;
   T_TRANSFORM *transform = tabl->t_transform;
-  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = getSymbolicOdeJacobian(userData->data);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
   gbInternal_KLU_initialize(&nls->klu, transform ? transform->nRealEigenvalues : 1, transform ? transform->nComplexEigenpairs : 0);
@@ -1421,7 +1427,7 @@ void *gbInternalNlsAllocate(int size,
   nls->tabl = tabl;
   nls->use_t_transform = (transform != NULL);
 
-  SPARSE_PATTERN *odePattern = isFast ? gbfData->sparsePattern_ODE : jacobian_ODE->sparsePattern;
+  SPARSE_PATTERN *odePattern = isFast ? gbfData->sparsePattern_ODE : getJacobianCscPattern(jacobian_ODE);
   SPARSE_PATTERN *nlsPattern = isFast ? gbfData->sparsePattern_NLS : gbData->sparsePattern_NLS;
   assertStreamPrint(NULL, odePattern != NULL && nlsPattern != NULL, "GBODE internal NLS requires sparse patterns.");
   nls_nnz_estimate = nlsPattern->nnz;

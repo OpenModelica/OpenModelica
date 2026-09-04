@@ -330,8 +330,8 @@ static SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data)
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
 
   /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
+  JACOBIAN* jacobian = getSymbolicOdeJacobian(data);
+  SPARSE_PATTERN* sparsePattern_ODE = getJacobianCscPattern(jacobian);
 
   int sizeRows = jacobian->sizeRows;
   int sizeCols = jacobian->sizeCols;

@@ -73,11 +73,13 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
 /**
  * @brief Set Sundials sparse pattern from SimRuntime SPARSE_PATTERN
  *
- * @param jacobian  Jacobian
+ * @param sp        Column oriented (CSC) sparsity pattern of the matrix.
+ *                  Use getJacobianCscPattern() to obtain it from a JACOBIAN.
+ * @param nCols     Number of columns of the matrix.
  * @param Jac       Sundials Matrix
  */
 void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  const SPARSE_PATTERN *sp = getJacobianCscPattern(jacobian);
   long int column, row, nz;
 
   for (column = 0; column < jacobian->sizeCols; column++) {
