@@ -1506,6 +1506,24 @@ function(omc_rust_fmu_aot_module)
   add_dependencies(rust_fmu_aot rust_wasm)
 endfunction()
 
+# `omplot` (openmodelica_result_cli) for wasm32-wasip1, staged as
+# web/omplot/omplot.wasm next to its Node runner omplot-cli.js: the OMPlot
+# module's readers, comparison and writers, runnable from a shell.
+function(omc_rust_omplot_cli_module)
+  set(_omplot_artifact ${RUST_TARGET_DIR}/wasm32-wasip1/release/omplot.wasm)
+  add_custom_target(rust_omplot_cli ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --target-dir ${RUST_TARGET_DIR}
+            --target wasm32-wasip1 -p openmodelica_result_cli
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
+    COMMAND ${CMAKE_COMMAND} -E copy ${_omplot_artifact} ${_web_dir}/omplot/omplot.wasm
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/omplot-cli.js ${_web_dir}/omplot/
+    COMMENT "Rust: omplot (wasm32-wasip1) -> ${_web_dir}/omplot/omplot.wasm"
+    VERBATIM)
+  add_dependencies(rust_omplot_cli rust_wasm)
+endfunction()
+
 # The FMI masters for the browser: `openmodelica_fmi_web` built for
 # wasm32-wasip1 and staged as web/fmi-simulator/openmodelica_fmi_web.wasm, where
 # the page's worker loads it. wasip1 so the result file is written through WASI
@@ -2037,6 +2055,7 @@ function(omc_rust_setup_wasm)
   if(_host STREQUAL "web")
     omc_rust_fmu_aot_module()
     omc_rust_fmi_driver_module()
+    omc_rust_omplot_cli_module()
   endif()
 
   if(OM_ENABLE_GUI_CLIENTS)

@@ -36,8 +36,8 @@ pub enum MatKind {
     /// The independent variable (`time`): data_2 row 1.
     Time,
     /// A time-variant real signal reading result-buffer column `col` (0-based
-    /// into the `[time | realVars]` row layout, so `col >= 1`). Several signals
-    /// may share one column (aliases); `negate` flags a negated alias.
+    /// into the `[time | realVars]` row layout; `col == 0` is an alias of time).
+    /// Several signals may share one column (aliases); `negate` flags a negated alias.
     Column { col: u32, negate: Neg },
     /// A time-invariant parameter; its value comes from the `params` slice in
     /// `Param` order. `negate` flags a negated alias of a parameter.
@@ -88,8 +88,8 @@ pub struct MatVar<'a> {
 /// Where a [`Mat4Stream`] puts its bytes.
 pub trait Out {
     fn write(&mut self, bytes: &[u8]);
-    /// Overwrite `bytes` at absolute byte position `pos` (the `data_2` row count,
-    /// patched once the last row is in).
+    /// Overwrite `bytes` at absolute byte position `pos` (the `data_2` row count)
+    /// and flush, so the file on disk is consistent afterwards.
     fn write_at(&mut self, pos: u64, bytes: &[u8]);
 }
 
@@ -124,6 +124,9 @@ pub struct Mat4Stream {
     /// `data_1`'s first column (row 1 = start time).
     data_1: Vec<f64>,
     buf: Vec<u8>,
+    /// Rows between header rewrites (`-mat_sync`); 0 = only at `finish`.
+    sync: usize,
+    since_sync: usize,
 }
 
 impl Mat4Stream {
@@ -224,12 +227,14 @@ impl Mat4Stream {
                         Neg::Arith => (&col_data1_row, &col_data2_row, -1),
                         Neg::None => (&col_data1_row, &col_data2_row, 1),
                     };
-                    if c < n_reals && d1[c] != 0 {
+                    if c == 0 {
+                        [0, sgn, 0, -1]
+                    } else if c < n_reals && d1[c] != 0 {
                         [1, sgn * d1[c], 0, 0]
                     } else if c < n_reals && d2[c] != 0 {
                         [2, sgn * d2[c], 0, 0]
                     } else {
-                        [0, 1, 0, -1] // unreachable (every Column is referenced); alias time
+                        [0, 1, 0, -1] // unreachable (every Column is referenced)
                     }
                 }
                 MatKind::Param { negate } => {
@@ -290,7 +295,13 @@ impl Mat4Stream {
         let data2_pos = head.len() as u64;
         out.write(&head);
 
-        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new() }
+        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new(), sync: 0, since_sync: 0 }
+    }
+
+    /// Patch the `data_2` row count after every `rows` pushed rows (C's
+    /// `-mat_sync`), so the file is readable while it is written; 0 disables.
+    pub fn set_sync(&mut self, rows: usize) {
+        self.sync = rows;
     }
 
     /// Append `rows` (row-major, `n_reals` values each) to `data_2`.
@@ -311,6 +322,13 @@ impl Mat4Stream {
         }
         out.write(&self.buf);
         self.n_rows += n;
+        if self.sync > 0 {
+            self.since_sync += n;
+            if self.since_sync > self.sync {
+                self.finish(out);
+                self.since_sync = 0;
+            }
+        }
     }
 
     /// Patch the `data_2` row count. Safe to call more than once.

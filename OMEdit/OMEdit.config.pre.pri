@@ -44,6 +44,8 @@ CONFIG += c++17
 CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
+# The qmake build keeps the C result readers; the cmake build links libomc_result.
+DEFINES += OM_LEGACY_RESULT_READERS
 
 # Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
 # Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing

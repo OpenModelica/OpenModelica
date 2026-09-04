@@ -205,7 +205,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */              "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMBEDDED_SERVER_PORT */         "[int (default 4841)] value specifies the port number used by the embedded server",
-  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header after emitting every N time-points (default disabled)",
+  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header (flushes a record batch of an arrow file) after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
   /* FLAG_DATA_RECONCILE_Eps */           "value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",

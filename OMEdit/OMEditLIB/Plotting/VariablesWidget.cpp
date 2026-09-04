@@ -180,7 +180,7 @@ bool VariablesTreeItem::isMainArrayProtected() const
 
 QIcon VariablesTreeItem::getVariableTreeItemIcon(QString name) const
 {
-  if (name.endsWith(".mat"))
+  if (name.endsWith(".mat") || name.endsWith(".arrow"))
     return QIcon(":/Resources/icons/mat.svg");
   else if (name.endsWith(".plt"))
     return QIcon(":/Resources/icons/plt.svg");
@@ -867,7 +867,8 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
     MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
-  /* open the .mat file */
+  /* open the result file, for the final values */
+#ifdef OM_LEGACY_RESULT_READERS
   ModelicaMatReader matReader;
   matReader.file = 0;
   const char *msg[] = {""};
@@ -878,6 +879,17 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                             .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
     }
   }
+#else
+  omc::ResultFile matReader;
+  if (fileName.endsWith(".mat") || fileName.endsWith(".arrow")) {
+    try {
+      matReader.open(QString(filePath + "/" + fileName).toStdString());
+    } catch (const omc::ResultError &e) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(filePath + "/" + fileName)
+                                                            .arg(QString(e.what())), Helper::scriptingKind, Helper::errorLevel));
+    }
+  }
+#endif
   // create hash based VariableNode
   VariableNode *pTopVariableNode = new VariableNode(variabledata);
   // remove time from variables list
@@ -1026,10 +1038,12 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   insertVariablesItems(pTopVariableNode, pTopVariablesTreeItem);
   // Delete VariableNode
   delete pTopVariableNode;
+#ifdef OM_LEGACY_RESULT_READERS
   /* close the .mat file */
   if (fileName.endsWith(".mat") && matReader.file) {
     omc_free_matlab4_reader(&matReader);
   }
+#endif
   /* Ticket #3016.
    * If you only have one model the message "You must select a class to re-simulate" is annoying.
    * A default behavior of selecting the (single) model would be good.
@@ -1205,7 +1219,7 @@ ScalarVariable VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlRead
  * \param displayUnit
  * \param description
  */
-void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble,
+void VariablesTreeModel::getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble,
                                                 QString *variability, QString *unit, QString *displayUnit, QString *description)
 {
   ScalarVariable scalarVariable = mScalarVariablesHash.value(variableToFind);
@@ -1215,7 +1229,8 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     *variability = scalarVariable.variability;
     if (*changeAble) {
       *value = scalarVariable.start;
-    } else { /* Read the final value of the variable. Only mat result files are supported. */
+    } else { /* Read the final value of the variable from the result file. */
+#ifdef OM_LEGACY_RESULT_READERS
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
         ModelicaMatVariable_t *var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData());
@@ -1224,6 +1239,15 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
           *value = StringHandler::number(res);
         }
       }
+#else
+      if (pMatReader->isOpen()) {
+        *value = "";
+        double res = 0.0;
+        if (pMatReader->valueAt(variableToFind.toStdString(), pMatReader->stopTime(), res)) {
+          *value = StringHandler::number(res);
+        }
+      }
+#endif
     }
     *unit = scalarVariable.unit;
     *displayUnit = scalarVariable.displayUnit;
@@ -1549,8 +1573,10 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpVariablesTreeView->setColumnWidth(3, 70);
   mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
+#ifdef OM_LEGACY_RESULT_READERS
   mModelicaMatReader.file = 0;
   mpCSVData = 0;
+#endif
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -2004,6 +2030,11 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 {
   double value = 0.0;
   bool found = false;
+#ifndef OM_LEGACY_RESULT_READERS
+  if (mResultFile.isOpen()) {
+    found = mResultFile.valueAt(variable.toStdString(), time, value);
+  }
+#else
   const double tolerance = 1e-12;
 
   if (mModelicaMatReader.file) {
@@ -2054,6 +2085,7 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
     }
     textStream.seek(0);
   }
+#endif
 
   if (reportError && !found) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.",
@@ -2713,6 +2745,7 @@ void VariablesWidget::selectInteractivePlotWindow(VariablesTreeItem *pVariablesT
  */
 void VariablesWidget::closeResultFile()
 {
+#ifdef OM_LEGACY_RESULT_READERS
   if (mModelicaMatReader.file) {
     omc_free_matlab4_reader(&mModelicaMatReader);
     mModelicaMatReader.file = 0;
@@ -2724,6 +2757,9 @@ void VariablesWidget::closeResultFile()
   if (mPlotFileReader.isOpen()) {
     mPlotFileReader.close();
   }
+#else
+  mResultFile.close();
+#endif
   mOpenedResultFileName = "";
 }
 
@@ -2741,6 +2777,16 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
     QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
     bool errorOpeningFile = false;
     QString errorString = "";
+#ifndef OM_LEGACY_RESULT_READERS
+    try {
+      mResultFile.open(fileName.toStdString());
+      startTime = mResultFile.startTime();
+      stopTime = mResultFile.stopTime();
+    } catch (const omc::ResultError &e) {
+      errorOpeningFile = true;
+      errorString = e.what();
+    }
+#else
     if (pVariablesTreeItem->getFileName().endsWith(".mat")) {
       const char *msg[] = {""};
       if (0 == (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
@@ -2805,6 +2851,7 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
         errorString = mPlotFileReader.errorString();
       }
     }
+#endif
     // check file opening error
     if (errorOpeningFile) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,

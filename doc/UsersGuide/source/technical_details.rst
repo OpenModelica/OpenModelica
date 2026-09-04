@@ -62,3 +62,137 @@ data_2
   Each row contains the values of a variable at the sampled times.
   The corresponding time stamps are stored in ``data_2(1,:)``. ``data_2(2,1)``
   is the value of some variable at time ``data_2(1,1)``.
+  The simulation flag ``-single`` stores ``data_1`` and ``data_2`` in single
+  precision (matrix type 10, 4-byte elements) instead of double.
+
+The Arrow Result File Format
+----------------------------
+
+``outputFormat="arrow"`` (the simulation flag ``-outputFormat=arrow``) writes the
+result as an `Apache Arrow <https://arrow.apache.org/>`__ IPC file
+(the "Feather v2" layout, suffix ``.arrow``). The file is read by every Arrow
+implementation: `pyarrow <https://arrow.apache.org/docs/python/>`__,
+`polars <https://pola.rs/>`__, `DuckDB <https://duckdb.org/>`__, R, Julia,
+MATLAB and the JavaScript ``apache-arrow`` package. The format is written by the
+Rust simulation runtime (the ``wasm-jit`` and ``C+Rust`` simulation targets,
+natively and in the browser) and by the C runtime of a build with
+``OM_RUST_RESULT_WRITERS`` (the default in the CMake build, where the result
+writers of the C runtime come from the same Rust code). OpenModelica reads ``.arrow`` files
+wherever it reads ``.mat`` files: the scripting functions
+``readSimulationResult``, ``val``,
+``readSimulationResultVars``, ``diffSimulationResults`` and
+``filterSimulationResults`` (which also converts between ``.mat`` and ``.arrow``
+in both directions, by output suffix), and OMPlot's web page.
+
+Compared to the MATv4 file the Arrow file stores each variable as a typed column
+(``Float64``, ``Int32``, ``Boolean`` or ``Utf8``), so one variable is read without
+striding through the others, carries the unit and description of every
+variable inside the file, and stores discrete-time variables only where they
+change. With the simulation flag ``-single`` the ``Real`` columns are
+``Float32``.
+
+The record batches
+  The rows of the simulation (one per output point, plus one per event) are
+  written as record batches of up to 1024 rows each, as the simulation
+  produces them. Column 0 is ``time``; the other columns are the *stored*
+  time-variant signals. A variable that is an affine function of a stored one
+  (an alias, a negated alias) is not a column of its own, see below.
+
+  Under ``-mat_sync=N`` a batch holds at most ``N`` rows and is flushed to the
+  file as soon as it is complete, so the file can be read while the
+  simulation runs. Such a file has no footer yet; OpenModelica's readers fall
+  back to reading the IPC stream that starts at the first continuation marker
+  (``0xFFFFFFFF``) after the ``ARROW1`` magic, up to the last complete batch
+  (``pyarrow.ipc.open_stream(data[data.index(b"\xff\xff\xff\xff"):])``
+  does the same).
+
+Field metadata
+  Every column carries string metadata: ``description`` (the Modelica comment),
+  ``unit`` and ``displayUnit`` when the variable has them, ``type``
+  (``Real``, ``Integer``, ``Boolean``, ``String`` or ``enumeration``, the
+  latter with the index into ``modelica.enumerations`` under
+  ``enumeration``) and ``variability`` (``continuous`` or ``discrete``).
+
+Enumerations
+  A variable of an enumeration type is typed ``enumeration`` and its field
+  metadata ``enumeration`` indexes ``modelica.enumerations``, the table of
+  literal names. The column is either an ``Int32`` holding the Modelica value
+  (1 for the first literal), or a ``Dictionary<Int32, Utf8>`` whose
+  dictionary is the same literal list and whose key is the value minus one.
+  A reader must accept both; OpenModelica writes the ``Int32`` form, since the
+  dictionary would repeat the literals per column and the compute kernels of
+  some Arrow libraries do not handle a run-end encoded dictionary. Being
+  discrete, the column is run-end encoded like the other discrete variables.
+  The C simulation runtime does not know the literals and writes plain
+  ``Int32`` columns typed ``Integer``.
+
+Discrete-time variables and Strings
+  A column of a discrete-time variable (a discrete ``Real``, every ``Integer``,
+  ``Boolean`` and ``String`` variable) is run-end encoded
+  (``RunEndEncoded<Int32, T>``): the file stores one value per change together
+  with the row index where that value ends, all indexed against the shared
+  ``time`` column. The stored points are therefore exactly the event instants,
+  nothing is repeated between events, and expanding the runs gives the value
+  at every output point with hold semantics. Arrow readers expand run-end
+  encoded arrays on request (``pyarrow.compute.run_end_decode``).
+
+  ``String`` variables and parameters are stored this way too, which the
+  MATv4 file cannot do. OpenModelica's own scripting functions list them but
+  read only numeric trajectories (``val`` of a ``String`` variable is NaN);
+  the C API of ``libomc_result`` reads the texts (``omc_result_strings``,
+  ``omc_result_string_at``).
+
+Schema metadata
+  The keys carry a tool-neutral ``modelica.`` prefix, so another Modelica tool
+  can write and read the same layout.
+
+  ``modelica.format``
+    The layout version, currently ``1``.
+  ``modelica.startTime``, ``modelica.stopTime``
+    The start and stop time of the run (what ``data_1(:,1)`` holds in the
+    MATv4 file); the time column itself may end past the stop time when the
+    last output point is an event.
+  ``modelica.variables``
+    A JSON array with one object per result variable, in the order the
+    runtime lists them, holding what ``dataInfo`` holds in the MATv4 file
+    together with each variable's own metadata. Only keys with content are
+    written:
+
+    - ``name``: the Modelica name.
+    - ``kind``: ``time``, ``variable`` or ``parameter``.
+    - ``column``: for ``time`` and ``variable``, the schema field index holding
+      the values. Several variables can name the same column: they are alias
+      variables and the data is stored once; an alias of ``time`` names
+      column 0.
+    - ``scale``, ``offset``: the variable is ``scale * column + offset``; each
+      key is omitted when it is the identity's ``1`` respectively ``0``. A
+      negated ``Real`` or ``Integer`` alias has ``scale: -1``; a negated
+      ``Boolean`` alias has ``scale: -1, offset: 1``, which over the 0/1
+      encoding is the logical negation. The runtime currently detects only
+      these negations, but a reader must apply any ``scale`` and ``offset``.
+    - ``value``: for ``parameter``, the value (a number, or the text of a
+      ``String`` parameter). Constants and variables computed once during
+      initialization are parameters here, as in ``data_1``.
+    - ``enumeration``: for a variable of an enumeration type, the index of
+      its type in ``modelica.enumerations``; a ``parameter`` also carries the
+      ``literal`` its ``value`` names.
+  ``modelica.enumerations``
+    A JSON array of the distinct enumeration types, each an array of its
+    literal names in declaration order. Modelica types an enumeration by its
+    literals alone, so two variables whose types list the same literals share
+    one entry.
+    - ``type``, ``discrete``, ``description``, ``unit``, ``displayUnit``:
+      as for the field metadata, but per variable rather than per column: two
+      aliases of the same column each carry their own, and the field metadata
+      is the one of the variable that owns the column.
+
+Reading the file with pyarrow, for example::
+
+    import json, pyarrow.ipc as ipc, pyarrow.compute as pc
+    table = ipc.open_file("Model_res.arrow").read_all()
+    variables = json.loads(table.schema.metadata[b"modelica.variables"])
+    x = table.column("x")                            # a stored column
+    n = pc.run_end_decode(table.column("n"))         # a discrete one, per row
+    y = [v for v in variables if v["name"] == "y"][0]  # {"column": 1, "scale": -1.0, ...}
+    y_values = pc.add(pc.multiply(table.column(y["column"]), y.get("scale", 1.0)), y.get("offset", 0.0))
+

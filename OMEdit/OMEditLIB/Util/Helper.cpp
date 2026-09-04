@@ -65,12 +65,21 @@ QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.json)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
+#else
+QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.arrow *.plt *.csv)";
+QString Helper::omResultFileTypesRegExp = "\\b(mat|arrow|plt|csv)\\b";
+#endif
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+#else
+QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.arrow *.csv *.fmu);;Visualization MAT(*.mat *.arrow);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+#endif
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
@@ -82,7 +91,11 @@ QString Helper::busConnectorFormat = "bus/connector";
 QString Helper::cutCopyPasteFormat = "application/OMEdit.cut-copy-paste";
 qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
+#ifdef OM_LEGACY_RESULT_READERS
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv";
+#else
+QString Helper::ModelicaSimulationOutputFormats = "mat,arrow,plt,csv";
+#endif
 QString Helper::clockOptions = ",RT,CYC,CPU";
 QString Helper::internalLevel = ".OpenModelica.Scripting.ErrorLevel.internal";
 QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";

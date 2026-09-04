@@ -15,7 +15,7 @@ fn not_found(path: &str) -> io::Error {
 /// A seekable reader for `Read + Seek` consumers: a `std::fs::File` natively, an
 /// in-memory `Cursor` on the web target.
 pub enum Reader {
-    Disk(std::fs::File),
+    Disk { file: std::fs::File, path: String },
     Mem(io::Cursor<Vec<u8>>),
 }
 
@@ -23,15 +23,26 @@ pub fn open_read(path: &str) -> io::Result<Reader> {
     if IN_MEMORY {
         Ok(Reader::Mem(io::Cursor::new(crate::read(path).ok_or_else(|| not_found(path))?)))
     } else {
-        Ok(Reader::Disk(std::fs::File::open(path)?))
+        Ok(Reader::Disk { file: std::fs::File::open(path)?, path: path.to_owned() })
     }
 }
 
 impl Reader {
-    /// A second independent handle: `try_clone` natively, a byte copy in memory.
+    /// A second independent handle at the same position; WASI cannot duplicate
+    /// a descriptor, so the file is reopened by path there.
     pub fn try_clone(&self) -> io::Result<Reader> {
         match self {
-            Reader::Disk(f) => Ok(Reader::Disk(f.try_clone()?)),
+            Reader::Disk { file, path } => {
+                let clone = match file.try_clone() {
+                    Ok(c) => c,
+                    Err(_) => {
+                        let mut c = std::fs::File::open(path)?;
+                        c.seek(SeekFrom::Start((&*file).stream_position()?))?;
+                        c
+                    }
+                };
+                Ok(Reader::Disk { file: clone, path: path.clone() })
+            }
             Reader::Mem(c) => Ok(Reader::Mem(c.clone())),
         }
     }
@@ -40,7 +51,7 @@ impl Reader {
 impl Read for Reader {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match self {
-            Reader::Disk(f) => f.read(buf),
+            Reader::Disk { file, .. } => file.read(buf),
             Reader::Mem(c) => c.read(buf),
         }
     }
@@ -49,7 +60,7 @@ impl Read for Reader {
 impl Seek for Reader {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         match self {
-            Reader::Disk(f) => f.seek(pos),
+            Reader::Disk { file, .. } => file.seek(pos),
             Reader::Mem(c) => c.seek(pos),
         }
     }

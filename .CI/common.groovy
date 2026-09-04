@@ -1189,7 +1189,8 @@ void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
-  partest(partition, partitionmodulo)
+  // arrow: this is the autotools build, the one without libomc_result.
+  partest(partition, partitionmodulo, true, '-suites=-arrow')
 }
 
 // The same, for a stashed CMake install tree (see buildCMakeGccOMC). Only the

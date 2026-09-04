@@ -77,6 +77,8 @@ TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
 Ticket5129.mos \
+ResultFileArrow.mos \
+ResultFileArrowTimeAlias.mos \
 VariableFilter.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \

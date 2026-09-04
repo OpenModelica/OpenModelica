@@ -43,3 +43,8 @@ elseif(UNIX)
 else()
   message(FATAL_ERROR "Unknown system for OpenModelica simulation code generation and compilation. OpenModelica does not know how to compile and simulate simulation code on this configuration.")
 endif()
+
+# libSimulationRuntimeC writes result files through libomc_result (OM_RUST_RESULT_WRITERS).
+if(OM_RUST_RESULT_WRITERS)
+  string(APPEND RT_LDFLAGS_GENERATED_CODE_SIM " -lomc_result ")
+endif()

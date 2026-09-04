@@ -59,6 +59,11 @@
 #include <QRegularExpression>
 #include <limits>
 
+static bool isSinglePrecisionFormat(const QString &outputFormat)
+{
+  return outputFormat.compare("mat") == 0 || outputFormat.compare("arrow") == 0;
+}
+
 /*!
  * \class SimulationDialog
  * \brief Displays a dialog with simulation options.
@@ -1039,7 +1044,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpOutputFormatComboBox->blockSignals(state);
   // single precision
   mpSinglePrecisionCheckBox->setChecked(simulationOptions.getSinglePrecision());
-  mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
+  mpSinglePrecisionCheckBox->setEnabled(isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()));
   // Output filename
   if (simulationOptions.getFileNamePrefix().startsWith("_omcQuot_")) {
     mpFileNameTextBox->setText(QByteArray::fromHex(simulationOptions.getFileNamePrefix().toUtf8()));
@@ -1302,7 +1307,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     }
   }
   // single precision
-  if ((simulationOptions.getOutputFormat().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+  if (isSinglePrecisionFormat(simulationOptions.getOutputFormat()) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.append("-single");
   }
   // emit protected variables
@@ -1620,7 +1625,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   // Flags from Output tab
   simulationFlags.insert("s", mpMethodComboBox->currentText());
-  if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+  if (isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.insert("single", "()");
   }
   if (!mpResultFileNameTextBox->text().isEmpty()) {
@@ -2037,7 +2042,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
 #if !defined(WITHOUT_OSG)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
-      if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
+#ifdef OM_LEGACY_RESULT_READERS
+      const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat");
+#else
+      const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat") || simulationOptions.getFullResultFileName().endsWith(".arrow");
+#endif
+      if (animatable) {
         MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
         if (pAnimationWindow) {
@@ -2306,7 +2316,7 @@ void SimulationDialog::resultFileNameChanged(int index)
   Q_UNUSED(index);
   ComboBox *pComboBoxSender = qobject_cast<ComboBox*>(sender());
   if (pComboBoxSender) {
-    mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
+    mpSinglePrecisionCheckBox->setEnabled(isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()));
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
   }
 }

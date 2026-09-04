@@ -3,8 +3,8 @@
 Plots result files and compares two of them the way `diffSimulationResults`
 does, in the browser. Nothing is uploaded: the files are read by
 `openmodelica_result_web.wasm`, a small module built from
-`openmodelica_result_files` (the CSV/PLT readers, the MATLAB v4 reader and the
-tube comparison omc itself uses) that needs no compiler. The charts are the
+`openmodelica_result_files` (the CSV/PLT readers, the MATLAB v4 and Arrow
+readers and the tube comparison omc itself uses) that needs no compiler. The charts are the
 same `../plot.js` the simulator pages draw with.
 
 ## Query parameters
@@ -32,7 +32,27 @@ same way.
 
 ## Files
 
-Open `.mat`, `.csv` and `.plt` with the button or by dropping them on the page.
-The save button writes the selected file back out as `.mat` or `.csv`, all
+Open `.mat`, `.arrow`, `.csv` and `.plt` with the button or by dropping them on
+the page. The save button writes the selected file back out as `.mat`, `.arrow`
+or `.csv`, all
 variables or the ticked ones, optionally resampled onto equidistant intervals —
 which also converts a Modelica Association CSV reference to `.mat`.
+
+## Command line
+
+The same module, built for wasm32-wasip1 as `omplot.wasm`, runs under Node's
+WASI without a browser (`omplot-cli.js` in this directory):
+
+    node omplot-cli.js vars Model_res.arrow
+    node omplot-cli.js traj Model_res.arrow x y > xy.csv
+    node omplot-cli.js val Model_res.arrow x 0.5
+    node omplot-cli.js diff Model_res.arrow Model_ref.mat --relTol 1e-3
+    node omplot-cli.js tube Model_res.arrow Model_ref.mat x
+    node omplot-cli.js convert Model_res.mat Model_res.arrow --intervals 500 --single
+
+`cargo run -p openmodelica_result_cli --` runs it natively with the same
+arguments. Both come from `openmodelica_result_cli`, a thin front over
+`openmodelica_result_files::ResultFile`, which also backs `libomc_result`, the
+C ABI (`openmodelica_result_capi/include/omc_result.h`, namespace `omc` for
+C++) that OMEdit and OMPlot open `.arrow`, `.mat`, `.csv` and `.plt` files
+through (cmake option `OM_RUST_RESULT_READERS`, on by default).

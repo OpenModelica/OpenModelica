@@ -1,0 +1,19 @@
+# Result files without the compiler: the readers, the diffSimulationResults
+# tube comparison and `ResultFile`, shared by the scripting API, the OMPlot web
+# module, `omplot` and the omc_result C ABI. Explicit dependencies (no
+# workspace inheritance), so it builds on stable from the runtime workspace.
+[package]
+name = "openmodelica_result_files"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[dependencies]
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }
+openmodelica_mat_reader = { path = "../openmodelica_mat_reader" }
+openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer" }
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+arrow-array = { version = "59", default-features = false }
+arrow-schema = { version = "59", default-features = false }
+arrow-ipc = { version = "59", default-features = false }
+serde_json = "1"

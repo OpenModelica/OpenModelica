@@ -260,6 +260,8 @@ typedef struct DATA_ALIAS
   enum ALIAS_TYPE aliasType;           /* 0 variable, 1 parameter, 2 time */
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_string unit;                /* an alias declares its own unit and */
+  modelica_string displayUnit;         /* displayUnit; only Reals have them */
 } DATA_ALIAS;
 
 typedef DATA_ALIAS DATA_REAL_ALIAS;

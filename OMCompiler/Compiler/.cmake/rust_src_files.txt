@@ -336,10 +336,6 @@ openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_program_util/Cargo.toml
-openmodelica_result_files/Cargo.toml
-openmodelica_result_files/src/cmp.rs
-openmodelica_result_files/src/lib.rs
-openmodelica_result_files/src/readers.rs
 openmodelica_result_web/Cargo.toml
 openmodelica_result_web/src/lib.rs
 openmodelica_revision/Cargo.toml
@@ -463,6 +459,7 @@ wasm/omc-cli.js
 wasm/omc-terminal/index.html
 wasm/omplot/README.md
 wasm/omplot/index.html
+wasm/omplot/omplot-cli.js
 wasm/plot.js
 wasm/simulator/.gitignore
 wasm/simulator/config.json

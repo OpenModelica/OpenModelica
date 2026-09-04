@@ -2876,6 +2876,10 @@ fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, lay
     for k in 0..layout.n_sens {
         rows.push(read_f64(e, sim_data + layout.sens_off + k * 8)?);
     }
+    for i in 0..layout.n_str_alg() {
+        let s = e.string_at(sim_data + layout.str_off + i * 4)?;
+        rows.push(crate::strings::intern(&s) as f64);
+    }
     Ok(())
 }
 
@@ -3169,7 +3173,8 @@ fn write_output_vars(
     let mut out = format!("time={}", format_g(rows[last], 20));
     for name in names {
         for v in &model.vars {
-            if v.name != *name {
+            // A String's column holds its interned id; the loops below print the text.
+            if v.name != *name || v.ty == crate::VarTy::String {
                 continue;
             }
             match &v.kind {
@@ -3195,7 +3200,7 @@ fn write_output_vars(
                 ResultKind::Const { value } => out.push_str(&format!(",{name}={}", format_g(*value, 20))),
             }
         }
-        // Strings own no result column; C reads them from `stringVars`/`stringParameter`.
+        // C reads Strings from `stringVars`/`stringParameter`.
         let mut string_at = |off: u32| -> Result<()> {
             let s = e.string_at(sim_data + off)?;
             out.push_str(&format!(",{name}=\"{s}\""));
@@ -4605,9 +4610,13 @@ pub fn read_params(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Re
     let mut params = Vec::new();
     for v in &model.vars {
         if let ResultKind::Param { off, wty, .. } = &v.kind {
-            let val = match wty {
-                WTy::F64 => read_f64(e, sim_data + off)?,
-                WTy::I32 => read_i32(e, sim_data + off)? as f64,
+            let val = if v.ty == crate::VarTy::String {
+                crate::strings::intern(&e.string_at(sim_data + off)?) as f64
+            } else {
+                match wty {
+                    WTy::F64 => read_f64(e, sim_data + off)?,
+                    WTy::I32 => read_i32(e, sim_data + off)? as f64,
+                }
             };
             params.push(val);
         }
@@ -4716,6 +4725,7 @@ pub fn drive(
         if !use_events
             && method == "euler"
             && layout.n_states > 0
+            && layout.n_str_alg() == 0
             && e.has_simulate_entry()
             && !host_driven
             && !csv_input_given()

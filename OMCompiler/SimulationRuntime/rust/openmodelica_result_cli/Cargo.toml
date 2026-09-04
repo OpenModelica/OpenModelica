@@ -1,0 +1,14 @@
+# `omplot`: the OMPlot web module as a command, native and wasm32-wasip1
+# (web/omplot/omplot.wasm, run by omplot-cli.js).
+[package]
+name = "openmodelica_result_cli"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[[bin]]
+name = "omplot"
+path = "src/main.rs"
+
+[dependencies]
+openmodelica_result_files = { path = "../openmodelica_result_files" }

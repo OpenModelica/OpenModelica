@@ -46,6 +46,46 @@ set(QWT_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(OMQWT_LIBRARY_TYPE STATIC)
 add_subdirectory(${QWT} ${CMAKE_BINARY_DIR}/qwt)
 
+# ---- libomc_result (result readers/writers) ----
+# Asyncify aborts on the wasm exception handling rustc emits for this target by
+# default and ships inside the precompiled std, so std is rebuilt here with
+# emscripten's JS exceptions (nightly + rust-src).
+set(RESULT_WORKSPACE ${OM_ROOT}/OMCompiler/SimulationRuntime/rust)
+set(RESULT_CRATE ${RESULT_WORKSPACE}/openmodelica_result_capi)
+set(RESULT_TARGET_DIR ${CMAKE_BINARY_DIR}/omc-result-emscripten)
+set(RESULT_LIB ${RESULT_TARGET_DIR}/wasm32-unknown-emscripten/release/libomc_result.a)
+find_program(CARGO_EXECUTABLE cargo)
+if(NOT CARGO_EXECUTABLE)
+  message(FATAL_ERROR "cargo was not found; the web OMEdit reads result files through "
+                      "libomc_result. Install a nightly Rust toolchain with the rust-src "
+                      "component and `rustup target add wasm32-unknown-emscripten`.")
+endif()
+file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS
+     ${RESULT_CRATE}/src/*.rs ${RESULT_CRATE}/Cargo.toml
+     ${RESULT_CRATE}/include/omc_result.h
+     ${RESULT_WORKSPACE}/openmodelica_result_files/src/*.rs
+     ${RESULT_WORKSPACE}/openmodelica_mat_reader/src/*.rs
+     ${RESULT_WORKSPACE}/openmodelica_arrow_writer/src/*.rs
+     ${RESULT_WORKSPACE}/openmodelica_mat_writer/src/*.rs)
+add_custom_command(
+  OUTPUT ${RESULT_LIB}
+  WORKING_DIRECTORY ${RESULT_WORKSPACE}
+  JOB_SERVER_AWARE TRUE
+  COMMAND ${CMAKE_COMMAND} -E env RUSTFLAGS=-Zemscripten-wasm-eh=no
+          ${CARGO_EXECUTABLE} rustc -Zbuild-std=std,panic_abort
+          --release --target wasm32-unknown-emscripten
+          --target-dir ${RESULT_TARGET_DIR} -p openmodelica_result_capi
+          --crate-type staticlib
+  DEPENDS ${RESULT_SOURCES}
+  COMMENT "Rust: building libomc_result (wasm32-unknown-emscripten)"
+  VERBATIM)
+add_custom_target(rust_omc_result DEPENDS ${RESULT_LIB})
+add_library(omc::result STATIC IMPORTED GLOBAL)
+set_target_properties(omc::result PROPERTIES
+  IMPORTED_LOCATION ${RESULT_LIB}
+  INTERFACE_INCLUDE_DIRECTORIES ${RESULT_CRATE}/include)
+add_dependencies(omc::result rust_omc_result)
+
 # ---- OMPlotLib (library only) ----
 add_library(OMPlotLib STATIC
   ${OMPLOT}/Plot.cpp ${OMPLOT}/PlotZoomer.cpp ${OMPLOT}/Legend.cpp
@@ -57,14 +97,14 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
   ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h
-  ${SIMRT}/util/read_matlab4.c ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c
-  ${SIMRT}/util/omc_numbers.c
+  # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c).
+  ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c ${SIMRT}/util/omc_numbers.c
   # TODO: give OMEdit its own copy; reuse the OMNotebook stdio shim for now.
   ${OM_ROOT}/OMNotebook/OMNotebook/OMNotebookGUI/wasm/omc_file_shim.c)
 target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
 target_include_directories(OMPlotLib PUBLIC ${OMPLOT} PRIVATE ${SIMRT})
 target_link_libraries(OMPlotLib PUBLIC
-  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt)
+  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt omc::result)
 
 # ---- OMEditLib (static) ----
 # Glob the native sources minus the subsystems stubbed on wasm. /generatedfiles/

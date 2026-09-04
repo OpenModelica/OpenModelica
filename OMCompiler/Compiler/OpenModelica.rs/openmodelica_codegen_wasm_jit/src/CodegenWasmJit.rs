@@ -77,7 +77,7 @@ use openmodelica_sim_meta::omclog;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
     var_filter, BaseClockMeta, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
-    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta,
+    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta, VarTy,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -3858,6 +3858,18 @@ fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
     }
 }
 
+/// The Modelica type of a variable, through subtype and array wrappers.
+fn var_ty(ty: &DAE::Type) -> VarTy {
+    match ty {
+        DAE::Type::T_INTEGER { .. } | DAE::Type::T_ENUMERATION { .. } => VarTy::Integer,
+        DAE::Type::T_BOOL { .. } => VarTy::Boolean,
+        DAE::Type::T_STRING { .. } => VarTy::String,
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => var_ty(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => var_ty(ty),
+        _ => VarTy::Real,
+    }
+}
+
 fn is_boolean_type(ty: &DAE::Type) -> bool {
     match ty {
         DAE::Type::T_BOOL { .. } => true,
@@ -3867,8 +3879,8 @@ fn is_boolean_type(ty: &DAE::Type) -> bool {
     }
 }
 
-/// Literal names of an enumeration type (through subtype/array wrappers), or
-/// `None` for a non-enumeration. The stored value is the 1-based index into these.
+/// Literal names of an enumeration type; the stored value is the 1-based index
+/// into these.
 fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
     match ty {
         DAE::Type::T_ENUMERATION { names, .. } => Some(lst(names).map(|n| n.to_string()).collect()),
@@ -3946,7 +3958,18 @@ pub(crate) fn const_value(exp: &Option<Arc<DAE::Exp>>) -> Option<f64> {
 /// captured per row) and string variables have no numeric result column.
 fn kind_from_slot(off: u32, wty: WTy, negate: Neg, heap: bool, layout: &SimLayout) -> Option<ResultKind> {
     if heap {
-        return None; // strings are not stored as numeric result data
+        // Strings: the row carries the interned text (`sim_meta::strings`) for an
+        // algebraic one; a parameter is read at result-file open.
+        if off >= layout.str_off && off < layout.sparam_off {
+            return Some(ResultKind::Column { col: layout.str_col0() + (off - layout.str_off) / 4, negate });
+        }
+        if off >= layout.sparam_off && off < layout.eobj_off {
+            return Some(ResultKind::Param { off, wty, negate });
+        }
+        return None;
+    }
+    if off == TIME_OFF {
+        return Some(ResultKind::Column { col: 0, negate });
     }
     if off >= REAL_OFF && off < layout.rparam_off {
         // realVars region (states | derivatives | algebraics) -> data_2 column.
@@ -4165,8 +4188,13 @@ fn push_sensitivity_vars(
             name: cref_display(&sv.name)?,
             comment: sv.comment.to_string(),
             kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: Neg::None },
+            unit: sv.unit.to_string(),
+            display_unit: sv.displayUnit.to_string(),
+            ty: var_ty(&sv.type_),
+            discrete: sv.isDiscrete,
             filter: filter_bits(sv),
             unvarying: false,
+            enumeration: None,
         });
     }
     Ok(offs)
@@ -4244,9 +4272,14 @@ fn build_var_map(
     result_vars.push(ResultVar {
         name: "time".to_string(),
         comment: "Simulation time [s]".to_string(),
+        unit: "s".to_string(),
+        display_unit: String::new(),
+        ty: VarTy::Real,
+        discrete: false,
         kind: ResultKind::Time,
         filter: 0,
         unvarying: false,
+        enumeration: None,
     });
 
     let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
@@ -4265,8 +4298,13 @@ fn build_var_map(
                         name,
                         comment: sv.comment.to_string(),
                         kind,
+                        unit: sv.unit.to_string(),
+                        display_unit: sv.displayUnit.to_string(),
+                        ty: var_ty(&sv.type_),
+                        discrete: sv.isDiscrete,
                         filter: filter_bits(sv),
                         unvarying: false,
+                        enumeration: enumeration_names(&sv.type_),
                     });
                 }
             }
@@ -4344,11 +4382,12 @@ fn build_var_map(
         push_editable(sv, &name, off, WTy::I32);
     }
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
-        insert_var(&mut map, sv, layout.str_off + (i as u32) * 4, WTy::I32, true)?;
+        let name = cref_display(&sv.name)?;
+        push_primary(&mut map, &mut result_vars, sv, layout.str_off + (i as u32) * 4, WTy::I32, true, name)?;
     }
     for (k, sv) in lst(&vars.stringParamVars).enumerate() {
         let off = layout.sparam_off + (k as u32) * 4;
-        insert_var(&mut map, sv, off, WTy::I32, true)?;
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, true, cref_display(&sv.name)?)?;
         // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
         if sv.isValueChangeable && is_result_output(sv)
             && let Some(disp) = result_name(&cref_display(&sv.name)?)
@@ -4400,8 +4439,13 @@ fn build_var_map(
                 name,
                 comment: sv.comment.to_string(),
                 kind: ResultKind::Const { value },
+                unit: sv.unit.to_string(),
+                display_unit: sv.displayUnit.to_string(),
+                ty: var_ty(&sv.type_),
+                discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
                 unvarying: false,
+                enumeration: enumeration_names(&sv.type_),
             });
         }
     }
@@ -4414,7 +4458,8 @@ fn build_var_map(
     let alias_lists = lst(&vars.aliasVars)
         .map(|v| (v, false))
         .chain(lst(&vars.intAliasVars).map(|v| (v, false)))
-        .chain(lst(&vars.boolAliasVars).map(|v| (v, true)));
+        .chain(lst(&vars.boolAliasVars).map(|v| (v, true)))
+        .chain(lst(&vars.stringAliasVars).map(|v| (v, false)));
     for (av, is_bool) in alias_lists {
         let (target, negate) = match &av.aliasvar {
             SimCodeVar::AliasVariable::ALIAS { varName } => (varName.clone(), false),
@@ -4422,7 +4467,13 @@ fn build_var_map(
             SimCodeVar::AliasVariable::NOALIAS => continue,
         };
         let tkey = sim_cref_key(&target)?;
-        let Some(tslot) = map.vars.get(&tkey).copied() else {
+        let time_slot = match &*target {
+            DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } if ident.as_str() == "time" && subscriptLst.is_empty() => {
+                Some(SimSlot { off: TIME_OFF, wty: WTy::F64, negate: Neg::None, heap: false })
+            }
+            _ => None,
+        };
+        let Some(tslot) = map.vars.get(&tkey).copied().or(time_slot) else {
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
                 if let Some(name) = result_name(&cref_display(&av.name)?) {
@@ -4432,8 +4483,13 @@ fn build_var_map(
                         name,
                         comment: av.comment.to_string(),
                         kind: ResultKind::Const { value },
+                        unit: av.unit.to_string(),
+                        display_unit: av.displayUnit.to_string(),
+                        ty: var_ty(&av.type_),
+                        discrete: av.isDiscrete,
                         filter: filter_bits(av) | var_filter::ALIAS,
                         unvarying: false,
+                        enumeration: enumeration_names(&av.type_),
                     });
                 }
             }
@@ -4466,8 +4522,13 @@ fn build_var_map(
                 name,
                 comment: av.comment.to_string(),
                 kind,
+                unit: av.unit.to_string(),
+                display_unit: av.displayUnit.to_string(),
+                ty: var_ty(&av.type_),
+                discrete: av.isDiscrete,
                 filter: filter_bits(av) | var_filter::ALIAS,
                 unvarying: false,
+                enumeration: enumeration_names(&av.type_),
             });
         }
     }
@@ -11273,6 +11334,11 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
     }
     for j in 0..layout.n_bool_alg() {
         store_islot(&mut f, layout.bool_off + j * 4, n_reals + layout.n_int_alg() + j);
+    }
+    // The raw String handles keep the row width; the driver never takes this path
+    // with String results (they need interning at capture).
+    for i in 0..layout.n_str_alg() {
+        store_islot(&mut f, layout.str_off + i * 4, layout.str_col0() + i);
     }
     // Only IDA fills the sensitivity block, and this loop is Euler's.
     if layout.n_sens > 0 {

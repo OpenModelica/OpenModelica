@@ -37,8 +37,12 @@
 #include "PlotWindow.h"
 #include "OMPlot.h"
 #include "PlotZoomer.h"
+#ifdef OM_LEGACY_RESULT_READERS
 #include "util/read_csv.h"
 #include "util/read_matlab4.h"
+#else
+#include "omc_result.h"
+#endif
 #include "PlotCurve.h"
 #include "PlotPicker.h"
 #include "Legend.h"
@@ -74,6 +78,8 @@
 using namespace OMPlot;
 
 static const QRegularExpression DER_VARIABLE_NAME_REGEX(QRegularExpression::anchoredPattern("der\\(\\D(\\w)*\\)"));
+
+
 static const QString ERROR_INTERVAL_SIZE_NOT_SPECIFIED = QObject::tr("Interval size not specified.");
 static const QString ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH = QObject::tr("Arrays must be of the same length in array parametric plot.");
 static const QString ERROR_UNKNOWN_TIME_UNIT = QObject::tr("Unknown time unit in plotArray(Parametric).");
@@ -88,6 +94,59 @@ static const QString ERROR_FAILED_TO_LOAD_VARIABLE = QObject::tr("Failed to load
 static const QString ERROR_VARIABLE_DOES_NOT_EXIST = QObject::tr("Variable doesn't exist");
 static const QString ERROR_ARRAY_VARIABLE_DOES_NOT_EXIST = QObject::tr("Array variable doesn't exist");
 static const QString ERROR_PARAMETER_DOES_NOT_HAVE_VALUE = QObject::tr("Parameter doesn't have a value");
+
+#ifndef OM_LEGACY_RESULT_READERS
+/* The formats the Rust reader opens (.plt keeps OMPlot's own text parser). */
+static bool isReaderFile(const QString &fileName)
+{
+  return fileName.endsWith("csv") || fileName.endsWith("mat") || fileName.endsWith("arrow");
+}
+
+static omc::ResultFile openResultFile(const QString &windowTitle, const QFile &file)
+{
+  try {
+    return omc::ResultFile(file.fileName().toStdString());
+  } catch (const omc::ResultError &e) {
+    throw PlotException(windowTitle, e.what());
+  }
+}
+
+/* Every variable of the file as one row of values: its trajectory, or a
+ * parameter's value repeated over the rows. Throws when it cannot be read. */
+static std::vector<double> readValues(const QString &windowTitle, const omc::ResultFile &result, const QString &variable)
+{
+  std::string name = variable.toStdString();
+  if (!result.hasVariable(name)) {
+    throw NoVariableException(windowTitle, ERROR_VARIABLE_DOES_NOT_EXIST, variable);
+  }
+  std::vector<double> values = result.values(name);
+  if (values.empty()) {
+    throw NoVariableException(windowTitle, result.isParameter(name) ? ERROR_PARAMETER_DOES_NOT_HAVE_VALUE : ERROR_CORRUPTED_FILE, variable);
+  }
+  return values;
+}
+
+/* The elements var[1], var[2], ... (der(var[i]) for a derivative) at `time`. */
+static QList<double> readArrayAt(const omc::ResultFile &result, const QString &variable, double time)
+{
+  QList<double> res;
+  for (int i = 1; ; i++) {
+    QString varNameQS = variable;
+    if (DER_VARIABLE_NAME_REGEX.match(varNameQS).hasMatch()) {
+      varNameQS.chop(1);
+      varNameQS.append("[" + QString::number(i) + "])");
+    } else {
+      varNameQS.append("[" + QString::number(i) + "]");
+    }
+    double value = 0.0;
+    if (!result.valueAt(varNameQS.toStdString(), time, value)) {
+      break;
+    }
+    res.push_back(value);
+  }
+  return res;
+}
+#endif
 
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
@@ -328,6 +387,17 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
     // close the file
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    start = result.startTime();
+    stop = result.stopTime();
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -365,7 +435,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
 
     // close the file
     omc_free_matlab4_reader(&reader);
-  } else {
+  }
+#endif
+  else {
     throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
   }
 }
@@ -556,6 +628,57 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // close the file
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    QStringList variablesPlotted;
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    QString timeName = QString::fromStdString(result.timeName());
+    if (timeName != "time") {
+      setXLabel(timeName);
+    }
+    std::vector<double> timeVals = readValues(windowTitle(), result, timeName);
+    const double startTime = result.startTime(), stopTime = result.stopTime();
+    for (const std::string &name : result.variables()) {
+      QString variable = QString::fromStdString(name);
+      if (variable == timeName || !(mVariablesList.contains(variable) || isPlotAll())) {
+        continue;
+      }
+      variablesPlotted.append(variable);
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), timeName, getXUnit(), getXDisplayUnit(), variable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      if (result.isParameter(name)) {
+        double value = 0.0;
+        if (!result.valueAt(name, startTime, value)) {
+          throw NoVariableException(windowTitle(), ERROR_PARAMETER_DOES_NOT_HAVE_VALUE, variable);
+        }
+        pPlotCurve->addXAxisValue(startTime);
+        pPlotCurve->addYAxisValue(value);
+        pPlotCurve->addXAxisValue(stopTime);
+        pPlotCurve->addYAxisValue(value);
+      } else {
+        std::vector<double> vals = readValues(windowTitle(), result, variable);
+        for (size_t i = 0; i < timeVals.size() && i < vals.size(); i++) {
+          pPlotCurve->addXAxisValue(timeVals[i]);
+          pPlotCurve->addYAxisValue(vals[i]);
+        }
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      mpPlot->replot();
+    }
+    if (isPlot())
+      checkForErrors(mVariablesList, variablesPlotted);
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -699,6 +822,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     // close the file
     omc_free_matlab4_reader(&reader);
   }
+#endif
 }
 
 void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
@@ -802,6 +926,28 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       // close the file
       mFile.close();
     }
+#ifndef OM_LEGACY_RESULT_READERS
+    else if (isReaderFile(mFile.fileName()))
+    {
+      omc::ResultFile result = openResultFile(windowTitle(), mFile);
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      std::vector<double> xVals = readValues(windowTitle(), result, xVariable);
+      std::vector<double> yVals = readValues(windowTitle(), result, yVariable);
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (size_t i = 0; i < xVals.size() && i < yVals.size(); i++) {
+        pPlotCurve->addXAxisValue(xVals[i]);
+        pPlotCurve->addYAxisValue(yVals[i]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      mpPlot->replot();
+    }
+#else
     //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
@@ -938,6 +1084,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       mpPlot->replot();
       omc_free_matlab4_reader(&reader);
     }
+#endif
   }
 }
 
@@ -1111,6 +1258,43 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     }
     mFile.close();
   }
+#ifndef OM_LEGACY_RESULT_READERS
+  else if (isReaderFile(mFile.fileName()))
+  {
+    omc::ResultFile result = openResultFile(windowTitle(), mFile);
+    if (result.rows() < 1) {
+      throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
+    const double startTime = result.startTime(), stopTime = result.stopTime();
+    if (time < startTime || stopTime < time) {
+      TimeOutOfBoundsException timeOutOfBoundsException(windowTitle(), QFileInfo(mFile), startTime, stopTime);
+      if (mTimeOutOfBounds) {
+        throw RecurringPlotException(timeOutOfBoundsException);
+      }
+      mTimeOutOfBounds = true;
+      throw timeOutOfBoundsException;
+    } else {
+      mTimeOutOfBounds = false;
+    }
+    foreach (QString variable, mVariablesList) {
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "array index", getXUnit(), getXDisplayUnit(), variable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      QList<double> res = readArrayAt(result, variable, time);
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (int j = 0; j < res.count(); j++) {
+        pPlotCurve->addXAxisValue(j + 1);
+        pPlotCurve->addYAxisValue(res[j]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      updateTimeText();
+    }
+  }
+#else
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
@@ -1248,6 +1432,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       // close the file
       omc_free_matlab4_reader(&reader);
     }
+#endif
 }
 
 void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
@@ -1344,6 +1529,45 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       updateTimeText();
       mFile.close();
     }
+#ifndef OM_LEGACY_RESULT_READERS
+    else if (isReaderFile(mFile.fileName()))
+    {
+      omc::ResultFile result = openResultFile(windowTitle(), mFile);
+      if (result.rows() < 1) {
+        throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+      }
+      const double startTime = result.startTime(), stopTime = result.stopTime();
+      if (time < startTime || stopTime < time) {
+        TimeOutOfBoundsException timeOutOfBoundsException(windowTitle(), QFileInfo(mFile), startTime, stopTime);
+        if (mTimeOutOfBounds) {
+          throw RecurringPlotException(timeOutOfBoundsException);
+        }
+        mTimeOutOfBounds = true;
+        throw timeOutOfBoundsException;
+      } else {
+        mTimeOutOfBounds = false;
+      }
+      if (!editCase) {
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
+        mpPlot->addPlotCurve(pPlotCurve);
+      }
+      QList<double> xRes = readArrayAt(result, xVariable, time);
+      QList<double> yRes = readArrayAt(result, yVariable, time);
+      if (xRes.count() != yRes.count()) {
+        throw PlotException(windowTitle(), ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
+      }
+      pPlotCurve->clearXAxisVector();
+      pPlotCurve->clearYAxisVector();
+      for (int i = 0; i < xRes.count(); i++) {
+        pPlotCurve->addXAxisValue(xRes[i]);
+        pPlotCurve->addYAxisValue(yRes[i]);
+      }
+      pPlotCurve->plotData();
+      pPlotCurve->attach(mpPlot);
+      updateTimeText();
+    }
+#else
     //    //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
@@ -1497,6 +1721,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       updateTimeText();
       omc_free_matlab4_reader(&reader);
     }
+#endif
   }
 }
 
