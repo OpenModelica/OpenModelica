@@ -216,6 +216,12 @@ package builtin
     output Real z;
   end realDiv;
 
+  function realSub
+    input Real x;
+    input Real y;
+    output Real z;
+  end realSub;
+
   function stringLength
     input String str;
     output Integer length;

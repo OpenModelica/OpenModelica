@@ -372,8 +372,9 @@ pub struct DisplayUnit {
     pub name: String,
     pub factor: f64,
     pub offset: f64,
-    /// FMI 3.0: the display value is `factor * (value + offset)` when set, the
-    /// FMI 2.0 form `factor * value + offset` when not.
+    /// FMI 3.0's reciprocal display units (mpg, Siemens): the display value is
+    /// `factor / value`, and the spec allows it only with `offset = 0`. Plain
+    /// `factor * value + offset` when not set.
     pub inverse: bool,
 }
 
@@ -409,7 +410,8 @@ pub struct TypeDefinition {
     pub items: Vec<EnumerationItem>,
 }
 
-/// A `<Tool name=…>` annotation, kept as the XML the tool wrote.
+/// One `<Annotations>` entry, kept as the XML the tool wrote. `name` is FMI 3.0's
+/// `type` or the older `<Tool name=…>`.
 #[derive(Clone, Debug)]
 pub struct ToolAnnotation {
     pub name: String,

@@ -76,8 +76,9 @@ use crate::CodegenWasmJitFunctions::{
 use openmodelica_sim_meta::omclog;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    var_filter, BaseClockMeta, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
-    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta, VarTy,
+    var_filter, BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, Layout as SimLayout,
+    MetaKind as ResultKind, MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta,
+    UnitDef, VarTy,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -180,6 +181,11 @@ pub struct SimSeries {
     pub name: String,
     pub comment: String,
     pub unit: String,
+    /// The unit it is preferably plotted in, a display unit of `unit`.
+    pub display_unit: String,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
     /// Time-invariant (parameter, constant, or computed once at initialization) —
     /// the web simulator hides these from the default plot ("all non-constant vars").
     pub constant: bool,
@@ -195,6 +201,8 @@ pub struct CapturedParam {
     pub name: String,
     pub comment: String,
     pub unit: String,
+    pub display_unit: String,
+    pub relative_quantity: bool,
     pub value: f64,
     /// Enumeration literal names (1-based index → name), empty for non-enum.
     pub enum_names: Vec<String>,
@@ -212,6 +220,9 @@ pub struct CapturedSim {
     layout: Option<MatLayout>,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
+    /// The units the signals and parameters name, defined: what a host needs to
+    /// plot or edit a value in its display unit.
+    pub units: Vec<openmodelica_sim_meta::UnitDef>,
     /// Solver counters, so a host with no stdout can tell a run that did more work
     /// from one that did the same work slower.
     pub stats: SolveStats,
@@ -305,6 +316,8 @@ fn capture_last_sim(
                 name: v.name.clone(),
                 comment: v.comment.clone(),
                 unit: unit_of(&v.name),
+                display_unit: v.display_unit.clone(),
+                relative_quantity: v.relative_quantity,
                 constant: matches!(data, SeriesData::Scalar(_)),
                 alias,
                 data,
@@ -320,6 +333,8 @@ fn capture_last_sim(
             name: p.name.clone(),
             comment: p.comment.clone(),
             unit: p.unit.clone(),
+            display_unit: p.display_unit.clone(),
+            relative_quantity: p.relative_quantity,
             value: if p.is_start {
                 row0_by_name.get(p.name.as_str()).copied().unwrap_or(0.0)
             } else {
@@ -337,6 +352,10 @@ fn capture_last_sim(
         layout,
         series,
         params,
+        units: model.meta.units.iter().cloned().map(|mut u| {
+            u.add_predefined_display_units();
+            u
+        }).collect(),
         stats: stats.clone(),
     });
 }
@@ -796,7 +815,16 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
 ///
 /// `cs` gates only the integrator: Model Exchange never integrates, but its
 /// initialisation and residuals run the same nonlinear and linear solvers.
-fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'static str> {
+///
+/// `sparse_nls` is the one selection no flag records: C's density/size rule sends a
+/// large sparse nonlinear system to kinsol+KLU whatever the flags say, so a model
+/// carrying one needs both however it was exported.
+fn fmu_solver_libraries(
+    flags_json: &str,
+    cs_method: &str,
+    cs: bool,
+    sparse_nls: bool,
+) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
     let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
     let named = |v: &str| ls == v || lss == v;
@@ -804,7 +832,7 @@ fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'st
     if cs && fmu_needs_sundials(cs_method) {
         wanted.push("sundials_driver");
     }
-    if matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
+    if sparse_nls || matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
         wanted.push("kinsol");
     }
     if named("umfpack") {
@@ -3553,8 +3581,8 @@ fn emit_fmu(
         let cs = kind != "ME";
         // Both adapters import every solver, real or stubbed; only the integrator is
         // Co-Simulation's alone.
-        let solvers =
-            sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs));
+        let solvers = sundials_available()
+            .then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs, model.sparse_nls));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into
@@ -4190,6 +4218,7 @@ fn push_sensitivity_vars(
             kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: Neg::None },
             unit: sv.unit.to_string(),
             display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
             ty: var_ty(&sv.type_),
             discrete: sv.isDiscrete,
             filter: filter_bits(sv),
@@ -4257,6 +4286,8 @@ fn build_var_map(
                     name: disp,
                     comment: sv.comment.to_string(),
                     unit: sv.unit.to_string(),
+                    display_unit: sv.displayUnit.to_string(),
+                    relative_quantity: sv.relativeQuantity,
                     off,
                     wty,
                     is_start: false,
@@ -4274,6 +4305,7 @@ fn build_var_map(
         comment: "Simulation time [s]".to_string(),
         unit: "s".to_string(),
         display_unit: String::new(),
+        relative_quantity: false,
         ty: VarTy::Real,
         discrete: false,
         kind: ResultKind::Time,
@@ -4300,6 +4332,7 @@ fn build_var_map(
                         kind,
                         unit: sv.unit.to_string(),
                         display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
                         ty: var_ty(&sv.type_),
                         discrete: sv.isDiscrete,
                         filter: filter_bits(sv),
@@ -4322,6 +4355,8 @@ fn build_var_map(
                     name: disp,
                     comment: sv.comment.to_string(),
                     unit: sv.unit.to_string(),
+                    display_unit: sv.displayUnit.to_string(),
+                    relative_quantity: sv.relativeQuantity,
                     off: start_off,
                     wty: WTy::F64,
                     is_start: true,
@@ -4396,6 +4431,8 @@ fn build_var_map(
                 name: disp,
                 comment: sv.comment.to_string(),
                 unit: sv.unit.to_string(),
+                display_unit: String::new(),
+                relative_quantity: false,
                 off,
                 wty: WTy::I32,
                 is_start: false,
@@ -4441,6 +4478,7 @@ fn build_var_map(
                 kind: ResultKind::Const { value },
                 unit: sv.unit.to_string(),
                 display_unit: sv.displayUnit.to_string(),
+            relative_quantity: sv.relativeQuantity,
                 ty: var_ty(&sv.type_),
                 discrete: sv.isDiscrete,
                 filter: filter_bits(sv),
@@ -4485,6 +4523,7 @@ fn build_var_map(
                         kind: ResultKind::Const { value },
                         unit: av.unit.to_string(),
                         display_unit: av.displayUnit.to_string(),
+                        relative_quantity: av.relativeQuantity,
                         ty: var_ty(&av.type_),
                         discrete: av.isDiscrete,
                         filter: filter_bits(av) | var_filter::ALIAS,
@@ -4524,6 +4563,7 @@ fn build_var_map(
                 kind,
                 unit: av.unit.to_string(),
                 display_unit: av.displayUnit.to_string(),
+                        relative_quantity: av.relativeQuantity,
                 ty: var_ty(&av.type_),
                 discrete: av.isDiscrete,
                 filter: filter_bits(av) | var_filter::ALIAS,
@@ -6022,7 +6062,7 @@ fn build_sim_model(
         }
     }
     let meta = build_sim_meta(
-        &layout, &result_vars, settings, cs_method, fmi_solver_flags, &model_name,
+        &layout, &result_vars, collect_unit_defs(mi, &result_vars), settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
@@ -6910,6 +6950,7 @@ fn build_sim_model(
         tolerance: settings.tolerance.into_inner(),
         state_sets,
         jac_a,
+        sparse_nls: var_map.nls_jobs.values().any(|j| j.sparse_default),
         editable_params,
         var_units,
         meta,
@@ -7450,6 +7491,45 @@ fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, Strin
     Ok(units)
 }
 
+/// The `modelica.units` table: every unit the result variables name, with its SI
+/// dimensions and the conversion to each display unit they name.
+///
+/// The SI dimensions come from `modelInfo.unitDefinitions`, which the FMI
+/// exporter already builds; the display conversion comes from the unit database
+/// itself (`SimCodeUtil.unitConversion`, which is `convertUnits`), because in
+/// that list a display unit is a top-level unit and collides with a variable
+/// declaring the same name as its own unit.
+fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVar]) -> Vec<UnitDef> {
+    let base_of = |name: &str| {
+        lst(&mi.unitDefinitions).find(|u| u.name.as_str() == name).and_then(|u| match u.baseUnit {
+            SimCode::BASEUNIT { s, m, kg, A, K, mol, cd, factor, offset } => {
+                Some(BaseUnit { exponents: [kg, m, s, A, K, mol, cd, 0], factor: factor.into_inner(), offset: offset.into_inner() })
+            }
+            SimCode::NOBASEUNIT => None,
+        })
+    };
+    let mut units: Vec<UnitDef> = Vec::new();
+    for v in result_vars.iter().filter(|v| !v.unit.is_empty()) {
+        let at = match units.iter().position(|u| u.name == v.unit) {
+            Some(i) => i,
+            None => {
+                units.push(UnitDef { name: v.unit.clone(), base: base_of(&v.unit), display_units: Vec::new() });
+                units.len() - 1
+            }
+        };
+        if v.display_unit.is_empty() || v.display_unit == v.unit || units[at].display_unit(&v.display_unit).is_some() {
+            continue;
+        }
+        // v_display = factor * v_unit + offset, FMI's own <DisplayUnit>.
+        let (converts, factor, offset) =
+            openmodelica_backend::SimCodeUtil::unitConversion(ArcStr::from(v.display_unit.as_str()), ArcStr::from(v.unit.as_str()));
+        if converts {
+            units[at].display_units.push(DisplayUnit::new(&v.display_unit, factor.into_inner(), offset.into_inner()));
+        }
+    }
+    units
+}
+
 /// Assemble the [`openmodelica_sim_meta::SimMeta`] embedded in the model module
 /// (decoded by both the in-wasm driver and the standalone `_start`) from the
 /// resolved layout, result variables, run settings and solver metadata. The
@@ -7459,6 +7539,7 @@ fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, Strin
 fn build_sim_meta(
     layout: &SimLayout,
     result_vars: &[ResultVar],
+    units: Vec<UnitDef>,
     settings: &SimCode::SimulationSettings,
     cs_method: &str,
     fmi_solver_flags: &str,
@@ -7501,6 +7582,7 @@ fn build_sim_meta(
         prefix: prefix.to_string(),
         model_name: model_name.to_string(),
         vars: result_vars.to_vec(),
+        units,
         jac_a,
         state_sets: state_sets.to_vec(),
         fmi_vrs,
@@ -11612,31 +11694,40 @@ mod link_tests {
 
     /// The mapping has to name `klu`, the shared core, whenever anything else is named.
     /// Only the integrator is Co-Simulation's alone: a Model Exchange FMU runs the same
-    /// nonlinear and linear solvers during initialisation.
+    /// nonlinear and linear solvers during initialisation. A model with a sparse
+    /// nonlinear system needs kinsol+KLU with no flag saying so.
     #[test]
     fn solver_libraries_follow_the_fmi_flags() {
-        for (json, cs, want) in [
-            ("{}", true, vec![]),
-            (r#"{"s":"euler"}"#, true, vec![]),
-            (r#"{"s":"cvode"}"#, true, vec!["sundials_driver", "klu"]),
-            (r#"{"s":"ida"}"#, true, vec!["sundials_driver", "klu"]),
-            (r#"{"nls":"kinsol"}"#, true, vec!["kinsol", "klu"]),
-            (r#"{"lss":"lis"}"#, true, vec!["lis", "klu"]),
-            (r#"{"ls":"umfpack"}"#, true, vec!["umfpack", "klu"]),
-            (r#"{"nlsLS":"klu"}"#, true, vec!["klu"]),
-            (r#"{"ls":"lapack"}"#, true, vec![]),
+        for (json, cs, sparse_nls, want) in [
+            ("{}", true, false, vec![]),
+            (r#"{"s":"euler"}"#, true, false, vec![]),
+            (r#"{"s":"cvode"}"#, true, false, vec!["sundials_driver", "klu"]),
+            (r#"{"s":"ida"}"#, true, false, vec!["sundials_driver", "klu"]),
+            (r#"{"nls":"kinsol"}"#, true, false, vec!["kinsol", "klu"]),
+            (r#"{"lss":"lis"}"#, true, false, vec!["lis", "klu"]),
+            (r#"{"ls":"umfpack"}"#, true, false, vec!["umfpack", "klu"]),
+            (r#"{"nlsLS":"klu"}"#, true, false, vec!["klu"]),
+            (r#"{"ls":"lapack"}"#, true, false, vec![]),
             // ME: the same solvers, never the integrator.
-            (r#"{"nls":"kinsol"}"#, false, vec!["kinsol", "klu"]),
-            (r#"{"lss":"lis"}"#, false, vec!["lis", "klu"]),
-            (r#"{"s":"cvode"}"#, false, vec![]),
+            (r#"{"nls":"kinsol"}"#, false, false, vec!["kinsol", "klu"]),
+            (r#"{"lss":"lis"}"#, false, false, vec!["lis", "klu"]),
+            (r#"{"s":"cvode"}"#, false, false, vec![]),
+            // The density rule's own choice, which no flag records.
+            ("{}", false, true, vec!["kinsol", "klu"]),
+            ("{}", true, true, vec!["kinsol", "klu"]),
+            (r#"{"nls":"kinsol"}"#, true, true, vec!["kinsol", "klu"]),
+            (r#"{"s":"ida"}"#, true, true, vec!["sundials_driver", "kinsol", "klu"]),
         ] {
             let method = cs_method_from(json, if cs { "CS" } else { "ME" }, false, "dassl");
-            assert_eq!(fmu_solver_libraries(json, &method, cs), want, "{json} cs={cs}");
+            assert_eq!(
+                fmu_solver_libraries(json, &method, cs, sparse_nls), want,
+                "{json} cs={cs} sparse_nls={sparse_nls}"
+            );
         }
         // Every name the mapping can produce must be a library that exists.
         let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
         let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"umfpack"}"#;
-        for name in fmu_solver_libraries(all, "ida", true) {
+        for name in fmu_solver_libraries(all, "ida", true, true) {
             assert!(known.contains(&name), "{name} is not a solver library");
         }
     }
@@ -11661,7 +11752,8 @@ mod link_tests {
                 .chain(baked.split_whitespace().map(str::to_string))
                 .collect();
             let f = simflags::parse(&argv).expect(&baked);
-            let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true);
+            let libs =
+                fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true, false);
             let cap = simflags::Capabilities {
                 klu: libs.contains(&"klu"),
                 kinsol: libs.contains(&"kinsol"),

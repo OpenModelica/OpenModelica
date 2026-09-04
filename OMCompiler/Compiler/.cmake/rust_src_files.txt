@@ -464,7 +464,9 @@ wasm/plot.js
 wasm/simulator/.gitignore
 wasm/simulator/config.json
 wasm/simulator/examples/BouncingBall.mo
+wasm/simulator/examples/DistrictHeating.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
 wasm/theme.css
+wasm/units.js
 wasm/ui.js

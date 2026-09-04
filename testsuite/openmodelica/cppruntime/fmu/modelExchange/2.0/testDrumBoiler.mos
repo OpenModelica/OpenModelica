@@ -91,21 +91,20 @@ val(evaporator_qm_S, 100);
 //     </Unit>
 //     <Unit name=\"1\">
 //       <BaseUnit />
+//       <DisplayUnit name=\"kg/kg\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"N/mm2\">
 //       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e6\" />
+//       <DisplayUnit name=\"bar\" factor=\"10.0\" offset=\"0.0\"/>
+//       <DisplayUnit name=\"Pa\" factor=\"1e6\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"MW\">
 //       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"1e6\" />
-//     </Unit>
-//     <Unit name=\"bar\">
-//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
+//       <DisplayUnit name=\"W\" factor=\"1e6\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"kg/kg\">
 //       <BaseUnit />
-//     </Unit>
-//     <Unit name=\"degC\">
-//       <BaseUnit K=\"1\" />
+//       <DisplayUnit name=\"1\" factor=\"1.0\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"J/(kg.K)\">
 //       <BaseUnit m=\"2\" s=\"-2\" K=\"-1\" />
@@ -116,11 +115,17 @@ val(evaporator_qm_S, 100);
 //     <Unit name=\"kg/s\">
 //       <BaseUnit s=\"-1\" kg=\"1\" />
 //     </Unit>
+//     <Unit name=\"g/cm3\">
+//       <BaseUnit m=\"-3\" kg=\"1\" factor=\"1000.0\" />
+//       <DisplayUnit name=\"kg/m3\" factor=\"1000.0\" offset=\"0.0\"/>
+//     </Unit>
 //     <Unit name=\"kg/m3\">
 //       <BaseUnit m=\"-3\" kg=\"1\" />
+//       <DisplayUnit name=\"g/cm3\" factor=\"0.001\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"W\">
 //       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" />
+//       <DisplayUnit name=\"MW\" factor=\"1e-6\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"kg\">
 //       <BaseUnit kg=\"1\" />
@@ -133,18 +138,32 @@ val(evaporator_qm_S, 100);
 //     </Unit>
 //     <Unit name=\"m3/s\">
 //       <BaseUnit m=\"3\" s=\"-1\" />
+//       <DisplayUnit name=\"m3.s-1\" factor=\"1.0\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"degC\">
+//       <BaseUnit K=\"1\" offset=\"273.15\" />
+//       <DisplayUnit name=\"K\" factor=\"1.0\" offset=\"273.15\"/>
 //     </Unit>
 //     <Unit name=\"K\">
 //       <BaseUnit K=\"1\" />
+//       <DisplayUnit name=\"degC\" factor=\"1.0\" offset=\"-273.15\"/>
 //     </Unit>
 //     <Unit name=\"km-1.s-3.g\">
 //       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-6\" />
 //     </Unit>
 //     <Unit name=\"m3.s-1\">
 //       <BaseUnit m=\"3\" s=\"-1\" />
+//       <DisplayUnit name=\"m3/s\" factor=\"1.0\" offset=\"0.0\"/>
+//     </Unit>
+//     <Unit name=\"bar\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
+//       <DisplayUnit name=\"N/mm2\" factor=\"0.1\" offset=\"0.0\"/>
+//       <DisplayUnit name=\"Pa\" factor=\"1e5\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"Pa\">
 //       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" />
+//       <DisplayUnit name=\"N/mm2\" factor=\"1e-6\" offset=\"0.0\"/>
+//       <DisplayUnit name=\"bar\" factor=\"1e-5\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"m3\">
 //       <BaseUnit m=\"3\" />

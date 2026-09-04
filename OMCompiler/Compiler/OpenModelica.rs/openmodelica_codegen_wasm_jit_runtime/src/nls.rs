@@ -529,8 +529,9 @@ fn scaled_max_norm(v: &[f64], scale: &[f64]) -> f64 {
 
 /// The sparse nonlinear solver a system with an analytic sparsity pattern gets, as
 /// in C: KINSOL over the Jacobian assembled straight into CSC, factorized by KLU.
-/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, and
-/// serves `-nlsLS=rsparse`. `pattern` is `colptr[n+1] ++ rowidx[nnz]`.
+/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, where an
+/// FMU left the two libraries out, and for `-nlsLS=rsparse`. `pattern` is
+/// `colptr[n+1] ++ rowidx[nnz]`.
 #[allow(clippy::too_many_arguments)]
 fn kinsol_sparse_solve(
     n: usize,
@@ -553,7 +554,10 @@ fn kinsol_sparse_solve(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     #[cfg(sundials)]
-    if nls_ls_backend() == solverflags::Sparse::Klu {
+    if nls_ls_backend() == solverflags::Sparse::Klu
+        && crate::sundials::have_kinsol()
+        && crate::sundials::have_klu()
+    {
         // C's retry ladder re-picks the start point, but only through settings its
         // loop head overrides; `warm` is the caller's own second attempt.
         let colptr: alloc::vec::Vec<i32> = pattern[..n + 1].iter().map(|v| *v as i32).collect();

@@ -563,6 +563,10 @@ struct MeState {
     dae_enable_vr: u32,
     dae_mode: bool,
     configuring: bool,
+    /// Set when the embedded solver has just left consistent derivatives and
+    /// algebraic unknowns behind, so the refresh below need not solve for them
+    /// again. Only a Co-Simulation step can promise that; any set clears it.
+    dae_current: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
     /// Every set made before Initialization Mode is left, applied by
@@ -635,7 +639,7 @@ impl MeState {
     fn eval(&self) -> driver::Result<()> {
         let mut e = Engine;
         if self.layout.dae_mode() {
-            if !self.dae_mode {
+            if !self.dae_mode && !self.dae_current {
                 let dae = self.meta.dae.as_ref().ok_or("fmi3: DAE-mode model without DAE metadata")?;
                 dae_solve_explicit(&mut e, self.sim_data, &self.layout, dae)?;
             }
@@ -876,6 +880,7 @@ fn new_state() -> Option<MeState> {
         dae_enable_vr,
         dae_mode: false,
         configuring: false,
+        dae_current: false,
         need_update: true,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
@@ -954,6 +959,7 @@ macro_rules! shared_instance_methods {
         // the live values into the `start` attributes the initial solve reads.
         st.mode = Mode::Init;
         st.need_update = true;
+        st.dae_current = false;
         st.write_f64(TIME_OFF, start_time);
         let (sim_data, layout) = (st.sim_data, st.layout);
         let mut e = Engine;
@@ -1052,6 +1058,7 @@ macro_rules! shared_instance_methods {
         };
         if reselected {
             st.need_update = true;
+        st.dae_current = false;
         }
 
         // C's `internalEventUpdate`: the timers, then the earliest of the next
@@ -1104,6 +1111,7 @@ macro_rules! shared_instance_methods {
         st.dae_mode = false;
         st.configuring = false;
         st.need_update = true;
+        st.dae_current = false;
         st.init_overrides.clear();
         st.init_start_overrides.clear();
         st.init_string_overrides.clear();
@@ -1275,6 +1283,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_int8(&self, _: Vec<u32>, _: Vec<i8>) -> Status {
@@ -1301,6 +1310,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
@@ -1321,6 +1331,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_uint8(&self, _: Vec<u32>, _: Vec<u8>) -> Status {
@@ -1350,6 +1361,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
@@ -1381,6 +1393,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_string(&self, vrs: Vec<u32>, values: Vec<String>) -> Status {
@@ -1402,6 +1415,7 @@ macro_rules! shared_instance_methods {
             }
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_binary(&self, _: Vec<u32>, _: Vec<Vec<u8>>) -> Status {
@@ -1558,6 +1572,7 @@ impl GuestModelExchangeInstance for Instance {
         let mut st = self.st.borrow_mut();
         st.write_f64(TIME_OFF, time);
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
     fn set_continuous_states(&self, states: Vec<f64>) -> Status {
@@ -1569,6 +1584,7 @@ impl GuestModelExchangeInstance for Instance {
             st.write_f64(REAL_OFF + (i as u32) * 8, v);
         }
         st.need_update = true;
+        st.dae_current = false;
         Status::Ok
     }
 
@@ -1633,6 +1649,7 @@ impl GuestModelExchangeInstance for Instance {
         // The only point the importer gives us to record the accepted step.
         driver::store_operators(&mut Engine, st.sim_data, &st.layout).map_err(err_status)?;
         st.need_update = true;
+        st.dae_current = false;
         let sim_data = st.sim_data;
         let m = &mut *st;
         let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(err_status)?;
@@ -1714,8 +1731,11 @@ impl GuestCoSimulationInstance for Instance {
         let outcome = driver.step_to(&mut e, &meta, target, defer, &mut st.dss);
         let last = driver.time();
         st.cs = Some(driver);
-        // C's `fmi2DoStep`: the getters now report the new time's values.
+        // C's `fmi2DoStep`: the getters now report the new time's values. The step
+        // ended on `functionAlgebraics`, so a DAE model's unknowns are current and
+        // the refresh must not solve for them a second time.
         st.need_update = true;
+        st.dae_current = matches!(&outcome, Ok(CsStep::Reached));
         let eps = target.abs().max(1.0) * 1e-10;
         match outcome {
             Ok(CsStep::Reached) => Ok(DoStepResult {

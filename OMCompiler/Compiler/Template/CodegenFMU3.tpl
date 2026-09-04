@@ -131,18 +131,19 @@ template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType)
 end fmiModelVariablesAndStructure3;
 
 template fmiOpenModelicaAnnotations(SimCode simCode)
- "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Tool
-  element; empty when the model has neither. C and wasm FMU export."
+ "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Annotation
+  element; empty when the model has neither. FMI 3.0 replaced 2.0\'s <Tool name=...>
+  with <Annotation type=...>, which is what fmi3Annotation.xsd validates."
 ::=
   let figures = fmiFiguresBody(simCode)
   let visualization = fmiVisualizationElement(simCode)
   if boolAnd(stringEq(figures,""), stringEq(visualization,"")) then '' else
   <<
   <Annotations>
-    <Tool name="OpenModelica">
+    <Annotation type="org.openmodelica">
       <%figures%>
       <%visualization%>
-    </Tool>
+    </Annotation>
   </Annotations>
   >>
 end fmiOpenModelicaAnnotations;
@@ -613,7 +614,7 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
@@ -637,7 +638,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then

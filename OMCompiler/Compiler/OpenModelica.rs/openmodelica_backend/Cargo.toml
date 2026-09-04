@@ -22,6 +22,8 @@ openmodelica_util.workspace=true
 openmodelica_util_datatypes_basic.workspace=true
 openmodelica_ast_collections.workspace=true
 openmodelica_program_util.workspace=true
+# UnitParserExt, for the unit conversions the FMI unit definitions need.
+openmodelica_script_util.workspace=true
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true

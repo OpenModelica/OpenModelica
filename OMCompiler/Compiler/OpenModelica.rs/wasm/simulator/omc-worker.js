@@ -13,7 +13,7 @@ import init, {
   omc_fmu_cs_solvers,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
-  omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
+  omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters, omc_sim_units,
 } from '../omc/OpenModelicaCompiler.js';
 // Shared MultiBody animation core (standalone wasm), the same module the FMI
 // simulator uses; fed here from the omc result store rather than an FMU.
@@ -169,7 +169,8 @@ function snapshot() {
   });
   const time = prof('sim_time', () => omc_sim_time()) || null;
   if (time) transfer.push(time.buffer);
-  return { snap: { ok: true, info, parameters, series, cols, time }, transfer };
+  const units = prof('sim_units', () => omc_sim_units()) || {};
+  return { snap: { ok: true, info, parameters, series, cols, time, units }, transfer };
 }
 
 function simError(fallback) {
@@ -255,6 +256,13 @@ function simflagsFor(a) {
   if (a.tolerance) flags.push(`-tolerance=${a.tolerance}`);
   if (a.override) flags.push(a.override);
   return flags.join(' ');
+}
+
+// `--daeMode` decides what the backend emits, so it has to be set before a
+// translation rather than passed as a simflag. The worker outlives many runs and
+// the flag is global compiler state, so every translation states it either way.
+function setDaeMode(on) {
+  oeval(`setCommandLineOptions("--daeMode=${on ? 'true' : 'false'}")`);
 }
 
 // The model's own startTime, which the page never edits.
@@ -380,6 +388,7 @@ self.onmessage = async (ev) => {
         // render rather than a second translation. The experiment travels in the
         // simflags rather than being baked in, so changing it needs no rebuild.
         const _tb = performance.now();
+        setDaeMode(a.daeMode);
         const built = (await evalWithDownloads(
           `translateModelFMU(${a.name}, version="3.0", fmuType="me_cs", platforms={"wasm"})`, status)).trim();
         const buildMs = performance.now() - _tb;
@@ -451,6 +460,7 @@ self.onmessage = async (ev) => {
         // Co-Simulation export, whose preOptModules differ (see the dialog's hint).
         status('Exporting FMU…');
         clearCancel();   // discard a cancel that raced in before this export
+        setDaeMode(a.daeMode);
         const fmuType = a.fmuType || 'me';
         const method = a.method ? `, method="${a.method}"` : '';
         // Each extra platform adds a machine-code build of the same component

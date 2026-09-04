@@ -159,6 +159,8 @@
       <select id="solver" class="wide" hidden></select>
       <label for="eventMode" id="eventModeLabel" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden>Event mode</label>
       <label class="chk wide" id="eventModeCell" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden><input type="checkbox" id="eventMode" checked /></label>
+      <label for="daeMode" id="daeModeLabel" title="Integrate the FMU's residuals through fmi-ls-dae instead of the ODE face the same FMU also serves" hidden>DAE mode</label>
+      <label class="chk wide" id="daeModeCell" title="Integrate the FMU's residuals through fmi-ls-dae instead of the ODE face the same FMU also serves" hidden><input type="checkbox" id="daeMode" /></label>
     </div>
   </div>
 
@@ -215,7 +217,8 @@
 import { readZip, writeZip, iconDataUri, documentationHtml } from './fmu.js';
 import { loaderIndex, loaderBytes, compileForPlatform } from '../fmu-aot.js';
 import { Session } from './session.js';
-import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { COLORS, createCharts, escapeHtml, unitHTML, unitLabel } from '../plot.js';
+import { toDisplay, fromDisplay, scale } from '../units.js';
 import { bindModal, downloadBlob } from '../ui.js';
 import { AnimView } from '../anim/anim-view.js';
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
@@ -230,6 +233,7 @@ const charts = createCharts(chartsEl);
 const ifaceEl = el('interface'), startEl = el('start'), stopEl = el('stop'), stepEl = el('step'),
       tolEl = el('tol'), stepLabel = el('stepLabel');
 const eventModeEl = el('eventMode'), eventModeLabel = el('eventModeLabel'), eventModeCell = el('eventModeCell');
+const daeModeEl = el('daeMode'), daeModeLabel = el('daeModeLabel'), daeModeCell = el('daeModeCell');
 const solverEl = el('solver'), solverLabel = el('solverLabel');
 const figToggle = el('figToggle');
 
@@ -320,6 +324,7 @@ async function openFile(file) {
     const probe = await session.load(buf);
     const ms = Math.round(performance.now() - t0);
     fmu = { md: probe };
+    forgetUnits();
     renderInfo(file.name, probe);
     renderDoc(documentationHtml(probe.documentation));
     renderFields();
@@ -378,6 +383,22 @@ function renderSolvers(solvers) {
   if ([...solverEl.options].some((o) => o.value === keep)) solverEl.value = keep;
 }
 
+// Only IDA takes a residual form, so DAE mode owns the solver choice while it is
+// set — the master would refuse anything else.
+let solverBeforeDae = null;
+function syncDaeMode() {
+  const on = daeModeEl.checked;
+  if (on) {
+    if (solverBeforeDae === null) solverBeforeDae = solverEl.value;
+    if ([...solverEl.options].some((o) => o.value === 'ida')) solverEl.value = 'ida';
+  } else if (solverBeforeDae !== null) {
+    solverEl.value = solverBeforeDae;
+    solverBeforeDae = null;
+  }
+  solverEl.disabled = on;
+}
+daeModeEl.onchange = syncDaeMode;
+
 ifaceEl.onchange = onIfaceChange;
 function onIfaceChange() {
   stepLabel.textContent = ifaceEl.value === 'me' ? 'Max step' : 'Step size';
@@ -387,6 +408,13 @@ function onIfaceChange() {
   solverEl.hidden = solverLabel.hidden = ifaceEl.value !== 'me';
   const showEventMode = ifaceEl.value === 'cs' && !!(fmu && fmu.md.coSimulation && fmu.md.coSimulation.hasEventMode);
   eventModeLabel.hidden = eventModeCell.hidden = !showEventMode;
+  // fmi-ls-dae is a Model Exchange affair, and only an FMU declaring the manifest
+  // has residuals to integrate. A Co-Simulation FMU exported from a DAE-mode model
+  // carries IDA inside instead, so there is nothing to choose there.
+  const showDae = ifaceEl.value === 'me' && !!(fmu && fmu.md.lsDae);
+  daeModeLabel.hidden = daeModeCell.hidden = !showDae;
+  if (!showDae) daeModeEl.checked = false;
+  syncDaeMode();
   // Instantiating the component for this interface takes longer than the run
   // does for a small FMU; get it out of the way while the options are set.
   if (fmu) session.warm(ifaceEl.value).catch(() => {});
@@ -416,16 +444,45 @@ function renderFields() {
     nm.innerHTML = escapeHtml(v.name)
       + (isInput ? '<span class="in">f(t)</span>' : isStart(v) ? '<span class="in">start</span>' : '');
     const input = document.createElement('input');
+    const base = v.unit || '';
+    const alternatives = v.numeric ? unitAlternatives(base) : [];
+    // The unit the value is edited in: the variable's display unit where it has one.
+    const chosen = alternatives.includes(v.displayUnit) ? v.displayUnit : base;
+    const field = { v, input, kind: isInput ? 'input' : 'parameter', base, unit: chosen };
+    const shown = (x) => (field.unit === base ? String(x) : toDisplay(x, displayUnitDef(base, field.unit)));
     // An input must be driven; a parameter with no declared start is left unset.
-    input.value = v.start != null ? v.start : isInput ? (v.type === 'Boolean' ? 'false' : '0') : '';
+    input.value = v.start != null ? shown(v.start)
+                : isInput ? (v.type === 'Boolean' ? 'false' : '0') : '';
     input.placeholder = input.value === '' ? 'unset' : '';
     input.spellcheck = false;
-    const unit = document.createElement('span');
+
+    let unit;
+    if (alternatives.length > 1) {
+      // As OMEdit does it: pick the unit the value is entered in, and convert
+      // what is already there.
+      unit = document.createElement('select');
+      unit.title = 'Unit to edit this value in';
+      for (const u of alternatives) {
+        const o = document.createElement('option');
+        o.value = u; o.textContent = unitLabel(u); o.selected = u === chosen;
+        unit.appendChild(o);
+      }
+      unit.onchange = () => {
+        const was = field.unit, now = unit.value, text = input.value.trim();
+        field.unit = now;
+        if (text === '' || !isFinite(Number(text))) return;   // an expression: leave it
+        const inBase = was === base ? text : fromDisplay(text, displayUnitDef(base, was));
+        const out = now === base ? inBase : toDisplay(inBase, displayUnitDef(base, now));
+        if (inBase != null && out != null) input.value = out;
+      };
+    } else {
+      unit = document.createElement('span');
+      unit.innerHTML = base ? unitHTML(base) : '';
+    }
     unit.className = 'unit';
-    unit.innerHTML = v.unit ? unitHTML(v.unit) : '';
     item.append(nm, input, unit);
     icGrid.appendChild(item);
-    fields.push({ v, input, kind: isInput ? 'input' : 'parameter' });
+    fields.push(field);
   }
   icEmpty.textContent = fields.length ? '' : 'This FMU has no inputs, parameters or settable start values.';
   icEmpty.style.display = fields.length ? 'none' : '';
@@ -469,8 +526,16 @@ function collectFields() {
     }
     try {
       const fn = compileExpr(src || '0', f.v.name);
-      if (f.kind === 'input') inputs.push({ vr: f.v.vr, expr: src || '0' });
-      else parameters.push({ vr: f.v.vr, value: fn(num(startEl.value, 0)) });
+      const expr = src || '0';
+      const d = displayUnitDef(f.base, f.unit);
+      if (f.kind === 'input') inputs.push({ vr: f.v.vr, expr: d ? backExpr(expr, d) : expr });
+      else {
+        const value = fn(num(startEl.value, 0));
+        // A plain number converts exactly; anything computed falls back to doubles.
+        const exact = d && /^[-+0-9.eE]+$/.test(src) ? fromDisplay(src, d) : null;
+        parameters.push({ vr: f.v.vr, value: exact != null ? Number(exact)
+                                            : d ? Number(fromDisplay(value, d) ?? value) : value });
+      }
     } catch (e) { f.input.classList.add('bad'); throw e; }
   }
   return { inputs, parameters };
@@ -507,6 +572,7 @@ async function run() {
       interface: ifaceEl.value,
       solver: solverEl.value,
       eventMode: eventModeEl.checked,
+      daeMode: daeModeEl.checked,
     };
   } catch (e) { setStatus(e.message, 'err'); return; }
   if (!(opts.stopTime > opts.startTime)) { setStatus('Stop time must be after start time.', 'err'); return; }
@@ -531,7 +597,7 @@ async function run() {
     const kind = ifaceEl.value === 'me' ? 'Model Exchange' : 'Co-Simulation';
     const s = rec.summary;
     const events = s.interface === 'me'
-      ? `${s.stateEvents} state events, ${s.timeEvents} time events, ${s.calls} evaluations`
+      ? `${s.solver}${s.daeMode ? ' in DAE mode' : ''}, ${s.stateEvents} state events, ${s.timeEvents} time events, ${s.calls} evaluations`
       : `${s.steps} steps, ${s.events} events, ${s.earlyReturns} early returns`;
     if (rec.terminated != null) {
       // A model-requested `terminate()` is a normal, successful stop — not an error.
@@ -650,6 +716,70 @@ async function renderAnimation(rec) {
   } catch (e) { log('host', 'animation failed: ' + (e.message || e)); if (animView) animView.hide(); }
 }
 
+// --- display units ----------------------------------------------------------
+// Only the plot converts; the `.mat` download stays in the FMU's own units.
+const unitPick = new Map();   // chart key -> the unit the reader picked
+let varsIndex = null;
+
+// Both belong to the FMU that is open.
+function forgetUnits() { unitPick.clear(); varsIndex = null; }
+
+function unitAlternatives(base) {
+  const ds = (fmu.md.units && fmu.md.units[base]) || [];
+  return base ? [base, ...ds.map((d) => d.name)] : [];
+}
+
+function unitConversion(base, to) {
+  const d = displayUnitDef(base, to);
+  return d ? scale(d) : null;
+}
+
+function convertSamples(ys, fn) {
+  if (!fn) return ys;
+  const out = new Float64Array(ys.length);
+  for (let i = 0; i < ys.length; i++) out[i] = fn(ys[i]);
+  return out;
+}
+
+// The `<DisplayUnit>` named `to`, or null for the unit itself.
+function displayUnitDef(base, to) {
+  if (!base || !to || to === base) return null;
+  return ((fmu.md.units && fmu.md.units[base]) || []).find((u) => u.name === to) || null;
+}
+
+// An input's expression is evaluated by the driver, so its unit is undone in the
+// expression text rather than on a value. A reciprocal unit is its own inverse.
+function backExpr(expr, d) {
+  const f = d.factor == null ? 1 : d.factor, o = d.offset == null ? 0 : d.offset;
+  return d.inverse ? `((${f})/(${expr}))` : `(((${expr}) - (${o}))/(${f}))`;
+}
+
+// What the reader picked, else the variable's display unit, else the base unit.
+// `curve.yName` is the variable; its label may be a figure's legend text.
+function chartUnit(key, base, curve) {
+  if (unitPick.has(key)) return unitPick.get(key);
+  const v = varsByName().get(curve.yName || curve.label);
+  const declared = v && v.displayUnit;
+  return declared && unitAlternatives(base).includes(declared) ? declared : base;
+}
+
+function varsByName() {
+  if (!varsIndex) varsIndex = new Map(fmu.md.variables.map((v) => [v.name, v]));
+  return varsIndex;
+}
+
+// Draw the curves of base unit `base` in `shown`, and let the axis switch.
+function applyUnit(spec, key, base, shown) {
+  const fn = unitConversion(base, shown);
+  if (fn) for (const c of spec.curves) {
+    if ((c.unit || '') === base) { c.ys = convertSamples(c.ys, fn); c.unit = shown; }
+  }
+  spec.yUnit = shown || spec.yUnit;
+  spec.unitChoices = unitAlternatives(base);
+  spec.onUnit = (u) => { unitPick.set(key, u); renderCharts(lastRec, true); };
+  return spec;
+}
+
 // `live` marks a partial record arriving while the run is still going: the
 // selection the user made in the legend is kept, and nothing else is disturbed.
 function renderCharts(rec, live = false) {
@@ -676,6 +806,8 @@ function renderAllVariables(rec, finite) {
   const curves = finite.map((c, i) => ({ label: c.name, unit: c.unit || '', color: COLORS[i % COLORS.length],
                                          xs, ys: c.values }));
   const spec = { curves, xText: 'time', xUnit: 's', xIsTime: true, solo: true };
+  const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+  if (bases.length === 1) applyUnit(spec, 'all', bases[0], chartUnit('all', bases[0], curves[0]));
   if (finite.length > 5) {
     const state = finite.find((c) => c.isState) || finite[0];
     spec.defaultVisible = [state.name];
@@ -703,11 +835,13 @@ function renderFigures(rec, finite) {
         const yc = byName.get(resolveAlias(cv.y, has)); if (!yc) return;
         const xc = cv.x ? byName.get(resolveAlias(cv.x, has)) : null;
         curves.push({ label: cv.legend || cv.y, unit: yc.unit || '', color: COLORS[curves.length % COLORS.length],
-                      xs: xc ? Float64Array.from(xc.values) : xs, ys: yc.values, xName: cv.x || 'time' });
+                      xs: xc ? Float64Array.from(xc.values) : xs, ys: yc.values, xName: cv.x || 'time',
+                      yName: yc.name });
       });
       const yAxis = plot.y || {}, xAxis = plot.x || {};
       const xIsTime = curves.every((c) => c.xName === 'time');
-      charts.add({
+      const key = 'f' + fi + 'p' + pi;
+      const spec = {
         title: plot.title, curves, xIsTime,
         xText: xAxis.label || (xIsTime ? 'time' : (curves[0] && curves[0].xName) || 'x'),
         xUnit: xAxis.unit || (xIsTime ? 's' : ''),
@@ -715,7 +849,13 @@ function renderFigures(rec, finite) {
         yMin: yAxis.min != null ? yAxis.min : null, yMax: yAxis.max != null ? yAxis.max : null,
         yLog: !!yAxis.log,
         note: plot.curves.length && !curves.length ? 'Referenced variables are not in the result.' : '',
-      }, 'f' + fi + 'p' + pi);
+      };
+      // A figure's own axis unit wins; otherwise the curves' shared unit is switchable.
+      const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+      if (!yAxis.unit && bases.length === 1) {
+        applyUnit(spec, key, bases[0], chartUnit(key, bases[0], curves[0]));
+      }
+      charts.add(spec, key);
       if (curves.length) plotted++;
     });
     if (fig.caption) {

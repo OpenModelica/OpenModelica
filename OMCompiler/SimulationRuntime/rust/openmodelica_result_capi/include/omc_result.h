@@ -140,6 +140,9 @@ typedef struct omc_result_signal {
   unsigned column;
   int negate;
   int unvarying;
+  /* FMI's relativeQuantity (Modelica absoluteValue=false): the value is a
+   * difference in its unit, so a conversion scales it but adds no offset. */
+  int relative_quantity;
 } omc_result_signal;
 
 typedef struct omc_result_writer omc_result_writer;

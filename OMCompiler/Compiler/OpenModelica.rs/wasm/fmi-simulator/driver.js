@@ -312,6 +312,8 @@ export class Driver {
         inst.enterInitializationMode(tolDefined, tol, start, stopDefined, stop)),
       fmu_exit_initialization_mode: guard('fmu_exit_initialization_mode', (inst) => inst.exitInitializationMode()),
       fmu_enter_event_mode: guard('fmu_enter_event_mode', (inst) => inst.enterEventMode()),
+      fmu_enter_configuration_mode: guard('fmu_enter_configuration_mode', (inst) => inst.enterConfigurationMode()),
+      fmu_exit_configuration_mode: guard('fmu_exit_configuration_mode', (inst) => inst.exitConfigurationMode()),
       fmu_enter_continuous_time_mode: guard('fmu_enter_continuous_time_mode', (inst) => inst.enterContinuousTimeMode()),
       fmu_enter_step_mode: guard('fmu_enter_step_mode', (inst) => inst.enterStepMode()),
       fmu_terminate: guard('fmu_terminate', (inst) => inst.terminate()),

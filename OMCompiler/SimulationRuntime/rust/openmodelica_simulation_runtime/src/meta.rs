@@ -94,6 +94,10 @@ impl Units<'_> {
     fn meta(&self, class_type: &str, index: usize) -> (String, String, bool) {
         (self.get(class_type, index), self.attr(class_type, index, "displayUnit"), self.attr(class_type, index, "isDiscrete") == "true")
     }
+    /// FMI's `relativeQuantity`; only a Real declares one.
+    fn relative(&self, class_type: &str, index: usize) -> bool {
+        self.attr(class_type, index, "relativeQuantity") == "true"
+    }
 }
 
 pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> SimMeta {
@@ -110,6 +114,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         comment: "Simulation time [s]".into(),
         unit: "s".into(),
         display_unit: String::new(),
+        relative_quantity: false,
         ty: VarTy::Real,
         discrete: false,
         kind: MetaKind::Time,
@@ -135,6 +140,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         };
         let index = if group == "rAlg" { a - 2 * md.nStatesArray as usize } else { a % md.nStatesArray.max(1) as usize };
         let (unit, display_unit, discrete) = units.meta(group, index);
+        let relative_quantity = units.relative(group, index);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, is_der).into_iter().enumerate() {
             if let Some(slot) = real_names.get_mut(base + k) {
                 *slot = name.clone();
@@ -144,6 +150,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: description(&cstr(v.info.comment), &unit),
                 unit: unit.clone(),
                 display_unit: display_unit.clone(),
+                relative_quantity,
                 ty: VarTy::Real,
                 discrete,
                 kind: MetaKind::Column { col: (base + k) as u32 + 1, negate: Neg::None },
@@ -175,6 +182,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 unit: String::new(),
                 display_unit: String::new(),
+                relative_quantity: false,
                 ty: VarTy::Real,
                 discrete: false,
                 kind: MetaKind::Column { col: layout.sens_col0() + (i - n_sens_par) as u32, negate: Neg::None },
@@ -196,6 +204,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 unit: unit.clone(),
                 display_unit: display_unit.clone(),
+                relative_quantity: false,
                 ty: VarTy::Integer,
                 discrete: true,
                 kind: MetaKind::Column { col: int_col0 + (base + k) as u32, negate: Neg::None },
@@ -215,6 +224,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 unit: String::new(),
                 display_unit: String::new(),
+                relative_quantity: false,
                 ty: VarTy::Boolean,
                 discrete: true,
                 kind: MetaKind::Column { col: bool_col0 + (base + k) as u32, negate: Neg::None },
@@ -230,12 +240,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         let v = unsafe { &*md.realParameterData.add(a) };
         let base = unsafe { *si.realParamsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("rPar", a);
+        let relative_quantity = units.relative("rPar", a);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: description(&cstr(v.info.comment), &unit),
                 unit: unit.clone(),
                 display_unit: display_unit.clone(),
+                relative_quantity,
                 ty: VarTy::Real,
                 discrete: false,
                 kind: MetaKind::Param {
@@ -259,6 +271,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 unit: unit.clone(),
                 display_unit: display_unit.clone(),
+                relative_quantity: false,
                 ty: VarTy::Integer,
                 discrete: false,
                 kind: MetaKind::Param {
@@ -281,6 +294,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                 comment: cstr(v.info.comment),
                 unit: String::new(),
                 display_unit: String::new(),
+                relative_quantity: false,
                 ty: VarTy::Boolean,
                 discrete: false,
                 kind: MetaKind::Param {
@@ -317,12 +331,14 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
         let dim = alias_dimension(md, al, 0);
         let (unit, display_unit, discrete) = units.meta("rAli", a);
+        let relative_quantity = units.relative("rAli", a);
         for (k, name) in scalar_names(&cstr(al.info.name), dim, is_der).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: cstr(al.info.comment),
                 unit: unit.clone(),
                 display_unit: display_unit.clone(),
+                relative_quantity,
                 ty: VarTy::Real,
                 discrete,
                 kind: real_alias_kind(al, k),
@@ -371,6 +387,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
                     comment: cstr(al.info.comment),
                     unit: unit.clone(),
                     display_unit: display_unit.clone(),
+                    relative_quantity: false,
                     ty: if kind_ix == 0 { VarTy::Integer } else { VarTy::Boolean },
                     discrete: true,
                     kind: kind(k),
@@ -407,6 +424,8 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         prefix: prefix.to_string(),
         model_name: cstr(md.modelName),
         vars,
+        // `_init.xml` names each variable's unit but defines none.
+        units: Vec::new(),
         jac_a: jac_a_info(data, layout),
         state_sets: crate::stateset::describe(data, layout),
         fmi_vrs: Vec::new(),

@@ -415,6 +415,176 @@ struct DaeCtx<'a> {
     n: usize,
     n_zc: usize,
     failed: Option<&'static str>,
+    /// KLU only: the CSC pattern and the scratch [`dae_jac`] assembles through.
+    jac: Option<&'a mut DaeJac>,
+    /// For the difference-quotient step, which scales with the last step's `y'`.
+    mem: *mut c_void,
+    tol: f64,
+    nominals: &'a [f64],
+}
+
+/// The residual Jacobian as KLU wants it: the CSC arrays IDA's sparse matrix is
+/// filled from, where each column's difference quotients go, and the buffers the
+/// assembly perturbs through.
+struct DaeJac {
+    colptr: Vec<sundials::SunIndex>,
+    rowidx: Vec<sundials::SunIndex>,
+    /// `slots[col][k]` is the value index of `rows_by_col[col][k]`.
+    slots: Vec<Vec<usize>>,
+    colors: Vec<Vec<u32>>,
+    rows_by_col: Vec<Vec<u32>>,
+    ysave: Vec<f64>,
+    ypsave: Vec<f64>,
+    del: Vec<f64>,
+    gp: Vec<f64>,
+}
+
+impl DaeJac {
+    /// `None` when the pattern does not describe an `n`-column system, or when its
+    /// colours do not partition the columns — a column no colour perturbs would
+    /// leave that column of the Jacobian zero, and the factorization singular.
+    /// A caller bug rather than a reason to fail the run: IDA's own dense
+    /// difference-quotient Jacobian still solves it.
+    fn new(sp: &crate::DaeSparsity, n: usize) -> Option<DaeJac> {
+        if sp.rows_by_col.len() != n || sp.rows_by_col.iter().flatten().any(|&r| r as usize >= n) {
+            return None;
+        }
+        let mut seen = vec![false; n];
+        for &col in sp.colors.iter().flatten() {
+            match seen.get_mut(col as usize) {
+                Some(s) if !*s => *s = true,
+                _ => return None, // out of range, or coloured twice
+            }
+        }
+        if seen.iter().any(|s| !s) {
+            return None;
+        }
+        let mut j = DaeJac {
+            colptr: Vec::with_capacity(n + 1),
+            rowidx: Vec::new(),
+            slots: Vec::with_capacity(n),
+            colors: sp.colors.clone(),
+            rows_by_col: sp.rows_by_col.clone(),
+            ysave: vec![0.0; n],
+            ypsave: vec![0.0; n],
+            del: vec![0.0; n],
+            gp: vec![0.0; n],
+        };
+        j.colptr.push(0);
+        for rows in &sp.rows_by_col {
+            let base = j.rowidx.len();
+            let mut sorted = rows.clone();
+            sorted.sort_unstable();
+            sorted.dedup();
+            j.slots.push(
+                rows.iter()
+                    .map(|r| base + sorted.binary_search(r).expect("row is in the column"))
+                    .collect(),
+            );
+            j.rowidx.extend(sorted.iter().map(|&r| r as sundials::SunIndex));
+            j.colptr.push(j.rowidx.len() as sundials::SunIndex);
+        }
+        Some(j)
+    }
+
+    fn nnz(&self) -> usize {
+        self.rowidx.len()
+    }
+}
+
+/// The finite-difference increment for a column, C's `numericalJacobianStep`
+/// (`model_help.h`): a relative step off the larger of the point and the last
+/// step's derivative, floored by the nominal where the unknown is inside its own
+/// absolute tolerance and so carries no scale to difference over.
+fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
+    const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
+    let scale = yi.abs().max(hyp.abs());
+    let ewt_inv = tol * (yi.abs() + nominal);
+    let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
+    let mag = DELTA_X_SOLVER * step;
+    // The step takes the sign of h*y', as both runtimes do.
+    if hyp >= 0.0 { mag } else { -mag }
+}
+
+/// `∂F/∂y + cj·∂F/∂y'`, differenced one colour at a time: perturbing `y[j]` by
+/// `del` and `y'[j]` by `cj*del` together makes one residual evaluation carry
+/// both terms of column `j`, so there is no `-cj·I` diagonal to add afterwards.
+unsafe extern "C" fn dae_jac(
+    t: f64,
+    cj: f64,
+    yy: NVector,
+    yp: NVector,
+    rr: NVector,
+    j: sundials::SunMatrix,
+    user: *mut c_void,
+    _t1: NVector,
+    _t2: NVector,
+    _t3: NVector,
+) -> c_int {
+    // Split the context so the residual and the pattern are borrowed apart.
+    let DaeCtx { dae, n, failed, jac, mem, tol, nominals, .. } = unsafe { &mut *(user as *mut DaeCtx) };
+    let n = *n;
+    let Some(jac) = jac.as_deref_mut() else { return -1 };
+    let (y, ypv, base) = (nv_data(yy), nv_data(yp), nv_data(rr));
+    let h = sundials::ida_current_step(*mem);
+    let nnz = jac.nnz();
+    let vals = unsafe {
+        let (data, colptr, rowidx) = sundials::sparse_arrays(j);
+        core::ptr::copy_nonoverlapping(jac.colptr.as_ptr(), colptr, n + 1);
+        core::ptr::copy_nonoverlapping(jac.rowidx.as_ptr(), rowidx, nnz);
+        core::slice::from_raw_parts_mut(data, nnz)
+    };
+    vals.fill(0.0);
+    for c in 0..jac.colors.len() {
+        for k in 0..jac.colors[c].len() {
+            let ci = jac.colors[c][k] as usize;
+            let yi = unsafe { *y.add(ci) };
+            let ypi = unsafe { *ypv.add(ci) };
+            let nom = nominals.get(ci).copied().unwrap_or(1.0);
+            let mut del = fd_step(yi, h * ypi, *tol, nom);
+            del = yi + del - yi; // floating-point rounding, as in the C runtime
+            if del == 0.0 {
+                del = fd_step(0.0, 0.0, *tol, nom);
+            }
+            jac.ysave[ci] = yi;
+            jac.ypsave[ci] = ypi;
+            jac.del[ci] = del;
+            unsafe {
+                *y.add(ci) = yi + del;
+                *ypv.add(ci) = ypi + cj * del;
+            }
+        }
+        let mut gp = core::mem::take(&mut jac.gp);
+        dae.note_call();
+        let r = {
+            let (ys, yps) =
+                unsafe { (core::slice::from_raw_parts(y, n), core::slice::from_raw_parts(ypv, n)) };
+            dae.residual(t, ys, yps, &mut gp)
+        };
+        jac.gp = gp;
+        for &col in &jac.colors[c] {
+            let ci = col as usize;
+            unsafe {
+                *y.add(ci) = jac.ysave[ci];
+                *ypv.add(ci) = jac.ypsave[ci];
+            }
+        }
+        if let Err(e) = r {
+            if dae.take_discard() {
+                return 1;
+            }
+            *failed = Some(e);
+            return -1;
+        }
+        for k in 0..jac.colors[c].len() {
+            let ci = jac.colors[c][k] as usize;
+            let del = jac.del[ci];
+            for (slot, &row) in jac.slots[ci].iter().zip(&jac.rows_by_col[ci]) {
+                vals[*slot] = (jac.gp[row as usize] - unsafe { *base.add(row as usize) }) / del;
+            }
+        }
+    }
+    0
 }
 
 unsafe extern "C" fn dae_res(t: f64, yy: NVector, yp: NVector, rr: NVector, user: *mut c_void) -> c_int {
@@ -473,6 +643,10 @@ pub struct IdaDae {
     nominals: Vec<f64>,
     pending: Pending,
     past: Counters,
+    /// Present once the [`Dae`] has been asked for a sparsity pattern and gave
+    /// one; then the linear solver is KLU rather than a dense LU.
+    jac: Option<DaeJac>,
+    asked_sparsity: bool,
 }
 
 impl IdaDae {
@@ -486,6 +660,8 @@ impl IdaDae {
             nominals: nominals.to_vec(),
             pending: Pending::Rebuild,
             past: Counters::default(),
+            jac: None,
+            asked_sparsity: false,
         }
     }
 
@@ -524,9 +700,14 @@ impl IdaDae {
             return Ok(SunStep::Reached);
         }
         self.prepare(dae, *t, y, yp)?;
-        let (n, n_zc) = (self.n, self.n_zc);
-        let ida = self.ida.as_mut().expect("prepare built it");
-        let mut ctx = DaeCtx { dae, n, n_zc, failed: None };
+        let (n, n_zc, tol) = (self.n, self.n_zc, self.tolerance);
+        // Split so the Jacobian's pattern and scratch are borrowed apart from the
+        // integrator itself.
+        let IdaDae { ida, jac, nominals, .. } = self;
+        let ida = ida.as_mut().expect("prepare built it");
+        let mem = ida.mem_ptr();
+        let mut ctx =
+            DaeCtx { dae, n, n_zc, failed: None, jac: jac.as_mut(), mem, tol, nominals };
         if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
@@ -575,14 +756,26 @@ impl IdaDae {
             if let Some(ida) = self.ida.take() {
                 self.past = add(self.past, ida.counters());
             }
+            // Once: the pattern is the model's structure, which does not change
+            // across a restart, and asking again would rebuild the colouring.
+            if !self.asked_sparsity {
+                self.asked_sparsity = true;
+                self.jac = dae.sparsity().and_then(|sp| DaeJac::new(sp, self.n));
+            }
             let atol = abs_tolerances(self.tolerance, self.n, &self.nominals);
             let root = (self.n_zc > 0).then_some(dae_roots as sundials::IdaRootFn);
             let opts = IdaOptions {
                 max_order: crate::simflags::with_flags(|f| f.max_order),
                 ..IdaOptions::default()
             };
+            // KLU needs a Jacobian of its own: IDA's internal difference-quotient
+            // one only fills a dense matrix.
+            let (ls, nnz, jac_fn) = match self.jac.as_ref() {
+                Some(j) => (IdaLs::Klu, j.nnz(), Some(dae_jac as sundials::IdaJacFn)),
+                None => (IdaLs::Dense, 0, None),
+            };
             let mut ida = Ida::new(
-                t, y, yp, self.tolerance, &atol, self.n_zc, dae_res, root, IdaLs::Dense, 0, None, &opts,
+                t, y, yp, self.tolerance, &atol, self.n_zc, dae_res, root, ls, nnz, jac_fn, &opts,
             )
             .ok_or("ida: the integrator could not be created")?;
             let mut id = vec![1.0; self.n_states];
@@ -592,7 +785,9 @@ impl IdaDae {
             }
             self.ida = Some(ida);
         }
-        let ida = self.ida.as_mut().expect("built above");
+        let (n, n_zc, tol) = (self.n, self.n_zc, self.tolerance);
+        let IdaDae { ida, jac, nominals, .. } = self;
+        let ida = ida.as_mut().expect("built above");
         if pending == Pending::Reinit {
             ida.y_mut().copy_from_slice(y);
             ida.yp_mut().copy_from_slice(yp);
@@ -600,12 +795,13 @@ impl IdaDae {
                 return Err("ida: the integrator could not be restarted");
             }
         }
-        let (n, n_zc) = (self.n, self.n_zc);
-        let mut ctx = DaeCtx { dae, n, n_zc, failed: None };
+        let mem = ida.mem_ptr();
+        let mut ctx =
+            DaeCtx { dae, n, n_zc, failed: None, jac: jac.as_mut(), mem, tol, nominals };
         if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
-        let ok = ida.calc_ic_at(t, self.tolerance);
+        let ok = ida.calc_ic_at(t, tol);
         if let Some(e) = ctx.failed {
             return Err(e);
         }

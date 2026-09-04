@@ -5191,6 +5191,7 @@ dependencies = [
  "openmodelica_revision",
  "openmodelica_script_util",
  "openmodelica_scripting_qt",
+ "openmodelica_sim_meta",
  "openmodelica_util",
  "openmodelica_wasi",
  "openmodelica_wasm_jit",
@@ -6577,6 +6578,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_nf_frontend",
  "openmodelica_program_util",
+ "openmodelica_script_util",
  "openmodelica_simcode_types",
  "openmodelica_simcode_util",
  "openmodelica_tpl",
@@ -7349,6 +7351,7 @@ name = "openmodelica_sim_meta"
 version = "0.1.0"
 dependencies = [
  "daskr",
+ "libc",
  "libm",
  "openmodelica_lapack",
  "openmodelica_mat_writer",

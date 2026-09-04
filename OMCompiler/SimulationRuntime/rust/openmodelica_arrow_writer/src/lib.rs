@@ -6,8 +6,9 @@
 //! discrete-time signal (and every String) is run-end encoded: one value per
 //! change, the run ends indexing the shared `time` column, so the event
 //! instants are its own time scale and nothing is repeated between events.
-//! Each field carries `description`, `unit`, `displayUnit`, `type` and
-//! `variability` metadata for readers that know nothing about Modelica.
+//! Each field carries `description`, `unit`, `displayUnit` and `type` metadata
+//! for readers that know nothing about the variable table. Whether a variable is
+//! discrete-time is the column's own encoding, not metadata.
 //!
 //! What the MATLAB v4 file keeps in `dataInfo` — aliases sharing one column, and
 //! time-invariant values — lives in the schema metadata key [`VARIABLES_KEY`]:
@@ -15,7 +16,8 @@
 //!
 //! ```text
 //! {"name": "a.b", "kind": "variable",  "column": 3, "scale": -1.0, "type": "Real",
-//!  "discrete": false, "description": "...", "unit": "m", "displayUnit": "mm"}
+//!  "description": "...", "unit": "m", "displayUnit": "mm",
+//!  "relativeQuantity": true}
 //! {"name": "p",   "kind": "parameter", "value": 2.5, ...}
 //! {"name": "time","kind": "time",      "column": 0, ...}
 //! ```
@@ -24,6 +26,9 @@
 //! (each key omitted when it is the identity's 1 or 0); a negated Real is
 //! `scale: -1`, a negated Boolean `scale: -1, offset: 1` over the 0/1 encoding,
 //! which is its logical negation. Only the keys with content are written.
+//!
+//! `unit` and `displayUnit` are names into the [`UNITS_KEY`] table, as in FMI,
+//! because a model has far more variables than units; see [`units`].
 //! Everything else in the file is plain Arrow.
 
 use std::collections::HashMap;
@@ -33,6 +38,10 @@ use arrow_array::types::Int32Type;
 use arrow_array::{ArrayRef, BooleanArray, Float32Array, Float64Array, Int32Array, RecordBatch, RunArray, StringArray};
 use arrow_ipc::writer::FileWriter;
 use arrow_schema::{DataType, Field, Schema, SchemaRef};
+
+pub mod units;
+
+pub use units::{BaseUnit, DisplayUnit, UnitDef};
 
 /// Turns an interned String id (what a String column or parameter holds in the
 /// result rows) back into its text.
@@ -49,6 +58,9 @@ pub const STOP_TIME_KEY: &str = "modelica.stopTime";
 /// The distinct enumeration types: a JSON array of literal-name arrays, which
 /// the `enumeration` of a variable indexes.
 pub const ENUMERATIONS_KEY: &str = "modelica.enumerations";
+/// The unit definitions a variable's `unit`/`displayUnit` names, for the units
+/// [`units::predefined`] does not already define.
+pub const UNITS_KEY: &str = "modelica.units";
 pub const FORMAT_VERSION: &str = "1";
 
 /// Rows per record batch when streaming.
@@ -191,6 +203,9 @@ pub struct ArrowVar<'a> {
     pub comment: &'a str,
     pub unit: &'a str,
     pub display_unit: &'a str,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to the
+    /// base unit or a display unit scales it but adds no offset.
+    pub relative_quantity: bool,
     pub ty: VarTy,
     pub discrete: bool,
     pub kind: ArrowKind,
@@ -215,6 +230,17 @@ impl Out for Vec<u8> {
     }
 }
 
+/// What the file says about itself rather than about one variable.
+#[derive(Default)]
+pub struct FileMeta<'a> {
+    /// The run's start and stop time; `None` falls back to the ends of the time
+    /// column.
+    pub span: Option<(f64, f64)>,
+    /// The units the variables name, minus the ones every reader of
+    /// [`FORMAT_VERSION`] knows (see [`UnitDef::is_predefined`]).
+    pub units: &'a [UnitDef],
+}
+
 /// A stored column: which result-row column feeds it and how.
 struct Stored {
     src: usize,
@@ -222,12 +248,6 @@ struct Stored {
     affine: Affine,
     /// Run-end encoded (a discrete-time signal).
     ree: bool,
-}
-
-/// The literal a 1-based enumeration value names.
-fn literal_of(literals: &[String], value: f64) -> Option<&str> {
-    let k = value as i64 - 1;
-    (k >= 0).then(|| literals.get(k as usize)).flatten().map(String::as_str)
 }
 
 /// The distinct enumeration types of a file, [`ENUMERATIONS_KEY`]: Modelica
@@ -269,7 +289,7 @@ fn json_str_list(out: &mut String, list: &[String]) {
     out.push(']');
 }
 
-fn json_str(out: &mut String, s: &str) {
+pub(crate) fn json_str(out: &mut String, s: &str) {
     out.push('"');
     for c in s.chars() {
         match c {
@@ -311,17 +331,29 @@ fn field_metadata(v: &ArrowVar) -> HashMap<String, String> {
     if !v.display_unit.is_empty() {
         md.insert("displayUnit".to_owned(), v.display_unit.to_owned());
     }
+    if v.relative_quantity {
+        md.insert("relativeQuantity".to_owned(), "true".to_owned());
+    }
     md.insert("type".to_owned(), type_name(v).to_owned());
-    md.insert("variability".to_owned(), if is_discrete(v) { "discrete" } else { "continuous" }.to_owned());
     md
 }
 
+/// The declared type as its Arrow name — the file is an Arrow file, so it names
+/// types the way Arrow does. It is the *declared* type, which the storage may
+/// narrow: a `Float64` variable is a `Float32` column under `-single`, and a
+/// discrete one is run-end encoded over this type. An enumeration is an ordinary
+/// `Int32`; the `enumeration` key is what marks it as one.
 fn type_name(v: &ArrowVar) -> &'static str {
-    if v.enumeration.is_some() { "enumeration" } else { v.ty.name() }
+    match v.ty {
+        VarTy::Real => "Float64",
+        VarTy::Integer => "Int32",
+        VarTy::Boolean => "Boolean",
+        VarTy::String => "Utf8",
+    }
 }
 
 /// The schema and the variable table for `vars`; `stored[i]` feeds field `i + 1`.
-fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy], resolve: &dyn Fn(u32) -> String, span: Option<(f64, f64)>) -> (SchemaRef, Vec<Stored>) {
+fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy], resolve: &dyn Fn(u32) -> String, file: &FileMeta) -> (SchemaRef, Vec<Stored>) {
     let mut fields: Vec<Field> = Vec::new();
     let mut stored: Vec<Stored> = Vec::new();
     // Result-row column -> (field index, how the field derives from the row).
@@ -411,13 +443,6 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
         json.push('"');
         if let Some(e) = v.enumeration {
             json.push_str(&format!(",\"enumeration\":{}", enumerations.index(e)));
-            if let Some(l) = value.and_then(|x| literal_of(e, x)) {
-                json.push_str(",\"literal\":");
-                json_str(&mut json, l);
-            }
-        }
-        if is_discrete(v) {
-            json.push_str(",\"discrete\":true");
         }
         if !v.comment.is_empty() {
             json.push_str(",\"description\":");
@@ -431,6 +456,9 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
             json.push_str(",\"displayUnit\":");
             json_str(&mut json, v.display_unit);
         }
+        if v.relative_quantity {
+            json.push_str(",\"relativeQuantity\":true");
+        }
         json.push('}');
     }
     json.push(']');
@@ -438,7 +466,10 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
     if !enumerations.0.is_empty() {
         metadata.insert(ENUMERATIONS_KEY.to_owned(), enumerations.json());
     }
-    if let Some((start, stop)) = span {
+    if !file.units.is_empty() {
+        metadata.insert(UNITS_KEY.to_owned(), units::units_json(file.units));
+    }
+    if let Some((start, stop)) = file.span {
         metadata.insert(START_TIME_KEY.to_owned(), format!("{start:?}"));
         metadata.insert(STOP_TIME_KEY.to_owned(), format!("{stop:?}"));
     }
@@ -466,7 +497,7 @@ impl ArrowStream {
     /// f64, a String column holding interned ids); `col_types[c]` says how column
     /// `c` is stored. `params` holds the `Param` values in `vars` order (a String
     /// parameter's interned id), `first_row` the initial row (for the `unvarying`
-    /// columns), `resolve` the id-to-text lookup, `span` the run's start and stop.
+    /// columns), `resolve` the id-to-text lookup, `file` the file-level metadata.
     #[allow(clippy::too_many_arguments)]
     pub fn begin(
         out: &mut dyn Out,
@@ -477,9 +508,9 @@ impl ArrowStream {
         col_types: &[ColTy],
         block_rows: usize,
         resolve: Resolve,
-        span: Option<(f64, f64)>,
+        file: &FileMeta,
     ) -> ArrowStream {
-        let (schema, stored) = plan(vars, params, first_row, col_types, &*resolve, span);
+        let (schema, stored) = plan(vars, params, first_row, col_types, &*resolve, file);
         let writer = FileWriter::try_new(Vec::with_capacity(1 << 16), &schema).expect("arrow schema");
         let mut s = ArrowStream {
             schema,
@@ -596,11 +627,11 @@ impl ArrowStream {
 
 /// The whole file at once. `resolve` is needed only with String columns or
 /// parameters; [`no_strings`] otherwise.
-pub fn write_arrow(vars: &[ArrowVar], rows: &[f64], n_reals: u32, params: &[f64], col_types: &[ColTy], resolve: Resolve, span: Option<(f64, f64)>) -> Vec<u8> {
+pub fn write_arrow(vars: &[ArrowVar], rows: &[f64], n_reals: u32, params: &[f64], col_types: &[ColTy], resolve: Resolve, file: &FileMeta) -> Vec<u8> {
     let mut out = Vec::new();
     let n_reals_u = n_reals.max(1) as usize;
     let first_row = rows.get(..n_reals_u).unwrap_or(&[]);
-    let mut s = ArrowStream::begin(&mut out, vars, params, first_row, n_reals, col_types, DEFAULT_BLOCK_ROWS, resolve, span);
+    let mut s = ArrowStream::begin(&mut out, vars, params, first_row, n_reals, col_types, DEFAULT_BLOCK_ROWS, resolve, file);
     s.push_rows(&mut out, rows);
     s.finish(&mut out);
     out
@@ -622,23 +653,23 @@ mod tests {
         let e: Vec<String> = ["one", "two", "three"].map(String::from).to_vec();
         let f: Vec<String> = ["on", "off"].map(String::from).to_vec();
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "fp", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&f) },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
+            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
+            ArrowVar { name: "fp", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&f) },
         ];
         let rows = [0.0, 1.0, 0.5, 1.0, 1.0, 3.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[2.0, 1.0], &[ColTy::F64, ColTy::I32], no_strings(), None);
+        let bytes = write_arrow(&vars, &rows, 2, &[2.0, 1.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
         let reader = FileReader::try_new(std::io::Cursor::new(bytes), None).expect("readable");
         let schema = reader.schema();
         let f = &schema.fields()[1];
-        assert_eq!(f.metadata()["type"], "enumeration");
+        assert_eq!(f.metadata()["type"], "Int32");
         assert_eq!(f.metadata()["enumeration"], "0");
         assert_eq!(*f.data_type(), ree_type(DataType::Int32));
         assert_eq!(schema.metadata()[ENUMERATIONS_KEY], r#"[["one","two","three"],["on","off"]]"#);
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#""name":"ep","kind":"parameter","value":2.0,"type":"enumeration","enumeration":0,"literal":"two""#), "{json}");
-        assert!(json.contains(r#""name":"fp","kind":"parameter","value":1.0,"type":"enumeration","enumeration":1,"literal":"on""#), "{json}");
+        assert!(json.contains(r#""name":"ep","kind":"parameter","value":2.0,"type":"Int32","enumeration":0"#), "{json}");
+        assert!(json.contains(r#""name":"fp","kind":"parameter","value":1.0,"type":"Int32","enumeration":1"#), "{json}");
         let batch = reader.into_iter().next().expect("a batch").expect("ok");
         let ree = batch.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().expect("run-end encoded");
         assert_eq!(ree.values().as_any().downcast_ref::<Int32Array>().expect("int32").values(), &[1, 3]);
@@ -647,26 +678,26 @@ mod tests {
     #[test]
     fn aliases_share_a_column() {
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "a state", unit: "m", display_unit: "mm", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "b", comment: "", unit: "", display_unit: "", ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "nb", comment: "", unit: "", display_unit: "", ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::NOT }, unvarying: false, enumeration: None },
-            ArrowVar { name: "p", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Param { affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "u", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 3, affine: Affine::IDENTITY }, unvarying: true, enumeration: None },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "x", comment: "a state", unit: "m", display_unit: "mm", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
+            ArrowVar { name: "b", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "nb", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::NOT }, unvarying: false, enumeration: None },
+            ArrowVar { name: "p", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Param { affine: Affine::NEGATE }, unvarying: false, enumeration: None },
+            ArrowVar { name: "u", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 3, affine: Affine::IDENTITY }, unvarying: true, enumeration: None },
         ];
         let rows = [0.0, 1.0, 1.0, 7.0, 0.5, 2.0, 0.0, 7.0, 1.0, 3.0, 1.0, 7.0];
-        let bytes = write_arrow(&vars, &rows, 4, &[2.5], &[ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::F64], no_strings(), Some((0.0, 1.0)));
+        let bytes = write_arrow(&vars, &rows, 4, &[2.5], &[ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::F64], no_strings(), &FileMeta { span: Some((0.0, 1.0)), ..FileMeta::default() });
         let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
         let schema = r.schema();
         assert_eq!(schema.fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(), ["time", "x", "b"]);
         assert_eq!(schema.field(1).metadata()["unit"], "m");
         assert_eq!(schema.metadata()[STOP_TIME_KEY], "1.0");
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"scale":-1.0,"type":"Real"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"nb","kind":"variable","column":2,"scale":-1.0,"offset":1.0,"type":"Boolean","discrete":true}"#), "{json}");
-        assert!(json.contains(r#"{"name":"p","kind":"parameter","value":-2.5,"type":"Real"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"u","kind":"parameter","value":7.0,"type":"Real"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"scale":-1.0,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"nb","kind":"variable","column":2,"scale":-1.0,"offset":1.0,"type":"Boolean"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"p","kind":"parameter","value":-2.5,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"u","kind":"parameter","value":7.0,"type":"Float64"}"#), "{json}");
         let batches: Vec<RecordBatch> = r.map(|b| b.unwrap()).collect();
         assert_eq!(batches.iter().map(|b| b.num_rows()).sum::<usize>(), 3);
         // `b` is discrete: run-end encoded, [true, false, true] in three runs.
@@ -681,19 +712,19 @@ mod tests {
     #[test]
     fn alias_relative_to_a_negated_owner() {
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "y", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine { scale: 2.0, offset: 3.0 } }, unvarying: false, enumeration: None },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
+            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "y", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine { scale: 2.0, offset: 3.0 } }, unvarying: false, enumeration: None },
         ];
         let rows = [0.0, 1.0, 0.5, 2.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[], &[ColTy::F32, ColTy::F32], no_strings(), None);
+        let bytes = write_arrow(&vars, &rows, 2, &[], &[ColTy::F32, ColTy::F32], no_strings(), &FileMeta::default());
         let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
         let schema = r.schema();
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"type":"Real"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"x","kind":"variable","column":1,"scale":-1.0,"type":"Real"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"y","kind":"variable","column":1,"scale":-2.0,"offset":3.0,"type":"Real"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"x","kind":"variable","column":1,"scale":-1.0,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"y","kind":"variable","column":1,"scale":-2.0,"offset":3.0,"type":"Float64"}"#), "{json}");
         let b = r.map(|b| b.unwrap()).next().unwrap();
         let mx = b.column(1).as_any().downcast_ref::<Float32Array>().unwrap();
         assert_eq!(mx.values(), &[-1.0f32, -2.0]);
@@ -704,18 +735,18 @@ mod tests {
         let table = ["off", "on"];
         let resolve: Resolve = Box::new(move |id| table[id as usize].to_owned());
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "s", comment: "", unit: "", display_unit: "", ty: VarTy::String, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "n", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "sp", comment: "", unit: "", display_unit: "", ty: VarTy::String, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "s", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::String, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "n", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "sp", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::String, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
         ];
         // rows: time, s (id), n
         let rows = [0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0, 1.0, 2.0, 1.5, 1.0, 2.0];
-        let bytes = write_arrow(&vars, &rows, 3, &[1.0], &[ColTy::F64, ColTy::Str, ColTy::I32], resolve, None);
+        let bytes = write_arrow(&vars, &rows, 3, &[1.0], &[ColTy::F64, ColTy::Str, ColTy::I32], resolve, &FileMeta::default());
         let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
         let schema = r.schema();
         assert!(matches!(schema.field(1).data_type(), DataType::RunEndEncoded(_, v) if *v.data_type() == DataType::Utf8));
-        assert!(schema.metadata()[VARIABLES_KEY].contains(r#"{"name":"sp","kind":"parameter","value":"on","type":"String"}"#));
+        assert!(schema.metadata()[VARIABLES_KEY].contains(r#"{"name":"sp","kind":"parameter","value":"on","type":"Utf8"}"#));
         let b = r.map(|b| b.unwrap()).next().unwrap();
         let s = b.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
         assert_eq!(s.run_ends().values(), &[2, 4]);

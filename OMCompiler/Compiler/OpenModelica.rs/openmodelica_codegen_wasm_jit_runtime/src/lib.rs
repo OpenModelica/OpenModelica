@@ -3248,11 +3248,13 @@ pub(crate) fn lin_sparse_cached(
     let n = n as usize;
     let nnz = nnz as usize;
 
+    // An FMU may have stubbed these out, and the density rule picks them, not a
+    // flag: `Rsparse` stands in.
     #[cfg(sundials)]
     match backend {
-        openmodelica_solvers::solverflags::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        openmodelica_solvers::solverflags::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        openmodelica_solvers::solverflags::Sparse::Rsparse => {}
+        openmodelica_solvers::solverflags::Sparse::Klu if sundials::have_klu() => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        openmodelica_solvers::solverflags::Sparse::Umfpack if sundials::have_umfpack() => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        _ => {}
     }
     #[cfg(not(sundials))]
     let _ = backend;

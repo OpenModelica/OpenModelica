@@ -70,28 +70,24 @@ The Arrow Result File Format
 
 ``outputFormat="arrow"`` (the simulation flag ``-outputFormat=arrow``) writes the
 result as an `Apache Arrow <https://arrow.apache.org/>`__ IPC file
-(the "Feather v2" layout, suffix ``.arrow``). The file is read by every Arrow
-implementation: `pyarrow <https://arrow.apache.org/docs/python/>`__,
-`polars <https://pola.rs/>`__, `DuckDB <https://duckdb.org/>`__, R, Julia,
-MATLAB and the JavaScript ``apache-arrow`` package. The format is written by the
-Rust simulation runtime (the ``wasm-jit`` and ``C+Rust`` simulation targets,
-natively and in the browser) and by the C runtime of a build with
-``OM_RUST_RESULT_WRITERS`` (the default in the CMake build, where the result
-writers of the C runtime come from the same Rust code). OpenModelica reads ``.arrow`` files
-wherever it reads ``.mat`` files: the scripting functions
-``readSimulationResult``, ``val``,
-``readSimulationResultVars``, ``diffSimulationResults`` and
-``filterSimulationResults`` (which also converts between ``.mat`` and ``.arrow``
-in both directions, by output suffix), and OMPlot's web page.
+(the "Feather v2" layout, suffix ``.arrow``).
+The columnar format version a reader needs depends on what the file contains:
+run-end encoded columns (below) were added in **Arrow columnar format 1.3**
+(Arrow 12.0), so a file holding any variable that changes only at events needs an
+implementation of that version or later. A file without one needs only 1.0. The
+version is not recorded in the file — the IPC metadata version it does record has
+been ``V5`` since Arrow 1.0 — so an older reader fails on the column type rather
+than on a version check.
 
-Compared to the MATv4 file the Arrow file stores each variable as a typed column
-(``Float64``, ``Int32``, ``Boolean`` or ``Utf8``), so one variable is read without
-striding through the others, carries the unit and description of every
-variable inside the file, and stores discrete-time variables only where they
-change. With the simulation flag ``-single`` the ``Real`` columns are
-``Float32``.
+Compared to the MATv4 file the Arrow file stores each variable as a typed column,
+so one variable is read without striding through the others, carries the unit and
+description of every variable inside the file, and stores a variable that changes
+only at events only where it changes.
 
-The record batches
+Nothing in the layout is specific to OpenModelica and is intended to work for both
+Modelica and FMI standards.
+
+The record batches (OpenModelica implementation detail)
   The rows of the simulation (one per output point, plus one per event) are
   written as record batches of up to 1024 rows each, as the simulation
   produces them. Column 0 is ``time``; the other columns are the *stored*
@@ -106,85 +102,342 @@ The record batches
   (``pyarrow.ipc.open_stream(data[data.index(b"\xff\xff\xff\xff"):])``
   does the same).
 
-Field metadata
-  Every column carries string metadata: ``description`` (the Modelica comment),
-  ``unit`` and ``displayUnit`` when the variable has them, ``type``
-  (``Real``, ``Integer``, ``Boolean``, ``String`` or ``enumeration``, the
-  latter with the index into ``modelica.enumerations`` under
-  ``enumeration``) and ``variability`` (``continuous`` or ``discrete``).
+Column types
+  A column holds the values of its variable in the Arrow type matching the
+  variable's own, so the full range of FMI variable types can be stored:
 
-Enumerations
-  A variable of an enumeration type is typed ``enumeration`` and its field
-  metadata ``enumeration`` indexes ``modelica.enumerations``, the table of
-  literal names. The column is either an ``Int32`` holding the Modelica value
-  (1 for the first literal), or a ``Dictionary<Int32, Utf8>`` whose
-  dictionary is the same literal list and whose key is the value minus one.
-  A reader must accept both; OpenModelica writes the ``Int32`` form, since the
-  dictionary would repeat the literals per column and the compute kernels of
-  some Arrow libraries do not handle a run-end encoded dictionary. Being
-  discrete, the column is run-end encoded like the other discrete variables.
-  The C simulation runtime does not know the literals and writes plain
-  ``Int32`` columns typed ``Integer``.
+  .. list-table::
+     :header-rows: 1
+     :widths: 34 33 33
 
-Discrete-time variables and Strings
-  A column of a discrete-time variable (a discrete ``Real``, every ``Integer``,
-  ``Boolean`` and ``String`` variable) is run-end encoded
-  (``RunEndEncoded<Int32, T>``): the file stores one value per change together
-  with the row index where that value ends, all indexed against the shared
-  ``time`` column. The stored points are therefore exactly the event instants,
-  nothing is repeated between events, and expanding the runs gives the value
-  at every output point with hold semantics. Arrow readers expand run-end
-  encoded arrays on request (``pyarrow.compute.run_end_decode``).
+     * - Variable
+       - ``type`` metadata
+       - Arrow column type
+     * - FMI ``Float64``, Modelica ``Real``
+       - ``Float64``
+       - ``Float64``, or ``Float32`` under ``-single``
+     * - FMI ``Float32``
+       - ``Float32``
+       - ``Float32``
+     * - FMI ``Int8`` … ``Int64``, ``UInt8`` … ``UInt64``,
+         Modelica ``Integer`` (``Int32``)
+       - the same name
+       - the same type
+     * - FMI ``Boolean`` or ``Clock``, Modelica ``Boolean``
+       - ``Boolean``
+       - ``Boolean``
+     * - FMI ``String``, Modelica ``String``
+       - ``Utf8``
+       - ``Utf8``
+     * - FMI ``Binary``
+       - ``Binary``
+       - ``Binary``
+     * - an enumeration
+       - ``Int32``
+       - ``Int32`` or ``Dictionary<Int32, Utf8>``
 
-  ``String`` variables and parameters are stored this way too, which the
-  MATv4 file cannot do. OpenModelica's own scripting functions list them but
-  read only numeric trajectories (``val`` of a ``String`` variable is NaN);
+  Types are named the way Arrow names them, this being an Arrow file: there is no
+  second vocabulary to translate. An enumeration is an ordinary ``Int32``; what
+  marks it as an enumeration is the ``enumeration`` key naming its literal table,
+  not a type of its own.
+
+  ``type`` is the variable's *declared* type and the column is its *storage*, so
+  the two differ wherever the storage is narrower or re-encoded: a ``Float64``
+  variable is a ``Float32`` column under the simulation flag ``-single``, and a
+  discrete-time variable is a ``RunEndEncoded<Int32, T>`` column over its
+  declared type.
+
+  OpenModelica writes the subset a Modelica model needs — ``Float64``, ``Int32``,
+  ``Boolean`` and ``Utf8`` — and a reader should accept the rest, since a writer
+  describing an FMU has them.
+
+  A column of a variable that changes only at events is run-end encoded, in
+  which case its type is ``RunEndEncoded<Int32, T>`` over the type above (see
+  *Discrete-time variables*).
+
+Discrete-time variables
+  A variable whose value changes only at events is stored run-end encoded
+  (``RunEndEncoded<Int32, T>``): one value per change together with the row index
+  where that value ends, indexed against the shared ``time`` column. Expanding
+  the runs gives the value at every row with hold semantics, which Arrow readers
+  do on request (``pyarrow.compute.run_end_decode``).
+
+  The encoding *is* the statement: a run-end encoded column is a discrete-time
+  variable and must be held between its stored points, and any other column may
+  change at every row. Nothing in the metadata repeats this, so there is nothing
+  that can disagree with it. In FMI's terms a ``discrete`` or ``tunable``
+  variable is stored this way — the two are indistinguishable once the run is
+  over — while ``constant`` and ``fixed`` variables have no column at all and
+  appear as a ``parameter`` in the variable table.
+
+  A variable that *could* change but did not — one the run computes once during
+  initialization and never writes again — is also stored as a ``parameter``,
+  holding the value it took. Its variability in the model it came from may well
+  have been continuous; the file records the trajectory, not the declaration.
+
+  This is independent of type. An ``Integer`` that varies at every row is a plain
+  ``Int32`` column, and a ``Real`` that changes only at events is run-end
+  encoded. ``String`` variables and parameters are stored like any other, which
+  the MATv4 file cannot do; OpenModelica's own scripting functions list them but
+  read only numeric trajectories (``val`` of a ``String`` variable is NaN), while
   the C API of ``libomc_result`` reads the texts (``omc_result_strings``,
   ``omc_result_string_at``).
 
+Enumerations
+  An enumeration variable is typed ``enumeration`` and names its type by index
+  into ``modelica.enumerations``, a table of ordered literal names. A type is
+  identified by that ordered list alone, so two variables listing the same
+  literals share one entry.
+
+  The column is either an ``Int32`` holding the value (``1`` for the first
+  literal), or a ``Dictionary<Int32, Utf8>`` whose dictionary is the same
+  literal list and whose key is the value minus one. A reader must accept both.
+  The ``Int32`` form is useful in the cases where the Arrow library does not allow
+  sharing the dictionary between columns (repeating all enumeration literals for
+  each variable).
+
+Field metadata
+  Every column carries string metadata: ``type`` (the declared type, see *Column
+  types*), ``description``, ``unit`` and ``displayUnit`` when the variable has
+  them, ``relativeQuantity`` (``"true"`` when set), and ``enumeration`` (the
+  index into ``modelica.enumerations``) for an enumeration variable. Where two
+  variables share a column, the field metadata is that of the variable owning
+  the column; the variable table carries each variable's own.
+
 Schema metadata
-  The keys carry a tool-neutral ``modelica.`` prefix, so another Modelica tool
-  can write and read the same layout.
+  The keys carry a tool-neutral ``modelica.`` prefix, so another tool can write
+  and read the same layout. Every value is a string, as Arrow schema metadata
+  always is; the types below are those of the JSON inside it.
 
   ``modelica.format``
     The layout version, currently ``1``.
   ``modelica.startTime``, ``modelica.stopTime``
     The start and stop time of the run (what ``data_1(:,1)`` holds in the
-    MATv4 file); the time column itself may end past the stop time when the
-    last output point is an event.
+    MATv4 file), as decimal numbers; the time column itself may end past the
+    stop time when the last output point is an event.
   ``modelica.variables``
-    A JSON array with one object per result variable, in the order the
-    runtime lists them, holding what ``dataInfo`` holds in the MATv4 file
-    together with each variable's own metadata. Only keys with content are
-    written:
+    A JSON array with one object per result variable, in the order the writer
+    lists them, holding what ``dataInfo`` holds in the MATv4 file together with
+    each variable's own metadata. Only keys with content are written, so a
+    reader must apply the default of every key it does not find:
 
-    - ``name``: the Modelica name.
-    - ``kind``: ``time``, ``variable`` or ``parameter``.
-    - ``column``: for ``time`` and ``variable``, the schema field index holding
-      the values. Several variables can name the same column: they are alias
-      variables and the data is stored once; an alias of ``time`` names
-      column 0.
-    - ``scale``, ``offset``: the variable is ``scale * column + offset``; each
-      key is omitted when it is the identity's ``1`` respectively ``0``. A
-      negated ``Real`` or ``Integer`` alias has ``scale: -1``; a negated
-      ``Boolean`` alias has ``scale: -1, offset: 1``, which over the 0/1
-      encoding is the logical negation. The runtime currently detects only
-      these negations, but a reader must apply any ``scale`` and ``offset``.
-    - ``value``: for ``parameter``, the value (a number, or the text of a
-      ``String`` parameter). Constants and variables computed once during
-      initialization are parameters here, as in ``data_1``.
-    - ``enumeration``: for a variable of an enumeration type, the index of
-      its type in ``modelica.enumerations``; a ``parameter`` also carries the
-      ``literal`` its ``value`` names.
+    .. list-table::
+       :header-rows: 1
+       :widths: 22 16 62
+
+       * - Key
+         - JSON type
+         - Meaning
+       * - ``name``
+         - string
+         - The variable's name. Required.
+       * - ``kind``
+         - string
+         - ``"time"``, ``"variable"`` or ``"parameter"`` — a string, not an
+           index. Required. A ``parameter`` carries ``value`` and no ``column``;
+           the other two carry ``column`` and no ``value``, so the kinds are
+           also told apart structurally. ``time`` marks the run's time variable,
+           which an alias of it (``column: 0``, kind ``variable``) does not.
+       * - ``column``
+         - integer
+         - For ``time`` and ``variable``, the schema field index holding the
+           values. Several variables may name the same column: they are
+           aliases and the data is stored once; an alias of ``time`` names
+           column 0.
+       * - ``scale``
+         - number
+         - The variable is ``scale * column + offset``. Default ``1``.
+       * - ``offset``
+         - number
+         - Default ``0``. A negated ``Real`` or ``Integer`` alias is
+           ``scale: -1``; a negated ``Boolean`` alias is ``scale: -1,
+           offset: 1``, which over the 0/1 encoding is the logical negation.
+           OpenModelica detects only these, but a reader must apply any
+           ``scale`` and ``offset`` it finds.
+       * - ``value``
+         - number or string
+         - For ``parameter``, the value; a string for a ``String`` parameter.
+           Values computed once during initialization are parameters here, as
+           in ``data_1``.
+       * - ``type``
+         - string
+         - The declared type, named as Arrow names it (see *Column types*).
+           Default ``"Float64"``.
+       * - ``description``
+         - string
+         - The variable's description. Default empty.
+       * - ``unit``
+         - string
+         - The variable's unit, as a name into ``modelica.units``. Default
+           empty.
+       * - ``displayUnit``
+         - string
+         - The unit the variable is preferably shown in, as the ``name`` of one
+           of the ``displayUnits`` of ``unit``. Default empty.
+       * - ``relativeQuantity``
+         - boolean
+         - The value is a difference in its unit, so converting it to another
+           unit scales it but adds no offset. Default ``false``.
+       * - ``enumeration``
+         - integer
+         - For an enumeration variable, the index of its type in
+           ``modelica.enumerations``. The literal a ``parameter``'s ``value``
+           names is that table's entry at ``value - 1``.
+
   ``modelica.enumerations``
     A JSON array of the distinct enumeration types, each an array of its
-    literal names in declaration order. Modelica types an enumeration by its
-    literals alone, so two variables whose types list the same literals share
-    one entry.
-    - ``type``, ``discrete``, ``description``, ``unit``, ``displayUnit``:
-      as for the field metadata, but per variable rather than per column: two
-      aliases of the same column each carry their own, and the field metadata
-      is the one of the variable that owns the column.
+    literal names in declaration order.
+  ``modelica.units``
+    A JSON array defining the units the variables name, since a model has far
+    more variables than units — 147 variables of ``DistrictHeating`` share
+    ``K``. A variable names a unit; the conversions live here once::
+
+        [{"name": "K",
+          "baseUnit": {"K": 1},
+          "displayUnits": [{"name": "degC", "offset": -273.15}]}]
+
+    ``name`` is required. ``baseUnit`` is FMI 3.0's ``<BaseUnit>``: the
+    exponents ``kg``, ``m``, ``s``, ``A``, ``K``, ``mol``, ``cd`` and ``rad``
+    (integers, default ``0``) together with ``factor`` (default ``1``) and
+    ``offset`` (default ``0``), meaning ``v_SI = factor * v_unit + offset``.
+    It is absent for a unit whose dimensions the writer could not derive.
+    ``displayUnits`` is FMI 3.0's ``<DisplayUnit>`` list, each entry a ``name``
+    with ``factor`` (default ``1``), ``offset`` (default ``0``) and ``inverse``
+    (default ``false``): ``v_display = factor * v_unit + offset``, or
+    ``v_display = factor * (1 / v_unit)`` when ``inverse``, which is only
+    allowed with a zero offset and is meant for reciprocal units such as
+    Siemens. A variable with ``relativeQuantity`` is a difference, so its
+    conversion applies the factor and drops the offset.
+
+    A display unit belongs to the unit it displays and is not itself a unit; no
+    variable may name one as its ``unit``.
+
+    *Predefined units.* A writer may leave out any unit in the table below,
+    which every reader of the ``modelica.format`` version the file declares
+    knows. The set is tied to that version: growing it would leave an older
+    reader not knowing a unit a newer writer omitted, so it may only grow
+    together with the version. An entry in ``modelica.units`` overrides the
+    predefined unit of the same name — a writer that means something else by a
+    name spells it out.
+
+    .. list-table::
+       :header-rows: 1
+       :widths: 14 30 56
+
+       * - Unit
+         - Base unit
+         - Display units
+       * - ``1``
+         - dimensionless
+         -
+       * - ``kg``, ``m``, ``s``, ``A``, ``K``, ``mol``, ``cd``, ``rad``
+         - the SI base units, each its own exponent ``1``
+         - ``kg``: ``g`` ×1e3, ``t`` ×1e-3. ``m``: ``mm`` ×1e3, ``cm`` ×1e2,
+           ``km`` ×1e-3. ``s``: ``ms`` ×1e3, ``min`` ×1/60, ``h`` ×1/3600,
+           ``d`` ×1/86400. ``A``: ``mA`` ×1e3, ``kA`` ×1e-3. ``K``: ``degC``
+           offset -273.15. ``rad``: ``deg`` ×180/π.
+       * - ``sr``
+         - ``rad`` 2
+         -
+       * - ``Hz``
+         - ``s`` -1
+         - ``kHz`` ×1e-3, ``MHz`` ×1e-6
+       * - ``N``
+         - ``kg`` 1, ``m`` 1, ``s`` -2
+         - ``kN`` ×1e-3
+       * - ``Pa``
+         - ``kg`` 1, ``m`` -1, ``s`` -2
+         - ``bar`` ×1e-5, ``kPa`` ×1e-3, ``MPa`` ×1e-6
+       * - ``J``
+         - ``kg`` 1, ``m`` 2, ``s`` -2
+         - ``kJ`` ×1e-3, ``MJ`` ×1e-6
+       * - ``W``
+         - ``kg`` 1, ``m`` 2, ``s`` -3
+         - ``kW`` ×1e-3, ``MW`` ×1e-6
+       * - ``C``
+         - ``s`` 1, ``A`` 1
+         -
+       * - ``V``
+         - ``kg`` 1, ``m`` 2, ``s`` -3, ``A`` -1
+         - ``mV`` ×1e3, ``kV`` ×1e-3
+       * - ``F``
+         - ``kg`` -1, ``m`` -2, ``s`` 4, ``A`` 2
+         - ``uF`` ×1e6, ``nF`` ×1e9, ``pF`` ×1e12
+       * - ``Ohm``
+         - ``kg`` 1, ``m`` 2, ``s`` -3, ``A`` -2
+         - ``kOhm`` ×1e-3, ``MOhm`` ×1e-6
+       * - ``S``
+         - ``kg`` -1, ``m`` -2, ``s`` 3, ``A`` 2
+         -
+       * - ``Wb``
+         - ``kg`` 1, ``m`` 2, ``s`` -2, ``A`` -1
+         -
+       * - ``T``
+         - ``kg`` 1, ``s`` -2, ``A`` -1
+         -
+       * - ``H``
+         - ``kg`` 1, ``m`` 2, ``s`` -2, ``A`` -2
+         - ``mH`` ×1e3
+       * - ``lm``
+         - ``cd`` 1, ``rad`` 2
+         -
+       * - ``lx``
+         - ``m`` -2, ``cd`` 1, ``rad`` 2
+         -
+       * - ``Bq``
+         - ``s`` -1
+         -
+       * - ``Gy``, ``Sv``
+         - ``m`` 2, ``s`` -2
+         -
+       * - ``kat``
+         - ``s`` -1, ``mol`` 1
+         -
+       * - ``m/s``
+         - ``m`` 1, ``s`` -1
+         - ``km/h`` ×3.6
+       * - ``m/s2``
+         - ``m`` 1, ``s`` -2
+         -
+       * - ``m2``
+         - ``m`` 2
+         -
+       * - ``m3``
+         - ``m`` 3
+         - ``l`` ×1e3
+       * - ``m3/s``
+         - ``m`` 3, ``s`` -1
+         - ``l/s`` ×1e3
+       * - ``kg/s``
+         - ``kg`` 1, ``s`` -1
+         -
+       * - ``kg/m3``
+         - ``kg`` 1, ``m`` -3
+         -
+       * - ``rad/s``
+         - ``rad`` 1, ``s`` -1
+         - ``rpm`` ×30/π, ``deg/s`` ×180/π
+       * - ``N.m``
+         - ``kg`` 1, ``m`` 2, ``s`` -2
+         -
+       * - ``J/K``
+         - ``kg`` 1, ``m`` 2, ``s`` -2, ``K`` -1
+         -
+       * - ``J/(kg.K)``
+         - ``m`` 2, ``s`` -2, ``K`` -1
+         -
+       * - ``W/(m.K)``
+         - ``kg`` 1, ``m`` 1, ``s`` -3, ``K`` -1
+         -
+       * - ``W/(m2.K)``
+         - ``kg`` 1, ``s`` -3, ``K`` -1
+         -
+
+    OpenModelica has no ``rad`` dimension and computes ``0`` for it, so the
+    ``rad`` exponents above are FMI's, which treats ``rad`` as ``1`` for
+    dimensional analysis. A file written by the C runtime carries no
+    ``modelica.units`` at all: the runtime reads its variable attributes from
+    ``<model>_init.xml``, which names each variable's unit but defines none.
 
 Reading the file with pyarrow, for example::
 

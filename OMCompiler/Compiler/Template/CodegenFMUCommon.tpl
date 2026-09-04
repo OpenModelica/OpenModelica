@@ -720,6 +720,40 @@ case SIMVAR(unit = unit, displayUnit = displayUnit) then
   '<%unitString%>'
 end UnitString2;
 
+template UnitString3(SimVar simvar, SimCode simCode)
+ "UnitString2 with the display unit, which FMI 3.0 may name now that the unit
+  definitions declare it. Left off where it resolved to no <DisplayUnit>, which a
+  variable may not name."
+::=
+match simvar
+case SIMVAR(unit = unit, displayUnit = displayUnit) then
+  let unitString = if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnitString = if declaredDisplayUnit(unit, displayUnit, simCode) then
+        ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
+  '<%unitString%><%displayUnitString%>'
+end UnitString3;
+
+template declaredDisplayUnit(String unit, String displayUnit, SimCode simCode)
+ "Non-empty when `displayUnit` is another unit of `unit`\'s dimensions, which is exactly
+  when UnitDefinitions nested it as a <DisplayUnit> of it."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(unitDefinitions=unitDefinitions)) then
+  let dims = (unitDefinitions |> u => unitDimensionsNamed(u, unit))
+  let displayDims = (unitDefinitions |> u => unitDimensionsNamed(u, displayUnit))
+  if boolAnd(boolNot(stringEq(dims, "")),
+             boolAnd(stringEq(dims, displayDims), boolNot(stringEq(unit, displayUnit)))) then "declared"
+end declaredDisplayUnit;
+
+template unitDimensionsNamed(UnitDefinition unitDefinition, String wanted)
+ "This unit\'s dimensions when it is the one named, so a fold over the list picks it out.
+  `wanted` may not be called `name`: a record field of that name shadows the parameter."
+::=
+match unitDefinition
+case UNITDEFINITION(name=unitName, baseUnit=baseUnit) then
+  if stringEq(unitName, wanted) then baseUnitDimensions(baseUnit)
+end unitDimensionsNamed;
+
 template relativeQuantity(SimVar simvar)
 ::=
 match simvar
@@ -760,22 +794,53 @@ template UnitDefinitionsHelper(list<UnitDefinition> unitDefinitions)
   if unitDefinitions then
   <<
   <UnitDefinitions>
-    <%unitDefinitions |> unitDefinition => UnitDefinitionsHelper1(unitDefinition) ;separator="\n"%>
+    <%unitDefinitions |> unitDefinition => UnitDefinitionsHelper1(unitDefinition, unitDefinitions) ;separator="\n"%>
   </UnitDefinitions>
   >>
 end UnitDefinitionsHelper;
 
-template UnitDefinitionsHelper1(UnitDefinition unitDefinition)
+template UnitDefinitionsHelper1(UnitDefinition unitDefinition, list<UnitDefinition> allUnits)
  "helper function to generates code for UnitDefinition for FMU target."
 ::=
 match unitDefinition
 case UNITDEFINITION(name=name, baseUnit=baseUnit) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
-    <%baseUnitAttributes(baseUnit)%>
+    <%baseUnitAttributes(baseUnit)%><%displayUnits(name, baseUnit, allUnits)%>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
+
+template displayUnits(String unitName, BaseUnit baseUnit, list<UnitDefinition> allUnits)
+ "Every other unit of the same dimensions, nested as a <DisplayUnit> of this one:
+  FMI lets a variable name a display unit only among its own unit\'s children.
+  Fields are bound by name; Susan will not pass on the ones `__` brings into scope."
+::=
+match baseUnit
+case BASEUNIT(factor=unitFactor, offset=unitOffset) then
+  let dims = baseUnitDimensions(baseUnit)
+  (allUnits |> other => displayUnit(unitName, dims, unitFactor, unitOffset, other))
+end displayUnits;
+
+template displayUnit(String unitName, String dims, Real unitFactor, Real unitOffset, UnitDefinition other)
+ "`other` as a <DisplayUnit> of the unit whose SI pair is (unitFactor, unitOffset), when
+  it is a different unit of the same dimensions. Both carry the pair taking them to SI,
+  so the display value is
+  value_display = (unitFactor/displayFactor)*value + (unitOffset - displayOffset)/displayFactor."
+::=
+match other
+case UNITDEFINITION(name=otherName, baseUnit=(otherBase as BASEUNIT(factor=displayFactor, offset=displayOffset))) then
+  if boolAnd(stringEq(dims, baseUnitDimensions(otherBase)), boolNot(stringEq(unitName, otherName))) then
+  '<%\n%><DisplayUnit name="<%Util.escapeModelicaStringToXmlString(otherName)%>" factor="<%realDiv(unitFactor, displayFactor)%>" offset="<%realDiv(realSub(unitOffset, displayOffset), displayFactor)%>"/>'
+end displayUnit;
+
+template baseUnitDimensions(BaseUnit baseUnit)
+ "The seven exponents as a key, so two units are compared as one string. Empty where
+  there is no base unit to compare."
+::=
+match baseUnit
+case BASEUNIT(__) then '<%s%>.<%m%>.<%kg%>.<%A%>.<%K%>.<%mol%>.<%cd%>'
+end baseUnitDimensions;
 
 template unitDefinitionAttribute(String unitName)
  "Generates code for UnitDefinition Attribute for FMU target."

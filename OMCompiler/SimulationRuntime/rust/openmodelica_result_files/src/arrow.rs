@@ -16,7 +16,8 @@ use arrow_array::types::Int32Type;
 use arrow_array::{Array, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int32Array, Int64Array, LargeStringArray, RecordBatch, RunArray, StringArray};
 use arrow_ipc::reader::{FileReader, StreamReader};
 use arrow_schema::SchemaRef;
-use openmodelica_arrow_writer::{ENUMERATIONS_KEY, START_TIME_KEY, STOP_TIME_KEY, VARIABLES_KEY};
+use openmodelica_arrow_writer::units::{self, BaseUnit, DisplayUnit, UnitDef};
+use openmodelica_arrow_writer::{ENUMERATIONS_KEY, START_TIME_KEY, STOP_TIME_KEY, UNITS_KEY, VARIABLES_KEY};
 use openmodelica_mat_reader::{MatVariable, ResultTable, find_closest_points, find_var_in, iws_cmp};
 
 pub struct ArrowReader {
@@ -29,8 +30,8 @@ pub struct ArrowReader {
     pub nparam: usize,
     /// The String parameters' texts, by 0-based `params` slot.
     pub string_params: std::collections::HashMap<usize, String>,
-    /// `(unit, displayUnit, type)` per `allInfo` entry.
-    meta: Vec<(String, String, String)>,
+    /// `(unit, displayUnit, type, relativeQuantity)` per `allInfo` entry.
+    meta: Vec<(String, String, String, bool)>,
     /// The literals per `allInfo` entry of an enumeration variable.
     enums: Vec<Option<Vec<String>>>,
     /// The run's start and stop from the schema metadata, else the time column's ends.
@@ -42,6 +43,10 @@ pub struct ArrowReader {
     strs: Vec<Option<Vec<String>>>,
     /// A String field: no numeric trajectory.
     text_only: Vec<bool>,
+    /// Run-end encoded, i.e. a discrete-time signal, per column of `cols`.
+    ree: Vec<bool>,
+    /// The file's own unit definitions; [`units::predefined`] answers the rest.
+    units: Vec<UnitDef>,
 }
 
 enum Col {
@@ -71,6 +76,43 @@ fn read_batches(bytes: &[u8]) -> Result<(SchemaRef, Vec<RecordBatch>), String> {
             Ok((schema, reader.map_while(Result::ok).collect()))
         }
     }
+}
+
+/// The `modelica.units` table. A malformed entry is dropped rather than failing
+/// the file: it costs a display unit, not the data.
+fn parse_units(json: &str) -> Vec<UnitDef> {
+    let Ok(serde_json::Value::Array(entries)) = serde_json::from_str::<serde_json::Value>(json) else {
+        return Vec::new();
+    };
+    let num = |v: &serde_json::Value, k: &str, dflt: f64| v.get(k).and_then(serde_json::Value::as_f64).unwrap_or(dflt);
+    let mut out = Vec::new();
+    for e in &entries {
+        let Some(name) = e.get("name").and_then(|v| v.as_str()).filter(|n| !n.is_empty()) else { continue };
+        let base = e.get("baseUnit").map(|b| {
+            let mut exponents = [0i32; 8];
+            for (i, k) in units::BASE_EXPONENTS.iter().enumerate() {
+                exponents[i] = b.get(k).and_then(serde_json::Value::as_i64).unwrap_or(0) as i32;
+            }
+            BaseUnit { exponents, factor: num(b, "factor", 1.0), offset: num(b, "offset", 0.0) }
+        });
+        let display_units = match e.get("displayUnits") {
+            Some(serde_json::Value::Array(ds)) => ds
+                .iter()
+                .filter_map(|d| {
+                    let n = d.get("name").and_then(|v| v.as_str()).filter(|n| !n.is_empty())?;
+                    Some(DisplayUnit {
+                        name: n.to_owned(),
+                        factor: num(d, "factor", 1.0),
+                        offset: num(d, "offset", 0.0),
+                        inverse: d.get("inverse").and_then(serde_json::Value::as_bool).unwrap_or(false),
+                    })
+                })
+                .collect(),
+            _ => Vec::new(),
+        };
+        out.push(UnitDef { name: name.to_owned(), base, display_units });
+    }
+    out
 }
 
 /// One field of a batch as row values, run-end encoding expanded.
@@ -132,10 +174,12 @@ impl ArrowReader {
 
     pub fn from_bytes(bytes: Vec<u8>) -> Result<ArrowReader, String> {
         let (schema, batches) = read_batches(&bytes)?;
+        let units = schema.metadata().get(UNITS_KEY).map_or_else(Vec::new, |s| parse_units(s));
         let nfields = schema.fields().len();
         let mut cols: Vec<Vec<f64>> = vec![Vec::new(); nfields];
         let mut strs: Vec<Option<Vec<String>>> = vec![None; nfields];
         let mut text_only = vec![false; nfields];
+        let mut ree: Vec<bool> = schema.fields().iter().map(|f| matches!(f.data_type(), arrow_schema::DataType::RunEndEncoded(..))).collect();
         for batch in batches {
             for (c, col) in batch.columns().iter().enumerate() {
                 match column(col.as_ref())? {
@@ -158,6 +202,7 @@ impl ArrowReader {
                 cols.swap(0, t);
                 strs.swap(0, t);
                 text_only.swap(0, t);
+                ree.swap(0, t);
             }
         }
         let nrows = cols.first().map_or(0, Vec::len);
@@ -208,6 +253,7 @@ impl ArrowReader {
                                 cols.push(derived);
                                 strs.push(None);
                                 text_only.push(false);
+                                ree.push(ree.get(field).copied().unwrap_or(false));
                                 (false, cols.len() as i32)
                             }
                         }
@@ -216,7 +262,7 @@ impl ArrowReader {
                     meta.push((str_of("unit"), str_of("displayUnit"), {
                         let t = str_of("type");
                         if t.is_empty() { "Real".to_owned() } else { t }
-                    }));
+                    }, e.get("relativeQuantity").and_then(|v| v.as_bool()).unwrap_or(false)));
                     enums.push(e.get("enumeration").and_then(|v| v.as_u64()).and_then(|i| enum_types.get(i as usize).cloned()));
                 }
             }
@@ -227,7 +273,7 @@ impl ArrowReader {
                     let get = |k: &str| md.get(k).cloned().unwrap_or_default();
                     let ix = if f.name() == "time" || f.name() == "Time" { 1 } else if i == 0 { 1 } else { i as i32 + 1 };
                     allInfo.push(MatVariable { name: f.name().clone(), descr: get("description"), isParam: false, index: ix });
-                    meta.push((get("unit"), get("displayUnit"), get("type")));
+                    meta.push((get("unit"), get("displayUnit"), get("type"), get("relativeQuantity") == "true"));
                     enums.push(None);
                 }
             }
@@ -235,12 +281,29 @@ impl ArrowReader {
         let mut order: Vec<usize> = (0..allInfo.len()).collect();
         order.sort_by(|&a, &b| iws_cmp(&allInfo[a].name, &allInfo[b].name));
         let allInfo: Vec<MatVariable> = order.iter().map(|&i| allInfo[i].clone()).collect();
-        let meta: Vec<(String, String, String)> = order.iter().map(|&i| meta[i].clone()).collect();
+        let meta: Vec<(String, String, String, bool)> = order.iter().map(|&i| meta[i].clone()).collect();
         let enums: Vec<Option<Vec<String>>> = order.iter().map(|&i| enums[i].clone()).collect();
         let ends = (cols.first().and_then(|c| c.first()).copied().unwrap_or(f64::NAN), cols.first().and_then(|c| c.last()).copied().unwrap_or(f64::NAN));
         let time_md = |k: &str| schema.metadata().get(k).and_then(|v| v.parse::<f64>().ok());
         let span = (time_md(START_TIME_KEY).unwrap_or(ends.0), time_md(STOP_TIME_KEY).unwrap_or(ends.1));
-        Ok(ArrowReader { allInfo, nparam: params.len(), params, string_params, nrows, nvar: cols.len(), span, meta, enums, cols, strs, text_only })
+        Ok(ArrowReader { allInfo, nparam: params.len(), params, string_params, nrows, nvar: cols.len(), span, meta, enums, cols, strs, text_only, ree, units })
+    }
+
+    /// The definition of `name`: the file's own entry, else the predefined one.
+    pub fn unit_def(&self, name: &str) -> Option<UnitDef> {
+        self.units.iter().find(|u| u.name == name).cloned().or_else(|| units::predefined(name))
+    }
+
+    /// Every unit the file's variables name, defined. A display unit is not one:
+    /// it lives inside the definition of the unit it displays.
+    pub fn unit_defs(&self) -> Vec<UnitDef> {
+        let mut names: Vec<&str> = Vec::new();
+        for (u, _, _, _) in &self.meta {
+            if !u.is_empty() && !names.contains(&u.as_str()) {
+                names.push(u);
+            }
+        }
+        names.iter().filter_map(|n| self.unit_def(n)).collect()
     }
 
     fn single_val(&self, index: i32, row: usize) -> Option<f64> {
@@ -322,8 +385,28 @@ impl ResultTable for ArrowReader {
     fn unit(&self, idx: usize) -> (&str, &str) {
         self.meta.get(idx).map_or(("", ""), |m| (m.0.as_str(), m.1.as_str()))
     }
+    /// The file names types the way Arrow does; `ResultTable` answers in the
+    /// Modelica names its callers and the `.mat` reader use, so the two formats
+    /// agree. An enumeration is an `Int32` column that names a literal table.
     fn var_type(&self, idx: usize) -> &str {
-        self.meta.get(idx).map_or("Real", |m| m.2.as_str())
+        if self.enums.get(idx).is_some_and(Option::is_some) {
+            return "enumeration";
+        }
+        match self.meta.get(idx).map_or("", |m| m.2.as_str()) {
+            "Utf8" | "LargeUtf8" | "Binary" | "LargeBinary" | "String" => "String",
+            "Boolean" => "Boolean",
+            "Float32" | "Float64" | "Real" | "" => "Real",
+            // Every Arrow integer width, and the older `Integer` spelling.
+            _ => "Integer",
+        }
+    }
+    fn relative_quantity(&self, idx: usize) -> bool {
+        self.meta.get(idx).is_some_and(|m| m.3)
+    }
+    /// The encoding is the statement: a run-end encoded column is discrete-time.
+    fn discrete(&self, idx: usize) -> bool {
+        let Some(i) = self.allInfo.get(idx).filter(|i| !i.isParam && i.index != 0) else { return false };
+        self.ree.get(i.index.unsigned_abs() as usize - 1).copied().unwrap_or(false)
     }
     fn enumeration(&self, idx: usize) -> Option<Vec<String>> {
         self.enums.get(idx).cloned().flatten()
@@ -340,7 +423,7 @@ impl ResultTable for ArrowReader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, VarTy, no_strings, write_arrow};
+    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, VarTy, no_strings, write_arrow};
 
     /// A file another tool wrote with the enumeration as `Dictionary<Int32, Utf8>`
     /// (key = value - 1) reads like the `Int32` layout OpenModelica writes.
@@ -381,12 +464,12 @@ mod tests {
     fn enumerations_read_as_values_and_literals() {
         let e: Vec<String> = ["one", "two", "three"].map(String::from).to_vec();
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
+            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
         ];
         let rows = [0.0, 1.0, 0.5, 1.0, 1.0, 3.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[2.0], &[ColTy::F64, ColTy::I32], no_strings(), None);
+        let bytes = write_arrow(&vars, &rows, 2, &[2.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
         let mut r = ArrowReader::from_bytes(bytes).expect("readable");
         let v = r.find_var("e").expect("e");
         assert_eq!(r.var_type(v), "enumeration");
@@ -401,12 +484,12 @@ mod tests {
     #[test]
     fn a_file_without_footer_reads_up_to_the_last_block() {
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
         ];
         let rows: Vec<f64> = (0..7).flat_map(|i| [i as f64, 10.0 * i as f64]).collect();
         let mut out = Vec::new();
-        let mut s = ArrowStream::begin(&mut out, &vars, &[], &rows[..2], 2, &[ColTy::F64, ColTy::F64], 3, no_strings(), Some((0.0, 6.0)));
+        let mut s = ArrowStream::begin(&mut out, &vars, &[], &rows[..2], 2, &[ColTy::F64, ColTy::F64], 3, no_strings(), &FileMeta { span: Some((0.0, 6.0)), ..FileMeta::default() });
         s.push_rows(&mut out, &rows);
         // Two complete blocks (6 rows) are on disk; the seventh row is pending, no footer.
         let mut r = ArrowReader::from_bytes(out.clone()).expect("footerless file");
