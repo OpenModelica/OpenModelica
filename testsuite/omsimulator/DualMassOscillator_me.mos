@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf DualMassOscillator_me.py DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_me_systemCall.log temp-DualMassOscillator_me/
+// teardown_command: rm -rf DualMassOscillator_me.py DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_me_systemCall.log DualMassOscillator_me_oms.log temp-DualMassOscillator_me/
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 
@@ -31,6 +31,8 @@ model.setSolver(CRef('default', 'system1'), 'solver1')
 model.setSolver(CRef('default', 'system2'), 'solver1')
 
 instantiated_model = model.instantiate()
+# OMSimulator's step counts are not portable across FMU targets.
+instantiated_model.setLogFile('DualMassOscillator_me_oms.log')
 instantiated_model.setResultFile('')
 instantiated_model.setValue(CRef('default', 'system2', 's2_start'), 2.5)
 
@@ -70,12 +72,7 @@ readFile("DualMassOscillator_me_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'model.root': 0.001000
-// info:    No result file will be created
-// info:    Final Statistics for 'model.root':
-//          NumSteps = 1233 NumRhsEvals  = 1457 NumLinSolvSetups = 117
-//          NumNonlinSolvIters = 1456 NumNonlinSolvConvFails = 0 NumErrTestFails = 39
-// info:    Initialization
+// "info:    Initialization
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
