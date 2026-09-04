@@ -8252,6 +8252,7 @@ fn build_chunks(
 ) -> Result<Vec<usize>> {
     let first = pool.len();
     let mut i = 0usize;
+    let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(name);
     while i < units.len() || (pool.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty()))
     {
         let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, n_params);
@@ -8856,6 +8857,7 @@ pub(crate) fn lower_equation(
             ctx.emit(we::Instruction::Call(rt_index("rt_prof_add_ncall")?));
         }
     }
+    let _g = crate::CodegenWasmJitFunctions::PartGuard::new(format!("equation {}", eq_index_of(eq)));
     lower_equation_inner(ctx, eq, eq_index)?;
     crate::CodegenWasmJitFunctions::emit_prof(ctx, clock, "rt_prof_acc")
 }
@@ -9883,6 +9885,9 @@ pub(crate) fn iteration_var_slot(
     match vars.get(&key) {
         None => Ok(None),
         Some(slot) if slot.wty != WTy::F64 => {
+            record_error(format!(
+                "CodegenWasmJit: torn-system unknown `{key}` is not a Real variable"
+            ));
             Err("CodegenWasmJit: torn-system unknown is not a Real variable")
         }
         Some(slot) => Ok(Some(slot.off)),
@@ -10667,6 +10672,10 @@ fn build_nls_fns(
     jac_info: Option<&NlsJacInfo>,
     strict: Option<NlsJob>,
 ) -> Result<(we::Function, we::Function, Option<we::Function>, Option<we::Function>)> {
+    let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(&format!(
+        "nonlinear system {}",
+        nlsystem.index
+    ));
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());

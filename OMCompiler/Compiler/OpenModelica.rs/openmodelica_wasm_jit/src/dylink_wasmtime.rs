@@ -636,6 +636,7 @@ mod tests {
             lang: ExtLang::C,
             args: vec![(SigTy::Real, false)],
             ret: Some(SigTy::Real),
+            declare: false,
         };
         let functype = wasmtime::FuncType::new(
             &engine,
@@ -697,6 +698,7 @@ mod tests {
             lang: ExtLang::C,
             args: vec![(ints.clone(), false), (ints, true), (SigTy::Real, true)],
             ret: None,
+            declare: false,
         };
         let export = loaded.func("xorshift").unwrap().ty(&store);
         assert!(same_type(&export, &functype(&engine, &xorshift.wasm_sig_c_shared())));
@@ -707,6 +709,7 @@ mod tests {
             lang: ExtLang::C,
             args: vec![(SigTy::Str, false), (SigTy::Int, false)],
             ret: Some(SigTy::Str),
+            declare: false,
         };
         let export = loaded.func("greet").unwrap().ty(&store);
         assert!(same_type(&export, &functype(&engine, &greet.wasm_sig_c_shared())));

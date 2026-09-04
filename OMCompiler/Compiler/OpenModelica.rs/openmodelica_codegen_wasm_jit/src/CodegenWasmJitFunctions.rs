@@ -98,10 +98,10 @@ fn fn_context() -> String {
 }
 
 /// Sets `CURRENT_PART` until it drops, restoring the previous value.
-struct PartGuard(String);
+pub(crate) struct PartGuard(String);
 
 impl PartGuard {
-    fn new(part: String) -> Self {
+    pub(crate) fn new(part: String) -> Self {
         PartGuard(CURRENT_PART.with(|p| p.replace(part)))
     }
 }
@@ -109,6 +109,22 @@ impl PartGuard {
 impl Drop for PartGuard {
     fn drop(&mut self) {
         CURRENT_PART.with(|p| *p.borrow_mut() = std::mem::take(&mut self.0));
+    }
+}
+
+/// [`PartGuard`] for `CURRENT_FN`, which the equation functions have no
+/// `SimCodeFunction` to take a name from.
+pub(crate) struct FnNameGuard(String);
+
+impl FnNameGuard {
+    pub(crate) fn new(name: &str) -> Self {
+        FnNameGuard(CURRENT_FN.with(|f| f.replace(name.to_owned())))
+    }
+}
+
+impl Drop for FnNameGuard {
+    fn drop(&mut self) {
+        CURRENT_FN.with(|f| *f.borrow_mut() = std::mem::take(&mut self.0));
     }
 }
 
@@ -621,6 +637,7 @@ pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
         lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
         args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
         ret: if ret == "-" { None } else { parse_sig_types(ret)?.into_iter().next() },
+        declare: f.next() == Some("1"),
     })
 }
 
@@ -640,7 +657,8 @@ fn write_ext_sig(e: &ExtCallSig) -> String {
         None => ret.push('-'),
     }
     let lang = if e.lang == ExtLang::Fortran77 { 'F' } else { 'C' };
-    format!("{}\t{lang}\t{ret}\t{args}\t{outs}", e.name)
+    let declare = if e.declare { '1' } else { '0' };
+    format!("{}\t{lang}\t{ret}\t{args}\t{outs}\t{declare}", e.name)
 }
 
 /// A lowered function module and what its sidecar has to record: the main
@@ -1075,7 +1093,9 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
 /// wrapper's own signature).
 pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, includes, .. } =
+        f
+    else {
         return Err("CodegenWasmJit: external_import_sig on a non-external function");
     };
     let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
@@ -1099,7 +1119,7 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
         ExtLang::C => extName.to_string(),
         ExtLang::Fortran77 => format!("{extName}_"),
     };
-    Ok(ExtCallSig { name, lang, args, ret })
+    Ok(ExtCallSig { name, lang, args, ret, declare: includes.is_empty() })
 }
 
 /// The input/output scalar `SigTy`s of the main function, for the sidecar.
@@ -6183,8 +6203,15 @@ fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
 }
 
 /// Address of the sub-clock block `interval()`/`firstTick()` read.
-fn sub_clock_off(sim: &SimCtx) -> Result<u32> {
-    sim.sub_clock_off.ok_or("CodegenWasmJit: clock builtin outside a clocked partition")
+fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<u32> {
+    sim.sub_clock_off.ok_or_else(|| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: `{name}()` reads the active sub-clock, but the equation is not in a \
+             clocked partition{}",
+            fn_context()
+        ));
+        "CodegenWasmJit: clock builtin outside a clocked partition"
+    })
 }
 
 /// The `der(cr)` component reference: `cr` wrapped in a `$DER` qualifier, as the
@@ -6879,7 +6906,8 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                 return Ok(Some(wty));
             }
             crate::CodegenWasmJit::record_error(format!(
-                "CodegenWasmJit: simulation reference to unknown variable `{key}`"
+                "CodegenWasmJit: simulation reference to unknown variable `{key}`{}",
+                fn_context()
             ));
             return Err("CodegenWasmJit: simulation reference to unknown variable")
         }
@@ -9459,10 +9487,9 @@ fn compile_math_builtin(
             let w = compile_exp(ctx, argv[0])?;
             Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
         }
-        // `homotopy(actual, simplified)` = `simplified + lambda*(actual-simplified)`
-        // (C's `homotopy_` with `data->simulationInfo->lambda`). lambda is 1.0
-        // outside the continuation, so this is `actual` for the normal init and the
-        // non-initial partitions; the init driver sweeps lambda 0->1 on fallback.
+        // C's macro, and not interchangeable with the algebraically equal
+        // `s + lambda*(a - s)`: that rounds `a - s` to the ulp of the larger operand,
+        // quantizing a residual whose simplified branch is much bigger than itself.
         "homotopy" => {
             need_args(&argv, 2, name)?;
             let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
@@ -9474,13 +9501,17 @@ fn compile_math_builtin(
             coerce(ctx, s, WTy::F64);
             let st = ctx.alloc_temp(WTy::F64);
             ctx.emit(we::Instruction::LocalSet(st));
-            // simplified + lambda*(actual - simplified)
-            ctx.emit(we::Instruction::LocalGet(st));
+            let lam = ctx.alloc_temp(WTy::F64);
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
-            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalSet(lam));
             ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::F64Const(1.0.into()));
+            ctx.emit(we::Instruction::LocalGet(lam));
             ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalGet(lam));
             ctx.emit(we::Instruction::F64Mul);
             ctx.emit(we::Instruction::F64Add);
             Ok(SigTy::Real)
@@ -9610,13 +9641,13 @@ fn compile_math_builtin(
         // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
         // `daeExpCall` does: the backend already put the reference in that partition.
         "interval" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "interval")?) };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::F64Load(mem_arg(off + clock_field::SUB_PREV_INTERVAL, 3)));
             Ok(SigTy::Real)
         }
         "firstTick" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "firstTick")?) };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
             ctx.emit(we::Instruction::I32Const(1));
@@ -10765,12 +10796,45 @@ const OP_POW: i32 = 4;
 const OP_AND: i32 = 5;
 const OP_OR: i32 = 6;
 
+/// The element type of an array operation: the operator's own type, else an
+/// operand's, since both frontends leave arithmetic operators `T_UNKNOWN`. A
+/// *definite* scalar operator type over array operands is an inconsistent DAE, so
+/// that case is named rather than lowered.
+fn array_op_elem(ty: &DAE::Type, operands: [&DAE::Exp; 2]) -> Result<Arc<SigTy>> {
+    match sig_ty(ty) {
+        Ok(SigTy::Array { elem, .. }) => return Ok(elem),
+        Ok(_) => {}
+        Err(_) => {
+            for e in operands {
+                if let Ok(Some(elem)) = array_elem(e) {
+                    return Ok(elem);
+                }
+            }
+        }
+    }
+    let show = |x: &DAE::Exp| {
+        openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default()
+    };
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: array operator between `{}` and `{}` types neither as an array{}",
+        show(operands[0]),
+        show(operands[1]),
+        fn_context()
+    ));
+    Err("CodegenWasmJit: array operator with non-array type")
+}
+
+/// `exp_sigty` is best-effort: an `Err` means "unknown", not "not an array".
+fn is_array_exp(e: &DAE::Exp) -> bool {
+    matches!(exp_sigty(e), Ok(SigTy::Array { .. }))
+}
+
 /// Element-wise `a op b` over two same-shape arrays: produces a fresh array; the
 /// operand arrays are released after.
 fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, ty: &DAE::Type) -> Result<WTy> {
-    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        return Err("CodegenWasmJit: element-wise array op with non-array type");
-    };
+    let elem = array_op_elem(ty, [e1, e2])?;
     let rt = if elem.wty() == WTy::F64 { "rt_array_ew_f64" } else { "rt_array_ew_i32" };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
@@ -10834,12 +10898,16 @@ fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> 
 /// and scalar operands are found by type (so commutative forms accept either
 /// order); the array operand is released after.
 fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, rev: bool, ty: &DAE::Type) -> Result<WTy> {
-    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        return Err("CodegenWasmJit: array-scalar op with non-array type");
-    };
+    let elem = array_op_elem(ty, [e1, e2])?;
     let elem_wty = elem.wty();
     let rt = if elem_wty == WTy::F64 { "rt_array_scalar_f64" } else { "rt_array_scalar_i32" };
-    let (arr_e, scal_e) = if matches!(exp_sigty(e1)?, SigTy::Array { .. }) { (e1, e2) } else { (e2, e1) };
+    // By type where the frontend typed one, else by the operator's own convention:
+    // `rev` marks the scalar-first forms.
+    let arr_first = match (is_array_exp(e1), is_array_exp(e2)) {
+        (a, b) if a != b => a,
+        _ => !rev,
+    };
+    let (arr_e, scal_e) = if arr_first { (e1, e2) } else { (e2, e1) };
     compile_exp(ctx, arr_e)?;
     let at = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(at));
