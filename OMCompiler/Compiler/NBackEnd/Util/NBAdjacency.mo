@@ -522,6 +522,7 @@ public
       array<Integer> data = Vector.rawArray(m.data);
       array<Integer> start, len, out;
       Integer n = arrayLength(m.start), nnz = 0, idx, pos, first;
+      Boolean negated = false;
     algorithm
       start := arrayCreate(size, 1);
       len   := arrayCreate(size, 0);
@@ -533,6 +534,7 @@ public
           if idx > 0 and idx <= size then
             arrayUpdate(len, idx, len[idx] + 1);
             nnz := nnz + 1;
+            negated := negated or data[k] < 0;
           else
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(data[k]) + ".
               The variables have to be dense (without empty spaces) for this to work!"});
@@ -562,16 +564,18 @@ public
       end for;
 
       // then the negated ones, rows ascending so that -row descends
-      for r in 1:n loop
-        first := m.start[r];
-        for k in first:first + m.len[r] - 1 loop
-          idx := data[k];
-          if idx < 0 and -idx <= size then
-            arrayUpdate(out, start[-idx], -r);
-            arrayUpdate(start, -idx, start[-idx] + 1);
-          end if;
+      if negated then
+        for r in 1:n loop
+          first := m.start[r];
+          for k in first:first + m.len[r] - 1 loop
+            idx := data[k];
+            if idx < 0 and -idx <= size then
+              arrayUpdate(out, start[-idx], -r);
+              arrayUpdate(start, -idx, start[-idx] + 1);
+            end if;
+          end for;
         end for;
-      end for;
+      end if;
 
       for c in 1:size loop
         arrayUpdate(start, c, start[c] - len[c]);
