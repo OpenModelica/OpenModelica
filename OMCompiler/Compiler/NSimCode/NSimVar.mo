@@ -317,9 +317,11 @@ public
     function convert
       input SimVar simVar;
       output OldSimCodeVar.SimVar oldSimVar;
+    protected
+      DAE.ComponentRef name = ComponentRef.toDAE(simVar.name);
     algorithm
       oldSimVar := OldSimCodeVar.SIMVAR(
-        name                = ComponentRef.toDAE(simVar.name),
+        name                = name,
         varKind             = convertVarKind(simVar.varKind),
         comment             = simVar.comment,
         unit                = simVar.unit,
@@ -348,10 +350,25 @@ public
         matrixName          = simVar.matrixName,
         variability         = SOME(convertVariability(simVar.varKind)),
         initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
-        exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
+        exportVar           = convertExportVar(simVar.exportVar, simVar.name, name),
         relativeQuantity    = false,
         isConnectorFlow     = simVar.isConnectorFlow);
     end convert;
+
+    function convertExportVar
+      "the export variable is the variable itself unless something replaced it,
+      so the converted name is usually the same cref again"
+      input Option<ComponentRef> exportVar;
+      input ComponentRef varName;
+      input DAE.ComponentRef converted "varName converted";
+      output Option<DAE.ComponentRef> dcref;
+    algorithm
+      dcref := match exportVar
+        local ComponentRef cref;
+        case SOME(cref) then SOME(if referenceEq(cref, varName) then converted else ComponentRef.toDAE(cref));
+        else NONE();
+      end match;
+    end convertExportVar;
 
     function convertAttribute
       "Util.applyOption would build the partial application once per attribute
