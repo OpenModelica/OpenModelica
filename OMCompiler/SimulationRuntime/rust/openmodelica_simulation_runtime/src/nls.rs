@@ -55,6 +55,8 @@ struct Scratch {
     history: VecHistory,
     /// `solveHomotopy`'s residual scaling, which survives between calls.
     res_scaling: Vec<f64>,
+    /// C's `hybrdData->useXScaling`, which `solveHybrd` carries between calls.
+    use_xscaling: bool,
 }
 
 /// [`nls::History`] over a plain `Vec`: C's list is unbounded and reaches 40+, but
@@ -462,6 +464,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             pattern,
             history: VecHistory::default(),
             res_scaling: vec![0.0; size.max(1)],
+            use_xscaling: true,
         })) as *mut c_void;
     }
     omclog::close(omclog::NLS);
@@ -666,6 +669,7 @@ pub extern "C" fn solve_nonlinear_system(
             res_scaling: &mut sd.res_scaling,
             extrapolation,
             last_solved: &mut sys.lastTimeSolved,
+            use_xscaling: &mut sd.use_xscaling,
         };
         nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };

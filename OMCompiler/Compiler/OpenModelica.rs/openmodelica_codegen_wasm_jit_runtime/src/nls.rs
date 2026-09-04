@@ -941,6 +941,10 @@ struct MemBlock {
 }
 
 impl MemBlock {
+    /// The header's spare word, zeroed by `rt_alloc`: 0 is C's `useXScaling = 1`.
+    fn xscaling_off(&self) -> u32 {
+        self.hist_addr + 4
+    }
     fn last_solved(&self) -> u32 {
         self.hist_addr + 8
     }
@@ -1043,6 +1047,7 @@ pub extern "C" fn rt_solve_nls(
     block.read(block.scale(), &mut res_scaling);
     block.read(block.extrap(), &mut extrapolation);
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
+    let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
     let mut hist =
         MemHistory { count_addr: hist_addr, base: block.extrap() + (hist_n * 8) as u32, n: hist_n };
 
@@ -1070,12 +1075,14 @@ pub extern "C" fn rt_solve_nls(
             res_scaling: &mut res_scaling,
             extrapolation: &mut extrapolation,
             last_solved: &mut last_solved,
+            use_xscaling: &mut use_xscaling,
         };
         solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
     block.write(block.scale(), &res_scaling);
     block.write(block.extrap(), &extrapolation);
     unsafe { store_f64(block.last_solved(), last_solved) };
+    unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
     rt_free(model.x_ptr);
     rt_free(model.r_ptr);
