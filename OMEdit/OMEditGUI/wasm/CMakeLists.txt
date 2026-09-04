@@ -87,6 +87,8 @@ endforeach()
 # IS compiled: the wasm-jit run drives it via runWasmJitSimulation() and its
 # QProcess/QTcpServer paths are guarded out under __EMSCRIPTEN__.
 set(WASM_EXCLUDE_FILES
+  # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
+  "Cloud/OAuth2RedirectLoopback.cpp"
   "Simulation/OpcUaClient.cpp"
   "OMS/OMSSimulationOutputWidget.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
@@ -121,9 +123,18 @@ list(APPEND OMEDITLIB_SOURCES
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
   ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
   # Browser file picker / download, for the user's own filesystem.
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+  # localStorage persistence: settings, cloud mounts and their sync manifests.
+  ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+  # IndexedDB cache of the cloud working copies, so a reload does not re-download.
+  ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+  # OAuth popup + same-origin callback page (the desktop half is a loopback socket).
+  ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
-                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp PROPERTIES SKIP_AUTOMOC ON)
+                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp PROPERTIES SKIP_AUTOMOC ON)
 # The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
 # OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
 list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)

@@ -69,6 +69,8 @@
 QByteArray omcWorkerReadFile(const char *path);
 QStringList omcWorkerListDir(const char *path);
 bool omcWorkerWriteFile(const char *path, const QByteArray &data);
+bool omcWorkerRemoveFile(const char *path);
+bool omcWorkerRenameFile(const char *from, const char *to);
 
 // True if the page MEMFS already has the path (then the default engine handles it).
 EM_JS(int, omedit_memfs_exists, (const char *path), {
@@ -157,6 +159,35 @@ public:
     return true;
   }
 
+  // Without these QFile::remove/rename and QDir::rmdir fail on worker-owned paths,
+  // which the cloud sync engine needs to propagate a deletion. rmdir removes the
+  // whole subtree, since a store directory is only its keys.
+  bool remove() override
+  {
+    const bool ok = omcWorkerRemoveFile(mName.toUtf8().constData());
+    if (ok) invalidate();
+    return ok;
+  }
+
+  bool rmdir(const QString &path, bool recurseParents) const override
+  {
+    if (recurseParents) return false;
+    return omcWorkerRemoveFile(path.toUtf8().constData());
+  }
+
+  // The store overwrites on write, so an overwriting rename is the same operation.
+  // QSaveFile's temp-then-rename (how the sync manifest is written) needs it.
+  bool rename(const QString &newName) override { return renameOverwrite(newName); }
+
+  bool renameOverwrite(const QString &newName) override
+  {
+    if (!omcWorkerRenameFile(mName.toUtf8().constData(), newName.toUtf8().constData())) {
+      return false;
+    }
+    setFileName(newName);
+    return true;
+  }
+
   qint64 size() const override { ensureFetched(); return mExists ? mData.size() : 0; }
   qint64 pos() const override { return mPos; }
   bool seek(qint64 p) override
@@ -226,11 +257,17 @@ public:
 
   void setFileName(const QString &file) override
   {
-    mName = file; mFetched = false; mExists = false; mData.clear(); mPos = 0;
-    mDirFetched = false; mDirEntries.clear(); mWriting = false; mDirty = false;
+    mName = file;
+    invalidate();
   }
 
 private:
+  void invalidate()
+  {
+    mFetched = false; mExists = false; mData.clear(); mPos = 0;
+    mDirFetched = false; mDirEntries.clear(); mWriting = false; mDirty = false;
+  }
+
   bool ensureFetched() const
   {
     if (!mFetched) {
@@ -270,6 +307,10 @@ public:
     // Only absolute paths (Qt resources start with ':', relative paths don't start
     // with '/'). If the page MEMFS already has it, let the default engine serve it.
     if (fileName.isEmpty() || fileName.at(0) != QLatin1Char('/')) return nullptr;
+    // Page-local tree: settings, the cloud sync manifests, the session list. These
+    // are the main thread's own and are mirrored to IndexedDB, so they must stay in
+    // MEMFS — the "already exists" test below cannot see a file being created.
+    if (fileName.startsWith(QLatin1String("/persist/"))) return nullptr;
     if (omedit_memfs_exists(fileName.toUtf8().constData())) return nullptr;
     return std::make_unique<WorkerVfsFileEngine>(fileName);
   }

@@ -71,8 +71,13 @@ extern "C" {
 #include <QShortcut>
 #include <QRadioButton>
 #include <QTimer>
+#include <QSet>
+
+#include <functional>
 
 class OMCProxy;
+class CloudAccount;
+struct CloudMount;
 class TransformationsWidget;
 class LibraryWidget;
 class ElementWidget;
@@ -132,6 +137,13 @@ public:
   int getNumberOfProcessors() {return mNumberOfProcessors;}
   QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  /*!
+   * \brief Whether the Libraries Browser exists yet.
+   * omc messages can be delivered as queued calls while MainWindow is still being
+   * constructed - during library loading at startup - and anything that reaches
+   * into the library tree from there works on a pointer that is not set up.
+   */
+  bool isLibraryWidgetReady() const {return mpLibraryWidget != 0;}
   ElementWidget* getElementWidget() {return mpElementWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
@@ -298,7 +310,7 @@ private:
   QDockWidget *mpMessagesDockWidget;
   NavigationManagerView *mpNavigationManagerView = nullptr;
   QDockWidget *mpNavigationManagerDockWidget = nullptr;
-  LibraryWidget *mpLibraryWidget;
+  LibraryWidget *mpLibraryWidget = 0;
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
   QDockWidget *mpElementDockWidget;
@@ -354,6 +366,8 @@ private:
   QAction *mpUnloadAllAction;
   // Directory actions
   QAction *mpOpenDirectoryAction;
+  QAction *mpOpenFromCloudAction;
+  QAction *mpSaveToCloudAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -499,8 +513,20 @@ private:
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
+  //! Mounts with a synchronisation already running; a second one would race it.
+  QSet<QString> mSyncingMounts;
+  QHash<QString, QTimer *> mAutoPushTimers;
 signals:
   void resetMessagesTabWidgetNames();
+public:
+  void syncMount(const CloudMount &mount, CloudAccount *pAccount, const QString &title,
+                 const std::function<void()> &onSuccess = std::function<void()>(), bool background = false);
+  void openMountContents(const CloudMount &mount);
+  //! Opens a file, fetching its cloud folder first when the working copy is gone.
+  void openFileFetchingFromCloud(const QString &fileName, const QString &encoding);
+  //! Push a mount whose working copy was just written to, if it is set to auto-push.
+  void pushMountInBackground(const QString &mountId);
+
 public slots:
   void showMessageBrowser();
   void switchToWelcomePerspectiveSlot();
@@ -522,6 +548,8 @@ public slots:
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
   void openDirectory();
+  void openFromCloud();
+  void saveToCloud();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
   void openRecentFile();

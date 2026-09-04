@@ -32,6 +32,9 @@ import init, {
   wasi_path_filestat_get,
   wasi_readdir,
   wasi_write_file,
+  wasi_write_files,
+  wasi_remove,
+  wasi_rename,
   omc_take_pending_downloads,
   omc_take_plot_commands,
 } from "./omc/OpenModelicaCompiler.js";
@@ -281,6 +284,21 @@ self.onmessage = async (e) => {
       let ok = true;
       try { wasi_write_file(msg.path, msg.bytes); } catch (e) { ok = false; }
       self.postMessage({ kind: "vfsPutResult", id: msg.id, ok });
+    } else if (msg.cmd === "vfsPutMany") {
+      // Bulk write, for restoring a cached cloud package tree in one round trip
+      // rather than one per file. `written` lets the page verify completeness.
+      let written = 0;
+      try { written = wasi_write_files(msg.entries); } catch (e) { written = -1; }
+      self.postMessage({ kind: "vfsPutManyResult", id: msg.id, written });
+    } else if (msg.cmd === "vfsRemove") {
+      // File or whole subtree; the store's directories are implicit.
+      let ok = false;
+      try { ok = wasi_remove(msg.path); } catch (e) { ok = false; }
+      self.postMessage({ kind: "vfsRemoveResult", id: msg.id, ok });
+    } else if (msg.cmd === "vfsRename") {
+      let ok = false;
+      try { ok = wasi_rename(msg.from, msg.to); } catch (e) { ok = false; }
+      self.postMessage({ kind: "vfsRenameResult", id: msg.id, ok });
     } else if (msg.cmd === "vfsStat") {
       // WASI path_filestat_get's size (-1 if absent), for the file engine's size().
       let size;
