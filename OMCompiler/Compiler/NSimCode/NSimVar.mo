@@ -325,10 +325,10 @@ public
         unit                = simVar.unit,
         displayUnit         = simVar.displayUnit,
         index               = simVar.index,
-        minValue            = Util.applyOption(simVar.min, function Expression.toDAE(allowEmpty = false)),
-        maxValue            = Util.applyOption(simVar.max, function Expression.toDAE(allowEmpty = false)),
-        initialValue        = Util.applyOption(simVar.start, function Expression.toDAE(allowEmpty = false)),
-        nominalValue        = Util.applyOption(simVar.nominal, function Expression.toDAE(allowEmpty = false)),
+        minValue            = convertAttribute(simVar.min),
+        maxValue            = convertAttribute(simVar.max),
+        initialValue        = convertAttribute(simVar.start),
+        nominalValue        = convertAttribute(simVar.nominal),
         isFixed             = simVar.isFixed,
         type_               = Type.toDAE(simVar.type_),
         isDiscrete          = simVar.isDiscrete,
@@ -352,6 +352,19 @@ public
         relativeQuantity    = false,
         isConnectorFlow     = simVar.isConnectorFlow);
     end convert;
+
+    function convertAttribute
+      "Util.applyOption would build the partial application once per attribute
+      and variable, which is millions of closures on a scalarized model."
+      input Option<Expression> exp;
+      output Option<DAE.Exp> dexp;
+    algorithm
+      dexp := match exp
+        local Expression e;
+        case SOME(e) then SOME(Expression.toDAE(e, allowEmpty = false));
+        else NONE();
+      end match;
+    end convertAttribute;
 
     function convertCausality
       "Convert the new-backend Causality enum to the old SimCodeVar.Causality used
