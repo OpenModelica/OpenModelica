@@ -1692,28 +1692,46 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
     return Err("Unknown uri: {uri}")
 }
 
+/// `@MODELICA_SPEC_PLATFORM@`: the Modelica spec's `<os><bitness>`. macOS is
+/// darwin64 on aarch64 too, since its libraries are universal binaries.
+const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+    if Autoconf::is64Bit { "win64" } else { "win32" }
+} else if cfg!(target_os = "macos") {
+    if Autoconf::is64Bit { "darwin64" } else { "darwin32" }
+} else if Autoconf::is64Bit {
+    "linux64"
+} else {
+    "linux32"
+};
+
+/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows
+/// where it names the toolchain. The Rust port targets windows-msvc.
+const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWindows {
+    if Autoconf::is64Bit { "msvc64" } else { "msvc32" }
+} else {
+    const_str::concat!(Autoconf::target_arch_str, "-", Autoconf::os)
+};
+
 pub fn modelicaPlatform() -> ArcStr {
-    // Standardised platform name per the Modelica spec
-    // (linux32 / linux64 / win32 / win64 / darwin64).
-    let s = match (Autoconf::os, Autoconf::is64Bit) {
-        ("linux",  true)  => "linux64",
-        ("linux",  false) => "linux32",
-        ("Windows_NT", true)  => "win64",
-        ("Windows_NT", false) => "win32",
-        ("OSX", _)  => "darwin64",
-        _ => Autoconf::os,
-    };
-    ArcStr::from(s)
+    ArcStr::from(MODELICA_SPEC_PLATFORM)
 }
 
 pub fn openModelicaPlatform() -> ArcStr {
-    // OMC's preferred platform identifier — same as modelicaPlatform for
-    // now since we have no separate notion.
-    modelicaPlatform()
+    ArcStr::from(OPENMODELICA_SPEC_PLATFORM)
 }
 
+/// `@OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE@`: a second spelling to search,
+/// for Windows' ucrt64/mingw64 and for CMake's arm64 vs config.guess' aarch64.
+const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if Autoconf::isWindows {
+    ""
+} else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+    "arm64-darwin"
+} else {
+    ""
+};
+
 pub fn openModelicaPlatformAlternative() -> ArcStr {
-    literal!("")
+    ArcStr::from(OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE)
 }
 
 pub fn gccDumpMachine() -> ArcStr {
