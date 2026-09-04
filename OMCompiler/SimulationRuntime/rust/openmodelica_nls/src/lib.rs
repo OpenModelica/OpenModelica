@@ -355,6 +355,10 @@ pub struct NlsPersistent<'a> {
     pub res_scaling: &'a mut [f64],
     pub extrapolation: &'a mut [f64],
     pub last_solved: &'a mut f64,
+    /// C's `hybrdData->useXScaling`. `solveHybrd` restores `factor` and `mode` on
+    /// exit but not this, so the rung that turns scaling off leaves every later
+    /// solve of the system unscaled.
+    pub use_xscaling: &'a mut bool,
 }
 
 static EVAL_CONTEXT: AtomicU32 = AtomicU32::new(CONTEXT_ALGEBRAIC);
@@ -1885,6 +1889,7 @@ fn hybrd_c(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     mut jac: Option<&mut dyn FnMut(&[f64], &mut [f64])>,
     set_continuous: &mut dyn FnMut(bool),
+    use_xscaling: &mut bool,
 ) -> bool {
     use omclog;
     let log_v = omclog::active(omclog::NLS_V);
@@ -1934,7 +1939,6 @@ fn hybrd_c(
 
     let mut local_tol = 1.0e-12f64;
     let mut factor = initial_factor;
-    let mut use_xscaling = true;
     let mut continuous = true;
     let mut non_continuous = false;
     // C's `mode == 2`: the solver's own variable scaling replaced by ours.
@@ -1966,7 +1970,7 @@ fn hybrd_c(
             print_vector("scaling factors x vector", &xscale);
             print_vector("Iteration variable values", &xv);
         }
-        if use_xscaling {
+        if *use_xscaling {
             for i in 0..n {
                 xv[i] /= xscale[i];
             }
@@ -1979,7 +1983,7 @@ fn hybrd_c(
         let status = {
             let mut seval = |sx: &[f64], r: &mut [f64]| {
                 for i in 0..n {
-                    unscaled[i] = if use_xscaling { sx[i] * xscale[i] } else { sx[i] };
+                    unscaled[i] = if *use_xscaling { sx[i] * xscale[i] } else { sx[i] };
                 }
                 eval(&unscaled, r);
             };
@@ -1993,7 +1997,7 @@ fn hybrd_c(
                     let mut unscaled_j = vec![0.0f64; n];
                     let mut sjac = |sx: &[f64], fj: &mut [f64]| {
                         for i in 0..n {
-                            unscaled_j[i] = if use_xscaling { sx[i] * xscale[i] } else { sx[i] };
+                            unscaled_j[i] = if *use_xscaling { sx[i] * xscale[i] } else { sx[i] };
                         }
                         jac(&unscaled_j, fj);
                     };
@@ -2004,7 +2008,7 @@ fn hybrd_c(
                 ),
             }
         };
-        if use_xscaling {
+        if *use_xscaling {
             for i in 0..n {
                 xv[i] *= xscale[i];
             }
@@ -2133,7 +2137,7 @@ fn hybrd_c(
             log_rung("iteration making no progress:\t try old values as scaling factors.");
         } else if retries < 6 {
             restart(&mut xv, &nlsx);
-            use_xscaling = false;
+            *use_xscaling = false;
             retries += 1;
             log_rung("iteration making no progress:\t try without scaling at all.");
         } else if retries < 7 && discrete_call {
@@ -2144,7 +2148,7 @@ fn hybrd_c(
             log_rung(" - iteration making no progress:\t try to solve a discontinuous system.");
         } else if retries2 < 1 {
             xv.copy_from_slice(&warm);
-            use_xscaling = true;
+            *use_xscaling = true;
             continuous = true;
             factor = initial_factor;
             retries = 0;
@@ -2180,7 +2184,7 @@ fn hybrd_c(
         } else if retries3 < 1 {
             restart(&mut xv, &nlsx);
             diag = Some(vec![1.0f64; n]);
-            use_xscaling = true;
+            *use_xscaling = true;
             retries = 0;
             retries2 = 0;
             retries3 += 1;
@@ -3634,14 +3638,15 @@ pub fn solve_nls(
         fj.copy_from_slice(&jacbuf[..fj.len()]);
     };
 
-    // Per-system state: count | lastTimeSolved | resScaling[n] | nlsxExtrapolation[n]
+    // Per-system state: count | useXScaling | lastTimeSolved | resScaling[n] | nlsxExtrapolation[n]
     // | DEPTH × (time, x[n]).
     // `resScaling` is C's `homotopyData->resScaling`, which lives in the per-system
     // solver data and survives between calls, starting zeroed (= unscaled).
-    // The entries are C's `oldValueList`. Depth is what makes the exact-time hit
-    // below common: DASSL revisits an already-solved time on about half of all
-    // calls, and only a deep list still holds it.
+    // The entries are C's `oldValueList`, which reaches ~20 but is searched the
+    // same way: the exact-time hit below fires on ~2.5% of calls, and C's own
+    // list gives the same count.
     let hist = &mut *mem.history;
+    let use_xscaling = &mut *mem.use_xscaling;
     let mut res_scaling: alloc::vec::Vec<f64> = mem.res_scaling.to_vec();
 
     // C's `getInitialGuess`: the extrapolation to `time`, and `nlsxOld` = the newest
@@ -3933,7 +3938,7 @@ pub fn solve_nls(
                                 converged = hybrd_c(
                                     n, &mut x, &nlsx, &warm, &guess, &nominal, &bounds, &t, &mut eval,
                                     has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])),
-                                    &mut set_cont,
+                                    &mut set_cont, use_xscaling,
                                 );
                                 if !converged {
                                     best.copy_from_slice(&x);
@@ -3965,6 +3970,7 @@ pub fn solve_nls(
                     converged = hybrd_c(
                         n, &mut x, &nlsx, &warm, &guess, &nominal, &bounds, &t, &mut eval,
                         has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])), &mut set_cont,
+                        use_xscaling,
                     );
                     if !converged {
                         best.copy_from_slice(&x);
@@ -3976,6 +3982,7 @@ pub fn solve_nls(
                     converged = hybrd_c(
                         n, &mut x, &best, &warm, &guess, &nominal, &bounds, &t, &mut eval,
                         has_jac.then_some(&mut jaceval as &mut dyn FnMut(&[f64], &mut [f64])), &mut set_cont,
+                        use_xscaling,
                     );
                 }
                 // Not C's; these catch what C gives up on.
@@ -4382,7 +4389,10 @@ mod tests {
         };
         let mut cont = |_: bool| {};
         let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true, header: true };
-        assert!(hybrd_c(n, &mut x, &x_start, &warm, &x_start, &nominal, &bounds, &t, &mut eval, None, &mut cont));
+        assert!(hybrd_c(
+            n, &mut x, &x_start, &warm, &x_start, &nominal, &bounds, &t, &mut eval, None, &mut cont,
+            &mut true,
+        ));
         for i in 0..n {
             assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
         }
