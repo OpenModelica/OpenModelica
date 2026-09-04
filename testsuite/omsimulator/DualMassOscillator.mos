@@ -89,4 +89,5 @@ unloadOMSimulator();
 // info:    Simulation
 // info:      system1.s1: 0.9106072183175901
 // info:      system2.s2: 1.9563340441740862
+// info:    Logging information has been saved to "DualMassOscillator_oms.log"
 // endResult
