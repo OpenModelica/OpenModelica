@@ -73,6 +73,7 @@ pub fn decode(words: &[f64]) -> alloc::vec::Vec<SysStat> {
 // every bracket costs two clock reads, which on a host-driven wasm run are calls
 // out of wasm.
 
+use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 
@@ -90,6 +91,10 @@ struct Open {
 struct Table {
     on: bool,
     sys: Vec<SysStat>,
+    /// `sys` is indexed by equation, not scanned: a model with one system per
+    /// discretization volume solves O(n) of them per `functionODE`, so a scan
+    /// would make the bracket itself quadratic in the model.
+    index: BTreeMap<(i32, bool), usize>,
     open: Vec<Open>,
     /// Flattened [`SysStat::to_words`], kept alive for a wasm host to read out of
     /// linear memory.
@@ -99,7 +104,13 @@ struct Table {
 struct Store(UnsafeCell<Table>);
 unsafe impl Sync for Store {}
 static TABLE: Store =
-    Store(UnsafeCell::new(Table { on: false, sys: Vec::new(), open: Vec::new(), words: Vec::new() }));
+    Store(UnsafeCell::new(Table {
+        on: false,
+        sys: Vec::new(),
+        index: BTreeMap::new(),
+        open: Vec::new(),
+        words: Vec::new(),
+    }));
 
 #[inline]
 fn table() -> &'static mut Table {
@@ -116,6 +127,7 @@ pub fn enable(on: bool) {
     let t = table();
     t.on = on;
     t.sys.clear();
+    t.index.clear();
     t.open.clear();
     t.words.clear();
 }
@@ -127,11 +139,13 @@ pub fn enabled() -> bool {
 
 fn slot(eq_index: i32, nonlinear: bool, size: u32, nnz: u32) -> usize {
     let t = table();
-    if let Some(i) = t.sys.iter().position(|s| s.eq_index == eq_index && s.nonlinear == nonlinear) {
+    if let Some(&i) = t.index.get(&(eq_index, nonlinear)) {
         return i;
     }
     t.sys.push(SysStat { eq_index, nonlinear, size, nnz, ..SysStat::default() });
-    t.sys.len() - 1
+    let i = t.sys.len() - 1;
+    t.index.insert((eq_index, nonlinear), i);
+    i
 }
 
 /// Enter a system — C's `rt_ext_tp_tick(&linsys->totalTimeClock)` at the top of
