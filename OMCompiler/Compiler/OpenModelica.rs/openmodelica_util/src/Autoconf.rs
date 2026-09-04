@@ -252,7 +252,7 @@ pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
 /// `$host_cpu` for the compilation target. Extend the chain when porting to
 /// a new architecture — an explicit "unknown" keeps path construction
 /// greppable rather than silently wrong.
-const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
+pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
     "x86_64"
 } else if cfg!(target_arch = "aarch64") {
     "aarch64"
