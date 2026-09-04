@@ -334,25 +334,61 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
 /// no dependencies for an entry is saying "everything", which is a dense column
 /// — and an FMU with no `<ContinuousStateDerivative>` at all leaves the solvers
 /// to difference the matrix themselves.
-pub fn jacobian_sparsity(md: &ModelDescription, states: &[u32]) -> (Vec<Vec<u32>>, Vec<Vec<u32>>) {
+///
+/// An FMI 3.0 entry can stand for a whole array: as many rows as the derivative
+/// has elements, and a dependency on an array covers all of its columns. A
+/// `<ModelStructure>` that does not account for all `nx` states the FMU reports
+/// is left to the solver rather than half-assembled.
+pub fn jacobian_sparsity(md: &ModelDescription, nx: usize) -> (Vec<Vec<u32>>, Vec<Vec<u32>>) {
+    let none = (Vec::new(), Vec::new());
     let derivatives = &md.model_structure.continuous_state_derivatives;
-    if derivatives.len() != states.len() || states.is_empty() {
-        return (Vec::new(), Vec::new());
+    if derivatives.is_empty() || nx == 0 {
+        return none;
     }
-    let column_of: std::collections::HashMap<u32, u32> =
-        states.iter().enumerate().map(|(i, vr)| (*vr, i as u32)).collect();
-    let mut rows_by_col: Vec<Vec<u32>> = vec![Vec::new(); states.len()];
-    for (row, unknown) in derivatives.iter().enumerate() {
-        let Some(dependencies) = unknown.dependencies.as_ref() else {
-            // Unstated dependencies mean all of them.
-            for rows in rows_by_col.iter_mut() {
-                rows.push(row as u32);
-            }
-            continue;
+    // The states as the FMU holds them: one span of elements per entry.
+    let mut spans: Vec<(usize, usize)> = Vec::with_capacity(derivatives.len());
+    let mut column_of: std::collections::HashMap<u32, (usize, usize)> = Default::default();
+    let mut n = 0usize;
+    for unknown in derivatives {
+        let Some(state) = md
+            .variable_by_vr(unknown.value_reference)
+            .and_then(|d| d.derivative)
+            .and_then(|vr| md.variable_by_vr(vr))
+        else {
+            return none;
         };
-        for vr in dependencies {
-            if let Some(&col) = column_of.get(vr) {
-                rows_by_col[col as usize].push(row as u32);
+        let Some(len) = state.fixed_len().filter(|&l| l > 0) else { return none };
+        let span = (n, len as usize);
+        spans.push(span);
+        column_of.insert(state.value_reference, span);
+        n += len as usize;
+    }
+    if n != nx {
+        return none;
+    }
+    // Past this the row lists cost more than differencing the whole matrix.
+    const MAX_NONZEROS: usize = 32 << 20;
+    let mut nonzeros = 0usize;
+    for (unknown, &(_, rows)) in derivatives.iter().zip(&spans) {
+        let cols: usize = match unknown.dependencies.as_ref() {
+            None => nx,
+            Some(deps) => deps.iter().filter_map(|vr| column_of.get(vr)).map(|&(_, l)| l).sum(),
+        };
+        nonzeros = nonzeros.saturating_add(rows.saturating_mul(cols));
+    }
+    if nonzeros > MAX_NONZEROS {
+        return none;
+    }
+    let mut rows_by_col: Vec<Vec<u32>> = vec![Vec::new(); nx];
+    for (unknown, &(row, rows)) in derivatives.iter().zip(&spans) {
+        let mut mark = |col: usize| rows_by_col[col].extend((row..row + rows).map(|r| r as u32));
+        match unknown.dependencies.as_ref() {
+            // Unstated dependencies mean all of them.
+            None => (0..nx).for_each(&mut mark),
+            Some(deps) => {
+                for &(col, cols) in deps.iter().filter_map(|vr| column_of.get(vr)) {
+                    (col..col + cols).for_each(&mut mark);
+                }
             }
         }
     }
@@ -626,7 +662,7 @@ pub fn simulate(
     }
 
     let states = md.continuous_states();
-    let (colors, rows_by_col) = jacobian_sparsity(md, &states);
+    let (colors, rows_by_col) = jacobian_sparsity(md, nx);
     // `<ContinuousStateDerivative valueReference=…>` lists the derivatives in
     // the order the states are in, which is the order the Jacobian's rows are.
     let derivative_vrs: Vec<u32> = md
