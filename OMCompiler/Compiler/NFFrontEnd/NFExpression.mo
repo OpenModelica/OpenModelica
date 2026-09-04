@@ -443,7 +443,7 @@ public
       local
         Absyn.Path path;
 
-      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case INTEGER() then Util.hashIntegerDjb2Continue(exp.value, hash);
       case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
       case STRING() then stringHashDjb2Continue(exp.value, hash);
       case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);

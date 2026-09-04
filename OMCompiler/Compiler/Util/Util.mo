@@ -79,6 +79,31 @@ import System;
 public constant Integer HASH_SEED = 5381;
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
+public function hashIntegerDjb2Continue
+  "Bit-identical to stringHashDjb2Continue(intString(i), hash) without building
+   the string. The builtin wraps its accumulator at 32 bits and masks to 31 at
+   the end; masking to 31 every step gives the same 31 bits, and keeps every
+   constant inside a 32-bit Integer."
+  input Integer i;
+  input output Integer hash;
+protected
+  Integer v = i, div = 1;
+algorithm
+  if v < 0 then
+    hash := intBitAnd(hash * 33 + 45 /* '-' */, 2147483647);
+    v := -v;
+  end if;
+
+  while intDiv(v, div) >= 10 loop
+    div := div * 10;
+  end while;
+
+  while div > 0 loop
+    hash := intBitAnd(hash * 33 + 48 /* '0' */ + intMod(intDiv(v, div), 10), 2147483647);
+    div := intDiv(div, 10);
+  end while;
+end hashIntegerDjb2Continue;
+
 public function isIntGreater "Author: BZ"
   input Integer lhs;
   input Integer rhs;

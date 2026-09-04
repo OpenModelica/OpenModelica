@@ -1364,6 +1364,22 @@ public
     output Integer hash = hashContinue(sub, Util.HASH_SEED);
   end hash;
 
+  function hashStringContinue
+    "Same value as stringHashDjb2Continue(toString(sub), hash), but without
+    rendering the subscript for the integer index case that array subscripts
+    almost always are. Used where the hash has to stay stable, since it decides
+    UnorderedSet bucket order and with it the order of the generated code."
+    input Subscript sub;
+    input output Integer hash;
+  algorithm
+    hash := match sub
+      local
+        Integer i;
+      case INDEX(index = Expression.INTEGER(value = i)) then Util.hashIntegerDjb2Continue(i, hash);
+      else stringHashDjb2Continue(toString(sub), hash);
+    end match;
+  end hashStringContinue;
+
   function hashContinue
     input Subscript sub;
     input output Integer hash;
