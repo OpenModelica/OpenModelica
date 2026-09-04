@@ -126,7 +126,7 @@ uniontype InstNodeType
   end IMPLICIT_SCOPE;
 end InstNodeType;
 
-constant Integer NUMBER_OF_CACHES = 2;
+constant Integer NUMBER_OF_CACHES = 3;
 
 type PackageCacheState = enumeration(
   NOT_INITIALIZED,
@@ -150,6 +150,10 @@ uniontype CachedData
     Boolean typed;
     Boolean specialBuiltin;
   end FUNCTION;
+
+  record PARTIAL_DAE_TYPE
+    DAE.Type ty;
+  end PARTIAL_DAE_TYPE;
 
   function empty
     output array<CachedData> cache = arrayCreate(NUMBER_OF_CACHES, NO_CACHE());
@@ -208,6 +212,31 @@ uniontype CachedData
     input array<CachedData> in_caches;
     output CachedData out_cache = arrayGet(in_caches, 2);
   end getPackageCache;
+
+  // The builtin nodes share literal cache arrays that are shorter than
+  // NUMBER_OF_CACHES and must not be written to, hence the length checks.
+  function getTypeCache
+    input array<CachedData> in_caches;
+    output CachedData out_cache = if arrayLength(in_caches) >= 3 then arrayGet(in_caches, 3) else NO_CACHE();
+  end getTypeCache;
+
+  function setTypeCache
+    input array<CachedData> in_caches;
+    input CachedData in_cache;
+  algorithm
+    if arrayLength(in_caches) >= 3 then
+      arrayUpdate(in_caches, 3, in_cache);
+    end if;
+  end setTypeCache;
+
+  function clearTypeCache
+    input array<CachedData> in_caches;
+  algorithm
+    () := match getTypeCache(in_caches)
+      case PARTIAL_DAE_TYPE() algorithm arrayUpdate(in_caches, 3, NO_CACHE()); then ();
+      else ();
+    end match;
+  end clearTypeCache;
 
   function setPackageCache
     input array<CachedData> in_caches;
@@ -968,6 +997,7 @@ uniontype InstNode
       case CLASS_NODE()
         algorithm
           Pointer.update(node.cls, cls);
+          CachedData.clearTypeCache(node.caches);
         then
           node;
     end match;
@@ -1051,6 +1081,7 @@ uniontype InstNode
       case CLASS_NODE()
         algorithm
           node.nodeType := nodeType;
+          CachedData.clearTypeCache(node.caches);
         then
           ();
 
@@ -1918,7 +1949,9 @@ uniontype InstNode
   end setModifier;
 
   function toPartialDAEType
-    "Returns the DAE type for a class, without the list of variables filled in."
+    "Returns the DAE type for a class, without the list of variables filled in.
+    The result is cached: converting the crefs of a scalarized array asks for the
+    same class type once per element, and building the path is not cheap."
     input InstNode clsNode;
     output DAE.Type outType;
   algorithm
@@ -1936,11 +1969,19 @@ uniontype InstNode
             case Class.DAE_TYPE() then stripDAETypeVars(cls.ty);
 
             else
-              algorithm
-                res := Class.restriction(cls);
-                state := Restriction.toDAE(res, fullPath(clsNode));
-              then
-                DAE.Type.T_COMPLEX(state, {}, NONE(), Restriction.isExternalRecord(res));
+              match CachedData.getTypeCache(clsNode.caches)
+                local DAE.Type cached;
+                case CachedData.PARTIAL_DAE_TYPE(ty = cached) then cached;
+
+                else
+                  algorithm
+                    res := Class.restriction(cls);
+                    state := Restriction.toDAE(res, fullPath(clsNode));
+                    outType := DAE.Type.T_COMPLEX(state, {}, NONE(), Restriction.isExternalRecord(res));
+                    CachedData.setTypeCache(clsNode.caches, CachedData.PARTIAL_DAE_TYPE(outType));
+                  then
+                    outType;
+              end match;
 
           end match;
     end match;
