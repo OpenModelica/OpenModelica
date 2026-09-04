@@ -33,6 +33,10 @@ standalone = ["dep:daskr", "dep:openmodelica_plt_writer", "inwasm_solve"]
 inwasm_solve = ["dep:rsparse"]
 # Delegate the sparse solve to the host (`env.rt_host_lin_solve`); native interactive only.
 host_lin_solve = []
+# Count `rt_free` and the bytes either side of the allocator passes, so a run's
+# live heap shows up in the bench line. Two extra atomics on every allocation, so
+# it is off unless a leak is being chased; rebuild the runtime wasm to use it.
+heap_stats = []
 # `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
 # CVODE/IDA/KINSOL/KLU/UMFPACK/Lis calls undefined, as imports the FMU's SUNDIALS
 # side module resolves.

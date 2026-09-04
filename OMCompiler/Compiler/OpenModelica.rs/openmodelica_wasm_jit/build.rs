@@ -1520,7 +1520,16 @@ fn standalone_features(sundials_dir: Option<&Path>) -> String {
     if has_primme(sundials_dir) {
         f.push_str(",primme");
     }
+    f.push_str(&heap_stats_feature());
     f
+}
+
+/// `,heap_stats` when `OMC_WASM_HEAP_STATS` is set, else nothing. The runtime
+/// blobs below are built `--no-default-features`, so a feature that is only in
+/// the crate's `default` never reaches them.
+fn heap_stats_feature() -> String {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_HEAP_STATS");
+    if std::env::var_os("OMC_WASM_HEAP_STATS").is_some() { ",heap_stats".to_string() } else { String::new() }
 }
 
 /// Returns `Some((dir, key))` when `OMC_SUNDIALS_WASM_DIR` is set (the key is
@@ -1741,6 +1750,10 @@ fn build_wasip1_interactive_runtime(
     if has_primme(sundials_dir) {
         features.push_str(",primme");
     }
+    // This blob is built `--no-default-features`, so the runtime's `heap_stats`
+    // has to be asked for by name; an in-session simulation runs *this* runtime,
+    // not the JIT one, so without it the live-heap counters read zero.
+    features.push_str(&heap_stats_feature());
     // The feature set is part of the cache key: toggling the engine must rebuild.
     let stamp_val = format!("{hash}:{features}");
 
