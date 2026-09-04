@@ -34,6 +34,7 @@
  */
 
 #include "LSP/LSPClient.h"
+#include "LSP/LSPFileWatcher.h"
 #include "Util/Utilities.h"
 
 #include <QCoreApplication>
@@ -66,9 +67,12 @@ LSPClient::LSPClient(QObject *pParent)
     mpProcess(new QProcess(this)),
     mNextId(1),
     mInitialized(false),
+    mpFileWatcher(new LSPFileWatcher(this)),
     mIntentionalStop(false)
 {
   qRegisterMetaType<LSP::Location>("LSP::Location");
+  connect(mpFileWatcher, &LSPFileWatcher::filesChanged, this, &LSPClient::onWatchedFilesChanged);
+  connect(mpFileWatcher, &LSPFileWatcher::watchLimitReached, this, &LSPClient::onWatchLimitReached);
   // The server logs to stderr. Nothing here reads that channel, and an unread
   // channel accumulates in QProcess for the life of the process, so hand it to
   // OMEdit's own stderr instead of growing a buffer that is never drained.
@@ -138,6 +142,13 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
   hoverCapabilities["contentFormat"] = QJsonArray{QStringLiteral("plaintext"), QStringLiteral("markdown")};
   textDocumentCapabilities["hover"] = hoverCapabilities;
   capabilities["textDocument"] = textDocumentCapabilities;
+  // Accepting a dynamic registration is what lets the server ask to be told
+  // about files changed outside OMEdit; LSPFileWatcher does the watching.
+  QJsonObject workspaceCapabilities;
+  QJsonObject didChangeWatchedFilesCapabilities;
+  didChangeWatchedFilesCapabilities["dynamicRegistration"] = true;
+  workspaceCapabilities["didChangeWatchedFiles"] = didChangeWatchedFilesCapabilities;
+  capabilities["workspace"] = workspaceCapabilities;
   initializeParams["capabilities"] = capabilities;
 
   QJsonObject request;
@@ -176,6 +187,8 @@ void LSPClient::stop()
   mInitialized = false;
   mPendingRequests.clear();
   mOpenDocuments.clear();
+  mWatchedFileRegistrations.clear();
+  updateFileWatcher();
 }
 
 bool LSPClient::isRunning() const
@@ -219,6 +232,126 @@ void LSPClient::updateLibraries(const QStringList &libraries)
   notification["method"] = QStringLiteral("workspace/didChangeConfiguration");
   notification["params"] = params;
   sendMessage(notification);
+
+  // The watcher follows the same roots the server was told about.
+  updateFileWatcher();
+}
+
+/*!
+ * \brief LSPClient::handleRegisterCapability
+ * Records a dynamic registration. Only workspace/didChangeWatchedFiles is acted
+ * on; other registrations are accepted so the server's initialized handler runs
+ * to completion, but nothing is done with them.
+ * \param params registration parameters
+ */
+void LSPClient::handleRegisterCapability(const QJsonObject &params)
+{
+  bool watchedFilesChanged = false;
+  const QJsonArray registrations = params["registrations"].toArray();
+  for (const QJsonValue &value : registrations) {
+    const QJsonObject registration = value.toObject();
+    if (registration["method"].toString() != QStringLiteral("workspace/didChangeWatchedFiles")) {
+      continue;
+    }
+    QStringList patterns;
+    const QJsonArray watchers = registration["registerOptions"].toObject()["watchers"].toArray();
+    for (const QJsonValue &watcherValue : watchers) {
+      const QJsonValue globPattern = watcherValue.toObject()["globPattern"];
+      if (globPattern.isString()) {
+        patterns.append(globPattern.toString());
+      } else if (globPattern.isObject()) {
+        // A relative pattern carries the glob in "pattern"; its "baseUri" is
+        // ignored because the watched roots already bound the search.
+        patterns.append(globPattern.toObject()["pattern"].toString());
+      }
+    }
+    mWatchedFileRegistrations.insert(registration["id"].toString(), patterns);
+    watchedFilesChanged = true;
+  }
+  if (watchedFilesChanged) {
+    updateFileWatcher();
+  }
+}
+
+/*!
+ * \brief LSPClient::handleUnregisterCapability
+ * Drops a registration made earlier, stopping the file watcher when the last
+ * workspace/didChangeWatchedFiles registration goes away.
+ * \param params unregistration parameters
+ */
+void LSPClient::handleUnregisterCapability(const QJsonObject &params)
+{
+  bool watchedFilesChanged = false;
+  const QJsonArray unregistrations = params["unregisterations"].toArray();
+  for (const QJsonValue &value : unregistrations) {
+    if (mWatchedFileRegistrations.remove(value.toObject()["id"].toString()) > 0) {
+      watchedFilesChanged = true;
+    }
+  }
+  if (watchedFilesChanged) {
+    updateFileWatcher();
+  }
+}
+
+/*!
+ * \brief LSPClient::updateFileWatcher
+ * Points the file watcher at the current library roots, or shuts it down when
+ * the server has not asked to hear about file changes.
+ */
+void LSPClient::updateFileWatcher()
+{
+  if (mWatchedFileRegistrations.isEmpty()) {
+    mpFileWatcher->setRoots(QStringList());
+    return;
+  }
+  QStringList patterns;
+  for (auto it = mWatchedFileRegistrations.constBegin(); it != mWatchedFileRegistrations.constEnd(); ++it) {
+    patterns.append(it.value());
+  }
+  // Patterns first: they decide which files the roots are scanned for.
+  mpFileWatcher->setPatterns(patterns);
+  mpFileWatcher->setRoots(mLastLibraries);
+}
+
+/*!
+ * \brief LSPClient::onWatchedFilesChanged
+ * Forwards changes made on disk to the server.
+ * \param events files created, changed or deleted outside OMEdit
+ */
+void LSPClient::onWatchedFilesChanged(QList<LSP::FileEvent> events)
+{
+  if (!mInitialized) {
+    return;
+  }
+  QJsonArray changes;
+  for (const LSP::FileEvent &event : events) {
+    // A document open in an editor is already kept in step through
+    // textDocument/didChange. Reporting it here would make the server re-read
+    // the file from disk and lose the unsaved buffer it has been given.
+    if (mOpenDocuments.contains(event.uri)) {
+      continue;
+    }
+    QJsonObject change;
+    change["uri"] = event.uri;
+    change["type"] = static_cast<int>(event.type);
+    changes.append(change);
+  }
+  if (changes.isEmpty()) {
+    return;
+  }
+  QJsonObject params;
+  params["changes"] = changes;
+  QJsonObject notification;
+  notification["jsonrpc"] = QStringLiteral("2.0");
+  notification["method"] = QStringLiteral("workspace/didChangeWatchedFiles");
+  notification["params"] = params;
+  sendMessage(notification);
+}
+
+void LSPClient::onWatchLimitReached(int limit)
+{
+  emit logMessage(tr("Watching more than %1 library files. Files added, removed or replaced are still reported to the language "
+                     "server, but a file rewritten in place beyond this limit is not.").arg(limit), 2);
 }
 
 void LSPClient::openDocument(const QString &uri, const QString &languageId, const QString &text)
@@ -514,15 +647,24 @@ void LSPClient::processMessage(const QJsonObject &message)
     }
   } else if (message.contains("method")) {
     if (message.contains("id")) {
-      // A request from the server. Nothing is implemented, but the protocol
-      // requires a reply; a server that waits for one would otherwise stall.
-      QJsonObject error;
-      error["code"] = -32601; // MethodNotFound
-      error["message"] = QStringLiteral("Method not supported by OMEdit");
+      // A request from the server. The protocol requires a reply; a server that
+      // waits for one would otherwise stall.
       QJsonObject response;
       response["jsonrpc"] = QStringLiteral("2.0");
       response["id"] = message["id"];
-      response["error"] = error;
+      const QString method = message["method"].toString();
+      if (method == QStringLiteral("client/registerCapability")) {
+        handleRegisterCapability(message["params"].toObject());
+        response["result"] = QJsonValue::Null;
+      } else if (method == QStringLiteral("client/unregisterCapability")) {
+        handleUnregisterCapability(message["params"].toObject());
+        response["result"] = QJsonValue::Null;
+      } else {
+        QJsonObject error;
+        error["code"] = -32601; // MethodNotFound
+        error["message"] = QStringLiteral("Method not supported by OMEdit");
+        response["error"] = error;
+      }
       sendMessage(response);
       return;
     }

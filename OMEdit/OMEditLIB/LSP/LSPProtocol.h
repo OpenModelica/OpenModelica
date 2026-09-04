@@ -56,6 +56,18 @@ struct Location {
   bool isValid() const { return !uri.isEmpty(); }
 };
 
+//! A file changed on disk, as reported through workspace/didChangeWatchedFiles.
+struct FileEvent {
+  //! Values are the protocol's FileChangeType.
+  enum Type {
+    Created = 1,
+    Changed = 2,
+    Deleted = 3
+  };
+  QString uri;
+  Type type = Changed;
+};
+
 } // namespace LSP
 
 Q_DECLARE_METATYPE(LSP::Location)

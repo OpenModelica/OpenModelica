@@ -43,6 +43,9 @@
 #include <QHash>
 #include <QMap>
 #include <QJsonObject>
+#include <QStringList>
+
+class LSPFileWatcher;
 
 /*!
  * \class LSPClient
@@ -84,6 +87,8 @@ protected:
 
 private slots:
   void onReadyRead();
+  void onWatchedFilesChanged(QList<LSP::FileEvent> events);
+  void onWatchLimitReached(int limit);
   void onProcessError(QProcess::ProcessError error);
   void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
@@ -100,6 +105,10 @@ private:
   int mNextId;
   bool mInitialized;
   QMap<int, QString> mPendingRequests; // id -> method name, ordered so the oldest id is begin()
+  // Watches the library roots for files changed outside OMEdit. Only fed once
+  // the server has registered workspace/didChangeWatchedFiles.
+  LSPFileWatcher *mpFileWatcher;
+  QHash<QString, QStringList> mWatchedFileRegistrations; // registration id -> glob patterns
   QHash<QString, DocumentState> mOpenDocuments; // uri -> open state
 
   // Arguments of the most recent start(), reused to auto-restart after a crash.
@@ -117,6 +126,9 @@ private:
   void processMessage(const QJsonObject &message);
   void handleResponse(int id, const QString &method, const QJsonValue &result);
   void handleNotification(const QString &method, const QJsonObject &params);
+  void handleRegisterCapability(const QJsonObject &params);
+  void handleUnregisterCapability(const QJsonObject &params);
+  void updateFileWatcher();
   int nextId() { return mNextId++; }
   void logCrashEvent(const QString &line);
 

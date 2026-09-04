@@ -208,6 +208,7 @@ SOURCES += Util/Helper.cpp \
   MCP/MCPToolsSimulation.cpp \
   Search/FindUsageWidget.cpp \
   LSP/LSPClient.cpp \
+  LSP/LSPFileWatcher.cpp \
   LSP/ModelicaLSPClient.cpp \
   LSP/LSPSetupDialog.cpp
 
@@ -336,6 +337,7 @@ HEADERS  += Util/Helper.h \
   MCP/MCPServerPrivate.h \
   Search/FindUsageWidget.h \
   LSP/LSPClient.h \
+  LSP/LSPFileWatcher.h \
   LSP/ModelicaLSPClient.h \
   LSP/LSPProtocol.h \
   LSP/LSPSetupDialog.h
