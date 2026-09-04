@@ -12,7 +12,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use openmodelica_arrow_writer::{ArrowStream, ArrowVar, ColTy};
+use openmodelica_arrow_writer::{ArrowStream, ArrowVar, ColTy, FileMeta};
 use openmodelica_mat_writer::{Mat4Stream, MatVar};
 pub use openmodelica_mat_writer::Precision;
 use openmodelica_plt_writer::{PltKind, PltVar};
@@ -165,6 +165,7 @@ impl ResultStream {
             "arrow" => {
                 let kept = kept_params(meta, params, |i, _| keep[i]);
                 let vars = arrow_vars(meta, keep);
+                let units = openmodelica_arrow_writer::units::declared(meta.units.iter().cloned());
                 let mut ao = ArrowOut { out: &mut *out, ok: &mut ok };
                 let mut s = ArrowStream::begin(
                     &mut ao,
@@ -175,7 +176,7 @@ impl ResultStream {
                     &col_types(meta, precision),
                     openmodelica_arrow_writer::block_rows(sync),
                     resolve_strings(),
-                    Some((meta.start_time, meta.stop_time)),
+                    &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units },
                 );
                 s.set_sync(sync > 0);
                 Kind::Arrow(s)
@@ -459,6 +460,7 @@ fn arrow_vars<'a>(meta: &'a SimMeta, keep: &[bool]) -> Vec<ArrowVar<'a>> {
             comment: &v.comment,
             unit: &v.unit,
             display_unit: &v.display_unit,
+            relative_quantity: v.relative_quantity,
             ty: v.ty,
             discrete: v.discrete,
             kind: v.kind.arrow(),
@@ -488,7 +490,8 @@ fn col_types(meta: &SimMeta, precision: Precision) -> Vec<ColTy> {
 pub fn arrow(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &[bool], precision: Precision) -> Vec<u8> {
     let kept = kept_params(meta, params, |i, _| keep[i]);
     let vars = arrow_vars(meta, keep);
-    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), Some((meta.start_time, meta.stop_time)))
+    let units = openmodelica_arrow_writer::units::declared(meta.units.iter().cloned());
+    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units })
 }
 
 /// C's `simulation_result_plt` omits integer and boolean parameters.

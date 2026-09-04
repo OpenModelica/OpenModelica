@@ -329,7 +329,8 @@ pub fn omc_abi(request: &str) -> String {
 // [`omc_sim_series`] and [`omc_sim_column`].
 
 /// Metadata for the last run's signals (excluding `time`): an array of
-/// `{ name, comment, constant, alias }`. `constant` marks parameters/constants and
+/// `{ name, comment, unit, displayUnit, relativeQuantity, constant, alias }`.
+/// `unit` and `displayUnit` name entries of [`omc_sim_units`]. `constant` marks parameters/constants and
 /// signals that never change; `alias` marks a signal that reads the *same stored
 /// column* as an earlier one (the `.mat`'s `dataInfo` aliasing — distinct columns
 /// are distinct signals). The plot shows only `!constant && !alias`. Empty if no run.
@@ -342,6 +343,8 @@ pub fn omc_sim_series() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&s.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&s.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&s.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&s.display_unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(s.relative_quantity));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("constant"), &JsValue::from_bool(s.constant));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("alias"), &JsValue::from_bool(s.alias));
             arr.push(&item);
@@ -351,8 +354,9 @@ pub fn omc_sim_series() -> JsValue {
 }
 
 /// The last run's editable initial conditions: an array of `{ name, comment,
-/// unit, value }`, plus `enumNames` for an enumeration (its value is the 1-based
-/// index). Feed edits back via `-override=name=value` on the next simulate.
+/// unit, displayUnit, relativeQuantity, value }`, plus `enumNames` for an
+/// enumeration (its value is the 1-based index). Feed edits back via
+/// `-override=name=value` on the next simulate, in the variable's own `unit`.
 #[wasm_bindgen]
 pub fn omc_sim_parameters() -> JsValue {
     let arr = js_sys::Array::new();
@@ -362,6 +366,8 @@ pub fn omc_sim_parameters() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&p.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&p.display_unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(p.relative_quantity));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
             if !p.enum_names.is_empty() {
                 let names = js_sys::Array::new();
@@ -374,6 +380,33 @@ pub fn omc_sim_parameters() -> JsValue {
         }
     });
     arr.into()
+}
+
+/// The display units of the last run's units: `{ "K": [{ name, factor, offset,
+/// inverse }], ... }`, the same shape the FMI simulator gets from an FMU's
+/// `<UnitDefinitions>`. A value in the unit shows as `factor * v + offset`
+/// (`factor / v` when `inverse`); a `relativeQuantity` signal drops the offset.
+#[wasm_bindgen]
+pub fn omc_sim_units() -> JsValue {
+    let map = js_sys::Object::new();
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        for u in &sim.units {
+            if u.display_units.is_empty() {
+                continue;
+            }
+            let list = js_sys::Array::new();
+            for d in &u.display_units {
+                let item = js_sys::Object::new();
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&d.name));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("factor"), &JsValue::from_f64(d.factor));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("offset"), &JsValue::from_f64(d.offset));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("inverse"), &JsValue::from_bool(d.inverse));
+                list.push(&item);
+            }
+            let _ = js_sys::Reflect::set(&map, &JsValue::from_str(&u.name), &list);
+        }
+    });
+    map.into()
 }
 
 /// `{ model, start, stop, rows }` for the last run, or `null` if none.

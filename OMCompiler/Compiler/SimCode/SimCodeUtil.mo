@@ -132,6 +132,9 @@ import SymbolicJacobian;
 import SymbolTable;
 import System;
 import TypesDump;
+import UnitAbsyn;
+import UnitAbsynBuilder;
+import UnitParserExt;
 import Util;
 import ValuesUtil;
 import VisualXML;
@@ -9792,20 +9795,77 @@ algorithm
           unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
         end try;
       end if;
+      // A variable may only name a display unit that is itself declared.
+      if not stringEq(var.displayUnit, "") and not stringEq(var.displayUnit, var.unit)
+         and not BaseHashSet.has(var.displayUnit, unitNameKeys) then
+        unitNameKeys := BaseHashSet.add(var.displayUnit, unitNameKeys);
+        unitDefinitions := displayUnitDefinition(var.unit, var.displayUnit) :: unitDefinitions;
+      end if;
     end if;
   end for;
 end getFmiUnitDefinitionsHelper;
 
+protected function displayUnitDefinition
+  "The display unit as a unit in its own right: the dimensions of the unit it
+   displays, and the factor and offset taking a value in it to SI."
+  input String unit;
+  input String displayUnit;
+  output SimCode.UnitDefinition definition;
+protected
+  Integer s, m, kg, A, K, mol, cd;
+  Real factor, offset, toUnit, toUnitOffset;
+  Boolean converts;
+algorithm
+  try
+    SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor, offset) :=
+      transformUnitToBaseUnit(Unit.parseUnitString(unit));
+    // Compose value_unit = toUnit*value_display + toUnitOffset with the unit's
+    // own value_SI = factor*value_unit + offset.
+    (converts, toUnit, toUnitOffset) := unitConversion(unit, displayUnit);
+    true := converts;
+    definition := SimCode.UNITDEFINITION(displayUnit,
+      SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*toUnit, factor*toUnitOffset + offset));
+  else
+    // No dimensions, so nothing nests it and no variable may name it.
+    definition := SimCode.UNITDEFINITION(displayUnit, SimCode.NOBASEUNIT());
+  end try;
+end displayUnitDefinition;
+
+public function unitConversion
+  "CevalScriptBackend's convertUnits: value_to = factor*value_from + offset, and
+   false where the two are of different dimensions."
+  input String to;
+  input String from;
+  output Boolean converts = false;
+  output Real factor = 1.0;
+  output Real offset = 0.0;
+protected
+  UnitAbsyn.Unit u1, u2;
+  Real factor1, factor2, offset1, offset2;
+algorithm
+  try
+    UnitParserExt.initSIUnits();
+    (u1, factor1, offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(to, NONE());
+    (u2, factor2, offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(from, NONE());
+    true := valueEq(u1, u2);
+    factor := factor2/factor1;
+    offset := (offset2 - offset1)/factor1;
+    converts := true;
+  else
+  end try;
+end unitConversion;
+
 public function transformUnitToBaseUnit
-  "translate Unit.UNIT to SimCode.BASEUNIT"
+  "translate Unit.UNIT to SimCode.BASEUNIT. NFUnit counts mass in grams, so the
+   factor picks up 10^-3 per kg; the offset is already in SI."
   input Unit.Unit unit;
   output SimCode.BaseUnit baseUnit;
 protected
   Integer mol, cd, m, s, A, K, kg;
-  Real factor;
+  Real factor, offset;
 algorithm
-  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
-  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
+  Unit.UNIT(s, m, kg, A, K, mol, cd, factor, offset) := unit;
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), offset);
 end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw

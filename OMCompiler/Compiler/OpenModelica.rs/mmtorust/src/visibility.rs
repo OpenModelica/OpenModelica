@@ -73,6 +73,9 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the FMI 2.0 wasm FMU
     // ships these offsets for its loader.
     "SimCodeUtil.getFMI2ValueReferenceOffsets",
+    // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the arrow result
+    // file's `modelica.units` needs the unit database's display conversions.
+    "SimCodeUtil.unitConversion",
 ];
 
 /// Result of [`analyze`]: the set of function FQNs that must keep full `pub`

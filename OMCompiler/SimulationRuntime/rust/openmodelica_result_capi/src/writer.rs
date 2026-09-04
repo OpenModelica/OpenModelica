@@ -14,7 +14,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
 use std::sync::{LazyLock, Mutex};
 
-use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, Resolve, VarTy};
+use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, Resolve, VarTy};
 use openmodelica_mat_writer::{Mat4Stream, MatKind, MatVar, Neg, Precision};
 use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar, write_plt};
 use openmodelica_result_files::cmp::format_g_prec;
@@ -47,6 +47,8 @@ pub struct omc_result_signal {
     pub negate: c_int,
     /// `OMC_RESULT_KIND_COLUMN` computed once at initialization: stored like a parameter.
     pub unvarying: c_int,
+    /// FMI's `relativeQuantity` (Modelica's `absoluteValue = false`).
+    pub relative_quantity: c_int,
 }
 
 struct Signal {
@@ -54,6 +56,7 @@ struct Signal {
     description: String,
     unit: String,
     display_unit: String,
+    relative_quantity: bool,
     ty: VarTy,
     discrete: bool,
     kind: c_int,
@@ -120,6 +123,7 @@ impl Signal {
             description: cstr(s.description),
             unit: cstr(s.unit),
             display_unit: cstr(s.display_unit),
+            relative_quantity: s.relative_quantity != 0,
             ty: match s.type_ {
                 OMC_RESULT_TYPE_INTEGER => VarTy::Integer,
                 OMC_RESULT_TYPE_BOOLEAN => VarTy::Boolean,
@@ -302,6 +306,7 @@ fn open(
                     comment: &s.description,
                     unit: &s.unit,
                     display_unit: &s.display_unit,
+                    relative_quantity: s.relative_quantity,
                     ty: s.ty,
                     discrete: s.discrete,
                     kind: match s.kind {
@@ -323,7 +328,10 @@ fn open(
                 &types,
                 openmodelica_arrow_writer::block_rows(sync),
                 resolve(),
-                Some((start, stop)),
+                // The C runtime reads its variable attributes from `_init.xml`,
+                // which carries no unit definitions: a file it writes leans on
+                // the predefined units alone.
+                &FileMeta { span: Some((start, stop)), units: &[] },
             );
             s.set_sync(sync > 0);
             Kind::Arrow(s)

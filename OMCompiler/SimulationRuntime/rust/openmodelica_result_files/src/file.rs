@@ -4,7 +4,8 @@
 
 use std::collections::HashMap;
 
-use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, VarTy};
+use openmodelica_arrow_writer::units::{self, UnitDef};
+use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, FileMeta, VarTy};
 use openmodelica_mat_writer::{MatKind, MatVar, Neg, Precision, write_mat4};
 
 use crate::cmp::{cmp_data_tubes, format_g_prec15};
@@ -66,6 +67,36 @@ impl ResultFile {
 
     pub fn display_unit(&self, var: &str) -> String {
         self.info(var, |t, i| t.unit(i).1.to_owned()).unwrap_or_default()
+    }
+
+    /// Every unit the file's variables name, defined — the conversions a plot
+    /// needs to show a value in its display unit. Empty for a format with no
+    /// unit table.
+    pub fn unit_defs(&self) -> Vec<UnitDef> {
+        match &self.reader {
+            ResultReader::Arrow(r) => r.unit_defs(),
+            _ => Vec::new(),
+        }
+    }
+
+    /// The definition of one unit, the predefined set included.
+    pub fn unit_def(&self, name: &str) -> Option<UnitDef> {
+        match &self.reader {
+            ResultReader::Arrow(r) => r.unit_def(name),
+            _ => units::predefined(name),
+        }
+    }
+
+    /// Whether the variable is a difference in its unit rather than an absolute
+    /// value, so a display-unit conversion must not apply the offset.
+    pub fn relative_quantity(&self, var: &str) -> bool {
+        self.info(var, |t, i| t.relative_quantity(i)).unwrap_or(false)
+    }
+
+    /// Whether the variable is discrete-time, which in an `.arrow` file is the
+    /// column's run-end encoding rather than a metadata key.
+    pub fn discrete(&self, var: &str) -> bool {
+        self.info(var, |t, i| t.discrete(i)).unwrap_or(false)
     }
 
     /// `Real`, `Integer`, `Boolean`, `String` or `enumeration`; `Real` for a
@@ -204,10 +235,11 @@ impl ResultFile {
                     MatKind::Param { negate } => ArrowKind::Param { affine: affine(negate) },
                     MatKind::Const { value } => ArrowKind::Const { value },
                 };
-                ArrowVar { name: &sg.name, comment: &sg.descr, unit: &sg.unit, display_unit: &sg.display_unit, ty, discrete: false, kind, unvarying: false, enumeration: sg.enumeration.as_deref() }
+                ArrowVar { name: &sg.name, comment: &sg.descr, unit: &sg.unit, display_unit: &sg.display_unit, relative_quantity: sg.relative_quantity, ty, discrete: sg.discrete, kind, unvarying: false, enumeration: sg.enumeration.as_deref() }
             })
             .collect();
-        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), Some((p.start, p.stop))))
+        let units = units::declared(self.unit_defs());
+        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units }))
     }
 
     /// The selected signals over the distinct columns they read (time first),
@@ -225,6 +257,8 @@ impl ResultFile {
             descr: String::new(),
             unit: if time_unit.is_empty() { "s".to_owned() } else { time_unit },
             display_unit: String::new(),
+            relative_quantity: false,
+            discrete: false,
             ty: "Real".to_owned(),
             enumeration: None,
             kind: MatKind::Time,
@@ -234,6 +268,8 @@ impl ResultFile {
         let mut column_of: HashMap<u32, u32> = HashMap::new();
         for var in &vars {
             let descr = self.description(var);
+            let relative_quantity = self.relative_quantity(var);
+            let discrete = self.discrete(var);
             let (storage, unit, display_unit, ty, enumeration) = match self.info(var, |t, i| {
                 let (u, du) = t.unit(i);
                 ((t.all_info()[i].isParam, t.all_info()[i].index), u.to_owned(), du.to_owned(), t.var_type(i).to_owned(), t.enumeration(i))
@@ -275,7 +311,7 @@ impl ResultFile {
                     MatKind::Column { col: columns.len() as u32, negate: Neg::None }
                 }
             };
-            signals.push(Signal { name: var.clone(), descr, unit, display_unit, ty, enumeration, kind });
+            signals.push(Signal { name: var.clone(), descr, unit, display_unit, relative_quantity, discrete, ty, enumeration, kind });
         }
         let n_reals = 1 + columns.len();
         let mut rows = Vec::with_capacity(n_rows * n_reals);
@@ -334,6 +370,8 @@ struct Signal {
     descr: String,
     unit: String,
     display_unit: String,
+    relative_quantity: bool,
+    discrete: bool,
     ty: String,
     enumeration: Option<Vec<String>>,
     kind: MatKind,

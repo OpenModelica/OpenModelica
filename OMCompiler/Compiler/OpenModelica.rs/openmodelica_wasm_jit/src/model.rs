@@ -64,6 +64,9 @@ pub struct SimModel {
     pub state_sets: Vec<StateSetInfo>,
     /// ODE state Jacobian ∂f/∂x sparsity + coloring; `None` ⇒ daskr's numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
+    /// Some nonlinear system takes the density rule's sparse default, decided at
+    /// codegen: kinsol+KLU, which an FMU export has to link for.
+    pub sparse_nls: bool,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
@@ -539,6 +542,11 @@ pub struct EditableParam {
     pub name: String,
     pub comment: String,
     pub unit: String,
+    /// The unit it is preferably shown and typed in, a display unit of `unit`.
+    pub display_unit: String,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
     pub off: u32,
     pub wty: WTy,
     /// A state's start value (vs. a plain parameter): overridden after `functionInitStartValues`.

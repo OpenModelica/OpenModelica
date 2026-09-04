@@ -23,6 +23,7 @@ openmodelica_mat_reader/Cargo.toml
 openmodelica_mat_reader/src/lib.rs
 openmodelica_arrow_writer/Cargo.toml
 openmodelica_arrow_writer/src/lib.rs
+openmodelica_arrow_writer/src/units.rs
 openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
 openmodelica_nls/Cargo.toml

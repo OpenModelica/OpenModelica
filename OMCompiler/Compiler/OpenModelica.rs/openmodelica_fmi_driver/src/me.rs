@@ -27,7 +27,7 @@ use openmodelica_solvers::fixedstep::{FixedKind, FixedStep};
 use openmodelica_solvers::gbode::{GbStep, Gbode};
 #[cfg(sundials)]
 use openmodelica_solvers::sundials_ode::{CvodeOde, IdaDae, IdaOde, SunStep};
-use openmodelica_solvers::{Dae, Ode};
+use openmodelica_solvers::{Dae, DaeSparsity, Ode};
 
 pub struct Run {
     pub recorder: Recorder,
@@ -57,6 +57,9 @@ struct DaeVrs {
     der_vrs: Vec<u32>,
     /// The residuals, one per row of `F`.
     res_vrs: Vec<u32>,
+    /// The residual Jacobian's sparsity, out of the manifest's `dependencies`;
+    /// `None` when the manifest states none, which means a dense Jacobian.
+    sparsity: Option<DaeSparsity>,
 }
 
 /// The FMU as an ODE: set the time and the states, then read the derivatives or
@@ -257,6 +260,10 @@ fn is_discard(e: &Error) -> bool {
 }
 
 impl Dae for FmuOde<'_> {
+    fn sparsity(&self) -> Option<&DaeSparsity> {
+        self.dae.as_ref().and_then(|d| d.sparsity.as_ref())
+    }
+
     fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> openmodelica_solvers::Result<()> {
         if self.past_deadline() {
             return Err(self.note(Error::Alarm));
@@ -326,7 +333,54 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
             alg_vrs.len()
         )));
     }
-    Ok(DaeVrs { nx, alg_vrs, der_vrs, res_vrs })
+    let sparsity = dae_sparsity(md, m, nx, &alg_vrs, &der_vrs);
+    Ok(DaeVrs { nx, alg_vrs, der_vrs, res_vrs, sparsity })
+}
+
+/// The residual Jacobian's sparsity out of the manifest's `<Formulation
+/// dependencies=…>`: for each residual, which of `y = [states | algebraic]` it
+/// reaches. A state's column collects the rows reached through either `x` or
+/// `der(x)`, since one difference quotient carries `∂F/∂x + cj·∂F/∂der(x)`
+/// together — which is why the exporter lists both for a state column.
+///
+/// `None` unless every residual states its dependencies: one that does not means
+/// "all of them", and a Jacobian with a dense row is no cheaper to difference
+/// sparsely than to let IDA build itself.
+fn dae_sparsity(
+    md: &ModelDescription,
+    m: &openmodelica_fmi::lsdae::Manifest,
+    nx: usize,
+    alg_vrs: &[u32],
+    der_vrs: &[u32],
+) -> Option<DaeSparsity> {
+    let mut column_of: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+    for (col, vr) in md.continuous_states().iter().enumerate() {
+        column_of.insert(*vr, col);
+    }
+    for (col, vr) in der_vrs.iter().enumerate() {
+        column_of.insert(*vr, col);
+    }
+    for (k, vr) in alg_vrs.iter().enumerate() {
+        column_of.insert(*vr, nx + k);
+    }
+    let n = nx + alg_vrs.len();
+    if column_of.len() < n {
+        return None; // a state without a value reference of its own
+    }
+    let mut rows_by_col: Vec<Vec<u32>> = vec![Vec::new(); n];
+    // The same flattening `Manifest::residual_vrs` uses, so the rows line up.
+    for (row, f) in m.residuals.iter().flat_map(|r| r.formulations.iter()).enumerate() {
+        let deps = f.dependencies.as_ref()?;
+        for col in deps.iter().filter_map(|vr| column_of.get(vr)) {
+            rows_by_col[*col].push(row as u32);
+        }
+    }
+    for rows in &mut rows_by_col {
+        rows.sort_unstable();
+        rows.dedup();
+    }
+    let colors = greedy_colors(&rows_by_col);
+    Some(DaeSparsity { rows_by_col, colors })
 }
 
 /// The ODE Jacobian's sparsity as `<ModelStructure>` gives it: for each state
@@ -392,14 +446,18 @@ pub fn jacobian_sparsity(md: &ModelDescription, nx: usize) -> (Vec<Vec<u32>>, Ve
             }
         }
     }
-    // Greedy colouring: two columns share a colour when no row is nonzero in
-    // both, so one perturbation differences them together.
+    let colors = greedy_colors(&rows_by_col);
+    (colors, rows_by_col)
+}
+
+/// Greedy colouring: two columns share a colour when no row is nonzero in both,
+/// so one perturbation differences them together.
+fn greedy_colors(rows_by_col: &[Vec<u32>]) -> Vec<Vec<u32>> {
     let mut colors: Vec<Vec<u32>> = Vec::new();
     let mut used: Vec<std::collections::HashSet<u32>> = Vec::new();
     for (col, rows) in rows_by_col.iter().enumerate() {
-        let free = colors.iter().enumerate().position(|(c, _)| {
-            !rows.iter().any(|row| used[c].contains(row))
-        });
+        let free =
+            colors.iter().enumerate().position(|(c, _)| !rows.iter().any(|row| used[c].contains(row)));
         let c = match free {
             Some(c) => c,
             None => {
@@ -411,7 +469,7 @@ pub fn jacobian_sparsity(md: &ModelDescription, nx: usize) -> (Vec<Vec<u32>>, Ve
         colors[c].push(col as u32);
         used[c].extend(rows.iter().copied());
     }
-    (colors, rows_by_col)
+    colors
 }
 
 /// The solvers a Model Exchange run can use. `gbode`, CVODE and IDA bring their

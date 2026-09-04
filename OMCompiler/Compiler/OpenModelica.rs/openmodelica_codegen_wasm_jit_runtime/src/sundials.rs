@@ -79,6 +79,22 @@ mod groups {
     ask!(driver);
 }
 
+/// Whether KINSOL is linked. Only an FMU answers no: what its export left out is a
+/// stub that traps, and no flag records the density rule's choice of KINSOL.
+pub(crate) fn have_kinsol() -> bool {
+    groups::kinsol()
+}
+
+/// The same for KLU.
+pub(crate) fn have_klu() -> bool {
+    groups::klu()
+}
+
+/// The same for UMFPACK.
+pub(crate) fn have_umfpack() -> bool {
+    groups::umfpack()
+}
+
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports
 /// success and its values land where [`klu::Common`] mirrors them, and KINSOL
 /// allocates.

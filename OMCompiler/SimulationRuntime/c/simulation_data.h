@@ -260,8 +260,9 @@ typedef struct DATA_ALIAS
   enum ALIAS_TYPE aliasType;           /* 0 variable, 1 parameter, 2 time */
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
-  modelica_string unit;                /* an alias declares its own unit and */
-  modelica_string displayUnit;         /* displayUnit; only Reals have them */
+  modelica_string unit;                /* an alias declares its own unit, */
+  modelica_string displayUnit;         /* displayUnit and relativeQuantity; */
+  modelica_boolean relativeQuantity;   /* only Reals have them */
 } DATA_ALIAS;
 
 typedef DATA_ALIAS DATA_REAL_ALIAS;
@@ -280,6 +281,7 @@ typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
+  modelica_boolean relativeQuantity;   /* = false; a difference, so a conversion adds no offset */
   real_array min;                      /* = {-Inf} */
   real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
