@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_number_of_event_indicators()
         .unwrap_or(md.number_of_event_indicators as usize);
     println!("{nx} continuous states, {nz} event indicators");
-    let (colors, rows) = openmodelica_fmi_driver::me::jacobian_sparsity(md, &md.continuous_states());
+    let (colors, rows) = openmodelica_fmi_driver::me::jacobian_sparsity(md, nx);
     let nonzeros: usize = rows.iter().map(Vec::len).sum();
     println!(
         "Jacobian sparsity: {} colours over {} columns, {nonzeros} nonzeros of {}",
