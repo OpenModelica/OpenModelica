@@ -34,6 +34,7 @@
  */
 
 #include "LSP/ModelicaLSPClient.h"
+#include "Util/Helper.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -81,7 +82,9 @@ QJsonObject ModelicaLSPClient::initializationOptions(const QStringList &librarie
  * Looks for the Modelica language server shipped alongside OMEdit.
  * Prefers a standalone binary (no Node.js required) over server.js.
  * Checks next to the executable first (Windows / dev builds), then the
- * installed share directory (Linux / macOS).
+ * installed share directory (Linux / macOS), and finally the share directory
+ * of the OpenModelica installation OMEdit is talking to — a binary run from
+ * the build tree has no share directory of its own.
  */
 QString ModelicaLSPClient::findBundledServer()
 {
@@ -94,24 +97,21 @@ QString ModelicaLSPClient::findBundledServer()
 #endif
   const QString jsName = QStringLiteral("languageserver/server.js");
 
-  // Prefer standalone binary — no Node.js required.
-  QString candidate = appDir.filePath(binaryName);
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + binaryName));
-  if (QFile::exists(candidate)) {
-    return candidate;
+  QStringList directories;
+  directories << appDir.absolutePath()
+              << QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit")));
+  if (!Helper::OpenModelicaHome.isEmpty()) {
+    directories << QDir::cleanPath(Helper::OpenModelicaHome + QStringLiteral("/share/omedit"));
   }
 
-  // Fall back to server.js (requires Node.js on PATH).
-  candidate = appDir.filePath(jsName);
-  if (QFile::exists(candidate)) {
-    return candidate;
-  }
-  candidate = QDir::cleanPath(appDir.filePath(QStringLiteral("../share/omedit/") + jsName));
-  if (QFile::exists(candidate)) {
-    return candidate;
+  // Prefer a standalone binary — no Node.js required — over server.js.
+  for (const QString &name : {binaryName, jsName}) {
+    for (const QString &directory : directories) {
+      const QString candidate = directory + QStringLiteral("/") + name;
+      if (QFile::exists(candidate)) {
+        return candidate;
+      }
+    }
   }
   return QString();
 }
