@@ -3186,7 +3186,6 @@ void OptionsDialog::readLanguageServerSettings()
     mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
   }
   mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
-  mpLanguageServerPage->getLibrariesTextBox()->setText(mpSettings->value("languageServer/libraries").toString());
   // Restart applies to the saved configuration, so offer it only when the saved
   // configuration has the server enabled.
   mpLanguageServerPage->setServerRestartEnabled(mpSettings->value("languageServer/enabled", false).toBool());
@@ -3201,7 +3200,6 @@ void OptionsDialog::saveLanguageServerSettings()
   // Capture previous LSP-relevant settings to decide whether a running server must restart.
   const bool wasEnabled = mpSettings->value("languageServer/enabled", false).toBool();
   const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
-  const QString oldLibraries = mpSettings->value("languageServer/libraries").toString().trimmed();
 
   bool enabled = mpLanguageServerPage->getLanguageServerGroupBox()->isChecked();
   QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
@@ -3231,18 +3229,15 @@ void OptionsDialog::saveLanguageServerSettings()
     mpSettings->setValue("languageServer/executable", executable);
   }
   mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
-  QString libraries = mpLanguageServerPage->getLibrariesTextBox()->text().trimmed();
-  if (libraries.isEmpty()) {
-    mpSettings->remove("languageServer/libraries");
-  } else {
-    mpSettings->setValue("languageServer/libraries", libraries);
-  }
-
+  // Earlier builds kept a separate library list here. The libraries now follow
+  // the ones loaded in OMC, so drop the leftover key instead of leaving a value
+  // in omedit.ini that nothing reads.
+  mpSettings->remove("languageServer/libraries");
   // Apply the change to the running session without requiring a restart.
   if (enabled) {
-    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable) || (oldLibraries != libraries);
+    const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable);
     if (settingsChanged) {
-      // Restart so a new executable or library set is picked up.
+      // Restart so a new executable is picked up.
       MainWindow::instance()->stopLanguageServer();
     }
     MainWindow::instance()->startLanguageServer();
@@ -7134,13 +7129,8 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   mpDownloadServerButton->setEnabled(!platformServerAsset().isEmpty());
   mpDownloadVersionComboBox->setEnabled(!platformServerAsset().isEmpty());
   connect(mpDownloadServerButton, SIGNAL(clicked()), SLOT(downloadServerExecutable()));
-  // Library roots loaded by the server (enables cross-file go-to-definition)
-  mpLibrariesLabel = new Label(tr("Library Paths:"));
-  mpLibrariesTextBox = new QLineEdit;
-  mpLibrariesTextBox->setPlaceholderText(tr("Semicolon-separated library roots, e.g. /path/to/Modelica 4.0.0"));
-  mpLibrariesTextBox->setToolTip(tr("Modelica library root directories (each containing a package.mo) the language server loads "
-                                    "so go-to-definition can resolve across files. Loading large libraries "
-                                    "such as the MSL can take several seconds at startup."));
+  // The server is told about the libraries OMC has loaded; there is no separate
+  // list to maintain here.
   // Layout inside group box
   QGridLayout *pGroupBoxLayout = new QGridLayout;
   pGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -7155,9 +7145,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   pDetectLayout->addWidget(mpDownloadVersionComboBox);
   pGroupBoxLayout->addLayout(pDetectLayout, 1, 1);
   pGroupBoxLayout->addWidget(mpDownloadServerButton, 1, 2);
-  pGroupBoxLayout->addWidget(mpLibrariesLabel, 2, 0);
-  pGroupBoxLayout->addWidget(mpLibrariesTextBox, 2, 1, 1, 2);
-  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 3, 0, 1, 3);
+  pGroupBoxLayout->addWidget(mpEnableLoggingCheckBox, 2, 0, 1, 3);
   mpLanguageServerGroupBox->setLayout(pGroupBoxLayout);
   // Main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
