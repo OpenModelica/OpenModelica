@@ -56,7 +56,7 @@ protected
   import Variable = NFVariable;
 
   // NB imports
-  import NBAdjacency.{Mapping, Mode, CausalizeModes, Dependency};
+  import NBAdjacency.{IntMatrix, Mapping, Mode, ModeTable, Modes, Dependency};
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
@@ -1190,9 +1190,9 @@ public
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   algorithm
     for cref in dependencies loop
       resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, fullmap, m, mapping, modes);
@@ -1409,9 +1409,9 @@ protected
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     Dependency d;
     list<tuple<Integer, Type>> skip_lst;
@@ -1476,17 +1476,17 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
-    Mode mode;
+    Integer mode;
     list<ComponentRef> scalarized;
     list<Val2> scal_indices = {};
     Val2 idx_lst;
     Integer scal_size = 0, shift;
   algorithm
-    mode        := Mode.create(eqn_name, {original_cref}, false);
+    mode        := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
     for scal in scalarized loop
       idx_lst       := getCrefInFrameIndices(scal, frames, mapping, map, true);
@@ -1500,7 +1500,7 @@ protected
       for i in 1:size/scal_size loop
         for indices in scal_indices loop
           for scal_idx in indices loop
-            addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+            addMatrixEntry(m, skip_idx + shift, scal_idx, mode);
             shift := shift + 1;
           end for;
         end for;
@@ -1527,9 +1527,9 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input list<Boolean> regulars;
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     ComponentRef stripped;
     list<Subscript> subs;
@@ -1578,7 +1578,7 @@ protected
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(lst, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(lst, map2, key, m, Modes.add(modes, Mode.create(eqn_name, {original_cref}, false)), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1620,15 +1620,15 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     Boolean repeated;
     list<ComponentRef> scalarized;
     list<Val2> scal_indices = {};
     Integer shift;
-    Mode mode;
+    Integer mode;
   algorithm
     repeated    := UnorderedSet.contains(cref, rep);
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
@@ -1638,18 +1638,14 @@ protected
     scal_indices := listReverse(scal_indices);
 
     // if its repeated, use the same cref always; otherwise use local cref
-    if repeated then
-      mode := Mode.create(eqn_name, {original_cref}, false);
-    else
-      mode := Mode.create(eqn_name, {original_cref}, true);
-    end if;
+    mode := Modes.add(modes, Mode.create(eqn_name, {original_cref}, not repeated));
 
     for i in skip_idx:iter_size:skip_idx+size-iter_size loop
       shift := 0;
       for indices in scal_indices loop
         for scal_idx in indices loop
           if intMod(shift, iter_size) == 0 then shift := 0; end if;
-          addMatrixEntry(m, modes, i + shift, scal_idx, mode);
+          addMatrixEntry(m, i + shift, scal_idx, mode);
           shift := shift + 1;
         end for;
       end for;
@@ -1667,11 +1663,11 @@ protected
     input Integer skip_idx, size, iter_size;
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedMap<ComponentRef, Integer> map;
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping;
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
-    Mode mode;
+    Integer mode;
     ComponentRef final_cref;
     Integer var_arr_idx, var_start;
     list<Integer> sizes;
@@ -1680,7 +1676,7 @@ protected
     Pointer<Integer> row;
     UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    mode          := Mode.create(eqn_name, {original_cref}, false);
+    mode          := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
     (final_cref, var_arr_idx) := getVarArrIdx(cref, mapping, map);
     (var_start, _)            := mapping.var_AtS[var_arr_idx];
     sizes         := ComponentRef.sizes(final_cref, false, true);
@@ -1688,7 +1684,7 @@ protected
     body_size     := intDiv(size, iter_size);
     row           := Pointer.create(skip_idx);
     replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    resolveFrames(frames, sizes, subs, var_start, replacements, true, m, modes, mode, body_size, row);
+    resolveFrames(frames, sizes, subs, var_start, replacements, true, m, mode, body_size, row);
   end resolveAllRegularPartial;
 
   function resolveFrames
@@ -1701,9 +1697,8 @@ protected
     input Integer var_start;
     input UnorderedMap<ComponentRef, Expression> replacements;
     input Boolean resize;
-    input array<list<Integer>> m;
-    input UnorderedMap<Mode.Key, Mode> modes;
-    input Mode mode;
+    input IntMatrix.Builder m;
+    input Integer mode                "index into the mode table";
     input Integer body_size;
     input Pointer<Integer> row;
   algorithm
@@ -1723,7 +1718,7 @@ protected
         r      := Pointer.access(row);
         values := resolveDimensionsSubscripts(sizes, subs, replacements, resize);
         for v in listReverse(values) loop
-          addMatrixEntry(m, modes, r, locationToIndex(sizes, v, var_start), mode);
+          addMatrixEntry(m, r, locationToIndex(sizes, v, var_start), mode);
         end for;
         Pointer.update(row, r + body_size);
       then ();
@@ -1748,7 +1743,7 @@ protected
         for index in iterator_lst loop
           UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
           Iterator.createMappedLocationReplacement(fmap, sub_idx, replacements);
-          resolveFrames(rest, sizes, subs, var_start, replacements, resize, m, modes, mode, body_size, row);
+          resolveFrames(rest, sizes, subs, var_start, replacements, resize, m, mode, body_size, row);
           sub_idx := sub_idx + 1;
         end for;
       then ();
@@ -1766,9 +1761,8 @@ protected
     input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
     input Array<Integer> key                    "mutable key";
-    input array<list<Integer>> m                "adjacency matrix";
-    input UnorderedMap<Mode.Key, Mode> modes;
-    input Mode mode;
+    input IntMatrix.Builder m         "adjacency matrix builder";
+    input Integer mode                "index into the mode table";
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
@@ -1784,7 +1778,7 @@ protected
         eqn_idx := Pointer.access(eqn_idx_ptr);
         scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
         for scal_idx in scal_lst loop
-          addMatrixEntry(m, modes, eqn_idx, scal_idx, mode);
+          addMatrixEntry(m, eqn_idx, scal_idx, mode);
         end for;
         Pointer.update(eqn_idx_ptr, eqn_idx + 1);
       then ();
@@ -1792,7 +1786,7 @@ protected
       case (dim, false)::rest algorithm
         // reduced dimension, keep key index at 0 and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
 
@@ -1801,32 +1795,23 @@ protected
         // and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
           arrayUpdate(key, index, i);
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
     end match;
   end resolveEquationDimensions;
 
   function addMatrixEntry
-    input array<list<Integer>> m                "adjacency matrix";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input IntMatrix.Builder m         "adjacency matrix builder";
     input Integer eqn_idx;
     input Integer var_idx;
-    input Mode mode;
+    input Integer mode                "index into the mode table";
   algorithm
-    try
-      // only add the variable if its a viable index. due to unresolved if-expressions in for-loops some branches can access variables
-      // that seem out of scope but are in fact valid because the if-condition ensures it.
-      if var_idx > 0 then
-        //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
-        arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
-        UnorderedMap.addMerge(Mode.key(eqn_idx, var_idx), mode, Mode.merge, modes);
-      end if;
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because index " + intString(eqn_idx)
-        + " could not be added. Matrix size: " + intString(arrayLength(m)) + "."});
-      fail();
-    end try;
+    // only add the variable if its a viable index. due to unresolved if-expressions in for-loops some branches can access variables
+    // that seem out of scope but are in fact valid because the if-condition ensures it.
+    if var_idx > 0 then
+      IntMatrix.builderAddAux(m, eqn_idx, var_idx, mode);
+    end if;
   end addMatrixEntry;
 
   function resolveReductions

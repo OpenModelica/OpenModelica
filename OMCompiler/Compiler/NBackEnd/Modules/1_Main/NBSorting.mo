@@ -120,9 +120,12 @@ public
       input array<Integer> eqn_to_var           "eqn to var matching";
       input EquationPointers eqns;
       input Adjacency.Mapping mapping           "scalar <-> array index mapping";
-      input UnorderedMap<Mode.Key, Mode> modes;
+      input Adjacency.IntMatrix m               "normal adjacency matrix, holding the mode ids";
+      input Adjacency.ModeTable modes;
       output list<tuple<Mode, Value>> buckets = {};
     protected
+      array<Integer> data = Adjacency.IntMatrix.entries(m);
+      array<Integer> ids = Adjacency.IntMatrix.payload(m);
       array<list<Bucket>> per_eqn = arrayCreate(intMax(arrayLength(mapping.eqn_AtS), 1), {});
       list<Bucket> order = {};
       Option<Mode> mode_opt;
@@ -136,7 +139,7 @@ public
     algorithm
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
-        mode_opt := UnorderedMap.get(Mode.key(eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
+        mode_opt := Adjacency.Modes.get(modes, m, data, ids, eqn_scal_idx, eqn_to_var[eqn_scal_idx]);
         if isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
           eqn_arr_idx := mapping.eqn_StA[eqn_scal_idx];
@@ -253,6 +256,7 @@ public
           Adjacency.Matrix phase2_adj;
           Matching phase2_matching;
           array<SuperNode> super_nodes;
+          array<Integer> var_loc;
           list<tuple<Mode, Value>> buckets;
 
         case Adjacency.Matrix.FINAL() algorithm
@@ -261,7 +265,7 @@ public
           end if;
 
           // phase 1 tarjan
-          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.modes);
+          buckets := PseudoBucket.create(matching.eqn_to_var, eqns, adj.mapping, adj.m, adj.modes);
           comps_indices := tarjanScalar(adj.m, matching);
 
           // phase 2 tarjan
@@ -273,7 +277,9 @@ public
             case Adjacency.Matrix.FINAL() algorithm
               // phase 3 tarjan
               phase2_indices := tarjanScalar(phase2_adj.m, phase2_matching);
-              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching, vars, eqns) for comp in phase2_indices);
+              var_loc := arrayCreate(arrayLength(matching.var_to_eqn), 0);
+              comps := list(SuperNode.collapse(comp, super_nodes, adj.m, adj.mapping, matching, vars, eqns, var_loc) for comp in phase2_indices);
+              GCExt.free(var_loc);
             then ();
 
             else algorithm
@@ -308,7 +314,7 @@ public
   function tarjanScalar
     "author: lochel, kabdelhak
     This sorting algorithm only considers equations e that have a matched variable v with e = var_to_eqn[v]."
-    input array<list<Integer>> m          "normal adjacency matrix";
+    input Adjacency.IntMatrix m           "normal adjacency matrix";
     input Matching matching               "eqn <-> var";
     output list<list<Integer>> comps = {} "eqn indices";
   protected
@@ -316,6 +322,7 @@ public
     list<Integer> stack = {};
     array<Integer> number, lowlink;
     array<Boolean> onStack;
+    array<Integer> data = Adjacency.IntMatrix.entries(m);
     Integer N = arrayLength(matching.var_to_eqn);
     Integer M = arrayLength(matching.eqn_to_var);
     Integer eqn;
@@ -328,7 +335,7 @@ public
     for var in 1:N loop
       eqn := matching.var_to_eqn[var];
       if eqn > 0 and number[eqn] == -1 then
-        (stack, index, comps) := strongConnect(m, matching.var_to_eqn, eqn, stack, index, number, lowlink, onStack, comps);
+        (stack, index, comps) := strongConnect(m, data, matching.var_to_eqn, eqn, stack, index, number, lowlink, onStack, comps);
       end if;
     end for;
 
@@ -466,6 +473,7 @@ public
       Value val;
       Integer index, shift;
       list<Integer> var_lst, eqn_lst;
+      list<list<Integer>> eqn_rows, var_rows, rest_var_rows "the rows merged into one super node, in merge order";
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
     algorithm
       phase2_adj := match phase2_adj
@@ -489,7 +497,10 @@ public
           shift := listLength(algebraic_loops) + listLength(buckets);
 
           // ### 2. initialize super nodes ###
-          super_nodes := listArray(list(SuperNode.SINGLE(i) for i in 1:arrayLength(phase2_adj.m) + shift));
+          super_nodes := arrayCreate(Adjacency.IntMatrix.rows(phase2_adj.m) + shift, SuperNode.SINGLE(0));
+          for i in 1:arrayLength(super_nodes) loop
+            arrayUpdate(super_nodes, i, SuperNode.SINGLE(i));
+          end for;
 
           // ### 3. expand matching ###
           index := arrayLength(phase2_matching.eqn_to_var);
@@ -506,12 +517,16 @@ public
 
           // ### 4. adjust transposed matrix ###
           // 4.1. enlarge transposed matrix by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.mT) + 1;
-          phase2_adj.mT := Adjacency.Matrix.expandMatrix(phase2_adj.mT, shift);
+          index := Adjacency.IntMatrix.rows(phase2_adj.mT) + 1;
+          phase2_adj.mT := Adjacency.IntMatrix.expandRows(phase2_adj.mT, shift);
+          eqn_rows := listAppend(algebraic_loops, list(Value.getEquations(Util.tuple22(bucket)) for bucket in buckets));
+          var_rows := list(list(phase2_matching.eqn_to_var[idx] for idx in row) for row in eqn_rows);
+          Adjacency.IntMatrix.reserveData(phase2_adj.mT, mergedSize(phase2_adj.mT, var_rows));
 
           // 4.2. merge all algebraic loop variables of one scc to one single variable
+          rest_var_rows := var_rows;
           for scc in algebraic_loops loop
-            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in scc);
+            var_lst :: rest_var_rows := rest_var_rows;
             mergeLoopNodes(super_nodes, var_lst, index, false);
             index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
           end for;
@@ -519,7 +534,7 @@ public
           // 4.3. merge all array variables of one bucket to one single variable
           for bucket in buckets loop
             (mode, val) := bucket;
-            var_lst := list(phase2_matching.eqn_to_var[idx] for idx in Value.getEquations(val));
+            var_lst :: rest_var_rows := rest_var_rows;
             () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
@@ -529,8 +544,9 @@ public
 
           /// ### 5. adjust normal matrix ###
           // 5.1. transpose the transposed matrix and enlarge it by the maximum possible amount of new nodes
-          index := arrayLength(phase2_adj.m) + 1;
-          phase2_adj.m := Adjacency.Matrix.transposeScalar(phase2_adj.mT, arrayLength(phase2_adj.m) + shift);
+          index := Adjacency.IntMatrix.rows(phase2_adj.m) + 1;
+          phase2_adj.m := Adjacency.IntMatrix.transpose(phase2_adj.mT, Adjacency.IntMatrix.rows(phase2_adj.m) + shift,
+                                                        mergedSize(phase2_adj.m, eqn_rows));
           // 5.2 merge all algebraic loop equations of one scc to one single equation
           for scc in algebraic_loops loop
             mergeLoopNodes(super_nodes, scc, index, true);
@@ -561,11 +577,12 @@ public
     function collapse
       input list<Integer> comp_indices;
       input array<SuperNode> super_nodes;
-      input array<list<Integer>> m;
+      input Adjacency.IntMatrix m;
       input Adjacency.Mapping mapping;
       input Matching matching;
       input VariablePointers vars;
       input EquationPointers eqns;
+      input array<Integer> var_loc  "scratch for getLocalSystem";
       output StrongComponent comp;
     protected
       list<SuperNode> node_comp = list(super_nodes[i] for i in comp_indices);
@@ -575,7 +592,7 @@ public
       comp := match node_comp
         local
           SuperNode node;
-          array<list<Integer>> m_local;
+          Adjacency.IntMatrix m_local;
           Matching matching_local;
           Boolean indep = true;
           array<Integer> map_back     "local to global equation indices";
@@ -592,10 +609,9 @@ public
         // a single array equation
         case {node as ARRAY_BUCKET()} algorithm
           // sort local system to determine in what order the equations have to be solved
-          (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, node.eqn_indices);
+          (m_local, matching_local, map_back) := getLocalSystem(m, matching, node.eqn_indices, var_loc);
           sorted_body_components := tarjanScalar(m_local, matching_local);
-          sorted_body_indices := List.flatten(sorted_body_components);
-          sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
+          sorted_body_indices := mapFlatten(sorted_body_components, map_back);
 
           // if new strong components of size > 1 were created it is an error, this should
           // have occured in sorting phase I
@@ -608,7 +624,7 @@ public
 
           // check for independence of the element equations
           // if locally each variable occurs in only one equation, then they are all independent
-          indep := Array.all(m_local, List.hasOneElement);
+          indep := Array.all(m_local.len, function intEq(i2 = 1));
 
           eqn_arr_idx := mapping.eqn_StA[listHead(node.eqn_indices)];
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
@@ -617,10 +633,9 @@ public
         // entwined equations: at least one array bucket mixed with scalar equations
         case _ guard(List.any(node_comp, isArrayBucket)) algorithm
           // sort local system to determine in what order the equations have to be solved
-          (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
+          (m_local, matching_local, map_back) := getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)), var_loc);
           sorted_body_components := tarjanScalar(m_local, matching_local);
-          sorted_body_indices := List.flatten(sorted_body_components);
-          sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
+          sorted_body_indices := mapFlatten(sorted_body_components, map_back);
           comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
         then comp;
 
@@ -632,31 +647,61 @@ public
     end collapse;
 
   protected
+    function mapFlatten
+      "flattens the components and maps the local indices back to global ones"
+      input list<list<Integer>> components;
+      input array<Integer> map_back;
+      output list<Integer> indices = {};
+    algorithm
+      for comp in components loop
+        for i in comp loop
+          indices := map_back[i] :: indices;
+        end for;
+      end for;
+      indices := MetaModelica.Dangerous.listReverseInPlace(indices);
+    end mapFlatten;
+
+    function mergedSize
+      "how much buffer the merged rows need at most, so that merging them does
+      not have to grow it"
+      input Adjacency.IntMatrix m;
+      input list<list<Integer>> rows;
+      output Integer total = 0;
+    algorithm
+      for row in rows loop
+        for idx in row loop
+          total := total + m.len[idx];
+        end for;
+      end for;
+    end mergedSize;
+
     function mergeRows
-      input array<list<Integer>> m;
+      input Adjacency.IntMatrix m;
       input array<Integer> matching;
       input array<SuperNode> super_nodes;
       input list<Integer> rows_to_merge;
       input output Integer new_idx;
     protected
-      Integer total = 0;
+      array<Integer> data = Adjacency.IntMatrix.entries(m);
+      Integer total = 0, first;
       UnorderedSet<Integer> set;
     algorithm
       // merge all rows to one row. Same set, and so the same row, as
       // unique_list(List.flatten(...)) built, without copying the rows first.
       for idx in rows_to_merge loop
-        total := total + listLength(m[idx]);
+        total := total + m.len[idx];
       end for;
       set := UnorderedSet.new<Integer>(Util.id, intEq, Util.nextPrime(total));
       for idx in rows_to_merge loop
-        for v in m[idx] loop
-          UnorderedSet.add(v, set);
+        first := m.start[idx];
+        for k in first:first + m.len[idx] - 1 loop
+          UnorderedSet.add(data[k], set);
         end for;
       end for;
-      arrayUpdate(m, new_idx, UnorderedSet.toList(set));
+      Adjacency.IntMatrix.setRow(m, new_idx, UnorderedSet.toList(set));
       // remove the original rows
       for idx in rows_to_merge loop
-        arrayUpdate(m, idx, {});
+        Adjacency.IntMatrix.clearRow(m, idx);
         arrayUpdate(matching, idx, -1);
       end for;
       new_idx := new_idx + 1;
@@ -700,9 +745,73 @@ public
   // ############################################################
 
 protected
+  function getLocalSystem
+    input Adjacency.IntMatrix m           "global adjacency matrix";
+    input Matching matching               "global matching";
+    input list<Integer> eqn_indices       "global equation indices to keep";
+    input array<Integer> var_loc          "scratch: global -> local variable index, all zero on entry and on exit";
+    output Adjacency.IntMatrix m_loc      "local adjacency matrix";
+    output Matching matching_loc          "local matching";
+    output array<Integer> map_back        "local to global equation indices";
+  protected
+    constant Integer N = listLength(eqn_indices);
+    array<Integer> var_to_eqn = arrayCreate(N, -1);
+    array<Integer> eqn_to_var = arrayCreate(N, -1);
+    array<Integer> data = Adjacency.IntMatrix.entries(m);
+    Adjacency.IntMatrix.Builder builder;
+    Integer j = 1, row, first, edges = 0, loc, var;
+  algorithm
+    // map matching from full system and save eqn map back
+    map_back := arrayCreate(N, -1);
+    for i in eqn_indices loop
+      // set equation map (local -> global)
+      map_back[j] := i;
+
+      // set var from matching (global -> local)
+      var := matching.eqn_to_var[i];
+      if var > 0 then
+        arrayUpdate(var_loc, var, j);
+      end if;
+
+      // set local matching
+      eqn_to_var[j] := j;
+      var_to_eqn[j] := j;
+
+      j := j + 1;
+    end for;
+    matching_loc := MATCHING(var_to_eqn, eqn_to_var);
+
+    // filter only local edges of adjacency matrix
+    for j in 1:N loop
+      edges := edges + m.len[map_back[j]];
+    end for;
+    builder := Adjacency.IntMatrix.newBuilder(edges);
+    for j in 1:N loop
+      row   := map_back[j];
+      first := m.start[row];
+      for k in first + m.len[row] - 1:-1:first loop
+        var := data[k];
+        loc := if var > 0 then var_loc[var] else 0;
+        if loc > 0 then
+          Adjacency.IntMatrix.builderAdd(builder, j, loc);
+        end if;
+      end for;
+    end for;
+    m_loc := Adjacency.IntMatrix.fromBuilder(builder, N);
+
+    // leave the scratch clean for the next component
+    for i in eqn_indices loop
+      var := matching.eqn_to_var[i];
+      if var > 0 then
+        arrayUpdate(var_loc, var, 0);
+      end if;
+    end for;
+  end getLocalSystem;
+
   function strongConnect
     "author: lochel, kabdelhak"
-    input array<list<Integer>> m            "normal adjacency matrix";
+    input Adjacency.IntMatrix m             "normal adjacency matrix";
+    input array<Integer> data               "its entry buffer";
     input array<Integer> var_to_eqn         "eqn := var_to_eqn[var]";
     input Integer eqn                       "current equation index";
     input output list<Integer> stack        "equation stack";
@@ -723,13 +832,14 @@ protected
     stack := eqn::stack;
 
     // Consider successors of eqn, without building a list of them per node
-    for cand in m[eqn] loop
+    for k in m.start[eqn]:m.start[eqn] + m.len[eqn] - 1 loop
+      cand := data[k];
       if cand > 0 then
         eqn2 := var_to_eqn[cand];
         if eqn2 > 0 and eqn2 <> eqn then
           if number[eqn2] == -1 then
             // Successor eqn2 has not yet been visited; recurse on it
-            (stack, index, comps) := strongConnect(m, var_to_eqn, eqn2, stack, index, number, lowlink, onStack, comps);
+            (stack, index, comps) := strongConnect(m, data, var_to_eqn, eqn2, stack, index, number, lowlink, onStack, comps);
             arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
           elseif onStack[eqn2] then
             // Successor eqn2 is in the stack and hence in the current SCC

@@ -202,6 +202,39 @@ pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<Arc<metamodelica:
     });
 }
 
+pub fn setAdjacencyMatrixFlat(
+    _nv: i32,
+    ne: i32,
+    nz: i32,
+    start: Array<i32>,
+    len: Array<i32>,
+    data: Array<i32>,
+) {
+    with_state(|s| {
+        s.col_ptrs = vec![0i32; (ne + 1) as usize];
+        s.col_ptrs[ne as usize] = nz;
+        s.col_ids = vec![0i32; nz.max(0) as usize];
+
+        let start = start.borrow();
+        let len = len.borrow();
+        let data = data.borrow();
+        let mut j = 0i32;
+        for i in 0..ne as usize {
+            s.col_ptrs[i] = j;
+            let first = start[i] as usize;
+            // Each entry is a 1-based incident variable; the C drops
+            // non-positive entries (used as "no variable" placeholders).
+            for k in first..first + len[i] as usize {
+                let i1 = data[k - 1];
+                if i1 > 0 {
+                    s.col_ids[j as usize] = i1 - 1;
+                    j += 1;
+                }
+            }
+        }
+    });
+}
+
 pub fn matching(
     nv: i32,
     ne: i32,

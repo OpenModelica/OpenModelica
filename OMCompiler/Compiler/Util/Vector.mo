@@ -77,6 +77,25 @@ public
                 Mutable.create(arrayLength(arr)));
   end fromArray;
 
+  function fromArrayNoCopy
+    "Creates a Vector that takes ownership of the given array. size defaults to
+     the whole array; give a smaller one to keep the rest as spare capacity."
+    input array<T> arr;
+    input Integer size = -1;
+    output Vector<T> v;
+  algorithm
+    v := VECTOR(Mutable.create(arr), Mutable.create(if size < 0 then arrayLength(arr) else size));
+  end fromArrayNoCopy;
+
+  function rawArray
+    "Returns the internal array of the Vector. It may be larger than the
+     Vector's size, and is invalidated whenever the Vector grows."
+    input Vector<T> v;
+    output array<T> arr;
+  algorithm
+    arr := Mutable.access(v.data);
+  end rawArray;
+
   function toArray
     "Converts a Vector to an array."
     input Vector<T> v;

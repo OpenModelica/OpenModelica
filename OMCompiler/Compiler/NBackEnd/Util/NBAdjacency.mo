@@ -78,6 +78,7 @@ protected
   import BuiltinSystem = System;
   import Slice = NBSlice;
   import StringUtil;
+  import Vector;
 
 public
   type MatrixStrictness  = enumeration(LINEAR, MATCHING, SORTING, FULL);
@@ -336,53 +337,376 @@ public
       output Mode oMode = MODE(mode1.eqn_name, listAppend(mode1.crefs, mode2.crefs), mode1.scalarize or mode2.scalarize);
     end merge;
 
-    function mergeCreate
-      input Option<Mode> omode;
-      input output Mode mode;
-    algorithm
-      mode := Util.applyOptionOrDefault(omode, function merge(mode1 = mode), mode);
-    end mergeCreate;
-
-    type Key = tuple<Integer, Integer>;
-
-    function key
-      input Integer eqn_idx;
-      input Integer var_idx;
-      output Key k = (eqn_idx, var_idx);
-    end key;
-
-    function keyString
-      input Key key;
-      output String str;
-    protected
-      Integer e,v;
-    algorithm
-      (e,v) := key;
-      str := intString(e) + "," + intString(v);
-    end keyString;
-
-    function keyHash
-      input Key key;
-      output Integer hash;
-    protected
-      Integer e,v;
-    algorithm
-      (e,v) := key;
-      hash := e * 31 + v;
-    end keyHash;
-
-    function keyEqual
-      input Key key1;
-      input Key key2;
-      output Boolean b;
-    protected
-      Integer e1,e2,v1,v2;
-    algorithm
-      (e1,v1) := key1;
-      (e2,v2) := key2;
-      b := e1 == e2 and v1 == v2;
-    end keyEqual;
   end Mode;
+
+  type ModeTable = Vector<Mode>
+    "the distinct causalization modes. a matrix entry refers to one by its index
+    in here (0 for none), kept in the matrix payload instead of in a map keyed
+    on the (equation, variable) pair.";
+
+  package Modes
+    function new
+      output ModeTable modes = Vector.new<Mode>(0);
+    end new;
+
+    function add
+      input ModeTable modes;
+      input Mode mode;
+      output Integer id;
+    algorithm
+      Vector.push(modes, mode);
+      id := Vector.size(modes);
+    end add;
+
+    function get
+      "the mode of the (eqn, var) entry. duplicate entries are merged the way
+      UnorderedMap.addMerge did, newest first, which is the row order."
+      input ModeTable modes;
+      input IntMatrix m;
+      input array<Integer> data;
+      input array<Integer> ids;
+      input Integer eqn;
+      input Integer var;
+      output Option<Mode> res = NONE();
+    protected
+      Integer first = m.start[eqn];
+      Mode mode;
+    algorithm
+      for k in first:first + m.len[eqn] - 1 loop
+        if data[k] == var and ids[k] > 0 then
+          mode := Vector.getNoBounds(modes, ids[k]);
+          res := match res
+            local Mode acc;
+            case SOME(acc) then SOME(Mode.merge(acc, mode));
+            else SOME(mode);
+          end match;
+        end if;
+      end for;
+    end get;
+  end Modes;
+
+  uniontype IntMatrix
+    "Adjacency rows stored flat: every row is a slice of one append-only integer
+    buffer. Nothing in here is a pointer, so the collector does not have to walk
+    the nonzeros. aux carries one extra integer per entry (the causalization
+    mode id of the normal matrix), and is empty where it is not used."
+
+    record INT_MATRIX
+      array<Integer> start  "row -> 1-based index of its first entry in data";
+      array<Integer> len    "row -> number of entries";
+      Vector<Integer> data  "entry buffer, only appended to";
+      Vector<Integer> aux   "payload parallel to data, empty if unused";
+    end INT_MATRIX;
+
+    uniontype Builder
+      "The matrix is filled by collecting (row, entry) pairs in any order;
+      fromBuilder() then groups them by row in one counting sort."
+      record BUILDER
+        Vector<Integer> pairs;
+        Vector<Integer> aux;
+        Boolean hasAux;
+      end BUILDER;
+    end Builder;
+
+    function new
+      input Integer rows;
+      output IntMatrix m = INT_MATRIX(arrayCreate(rows, 1), arrayCreate(rows, 0), Vector.new<Integer>(0), Vector.new<Integer>(0));
+    end new;
+
+    function rows
+      input IntMatrix m;
+      output Integer n = arrayLength(m.start);
+    end rows;
+
+    function nonZeroCount
+      input IntMatrix m;
+      output Integer count = sum(l for l in m.len);
+    end nonZeroCount;
+
+    function entries
+      "the raw entry buffer, indexed by start[row] .. start[row]+len[row]-1.
+      invalidated by anything that adds entries"
+      input IntMatrix m;
+      output array<Integer> data = Vector.rawArray(m.data);
+    end entries;
+
+    function payload
+      input IntMatrix m;
+      output array<Integer> aux = Vector.rawArray(m.aux);
+    end payload;
+
+    function toList
+      input IntMatrix m;
+      input Integer row;
+      output list<Integer> lst = {};
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      Integer first = m.start[row];
+    algorithm
+      for k in first + m.len[row] - 1:-1:first loop
+        lst := data[k] :: lst;
+      end for;
+    end toList;
+
+    function setRow
+      "replaces a row by appending its new entries to the buffer. the payload,
+      if any, is not maintained"
+      input IntMatrix m;
+      input Integer row;
+      input list<Integer> values;
+    algorithm
+      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, row, listLength(values));
+      for v in values loop
+        Vector.push(m.data, v);
+      end for;
+    end setRow;
+
+    function reserveData
+      "makes room for extra more entries so that adding them does not grow the buffer"
+      input IntMatrix m;
+      input Integer extra;
+    algorithm
+      Vector.reserve(m.data, Vector.size(m.data) + extra);
+    end reserveData;
+
+    function clearRow
+      input IntMatrix m;
+      input Integer row;
+    algorithm
+      arrayUpdate(m.len, row, 0);
+    end clearRow;
+
+    function copyRow
+      "appends row src of `from` (whose buffer must be given) as row dst of m"
+      input IntMatrix from;
+      input Integer src;
+      input array<Integer> from_data;
+      input array<Integer> from_aux;
+      input IntMatrix m;
+      input Integer dst;
+    protected
+      Integer first = from.start[src], n = from.len[src];
+      Boolean aux = arrayLength(from_aux) > 0;
+    algorithm
+      arrayUpdate(m.start, dst, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, dst, n);
+      for k in first:first + n - 1 loop
+        Vector.push(m.data, from_data[k]);
+        if aux then
+          Vector.push(m.aux, from_aux[k]);
+        end if;
+      end for;
+    end copyRow;
+
+    function expandRows
+      input output IntMatrix m;
+      input Integer shift;
+    algorithm
+      if shift > 0 then
+        m := INT_MATRIX(Array.expandToSize(arrayLength(m.start) + shift, m.start, 1),
+                        Array.expandToSize(arrayLength(m.len) + shift, m.len, 0), m.data, m.aux);
+      end if;
+    end expandRows;
+
+    function transpose
+      "transposes the matrix, dropping any payload. a negative entry -v means
+      that row occurs negated in column v. each result row comes out descending,
+      matching what List.sort(.., intLt) produced before.
+      slack reserves buffer space for rows that are merged in afterwards."
+      input IntMatrix m;
+      input Integer size "number of rows of the result (does not have to be square!)";
+      input Integer slack = 0;
+      output IntMatrix mT;
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> start, len, out;
+      Integer n = arrayLength(m.start), nnz = 0, idx, pos, first;
+    algorithm
+      start := arrayCreate(size, 1);
+      len   := arrayCreate(size, 0);
+
+      for r in 1:n loop
+        first := m.start[r];
+        for k in first:first + m.len[r] - 1 loop
+          idx := intAbs(data[k]);
+          if idx > 0 and idx <= size then
+            arrayUpdate(len, idx, len[idx] + 1);
+            nnz := nnz + 1;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(data[k]) + ".
+              The variables have to be dense (without empty spaces) for this to work!"});
+          end if;
+        end for;
+      end for;
+
+      pos := 1;
+      for c in 1:size loop
+        arrayUpdate(start, c, pos);
+        pos := pos + len[c];
+      end for;
+
+      out := arrayCreate(nnz + slack, 0);
+
+      // scatter, using start as the cursor and winding it back afterwards.
+      // positive entries first, rows descending
+      for r in n:-1:1 loop
+        first := m.start[r];
+        for k in first:first + m.len[r] - 1 loop
+          idx := data[k];
+          if idx > 0 and idx <= size then
+            arrayUpdate(out, start[idx], r);
+            arrayUpdate(start, idx, start[idx] + 1);
+          end if;
+        end for;
+      end for;
+
+      // then the negated ones, rows ascending so that -row descends
+      for r in 1:n loop
+        first := m.start[r];
+        for k in first:first + m.len[r] - 1 loop
+          idx := data[k];
+          if idx < 0 and -idx <= size then
+            arrayUpdate(out, start[-idx], -r);
+            arrayUpdate(start, -idx, start[-idx] + 1);
+          end if;
+        end for;
+      end for;
+
+      for c in 1:size loop
+        arrayUpdate(start, c, start[c] - len[c]);
+      end for;
+
+      mT := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, nnz), Vector.new<Integer>(0));
+    end transpose;
+
+    function newBuilder
+      input Integer capacity = 0;
+      input Boolean withAux = false;
+      output Builder b = Builder.BUILDER(Vector.new<Integer>(2 * capacity),
+                                         Vector.new<Integer>(if withAux then capacity else 0), withAux);
+    end newBuilder;
+
+    function builderAdd
+      input Builder b;
+      input Integer row;
+      input Integer value;
+    algorithm
+      Vector.push(b.pairs, row);
+      Vector.push(b.pairs, value);
+    end builderAdd;
+
+    function builderAddAux
+      input Builder b;
+      input Integer row;
+      input Integer value;
+      input Integer aux;
+    algorithm
+      Vector.push(b.pairs, row);
+      Vector.push(b.pairs, value);
+      Vector.push(b.aux, aux);
+    end builderAddAux;
+
+    function builderAddList
+      "adds a whole row front, keeping the order of the list"
+      input Builder b;
+      input Integer row;
+      input list<Integer> values;
+      input Integer aux = 0;
+    algorithm
+      for v in listReverse(values) loop
+        Vector.push(b.pairs, row);
+        Vector.push(b.pairs, v);
+        if b.hasAux then
+          Vector.push(b.aux, aux);
+        end if;
+      end for;
+    end builderAddList;
+
+    function toBuilder
+      "seeds a builder with the entries of an existing matrix, oldest first, so that
+      fromBuilder puts them back in the same order"
+      input IntMatrix m;
+      input Integer capacity = 0;
+      input Boolean withAux = false;
+      output Builder b;
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> aux = Vector.rawArray(m.aux);
+      Integer nnz = nonZeroCount(m), first;
+    algorithm
+      b := newBuilder(intMax(nnz, capacity), withAux);
+      for r in 1:arrayLength(m.start) loop
+        first := m.start[r];
+        for k in first + m.len[r] - 1:-1:first loop
+          Vector.push(b.pairs, r);
+          Vector.push(b.pairs, data[k]);
+          if withAux then
+            Vector.push(b.aux, aux[k]);
+          end if;
+        end for;
+      end for;
+    end toBuilder;
+
+    function fromBuilder
+      "groups the collected pairs by row. entries were prepended to their row
+      before, so the pairs are distributed back to front."
+      input Builder b;
+      input Integer rows;
+      output IntMatrix m;
+    protected
+      array<Integer> raw = Vector.rawArray(b.pairs);
+      array<Integer> raux = Vector.rawArray(b.aux);
+      array<Integer> start, len, out, aout;
+      Integer n = intDiv(Vector.size(b.pairs), 2), r, pos = 1, p;
+    algorithm
+      start := arrayCreate(rows, 1);
+      len   := arrayCreate(rows, 0);
+
+      for i in 1:n loop
+        r := raw[2*i - 1];
+        arrayUpdate(len, r, len[r] + 1);
+      end for;
+
+      for i in 1:rows loop
+        arrayUpdate(start, i, pos);
+        pos := pos + len[i];
+      end for;
+
+      out  := arrayCreate(n, 0);
+      aout := arrayCreate(if b.hasAux then n else 0, 0);
+
+      // scatter, using start as the cursor and winding it back afterwards
+      for i in n:-1:1 loop
+        r := raw[2*i - 1];
+        p := start[r];
+        arrayUpdate(out, p, raw[2*i]);
+        if b.hasAux then
+          arrayUpdate(aout, p, raux[i]);
+        end if;
+        arrayUpdate(start, r, p + 1);
+      end for;
+
+      for i in 1:rows loop
+        arrayUpdate(start, i, start[i] - len[i]);
+      end for;
+
+      m := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, n), Vector.fromArrayNoCopy(aout, arrayLength(aout)));
+    end fromBuilder;
+
+    function toString
+      input IntMatrix m;
+      output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m.start))) + 1;
+      String tmp;
+    algorithm
+      for row in 1:arrayLength(m.start) loop
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(toList(m, row), intString) + "\n";
+      end for;
+    end toString;
+  end IntMatrix;
 
   uniontype Matrix
     "used to store adjacency information for the bipartite graph representing the system of equations and variables
@@ -403,10 +727,10 @@ public
     end FULL;
 
     record FINAL "specific final matrix, defined by its strictness"
-      array<list<Integer>> m              "eqn -> list<var>";
-      array<list<Integer>> mT             "var -> list<eqn>";
+      IntMatrix m                         "eqn -> vars";
+      IntMatrix mT                        "var -> eqns";
       Mapping mapping                     "index mapping scalar <-> array";
-      UnorderedMap<Mode.Key, Mode> modes  "array reconstruction information";
+      ModeTable modes                     "array reconstruction information";
       MatrixStrictness st                 "strictness with which it was created";
     end FINAL;
 
@@ -751,6 +1075,8 @@ public
       adj := match full
         local
           Integer min, max;
+          IntMatrix.Builder builder;
+          list<Integer> indices;
 
         case EMPTY() then EMPTY(st);
 
@@ -780,12 +1106,15 @@ public
                 result := adj;
               elseif max > min then
                 (occ, dep, sol, rep) := (full.occurrences, full.dependencies, full.solvabilities, full.repetitions);
-                for index in UnorderedMap.valueList(eqns_map) loop
+                indices := UnorderedMap.valueList(eqns_map);
+                builder := IntMatrix.toBuilder(adj.m, estimateEntries(occ, adj.mapping, indices), true);
+                for index in indices loop
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes, iter);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, builder, adj.mapping, adj.modes, iter);
                 end for;
-                adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
+                adj.m  := IntMatrix.fromBuilder(builder, IntMatrix.rows(adj.m));
+                adj.mT := IntMatrix.transpose(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
               else
                 if Flags.isSet(Flags.FAILTRACE) then
@@ -851,8 +1180,10 @@ public
       adj := match (adj, full)
         local
           Matrix new;
-          Integer rank, max_index_eq, max_index_var;
+          Integer rank, max_index_eq, max_index_var, eqn_scalar_size;
           list<ComponentRef> filtered;
+          list<Integer> eo_lst, en_lst;
+          IntMatrix.Builder builder;
           UnorderedMap<ComponentRef, Integer> v = vo;
 
         // if the matrix is empty, initialize it first
@@ -866,8 +1197,13 @@ public
         // default case
         case (FINAL(), FULL()) algorithm
           // 0. expand the integer matrix
-          adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns, true) - arrayLength(adj.m));
+          eqn_scalar_size := EquationPointers.scalarSize(eqns, true);
           adj.mapping := full.mapping;
+          eo_lst := UnorderedMap.valueList(eo);
+          en_lst := UnorderedMap.valueList(en);
+          builder := IntMatrix.toBuilder(adj.m,
+            estimateEntries(full.occurrences, adj.mapping, eo_lst) + estimateEntries(full.occurrences, adj.mapping, en_lst), true);
+
 
           // get the strictness ranking
           rank := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -878,17 +1214,17 @@ public
 
           // I. update all old equations with the new variables
           if not UnorderedMap.isEmpty(vn) then
-            for e in UnorderedMap.valueList(eo) loop
+            for e in eo_lst loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], vn, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, builder, adj.mapping, adj.modes);
             end for;
           end if;
 
           // II. update new equations with all variables
           if not UnorderedMap.isEmpty(en) then
-            for e in UnorderedMap.valueList(en) loop
+            for e in en_lst loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], v, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, builder, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -898,7 +1234,8 @@ public
           else
             max_index_var := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
           end if;
-          adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars, true));
+          adj.m  := IntMatrix.fromBuilder(builder, eqn_scalar_size);
+          adj.mT := IntMatrix.transpose(adj.m, VariablePointers.scalarSize(vars, true));
         then adj;
 
         // fail cases
@@ -1078,7 +1415,8 @@ public
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
       Mapping mapping;
-      array<list<Integer>> m;
+      IntMatrix m;
+      array<Integer> m_data, m_aux;
       Integer old_start, old_size, new_start, new_size;
     algorithm
       (adj, full) := match (adj, full)
@@ -1089,7 +1427,9 @@ public
           mapping := Mapping.create(eqns, vars);
 
           // create empty arrays for the structures
-          m               := arrayCreate(arrayLength(mapping.eqn_StA), {});
+          m               := IntMatrix.new(arrayLength(mapping.eqn_StA));
+          m_data          := IntMatrix.entries(adj.m);
+          m_aux           := IntMatrix.payload(adj.m);
           equation_names  := arrayCreate(size, ComponentRef.EMPTY());
           occurrences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
           dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
@@ -1105,7 +1445,7 @@ public
             (new_start, new_size)     := mapping.eqn_AtS[index_new];
             if old_size == new_size then
               for i in 0:old_size-1 loop
-                m[new_start+i] := adj.m[old_start+i];
+                IntMatrix.copyRow(adj.m, old_start+i, m_data, m_aux, m, new_start+i);
               end for;
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " sizes (old: " + intString(old_size) + ", new: "
@@ -1120,7 +1460,7 @@ public
             repetitions[index_new]    := full.repetitions[index_old];
           end for;
 
-          new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
+          new_adj  := FINAL(m, IntMatrix.transpose(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
           new_full := FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, mapping);
         then (new_adj, new_full);
 
@@ -1204,14 +1544,14 @@ public
 
         case FINAL() algorithm
           str := StringUtil.headline_2(str + "FINAL Adjacency Matrix") + "\n";
-          if arrayLength(adj.m) > 0 then
+          if IntMatrix.rows(adj.m) > 0 then
             str := str + StringUtil.headline_4("Normal Adjacency Matrix (row = equation)");
-            str := str + toStringSingle(adj.m);
+            str := str + IntMatrix.toString(adj.m);
           end if;
           str := str + "\n";
-          if arrayLength(adj.mT) > 0 then
+          if IntMatrix.rows(adj.mT) > 0 then
             str := str + StringUtil.headline_4("Transposed Adjacency Matrix (row = variable)");
-            str := str + toStringSingle(adj.mT);
+            str := str + IntMatrix.toString(adj.mT);
           end if;
           str := str + "\n" + Mapping.toString(adj.mapping);
         then str;
@@ -1397,63 +1737,13 @@ public
       output Integer count;
     algorithm
       count := match adj
-        case FINAL()  then BackendUtil.countElem(adj.m);
+        case FINAL()  then IntMatrix.nonZeroCount(adj.m);
         case EMPTY()         then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown matrix type."});
         then fail();
       end match;
     end nonZeroCount;
-
-    function expandMatrix
-      input output array<list<Integer>> m;
-      input Integer shift;
-    algorithm
-      if shift > 0 then
-        m := Array.expandToSize(arrayLength(m) + shift, m, {});
-      end if;
-    end expandMatrix;
-
-    function transposeScalar
-      input array<list<Integer>> m      "original matrix";
-      input Integer size                "size of the transposed matrix (does not have to be square!)";
-      output array<list<Integer>> mT    "transposed matrix";
-    algorithm
-      mT := arrayCreate(size, {});
-      // loop over all elements and store them in reverse
-      for row in 1:arrayLength(m) loop
-        for idx in m[row] loop
-          try
-            if idx > 0 then
-              mT[idx] := row :: mT[idx];
-            else
-              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
-            end if;
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
-              The variables have to be dense (without empty spaces) for this to work!"});
-          end try;
-        end for;
-      end for;
-      // sort the transposed matrix
-      // bigger to lower such that negative entries are at the and
-      for row in 1:arrayLength(mT) loop
-        mT[row] := List.sort(mT[row], intLt);
-      end for;
-    end transposeScalar;
-
-    function toStringSingle
-      input array<list<Integer>> m;
-      output String str = "";
-    protected
-      Integer skip = stringLength(intString(arrayLength(m))) + 1;
-      String tmp;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        tmp := intString(row);
-        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
-      end for;
-    end toStringSingle;
 
   protected
     function fullString
@@ -1495,22 +1785,31 @@ public
       input MatrixStrictness st;
       output Matrix adj;
     protected
-      array<list<Integer>> m, mT;
       Integer eqn_scalar_size, var_scalar_size;
     algorithm
       eqn_scalar_size := arrayLength(mapping.eqn_StA);
       var_scalar_size := arrayLength(mapping.var_StA);
       if eqn_scalar_size > 0 or var_scalar_size > 0 then
-        // create empty for-loop reconstruction information
-        // create empty matrix and transposed matrix
-        m := arrayCreate(eqn_scalar_size, {});
-        mT := transposeScalar(m, var_scalar_size);
-        // create record
-        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), st);
+        adj := FINAL(IntMatrix.new(eqn_scalar_size), IntMatrix.new(var_scalar_size), mapping, Modes.new(), st);
       else
         adj := EMPTY(st);
       end if;
     end initialize;
+
+    function estimateEntries
+      "estimates how many entries the given equations contribute, to size the builder"
+      input array<UnorderedSet<ComponentRef>> occ;
+      input Mapping mapping;
+      input list<Integer> indices;
+      output Integer n = 0;
+    protected
+      Integer sz;
+    algorithm
+      for i in indices loop
+        (_, sz) := mapping.eqn_AtS[i];
+        n := n + UnorderedSet.size(occ[i]) * sz;
+      end for;
+    end estimateEntries;
 
     function upgradeRow
       input Pointer<Equation> eqn_ptr;
@@ -1520,9 +1819,9 @@ public
       input UnorderedSet<ComponentRef> rep              "repetition set";
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
       input UnorderedMap<ComponentRef, Integer> fullmap "unordered map to check for general relevance";
-      input array<list<Integer>> m;
+      input IntMatrix.Builder m;
       input Mapping mapping;
-      input UnorderedMap<Mode.Key, Mode> modes;
+      input ModeTable modes;
       input Iterator iter_ = Iterator.EMPTY();
     protected
       Integer eqn_scal_idx, eqn_size;
@@ -1541,7 +1840,7 @@ public
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.upgradeRowFull(dependencies, map, mapping);
           for i in 0:eqn_size-1 loop
-            updateIntegerRow(m, eqn_scal_idx+i, row);
+            IntMatrix.builderAddList(m, eqn_scal_idx+i, row);
           end for;
         else
           // todo: if, when single equation (needs to be updated for if)
@@ -1560,16 +1859,6 @@ public
       end try;
     end upgradeRow;
 
-    function updateIntegerRow
-      input array<list<Integer>> m;
-      input Integer idx;
-      input list<Integer> row;
-    algorithm
-      arrayUpdate(m, idx, listAppend(row, m[idx]));
-      /*if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print("Adding to row " + intString(idx) + " " + List.toString(row, intString) + "\n");
-      end if;*/
-    end updateIntegerRow;
   end Matrix;
 
   uniontype Dependency
