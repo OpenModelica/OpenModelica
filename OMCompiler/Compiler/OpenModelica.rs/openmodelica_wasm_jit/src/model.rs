@@ -338,6 +338,12 @@ pub fn ext_wrappers(sigs: &[ExtCallSig]) -> String {
     let mut out = String::new();
     for sig in sigs {
         let name = &sig.name;
+        // C's `extFunDef`.
+        if sig.declare {
+            if let Some(decl) = ext_prototype(sig) {
+                out.push_str(&decl);
+            }
+        }
         match ext_call_wrapper(sig) {
             // A macro has no address to hand back.
             Some(call) => out.push_str(&format!("{call}#ifndef {name}\n{}#endif\n", ext_addr_wrapper(name))),
@@ -351,20 +357,38 @@ fn ext_addr_wrapper(name: &str) -> String {
     format!("void (*{EXT_ADDR_PREFIX}{name}(void))(void) {{ return (void (*)(void)) {name}; }}\n")
 }
 
+/// `extern T f(A, …);` in the types [`ext_call_wrapper`] hands the call.
+fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
+    let params = ext_param_types(sig)?.join(", ");
+    let ret = match &sig.ret {
+        Some(ty) => ext_c_type(ty)?.to_owned(),
+        None => "void".to_owned(),
+    };
+    Some(format!("extern {ret} {}({});\n", sig.name, if params.is_empty() { "void".to_owned() } else { params }))
+}
+
+/// Fortran passes everything by reference, and so does an `_Out_` scalar; an array
+/// or record is a pointer either way.
+fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
+    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
+    sig.args
+        .iter()
+        .map(|(ty, is_out)| {
+            let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
+            Some(format!("{}{}", ext_c_arg_type(ty)?, if ptr { "*" } else { "" }))
+        })
+        .collect()
+}
+
 /// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when the result has no
 /// C spelling the declaration alone fixes (a record returned by value).
 fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
-    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
-    let mut params = String::new();
-    for (i, (ty, is_out)) in sig.args.iter().enumerate() {
-        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
-        params.push_str(&format!(
-            "{}{}{} a{i}",
-            if i == 0 { "" } else { ", " },
-            ext_c_arg_type(ty)?,
-            if ptr { "*" } else { "" }
-        ));
-    }
+    let params = ext_param_types(sig)?
+        .into_iter()
+        .enumerate()
+        .map(|(i, ty)| format!("{ty} a{i}"))
+        .collect::<Vec<_>>()
+        .join(", ");
     let args: Vec<String> = (0..sig.args.len()).map(|i| format!("a{i}")).collect();
     let (ret, call) = match &sig.ret {
         Some(ty) => (ext_c_type(ty)?.to_owned(), "return "),
