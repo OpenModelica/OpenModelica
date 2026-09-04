@@ -1,6 +1,6 @@
 // name:     DualMassOscillator.mos
 // status:   correct
-// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator.py DualMassOscillator.ssp DualMassOscillator_systemCall.log
+// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator.py DualMassOscillator.ssp DualMassOscillator_systemCall.log DualMassOscillator_oms.log
 
 setCommandLineOptions("-g=MetaModelica");
 
@@ -21,6 +21,8 @@ echo(false);
  * should go through oms3 Python; this test should be removed in future
  */
 loadOMSimulator();
+// OMSimulator's step counts are not portable across FMU targets.
+oms_setLogFile("DualMassOscillator_oms.log");
 oms_setCommandLineOption("--suppressPath=true");
 oms_setTempDirectory("./temp_dualmassoscillator/");
 
@@ -81,15 +83,10 @@ unloadOMSimulator();
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
-// info:    maximum step size for 'DualMassOscillator.root': 0.001000
-// info:    Result file: DualMassOscillator.mat (bufferSize=100)
 // info:    Initialization
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
 // info:      system1.s1: 0.9106072183175901
 // info:      system2.s2: 1.9563340441740862
-// info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 658 NumRhsEvals  = 897 NumLinSolvSetups = 120
-//          NumNonlinSolvIters = 896 NumNonlinSolvConvFails = 0 NumErrTestFails = 53
 // endResult
