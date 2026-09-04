@@ -467,8 +467,8 @@ public
 protected
   function getMSSS
     "finds the minimal structurally singular subsets"
-    input array<list<Integer>> m              "eqn -> list<var>";
-    input array<list<Integer>> mT             "var -> list<eqn>";
+    input Adjacency.IntMatrix m               "eqn -> vars";
+    input Adjacency.IntMatrix mT              "var -> eqns";
     input Matching matching;
     input array<Boolean> excluded_eqns;
     input Adjacency.Mapping mapping;
@@ -476,8 +476,8 @@ protected
   protected
     list<Integer> eqn_candidates = {};
     array<Integer> color_clustering;
-    array<Integer> eqn_coloring = arrayCreate(arrayLength(m), -1);
-    array<Integer> var_coloring = arrayCreate(arrayLength(mT), -1);
+    array<Integer> eqn_coloring = arrayCreate(Adjacency.IntMatrix.rows(m), -1);
+    array<Integer> var_coloring = arrayCreate(Adjacency.IntMatrix.rows(mT), -1);
     Integer color = 0;
   algorithm
     // find all unmatched equation indices
@@ -519,14 +519,17 @@ protected
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
     input array<Integer> color_clustering;
-    input array<list<Integer>> m              "eqn -> list<var>";
-    input array<list<Integer>> mT             "var -> list<eqn>";
+    input Adjacency.IntMatrix m               "eqn -> vars";
+    input Adjacency.IntMatrix mT              "var -> eqns";
     input Matching matching;
     input Adjacency.Mapping mapping;
+  protected
+    array<Integer> data = Adjacency.IntMatrix.entries(m);
+    Integer first = m.start[eqn];
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
-    for var in m[eqn] loop
-      fillColorVar(var, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+    for k in first:first + m.len[eqn] - 1 loop
+      fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
     end for;
   end fillColorEqn;
 
@@ -538,8 +541,8 @@ protected
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
     input array<Integer> color_clustering;
-    input array<list<Integer>> m              "eqn -> list<var>";
-    input array<list<Integer>> mT             "var -> list<eqn>";
+    input Adjacency.IntMatrix m               "eqn -> vars";
+    input Adjacency.IntMatrix mT              "var -> eqns";
     input Matching matching;
     input Adjacency.Mapping mapping;
   protected

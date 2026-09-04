@@ -66,6 +66,7 @@ protected
   // Util import
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
+  import Vector;
   import NBSlice.IntLst;
   import StringUtil;
 public
@@ -235,13 +236,13 @@ public
   function getAssignments
     "expands the assignments with -1 if needed"
     input Matching matching;
-    input array<list<Integer>> m;
-    input array<list<Integer>> mT;
+    input Adjacency.IntMatrix m;
+    input Adjacency.IntMatrix mT;
     output array<Integer> var_to_eqn;
     output array<Integer> eqn_to_var;
   protected
-    Integer nVars = arrayLength(mT);
-    Integer nEqns = arrayLength(m);
+    Integer nVars = Adjacency.IntMatrix.rows(mT);
+    Integer nEqns = Adjacency.IntMatrix.rows(m);
   algorithm
     var_to_eqn := Array.expandToSize(nVars, matching.var_to_eqn, -1);
     eqn_to_var := Array.expandToSize(nEqns, matching.eqn_to_var, -1);
@@ -453,18 +454,18 @@ protected
   end augmentPath;
 
   function PFPlusExternal
-    input array<list<Integer>> m;
+    input Adjacency.IntMatrix m;
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input Boolean clear;
     // this needs partially = true to get computed. Otherwise it fails on singular partitions
     output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
-    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
+    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = Adjacency.IntMatrix.nonZeroCount(m);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";
   algorithm
     BackendDAEEXT.setAssignment(n2, n1, ass2, ass1);
-    BackendDAEEXT.setAdjacencyMatrix(n1, n2, nonZero, m);
+    BackendDAEEXT.setAdjacencyMatrixFlat(n1, n2, nonZero, m.start, m.len, Vector.rawArray(m.data));
     BackendDAEEXT.matching(n1, n2, algIndx, cheap, 1.0, if clear then 1 else 0);
     BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;
