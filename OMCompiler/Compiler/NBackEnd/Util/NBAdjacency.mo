@@ -345,6 +345,12 @@ public
 
     type Key = tuple<Integer, Integer>;
 
+    function key
+      input Integer eqn_idx;
+      input Integer var_idx;
+      output Key k = (eqn_idx, var_idx);
+    end key;
+
     function keyString
       input Key key;
       output String str;

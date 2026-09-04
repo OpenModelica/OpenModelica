@@ -105,101 +105,103 @@ public
       end match;
     end getEquations;
 
-    function addEquation
-      input output Value val;
-      input Integer eqn_idx;
-    algorithm
-      val := match val
-        case SINGLE_VAL() algorithm val.eqn_scal_indices := eqn_idx :: val.eqn_scal_indices; then val;
-        case MULTI_VAL()  algorithm val.eqn_scal_indices := eqn_idx :: val.eqn_scal_indices; then val;
-      end match;
-    end addEquation;
-
-    function addCref
-      input output Value val;
-      input ComponentRef cref;
-    algorithm
-      val := match val
-        case MULTI_VAL() algorithm val.crefs_to_solve := cref :: val.crefs_to_solve; then val;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because trying to add a cref to a single value."});
-        then fail();
-      end match;
-    end addCref;
   end Value;
 
   package PseudoBucket
+    // While collecting, a bucket accumulates its equations and crefs in pointers
+    // so that adding one costs a single cons.
+    type Bucket = tuple<Mode, Boolean, Pointer<list<Integer>>, Pointer<list<ComponentRef>>>;
+
     function create
       "recollects subsets of multi-dimensional equations that have to be solved in the same way.
-      currently only for loops!"
+      currently only for loops!
+      The buckets of one array equation are found by its index instead of by
+      hashing the mode, which keys on the equation name only anyway."
       input array<Integer> eqn_to_var           "eqn to var matching";
       input EquationPointers eqns;
       input Adjacency.Mapping mapping           "scalar <-> array index mapping";
       input UnorderedMap<Mode.Key, Mode> modes;
-      output UnorderedMap<Mode, Value> buckets = UnorderedMap.new<Value>(Mode.hash, Mode.isEqual);
+      output list<tuple<Mode, Value>> buckets = {};
     protected
+      array<list<Bucket>> per_eqn = arrayCreate(intMax(arrayLength(mapping.eqn_AtS), 1), {});
+      list<Bucket> order = {};
       Option<Mode> mode_opt;
       Mode mode;
       ComponentRef cref;
+      Integer eqn_arr_idx;
+      Boolean multi, fresh;
+      Pointer<list<Integer>> idx_ptr;
+      Pointer<list<ComponentRef>> cref_ptr;
+      Value val;
     algorithm
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
-        mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
+        mode_opt := UnorderedMap.get(Mode.key(eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
         if isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
-          if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
+          eqn_arr_idx := mapping.eqn_StA[eqn_scal_idx];
+          multi := Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, eqn_arr_idx));
+          cref := ComponentRef.EMPTY();
+          if multi then
             // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
             cref := listHead(mode.crefs);
             mode.crefs := {};
-            addMulti(cref, eqn_scal_idx, mode, buckets);
-          else
-            add(eqn_scal_idx, mode, buckets);
           end if;
+
+          (idx_ptr, cref_ptr, fresh) := getBucket(mode, multi, eqn_arr_idx, per_eqn);
+          if fresh then
+            order := (mode, multi, idx_ptr, cref_ptr) :: order;
+          elseif multi then
+            Pointer.update(cref_ptr, cref :: Pointer.access(cref_ptr));
+          end if;
+          Pointer.update(idx_ptr, eqn_scal_idx :: Pointer.access(idx_ptr));
         end if;
       end for;
 
+      // order holds the buckets newest first, prepending reverses it back
+      for bucket in order loop
+        (mode, multi, idx_ptr, cref_ptr) := bucket;
+        if multi then
+          val := Value.MULTI_VAL(Pointer.access(cref_ptr), Pointer.access(idx_ptr));
+        else
+          val := Value.SINGLE_VAL(listHead(mode.crefs), Pointer.access(idx_ptr));
+        end if;
+        buckets := (mode, val) :: buckets;
+      end for;
+
       if Flags.isSet(Flags.DUMP_SORTING) then
-        print(UnorderedMap.toString(buckets, Mode.toString, Value.toString) + "\n");
+        for bucket_tpl in buckets loop
+          (mode, val) := bucket_tpl;
+          print(Mode.toString(mode) + Value.toString(val) + "\n");
+        end for;
       end if;
     end create;
 
-    function add
-      input Integer eqn_scal_idx;
+    function getBucket
+      "Returns the accumulators of this mode's bucket, creating it if the array
+      equation does not have one for the mode yet."
       input Mode mode;
-      input UnorderedMap<Mode, Value> buckets;
+      input Boolean multi;
+      input Integer eqn_arr_idx;
+      input array<list<Bucket>> per_eqn;
+      output Pointer<list<Integer>> idx_ptr;
+      output Pointer<list<ComponentRef>> cref_ptr;
+      output Boolean fresh = false;
     protected
-      Option<Value> val_opt = UnorderedMap.get(mode, buckets);
-      Value val;
+      Mode m;
+      Boolean mu;
     algorithm
-      if isSome(val_opt) then
-        SOME(val) := val_opt;
-        val := Value.addEquation(val, eqn_scal_idx);
-        UnorderedMap.add(mode, val, buckets);
-      else
-        val := Value.SINGLE_VAL(listHead(mode.crefs), {eqn_scal_idx});
-        UnorderedMap.addNew(mode, val, buckets);
-      end if;
-    end add;
-
-    function addMulti
-      input ComponentRef cref;
-      input Integer eqn_scal_idx;
-      input Mode mode;
-      input UnorderedMap<Mode, Value> buckets;
-    protected
-      Option<Value> val_opt = UnorderedMap.get(mode, buckets);
-      Value val;
-    algorithm
-      if isSome(val_opt) then
-        SOME(val) := val_opt;
-        val := Value.addCref(val, cref);
-        val := Value.addEquation(val, eqn_scal_idx);
-        UnorderedMap.add(mode, val, buckets);
-      else
-        val := Value.MULTI_VAL(mode.crefs, {eqn_scal_idx});
-        UnorderedMap.addNew(mode, val, buckets);
-      end if;
-    end addMulti;
+      for bucket in per_eqn[eqn_arr_idx] loop
+        (m, mu, idx_ptr, cref_ptr) := bucket;
+        if mu == multi and Mode.isEqual(m, mode) then
+          return;
+        end if;
+      end for;
+      idx_ptr := Pointer.create({});
+      cref_ptr := Pointer.create(if multi then mode.crefs else {});
+      fresh := true;
+      arrayUpdate(per_eqn, eqn_arr_idx, (mode, multi, idx_ptr, cref_ptr) :: per_eqn[eqn_arr_idx]);
+    end getBucket;
 
     function filter
       "filters out the indices that are in in the set"
@@ -251,7 +253,7 @@ public
           Adjacency.Matrix phase2_adj;
           Matching phase2_matching;
           array<SuperNode> super_nodes;
-          UnorderedMap<Mode, Value> buckets;
+          list<tuple<Mode, Value>> buckets;
 
         case Adjacency.Matrix.FINAL() algorithm
           if Flags.isSet(Flags.DUMP_SORTING) then
@@ -451,7 +453,7 @@ public
       input Matching matching;
       input UnorderedMap<ComponentRef, Integer> eqn_map;
       input list<SCC> scc_phase1;
-      input UnorderedMap<Mode, Value> buck;
+      input list<tuple<Mode, Value>> buck;
       output Adjacency.Matrix phase2_adj = adj;
       output Matching phase2_matching = matching;
       output array<SuperNode> super_nodes;
@@ -459,7 +461,7 @@ public
       LoopIdentifier li;
       UnorderedMap<LoopIdentifier, SCC> loop_map = UnorderedMap.new<SCC>(LoopIdentifier.hash, LoopIdentifier.isEqual);
       list<SCC> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
-      list<tuple<Mode, Value>> buckets = UnorderedMap.toList(buck);
+      list<tuple<Mode, Value>> buckets = buck;
       Mode mode;
       Value val;
       Integer index, shift;
@@ -546,8 +548,7 @@ public
             index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, eqn_lst, index);
           end for;
 
-          // 5.4. transpose it back to have it consistent (probably not actually necessary for phase2 tarjan but more safe)
-          phase2_adj.mT := Adjacency.Matrix.transposeScalar(phase2_adj.m, arrayLength(phase2_adj.mT));
+          // phase 3 tarjan only reads phase2_adj.m, so mT is left as it is
 
         then phase2_adj;
 
@@ -637,9 +638,22 @@ public
       input array<SuperNode> super_nodes;
       input list<Integer> rows_to_merge;
       input output Integer new_idx;
+    protected
+      Integer total = 0;
+      UnorderedSet<Integer> set;
     algorithm
-      // merge all rows to one row
-      arrayUpdate(m, new_idx, UnorderedSet.unique_list(List.flatten(list(m[idx] for idx in rows_to_merge)), Util.id, intEq));
+      // merge all rows to one row. Same set, and so the same row, as
+      // unique_list(List.flatten(...)) built, without copying the rows first.
+      for idx in rows_to_merge loop
+        total := total + listLength(m[idx]);
+      end for;
+      set := UnorderedSet.new<Integer>(Util.id, intEq, Util.nextPrime(total));
+      for idx in rows_to_merge loop
+        for v in m[idx] loop
+          UnorderedSet.add(v, set);
+        end for;
+      end for;
+      arrayUpdate(m, new_idx, UnorderedSet.toList(set));
       // remove the original rows
       for idx in rows_to_merge loop
         arrayUpdate(m, idx, {});
@@ -699,7 +713,7 @@ protected
     input output list<list<Integer>> comps  "accumulator for components";
   protected
     list<Integer> SCC;
-    Integer eqn2;
+    Integer eqn2, cand;
   algorithm
     // Set the depth index for eqn to the smallest unused index
     arrayUpdate(number, eqn, index);
@@ -708,15 +722,20 @@ protected
     index := index + 1;
     stack := eqn::stack;
 
-    // Consider successors of eqn
-    for eqn2 in predecessors(eqn, m, var_to_eqn) loop
-      if number[eqn2] == -1 then
-        // Successor eqn2 has not yet been visited; recurse on it
-        (stack, index, comps) := strongConnect(m, var_to_eqn, eqn2, stack, index, number, lowlink, onStack, comps);
-        arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
-      elseif onStack[eqn2] then
-        // Successor eqn2 is in the stack and hence in the current SCC
-        arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
+    // Consider successors of eqn, without building a list of them per node
+    for cand in m[eqn] loop
+      if cand > 0 then
+        eqn2 := var_to_eqn[cand];
+        if eqn2 > 0 and eqn2 <> eqn then
+          if number[eqn2] == -1 then
+            // Successor eqn2 has not yet been visited; recurse on it
+            (stack, index, comps) := strongConnect(m, var_to_eqn, eqn2, stack, index, number, lowlink, onStack, comps);
+            arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
+          elseif onStack[eqn2] then
+            // Successor eqn2 is in the stack and hence in the current SCC
+            arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
+          end if;
+        end if;
       end if;
     end for;
 
@@ -733,17 +752,6 @@ protected
       comps := MetaModelica.Dangerous.listReverseInPlace(SCC)::comps;
     end if;
   end strongConnect;
-
-  function predecessors "author: lochel, kabdelhak
-    Returns a list of incoming nodes, corresponding
-    to the adjacency matrix"
-    input Integer idx             "node index to get all predecessors for";
-    input array<list<Integer>> m  "normal adjacency matrix";
-    input array<Integer> mapping  "maps either var to eqn or eqn to var (matching)";
-    output list<Integer> pre_lst  "all predecessors";
-  algorithm
-    pre_lst := list(mapping[cand] for cand guard(cand > 0 and mapping[cand] <> idx and mapping[cand] > 0) in m[idx]);
-  end predecessors;
 
 
   annotation(__OpenModelica_Interface="nbackend");
