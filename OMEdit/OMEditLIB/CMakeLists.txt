@@ -18,6 +18,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
+                      LSP/LSPFileWatcher.cpp
                       LSP/ModelicaLSPClient.cpp
                       LSP/LSPSetupDialog.cpp
                       Util/Helper.cpp
@@ -156,6 +157,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       resource_omedit.qrc)
 
 set(OMEDITLIB_HEADERS LSP/LSPClient.h
+                      LSP/LSPFileWatcher.h
                       LSP/ModelicaLSPClient.h
                       LSP/LSPSetupDialog.h
                       LSP/LSPProtocol.h
