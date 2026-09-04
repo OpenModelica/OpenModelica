@@ -65,6 +65,9 @@ print("info:      system2.s2: " + realString(v2)+"\n");
 
 oms_terminate("DualMassOscillator");
 oms_delete("DualMassOscillator");
+// Closing the log here, not in a static destructor at unload, is what makes
+// the notice below appear at a defined point.
+oms_setLogFile("");
 unloadOMSimulator();
 
 
