@@ -1184,7 +1184,6 @@ public:
   QGroupBox* getLanguageServerGroupBox() {return mpLanguageServerGroupBox;}
   QCheckBox* getEnableLoggingCheckBox() {return mpEnableLoggingCheckBox;}
   QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
-  QLineEdit* getLibrariesTextBox() {return mpLibrariesTextBox;}
   /*!
    * \brief setServerRestartEnabled
    * Restarting acts on the saved configuration, so it follows the stored
@@ -1203,8 +1202,6 @@ private:
   QPushButton *mpRestartServerButton;
   QPushButton *mpDownloadServerButton;
   QComboBox *mpDownloadVersionComboBox;
-  Label *mpLibrariesLabel;
-  QLineEdit *mpLibrariesTextBox;
 
   static QString platformServerAsset();
   static QString testedServerVersion();

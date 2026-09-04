@@ -2021,11 +2021,9 @@ The feature is opt-in and disabled by default.
      release published on GitHub, which may be newer than any version OMEdit
      has been tried with.
 
-  -  *Library Paths* - optional semicolon-separated list of Modelica library
-     root directories (each containing a ``package.mo``) that the server loads
-     on startup.  These enable *Go to Definition* and richer hover across
-     files.  Loading large libraries such as the Modelica Standard Library can
-     take a few seconds at startup.
+  The libraries the server searches are the ones loaded in OMEdit; there is no
+  separate list to maintain.  Loading a library makes it resolvable for *Go to
+  Definition* and hover, and unloading it removes it again.
 
   -  *Log language server messages to the Messages Browser* - when checked,
      messages from the language server are shown in the Messages Browser,

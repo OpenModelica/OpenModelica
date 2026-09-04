@@ -254,24 +254,14 @@ void MainWindow::startLanguageServer()
 
 /*!
  * \brief MainWindow::languageServerLibraries
- * Library roots the language server should know about: the ones configured in
- * the settings, plus the source directories of the libraries currently loaded
- * in OMC. Including the latter keeps the server in step with OMC instead of
- * relying on a separately maintained list.
+ * Library roots the language server should know about: the source directories
+ * of the libraries currently loaded in OMC. Following OMC is the whole list;
+ * there is deliberately no separate setting to keep in step with it.
  * \return de-duplicated list of library root directories
  */
 QStringList MainWindow::languageServerLibraries() const
 {
   QStringList libraries;
-  const QString librariesSetting = Utilities::getApplicationSettings()->value("languageServer/libraries").toString().trimmed();
-  const QStringList parts = librariesSetting.split(QLatin1Char(';'), Qt::SkipEmptyParts);
-  for (const QString &part : parts) {
-    const QString trimmed = part.trimmed();
-    if (!trimmed.isEmpty() && !libraries.contains(trimmed)) {
-      libraries.append(trimmed);
-    }
-  }
-
   if (mpLibraryWidget && mpLibraryWidget->getLibraryTreeModel()) {
     LibraryTreeItem *pRootLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
     for (int i = 0; i < pRootLibraryTreeItem->childrenSize(); ++i) {
