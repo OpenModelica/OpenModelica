@@ -143,15 +143,17 @@ impl DelayState {
                 buf.pop_front();
             }
         }
-        omclog::info!(
-            omclog::DELAY,
-            false,
-            "storeDelayed[{idx}] ({},{}) position={}",
-            format_g(time, 6),
-            format_g(value, 6),
-            buf.len(),
-        );
-        print_buffer(omclog::DELAY, buf);
+        if omclog::active(omclog::DELAY) {
+            omclog::info!(
+                omclog::DELAY,
+                false,
+                "storeDelayed[{idx}] ({},{}) position={}",
+                format_g(time, 6),
+                format_g(value, 6),
+                buf.len(),
+            );
+            print_buffer(omclog::DELAY, buf);
+        }
     }
 
     /// C `delayImpl`: `expr(time - delay_time)` by linear interpolation, with the
@@ -159,14 +161,16 @@ impl DelayState {
     pub fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64, delay_max: f64) -> f64 {
         let buf = &self.buffers[idx];
         let length = buf.len();
-        omclog::info!(
-            omclog::DELAY,
-            false,
-            "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
-            format_g(value, 6),
-            format_g(time, 6),
-            format_g(delay_time, 6),
-        );
+        if omclog::active(omclog::DELAY) {
+            omclog::info!(
+                omclog::DELAY,
+                false,
+                "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
+                format_g(value, 6),
+                format_g(time, 6),
+                format_g(delay_time, 6),
+            );
+        }
         // C's `assertStreamPrint` guards, `DASSL_STEP_EPS` being 1e-13. Each one
         // throws in C, so at most one is reported and the caller's value stands in
         // for the interpolation the jump skipped.

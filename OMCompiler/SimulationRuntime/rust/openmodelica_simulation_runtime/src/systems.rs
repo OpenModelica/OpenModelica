@@ -350,12 +350,14 @@ fn solve_total_pivot(
     let size = ls.size.max(0) as usize;
     let time = unsafe { (**(*data).localData).timeValue };
     let eq = ls.equationIndex;
-    omclog::info!(
-        omclog::LS,
-        false,
-        "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
-        openmodelica_sim_meta::driver::format_g(time, 6),
-    );
+    if omclog::active(omclog::LS) {
+        omclog::info!(
+            omclog::LS,
+            false,
+            "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6),
+        );
+    }
     let mut a = vec![0.0f64; (size * size).max(1)];
     let mut b = vec![0.0f64; size.max(1)];
     if ls.method == 0 {
