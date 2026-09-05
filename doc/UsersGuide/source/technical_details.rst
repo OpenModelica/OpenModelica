@@ -168,10 +168,10 @@ Discrete-time variables
   that can disagree with it. In FMI's terms a ``discrete`` or ``tunable``
   variable is stored this way — the two are indistinguishable once the run is
   over — while ``constant`` and ``fixed`` variables have no column at all and
-  appear as a ``parameter`` in the variable table.
+  appear in the variable table as a parameter: a ``value`` and no ``column``.
 
   A variable that *could* change but did not — one the run computes once during
-  initialization and never writes again — is also stored as a ``parameter``,
+  initialization and never writes again — is also stored as a parameter,
   holding the value it took. Its variability in the model it came from may well
   have been continuous; the file records the trajectory, not the declaration.
 
@@ -184,10 +184,10 @@ Discrete-time variables
   ``omc_result_string_at``).
 
 Enumerations
-  An enumeration variable is typed ``enumeration`` and names its type by index
-  into ``modelica.enumerations``, a table of ordered literal names. A type is
-  identified by that ordered list alone, so two variables listing the same
-  literals share one entry.
+  An enumeration variable is an ``Int32`` that names its type by index into
+  ``modelica.enumerations``, a table of ordered literal names, in an
+  ``enumeration`` key. A type is identified by that ordered list alone, so two
+  variables listing the same literals share one entry.
 
   The column is either an ``Int32`` holding the value (``1`` for the first
   literal), or a ``Dictionary<Int32, Utf8>`` whose dictionary is the same
@@ -204,6 +204,11 @@ Field metadata
   variables share a column, the field metadata is that of the variable owning
   the column; the variable table carries each variable's own.
 
+  ``type`` and ``enumeration`` are the exception: they belong to the column
+  rather than to the variable, so the variable table does not repeat them and an
+  alias has the type of the column it reads. Only a variable with no column at
+  all — a parameter — carries them there.
+
 Schema metadata
   The keys carry a tool-neutral ``modelica.`` prefix, so another tool can write
   and read the same layout. Every value is a string, as Arrow schema metadata
@@ -219,7 +224,10 @@ Schema metadata
     A JSON array with one object per result variable, in the order the writer
     lists them, holding what ``dataInfo`` holds in the MATv4 file together with
     each variable's own metadata. Only keys with content are written, so a
-    reader must apply the default of every key it does not find:
+    reader must apply the default of every key it does not find.
+
+    An entry either names a ``column`` or carries a ``value``, and that alone
+    tells a time-variant variable from a parameter.
 
     .. list-table::
        :header-rows: 1
@@ -231,19 +239,12 @@ Schema metadata
        * - ``name``
          - string
          - The variable's name. Required.
-       * - ``kind``
-         - string
-         - ``"time"``, ``"variable"`` or ``"parameter"`` — a string, not an
-           index. Required. A ``parameter`` carries ``value`` and no ``column``;
-           the other two carry ``column`` and no ``value``, so the kinds are
-           also told apart structurally. ``time`` marks the run's time variable,
-           which an alias of it (``column: 0``, kind ``variable``) does not.
        * - ``column``
          - integer
-         - For ``time`` and ``variable``, the schema field index holding the
-           values. Several variables may name the same column: they are
-           aliases and the data is stored once; an alias of ``time`` names
-           column 0.
+         - The schema field index holding the values, for a time-variant
+           variable. Several variables may name the same column: they are
+           aliases and the data is stored once. Column 0 is ``time``, so the
+           time variable and any alias of it name it.
        * - ``scale``
          - number
          - The variable is ``scale * column + offset``. Default ``1``.
@@ -255,14 +256,19 @@ Schema metadata
            OpenModelica detects only these, but a reader must apply any
            ``scale`` and ``offset`` it finds.
        * - ``value``
-         - number or string
-         - For ``parameter``, the value; a string for a ``String`` parameter.
-           Values computed once during initialization are parameters here, as
-           in ``data_1``.
+         - number, string or boolean
+         - The value of a variable that has no column: a parameter. Its JSON
+           type is the one ``type`` calls for — a JSON boolean for a
+           ``Boolean``, a string for a ``Utf8``, a number otherwise, ``null``
+           for a value JSON cannot write (an infinity or a NaN). Values
+           computed once during initialization are parameters here, as in
+           ``data_1``.
        * - ``type``
          - string
          - The declared type, named as Arrow names it (see *Column types*).
-           Default ``"Float64"``.
+           Default ``"Float64"``. Only an entry with a ``value`` carries it;
+           a variable with a ``column`` has the type of that column's field
+           metadata.
        * - ``description``
          - string
          - The variable's description. Default empty.
@@ -280,9 +286,10 @@ Schema metadata
            unit scales it but adds no offset. Default ``false``.
        * - ``enumeration``
          - integer
-         - For an enumeration variable, the index of its type in
-           ``modelica.enumerations``. The literal a ``parameter``'s ``value``
-           names is that table's entry at ``value - 1``.
+         - The index in ``modelica.enumerations`` of the type of an enumeration
+           parameter; the literal its ``value`` names is that table's entry at
+           ``value - 1``. Like ``type``, it is the column's field metadata for
+           a variable that has one.
 
   ``modelica.enumerations``
     A JSON array of the distinct enumeration types, each an array of its

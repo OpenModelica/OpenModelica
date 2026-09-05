@@ -15,17 +15,20 @@
 //! a JSON array with one object per result variable,
 //!
 //! ```text
-//! {"name": "a.b", "kind": "variable",  "column": 3, "scale": -1.0, "type": "Real",
+//! {"name": "a.b", "column": 3, "scale": -1.0,
 //!  "description": "...", "unit": "m", "displayUnit": "mm",
 //!  "relativeQuantity": true}
-//! {"name": "p",   "kind": "parameter", "value": 2.5, ...}
-//! {"name": "time","kind": "time",      "column": 0, ...}
+//! {"name": "p",   "value": 2.5, ...}
+//! {"name": "time","column": 0, ...}
 //! ```
 //!
-//! `column` is the schema field index. An alias is `scale * column + offset`
-//! (each key omitted when it is the identity's 1 or 0); a negated Real is
-//! `scale: -1`, a negated Boolean `scale: -1, offset: 1` over the 0/1 encoding,
-//! which is its logical negation. Only the keys with content are written.
+//! `column` is the schema field index and column 0 is `time`. An entry without
+//! one is time-invariant and carries its `value` instead, typed by the JSON: a
+//! boolean, a string, or a number that `type` widens beyond the default
+//! `Float64`. An alias is `scale * column + offset` (each key omitted when it is
+//! the identity's 1 or 0); a negated Real is `scale: -1`, a negated Boolean
+//! `scale: -1, offset: 1` over the 0/1 encoding, which is its logical negation.
+//! Only the keys with content are written.
 //!
 //! `unit` and `displayUnit` are names into the [`UNITS_KEY`] table, as in FMI,
 //! because a model has far more variables than units; see [`units`].
@@ -338,6 +341,9 @@ fn field_metadata(v: &ArrowVar) -> HashMap<String, String> {
     md
 }
 
+/// The type a variable has when its entry names none.
+const DEFAULT_TYPE: &str = "Float64";
+
 /// The declared type as its Arrow name — the file is an Arrow file, so it names
 /// types the way Arrow does. It is the *declared* type, which the storage may
 /// narrow: a `Float64` variable is a `Float32` column under `-single`, and a
@@ -382,31 +388,31 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
     let time_field = match time_var {
         Some(v) => Field::new("time", DataType::Float64, false).with_metadata(field_metadata(v)),
         None => Field::new("time", DataType::Float64, false)
-            .with_metadata(HashMap::from([("unit".to_owned(), "s".to_owned()), ("type".to_owned(), "Real".to_owned())])),
+            .with_metadata(HashMap::from([("unit".to_owned(), "s".to_owned()), ("type".to_owned(), DEFAULT_TYPE.to_owned())])),
     };
     fields.push(time_field);
     owner.insert(0, (0, Affine::IDENTITY));
 
     for v in vars {
-        // (kind, column, alias transform, value)
-        let (kind, column, affine, value): (&str, Option<usize>, Affine, Option<f64>) = match v.kind {
-            ArrowKind::Time => ("time", Some(0), Affine::IDENTITY, None),
+        // (column, alias transform, time-invariant value)
+        let (column, affine, value): (Option<usize>, Affine, Option<f64>) = match v.kind {
+            ArrowKind::Time => (Some(0), Affine::IDENTITY, None),
             ArrowKind::Param { affine } => {
                 let p = params.get(param_ix).copied().unwrap_or(0.0);
                 param_ix += 1;
-                ("parameter", None, Affine::IDENTITY, Some(affine.apply(p)))
+                (None, Affine::IDENTITY, Some(affine.apply(p)))
             }
-            ArrowKind::Const { value } => ("parameter", None, Affine::IDENTITY, Some(value)),
+            ArrowKind::Const { value } => (None, Affine::IDENTITY, Some(value)),
             ArrowKind::Column { col, affine } if v.unvarying => {
                 let raw = first_row.get(col as usize).copied().unwrap_or(0.0);
-                ("parameter", None, Affine::IDENTITY, Some(affine.apply(raw)))
+                (None, Affine::IDENTITY, Some(affine.apply(raw)))
             }
             ArrowKind::Column { col, affine } => match owner.get(&col) {
-                Some(&(f, base)) => ("variable", Some(f), affine.relative_to(base), None),
+                Some(&(f, base)) => (Some(f), affine.relative_to(base), None),
                 None => {
                     let f = field_for(&mut fields, &mut stored, &mut enumerations, v, col, affine);
                     owner.insert(col, (f, affine));
-                    ("variable", Some(f), Affine::IDENTITY, None)
+                    (Some(f), Affine::IDENTITY, None)
                 }
             },
         };
@@ -416,9 +422,6 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
         first = false;
         json.push_str("{\"name\":");
         json_str(&mut json, v.name);
-        json.push_str(",\"kind\":\"");
-        json.push_str(kind);
-        json.push('"');
         if let Some(c) = column {
             json.push_str(&format!(",\"column\":{c}"));
         }
@@ -430,19 +433,23 @@ fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy
             json.push_str(",\"offset\":");
             json_f64(&mut json, affine.offset);
         }
+        // Only a parameter has no column to carry its type and enumeration.
         if let Some(val) = value {
             json.push_str(",\"value\":");
-            if v.ty == VarTy::String {
-                json_str(&mut json, &resolve(val as u32));
-            } else {
-                json_f64(&mut json, val);
+            match v.ty {
+                VarTy::String => json_str(&mut json, &resolve(val as u32)),
+                VarTy::Boolean => json.push_str(if val != 0.0 { "true" } else { "false" }),
+                VarTy::Integer if val.is_finite() => json.push_str(&(val as i64).to_string()),
+                _ => json_f64(&mut json, val),
             }
-        }
-        json.push_str(",\"type\":\"");
-        json.push_str(type_name(v));
-        json.push('"');
-        if let Some(e) = v.enumeration {
-            json.push_str(&format!(",\"enumeration\":{}", enumerations.index(e)));
+            if type_name(v) != DEFAULT_TYPE {
+                json.push_str(",\"type\":\"");
+                json.push_str(type_name(v));
+                json.push('"');
+            }
+            if let Some(e) = v.enumeration {
+                json.push_str(&format!(",\"enumeration\":{}", enumerations.index(e)));
+            }
         }
         if !v.comment.is_empty() {
             json.push_str(",\"description\":");
@@ -668,8 +675,8 @@ mod tests {
         assert_eq!(*f.data_type(), ree_type(DataType::Int32));
         assert_eq!(schema.metadata()[ENUMERATIONS_KEY], r#"[["one","two","three"],["on","off"]]"#);
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#""name":"ep","kind":"parameter","value":2.0,"type":"Int32","enumeration":0"#), "{json}");
-        assert!(json.contains(r#""name":"fp","kind":"parameter","value":1.0,"type":"Int32","enumeration":1"#), "{json}");
+        assert!(json.contains(r#""name":"ep","value":2,"type":"Int32","enumeration":0"#), "{json}");
+        assert!(json.contains(r#""name":"fp","value":1,"type":"Int32","enumeration":1"#), "{json}");
         let batch = reader.into_iter().next().expect("a batch").expect("ok");
         let ree = batch.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().expect("run-end encoded");
         assert_eq!(ree.values().as_any().downcast_ref::<Int32Array>().expect("int32").values(), &[1, 3]);
@@ -694,10 +701,10 @@ mod tests {
         assert_eq!(schema.field(1).metadata()["unit"], "m");
         assert_eq!(schema.metadata()[STOP_TIME_KEY], "1.0");
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"scale":-1.0,"type":"Float64"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"nb","kind":"variable","column":2,"scale":-1.0,"offset":1.0,"type":"Boolean"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"p","kind":"parameter","value":-2.5,"type":"Float64"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"u","kind":"parameter","value":7.0,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"mx","column":1,"scale":-1.0}"#), "{json}");
+        assert!(json.contains(r#"{"name":"nb","column":2,"scale":-1.0,"offset":1.0}"#), "{json}");
+        assert!(json.contains(r#"{"name":"p","value":-2.5}"#), "{json}");
+        assert!(json.contains(r#"{"name":"u","value":7.0}"#), "{json}");
         let batches: Vec<RecordBatch> = r.map(|b| b.unwrap()).collect();
         assert_eq!(batches.iter().map(|b| b.num_rows()).sum::<usize>(), 3);
         // `b` is discrete: run-end encoded, [true, false, true] in three runs.
@@ -705,6 +712,37 @@ mod tests {
         assert_eq!(b.run_ends().values(), &[1, 2, 3]);
         let bv = b.values().as_any().downcast_ref::<BooleanArray>().unwrap();
         assert_eq!((0..3).map(|i| bv.value(i)).collect::<Vec<_>>(), [true, false, true]);
+    }
+
+    /// A time-invariant value is written in the JSON type its own type calls for.
+    #[test]
+    fn parameter_values_are_typed_json() {
+        let param = |name, ty, affine| ArrowVar {
+            name,
+            comment: "",
+            unit: "",
+            display_unit: "",
+            relative_quantity: false,
+            ty,
+            discrete: false,
+            kind: ArrowKind::Param { affine },
+            unvarying: false,
+            enumeration: None,
+        };
+        let vars = [
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            param("b", VarTy::Boolean, Affine::IDENTITY),
+            param("nb", VarTy::Boolean, Affine::NOT),
+            param("n", VarTy::Integer, Affine::NEGATE),
+            param("x", VarTy::Real, Affine::IDENTITY),
+        ];
+        let bytes = write_arrow(&vars, &[0.0, 1.0], 1, &[1.0, 1.0, 3.0, 2.5], &[ColTy::F64], no_strings(), &FileMeta::default());
+        let schema = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap().schema();
+        let json = &schema.metadata()[VARIABLES_KEY];
+        assert!(json.contains(r#"{"name":"b","value":true,"type":"Boolean"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"nb","value":false,"type":"Boolean"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"n","value":-3,"type":"Int32"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"x","value":2.5}"#), "{json}");
     }
 
     /// The first variable to reach a column decides how it is stored; the others
@@ -722,9 +760,9 @@ mod tests {
         let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
         let schema = r.schema();
         let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","kind":"variable","column":1,"type":"Float64"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"x","kind":"variable","column":1,"scale":-1.0,"type":"Float64"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"y","kind":"variable","column":1,"scale":-2.0,"offset":3.0,"type":"Float64"}"#), "{json}");
+        assert!(json.contains(r#"{"name":"mx","column":1}"#), "{json}");
+        assert!(json.contains(r#"{"name":"x","column":1,"scale":-1.0}"#), "{json}");
+        assert!(json.contains(r#"{"name":"y","column":1,"scale":-2.0,"offset":3.0}"#), "{json}");
         let b = r.map(|b| b.unwrap()).next().unwrap();
         let mx = b.column(1).as_any().downcast_ref::<Float32Array>().unwrap();
         assert_eq!(mx.values(), &[-1.0f32, -2.0]);
@@ -746,7 +784,7 @@ mod tests {
         let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
         let schema = r.schema();
         assert!(matches!(schema.field(1).data_type(), DataType::RunEndEncoded(_, v) if *v.data_type() == DataType::Utf8));
-        assert!(schema.metadata()[VARIABLES_KEY].contains(r#"{"name":"sp","kind":"parameter","value":"on","type":"Utf8"}"#));
+        assert!(schema.metadata()[VARIABLES_KEY].contains(r#"{"name":"sp","value":"on","type":"Utf8"}"#));
         let b = r.map(|b| b.unwrap()).next().unwrap();
         let s = b.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
         assert_eq!(s.run_ends().values(), &[2, 4]);
