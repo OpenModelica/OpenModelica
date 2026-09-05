@@ -6252,14 +6252,16 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
             let outer_off = match outer_rev_subs
               case {} then '0'
               else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls)
             <<
             <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                if (<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%> < (unsigned int)(<%nCols%>)) {
-                  col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++;
+                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
+                  col_counts[<%col%>]++;
                 }
               }
             }
@@ -6321,10 +6323,12 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
           else
             let &offsetPreExp = buffer ""
             let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls)
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            if (<%v.index%> + (<%offset%>) < (unsigned int)(<%nCols%>)) { col_counts[<%v.index%> + (<%offset%>)]++; }
+            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { col_counts[<%col%>]++; }
             >>
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
@@ -6668,14 +6672,16 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
             let outer_off = match outer_rev_subs
               case {} then '0'
               else indexSubRecursive(List.restOrEmpty(listReverse(List.restOrEmpty(crefDims(seed)))), outer_rev_subs, context, &outerPreExp, &varDecls, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls)
             <<
             <%seedComment%>
             {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                if (<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%> < (unsigned int)(<%nCols%>)) {
-                  <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
+                  <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>;
                 }
               }
             }
@@ -6737,10 +6743,12 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
           else
             let &offsetPreExp = buffer ""
             let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(seed))), listReverse(crefSubs(seed)), context, &offsetPreExp, &varDecls, &auxFunction)
+            let col = tempDecl("modelica_integer", &varDecls)
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            if (<%v.index%> + (<%offset%>) < (unsigned int)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>; }
+            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>; }
             >>
     else '/* resizableColFill: seed not found in jacHT */'
   else ''
