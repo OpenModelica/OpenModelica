@@ -65,7 +65,7 @@ public
   import SimGenericCall = NSimGenericCall;
   import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.{SimVar, SimVars, VarType};
+  import NSimVar.{SimVar, SimVars, VarType, ConvertMemo};
 
   // Old SimCode imports
   import OldSimCode = SimCode;
@@ -688,17 +688,20 @@ public
       OldSimCode.JacobianColumn oldJacCol;
     algorithm
       oldJac := match simJac
+        local
+          ConvertMemo memo;
         case SIM_JAC() algorithm
+          memo := SimVar.newConvertMemo(listLength(simJac.seedVars) + listLength(simJac.columnVars));
           oldJacCol := OldSimCode.JAC_COLUMN(
             columnEqns          = list(SimStrongComponent.Block.convert(blck) for blck in simJac.columnEqns),
-            columnVars          = list(SimVar.convert(var) for var in simJac.columnVars),
+            columnVars          = SimVar.convertListMemo(simJac.columnVars, memo),
             numberOfResultVars  = simJac.numberOfResultVars,
             constantEqns        = list(SimStrongComponent.Block.convert(blck) for blck in simJac.constantEqns)
           );
 
           oldJac := OldSimCode.JAC_MATRIX(
             columns             = {oldJacCol},
-            seedVars            = SimVar.convertList(simJac.seedVars),
+            seedVars            = SimVar.convertListMemo(simJac.seedVars, memo),
             matrixName          = simJac.name,
             sparsityMatrix      = Sparsity.convert(simJac.sparsityMatrix),
             sparsity            = {},
@@ -711,7 +714,7 @@ public
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
-            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap),
+            crefsHT             = Util.applyOption(simJac.jac_map, function SimCodeUtil.convertSimCodeMap(memo = memo)),
             isAdjoint           = simJac.isAdjoint,
             isBidirectional     = simJac.isBidirectional,
             adjointJacobianIndex = simJac.adjointJacobianIndex,

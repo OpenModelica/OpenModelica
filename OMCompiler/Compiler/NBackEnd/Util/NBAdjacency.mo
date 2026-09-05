@@ -1086,8 +1086,9 @@ public
 
         case FULL() algorithm
           // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
+          // min is the rank the matrix already contains, -1 for an empty one
           if isEmpty(adj) then
-            min := 0;
+            min := -1;
             adj := initialize(full.mapping, st);
           else
             min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -1113,7 +1114,7 @@ public
                 indices := UnorderedMap.valueList(eqns_map);
                 builder := IntMatrix.toBuilder(adj.m, estimateEntries(occ, adj.mapping, indices), true);
                 for index in indices loop
-                  filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
+                  filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min + 1, max);
                   // upgrade the row and all meta data
                   upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, builder, adj.mapping, adj.modes, iter);
                 end for;

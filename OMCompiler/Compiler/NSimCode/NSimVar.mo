@@ -85,6 +85,9 @@ protected
   import Util;
 
 public
+  type ConvertEntry = tuple<SimVar, OldSimCodeVar.SimVar>;
+  type ConvertMemo = UnorderedMap<ComponentRef, ConvertEntry> "SimVar -> old SimVar conversions already made";
+
   uniontype SimVar "Information about a variable in a Modelica model."
     record SIMVAR
       ComponentRef name;
@@ -435,6 +438,39 @@ public
       input list<SimVar> simVar_lst;
       output list<OldSimCodeVar.SimVar> oldSimVar_lst = list(convert(simVar) for simVar in simVar_lst);
     end convertList;
+
+    function newConvertMemo
+      input Integer size;
+      output ConvertMemo memo = UnorderedMap.new<ConvertEntry>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(size));
+    end newConvertMemo;
+
+    function convertMemo
+      input SimVar simVar;
+      input ConvertMemo memo;
+      output OldSimCodeVar.SimVar oldSimVar = convert(simVar);
+    algorithm
+      UnorderedMap.add(simVar.name, (simVar, oldSimVar), memo);
+    end convertMemo;
+
+    function convertListMemo
+      input list<SimVar> simVar_lst;
+      input ConvertMemo memo;
+      output list<OldSimCodeVar.SimVar> oldSimVar_lst = list(convertMemo(simVar, memo) for simVar in simVar_lst);
+    end convertListMemo;
+
+    function convertMemoized
+      "the remembered conversion of exactly this record, or a fresh one"
+      input SimVar simVar;
+      input ConvertMemo memo;
+      output OldSimCodeVar.SimVar oldSimVar;
+    protected
+      SimVar orig;
+    algorithm
+      oldSimVar := match UnorderedMap.get(simVar.name, memo)
+        case SOME((orig, oldSimVar)) guard referenceEq(orig, simVar) then oldSimVar;
+        else convert(simVar);
+      end match;
+    end convertMemoized;
 
     function convertTpl
       input tuple<SimVar, Boolean> tpl;
@@ -1055,39 +1091,40 @@ public
 
     function convert
       input SimVars simVars;
+      input ConvertMemo memo;
       output OldSimCodeVar.SimVars oldSimVars;
     algorithm
       oldSimVars := OldSimCodeVar.SIMVARS(
-        stateVars                         = SimVar.convertList(simVars.stateVars),
-        derivativeVars                    = SimVar.convertList(simVars.derivativeVars),
-        algVars                           = SimVar.convertList(simVars.algVars),
-        discreteAlgVars                   = SimVar.convertList(simVars.discreteAlgVars),
-        intAlgVars                        = SimVar.convertList(simVars.intAlgVars),
-        boolAlgVars                       = SimVar.convertList(simVars.boolAlgVars),
-        inputVars                         = SimVar.convertList(simVars.inputVars),
-        outputVars                        = SimVar.convertList(simVars.outputVars),
-        aliasVars                         = SimVar.convertList(simVars.aliasVars),
-        intAliasVars                      = SimVar.convertList(simVars.intAliasVars),
-        boolAliasVars                     = SimVar.convertList(simVars.boolAliasVars),
-        paramVars                         = SimVar.convertList(simVars.paramVars),
-        intParamVars                      = SimVar.convertList(simVars.intParamVars),
-        boolParamVars                     = SimVar.convertList(simVars.boolParamVars),
-        stringAlgVars                     = SimVar.convertList(simVars.stringAlgVars),
-        stringParamVars                   = SimVar.convertList(simVars.stringParamVars),
-        stringAliasVars                   = SimVar.convertList(simVars.stringAliasVars),
-        extObjVars                        = SimVar.convertList(simVars.extObjVars),
-        constVars                         = SimVar.convertList(simVars.constVars),
-        intConstVars                      = SimVar.convertList(simVars.intConstVars),
-        boolConstVars                     = SimVar.convertList(simVars.boolConstVars),
-        stringConstVars                   = SimVar.convertList(simVars.stringConstVars),
-        jacobianVars                      = SimVar.convertList(simVars.jacobianVars),
-        seedVars                          = SimVar.convertList(simVars.seedVars),
-        realOptimizeConstraintsVars       = SimVar.convertList(simVars.realOptimizeConstraintsVars),
-        realOptimizeFinalConstraintsVars  = SimVar.convertList(simVars.realOptimizeFinalConstraintsVars),
-        sensitivityVars                   = SimVar.convertList(simVars.sensitivityVars),
-        dataReconSetcVars                 = SimVar.convertList(simVars.dataReconSetcVars),
-        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars),
-        dataReconSetBVars                 = SimVar.convertList(simVars.dataReconSetBVars));
+        stateVars                         = SimVar.convertListMemo(simVars.stateVars, memo),
+        derivativeVars                    = SimVar.convertListMemo(simVars.derivativeVars, memo),
+        algVars                           = SimVar.convertListMemo(simVars.algVars, memo),
+        discreteAlgVars                   = SimVar.convertListMemo(simVars.discreteAlgVars, memo),
+        intAlgVars                        = SimVar.convertListMemo(simVars.intAlgVars, memo),
+        boolAlgVars                       = SimVar.convertListMemo(simVars.boolAlgVars, memo),
+        inputVars                         = SimVar.convertListMemo(simVars.inputVars, memo),
+        outputVars                        = SimVar.convertListMemo(simVars.outputVars, memo),
+        aliasVars                         = SimVar.convertListMemo(simVars.aliasVars, memo),
+        intAliasVars                      = SimVar.convertListMemo(simVars.intAliasVars, memo),
+        boolAliasVars                     = SimVar.convertListMemo(simVars.boolAliasVars, memo),
+        paramVars                         = SimVar.convertListMemo(simVars.paramVars, memo),
+        intParamVars                      = SimVar.convertListMemo(simVars.intParamVars, memo),
+        boolParamVars                     = SimVar.convertListMemo(simVars.boolParamVars, memo),
+        stringAlgVars                     = SimVar.convertListMemo(simVars.stringAlgVars, memo),
+        stringParamVars                   = SimVar.convertListMemo(simVars.stringParamVars, memo),
+        stringAliasVars                   = SimVar.convertListMemo(simVars.stringAliasVars, memo),
+        extObjVars                        = SimVar.convertListMemo(simVars.extObjVars, memo),
+        constVars                         = SimVar.convertListMemo(simVars.constVars, memo),
+        intConstVars                      = SimVar.convertListMemo(simVars.intConstVars, memo),
+        boolConstVars                     = SimVar.convertListMemo(simVars.boolConstVars, memo),
+        stringConstVars                   = SimVar.convertListMemo(simVars.stringConstVars, memo),
+        jacobianVars                      = SimVar.convertListMemo(simVars.jacobianVars, memo),
+        seedVars                          = SimVar.convertListMemo(simVars.seedVars, memo),
+        realOptimizeConstraintsVars       = SimVar.convertListMemo(simVars.realOptimizeConstraintsVars, memo),
+        realOptimizeFinalConstraintsVars  = SimVar.convertListMemo(simVars.realOptimizeFinalConstraintsVars, memo),
+        sensitivityVars                   = SimVar.convertListMemo(simVars.sensitivityVars, memo),
+        dataReconSetcVars                 = SimVar.convertListMemo(simVars.dataReconSetcVars, memo),
+        dataReconinputVars                = SimVar.convertListMemo(simVars.dataReconinputVars, memo),
+        dataReconSetBVars                 = SimVar.convertListMemo(simVars.dataReconSetBVars, memo));
     end convert;
 
     function createSimVarLists
