@@ -1,7 +1,8 @@
 //! The masters against the Modelica Association's Reference FMUs, which are not
 //! in this repository: point `OMC_FMI_REFERENCE_FMUS` at an unpacked
 //! `Reference-FMUs-<version>.zip` (the directory holding `3.0/`) and these run;
-//! without it they skip.
+//! without it they skip. `OMC_FMI_LS_DAE_FMUS` does the same for the fmi-ls-dae
+//! repository's own FMUs (its `reference-FMUs/build/fmus`).
 //!
 //! What is checked is what a master can be wrong about on its own: the solution
 //! an FMU's equations have, the time an event happens at, and the values around
@@ -18,6 +19,12 @@ use std::path::PathBuf;
 fn reference_fmu(name: &str) -> Option<PathBuf> {
     let root = std::env::var_os("OMC_FMI_REFERENCE_FMUS")?;
     let path = PathBuf::from(root).join("3.0").join(format!("{name}.fmu"));
+    path.exists().then_some(path)
+}
+
+fn ls_dae_fmu(name: &str) -> Option<PathBuf> {
+    let root = std::env::var_os("OMC_FMI_LS_DAE_FMUS")?;
+    let path = PathBuf::from(root).join(format!("{name}.fmu"));
     path.exists().then_some(path)
 }
 
@@ -49,10 +56,29 @@ impl Sim {
 }
 
 fn simulate(name: &str, kind: InterfaceKind, with: impl FnOnce(&mut Options)) -> Option<Sim> {
-    let path = reference_fmu(name)?;
-    let fmu = Fmu::from_path(&path).expect("read the FMU");
+    run(&reference_fmu(name)?, name, kind, false, with)
+}
+
+/// The same, in fmi-ls-dae's DAE mode: the manifest out of the FMU decides the
+/// unknowns and the residuals, so nothing about the form is written down here.
+fn simulate_dae(name: &str, with: impl FnOnce(&mut Options)) -> Option<Sim> {
+    run(&ls_dae_fmu(name)?, name, InterfaceKind::ModelExchange, true, with)
+}
+
+fn run(
+    path: &std::path::Path,
+    name: &str,
+    kind: InterfaceKind,
+    dae: bool,
+    with: impl FnOnce(&mut Options),
+) -> Option<Sim> {
+    let fmu = Fmu::from_path(path).expect("read the FMU");
     let md = &fmu.model_description;
     let mut opts = Options::from_model_description(md);
+    if dae {
+        opts.solver = openmodelica_fmi_driver::Solver::Ida;
+        opts.dae = Some(fmu.ls_dae_manifest().expect("no fmi-ls-dae manifest").expect("parse the manifest"));
+    }
     with(&mut opts);
 
     // A directory of its own per run: the tests run in parallel, and two of them
@@ -204,4 +230,26 @@ fn co_simulation_handles_events_at_the_time_they_happen() {
     let v = sim.at("v", handled + 1e-9);
     assert!(v > 0.0, "the ball is still falling after the bounce (v = {v})");
     assert!(sim.rec.times().last().unwrap_or(0.0) >= 1.0 - 1e-9, "the run stopped early");
+}
+
+/// fmi-ls-dae's own reference FMU states a *semi-explicit* DAE, so the master
+/// closes the system itself over `y = [x1 x2 z1 z2]`. With both inputs left at
+/// zero the constraints come out as `tanh(3*z1) = 0` and `1/3 = sin(z2*x2)`, and
+/// `der(x1) = sin(x1)` integrates to `x1 = 2*atan(tan(x1(0)/2)*e^t)`.
+#[test]
+fn dae_mode_solves_a_semi_explicit_dae() {
+    let Some(sim) = simulate_dae("SimpleDAE", |o| {
+        o.tolerance = Some(1e-10);
+        o.stop_time = 2.0;
+    }) else {
+        return;
+    };
+    for t in [0.5, 1.0, 2.0] {
+        let (x1, x2, z1, z2) = (sim.at("x1", t), sim.at("x2", t), sim.at("z1", t), sim.at("z2", t));
+        let want_x1 = 2.0 * ((0.25f64).tan() * t.exp()).atan();
+        assert!((x1 - want_x1).abs() < 1e-6, "x1({t}) = {x1}, not {want_x1}");
+        assert!(z1.abs() < 1e-6, "z1({t}) = {z1}, not 0 — the first constraint is not held");
+        let g = (z2 * x2).sin() - 1.0 / 3.0;
+        assert!(g.abs() < 1e-6, "the second constraint is off by {g} at t = {t}");
+    }
 }

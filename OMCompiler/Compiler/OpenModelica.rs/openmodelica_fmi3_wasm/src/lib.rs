@@ -557,7 +557,7 @@ struct MeState {
     mode: Mode,
     /// C's `model_state_me_continuous_time_mode`.
     continuous_time: bool,
-    /// fmi-ls-dae: the `EnableDAE` structural parameter's value reference (0 when
+    /// fmi-ls-dae: the `EnableDAEParameter` structural parameter's value reference (0 when
     /// the model has no DAE formulation), whether it is set, and whether the
     /// importer is in Configuration Mode, the only place it may be set.
     dae_enable_vr: u32,

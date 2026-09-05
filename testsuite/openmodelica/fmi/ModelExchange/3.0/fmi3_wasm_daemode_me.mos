@@ -52,7 +52,8 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // end SimulationResult;
 // ""
 // "DaeModeMe.fmu"
-// "Notification: Building FMU for platform 'wasm' (1/1).
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // record SimulationResult
@@ -69,17 +70,17 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 // true
 // ""
 // "DaeModeMeDir.fmu"
-// "Notification: Building FMU for platform 'wasm' (1/1).
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-// <fmi-ls-dae
-//   xmlns=\"http://fmi-standard.org/fmi-ls-manifest\"
+// <fmiDAEManifest
 //   xmlns:fmi-ls=\"http://fmi-standard.org/fmi-ls-manifest\"
 //   fmi-ls:fmi-ls-name=\"org.fmi-standard.fmi-ls-dae\"
-//   fmi-ls:fmi-ls-version=\"0.1.0\"
+//   fmi-ls:fmi-ls-version=\"1.0.0-alpha.1\"
 //   fmi-ls:fmi-ls-description=\"Layered standard for DAE support in FMI.\">
-//   <EnableDAE valueReference=\"9\"/>
+//   <EnableDAEParameter valueReference=\"9\"/>
 //   <AlgebraicVariables>
 //     <AlgebraicVariable valueReference=\"3\"/>
 //     <AlgebraicVariable valueReference=\"4\"/>
@@ -87,17 +88,11 @@ simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="
 //   <ModelStructure>
 //     <InitialUnknown valueReference=\"1\"/>
 //     <EventIndicator valueReference=\"8\"/>
-//     <Residual>
-//       <Formulation valueReference=\"10\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
-//     </Residual>
-//     <Residual>
-//       <Formulation valueReference=\"11\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
-//     </Residual>
-//     <Residual>
-//       <Formulation valueReference=\"12\" dependencies=\"0 1 3\" dependenciesKind=\"dependent dependent dependent\"/>
-//     </Residual>
+//     <Residual valueReference=\"10\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+//     <Residual valueReference=\"11\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+//     <Residual valueReference=\"12\" dependencies=\"0 1 3\" dependenciesKind=\"dependent dependent dependent\"/>
 //   </ModelStructure>
-// </fmi-ls-dae>"
+// </fmiDAEManifest>"
 // ""
 // true
 // record SimulationResult

@@ -529,7 +529,7 @@ template fmiLsDaeManifest(SimCode simCode)
   for a --daeMode Model Exchange FMU: the switch, the algebraic variables the
   importer solves for beside the states, and a ModelStructure that restates the
   model description's and adds the residuals — the fully implicit form
-  F(der(x), x, z, t) = 0, so no ContinuousStateDerivative entries."
+  F(der(x), x, a, t) = 0, so no ContinuousStateDerivative entries."
 ::=
 match simCode
 case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure) then
@@ -545,13 +545,12 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
   let residuals = (SimCodeUtil.fmi3DaeResiduals(simCode) |> (vr, dependencyAttributes) => DaeResidual3(vr, dependencyAttributes) ;separator="\n")
   let _ = SimCodeUtil.clearFMI3ValueReferences()
   <<
-  <fmi-ls-dae
-    xmlns="http://fmi-standard.org/fmi-ls-manifest"
+  <fmiDAEManifest
     xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
     fmi-ls:fmi-ls-name="org.fmi-standard.fmi-ls-dae"
-    fmi-ls:fmi-ls-version="0.1.0"
+    fmi-ls:fmi-ls-version="<%SimCodeUtil.fmiLsDaeVersion()%>"
     fmi-ls:fmi-ls-description="Layered standard for DAE support in FMI.">
-    <EnableDAE valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
+    <EnableDAEParameter valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
     <AlgebraicVariables>
       <%dmd.algebraicVars |> var => '<AlgebraicVariable valueReference="<%SimCodeUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
     </AlgebraicVariables>
@@ -560,17 +559,13 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
       <%indicators%>
       <%residuals%>
     </ModelStructure>
-  </fmi-ls-dae>
+  </fmiDAEManifest>
   >>
 end fmiLsDaeManifest;
 
 template DaeResidual3(String vr, String dependencyAttributes)
 ::=
-  <<
-  <Residual>
-    <Formulation valueReference="<%vr%>"<%dependencyAttributes%>/>
-  </Residual>
-  >>
+  '<Residual valueReference="<%vr%>"<%dependencyAttributes%>/>'
 end DaeResidual3;
 
 template EventIndicatorVariables3(SimCode simCode)

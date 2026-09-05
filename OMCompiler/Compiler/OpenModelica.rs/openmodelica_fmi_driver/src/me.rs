@@ -10,11 +10,12 @@
 //! `fmi3UpdateDiscreteStates` announces.
 //!
 //! An FMU with an fmi-ls-dae manifest can instead be run in DAE mode
-//! ([`Options::dae`]): the master sets the states, their derivatives and the
-//! algebraic variables, reads the residuals back, and IDA drives them to zero over
+//! ([`Options::dae`]): the master sets the states and the algebraic variables,
+//! reads the residuals back, and IDA drives them to zero over
 //! `y = [states | algebraic variables]` — with `IDACalcIC` making the point
 //! consistent at the start and after every event, as a `--daeMode` model's own
-//! runtime does.
+//! runtime does. The manifest states the DAE in one of two forms (`DaeForm`),
+//! which decides whether the derivatives go in as knowns as well.
 
 use crate::api::{Fmi3, Fmi3ModelExchange};
 use crate::common::{Inputs, event_iteration, initialize};
@@ -48,14 +49,28 @@ pub struct Run {
     pub retries: u64,
 }
 
+/// The two shapes fmi-ls-dae's `<ModelStructure>` can state a DAE in.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DaeForm {
+    /// No `<ContinuousStateDerivative>`: the residuals cover every unknown, and
+    /// `der(x)` goes into the FMU as a known of theirs.
+    Implicit,
+    /// One per state: the FMU answers with `der(x)`, the residuals constrain the
+    /// algebraic variables alone, and the master closes the state rows itself.
+    SemiExplicit,
+}
+
 /// The value references DAE mode works through, out of the fmi-ls-dae manifest.
 struct DaeVrs {
     nx: usize,
+    form: DaeForm,
     /// The algebraic variables, which follow the states in `y`.
     alg_vrs: Vec<u32>,
-    /// The state derivatives, set as knowns of the residuals.
+    /// The state derivatives in the FMU's own order: knowns of the residuals in
+    /// the implicit form, and in the semi-explicit one the name of the column
+    /// each belongs to.
     der_vrs: Vec<u32>,
-    /// The residuals, one per row of `F`.
+    /// The residuals the FMU exposes, one per `<Residual>`.
     res_vrs: Vec<u32>,
     /// The residual Jacobian's sparsity, out of the manifest's `dependencies`;
     /// `None` when the manifest states none, which means a dense Jacobian.
@@ -63,8 +78,8 @@ struct DaeVrs {
 }
 
 /// The FMU as an ODE: set the time and the states, then read the derivatives or
-/// the event indicators back. In DAE mode the derivatives and the algebraic
-/// variables are set too, and the residuals are what is read.
+/// the event indicators back. In DAE mode the algebraic variables are set too —
+/// and the derivatives, in the implicit form — and the residuals are read.
 struct FmuOde<'a> {
     inst: &'a mut dyn Fmi3ModelExchange,
     inputs: &'a mut Inputs,
@@ -85,7 +100,7 @@ struct FmuOde<'a> {
     /// FMU treats every `fmi3SetContinuousStates` as a move and throws away what
     /// it cached for the old point — including its Jacobian, which a colour-by-
     /// colour assembly would then pay for again per colour. The derivatives are
-    /// part of the point in DAE mode only.
+    /// part of the point in the implicit DAE form only.
     committed: Option<(f64, Vec<f64>, Vec<f64>)>,
     dae: Option<DaeVrs>,
     /// What the FMU actually said, behind the static message the solvers carry.
@@ -107,8 +122,8 @@ impl FmuOde<'_> {
         self.commit_point(t, y, &[])
     }
 
-    /// [`commit`](Self::commit), with the derivatives too in DAE mode: the
-    /// residuals are a function of `(t, y, y')`.
+    /// [`commit`](Self::commit), with the derivatives too where the FMU takes
+    /// them: the implicit form's residuals are a function of `(t, y, y')`.
     fn commit_point(&mut self, t: f64, y: &[f64], yp: &[f64]) -> Result<()> {
         let Some(dae) = self.dae.as_ref() else {
             if self.committed.as_ref().is_some_and(|(ct, cy, _)| *ct == t && cy == y) {
@@ -124,7 +139,10 @@ impl FmuOde<'_> {
             return Ok(());
         };
         let nx = dae.nx;
-        let ders = &yp[..nx.min(yp.len())];
+        // A semi-explicit FMU is not told its derivatives, so they are no part
+        // of the point it stands at.
+        let implicit = dae.form == DaeForm::Implicit;
+        let ders = if implicit { &yp[..nx.min(yp.len())] } else { &[][..] };
         if self.committed.as_ref().is_some_and(|(ct, cy, cp)| *ct == t && cy == y && cp == ders) {
             return Ok(());
         }
@@ -134,7 +152,7 @@ impl FmuOde<'_> {
             let inst: &mut dyn Fmi3 = self.inst;
             inst.set_numeric(VarType::Float64, &dae.alg_vrs, &y[nx..])?;
         }
-        if ders.len() == nx && nx > 0 {
+        if implicit && ders.len() == nx && nx > 0 {
             let inst: &mut dyn Fmi3 = self.inst;
             inst.set_numeric(VarType::Float64, &dae.der_vrs, ders)?;
         }
@@ -270,8 +288,26 @@ impl Dae for FmuOde<'_> {
         }
         self.commit_point(t, y, yp).map_err(|e| self.note(e))?;
         let Some(d) = self.dae.as_ref() else { return Ok(()) };
+        let (form, nx) = (d.form, d.nx);
+        if form == DaeForm::Implicit {
+            let inst: &mut dyn Fmi3 = self.inst;
+            let r = inst.get_numeric(VarType::Float64, &d.res_vrs, res);
+            return r.map_err(|e| self.note(e));
+        }
+        // The state rows close der(x) = f(x, a, t) over y'; the FMU's residuals
+        // are the constraints below them.
+        if nx > 0 {
+            self.inst.get_continuous_state_derivatives(&mut res[..nx]).map_err(|e| self.note(e))?;
+            for (r, p) in res[..nx].iter_mut().zip(yp) {
+                *r = *p - *r;
+            }
+        }
+        let d = self.dae.as_ref().expect("checked above");
+        if d.res_vrs.is_empty() {
+            return Ok(());
+        }
         let inst: &mut dyn Fmi3 = self.inst;
-        let r = inst.get_numeric(VarType::Float64, &d.res_vrs, res);
+        let r = inst.get_numeric(VarType::Float64, &d.res_vrs, &mut res[nx..]);
         r.map_err(|e| self.note(e))
     }
 
@@ -311,45 +347,67 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
             ))),
         }
     };
-    let der_vrs: Vec<u32> = md
-        .model_structure
-        .continuous_state_derivatives
-        .iter()
-        .map(|u| u.value_reference)
-        .collect();
+    // The manifest's <ModelStructure> replaces the model description's, so its
+    // <ContinuousStateDerivative> list decides the form; naming none states the
+    // implicit one, whose derivatives the model description still has to name.
+    let form = if m.continuous_state_derivatives.is_empty() { DaeForm::Implicit } else { DaeForm::SemiExplicit };
+    // From the model description in either form: `continuous_states` and
+    // `fmi3GetContinuousStates` follow this order, which is what pairs `y[i]`
+    // with `y'[i]`. The manifest's own order does not get to decide that.
+    let der_vrs: Vec<u32> =
+        md.model_structure.continuous_state_derivatives.iter().map(|u| u.value_reference).collect();
     if der_vrs.len() != nx {
         return Err(Error::Unsupported(format!(
             "fmi-ls-dae: the FMU has {nx} continuous states but <ModelStructure> lists {} derivatives",
             der_vrs.len()
         )));
     }
-    let alg_vrs = m.algebraic_variables.iter().map(|&vr| float64(vr, "algebraic variable")).collect::<Result<Vec<_>>>()?;
-    let res_vrs = m.residual_vrs().into_iter().map(|vr| float64(vr, "residual")).collect::<Result<Vec<_>>>()?;
-    if res_vrs.len() != nx + alg_vrs.len() {
+    if form == DaeForm::SemiExplicit && m.continuous_state_derivatives.len() != nx {
         return Err(Error::Unsupported(format!(
-            "fmi-ls-dae: {} residuals for {} states and {} algebraic variables; only a square system can be integrated",
-            res_vrs.len(),
-            nx,
-            alg_vrs.len()
+            "fmi-ls-dae: the manifest states a semi-explicit DAE but gives {} of the FMU's {nx} state derivatives",
+            m.continuous_state_derivatives.len()
         )));
     }
-    let sparsity = dae_sparsity(md, m, nx, &alg_vrs, &der_vrs);
-    Ok(DaeVrs { nx, alg_vrs, der_vrs, res_vrs, sparsity })
+    let alg_vrs = m.algebraic_variables.iter().map(|&vr| float64(vr, "algebraic variable")).collect::<Result<Vec<_>>>()?;
+    let res_vrs = m.residual_vrs().into_iter().map(|vr| float64(vr, "residual")).collect::<Result<Vec<_>>>()?;
+    let wanted = match form {
+        DaeForm::Implicit => nx + alg_vrs.len(),
+        DaeForm::SemiExplicit => alg_vrs.len(),
+    };
+    if res_vrs.len() != wanted {
+        let form = match form {
+            DaeForm::Implicit => "implicit",
+            DaeForm::SemiExplicit => "semi-explicit",
+        };
+        return Err(Error::Unsupported(format!(
+            "fmi-ls-dae: the manifest states a {form} DAE with {} states and {} algebraic variables, which wants {wanted} residuals, but lists {}; only a square system can be integrated",
+            nx,
+            alg_vrs.len(),
+            res_vrs.len()
+        )));
+    }
+    let sparsity = dae_sparsity(md, m, nx, form, &alg_vrs, &der_vrs);
+    Ok(DaeVrs { nx, form, alg_vrs, der_vrs, res_vrs, sparsity })
 }
 
-/// The residual Jacobian's sparsity out of the manifest's `<Formulation
-/// dependencies=…>`: for each residual, which of `y = [states | algebraic]` it
-/// reaches. A state's column collects the rows reached through either `x` or
-/// `der(x)`, since one difference quotient carries `∂F/∂x + cj·∂F/∂der(x)`
-/// together — which is why the exporter lists both for a state column.
+/// The residual Jacobian's sparsity out of the manifest's `dependencies`: for
+/// each row of `F`, which of `y = [states | algebraic]` it reaches. A state's
+/// column collects the rows reached through either `x` or `der(x)`, since one
+/// difference quotient carries `∂F/∂x + cj·∂F/∂der(x)` together — which is why
+/// the exporter lists both for a state column.
 ///
-/// `None` unless every residual states its dependencies: one that does not means
+/// The semi-explicit form's state rows reach their own column through `y'`
+/// whatever the manifest says, plus what the `<ContinuousStateDerivative>`
+/// depends on.
+///
+/// `None` unless every row states its dependencies: one that does not means
 /// "all of them", and a Jacobian with a dense row is no cheaper to difference
 /// sparsely than to let IDA build itself.
 fn dae_sparsity(
     md: &ModelDescription,
     m: &openmodelica_fmi::lsdae::Manifest,
     nx: usize,
+    form: DaeForm,
     alg_vrs: &[u32],
     der_vrs: &[u32],
 ) -> Option<DaeSparsity> {
@@ -368,12 +426,29 @@ fn dae_sparsity(
         return None; // a state without a value reference of its own
     }
     let mut rows_by_col: Vec<Vec<u32>> = vec![Vec::new(); n];
-    // The same flattening `Manifest::residual_vrs` uses, so the rows line up.
-    for (row, f) in m.residuals.iter().flat_map(|r| r.formulations.iter()).enumerate() {
-        let deps = f.dependencies.as_ref()?;
+    let mark = |rows_by_col: &mut Vec<Vec<u32>>, row: usize, u: &openmodelica_fmi::description::Unknown| {
+        let deps = u.dependencies.as_ref()?;
         for col in deps.iter().filter_map(|vr| column_of.get(vr)) {
             rows_by_col[*col].push(row as u32);
         }
+        Some(())
+    };
+    let first_residual = if form == DaeForm::SemiExplicit {
+        let row_of: std::collections::HashMap<u32, usize> =
+            der_vrs.iter().enumerate().map(|(row, vr)| (*vr, row)).collect();
+        for row in 0..nx {
+            rows_by_col[row].push(row as u32);
+        }
+        for u in &m.continuous_state_derivatives {
+            mark(&mut rows_by_col, *row_of.get(&u.value_reference)?, u)?;
+        }
+        nx
+    } else {
+        0
+    };
+    // The same order `Manifest::residual_vrs` uses, so the rows line up.
+    for (i, u) in m.residuals.iter().enumerate() {
+        mark(&mut rows_by_col, first_residual + i, u)?;
     }
     for rows in &mut rows_by_col {
         rows.sort_unstable();

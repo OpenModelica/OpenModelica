@@ -15155,6 +15155,18 @@ algorithm
   end if;
 end exportIfAlgebraicState;
 
+public constant String FMI_LS_DAE_VERSION = "1.0.0-alpha.1";
+public constant String FMI_LS_DAE_DRAFT_DATE = "2026-09-02";
+public constant String FMI_LS_DAE_DRAFT_COMMIT = "78313f4";
+
+public function fmiLsDaeVersion
+  "The version of fmi-ls-dae the manifest declares. FMI_LS_DAE_DRAFT_DATE and
+   FMI_LS_DAE_DRAFT_COMMIT name the revision of github.com/modelica/fmi-ls-dae
+   the export was written against, which the export reports since the layered
+   standard is still a draft."
+  output String version = FMI_LS_DAE_VERSION;
+end fmiLsDaeVersion;
+
 public function getFMI3DaeModeValueReference
   "fmi-ls-dae: the value reference of the structural parameter that switches a
    --daeMode FMU into DAE mode, the first one past the event indicators. The
@@ -15169,7 +15181,7 @@ end getFMI3DaeModeValueReference;
 public function fmi3DaeResiduals
   "fmi-ls-dae: the residuals of a --daeMode model as (valueReference, dependency
    attributes): the value references follow the DAE-mode switch's, and the
-   dependencies and dependenciesKind attributes of each <Formulation> are read
+   dependencies and dependenciesKind attributes of each <Residual> are read
    off the rows of the DAE-mode Jacobian's transposed sparsity. A state column
    stands for the state and its derivative both, since DAE-mode differentiation
    folds der(x) into x ($cj * x.Seed); the other columns are the algebraic

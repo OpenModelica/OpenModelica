@@ -1113,7 +1113,7 @@ pub struct SimMeta {
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
-    /// fmi-ls-dae's `EnableDAE` structural parameter, the value reference that
+    /// fmi-ls-dae's `EnableDAEParameter` structural parameter, the value reference that
     /// switches a `--daeMode` FMU into DAE mode; 0 for an FMU without one.
     pub fmi_dae_enable_vr: u32,
     /// Per-zero-crossing description (Modelica source of the relation, e.g.

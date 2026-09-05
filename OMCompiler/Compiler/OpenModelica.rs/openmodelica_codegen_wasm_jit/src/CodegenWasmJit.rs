@@ -2782,7 +2782,7 @@ fn link_err(e: impl core::fmt::Debug) -> &'static str {
 /// The value references are `getFMI3ValueReference`'s, the ones `CodegenFMU3`
 /// writes into `modelDescription.xml`. Variables with no slot are skipped; the
 /// adapter reports an unresolvable vr as an error.
-/// Also the fmi-ls-dae `EnableDAE` value reference, 0 for a model without a DAE
+/// Also the fmi-ls-dae `EnableDAEParameter` value reference, 0 for a model without a DAE
 /// formulation. The synthetic variables follow `CodegenFMU3`: time, then the event
 /// indicators, then (`--daeMode`) the DAE-mode switch and the residuals.
 fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<(Vec<FmiVr>, u32)> {

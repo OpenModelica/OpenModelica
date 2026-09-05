@@ -1586,6 +1586,10 @@ package SimCodeUtil
     output list<tuple<String, String>> residuals;
   end fmi3DaeResiduals;
 
+  function fmiLsDaeVersion
+    output String version;
+  end fmiLsDaeVersion;
+
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
     input SimCode.SimCode inSimCode;
