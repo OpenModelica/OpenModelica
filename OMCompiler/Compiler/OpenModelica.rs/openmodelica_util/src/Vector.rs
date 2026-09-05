@@ -59,6 +59,22 @@ pub fn toArray<T: Clone + 'static>(v: Arc<Vector<T>>) -> Array<T> {
     metamodelica::arrayFromVec(v.borrow().clone())
 }
 
+/// Takes ownership of the array. `size` smaller than the array truncates it;
+/// MetaModelica keeps the rest as spare capacity, which a `Vec` cannot express.
+pub fn fromArrayNoCopy<T: Clone + 'static>(arr: Array<T>, size: i32) -> Arc<Vector<T>> {
+    if size >= 0 && (size as usize) < arr.borrow().len() {
+        arr.borrow_mut().truncate(size as usize);
+    }
+    Arc::new(arr)
+}
+
+/// The Vector's storage. `Vector<T>` is `Array<T>`, so this shares it rather
+/// than copying, and unlike in MetaModelica it stays valid when the Vector
+/// grows and is never longer than the Vector.
+pub fn rawArray<T: Clone + 'static>(v: Arc<Vector<T>>) -> Array<T> {
+    (*v).clone()
+}
+
 pub fn fromList<T: Clone + 'static>(l: Arc<List<T>>) -> Arc<Vector<T>> {
     Arc::new(metamodelica::arrayFromVec(l.into_iter().cloned().collect()))
 }
