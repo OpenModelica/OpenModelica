@@ -91,7 +91,7 @@ protected
   import SimGenericCall = NSimGenericCall;
   import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
+  import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo, ConvertMemo};
 
   // Old SimCode imports
   import HashTableCrIListArray;
@@ -523,12 +523,14 @@ public
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
       list<SimVar> residualVars;
+      ConvertMemo memo;
     algorithm
-      modelInfo := ModelInfo.convert(simCode.modelInfo);
+      memo := SimVar.newConvertMemo(UnorderedMap.size(simCode.simcode_map));
+      modelInfo := ModelInfo.convert(simCode.modelInfo, memo);
       (zeroCrossings, relations, timeEvents, spatialInfo) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
       (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
-      crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
+      crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map, memo);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
         SOME(DAE_MODE_DATA(residualVars = residualVars)) := simCode.daeModeData;
@@ -725,6 +727,7 @@ public
 
     function convert
       input ModelInfo modelInfo;
+      input ConvertMemo memo;
       output OldSimCode.ModelInfo oldModelInfo;
     protected
       OldSimCode.VarInfo varInfo;
@@ -740,7 +743,7 @@ public
         directory                       = modelInfo.directory,
         fileName                        = modelInfo.fileName,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
-        vars                            = SimVar.SimVars.convert(modelInfo.vars),
+        vars                            = SimVar.SimVars.convert(modelInfo.vars, memo),
         functions                       = modelInfo.functions,
         labels                          = modelInfo.labels,
         resourcePaths                   = modelInfo.resourcePaths,
