@@ -112,7 +112,7 @@ getErrorString();
 //       <BaseUnit mol=\"1\" m=\"-3\" factor=\"1000.0\" />
 //     </Unit>
 //     <Unit name=\"degC\">
-//       <BaseUnit K=\"1\" />
+//       <BaseUnit K=\"1\" offset=\"273.15\" />
 //     </Unit>
 //   </UnitDefinitions>
 //   <TypeDefinitions>

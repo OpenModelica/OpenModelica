@@ -100,7 +100,8 @@ static double internString(modelica_string s)
  * the row column of the first scalar for a column signal, -1 for the others. */
 static void addSignals(rust_result_data *d, const char *name, const char *comment, const char *unit, const char *displayUnit,
                        int type, int kind, long column, int negate, int unvarying,
-                       const DIMENSION_INFO *dimension, modelica_boolean isStateDerivative)
+                       const DIMENSION_INFO *dimension, modelica_boolean isStateDerivative,
+                       modelica_boolean relativeQuantity = FALSE)
 {
   size_t n = dimension ? dimension->scalar_length : 1;
   for (size_t i = 0; i < n; i++) {
@@ -117,6 +118,7 @@ static void addSignals(rust_result_data *d, const char *name, const char *commen
     s.column = kind == OMC_RESULT_KIND_COLUMN ? (unsigned)(column + i) : 0;
     s.negate = negate;
     s.unvarying = unvarying;
+    s.relative_quantity = relativeQuantity;
     d->signals.push_back(s);
   }
 }
@@ -162,7 +164,8 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
     }
     size_t first = d->signals.size();
     addSignals(d, v->info.name, v->info.comment, mmcString(&v->attribute.unit), mmcString(&v->attribute.displayUnit),
-               OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_COLUMN, column, 0, v->time_unvarying, &v->dimension, isStateDerivative);
+               OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_COLUMN, column, 0, v->time_unvarying, &v->dimension, isStateDerivative,
+               v->attribute.relativeQuantity);
     if (i >= firstDiscreteReal) markDiscrete(first);
     d->reals.push_back({start, v->dimension.scalar_length});
     column += v->dimension.scalar_length;
@@ -219,7 +222,8 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
     const STATIC_REAL_DATA *v = &mData->realParameterData[i];
     if (v->filterOutput) continue;
     addSignals(d, v->info.name, v->info.comment, mmcString(&v->attribute.unit), mmcString(&v->attribute.displayUnit),
-               OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_PARAMETER, -1, 0, 0, &v->dimension, FALSE);
+               OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_PARAMETER, -1, 0, 0, &v->dimension, FALSE,
+               v->attribute.relativeQuantity);
   }
   for (int i = 0; i < mData->nParametersIntegerArray; i++) {
     const STATIC_INTEGER_DATA *v = &mData->integerParameterData[i];
@@ -248,20 +252,23 @@ void rust_result_init(simulation_result *self, DATA *data, threadData_t *threadD
       modelica_boolean isStateDerivative = mData->nStatesArray <= a->nameID && a->nameID < 2 * mData->nStatesArray;
       size_t first = d->signals.size();
       addSignals(d, a->info.name, a->info.comment, mmcString(&a->unit), mmcString(&a->displayUnit),
-                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_COLUMN, realColumn[sInfo->realVarsIndex[a->nameID]], negate, v->time_unvarying, &v->dimension, isStateDerivative);
+                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_COLUMN, realColumn[sInfo->realVarsIndex[a->nameID]], negate, v->time_unvarying, &v->dimension, isStateDerivative,
+                 a->relativeQuantity);
       if (a->nameID >= firstDiscreteReal) markDiscrete(first);
       break;
     }
     case ALIAS_TYPE_PARAMETER: {
       const STATIC_REAL_DATA *v = &mData->realParameterData[a->nameID];
       addSignals(d, a->info.name, a->info.comment, mmcString(&a->unit), mmcString(&a->displayUnit),
-                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_PARAMETER, -1, negate, 0, &v->dimension, FALSE);
+                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_PARAMETER, -1, negate, 0, &v->dimension, FALSE,
+                 a->relativeQuantity);
       break;
     }
     case ALIAS_TYPE_TIME: {
       const char *unit = mmcString(&a->unit);
       addSignals(d, a->info.name, a->info.comment, unit[0] ? unit : "s", mmcString(&a->displayUnit),
-                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_TIME, 0, negate, 0, NULL, FALSE);
+                 OMC_RESULT_TYPE_REAL, OMC_RESULT_KIND_TIME, 0, negate, 0, NULL, FALSE,
+                 a->relativeQuantity);
       break;
     }
     default:

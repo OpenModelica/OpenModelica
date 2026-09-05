@@ -62,6 +62,8 @@ unsafe extern "C" {
     ) -> i32;
     fn fmu_exit_initialization_mode() -> i32;
     fn fmu_enter_event_mode() -> i32;
+    fn fmu_enter_configuration_mode() -> i32;
+    fn fmu_exit_configuration_mode() -> i32;
     fn fmu_enter_continuous_time_mode() -> i32;
     fn fmu_enter_step_mode() -> i32;
     fn fmu_terminate() -> i32;
@@ -180,6 +182,14 @@ impl Fmi3 for HostFmu {
 
     fn enter_event_mode(&mut self) -> Result<()> {
         check_host("fmi3EnterEventMode", unsafe { fmu_enter_event_mode() })
+    }
+
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        check_host("fmi3EnterConfigurationMode", unsafe { fmu_enter_configuration_mode() })
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        check_host("fmi3ExitConfigurationMode", unsafe { fmu_exit_configuration_mode() })
     }
 
     fn update_discrete_states(&mut self) -> Result<DiscreteStates> {

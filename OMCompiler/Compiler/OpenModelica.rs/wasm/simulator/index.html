@@ -169,6 +169,8 @@
           <input id="tol" type="text" inputmode="decimal" />
           <button type="button" id="tolUp" title="×10">▲</button>
         </div></div>
+      <div class="fld wide"><label class="chk" for="daeMode" title="Give the integrator the unsolved residuals instead of an explicit ODE">
+        <input type="checkbox" id="daeMode" /> DAE mode <span class="flag">--daeMode</span></label></div>
       <div class="fld"><label for="nls">Nonlinear solver <span class="flag">-nls</span></label>
         <select id="nls"></select></div>
       <div class="fld"><label for="nlsLS" title="Linear solver used by the nonlinear solver">NLS linear solver <span class="flag">-nlsLS</span></label>
@@ -179,7 +181,7 @@
         <select id="lss"></select></div>
       <div class="fld wide"><label for="lv">Log streams <span class="flag">-lv</span></label>
         <input id="lv" type="text" placeholder="LOG_STATS, LOG_SOLVER, …" title="Comma separated" /></div>
-      <p class="modal-hint">Solver selectors and log streams are read at each run, so changing one re-simulates without recompiling. The model's output goes to the browser console.</p>
+      <p class="modal-hint">Solver selectors and log streams are read at each run, so changing one re-simulates without recompiling. DAE mode is a translation flag, so it rebuilds, and it commits the run to IDA. The model's output goes to the browser console.</p>
     </div>
   </div>
 </div>
@@ -198,6 +200,11 @@
       </div>
       <label for="csSolver">CS solver</label>
       <select id="csSolver"></select>
+      <label>DAE mode</label>
+      <div class="chk-group">
+        <label class="chk"><input type="checkbox" id="daeModeFmu" /> Export the residual form <code>--daeMode</code></label>
+      </div>
+      <p class="modal-hint" id="daeFmuHint" hidden>Co-Simulation embeds IDA over the residuals; Model Exchange adds the draft of the <code>fmi-ls-dae</code> layered standard beside the ordinary ODE interface, which an importer opts into by setting <code>_D_daeMode</code> in Configuration Mode.</p>
       <label>Also run natively on</label>
       <div class="chk-group" id="fmuPlatforms"></div>
       <p class="modal-hint">FMI 3.0 wasm component, built around the module this model was compiled to — the export links an adapter onto it rather than translating again. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
@@ -212,7 +219,8 @@
 
 <script type="module">
 import { AnimView } from '../anim/anim-view.js';
-import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { COLORS, createCharts, escapeHtml, unitHTML, unitLabel } from '../plot.js';
+import { toDisplay, fromDisplay, scale, relative } from '../units.js';
 import { attachFmuAot } from '../fmu-aot.js';
 import { bindModal, downloadBlob } from '../ui.js';
 // The omc compiler runs in Web Workers (omc-worker.js), not on this thread, so
@@ -224,7 +232,8 @@ import { bindModal, downloadBlob } from '../ui.js';
 // host can curate their own set without touching the code. Each entry is either
 // inline (`source` text, or `sourceFile` fetched lazily) run on any worker, or a
 // `library` class inside the MSL (needs the MSL worker) with an optional `figures`
-// annotation that curates the plotted variables. Populated by loadConfig().
+// annotation that curates the plotted variables. `daeMode: true` selects the DAE
+// backend for it. Populated by loadConfig().
 let EXAMPLES = [];
 // Minimal safety net if config.json is missing or invalid — the app still runs.
 const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: [
@@ -426,10 +435,12 @@ function parseModelName(text) {
 let icValues = new Map();     // param name -> input value (string)
 let icBaseline = new Map();   // the same, as the last run left it: unedited values
 let builtModel = null, lastText = null;
+let builtDae = null;          // whether the built model was translated with --daeMode
 let running = false, pendingKind = null, runningKind = null;
 let modelFigures = null;      // parsed figures for the current model, or null
 let viewMode = 'auto';        // 'auto' (figures if present) | 'all'
-let colMap = new Map();       // result-variable name -> { values:Float64Array, unit }
+let colMap = new Map();       // result-variable name -> { values:Float64Array, unit, displayUnit, relative }
+const unitPick = new Map();   // chart key -> the unit the reader picked for its y axis
 let snap = null;              // last simulation snapshot from a worker
 let modelDoc = '';            // current model's documentation HTML (persists across re-sims)
 let currentExample = null;
@@ -476,7 +487,34 @@ function fillSolverMenus(options) {
     m.replaceChildren(...options.s.map((v) => new Option(v, v)));
     m.value = options.s.includes(keep) ? keep : options.s[0];
   }
+  // A residual form has no explicit derivatives, so IDA is the only integrator
+  // that can step it: without IDA this build cannot run DAE mode at all.
+  daeEl.disabled = daeFmuEl.disabled = !(options.s || []).includes('ida');
+  if (daeEl.disabled) daeEl.checked = false;
+  syncDaeMode();
 }
+
+// `--daeMode` is a translation flag, not a runtime one — the backend emits
+// residuals instead of an explicit ODE — so toggling it rebuilds where the solver
+// selectors only re-simulate. The settings checkbox and the FMU dialog's are one
+// setting; `daeEl` holds it.
+const daeEl = el('daeMode'), daeFmuEl = el('daeModeFmu');
+let methodBeforeDae = null;               // the `-s` choice to restore when DAE mode goes off
+function syncDaeMode() {
+  const on = daeEl.checked, m = el('method');
+  daeFmuEl.checked = on;
+  el('daeFmuHint').hidden = !on;
+  if (on) {
+    if (methodBeforeDae === null) methodBeforeDae = m.value;
+    if ([...m.options].some((o) => o.value === 'ida')) m.value = 'ida';
+  } else if (methodBeforeDae !== null) {
+    m.value = methodBeforeDae;
+    methodBeforeDae = null;
+  }
+  m.disabled = on;
+  syncExportDialog();
+}
+
 // A Co-Simulation FMU embeds the driver, and the FMU carries no SUNDIALS, so its
 // method list is its own (omc_fmu_cs_solvers), not the simulator's `-s` menu.
 function fillCsSolvers(values) {
@@ -544,16 +582,18 @@ async function run(kind) {                       // 'full' | 'resim'
 
   try {
     const method = el('method').value, ov = overrideFlag(), solvers = solverFlags();
+    const daeMode = daeEl.checked;
     // A freshly loaded model drives its own settings: omit stopTime/intervals/
     // tolerance so simulate() uses the experiment annotation; we read back what it
     // used and seed the dialog. Once seeded (or user-overridden), pass the values.
-    const settings = freshModel ? { method } : { method,
+    const settings = freshModel ? { method, daeMode } : { method, daeMode,
       stopTime: num(el('stop').value, 1),
       intervals: Math.max(1, Math.round(num(el('intervals').value, 500))),
       tolerance: tolValue };
 
-    // Re-simulate the already-built model (fast, no recompile) when possible.
-    if (kind === 'resim' && builtModel && builtWorker) {
+    // Re-simulate the already-built model (fast, no recompile) when possible — but
+    // not across a DAE-mode change, which is baked into the built model.
+    if (kind === 'resim' && builtModel && builtWorker && builtDae === daeMode) {
       jobWorker = builtWorker;
       // The experiment reaches the run as simflags, so a changed stopTime,
       // tolerance or solver is honoured here too — no rebuild.
@@ -585,7 +625,7 @@ async function run(kind) {                       // 'full' | 'resim'
       runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
-      builtModel = lm.name; builtWorker = worker; lastText = text; snap = r;
+      builtModel = lm.name; builtWorker = worker; lastText = text; builtDae = daeMode; snap = r;
     }
 
     // Reflect the settings the run actually used, then treat them as user-editable.
@@ -604,10 +644,11 @@ async function run(kind) {                       // 'full' | 'resim'
     const i = snap.info;
     const work = (i && i.steps != null)
       ? ` · ${i.steps} steps, ${i.resEvals} ODE, ${i.jacEvals} jac, ${i.stateEvents} events` : '';
+    const daeNote = builtDae ? ' · DAE mode' : '';
     const msNote = t
       ? ` · ${t.buildMs ? `build ${Math.round(t.buildMs)} ms + ` : ''}sim ${Math.round(t.simMs)} ms${phases}${drv}${work}`
       : (runMs ? ` · ${Math.round(runMs)} ms${drv}` : '');
-    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${msNote}`);
+    setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]${figNote}${daeNote}${msNote}`);
     log('done', snap.info.model, snap.info.rows, 'points');
   } catch (e) {
     log('run failed', e); fail('' + e);
@@ -668,7 +709,7 @@ function cancelRun() {
 // Immediately blank the stale panels so a switch doesn't keep showing the old
 // model's initial conditions / plots / docs until the new run finishes.
 function showBuilding() {
-  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
+  icGrid.replaceChildren(); icValues.clear(); icBaseline.clear(); unitPick.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
   charts.clear(chartsEmpty);
   showEmpty('Simulating…');
@@ -679,7 +720,11 @@ function showBuilding() {
 async function selectExample(ex) {
   beginOp('Loading the example failed');
   currentExample = ex;
-  builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
+  // An example may ask for DAE mode (config.json). Switching examples sets the box
+  // either way, so the settings always describe the model that is running.
+  daeEl.checked = !!ex.daeMode && !daeEl.disabled;
+  syncDaeMode();
+  builtModel = null; builtWorker = null; lastText = null; builtDae = null; preloaded = null; freshModel = true;
   snap = null; resultReady = false; resultCache = null; syncResultDownload();
   showBuilding();
   if (ex.library) {
@@ -770,11 +815,42 @@ function buildInitialConditions() {
       sel.addEventListener('change', () => onParamChange(p.name, sel.value));
       item.appendChild(sel);
     } else {
+      // `-override` takes the value in the model's own unit; the field may show
+      // and take it in a display unit, as OMEdit does.
       icValues.set(p.name, String(p.value));
       icBaseline.set(p.name, String(p.value));
-      const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = p.value;
-      inp.addEventListener('change', () => onParamChange(p.name, inp.value));
-      const unit = document.createElement('div'); unit.className = 'unit'; unit.innerHTML = unitHTML(p.unit || '');
+      const base = p.unit || '';
+      const alternatives = unitAlternatives(base);
+      const declared = p.displayUnit || '';
+      let shownUnit = alternatives.includes(declared) ? declared : base;
+      const inBase = (text) => {
+        const d = displayUnitDef(base, shownUnit, p.relativeQuantity);
+        return d ? fromDisplay(text, d) : text;
+      };
+      const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any';
+      const show = (v, u) => { const d = displayUnitDef(base, u, p.relativeQuantity); return d ? toDisplay(v, d) : String(v); };
+      inp.value = show(p.value, shownUnit);
+      inp.addEventListener('change', () => { const v = inBase(inp.value); if (v != null) onParamChange(p.name, v); });
+      let unit;
+      if (alternatives.length > 1) {
+        unit = document.createElement('select');
+        unit.title = 'Unit to edit this value in';
+        for (const u of alternatives) {
+          const o = document.createElement('option');
+          o.value = u; o.textContent = unitLabel(u); o.selected = u === shownUnit;
+          unit.appendChild(o);
+        }
+        unit.onchange = () => {
+          const text = inp.value.trim();
+          const base_ = text === '' ? null : inBase(text);
+          shownUnit = unit.value;
+          if (base_ != null) inp.value = show(Number(base_), shownUnit);
+        };
+      } else {
+        unit = document.createElement('span');
+        unit.innerHTML = unitHTML(base);
+      }
+      unit.className = 'unit';
       item.append(inp, unit);
     }
     icGrid.appendChild(item);
@@ -800,8 +876,9 @@ function renderDoc() {
 function buildColMap() {
   colMap = new Map();
   const series = (snap && snap.series) || [];
-  series.forEach((m) => { const c = snap.cols[m.name]; if (c) colMap.set(m.name, { values: c, unit: m.unit || '' }); });
-  if (snap && snap.time) colMap.set('time', { values: snap.time, unit: 's' });
+  series.forEach((m) => { const c = snap.cols[m.name];
+    if (c) colMap.set(m.name, { values: c, unit: m.unit || '', displayUnit: m.displayUnit || '', relative: !!m.relativeQuantity }); });
+  if (snap && snap.time) colMap.set('time', { values: snap.time, unit: 's', displayUnit: '', relative: false });
 }
 function finalValue(name) { const c = colMap.get(name); if (!c) return null; const a = c.values; return a.length ? a[a.length - 1] : null; }
 // Expand the spec's variable-reference markup in titles/legends/captions using
@@ -821,6 +898,46 @@ function alignXY(xcol, ycol) {
   xs = grow(xs); ys = grow(ys);
   const L = Math.min(xs.length, ys.length);
   return { xs: xs.subarray(0, L), ys: ys.subarray(0, L) };
+}
+
+// --- display units ----------------------------------------------------------
+// Only the plot and the initial-condition fields convert; the result download
+// stays in the model's own units. `snap.units` is unit name -> its display units.
+function unitDefs(base) { return (snap && snap.units && snap.units[base]) || []; }
+function unitAlternatives(base) { return base ? [base, ...unitDefs(base).map((d) => d.name)] : []; }
+
+// The display unit named `to`, or null for the unit itself. A relative quantity
+// is a difference, so its conversion keeps the factor and drops the offset.
+function displayUnitDef(base, to, rel) {
+  if (!base || !to || to === base) return null;
+  const d = unitDefs(base).find((u) => u.name === to) || null;
+  return rel ? relative(d) : d;
+}
+
+function convertSamples(ys, fn) {
+  const out = new Float64Array(ys.length);
+  for (let i = 0; i < ys.length; i++) out[i] = fn(ys[i]);
+  return out;
+}
+
+// What the reader picked, else the variable's declared display unit, else the unit.
+function chartUnit(key, base, curve) {
+  if (unitPick.has(key)) return unitPick.get(key);
+  const declared = curve && curve.displayUnit;
+  return declared && unitAlternatives(base).includes(declared) ? declared : base;
+}
+
+// Draw the curves of unit `base` in `shown`, and let the axis switch unit.
+function applyUnit(spec, key, base, shown) {
+  for (const c of spec.curves) {
+    if ((c.unit || '') !== base) continue;
+    const d = displayUnitDef(base, shown, c.relative);
+    if (d) { c.ys = convertSamples(c.ys, scale(d)); c.unit = shown; }
+  }
+  spec.yUnit = shown || spec.yUnit;
+  spec.unitChoices = unitAlternatives(base);
+  spec.onUnit = (u) => { unitPick.set(key, u); renderCharts(); };
+  return spec;
 }
 
 // --- chart rendering --------------------------------------------------------
@@ -844,9 +961,13 @@ function renderAllVariables() {
     if (m.constant || m.alias) return;
     const yc = colMap.get(m.name); if (!yc) return;
     const { xs, ys } = alignXY(time, yc);
-    curves.push({ label: m.name, unit: m.unit || '', color: COLORS[curves.length % COLORS.length], xs, ys });
+    curves.push({ label: m.name, unit: m.unit || '', displayUnit: yc.displayUnit, relative: yc.relative,
+      color: COLORS[curves.length % COLORS.length], xs, ys });
   });
-  charts.add({ title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'all');
+  const spec = { title: '', curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true };
+  const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+  if (bases.length === 1) applyUnit(spec, 'all', bases[0], chartUnit('all', bases[0], curves.find((c) => c.unit === bases[0])));
+  charts.add(spec, 'all');
 }
 
 function renderFigures() {
@@ -861,6 +982,7 @@ function renderFigures() {
         const xc = colMap.get(xname) || colMap.get('time'); if (!xc) return;
         const { xs, ys } = alignXY(xc, yc);
         curves.push({ label: expandText(cv.legend) || cv.y, unit: yc.unit || '',
+          displayUnit: yc.displayUnit, relative: yc.relative,
           color: COLORS[curves.length % COLORS.length], xs, ys, xName: xname });
       });
       const xAxis = plot.x || {}, yAxis = plot.y || {};
@@ -877,7 +999,13 @@ function renderFigures() {
         yLog: (yAxis.scale && yAxis.scale.scaleType === 'Log'),
         note: (plot.curves || []).length && !curves.length ? 'Referenced variables are not in the result.' : '',
       };
-      charts.add(spec, 'f' + fi + 'p' + pi);
+      // A figure's own axis unit wins; otherwise the curves' shared unit is switchable.
+      const key = 'f' + fi + 'p' + pi;
+      const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+      if (!yAxis.unit && bases.length === 1) {
+        applyUnit(spec, key, bases[0], chartUnit(key, bases[0], curves.find((c) => c.unit === bases[0])));
+      }
+      charts.add(spec, key);
     });
     const cap = expandText(fig.caption);
     if (cap) { const c = document.createElement('div'); c.className = 'caption'; c.textContent = cap; chartsEl.appendChild(c); }
@@ -960,6 +1088,10 @@ srcEl.addEventListener('input', () => {   // manual edits are authoritative: re-
 for (const id of ['stop', 'intervals', 'method']) el(id).addEventListener('change', () => run('full'));
 // Solver selectors are runtime flags, not build settings: re-simulate, don't rebuild.
 for (const id of [...SOLVER_FLAGS, 'lv']) el(id).addEventListener('change', () => run('resim'));
+daeEl.addEventListener('change', () => { syncDaeMode(); run('full'); });
+// Toggling it from the export dialog only records the choice: the user is on their
+// way to an export, and the next run picks it up (builtDae no longer matches).
+daeFmuEl.addEventListener('change', () => { daeEl.checked = daeFmuEl.checked; syncDaeMode(); });
 function stepTol(factor) { tolValue = cleanTol(Math.min(1e-1, Math.max(1e-15, tolValue * factor))); renderTol(); run('full'); }
 el('tolUp').addEventListener('click', () => stepTol(10));
 el('tolDn').addEventListener('click', () => stepTol(0.1));
@@ -969,7 +1101,7 @@ runBtn.addEventListener('click', () => { if (running) cancelRun(); else run('ful
 
 const exportBtn = el('exportFmu');
 let exporting = false;
-async function exportFmu({ fmuType, method, platforms }) {
+async function exportFmu({ fmuType, method, platforms, daeMode }) {
   if (running || exporting) return;
   const text = srcEl.value;
   if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
@@ -987,12 +1119,14 @@ async function exportFmu({ fmuType, method, platforms }) {
     // unchanged model goes straight to the export and links onto the kernel it
     // already has. A changed one has to be reloaded, and is translated again.
     let name = builtModel;
-    if (!(name && builtWorker === worker && text === lastText)) {
+    // A DAE-mode change makes that kernel the wrong one, so reload to force the
+    // re-translation just as an edited model does.
+    if (!(name && builtWorker === worker && text === lastText && builtDae === daeMode)) {
       const lm = await call(worker, 'loadSource', { text, name: parseModelName(text) });
       if (!lm.ok) return fail(lm.error);
       name = lm.name;
     }
-    const r = await call(worker, 'exportFmu', { name, fmuType, method, platforms });
+    const r = await call(worker, 'exportFmu', { name, fmuType, method, platforms, daeMode });
     if (r.cancelled) { setStatus('Export cancelled.'); return; }
     if (!r.ok) return fail(r.error);
     downloadBlob(r.filename, r.bytes);
@@ -1007,7 +1141,9 @@ function syncExportDialog() {
   // Only a pure Co-Simulation export needs its own translation; every other
   // combination is served by the one the model was compiled with.
   el('csOnlyHint').hidden = !(fmiCs.checked && !fmiMe.checked);
-  csSolver.disabled = !fmiCs.checked;
+  // DAE mode commits the embedded solver to IDA too — nothing else steps residuals.
+  if (daeEl.checked && [...csSolver.options].some((o) => o.value === 'ida')) csSolver.value = 'ida';
+  csSolver.disabled = !fmiCs.checked || daeEl.checked;
   el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
 }
 const exportDialog = bindModal(exportBackdrop, {
@@ -1022,7 +1158,7 @@ el('exportGo').addEventListener('click', () => {
   const method = fmiCs.checked ? csSolver.value : undefined;
   const platforms = [...el('fmuPlatforms').querySelectorAll('input:checked')].map((c) => c.value);
   exportDialog.close();
-  exportFmu({ fmuType, method, platforms });
+  exportFmu({ fmuType, method, platforms, daeMode: daeEl.checked });
 });
 toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'auto' : 'all'; renderCharts();
   if (snap) setStatus(`${snap.info.model} — ${snap.info.rows} points, t ∈ [${snap.info.start}, ${snap.info.stop}]` + ((modelFigures && modelFigures.length && viewMode !== 'all') ? ' · figures' : '')); });

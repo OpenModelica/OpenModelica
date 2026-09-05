@@ -171,12 +171,31 @@ pub trait Ode {
     }
 }
 
+/// A residual Jacobian's sparsity, from a caller that knows it. `rows_by_col[j]`
+/// are the rows of `F` that unknown `j` appears in — the states first, then the
+/// algebraic ones, the order `y` follows — and `colors` groups columns sharing no
+/// row, so one residual evaluation differences a whole group.
+///
+/// The pattern is `∂F/∂y + cj·∂F/∂y'`, which for a state column means the rows
+/// reached through either `x` or `der(x)`: one difference carries both terms.
+pub struct DaeSparsity {
+    pub rows_by_col: alloc::vec::Vec<alloc::vec::Vec<u32>>,
+    pub colors: alloc::vec::Vec<alloc::vec::Vec<u32>>,
+}
+
 /// A model in residual form, `F(t, y, y') = 0` over `y = [states | algebraic
 /// unknowns]`, which only IDA integrates. `y'` carries a derivative per component,
 /// the algebraic ones being whatever IDA holds there.
 pub trait Dae {
     /// `res := F(t, y, y')`.
     fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> Result<()>;
+
+    /// The residual Jacobian's sparsity, when the caller can supply one; IDA then
+    /// factorizes with KLU over a coloured difference-quotient Jacobian instead of
+    /// building its own dense one.
+    fn sparsity(&self) -> Option<&DaeSparsity> {
+        None
+    }
 
     /// The zero-crossing functions at `(t, y, y')`.
     fn eval_zc(&mut self, t: f64, y: &[f64], yp: &[f64], zc: &mut [f64]) -> Result<()>;

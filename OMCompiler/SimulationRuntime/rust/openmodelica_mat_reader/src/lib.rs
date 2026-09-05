@@ -77,10 +77,21 @@ pub trait ResultTable {
     fn var_type(&self, _idx: usize) -> &str {
         "Real"
     }
+    /// FMI's `relativeQuantity` for `all_info()[idx]`: the value is a difference in
+    /// its unit, so a conversion scales it but adds no offset. False for a format
+    /// that does not record it.
+    fn relative_quantity(&self, _idx: usize) -> bool {
+        false
+    }
     /// The trajectory of a String column (1-based `index`); `None` unless the
     /// format stores Strings and the column is one.
     fn read_strings(&mut self, _index: i32) -> Option<Vec<String>> {
         None
+    }
+    /// Whether `all_info()[idx]` is a discrete-time variable. False for a format
+    /// that does not record it.
+    fn discrete(&self, _idx: usize) -> bool {
+        false
     }
     /// The literals of the enumeration variable `all_info()[idx]`.
     fn enumeration(&self, _idx: usize) -> Option<Vec<String>> {

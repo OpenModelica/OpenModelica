@@ -1508,6 +1508,12 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     // `hintReadAllVars` is a performance hint in the C reader (pre-read every
     // column); the Rust reader always loads data_2 in one pass, so it is a no-op.
     let mut opened = open_reporting(&inFile)?;
+    // The unit table is the file's, not a variable's, so it is read before the
+    // reader is erased to `dyn ResultTable`.
+    let unit_defs = match opened.as_ref() {
+        Some(ResultReader::Arrow(r)) => r.unit_defs(),
+        _ => Vec::new(),
+    };
     let reader: &mut dyn ResultTable = match opened.as_mut() {
         Some(ResultReader::Csv(r)) => {
             let mut names: Vec<ArcStr> = Vec::with_capacity(1 + vars.as_ref().into_iter().count());
@@ -1587,7 +1593,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     }
 
     if outFile.ends_with(".arrow") {
-        return filter_to_arrow(reader, &fvars, numberOfIntervals, removeDescription, &inFile, &outFile, start, stop);
+        return filter_to_arrow(reader, &fvars, &unit_defs, numberOfIntervals, removeDescription, &inFile, &outFile, start, stop);
     }
 
     // MATLAB v4 output. Tally which input data_1/data_2 columns are referenced
@@ -1769,6 +1775,7 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
 fn filter_to_arrow(
     reader: &mut dyn ResultTable,
     fvars: &[FilterVar],
+    unit_defs: &[openmodelica_arrow_writer::UnitDef],
     n_intervals: i32,
     remove_description: bool,
     in_file: &ArcStr,
@@ -1776,7 +1783,7 @@ fn filter_to_arrow(
     start: f64,
     stop: f64,
 ) -> Result<bool> {
-    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, VarTy, write_arrow};
+    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, FileMeta, VarTy, write_arrow};
     // Output column of each input column (1-based); time is output column 0.
     let mut out_col = vec![u32::MAX; reader.nvar() + 1];
     let mut src_cols: Vec<i32> = vec![1];
@@ -1832,6 +1839,8 @@ fn filter_to_arrow(
     for (fv, enumeration) in fvars.iter().zip(&enums) {
         let ty = VarTy::from_name(reader.var_type(fv.idx));
         let (unit, display_unit) = reader.unit(fv.idx);
+        let relative_quantity = reader.relative_quantity(fv.idx);
+        let discrete = reader.discrete(fv.idx);
         let affine = if fv.index < 0 { Affine::NEGATE } else { Affine::IDENTITY };
         let kind = if fv.isParam {
             params.push(reader.params()[fv.index.unsigned_abs() as usize - 1]);
@@ -1854,14 +1863,16 @@ fn filter_to_arrow(
             comment: if remove_description { "" } else { &fv.descr },
             unit,
             display_unit,
+            relative_quantity,
             ty,
-            discrete: false,
+            discrete,
             kind,
             unvarying: false,
             enumeration: enumeration.as_deref(),
         });
     }
-    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), Some((start, stop)));
+    let units = openmodelica_arrow_writer::units::declared(unit_defs.to_vec());
+    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((start, stop)), units: &units });
     if write_output_file(out_file.as_str(), &bytes).is_err() {
         err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
         return Ok(false);

@@ -558,6 +558,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
+  attribute->relativeQuantity = read_value_bool(findHashStringStringEmpty(var_map, "relativeQuantity"));
 
   if (omc_useStream[OMC_LOG_DEBUG])
   {
@@ -1010,6 +1011,7 @@ void read_alias_var(DATA_ALIAS* alias,
     /* Empty for the types that have no unit, and for an alias that declares none. */
     alias[i].unit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "unit"));
     alias[i].displayUnit = read_value_string(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "displayUnit"));
+    alias[i].relativeQuantity = read_value_bool(findHashStringStringEmpty(*findHashLongVar(aliasHashMap, i), "relativeQuantity"));
 
     aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {

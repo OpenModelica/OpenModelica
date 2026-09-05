@@ -961,6 +961,7 @@ template simulationFile_jac_header(SimCode simCode)
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = {
       .unit = NULL,
       .displayUnit = NULL,
+      .relativeQuantity = FALSE,
       .min = {
         .ndims     = 1,
         .dim_size  = one_dim,

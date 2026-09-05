@@ -31,6 +31,7 @@ pub mod linearize;
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
 // (and the paths the codegen already uses) still name them.
 pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
+pub use openmodelica_arrow_writer::units::{BaseUnit, DisplayUnit, UnitDef};
 pub use openmodelica_arrow_writer::VarTy;
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
@@ -641,6 +642,9 @@ pub struct MetaVar {
     pub comment: String,
     pub unit: String,
     pub display_unit: String,
+    /// FMI's `relativeQuantity`: the value is a difference in its unit, so a
+    /// conversion scales it but adds no offset.
+    pub relative_quantity: bool,
     pub ty: VarTy,
     /// A discrete-time variable (changes only at events).
     pub discrete: bool,
@@ -1098,6 +1102,10 @@ pub struct SimMeta {
     /// The model's name (diagnostics).
     pub model_name: String,
     pub vars: Vec<MetaVar>,
+    /// The units [`MetaVar::unit`] and [`MetaVar::display_unit`] name, defined:
+    /// the SI dimensions and the conversion to each display unit. Only the
+    /// `.arrow` writer uses them; the other formats carry no unit table.
+    pub units: Vec<UnitDef>,
     /// ODE state Jacobian sparsity + coloring; `None` ⇒ numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
     /// Dynamic state selection metadata (one per `$STATESET`); empty otherwise.
@@ -1481,7 +1489,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 20;
+const VERSION: u32 = 21;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1606,6 +1614,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, &v.comment);
         put_str(&mut o, &v.unit);
         put_str(&mut o, &v.display_unit);
+        o.push(v.relative_quantity as u8);
         o.push(v.ty.code());
         o.push(v.discrete as u8);
         put_kind(&mut o, &v.kind);
@@ -1901,6 +1910,28 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             }
         }
     }
+    put_u32(&mut o, m.units.len() as u32);
+    for u in &m.units {
+        put_str(&mut o, &u.name);
+        match &u.base {
+            None => o.push(0),
+            Some(b) => {
+                o.push(1);
+                for e in b.exponents {
+                    put_u32(&mut o, e as u32);
+                }
+                put_f64(&mut o, b.factor);
+                put_f64(&mut o, b.offset);
+            }
+        }
+        put_u32(&mut o, u.display_units.len() as u32);
+        for d in &u.display_units {
+            put_str(&mut o, &d.name);
+            put_f64(&mut o, d.factor);
+            put_f64(&mut o, d.offset);
+            o.push(d.inverse as u8);
+        }
+    }
     o
 }
 
@@ -2115,6 +2146,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             comment: r.string()?,
             unit: r.string()?,
             display_unit: r.string()?,
+            relative_quantity: r.u8()? != 0,
             ty: VarTy::from_code(r.u8()?),
             discrete: r.u8()? != 0,
             kind: r.kind()?,
@@ -2433,10 +2465,29 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             Some(ParmodInfo { tasks })
         }
     };
+    let mut units = Vec::new();
+    for _ in 0..r.u32()? {
+        let name = r.string()?;
+        let base = match r.u8()? {
+            0 => None,
+            _ => {
+                let mut exponents = [0i32; 8];
+                for e in &mut exponents {
+                    *e = r.u32()? as i32;
+                }
+                Some(BaseUnit { exponents, factor: r.f64()?, offset: r.f64()? })
+            }
+        };
+        let mut display_units = Vec::new();
+        for _ in 0..r.u32()? {
+            display_units.push(DisplayUnit { name: r.string()?, factor: r.f64()?, offset: r.f64()?, inverse: r.u8()? != 0 });
+        }
+        units.push(UnitDef { name, base, display_units });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
+        model_name, vars, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod,
     })
@@ -2465,13 +2516,18 @@ mod tests {
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
+            units: vec![UnitDef {
+                name: "K".to_string(),
+                base: Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], factor: 1.0, offset: 0.0 }),
+                display_units: vec![DisplayUnit { name: "degC".to_string(), factor: 1.0, offset: -273.15, inverse: false }],
+            }],
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::ALIAS, unvarying: false, enumeration: None },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::HIDE_RESULT, unvarying: false, enumeration: None },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, unit: String::new(), display_unit: String::new(), ty: VarTy::Real, discrete: false, filter: var_filter::FILTERED, unvarying: false, enumeration: None },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::ALIAS, unvarying: false, enumeration: None },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::HIDE_RESULT, unvarying: false, enumeration: None },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::FILTERED, unvarying: false, enumeration: None },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,

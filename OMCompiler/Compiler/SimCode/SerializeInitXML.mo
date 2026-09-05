@@ -440,6 +440,9 @@ algorithm
       scalarVariableTypeAttribute(file, v.maxValue, "max");
       scalarVariableTypeStringAttribute(file, v.unit, "unit");
       scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      if v.relativeQuantity then
+        File.write(file, " relativeQuantity=\"true\"");
+      end if;
       File.write(file, " />");
     then ();
   case Type.T_BOOL()

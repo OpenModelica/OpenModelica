@@ -577,6 +577,13 @@ struct Sens {
 }
 
 impl Ida {
+    /// The `IDA` handle, for a callback that has to ask IDA something the callback
+    /// signature does not carry — [`ida_current_step`], which a difference-quotient
+    /// Jacobian's increment scales with, and which changes step by step.
+    pub fn mem_ptr(&self) -> *mut c_void {
+        self.mem
+    }
+
     /// `nnz` is the sparse pattern's nonzero count ([`IdaLs::Klu`] only); `jac`
     /// is `None` for IDA's internal difference-quotient Jacobian. `user_data` is
     /// bound separately, by [`set_user_data`](Ida::set_user_data).
