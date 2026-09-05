@@ -428,25 +428,34 @@ impl History for MemHistory {
 }
 
 /// C's `simulationInfo->nonlinearSystemData`: each system's (state address, size),
-/// filled by the module `start`.
-struct RosterCell(UnsafeCell<alloc::vec::Vec<(u32, usize)>>);
+/// filled by the module `start`. `index` is the reverse map, wanted per solve.
+struct Roster {
+    sys: alloc::vec::Vec<(u32, usize)>,
+    index: alloc::collections::BTreeMap<u32, u32>,
+}
+struct RosterCell(UnsafeCell<Roster>);
 // Single-threaded wasm: no concurrent access.
 unsafe impl Sync for RosterCell {}
-static ROSTER: RosterCell = RosterCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static ROSTER: RosterCell =
+    RosterCell(UnsafeCell::new(Roster { sys: alloc::vec::Vec::new(), index: alloc::collections::BTreeMap::new() }));
 
 /// `k == 0` starts a fresh roster, so a second model replaces the first.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     let roster = unsafe { &mut *ROSTER.0.get() };
-    roster.truncate(k as usize);
-    roster.push((hist_addr, n as usize));
+    let keep = roster.sys.len().min(k as usize);
+    for (addr, _) in roster.sys.drain(keep..) {
+        roster.index.remove(&addr);
+    }
+    roster.index.insert(hist_addr, roster.sys.len() as u32);
+    roster.sys.push((hist_addr, n as usize));
 }
 
 /// C's `sysNumber`: the index in `nonlinearSystemData` the homotopy messages quote
 /// (not the equation index). The roster is registered in that order.
 fn nls_sys_number(hist_addr: u32) -> u32 {
     let roster = unsafe { &*ROSTER.0.get() };
-    roster.iter().position(|(h, _)| *h == hist_addr).unwrap_or(0) as u32
+    roster.index.get(&hist_addr).copied().unwrap_or(0)
 }
 
 /// [`set_var_names`] across the module boundary: `ptr`/`len` are a NUL-separated
@@ -504,7 +513,7 @@ pub(crate) fn set_diag(systems: &[openmodelica_sim_meta::NlsVars]) {
 /// C's `cleanUpOldValueListAfterEvent`, called once per event.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
-    for &(addr, n) in unsafe { &*ROSTER.0.get() } {
+    for &(addr, n) in &unsafe { &*ROSTER.0.get() }.sys {
         let mut hist = MemHistory { count_addr: addr, base: addr + 16 + 2 * (n * 8) as u32, n };
         history_clean(&mut hist, time);
     }

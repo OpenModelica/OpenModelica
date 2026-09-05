@@ -1041,13 +1041,15 @@ pub mod sun {
             };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut BUd as *mut c_void) };
             let v = openmodelica_solvers::omclog::NLS_V;
-            openmodelica_solvers::omclog::info!(
-                v,
-                true,
-                "Start solving Non-Linear System {eq_index} (size {}) at time {} with Kinsol Solver",
-                self.n,
-                openmodelica_solvers::format_g(time, 6),
-            );
+            if openmodelica_solvers::omclog::active(v) {
+                openmodelica_solvers::omclog::info!(
+                    v,
+                    true,
+                    "Start solving Non-Linear System {eq_index} (size {}) at time {} with Kinsol Solver",
+                    self.n,
+                    openmodelica_solvers::format_g(time, 6),
+                );
+            }
             let mut success = false;
             let mut retries = 0;
             let mut passes = 0;
@@ -1169,10 +1171,10 @@ pub mod sun {
 pub const AVAILABLE: bool = cfg!(sundials);
 
 /// One solver per system `handle`, kept for the run so KINSOL and KLU reuse their
-/// setup. A list rather than a map: a model has a handful of nonlinear systems, and
-/// the runtime is single-threaded (as the rest of this crate's rosters are).
+/// setup. Keyed, not scanned: a model can have one system per discretization
+/// volume. Single-threaded, as the rest of this crate's rosters are.
 #[cfg(sundials)]
-struct Cache<T>(core::cell::UnsafeCell<alloc::vec::Vec<(u32, T)>>);
+struct Cache<T>(core::cell::UnsafeCell<alloc::collections::BTreeMap<u32, T>>);
 #[cfg(sundials)]
 unsafe impl<T> Sync for Cache<T> {}
 
@@ -1181,25 +1183,26 @@ impl<T> Cache<T> {
     /// Detach the solver for `handle` so a model callback can re-enter for a nested
     /// system, run `f`, then put it back.
     fn with(&self, handle: u32, new: impl FnOnce() -> Option<T>, f: impl FnOnce(&mut T) -> bool) -> bool {
-        let list = unsafe { &mut *self.0.get() };
-        let mut solver = match list.iter().position(|(h, _)| *h == handle) {
-            Some(i) => list.swap_remove(i).1,
+        let mut solver = match unsafe { &mut *self.0.get() }.remove(&handle) {
+            Some(s) => s,
             None => match new() {
                 Some(s) => s,
                 None => return false,
             },
         };
         let ok = f(&mut solver);
-        unsafe { &mut *self.0.get() }.push((handle, solver));
+        unsafe { &mut *self.0.get() }.insert(handle, solver);
         ok
     }
 }
 
 #[cfg(sundials)]
-static KIN_CACHE: Cache<sun::Solver> = Cache(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+static KIN_CACHE: Cache<sun::Solver> =
+    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
 /// [`KIN_CACHE`] for `-nls=kinsol_b`.
 #[cfg(sundials)]
-static KIN_B_CACHE: Cache<sun::BSolver> = Cache(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+static KIN_B_CACHE: Cache<sun::BSolver> =
+    Cache(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 /// Drop every per-system KINSOL/KLU memory; they belong to one run.
 #[cfg(sundials)]

@@ -2924,8 +2924,12 @@ fn ls_print_matrix(name: &str, a: &[f64], n: usize) {
     omclog::close(omclog::LS_V);
 }
 
-/// C's per-solver `Start solving Linear System …` line.
+/// C's per-solver `Start solving Linear System …` line. `format_g` allocates, so
+/// check the stream before the arguments are built.
 fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
+    if !omclog::active(omclog::LS) {
+        return;
+    }
     omclog::info!(
         omclog::LS,
         false,
@@ -2983,7 +2987,7 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
     if dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot) {
         return 0;
     }
-    if core::mem::replace(&mut ls_failure_entry(eq_index).fell_back, false) {
+    if ls_took_fallback(eq_index) {
         return 0;
     }
     let n = n as usize;
@@ -3014,28 +3018,37 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
 
 /// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
 /// a success warns on stdout, a run of them only on `LOG_LS`.
+#[derive(Default)]
 struct LsFailure {
-    eq_index: i32,
     failed: bool,
     failures: u64,
     /// The last solve was the total-pivot fallback, whose step C takes unchecked.
     fell_back: bool,
 }
-struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<LsFailure>>);
+/// Keyed, not scanned: [`ls_solved`] runs per solve, and a model can solve O(n)
+/// systems per `functionODE`.
+struct LsFailures(core::cell::UnsafeCell<alloc::collections::BTreeMap<i32, LsFailure>>);
 unsafe impl Sync for LsFailures {}
-static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+static LS_FAILURES: LsFailures =
+    LsFailures(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {
-    let v = unsafe { &mut *LS_FAILURES.0.get() };
-    if let Some(i) = v.iter().position(|e| e.eq_index == eq_index) {
-        return &mut v[i];
-    }
-    v.push(LsFailure { eq_index, failed: false, failures: 0, fell_back: false });
-    v.last_mut().unwrap()
+    unsafe { &mut *LS_FAILURES.0.get() }.entry(eq_index).or_default()
 }
 
+/// No entry means the system never failed, so `failed` is already clear.
 fn ls_solved(eq_index: i32) {
-    ls_failure_entry(eq_index).failed = false;
+    if let Some(e) = unsafe { &mut *LS_FAILURES.0.get() }.get_mut(&eq_index) {
+        e.failed = false;
+    }
+}
+
+/// Takes the total-pivot-fallback flag: C's step after it goes unchecked.
+fn ls_took_fallback(eq_index: i32) -> bool {
+    match unsafe { &mut *LS_FAILURES.0.get() }.get_mut(&eq_index) {
+        Some(e) => core::mem::replace(&mut e.fell_back, false),
+        None => false,
+    }
 }
 
 /// C's `++systemData->numberOfFailures`, shared by both warnings of one failure.

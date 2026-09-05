@@ -1893,7 +1893,8 @@ fn hybrd_c(
 ) -> bool {
     use omclog;
     let log_v = omclog::active(omclog::NLS_V);
-    let names = var_names(t.eq_index);
+    // The first lookup parses `<Model>_info.json` on the native runtime.
+    let names = if log_v { var_names(t.eq_index) } else { &[] };
     // C's `printVector`.
     let print_vector = |name: &str, v: &[f64]| {
         omclog::info(omclog::NLS_V, true, name);
@@ -1902,11 +1903,15 @@ fn hybrd_c(
         }
         omclog::close(omclog::NLS_V);
     };
-    let log_rung = |msg: &str| {
-        if log_v {
-            omclog::info(omclog::NLS_V, false, msg);
-        }
-    };
+    // A macro, not a `fn(&str)`: the rung messages format their arguments, and a
+    // function call would do that before `log_v` is ever tested.
+    macro_rules! log_rung {
+        ($($arg:tt)*) => {
+            if log_v {
+                omclog::info!(omclog::NLS_V, false, $($arg)*);
+            }
+        };
+    }
     if log_v {
         omclog::info!(
             omclog::NLS_V,
@@ -2116,36 +2121,36 @@ fn hybrd_c(
                 xv[assert_retries - 1] += 0.01 * nominal[assert_retries - 1];
             }
             assert_retries += 1;
-            log_rung(&alloc::format!(" - try to handle a problem with a called assert vary initial value a bit. (Retry: {assert_retries})"));
+            log_rung!(" - try to handle a problem with a called assert vary initial value a bit. (Retry: {assert_retries})");
         } else if retries < 3 {
             restart(&mut xv, &nlsx);
             factor /= 10.0;
             retries += 1;
-            log_rung(&alloc::format!(" - iteration making no progress:\t decreasing initial step bound to {}.", omclog::f(factor, 0, 6)));
+            log_rung!(" - iteration making no progress:\t decreasing initial step bound to {}.", omclog::f(factor, 0, 6));
         } else if retries < 4 {
             for i in 0..n {
                 xv[i] += nominal[i] * 0.1;
             }
             factor = initial_factor;
             retries += 1;
-            log_rung("iteration making no progress:\t vary solution point by 1%.");
+            log_rung!("iteration making no progress:\t vary solution point by 1%.");
         } else if retries < 5 {
             // C's "try old values as x-scaling factors"; the constrain-x block above
             // overwrites them again, in C too, so this is a plain restart.
             restart(&mut xv, &nlsx);
             retries += 1;
-            log_rung("iteration making no progress:\t try old values as scaling factors.");
+            log_rung!("iteration making no progress:\t try old values as scaling factors.");
         } else if retries < 6 {
             restart(&mut xv, &nlsx);
             *use_xscaling = false;
             retries += 1;
-            log_rung("iteration making no progress:\t try without scaling at all.");
+            log_rung!("iteration making no progress:\t try without scaling at all.");
         } else if retries < 7 && discrete_call {
             xv.copy_from_slice(&warm);
             continuous = false;
             non_continuous = true;
             retries += 1;
-            log_rung(" - iteration making no progress:\t try to solve a discontinuous system.");
+            log_rung!(" - iteration making no progress:\t try to solve a discontinuous system.");
         } else if retries2 < 1 {
             xv.copy_from_slice(&warm);
             *use_xscaling = true;
@@ -2153,7 +2158,7 @@ fn hybrd_c(
             factor = initial_factor;
             retries = 0;
             retries2 += 1;
-            log_rung(" - iteration making no progress:\t use old values instead extrapolated.");
+            log_rung!(" - iteration making no progress:\t use old values instead extrapolated.");
         } else if retries2 < 2 {
             restart(&mut xv, &nlsx);
             for v in xv.iter_mut() {
@@ -2161,7 +2166,7 @@ fn hybrd_c(
             }
             retries = 0;
             retries2 += 1;
-            log_rung(" - iteration making no progress:\t vary initial point by adding 1%.");
+            log_rung!(" - iteration making no progress:\t vary initial point by adding 1%.");
         } else if retries2 < 3 {
             restart(&mut xv, &nlsx);
             for v in xv.iter_mut() {
@@ -2169,18 +2174,18 @@ fn hybrd_c(
             }
             retries = 0;
             retries2 += 1;
-            log_rung(" - iteration making no progress:\t vary initial point by -1%.");
+            log_rung!(" - iteration making no progress:\t vary initial point by -1%.");
         } else if retries2 < 4 {
             xv.copy_from_slice(nominal);
             retries = 0;
             retries2 += 1;
-            log_rung(" - iteration making no progress:\t try scaling factor as initial point.");
+            log_rung!(" - iteration making no progress:\t try scaling factor as initial point.");
         } else if retries2 < 5 && !assert_called {
             restart(&mut xv, &nlsx);
             diag = Some(res_scaling.iter().map(|v| libm::fabs(*v).max(1e-16)).collect());
             retries = 0;
             retries2 += 1;
-            log_rung(" - iteration making no progress:\t try with own scaling factors.");
+            log_rung!(" - iteration making no progress:\t try with own scaling factors.");
         } else if retries3 < 1 {
             restart(&mut xv, &nlsx);
             diag = Some(vec![1.0f64; n]);
@@ -2188,7 +2193,7 @@ fn hybrd_c(
             retries = 0;
             retries2 = 0;
             retries3 += 1;
-            log_rung(" - iteration making no progress:\t disable solver internal scaling.");
+            log_rung!(" - iteration making no progress:\t disable solver internal scaling.");
         } else if retries3 < 6 {
             restart(&mut xv, &nlsx);
             local_tol *= 10.0;
@@ -2197,9 +2202,9 @@ fn hybrd_c(
             retries = 0;
             retries2 = 0;
             retries3 += 1;
-            log_rung(&alloc::format!(" - iteration making no progress:\t reduce the tolerance slightly to {}.", omclog::e(local_tol, 0, 6)));
+            log_rung!(" - iteration making no progress:\t reduce the tolerance slightly to {}.", omclog::e(local_tol, 0, 6));
         } else {
-            log_rung(&alloc::format!("### No Solution! ###\n after {} restarts", retries * retries2 * retries3));
+            log_rung!("### No Solution! ###\n after {} restarts", retries * retries2 * retries3);
             x.copy_from_slice(&xv);
             set_continuous(true);
             return false;
@@ -2409,9 +2414,9 @@ pub fn history_clean(h: &mut dyn History, time: f64) {
 
 /// C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,JEval}`: per system,
 /// cumulative over the run, keyed by equation index.
-struct CountersCell(UnsafeCell<alloc::vec::Vec<(u32, [u64; 3])>>);
+struct CountersCell(UnsafeCell<alloc::collections::BTreeMap<u32, [u64; 3]>>);
 unsafe impl Sync for CountersCell {}
-static COUNTERS: CountersCell = CountersCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static COUNTERS: CountersCell = CountersCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 /// Nonzero while a Jacobian is being formed: C counts `numberOfFEval` in
 /// `wrapper_fvec`, which the FD Jacobian does not go through.
@@ -2436,26 +2441,18 @@ fn sys_counts() -> [u64; 3] {
 }
 
 fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
-    let v = unsafe { &mut *COUNTERS.0.get() };
-    let pos = match v.iter().position(|(i, _)| *i == eq_index) {
-        Some(p) => p,
-        None => {
-            v.push((eq_index, [0; 3]));
-            v.len() - 1
-        }
-    };
-    &mut v[pos].1
+    unsafe { &mut *COUNTERS.0.get() }.entry(eq_index).or_default()
 }
 
 /// C's `modelInfoGetEquation(...).vars[i]`, keyed by `equationIndex`. Pushed in
 /// from the decoded `SimMeta`, and only when the stream is on.
-struct NamesCell(UnsafeCell<alloc::vec::Vec<(u32, alloc::vec::Vec<alloc::string::String>)>>);
+struct NamesCell(UnsafeCell<alloc::collections::BTreeMap<u32, alloc::vec::Vec<alloc::string::String>>>);
 unsafe impl Sync for NamesCell {}
-static NAMES: NamesCell = NamesCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static NAMES: NamesCell = NamesCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 /// `eq_index`'s iteration-variable names, or `[]` when they were not pushed in.
 pub fn var_names(eq_index: u32) -> &'static [alloc::string::String] {
-    if let Some((_, v)) = unsafe { &*NAMES.0.get() }.iter().find(|(i, _)| *i == eq_index) {
+    if let Some(v) = unsafe { &*NAMES.0.get() }.get(&eq_index) {
         return v.as_slice();
     }
     // Not shipped ahead of time: ask the host, which reads the model's equation
@@ -2475,29 +2472,29 @@ fn var_label(names: &[alloc::string::String], i: usize) -> alloc::string::String
 
 /// Replace the name roster. `set` is `(eq_index, names)` in any order.
 pub fn set_var_names(set: alloc::vec::Vec<(u32, alloc::vec::Vec<alloc::string::String>)>) {
-    *unsafe { &mut *NAMES.0.get() } = set;
+    *unsafe { &mut *NAMES.0.get() } = set.into_iter().collect();
 }
 
 /// What `-lv=LOG_NLS_NEWTON_DIAGNOSTICS` needs per system beyond the names, keyed
 /// by equation index; pushed in from the model's metadata.
-struct DiagCell(UnsafeCell<alloc::vec::Vec<(u32, newton_diagnostics::DiagInfo)>>);
+struct DiagCell(UnsafeCell<alloc::collections::BTreeMap<u32, newton_diagnostics::DiagInfo>>);
 unsafe impl Sync for DiagCell {}
-static DIAG: DiagCell = DiagCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static DIAG: DiagCell = DiagCell(UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 /// Replace the `LOG_NLS_NEWTON_DIAGNOSTICS` roster. `set` is `(eq_index, info)`
 /// in any order.
 pub fn set_diag(set: alloc::vec::Vec<(u32, newton_diagnostics::DiagInfo)>) {
-    *unsafe { &mut *DIAG.0.get() } = set;
+    *unsafe { &mut *DIAG.0.get() } = set.into_iter().collect();
 }
 
 /// Add one system to it, for a host that ships the roster a system at a time.
 pub fn push_diag(eq_index: u32, info: newton_diagnostics::DiagInfo) {
-    unsafe { &mut *DIAG.0.get() }.push((eq_index, info));
+    unsafe { &mut *DIAG.0.get() }.insert(eq_index, info);
 }
 
 /// [`set_var_names`] one system at a time.
 pub fn push_var_names(eq_index: u32, names: alloc::vec::Vec<alloc::string::String>) {
-    unsafe { &mut *NAMES.0.get() }.push((eq_index, names));
+    unsafe { &mut *NAMES.0.get() }.insert(eq_index, names);
 }
 
 /// The SimCode equation index of each residual, as the Newton-diagnostics roster
@@ -2518,7 +2515,7 @@ pub fn clear_diag() {
 }
 
 fn diag_info(eq_index: u32) -> Option<&'static newton_diagnostics::DiagInfo> {
-    unsafe { &*DIAG.0.get() }.iter().find(|(e, _)| *e == eq_index).map(|(_, d)| d)
+    unsafe { &*DIAG.0.get() }.get(&eq_index)
 }
 
 /// C's `printNonLinearInitialInfo`, under the `solve_nonlinear_system` header.
