@@ -2072,11 +2072,8 @@ public
       output Boolean res;
     algorithm
       res := match exp
-        local
-          InstNode node;
-
-        case CREF(cref = ComponentRef.CREF(node = node))
-          then InstNode.refEqual(node, iterator);
+        // Only the first (last in stored order) part of a cref can be an iterator: `i.x`.
+        case CREF() then InstNode.refEqual(ComponentRef.node(ComponentRef.last(exp.cref)), iterator);
         else false;
       end match;
     end containsIterator2;
