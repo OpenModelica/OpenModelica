@@ -68,6 +68,63 @@ fn alarm_secs() -> u32 {
     ALARM_SECS.load(std::sync::atomic::Ordering::Relaxed)
 }
 
+/// The model's math builtins from the host's libm, as the C target has them,
+/// rather than the runtime's in-wasm `libm` crate. Only this engine can: the
+/// browser, the wasip1 session and the standalone command module have no host
+/// libm. `OMC_WASM_HOST_LIBM=0` restores the in-wasm one here too.
+fn host_libm() -> bool {
+    !matches!(std::env::var("OMC_WASM_HOST_LIBM").as_deref(), Ok("0"))
+}
+
+fn shadow_math_with_host_libm(
+    linker: &mut wasmtime::Linker<WasiCtx>,
+    store: &mut wasmtime::Store<WasiCtx>,
+    rt_inst: &wasmtime::Instance,
+) -> std::result::Result<(), wasmtime::Error> {
+    // `^` lowers to `rt_real_pow`, which owns C's negative-base and odd-root
+    // cases: take the ordinary branch here and leave the rest to the runtime.
+    let rt_pow = rt_inst.get_typed_func::<(f64, f64, u32), f64>(&mut *store, "rt_real_pow")?;
+    linker.allow_shadowing(true);
+    linker.func_wrap(
+        "rt",
+        "rt_real_pow",
+        move |mut caller: wasmtime::Caller<'_, WasiCtx>, base: f64, exp: f64, loc: u32| {
+            if base >= 0.0 || exp == 0.0 {
+                let r = base.powf(exp);
+                if r.is_finite() {
+                    return Ok(r);
+                }
+            }
+            rt_pow.call(&mut caller, (base, exp, loc))
+        },
+    )?;
+    macro_rules! m1 {
+        ($($n:literal => $f:expr),* $(,)?) => {$(
+            linker.func_wrap("rt", $n, |x: f64| -> f64 { $f(x) })?;
+        )*};
+    }
+    macro_rules! m2 {
+        ($($n:literal => $f:expr),* $(,)?) => {$(
+            linker.func_wrap("rt", $n, |x: f64, y: f64| -> f64 { $f(x, y) })?;
+        )*};
+    }
+    m1! {
+        "sin" => f64::sin, "cos" => f64::cos, "tan" => f64::tan,
+        "asin" => f64::asin, "acos" => f64::acos, "atan" => f64::atan,
+        "sinh" => f64::sinh, "cosh" => f64::cosh, "tanh" => f64::tanh,
+        "exp" => f64::exp, "log" => f64::ln, "log10" => f64::log10,
+        "cbrt" => f64::cbrt, "expm1" => f64::exp_m1, "log1p" => f64::ln_1p,
+        "exp2" => f64::exp2, "log2" => f64::log2,
+        "asinh" => f64::asinh, "acosh" => f64::acosh, "atanh" => f64::atanh,
+    }
+    m2! {
+        "pow" => f64::powf, "atan2" => f64::atan2, "hypot" => f64::hypot,
+        "fmod" => |x: f64, y: f64| x % y,
+    }
+    linker.allow_shadowing(false);
+    Ok(())
+}
+
 /// Report an expired alarm as the driver's own deadline does; the trap it unwinds
 /// as no longer says. The engine detail stays: its backtrace is where it stuck.
 fn map_alarm(e: String) -> String {
@@ -1382,6 +1439,9 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let rt_inst = wts(linker.instantiate(&mut store, runtime_module))?;
     // The generated module imports the runtime's exports under module name "rt".
     wts(linker.instance(&mut store, "rt", rt_inst))?;
+    if host_libm() {
+        wts(shadow_math_with_host_libm(&mut linker, &mut store, &rt_inst))?;
+    }
     let memory = rt_inst
         .get_memory(&mut store, "memory")
         .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
