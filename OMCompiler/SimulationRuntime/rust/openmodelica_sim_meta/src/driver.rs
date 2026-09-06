@@ -10137,7 +10137,14 @@ unsafe extern "C" fn ida_jac(
             let mut gp = core::mem::take(&mut ctx.jac_gp);
             let r = unsafe { ida_residual(ctx, t, y, ypv, gp.as_mut_ptr()) };
             ctx.jac_gp = gp;
-            r?;
+            // C's `jacoColoredNumericalSparse` ignores what the probe returns:
+            // `residualFunctionIDA` catches a model throw itself, leaving
+            // `newdelta` at the previous colour's values.
+            if let Err(err) = r
+                && !residual_model_throw(e, err, t)
+            {
+                return Err(err);
+            }
             for &col in color {
                 let ci = col as usize;
                 let del = ctx.jac_del[ci];
