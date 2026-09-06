@@ -239,6 +239,11 @@ fn err_status(msg: &str) -> Status {
     Status::Error
 }
 
+/// C's `omc_assert_fmi` for a `ModelicaError`: the logger, at error level.
+fn report_ext_error(msg: &str) {
+    fmi_log(Status::Error, CAT_ERROR, msg);
+}
+
 /// C's `FILTERED_LOG` / `isCategoryLogged`.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
     let cats = logger().cats;
@@ -261,6 +266,7 @@ fn init_logging(name: String, logging_on: bool) {
     l.name = name;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
+    driver::set_ext_error_reporter(report_ext_error);
     driver::set_terminate_reporter(terminate_fmi);
     omclog::set_mask(omclog::FMU_STREAMS);
 }

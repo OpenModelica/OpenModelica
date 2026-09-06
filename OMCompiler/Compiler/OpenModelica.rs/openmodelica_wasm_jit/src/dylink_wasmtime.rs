@@ -969,12 +969,12 @@ pub fn raise_model_error(
         None => false,
     };
     if !recovering {
-        let msg = shared_cstr(caller, ptr);
-        // A run reports itself through its log alone, as C's separate executable
-        // does; the function JIT has no log and answers through the Error buffer.
-        match nls {
-            Some(_) => crate::sim_driver::note_runtime_error(&msg),
-            None => openmodelica_error::ErrorExt::runtime_error(&msg),
+        // An artifact reports through its own runtime, a run through its log, the
+        // function JIT through the Error buffer.
+        match (caller.data().ext_error_report.clone(), nls) {
+            (Some(report), _) => report.call(&mut *caller, ptr as u32)?,
+            (None, Some(_)) => crate::sim_driver::note_runtime_error(&shared_cstr(caller, ptr)),
+            (None, None) => openmodelica_error::ErrorExt::runtime_error(&shared_cstr(caller, ptr)),
         }
     }
     match crate::host::model_error_exception(caller)? {

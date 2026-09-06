@@ -2518,10 +2518,11 @@ impl DylinkFmu {
         }
 
         let fused_inst = wts(linker.instantiate(&mut store, &fused_module))?;
+        store.data_mut().ext_error_report = fused_inst.get_typed_func::<u32, ()>(&mut store, "rt_ext_error_report").ok();
         let memory = fused_inst
             .get_memory(&mut store, "memory")
             .ok_or_else(|| "CodegenWasmJit: the fused runtime has no `memory` export".to_string())?;
-        crate::host::set_sim_memory(memory);
+        store.data_mut().memory = Some(memory);
         let alloc = wts(fused_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
         // The host's `rt` names first, so the loop below leaves them alone: the
         // fused module carries the runtime crate whole and so exports some of what

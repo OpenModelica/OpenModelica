@@ -340,6 +340,12 @@ mod ext_report {
         crate::trap()
     }
 
+    /// The report alone; the host does the throw.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error_report(msg: u32) {
+        crate::note_runtime_error(cstr(msg));
+    }
+
     /// C's `infoStreamPrint(OMC_LOG_STDOUT, 0, …)`.
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_message(msg: u32) {
