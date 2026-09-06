@@ -352,10 +352,9 @@ fn capture_last_sim(
         layout,
         series,
         params,
-        units: model.meta.units.iter().cloned().map(|mut u| {
-            u.add_predefined_display_units();
-            u
-        }).collect(),
+        // Only what the model declares: a reader merges in the predefined
+        // display units of the same name.
+        units: model.meta.units.clone(),
         stats: stats.clone(),
     });
 }

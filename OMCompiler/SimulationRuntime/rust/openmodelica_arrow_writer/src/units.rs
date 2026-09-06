@@ -83,12 +83,17 @@ impl UnitDef {
     /// so the file need not carry it.
     pub fn is_predefined(&self) -> bool {
         let Some(p) = self.same_base_as_predefined() else { return false };
-        self.base.is_some() && self.display_units.iter().all(|d| p.display_unit(&d.name) == Some(d))
+        self.display_units.iter().all(|d| p.display_unit(&d.name) == Some(d))
     }
 
     /// The predefined display units of this name that this one does not itself
     /// declare — skipped where the two disagree about the dimensions, which
     /// makes them different units that happen to share a name.
+    ///
+    /// A writer does not need this: an entry of the units table is merged with
+    /// the predefined one by whoever reads it. It is for a consumer that must
+    /// materialise a complete unit, an FMI exporter where a variable may only
+    /// name a declared `<Unit>`.
     pub fn add_predefined_display_units(&mut self) {
         let Some(p) = self.same_base_as_predefined() else { return };
         if self.base.is_none() {
@@ -103,17 +108,16 @@ impl UnitDef {
 }
 
 /// The entries a file must carry for the units its variables name: the ones
-/// [`predefined`] does not already say everything about, each completed with the
-/// predefined display units its own entry would otherwise hide.
+/// [`predefined`] does not already say everything about.
+///
+/// An entry carries only what it declares. A reader adds the predefined display
+/// units of the same name to it, so a unit that needs spelling out for one
+/// display unit the predefined set lacks does not have to repeat the twenty it
+/// has - which is what makes prefixing every unit affordable. An entry whose
+/// `baseUnit` disagrees with the predefined one is a different unit that happens
+/// to share a name, and nothing is merged into it.
 pub fn declared(units: impl IntoIterator<Item = UnitDef>) -> Vec<UnitDef> {
-    units
-        .into_iter()
-        .map(|mut u| {
-            u.add_predefined_display_units();
-            u
-        })
-        .filter(|u| !u.is_predefined())
-        .collect()
+    units.into_iter().filter(|u| !u.is_predefined()).collect()
 }
 
 /// The `modelica.units` JSON for the units a file must spell out.
@@ -227,17 +231,62 @@ const PREDEFINED: &[Predef] = &[
     ("m/s",  [ 0, 1,-1, 0, 0, 0, 0, 0], 1.0, 0.0, &[("km/h", 3.6, 0.0)]),
     ("m/s2", [ 0, 1,-2, 0, 0, 0, 0, 0], 1.0, 0.0, &[]),
     ("m2",   [ 0, 2, 0, 0, 0, 0, 0, 0], 1.0, 0.0, &[]),
-    ("m3",   [ 0, 3, 0, 0, 0, 0, 0, 0], 1.0, 0.0, &[("l", 1e3, 0.0)]),
+    ("m3",   [ 0, 3, 0, 0, 0, 0, 0, 0], 1.0, 0.0, &[("l", 1e3, 0.0), ("ml", 1e6, 0.0)]),
     ("m3/s", [ 0, 3,-1, 0, 0, 0, 0, 0], 1.0, 0.0, &[("l/s", 1e3, 0.0)]),
     ("kg/s", [ 1, 0,-1, 0, 0, 0, 0, 0], 1.0, 0.0, &[]),
-    ("kg/m3",[ 1,-3, 0, 0, 0, 0, 0, 0], 1.0, 0.0, &[]),
-    ("rad/s",[ 0, 0,-1, 0, 0, 0, 0, 1], 1.0, 0.0, &[("rpm", RPM, 0.0), ("deg/s", DEG, 0.0)]),
+    ("kg/m3",[ 1,-3, 0, 0, 0, 0, 0, 0], 1.0, 0.0, &[("g/cm3", 1e-3, 0.0)]),
+    // `rpm`, `rev/min` and `1/min` are one conversion under three names; the
+    // Modelica Standard Library writes all three.
+    ("rad/s",[ 0, 0,-1, 0, 0, 0, 0, 1], 1.0, 0.0, &[("rpm", RPM, 0.0), ("rev/min", RPM, 0.0), ("1/min", RPM, 0.0), ("deg/s", DEG, 0.0)]),
     ("N.m",  [ 1, 2,-2, 0, 0, 0, 0, 0], 1.0, 0.0, &[]),
     ("J/K",  [ 1, 2,-2, 0,-1, 0, 0, 0], 1.0, 0.0, &[]),
     ("J/(kg.K)", [0, 2,-2, 0,-1, 0, 0, 0], 1.0, 0.0, &[]),
     ("W/(m.K)",  [1, 1,-3, 0,-1, 0, 0, 0], 1.0, 0.0, &[]),
     ("W/(m2.K)", [1, 0,-3, 0,-1, 0, 0, 0], 1.0, 0.0, &[]),
 ];
+
+/// The SI prefixes, as `(name, exponent)`. A display unit converts *from* the
+/// unit, `v_display = factor * v_unit`, so a prefix of 10^n is a factor 10^-n.
+/// `u` rather than the micro sign, because a unit name is written in a Modelica
+/// source file.
+#[rustfmt::skip]
+const PREFIXES: &[(&str, i32)] = &[
+    ("y", -24), ("z", -21), ("a", -18), ("f", -15), ("p", -12), ("n", -9),
+    ("u",  -6), ("m",  -3), ("c",  -2), ("d",  -1), ("da",  1), ("h",  2),
+    ("k",   3), ("M",   6), ("G",   9), ("T",  12), ("P",  15), ("E", 18),
+    ("Z",  21), ("Y",  24),
+];
+
+/// The units a prefix may be written on, as `(unit, stem, stem per unit)`.
+///
+/// Only the base and named derived units: `mW/(m2.K)` is not something anyone
+/// writes, and a compound name is where a reader would have to start guessing.
+/// The stem is the unit itself except for `kg`, where the SI prefixes the gram,
+/// so its prefixed forms are milligrams and megagrams rather than millikilograms.
+#[rustfmt::skip]
+const PREFIXABLE: &[(&str, &str, f64)] = &[
+    ("kg", "g", 1e3), ("m", "m", 1.0), ("s", "s", 1.0), ("A", "A", 1.0),
+    ("K", "K", 1.0), ("mol", "mol", 1.0), ("cd", "cd", 1.0), ("rad", "rad", 1.0),
+    ("sr", "sr", 1.0), ("Hz", "Hz", 1.0), ("N", "N", 1.0), ("Pa", "Pa", 1.0),
+    ("J", "J", 1.0), ("W", "W", 1.0), ("C", "C", 1.0), ("V", "V", 1.0),
+    ("F", "F", 1.0), ("Ohm", "Ohm", 1.0), ("S", "S", 1.0), ("Wb", "Wb", 1.0),
+    ("T", "T", 1.0), ("H", "H", 1.0), ("lm", "lm", 1.0), ("lx", "lx", 1.0),
+    ("Bq", "Bq", 1.0), ("Gy", "Gy", 1.0), ("Sv", "Sv", 1.0), ("kat", "kat", 1.0),
+];
+
+/// The prefixed display units of one unit, in prefix order, skipping any name
+/// the hand-written table already gives and any form that is the unit itself
+/// (`kg` prefixed back to `kg`, whose factor is 1).
+fn prefixed(unit: &str, have: &[DisplayUnit]) -> Vec<DisplayUnit> {
+    let Some(&(_, stem, per_unit)) = PREFIXABLE.iter().find(|p| p.0 == unit) else {
+        return Vec::new();
+    };
+    PREFIXES
+        .iter()
+        .map(|&(p, exp)| DisplayUnit::new(&format!("{p}{stem}"), per_unit * 10f64.powi(-exp), 0.0))
+        .filter(|d| d.name != unit && !have.iter().any(|h| h.name == d.name))
+        .collect()
+}
 
 /// The predefined unit of that name, if there is one.
 pub fn predefined(name: &str) -> Option<UnitDef> {
@@ -251,16 +300,43 @@ pub fn predefined_units() -> impl Iterator<Item = UnitDef> {
 }
 
 fn unit_def(p: &Predef) -> UnitDef {
-    UnitDef {
-        name: p.0.to_owned(),
-        base: Some(BaseUnit { exponents: p.1, factor: p.2, offset: p.3 }),
-        display_units: p.4.iter().map(|&(n, f, o)| DisplayUnit::new(n, f, o)).collect(),
-    }
+    let mut display_units: Vec<DisplayUnit> =
+        p.4.iter().map(|&(n, f, o)| DisplayUnit::new(n, f, o)).collect();
+    display_units.extend(prefixed(p.0, &display_units));
+    UnitDef { name: p.0.to_owned(), base: Some(BaseUnit { exponents: p.1, factor: p.2, offset: p.3 }), display_units }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn prefixed_display_units_are_sane() {
+        let units: Vec<UnitDef> = predefined_units().collect();
+        let names: Vec<&str> = units.iter().map(|u| u.name.as_str()).collect();
+        for u in &units {
+            let mut seen = std::collections::HashSet::new();
+            for d in &u.display_units {
+                assert!(seen.insert(&d.name), "{}: {} twice", u.name, d.name);
+                assert!(
+                    !names.contains(&d.name.as_str()),
+                    "{}: display unit {} is also a unit",
+                    u.name,
+                    d.name
+                );
+                assert!(d.factor.is_finite() && d.factor != 0.0, "{}: {}", u.name, d.name);
+            }
+        }
+        // The SI prefixes the gram, not the kilogram.
+        let kg = predefined("kg").unwrap();
+        assert_eq!(kg.display_unit("mg").map(|d| d.factor), Some(1e6));
+        assert_eq!(kg.display_unit("Mg").map(|d| d.factor), Some(1e-3));
+        assert!(kg.display_unit("mkg").is_none());
+        // A hand-written display unit is not replaced by a prefixed one.
+        assert_eq!(predefined("K").unwrap().display_unit("degC").map(|d| d.offset), Some(-273.15));
+        // A compound unit takes no prefixes at all.
+        assert!(predefined("W/(m2.K)").unwrap().display_units.is_empty());
+    }
 
     #[test]
     fn predefined_names_are_distinct() {
@@ -280,8 +356,9 @@ mod tests {
         assert!(k.is_predefined());
         k.display_units.push(DisplayUnit::new("degF", 1.8, -459.67));
         assert!(!k.is_predefined(), "degF is not predefined, so K must be spelled out");
-        k.add_predefined_display_units();
-        assert_eq!(k.display_units.len(), 2, "degC was already there");
+        // And it is spelled out with what it declares, not with the twenty
+        // prefixed kelvins a reader already knows.
+        assert_eq!(declared(vec![k])[0].display_units.len(), 2);
     }
 
     #[test]
@@ -302,7 +379,9 @@ mod tests {
 
     #[test]
     fn the_json_omits_every_default() {
-        let k = predefined("K").expect("K");
+        let mut k = UnitDef::new("K");
+        k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
+        k.display_units.push(DisplayUnit::new("degC", 1.0, -273.15));
         assert_eq!(units_json(&[k]), r#"[{"name":"K","baseUnit":{"K":1},"displayUnits":[{"name":"degC","offset":-273.15}]}]"#);
     }
 }
