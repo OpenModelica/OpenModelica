@@ -1795,8 +1795,10 @@ pub(crate) struct ExtLibraries {
     /// In link order, for a native host to fall back to.
     pub native: Vec<String>,
     /// The system libraries among them: named by soname, with no file behind them
-    /// that an export could ship. Also in `native`, which only ever dlopens.
+    /// that an export could ship. Also in `native`/`fallback`, which only dlopen.
     pub native_system: Vec<String>,
+    /// The platform LAPACK/BLAS, searched after the process image.
+    pub fallback: Vec<String>,
     /// The static archives and object files among them, likewise in link order.
     pub archives: Vec<String>,
     /// `#include` lines for the C sources a `Library` named, which the C target
@@ -1806,9 +1808,11 @@ pub(crate) struct ExtLibraries {
 
 /// Resolve the `Library` annotations against the library directories. A name that
 /// resolves to nothing is reported here, not later as an unresolvable `ext.<fn>`
-/// import.
+/// import. `fortran`: a FORTRAN 77 import adds the platform LAPACK/BLAS
+/// (`Library="lapack"` names nothing; the C runtime always links them).
 pub(crate) fn resolve_ext_libraries(
     mp: &SimCodeFunction::MakefileParams,
+    fortran: bool,
     notes: &mut Vec<String>,
 ) -> Result<ExtLibraries> {
     let mut dirs: Vec<String> = vec![String::new()]; // relative to the working directory
@@ -1878,6 +1882,21 @@ pub(crate) fn resolve_ext_libraries(
         };
         if placed.insert(path.clone()) {
             out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
+        }
+    }
+    if fortran {
+        for lib in ["-llapack", "-lblas"] {
+            if !seen.insert(lib.to_string()) {
+                continue;
+            }
+            match find_native_library(lib, &dirs) {
+                Some(NativeLib::Shared(path)) => out.fallback.push(path),
+                Some(NativeLib::System(soname)) => {
+                    out.fallback.push(soname.clone());
+                    out.native_system.push(soname);
+                }
+                _ => (),
+            }
         }
     }
     Ok(out)
@@ -2599,7 +2618,10 @@ fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
     types.ty().function([we::ValType::I32; 4], []);
     let mut fn_sigs = Vec::with_capacity(sigs.len());
     for sig in sigs {
-        let fs = sig.wasm_sig_c_shared();
+        let fs = match sig.lang {
+            openmodelica_wasm_jit::sig::ExtLang::Fortran77 => sig.wasm_sig_f77_shared(),
+            openmodelica_wasm_jit::sig::ExtLang::C => sig.wasm_sig_c_shared(),
+        };
         types.ty().function(fs.params.iter().map(val), fs.results.iter().map(val));
         frame_slots = frame_slots.max(fs.params.len() as u32 + 1);
         fn_sigs.push(fs);
@@ -5479,7 +5501,8 @@ fn build_sim_model(
     let mut ext_builtin = false;
     let mut ext_native: Vec<ExtCallSig> = Vec::new();
     if !ext_imports.is_empty() {
-        ext_libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
+        let fortran = ext_imports.iter().any(|s| s.lang == openmodelica_wasm_jit::sig::ExtLang::Fortran77);
+        ext_libs = resolve_ext_libraries(&sim_code.makefileParams, fortran, &mut ext_lib_notes)?;
         ext_builtin = builtin_wasm_needed(&ext_imports, &ext_libs.wasm);
         // What the `Library` annotations did not provide may come from an `Include`
         // carrying the C source, though most carry only the declarations.
@@ -5531,6 +5554,7 @@ fn build_sim_model(
             ext_includes = Some(ExtIncludes {
                 sources,
                 include_dirs: dirs,
+                libs: ext_libs.native.iter().chain(&ext_libs.fallback).cloned().collect(),
                 archives: ext_libs.archives.clone(),
                 symbols: symbols.clone(),
                 ccompiler: mp.ccompiler.to_string(),
@@ -6956,6 +6980,7 @@ fn build_sim_model(
         ext_native,
         ext_builtin,
         ext_native_libs: ext_libs.native,
+        ext_native_fallback: ext_libs.fallback,
         ext_native_system: ext_libs.native_system,
         ext_archives,
         ext_includes,

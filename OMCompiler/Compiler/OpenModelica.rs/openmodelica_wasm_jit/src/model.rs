@@ -38,8 +38,10 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
-    /// The system libraries among `ext_native_libs`: an export declares these
-    /// rather than shipping them.
+    /// The platform LAPACK/BLAS, searched after the process image.
+    pub ext_native_fallback: Vec<String>,
+    /// The system libraries among `ext_native_libs`/`ext_native_fallback`: an
+    /// export declares these rather than shipping them.
     pub ext_native_system: Vec<String>,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
@@ -189,6 +191,8 @@ pub struct ExtIncludes {
     pub sources: Vec<String>,
     /// `IncludeDirectory` annotations, already `-I"…"` strings.
     pub include_dirs: Vec<String>,
+    /// The platform libraries the wrappers call into: a path or a bare soname.
+    pub libs: Vec<String>,
     /// The model's static archives, in link order: this source is what references
     /// their members, so linking them anywhere else pulls in nothing.
     pub archives: Vec<String>,
@@ -301,6 +305,13 @@ impl ExtIncludes {
         cmd.arg("-o").arg(&out).arg(&tu);
         if archives {
             cmd.args(&self.archives);
+        }
+        for lib in &self.libs {
+            if lib.contains(['/', '\\']) {
+                cmd.arg(lib);
+            } else {
+                cmd.arg(format!("-l:{lib}"));
+            }
         }
         let output = cmd
             .output()
