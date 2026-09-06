@@ -28,7 +28,11 @@ pub fn known(format: &str) -> bool {
 /// The writer a result file's name asks for: its suffix when this runtime has
 /// that writer, else `fallback` (the model's `outputFormat`). Diverges from C,
 /// which always writes the `outputFormat` under whatever name it was given.
+/// `empty` (`-noemit`) means no file, whatever the name.
 pub fn format_of<'a>(path: &'a str, fallback: &'a str) -> &'a str {
+    if fallback == "empty" {
+        return fallback;
+    }
     match path.rsplit_once('.') {
         Some((_, suffix)) if known(suffix) => suffix,
         _ => fallback,
