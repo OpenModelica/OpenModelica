@@ -29,7 +29,7 @@ else
     AC_MSG_RESULT([$QMAKE])
   else
     AC_MSG_RESULT([no])
-    AC_CHECK_PROGS(QMAKE,qmake qmake-mac qmake-qt4,"")
+    AC_CHECK_PROGS(QMAKE,qmake qmake6 qmake-mac qmake-qt4,"")
   fi
 fi
 
@@ -49,9 +49,12 @@ if test -n "$QMAKE"; then
     QT4BUILD="-DQT4_BUILD:Boolean=OFF"
   elif "$QMAKE" -v 2>&1 | grep "Qt version 4"; then
     QT4BUILD="-DQT4_BUILD:Boolean=ON"
+  elif "$QMAKE" -v 2>&1 | grep "Qt version 6"; then
+    WITH_QT6="yes"
+    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
   else
     QMAKE_VERSION=`"$QMAKE" -v`
-    AC_MSG_ERROR([qmake does not report qt version 4 or 5: $QMAKE_VERSION])
+    AC_MSG_ERROR([qmake does not report qt version 4, 5 or 6: $QMAKE_VERSION])
   fi
 
   if echo $host | grep darwin; then
