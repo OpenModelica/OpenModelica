@@ -122,8 +122,8 @@ pub(crate) mod dylink_fmi;
 
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
-pub(crate) fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
-    (&**l).into_iter()
+pub(crate) fn lst<T: Clone>(l: &List<T>) -> impl Iterator<Item = &T> {
+    l.iter()
 }
 
 // ===========================================================================
@@ -881,8 +881,8 @@ pub fn fmu_cs_solvers() -> Vec<&'static str> {
 
 /// `CodegenWasmJit.fmuCsSolvers`: [`fmu_cs_solvers`] for the MetaModelica side,
 /// which folds an accepted `method=` into the FMU's `_flags.json`.
-pub fn fmuCsSolvers() -> Arc<List<ArcStr>> {
-    Arc::new(fmu_cs_solvers().into_iter().map(ArcStr::from).collect())
+pub fn fmuCsSolvers() -> List<ArcStr> {
+    fmu_cs_solvers().into_iter().map(ArcStr::from).collect()
 }
 
 /// The `platforms=` values `buildModelFMU` can serve besides `"wasm"`: those this
@@ -4100,7 +4100,7 @@ fn scalarize_sim_vars(vars: &SimCodeVar::SimVars) -> Result<SimCodeVar::SimVars>
     Ok(out)
 }
 
-fn scalarize_var_list(list: &Arc<List<SimCodeVar::SimVar>>) -> Result<Arc<List<SimCodeVar::SimVar>>> {
+fn scalarize_var_list(list: &List<SimCodeVar::SimVar>) -> Result<List<SimCodeVar::SimVar>> {
     let mut out: Vec<SimCodeVar::SimVar> = Vec::new();
     for sv in &**list {
         let dims = array_dims_of(&sv.numArrayElement)?;
@@ -4121,11 +4121,11 @@ fn scalarize_var_list(list: &Arc<List<SimCodeVar::SimVar>>) -> Result<Arc<List<S
             out.push(e);
         }
     }
-    Ok(Arc::new(out.into_iter().collect::<List<SimCodeVar::SimVar>>()))
+    Ok(out.into_iter().collect::<List<SimCodeVar::SimVar>>())
 }
 
 /// Parse `numArrayElement` (dimension sizes) to integers; empty for a scalar.
-fn array_dims_of(nae: &Arc<List<ArcStr>>) -> Result<Vec<u32>> {
+fn array_dims_of(nae: &List<ArcStr>) -> Result<Vec<u32>> {
     let mut dims = Vec::new();
     for s in &**nae {
         match s.trim().parse::<u32>() {
@@ -4165,7 +4165,7 @@ fn cref_with_indices(cr: &Arc<DAE::ComponentRef>, idx: &[i32]) -> Arc<DAE::Compo
                 .iter()
                 .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: i }) }))
                 .collect();
-            Arc::new(C::CREF_IDENT { ident: ident.clone(), identType: identType.clone(), subscriptLst: Arc::new(subs) })
+            Arc::new(C::CREF_IDENT { ident: ident.clone(), identType: identType.clone(), subscriptLst: subs })
         }
         C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
             ident: ident.clone(),
@@ -4209,7 +4209,7 @@ fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
         .iter()
         .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(E::ICONST { integer: i }) }))
         .collect();
-    let asub = Arc::new(E::ASUB { exp: exp.clone(), sub: Arc::new(sub) });
+    let asub = Arc::new(E::ASUB { exp: exp.clone(), sub: sub });
     openmodelica_frontend_base::ExpressionSimplify::simplify1(asub.clone())
         .map(|(e, _)| e)
         .unwrap_or(asub)
@@ -4795,7 +4795,7 @@ fn flat_array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<GroupEntr
 
 /// Parse a subscript list to constant 1-based integer indices, or `None` if any
 /// subscript is not a constant integer / enum literal (a slice, `:`, expression).
-fn const_int_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<Option<Vec<i32>>> {
+fn const_int_subscripts(subs: &List<Arc<DAE::Subscript>>) -> Result<Option<Vec<i32>>> {
     let mut out = Vec::new();
     for sub in &**subs {
         match &**sub {
@@ -5012,7 +5012,7 @@ fn path_ident_name(path: &openmodelica_ast::Absyn::Path) -> Option<&str> {
 /// For-loop (`iter`) crossings still error — they need iterator expansion, not
 /// yet ported.
 fn collect_zero_crossings(
-    zcs: &Arc<List<openmodelica_backend_types::BackendDAE::ZeroCrossing>>,
+    zcs: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
 ) -> Result<Vec<ZcInfo>> {
     let mut out = Vec::new();
     for zc in lst(zcs) {
@@ -5047,7 +5047,7 @@ fn collect_zero_crossings(
 /// constant, so the same slots come from substituting each iterator value in.
 fn expand_iter_crossing(
     relation: &Arc<DAE::Exp>,
-    iters: &Option<Arc<List<openmodelica_backend_types::BackendDAE::SimIterator>>>,
+    iters: &Option<List<openmodelica_backend_types::BackendDAE::SimIterator>>,
 ) -> Result<Vec<Arc<DAE::Exp>>> {
     let Some(iters) = iters else { return Ok(vec![relation.clone()]) };
     let mut out = vec![relation.clone()];
@@ -5127,7 +5127,7 @@ fn subst_iterator(exp: &Arc<DAE::Exp>, name: &str, value: &Arc<DAE::Exp>) -> Res
 /// `Some` for a bare relation, `None` for a form C's `relationTpl` also leaves
 /// untouched while still consuming its index.
 fn collect_relations(
-    rels: &Arc<List<openmodelica_backend_types::BackendDAE::ZeroCrossing>>,
+    rels: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
 ) -> Result<Vec<Option<Arc<DAE::Exp>>>> {
     let mut out = Vec::new();
     for zc in lst(rels) {
@@ -5145,7 +5145,7 @@ fn collect_relations(
 /// `iter`) expand to multiple runtime samples and are not handled yet, so bail
 /// loudly rather than mis-simulate.
 fn collect_samples(
-    time_events: &Arc<List<openmodelica_backend_types::BackendDAE::TimeEvent>>,
+    time_events: &List<openmodelica_backend_types::BackendDAE::TimeEvent>,
 ) -> Result<Vec<SampleInfo>> {
     use openmodelica_backend_types::BackendDAE::TimeEvent as TE;
     let mut out = Vec::new();
@@ -5173,7 +5173,7 @@ struct ClockInfo {
 
 /// Split a `ClockedPartition` list into per-base-clock info, assigning the flat
 /// sub-clock indices the `SimData` sub-clock region is addressed by.
-fn collect_clocks(partitions: &Arc<List<SimCode::ClockedPartition>>) -> Result<Vec<ClockInfo>> {
+fn collect_clocks(partitions: &List<SimCode::ClockedPartition>) -> Result<Vec<ClockInfo>> {
     let mut out = Vec::new();
     let mut sub_base = 0u32;
     for part in lst(partitions) {
@@ -5435,7 +5435,7 @@ fn build_sim_model(
     // (or mixed / if-) system, so index every list recursively. `eqFunction_<n>`
     // is emitted once in the C target and shared; here the target is inlined.
     let mut eq_index: HashMap<i32, Arc<SimCode::SimEqSystem>> = HashMap::new();
-    let index_list = |eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>| {
+    let index_list = |eqs: &List<Arc<SimCode::SimEqSystem>>, idx: &mut HashMap<i32, Arc<SimCode::SimEqSystem>>| {
         for e in lst(eqs) {
             index_eq_recursive(e, idx);
         }
@@ -7748,7 +7748,7 @@ fn const_str(e: &Option<Arc<DAE::Exp>>) -> Option<String> {
 /// `spatialDistributionZeroCrossing` are stored as the bare call, which no target
 /// assigns to `relations[]`, but C's `relationDescription` still names them.
 fn rel_descriptions(
-    rels: &Arc<List<openmodelica_backend_types::BackendDAE::ZeroCrossing>>,
+    rels: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
 ) -> Vec<String> {
     lst(rels).map(|zc| dump_exp(&zc.relation_)).collect()
 }
@@ -7775,7 +7775,7 @@ pub(crate) fn t_real() -> Arc<DAE::Type> {
     Arc::new(DAE::Type::T_REAL { varLst: metamodelica::nil() })
 }
 
-pub(crate) fn count<T: Clone>(list: &Arc<List<T>>) -> usize {
+pub(crate) fn count<T: Clone>(list: &List<T>) -> usize {
     lst(list).count()
 }
 
@@ -7795,13 +7795,13 @@ fn extobj_destructor_key(sv: &SimCodeVar::SimVar) -> Result<String> {
 }
 
 /// Flatten a `list<SimEqSystem>` to a Vec of references.
-fn flatten_eqs(eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>) -> Vec<Arc<SimCode::SimEqSystem>> {
+fn flatten_eqs(eqs: &List<Arc<SimCode::SimEqSystem>>) -> Vec<Arc<SimCode::SimEqSystem>> {
     lst(eqs).cloned().collect()
 }
 
 /// Flatten a `list<list<SimEqSystem>>` (partitioned equations) to a flat Vec.
 fn flatten_eqs_ll(
-    eqs: &Arc<List<Arc<List<Arc<SimCode::SimEqSystem>>>>>,
+    eqs: &List<List<Arc<SimCode::SimEqSystem>>>,
 ) -> Vec<Arc<SimCode::SimEqSystem>> {
     let mut out = Vec::new();
     for part in lst(eqs) {
@@ -7966,7 +7966,7 @@ fn prof_plan(
 fn visit_nested_eqs(e: &Arc<SimCode::SimEqSystem>, f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>)) {
     use SimCode::SimEqSystem as E;
     fn visit_list(
-        eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>,
+        eqs: &List<Arc<SimCode::SimEqSystem>>,
         f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>),
     ) {
         for e in lst(eqs) {
@@ -9153,7 +9153,7 @@ enum DtSystem<'a> {
 }
 
 /// Every `CONSTRAINT_DT` of an equation's constraint list, as `(condition, local)`.
-pub(crate) fn dt_constraints(cons: &Arc<List<Arc<DAE::Constraint>>>) -> Vec<(Arc<DAE::Exp>, bool)> {
+pub(crate) fn dt_constraints(cons: &List<Arc<DAE::Constraint>>) -> Vec<(Arc<DAE::Exp>, bool)> {
     lst(cons)
         .filter_map(|c| match &**c {
             DAE::Constraint::CONSTRAINT_DT { constraint, localCon } => {
@@ -9362,7 +9362,7 @@ fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
 
 /// Total f64 count of the state-set Jacobian scratch region: the seeds plus every
 /// variable the column equations write.
-fn stateset_scratch_f64(state_sets: &Arc<List<SimCode::StateSet>>) -> Result<u32> {
+fn stateset_scratch_f64(state_sets: &List<SimCode::StateSet>) -> Result<u32> {
     let mut n = 0u32;
     for set in lst(state_sets) {
         n += count(&set.jacobianMatrix.seedVars) as u32 + jac_column_vars(&set.jacobianMatrix).len() as u32;
@@ -9374,7 +9374,7 @@ fn stateset_scratch_f64(state_sets: &Arc<List<SimCode::StateSet>>) -> Result<u32
 /// collect the driver-side [`StateSetInfo`], so the emitted
 /// `functionStateSetJacobians` works on the Jacobian's own storage.
 fn build_state_set_infos(
-    state_sets: &Arc<List<SimCode::StateSet>>,
+    state_sets: &List<SimCode::StateSet>,
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<Vec<StateSetInfo>> {
@@ -9467,7 +9467,7 @@ fn build_state_set_infos(
 /// candidate at a time and reads back one Jacobian column
 /// (`getAnalyticalJacobianSet` in C's `stateset.c`).
 fn build_stateset_jac_fn(
-    state_sets: &Arc<List<SimCode::StateSet>>,
+    state_sets: &List<SimCode::StateSet>,
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
@@ -9509,7 +9509,7 @@ fn stateset_a_slot<'a>(
 /// independent (true for the models in scope; a candidate going singular
 /// mid-run would need the runtime `pivot`/`stateSelection` port).
 fn stateset_diag_offsets(
-    state_sets: &Arc<List<SimCode::StateSet>>,
+    state_sets: &List<SimCode::StateSet>,
     var_map: &SimVarMap,
 ) -> Result<Vec<u32>> {
     let mut offs = Vec::new();
@@ -10457,7 +10457,7 @@ fn build_lin_info(
     // A compile-time-constant input/output has no slot to perturb or read, so the
     // model cannot be linearized (nor can C's); `-l` reports it rather than
     // translation failing.
-    let slots = |list: &Arc<List<SimCodeVar::SimVar>>| -> Result<Option<Vec<LinVar>>> {
+    let slots = |list: &List<SimCodeVar::SimVar>| -> Result<Option<Vec<LinVar>>> {
         let mut out = Vec::new();
         for sv in lst(list) {
             let Some(slot) = var_map.vars.get(&sim_cref_key(&sv.name)?) else { return Ok(None) };
@@ -11241,7 +11241,7 @@ fn parmod_info(ode_eqs: &[Arc<SimCode::SimEqSystem>]) -> Result<openmodelica_sim
         }
         Ok(())
     }
-    let sorted = |eqs: &Arc<List<Arc<E>>>| -> Vec<Arc<E>> {
+    let sorted = |eqs: &List<Arc<E>>| -> Vec<Arc<E>> {
         let mut v: Vec<Arc<E>> = lst(eqs).cloned().collect();
         v.sort_by_key(|e| eq_index_of(e));
         v

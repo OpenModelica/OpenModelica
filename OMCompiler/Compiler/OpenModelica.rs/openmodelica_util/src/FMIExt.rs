@@ -39,7 +39,6 @@
 #![allow(non_snake_case)]
 
 use std::io::Read;
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::ArcStr;
@@ -59,7 +58,7 @@ const CS_UNSUPPORTED_ERR: &str =
 /// `c_add_message(NULL, -1, ErrorType_scripting, ErrorLevel_error, ...)`
 /// equivalent: an ad-hoc scripting error with no source location.
 fn add_scripting_error(template: &str, tokens: &[&str]) {
-    let mut toks: Arc<List<ArcStr>> = Arc::new(List::Nil);
+    let mut toks: List<ArcStr> = metamodelica::nil();
     for t in tokens.iter().rev() {
         toks = metamodelica::cons(ArcStr::from(*t), toks);
     }
@@ -113,10 +112,10 @@ type InitializeFMIImportResult = (
     Option<i32>,                            // outFMIContext
     Option<i32>,                            // outFMIInstance
     FMI::Info,                              // outFMIInfo
-    Arc<List<FMI::TypeDefinitions>>,        // outTypeDefinitionsList
+    List<FMI::TypeDefinitions>,        // outTypeDefinitionsList
     FMI::ExperimentAnnotation,              // outExperimentAnnotation
     Option<i32>,                            // outModelVariablesInstance
-    Arc<List<FMI::ModelVariables>>,         // outModelVariablesList
+    List<FMI::ModelVariables>,         // outModelVariablesList
 );
 
 /// The all-defaults failure tuple: `result = false`, everything else empty.
@@ -300,8 +299,8 @@ fn attr_or_empty(node: &roxmltree::Node, name: &str) -> ArcStr {
 
 /// `[n, n-1, .., 1]` — the C builds these by consing 1..n and never
 /// reverses them.
-fn descending_int_list(n: u32) -> Arc<List<i32>> {
-    let mut list: Arc<List<i32>> = metamodelica::nil();
+fn descending_int_list(n: u32) -> List<i32> {
+    let mut list: List<i32> = metamodelica::nil();
     for i in 1..=n as i64 {
         list = metamodelica::cons(i as i32, list);
     }
@@ -480,8 +479,8 @@ fn parse_default_experiment(root: &roxmltree::Node<'_, '_>, version: u32) -> Opt
 
 /// Prepend `items` (already in fmilib order) onto a list, so the result is
 /// reversed exactly like the C `mmc_mk_cons` loops produce.
-fn prepended_list<T: Clone>(items: impl IntoIterator<Item = T>) -> Arc<List<T>> {
-    let mut list: Arc<List<T>> = metamodelica::nil();
+fn prepended_list<T: Clone>(items: impl IntoIterator<Item = T>) -> List<T> {
+    let mut list: List<T> = metamodelica::nil();
     for item in items {
         list = metamodelica::cons(item, list);
     }
@@ -520,9 +519,9 @@ fn enumeration_items(
 
 type ParsedModelDescription = (
     FMI::Info,
-    Arc<List<FMI::TypeDefinitions>>,
+    List<FMI::TypeDefinitions>,
     FMI::ExperimentAnnotation,
-    Arc<List<FMI::ModelVariables>>,
+    List<FMI::ModelVariables>,
 );
 
 fn parse_fmi2(
@@ -722,7 +721,7 @@ fn parse_type_definitions(
     root: &roxmltree::Node<'_, '_>,
     type_tag: &'static str,
     explicit_values: bool,
-) -> Option<Arc<List<FMI::TypeDefinitions>>> {
+) -> Option<List<FMI::TypeDefinitions>> {
     let mut enums: Vec<FMI::TypeDefinitions> = Vec::new();
     if let Some(td) = child_element(root, "TypeDefinitions") {
         for ty in element_children(&td, type_tag) {

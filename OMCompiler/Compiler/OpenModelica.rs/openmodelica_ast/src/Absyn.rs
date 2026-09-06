@@ -89,7 +89,7 @@ pub type ITERATOR = ForIterator;
 ///     see 3.3.3.2 Several Iterators from Modelica Specification.
 ///   * in array iterators where the expression should always be SOME(Exp),
 ///     see 3.4.4.2 Array constructor with iterators from Specification
-pub type ForIterators = Arc<metamodelica::List<Arc<ForIterator>>>;
+pub type ForIterators = metamodelica::List<Arc<ForIterator>>;
 
 /// - Programs, the top level construct
 ///   A program is simply a list of class definitions declared at top
@@ -99,7 +99,7 @@ pub type ForIterators = Arc<metamodelica::List<Arc<ForIterator>>>;
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Program {
     /// List of classes
-    pub classes: Arc<metamodelica::List<Arc<Class>>>,
+    pub classes: metamodelica::List<Arc<Class>>,
     /// Within clause
     pub within_: Within,
 }
@@ -167,11 +167,11 @@ pub struct Class {
     pub restriction: Restriction,
     pub body: Arc<ClassDef>,
     /// when a class is the first one in the file and has a comment before it
-    pub commentsBeforeClass: Arc<metamodelica::List<ArcStr>>,
+    pub commentsBeforeClass: metamodelica::List<ArcStr>,
     /// when a class has comments before its end
-    pub commentsBeforeEnd: Arc<metamodelica::List<ArcStr>>,
+    pub commentsBeforeEnd: metamodelica::List<ArcStr>,
     /// when the class has comments after its end, before the next class or the end of the file
-    pub commentsAfterEnd: Arc<metamodelica::List<ArcStr>>,
+    pub commentsAfterEnd: metamodelica::List<ArcStr>,
     /// Information: FileName is the class is defined in +
     ///               isReadOnly bool + start line no + start column no +
     ///               end line no + end column no
@@ -224,20 +224,20 @@ pub type CLASS = Class;
 pub enum ClassDef {
     PARTS {
         /// class A<B,C> ... has type variables B,C
-        typeVars: Arc<metamodelica::List<ArcStr>>,
+        typeVars: metamodelica::List<ArcStr>,
         /// optimization Op (objective=...) end Op. A list arguments attributing a
         ///    class declaration. Currently used only for Optimica extensions
-        classAttrs: Arc<metamodelica::List<Arc<NamedArg>>>,
-        classParts: Arc<metamodelica::List<Arc<ClassPart>>>,
+        classAttrs: metamodelica::List<Arc<NamedArg>>,
+        classParts: metamodelica::List<Arc<ClassPart>>,
         /// Modelica2 allowed multiple class-annotations
-        ann: Arc<metamodelica::List<Arc<Annotation>>>,
+        ann: metamodelica::List<Arc<Annotation>>,
         comment: Option<ArcStr>,
     },
     DERIVED {
         /// typeSpec specification includes array dimensions
         typeSpec: Arc<TypeSpec>,
         attributes: ElementAttributes,
-        arguments: Arc<metamodelica::List<Arc<ElementArg>>>,
+        arguments: metamodelica::List<Arc<ElementArg>>,
         comment: Option<Arc<Comment>>,
     },
     ENUMERATION {
@@ -245,24 +245,24 @@ pub enum ClassDef {
         comment: Option<Arc<Comment>>,
     },
     OVERLOAD {
-        functionNames: Arc<metamodelica::List<Arc<Path>>>,
+        functionNames: metamodelica::List<Arc<Path>>,
         comment: Option<Arc<Comment>>,
     },
     CLASS_EXTENDS {
         /// name of class to extend
         baseClassName: Ident,
         /// modifications to be applied to the base class
-        modifications: Arc<metamodelica::List<Arc<ElementArg>>>,
+        modifications: metamodelica::List<Arc<ElementArg>>,
         /// comment
         comment: Option<ArcStr>,
         /// class parts
-        parts: Arc<metamodelica::List<Arc<ClassPart>>>,
-        ann: Arc<metamodelica::List<Arc<Annotation>>>,
+        parts: metamodelica::List<Arc<ClassPart>>,
+        ann: metamodelica::List<Arc<Annotation>>,
     },
     PDER {
         functionName: Arc<Path>,
         /// derived variables
-        vars: Arc<metamodelica::List<ArcStr>>,
+        vars: metamodelica::List<ArcStr>,
         /// comment
         comment: Option<Arc<Comment>>,
     },
@@ -330,19 +330,19 @@ pub use self::ClassDef::{PARTS,DERIVED,ENUMERATION,OVERLOAD,CLASS_EXTENDS,PDER};
 ///  dimensions. This type is used to indicate the dimensionality
 ///  of a component or a type definition.
 /// - Array dimensions
-pub type ArrayDim = Arc<metamodelica::List<Arc<Subscript>>>;
+pub type ArrayDim = metamodelica::List<Arc<Subscript>>;
 
 /// ModExtension: new MetaModelica type specification!
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum TypeSpec {
     TPATH {
         path: Arc<Path>,
-        arrayDim: Option<Arc<metamodelica::List<Arc<Subscript>>>>,
+        arrayDim: Option<metamodelica::List<Arc<Subscript>>>,
     },
     TCOMPLEX {
         path: Arc<Path>,
-        typeSpecs: Arc<metamodelica::List<Arc<TypeSpec>>>,
-        arrayDim: Option<Arc<metamodelica::List<Arc<Subscript>>>>,
+        typeSpecs: metamodelica::List<Arc<TypeSpec>>,
+        arrayDim: Option<metamodelica::List<Arc<Subscript>>>,
     },
 }
 impl metamodelica::gc::MMTrace for TypeSpec {
@@ -377,7 +377,7 @@ pub use self::TypeSpec::{TPATH,TCOMPLEX};
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum EnumDef {
     ENUMLITERALS {
-        enumLiterals: Arc<metamodelica::List<Arc<EnumLiteral>>>,
+        enumLiterals: metamodelica::List<Arc<EnumLiteral>>,
     },
     ENUM_COLON,
 }
@@ -430,25 +430,25 @@ pub type ENUMLITERAL = EnumLiteral;
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ClassPart {
     PUBLIC {
-        contents: Arc<metamodelica::List<Arc<ElementItem>>>,
+        contents: metamodelica::List<Arc<ElementItem>>,
     },
     PROTECTED {
-        contents: Arc<metamodelica::List<Arc<ElementItem>>>,
+        contents: metamodelica::List<Arc<ElementItem>>,
     },
     CONSTRAINTS {
-        contents: Arc<metamodelica::List<Arc<Exp>>>,
+        contents: metamodelica::List<Arc<Exp>>,
     },
     EQUATIONS {
-        contents: Arc<metamodelica::List<Arc<EquationItem>>>,
+        contents: metamodelica::List<Arc<EquationItem>>,
     },
     INITIALEQUATIONS {
-        contents: Arc<metamodelica::List<Arc<EquationItem>>>,
+        contents: metamodelica::List<Arc<EquationItem>>,
     },
     ALGORITHMS {
-        contents: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        contents: metamodelica::List<Arc<AlgorithmItem>>,
     },
     INITIALALGORITHMS {
-        contents: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        contents: metamodelica::List<Arc<AlgorithmItem>>,
     },
     EXTERNAL {
         /// externalDecl
@@ -557,7 +557,7 @@ pub enum Element {
     },
     DEFINEUNIT {
         name: Ident,
-        args: Arc<metamodelica::List<Arc<NamedArg>>>,
+        args: metamodelica::List<Arc<NamedArg>>,
         info: Info,
     },
     TEXT {
@@ -655,7 +655,7 @@ pub enum ElementSpec {
         /// path
         path: Arc<Path>,
         /// elementArg
-        elementArg: Arc<metamodelica::List<Arc<ElementArg>>>,
+        elementArg: metamodelica::List<Arc<ElementArg>>,
         /// optional annotation
         annotationOpt: Option<Arc<Annotation>>,
     },
@@ -672,7 +672,7 @@ pub enum ElementSpec {
         /// typeSpec
         typeSpec: Arc<TypeSpec>,
         /// components
-        components: Arc<metamodelica::List<Arc<ComponentItem>>>,
+        components: metamodelica::List<Arc<ComponentItem>>,
     },
 }
 impl metamodelica::gc::MMTrace for ElementSpec {
@@ -761,7 +761,7 @@ pub enum Import {
     },
     GROUP_IMPORT {
         prefix: Arc<Path>,
-        groups: Arc<metamodelica::List<GroupImport>>,
+        groups: metamodelica::List<GroupImport>,
     },
 }
 impl metamodelica::gc::MMTrace for Import {
@@ -990,11 +990,11 @@ pub enum Equation {
         /// Conditional expression
         ifExp: Arc<Exp>,
         /// true branch
-        equationTrueItems: Arc<metamodelica::List<Arc<EquationItem>>>,
+        equationTrueItems: metamodelica::List<Arc<EquationItem>>,
         /// elseIfBranches
-        elseIfBranches: Arc<metamodelica::List<(Arc<Exp>, Arc<metamodelica::List<Arc<EquationItem>>>)>>,
+        elseIfBranches: metamodelica::List<(Arc<Exp>, metamodelica::List<Arc<EquationItem>>)>,
         /// equationElseItems Standard 2-side eqn
-        equationElseItems: Arc<metamodelica::List<Arc<EquationItem>>>,
+        equationElseItems: metamodelica::List<Arc<EquationItem>>,
     },
     EQ_EQUALS {
         /// leftSide
@@ -1019,15 +1019,15 @@ pub enum Equation {
     EQ_FOR {
         iterators: ForIterators,
         /// forEquations
-        forEquations: Arc<metamodelica::List<Arc<EquationItem>>>,
+        forEquations: metamodelica::List<Arc<EquationItem>>,
     },
     EQ_WHEN_E {
         /// whenExp
         whenExp: Arc<Exp>,
         /// whenEquations
-        whenEquations: Arc<metamodelica::List<Arc<EquationItem>>>,
+        whenEquations: metamodelica::List<Arc<EquationItem>>,
         /// elseWhenEquations
-        elseWhenEquations: Arc<metamodelica::List<(Arc<Exp>, Arc<metamodelica::List<Arc<EquationItem>>>)>>,
+        elseWhenEquations: metamodelica::List<(Arc<Exp>, metamodelica::List<Arc<EquationItem>>)>,
     },
     EQ_NORETCALL {
         /// functionName
@@ -1113,35 +1113,35 @@ pub enum Algorithm {
         /// ifExp
         ifExp: Arc<Exp>,
         /// trueBranch
-        trueBranch: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        trueBranch: metamodelica::List<Arc<AlgorithmItem>>,
         /// elseIfAlgorithmBranch
-        elseIfAlgorithmBranch: Arc<metamodelica::List<(Arc<Exp>, Arc<metamodelica::List<Arc<AlgorithmItem>>>)>>,
+        elseIfAlgorithmBranch: metamodelica::List<(Arc<Exp>, metamodelica::List<Arc<AlgorithmItem>>)>,
         /// elseBranch
-        elseBranch: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        elseBranch: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_FOR {
         iterators: ForIterators,
         /// forBody
-        forBody: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        forBody: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_PARFOR {
         iterators: ForIterators,
         /// parallel for loop Body
-        parforBody: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        parforBody: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_WHILE {
         /// boolExpr
         boolExpr: Arc<Exp>,
         /// whileBody
-        whileBody: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        whileBody: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_WHEN_A {
         /// boolExpr
         boolExpr: Arc<Exp>,
         /// whenBody
-        whenBody: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        whenBody: metamodelica::List<Arc<AlgorithmItem>>,
         /// elseWhenAlgorithmBranch
-        elseWhenAlgorithmBranch: Arc<metamodelica::List<(Arc<Exp>, Arc<metamodelica::List<Arc<AlgorithmItem>>>)>>,
+        elseWhenAlgorithmBranch: metamodelica::List<(Arc<Exp>, metamodelica::List<Arc<AlgorithmItem>>)>,
     },
     ALG_NORETCALL {
         /// functionCall
@@ -1152,11 +1152,11 @@ pub enum Algorithm {
     ALG_RETURN,
     ALG_BREAK,
     ALG_FAILURE {
-        equ: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        equ: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_TRY {
-        body: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
-        elseBody: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        body: metamodelica::List<Arc<AlgorithmItem>>,
+        elseBody: metamodelica::List<Arc<AlgorithmItem>>,
     },
     ALG_CONTINUE,
 }
@@ -1246,7 +1246,7 @@ pub static emptyMod: std::sync::LazyLock<Arc<Modification>> = std::sync::LazyLoc
 ///  - Modifications
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Modification {
-    pub elementArgLst: Arc<metamodelica::List<Arc<ElementArg>>>,
+    pub elementArgLst: metamodelica::List<Arc<ElementArg>>,
     pub eqMod: Arc<EqMod>,
 }
 
@@ -1647,13 +1647,13 @@ pub enum Exp {
         /// elseBranch
         elseBranch: Arc<Exp>,
         /// elseIfBranch Function calls
-        elseIfBranch: Arc<metamodelica::List<(Arc<Exp>, Arc<Exp>)>>,
+        elseIfBranch: metamodelica::List<(Arc<Exp>, Arc<Exp>)>,
     },
     CALL {
         /// function
         function_: Arc<ComponentRef>,
         functionArgs: Arc<FunctionArgs>,
-        typeVars: Arc<metamodelica::List<Arc<Path>>>,
+        typeVars: metamodelica::List<Arc<Path>>,
     },
     /// Partially evaluated function
     PARTEVALFUNCTION {
@@ -1663,11 +1663,11 @@ pub enum Exp {
     },
     /// Array construction using {, }, or array
     ARRAY {
-        arrayExp: Arc<metamodelica::List<Arc<Exp>>>,
+        arrayExp: metamodelica::List<Arc<Exp>>,
     },
     /// Matrix construction using {, }
     MATRIX {
-        matrix: Arc<metamodelica::List<Arc<metamodelica::List<Arc<Exp>>>>>,
+        matrix: metamodelica::List<metamodelica::List<Arc<Exp>>>,
     },
     /// Range expressions, e.g. 1:10 or 1:0.5:10
     RANGE {
@@ -1681,7 +1681,7 @@ pub enum Exp {
     /// Tuples used in function calls returning several values
     TUPLE {
         /// comma-separated expressions
-        expressions: Arc<metamodelica::List<Arc<Exp>>>,
+        expressions: metamodelica::List<Arc<Exp>>,
     },
     /// array access operator for last element, e.g. a{end}:=1;
     END,
@@ -1710,15 +1710,15 @@ pub enum Exp {
         /// match expression of
         inputExp: Arc<Exp>,
         /// local declarations
-        localDecls: Arc<metamodelica::List<Arc<ElementItem>>>,
+        localDecls: metamodelica::List<Arc<ElementItem>>,
         /// case list + else in the end
-        cases: Arc<metamodelica::List<Arc<Case>>>,
+        cases: metamodelica::List<Arc<Case>>,
         /// TODO: Remove this as it was removed from the grammar
         comment: Option<ArcStr>,
     },
     /// Part of MetaModelica extension
     LIST {
-        exps: Arc<metamodelica::List<Arc<Exp>>>,
+        exps: metamodelica::List<Arc<Exp>>,
     },
     /// exp.index
     DOT {
@@ -1726,13 +1726,13 @@ pub enum Exp {
         index: Arc<Exp>,
     },
     EXPRESSIONCOMMENT {
-        commentsBefore: Arc<metamodelica::List<ArcStr>>,
+        commentsBefore: metamodelica::List<ArcStr>,
         exp: Arc<Exp>,
-        commentsAfter: Arc<metamodelica::List<ArcStr>>,
+        commentsAfter: metamodelica::List<ArcStr>,
     },
     SUBSCRIPTED_EXP {
         exp: Arc<Exp>,
-        subscripts: Arc<metamodelica::List<Arc<Subscript>>>,
+        subscripts: metamodelica::List<Arc<Subscript>>,
     },
     BREAK,
 }
@@ -1897,7 +1897,7 @@ pub enum Case {
         /// file information of the pattern
         patternInfo: Info,
         /// TODO: Remove this as it was removed from the grammar
-        localDecls: Arc<metamodelica::List<Arc<ElementItem>>>,
+        localDecls: metamodelica::List<Arc<ElementItem>>,
         /// equation or algorithm section
         classPart: Arc<ClassPart>,
         /// result
@@ -1912,7 +1912,7 @@ pub enum Case {
     /// else in match or matchcontinue
     ELSE {
         /// TODO: Remove this as it was removed from the grammar
-        localDecls: Arc<metamodelica::List<Arc<ElementItem>>>,
+        localDecls: metamodelica::List<Arc<ElementItem>>,
         /// equation or algorithm section
         classPart: Arc<ClassPart>,
         /// result
@@ -1997,15 +1997,15 @@ pub enum CodeNode {
     },
     C_CONSTRAINTSECTION {
         boolean: bool,
-        equationItemLst: Arc<metamodelica::List<Arc<EquationItem>>>,
+        equationItemLst: metamodelica::List<Arc<EquationItem>>,
     },
     C_EQUATIONSECTION {
         boolean: bool,
-        equationItemLst: Arc<metamodelica::List<Arc<EquationItem>>>,
+        equationItemLst: metamodelica::List<Arc<EquationItem>>,
     },
     C_ALGORITHMSECTION {
         boolean: bool,
-        algorithmItemLst: Arc<metamodelica::List<Arc<AlgorithmItem>>>,
+        algorithmItemLst: metamodelica::List<Arc<AlgorithmItem>>,
     },
     C_ELEMENT {
         element: Arc<Element>,
@@ -2073,9 +2073,9 @@ pub use self::CodeNode::{C_TYPENAME,C_VARIABLENAME,C_CONSTRAINTSECTION,C_EQUATIO
 pub enum FunctionArgs {
     FUNCTIONARGS {
         /// args
-        args: Arc<metamodelica::List<Arc<Exp>>>,
+        args: metamodelica::List<Arc<Exp>>,
         /// argNames
-        argNames: Arc<metamodelica::List<Arc<NamedArg>>>,
+        argNames: metamodelica::List<Arc<NamedArg>>,
     },
     FOR_ITER_FARG {
         /// iterator expression
@@ -2296,7 +2296,7 @@ pub enum ComponentRef {
         /// name
         name: Ident,
         /// subscripts
-        subscripts: Arc<metamodelica::List<Arc<Subscript>>>,
+        subscripts: metamodelica::List<Arc<Subscript>>,
         /// componentRef
         componentRef: Arc<ComponentRef>,
     },
@@ -2304,7 +2304,7 @@ pub enum ComponentRef {
         /// name
         name: Ident,
         /// subscripts
-        subscripts: Arc<metamodelica::List<Arc<Subscript>>>,
+        subscripts: metamodelica::List<Arc<Subscript>>,
     },
     WILD,
     ALLWILD,
@@ -2443,7 +2443,7 @@ pub enum Restriction {
         index: i32,
         singleton: bool,
         moved: bool,
-        typeVars: Arc<metamodelica::List<ArcStr>>,
+        typeVars: metamodelica::List<ArcStr>,
     },
     /// Helper restriction
     R_UNKNOWN,
@@ -2546,7 +2546,7 @@ pub use self::FunctionRestriction::{FR_NORMAL_FUNCTION,FR_OPERATOR_FUNCTION,FR_P
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Annotation {
     /// elementArgs
-    pub elementArgs: Arc<metamodelica::List<Arc<ElementArg>>>,
+    pub elementArgs: metamodelica::List<Arc<ElementArg>>,
 }
 
 impl metamodelica::gc::MMTrace for Annotation {
@@ -2604,7 +2604,7 @@ pub struct ExternalDecl {
     /// output parameter as return value
     pub output_: Option<Arc<ComponentRef>>,
     /// only positional arguments, i.e. expression list
-    pub args: Arc<metamodelica::List<Arc<Exp>>>,
+    pub args: metamodelica::List<Arc<Exp>>,
     pub annotation_: Option<Arc<Annotation>>,
 }
 

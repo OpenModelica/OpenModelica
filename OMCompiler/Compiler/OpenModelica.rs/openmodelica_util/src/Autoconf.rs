@@ -44,7 +44,6 @@
  */
 #![allow(non_upper_case_globals, non_snake_case, dead_code)]
 
-use std::sync::Arc;
 
 use arcstr::{literal, ArcStr};
 use metamodelica::list;
@@ -232,7 +231,7 @@ pub const corbaLibs: &str = "";
 /// requested at configure time; mirror the default.
 pub const hwloc: &str = "";
 
-pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
+pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
     std::sync::LazyLock::new(|| {
         if isWindows {
             // Autoconf.mo.omdev.mingw: constant list<String> systemLibs = {};

@@ -32,7 +32,7 @@ thread_local! {
     // Optional list of active rewrite rules. Set to Some(rules) when a
     // rewrite-rule file is loaded; None otherwise.
     // Source: RewriteRules.mo.
-    pub static rewriteRulesIndex: RefCell<Option<Arc<metamodelica::List<crate::RewriteRules::Rule>>>> =
+    pub static rewriteRulesIndex: RefCell<Option<metamodelica::List<crate::RewriteRules::Rule>>> =
         const { RefCell::new(None) };
 
     // Index 25 — optionSimCode
@@ -48,7 +48,7 @@ thread_local! {
     // with that value reference. Live only while one modelDescription.xml is
     // being written; source: SimCodeUtil.cacheFMI3VariableAliases.
     pub static fmi3VariableAliasCache: RefCell<
-        Option<metamodelica::Array<Arc<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
+        Option<metamodelica::Array<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>,
     > = const { RefCell::new(None) };
 
     // Index 26 — interactiveCache

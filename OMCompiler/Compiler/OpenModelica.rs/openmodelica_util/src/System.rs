@@ -111,7 +111,7 @@ fn with<R>(f: impl FnOnce(&mut SysState) -> R) -> R {
 /// Build a `List` (MetaModelica cons-list) from a `Vec`, preserving order
 /// — the rightmost element ends up at the tail. Mirrors `list![..]` for
 /// the dynamic case.
-fn list_from_vec<T: Clone>(xs: Vec<T>) -> Arc<List<T>> {
+fn list_from_vec<T: Clone>(xs: Vec<T>) -> List<T> {
     let mut acc = metamodelica::nil::<T>();
     for x in xs.into_iter().rev() {
         acc = metamodelica::cons(x, acc);
@@ -192,8 +192,8 @@ pub fn regex(
     maxMatches: i32,
     extended: bool,
     ignoreCase: bool,
-) -> (i32, Arc<List<ArcStr>>) {
-    fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
+) -> (i32, List<ArcStr>) {
+    fn list_forward(items: Vec<ArcStr>) -> List<ArcStr> {
         let mut res = metamodelica::nil();
         for it in items.into_iter().rev() {
             res = metamodelica::cons(it, res);
@@ -297,7 +297,7 @@ pub fn tolower(inString: ArcStr) -> ArcStr {
     ArcStr::from(inString.to_lowercase())
 }
 
-pub fn strtok(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
+pub fn strtok(string: ArcStr, token: ArcStr) -> List<ArcStr> {
     // C strtok semantics: each char of `token` is a delimiter; empty
     // segments are dropped. Returned as a MetaModelica list.
     let delims: Vec<char> = token.chars().collect();
@@ -309,7 +309,7 @@ pub fn strtok(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
     list_from_vec(parts)
 }
 
-pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
+pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> List<ArcStr> {
     // Splits on the *substring* `token` and re-emits the delimiter between
     // the surrounding segments (mirrors `SystemImpl__strtokIncludingDelimiters`).
     if token.is_empty() {
@@ -330,7 +330,7 @@ pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> Arc<List<ArcS
     list_from_vec(out)
 }
 
-pub fn splitOnNewline(r#str: ArcStr, includeDelimiter: bool) -> Result<Arc<List<ArcStr>>> {
+pub fn splitOnNewline(r#str: ArcStr, includeDelimiter: bool) -> Result<List<ArcStr>> {
     // Split on '\n' and '\r\n', mirroring `System_splitOnNewline` in
     // `runtime/System_omc.c`. When `includeDelimiter` is true the newline
     // delimiters are emitted as their OWN tokens, not re-attached to the
@@ -562,7 +562,7 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
     }
 }
 
-pub fn systemCallParallel(_inStrings: Arc<List<ArcStr>>, _numThreads: i32) -> Arc<List<i32>> {
+pub fn systemCallParallel(_inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
     // Fan-out N shell commands across a thread pool and collect the exit
     // codes. Not used by code paths exercised today; defer until needed.
     todo!("System.systemCallParallel: parallel shell-out not yet ported")
@@ -785,7 +785,7 @@ pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
     }
 }
 
-pub fn subDirectories(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn subDirectories(inString: ArcStr) -> List<ArcStr> {
     let out: Vec<ArcStr> = openmodelica_wasi::fs::read_dir(inString.as_str())
         .unwrap_or_default()
         .into_iter()
@@ -812,10 +812,10 @@ fn files_with_ext(dir: &str, ext: &str) -> Vec<ArcStr> {
         .collect()
 }
 
-pub fn moFiles(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn moFiles(inString: ArcStr) -> List<ArcStr> {
     list_from_vec(files_with_ext(&inString, "mo"))
 }
-pub fn mocFiles(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn mocFiles(inString: ArcStr) -> List<ArcStr> {
     list_from_vec(files_with_ext(&inString, "moc"))
 }
 
@@ -877,7 +877,7 @@ fn split_version(version: &str) -> ([i64; MODELICAPATH_LEVELS], String, bool) {
 /// entries whose name is `name`, `name.<ext>` or `name <version>[.<ext>]`,
 /// either as a library directory (containing `package.mo`/`package.moc`)
 /// or as a plain `.mo`/`.moc` file.
-fn get_all_modelica_paths(name: &str, mps: &Arc<List<ArcStr>>) -> Vec<ModelicaPathEntry> {
+fn get_all_modelica_paths(name: &str, mps: &List<ArcStr>) -> Vec<ModelicaPathEntry> {
     let mut res = Vec::new();
     for mp in &**mps {
         for (file, _) in dir_entries(mp.as_str()) {
@@ -1033,8 +1033,8 @@ fn load_model_path_default_target(entries: &[ModelicaPathEntry]) -> Option<&Mode
 /// best available version); fails (MMC_THROW in C) when nothing matches.
 pub fn getLoadModelPath(
     className: ArcStr,
-    prios: Arc<List<ArcStr>>,
-    mps: Arc<List<ArcStr>>,
+    prios: List<ArcStr>,
+    mps: List<ArcStr>,
     requireExactVersion: bool,
 ) -> Result<(ArcStr, ArcStr, bool)> {
     let entries = get_all_modelica_paths(&className, &mps);
@@ -1198,8 +1198,8 @@ pub fn setClassnamesForSimulation(inString: ArcStr) {
 
 pub fn getVariableValue(
     _timeStamp: metamodelica::Real,
-    _timeValues: Arc<List<metamodelica::Real>>,
-    _varValues: Arc<List<metamodelica::Real>>,
+    _timeValues: List<metamodelica::Real>,
+    _varValues: List<metamodelica::Real>,
 ) -> Result<metamodelica::Real> {
     // Linear interpolation of a varValues sample at timeStamp; the C
     // runtime walks the parallel `timeValues` list looking for the
@@ -1747,9 +1747,9 @@ pub fn gccVersion() -> ArcStr {
 // ───────────────────────────────── LAPACK / iconv / printf ───────────────────
 
 pub fn dgesv(
-    A: Arc<List<Arc<List<metamodelica::Real>>>>,
-    B: Arc<List<metamodelica::Real>>,
-) -> Result<(Arc<List<metamodelica::Real>>, i32)> {
+    A: List<List<metamodelica::Real>>,
+    B: List<metamodelica::Real>,
+) -> Result<(List<metamodelica::Real>, i32)> {
     // Port of SystemImpl__dgesv (systemimpl.c), which calls LAPACK `dgesv` to
     // solve the dense linear system A*X = B for a single right-hand side.
     // LAPACK's dgesv is an LU factorization with partial pivoting (dgetrf)
@@ -1772,7 +1772,7 @@ pub fn dgesv(
         return Ok((B.clone(), -1));
     }
     if n == 0 {
-        return Ok((Arc::new(List::Nil), 0));
+        return Ok((metamodelica::nil(), 0));
     }
 
     // Working copy of the matrix: a[i][j] = row i, column j (as in the C code,
@@ -1826,7 +1826,7 @@ pub fn dgesv(
     }
 
     let out = List::from_iter(x.into_iter().map(metamodelica::OrderedFloat));
-    Ok((Arc::new(out), 0))
+    Ok((out, 0))
 }
 
 pub fn reopenStandardStream(_stream: i32, _filename: ArcStr) -> bool {
@@ -2190,9 +2190,9 @@ pub fn numProcessors() -> i32 {
 
 pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static>(
     _numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     // The C runtime (System_omc.c) spawns `numThreads` worker pthreads pulling
     // tasks off a shared queue, but collects the results back in INPUT ORDER
     // (`commands[i] = fn(task[i])`) and itself falls back to a plain serial map
@@ -2210,7 +2210,7 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
     // `collect`).
     let results: Result<Vec<AnyOutput>> =
         (&*inData).into_iter().map(|x| func(x.clone())).collect();
-    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+    Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
 // A process-wide pool, sized on first use to the requested thread count and
@@ -2229,15 +2229,15 @@ fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
     numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     use rayon::prelude::*;
 
     let items: Vec<AnyInput> = (&*inData).into_iter().cloned().collect();
     if numThreads <= 1 || items.len() < 2 {
         let results: Result<Vec<AnyOutput>> = items.into_iter().map(|x| func(x)).collect();
-        return Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()));
+        return Ok(results?.into_iter().collect::<List<AnyOutput>>());
     }
 
     struct SendSync<T>(T);
@@ -2270,19 +2270,19 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
     for r in results {
         out.push(r?);
     }
-    Ok(Arc::new(out.into_iter().collect::<List<AnyOutput>>()))
+    Ok(out.into_iter().collect::<List<AnyOutput>>())
 }
 
 #[cfg(target_arch = "wasm32")]
 pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
     _numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     // wasm32-unknown-unknown has no OS threads; run serially.
     let results: Result<Vec<AnyOutput>> =
         (&*inData).into_iter().map(|x| func(x.clone())).collect();
-    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+    Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
 pub fn exit(status: i32) -> Result<()> {
@@ -2638,7 +2638,7 @@ pub fn stringAllocatorResult<T: Clone + 'static>(sa: StringAllocator, _dummy: T)
     }
 }
 
-pub fn relocateFunctions(_fileName: ArcStr, _names: Arc<List<(ArcStr, ArcStr)>>) -> bool {
+pub fn relocateFunctions(_fileName: ArcStr, _names: List<(ArcStr, ArcStr)>) -> bool {
     // Hot-swap runtime symbols from a fresh .so — needs dlopen + relocation
     // walking. Not used by the Rust-side compile path.
     todo!("System.relocateFunctions: symbol relocation not yet ported")

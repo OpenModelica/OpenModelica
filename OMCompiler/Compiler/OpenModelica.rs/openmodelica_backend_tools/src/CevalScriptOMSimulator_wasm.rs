@@ -12,7 +12,7 @@ use openmodelica_frontend_types::Values;
 
 pub fn ceval(
     inFunctionName: ArcStr,
-    _inVals: Arc<metamodelica::List<Arc<Values::Value>>>,
+    _inVals: metamodelica::List<Arc<Values::Value>>,
 ) -> Result<Arc<Values::Value>> {
     return Err("CevalScriptOMSimulator: the OMSimulator scripting API (libOMSimulator) is unavailable on wasm (called `{inFunctionName}`)")
 }

@@ -113,8 +113,8 @@ fn intern_type(params: &[SigTy], results: &[SigTy]) -> u32 {
 
 /// The `SigTy` of a `FUNCTION_PTR` function argument — what its holder may call.
 pub(crate) fn function_ptr_sigty(
-    tys: &Arc<List<Arc<DAE::Type>>>,
-    args: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>,
+    tys: &List<Arc<DAE::Type>>,
+    args: &List<Arc<SimCodeFunction::Variable::Variable>>,
 ) -> Result<SigTy> {
     let results: Result<Vec<SigTy>> = (&**tys).into_iter().map(|t| sig_ty(t)).collect();
     Ok(SigTy::Func { params: Arc::new(var_sigtys(args)?), results: Arc::new(results?) })
@@ -303,7 +303,7 @@ fn intern_thunk(
 pub(crate) fn compile_fnptr_call(
     ctx: &mut FnCtx,
     name: &str,
-    args: &Arc<List<Arc<DAE::Exp>>>,
+    args: &List<Arc<DAE::Exp>>,
 ) -> Result<Vec<SigTy>> {
     let Some((local, SigTy::Func { params, results })) = ctx.locals.get(name).cloned() else {
         return Err("CodegenWasmJit: function-pointer calls are only supported through a local variable");

@@ -30,7 +30,6 @@
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
-use std::sync::Arc;
 use std::time::Duration;
 
 use metamodelica::Result;
@@ -67,7 +66,7 @@ impl Shared {
 /// `c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, ...)`
 /// equivalent: an ad-hoc runtime error with no source location.
 fn add_error(template: &str, tokens: Vec<ArcStr>) -> Result<()> {
-    let mut toks: Arc<List<ArcStr>> = Arc::new(List::Nil);
+    let mut toks: List<ArcStr> = metamodelica::nil();
     for t in tokens.into_iter().rev() {
         toks = metamodelica::cons(t, toks);
     }
@@ -178,15 +177,15 @@ fn worker(shared: &Shared) {
 }
 
 pub fn multiDownload(
-    urlFileList: Arc<List<(Arc<List<ArcStr>>, ArcStr)>>,
+    urlFileList: List<(List<ArcStr>, ArcStr)>,
     maxParallel: i32,
 ) -> Result<bool> {
     let mut queue: VecDeque<WorkItem> = VecDeque::new();
     let mut cur = urlFileList;
-    while let List::Cons { head: (urls, filename), tail } = &*cur {
+    while let metamodelica::ListNode::Cons { head: (urls, filename), tail } = &*cur {
         let mut mirror_urls = VecDeque::new();
         let mut u = urls.clone();
-        while let List::Cons { head, tail } = &*u {
+        while let metamodelica::ListNode::Cons { head, tail } = &*u {
             mirror_urls.push_back(head.clone());
             let tail = tail.clone();
             u = tail;
@@ -223,7 +222,7 @@ mod tests {
     use super::*;
     use metamodelica::{cons, nil};
 
-    fn item(urls: &[&str], file: &str) -> (Arc<List<ArcStr>>, ArcStr) {
+    fn item(urls: &[&str], file: &str) -> (List<ArcStr>, ArcStr) {
         let mut l = nil::<ArcStr>();
         for u in urls.iter().rev() {
             l = cons(ArcStr::from(*u), l);

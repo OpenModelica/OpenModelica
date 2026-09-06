@@ -87,7 +87,7 @@ pub use self::Statement::{IALG,IEXP};
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Statements {
     /// interactiveStmtLst
-    pub interactiveStmtLst: Arc<metamodelica::List<Statement>>,
+    pub interactiveStmtLst: metamodelica::List<Statement>,
     /// semicolon; true = statement ending with a semicolon. The result will not be shown in the interactive environment.
     pub semicolon: bool,
 }

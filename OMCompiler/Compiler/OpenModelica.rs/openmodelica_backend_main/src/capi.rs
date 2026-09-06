@@ -36,7 +36,7 @@ use crate::Main;
 /// default configuration (the installation directory is then taken from the
 /// `OPENMODELICAHOME` environment variable).
 pub fn init(args: &[ArcStr]) -> Result<()> {
-    let arglist: Arc<metamodelica::List<ArcStr>> = Arc::new(args.iter().cloned().collect());
+    let arglist: metamodelica::List<ArcStr> = args.iter().cloned().collect();
     let arglist = Main::init(arglist)?;
     Main::readSettings(arglist)?;
     Ok(())

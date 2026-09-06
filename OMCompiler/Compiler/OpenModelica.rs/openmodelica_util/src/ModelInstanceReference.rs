@@ -226,8 +226,8 @@ pub struct OmcJsonIter {
 pub extern "C" fn omc_json_iter_new(node: *const JSON) -> *mut OmcJsonIter {
     // SAFETY: `node` points into a live, immutable JSON tree.
     let cur = match unsafe { &*node } {
-        JSON::LIST { values } => Cursor::List(Arc::as_ptr(values)),
-        JSON::LIST_OBJECT { values } => Cursor::Object(Arc::as_ptr(values)),
+        JSON::LIST { values } => Cursor::List(values as *const _),
+        JSON::LIST_OBJECT { values } => Cursor::Object(values as *const _),
         _ => return ptr::null_mut(),
     };
     Box::into_raw(Box::new(OmcJsonIter { cur }))
@@ -238,8 +238,8 @@ pub extern "C" fn omc_json_iter_new(node: *const JSON) -> *mut OmcJsonIter {
 pub extern "C" fn omc_json_iter_at_end(it: *const OmcJsonIter) -> c_int {
     let it = unsafe { &*it };
     let at_end = match it.cur {
-        Cursor::List(p) => matches!(unsafe { &*p }, List::Nil),
-        Cursor::Object(p) => matches!(unsafe { &*p }, List::Nil),
+        Cursor::List(p) => unsafe { &*p }.is_empty(),
+        Cursor::Object(p) => unsafe { &*p }.is_empty(),
     };
     if at_end { 1 } else { 0 }
 }
@@ -250,13 +250,13 @@ pub extern "C" fn omc_json_iter_at_end(it: *const OmcJsonIter) -> c_int {
 pub extern "C" fn omc_json_iter_value(it: *const OmcJsonIter) -> *const JSON {
     let it = unsafe { &*it };
     match it.cur {
-        Cursor::List(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => Arc::as_ptr(head),
-            List::Nil => ptr::null(),
+        Cursor::List(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => Arc::as_ptr(head),
+            metamodelica::ListNode::Nil => ptr::null(),
         },
-        Cursor::Object(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => Arc::as_ptr(&head.1),
-            List::Nil => ptr::null(),
+        Cursor::Object(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => Arc::as_ptr(&head.1),
+            metamodelica::ListNode::Nil => ptr::null(),
         },
     }
 }
@@ -268,12 +268,12 @@ pub extern "C" fn omc_json_iter_value(it: *const OmcJsonIter) -> *const JSON {
 pub extern "C" fn omc_json_iter_key(it: *const OmcJsonIter, len: *mut usize) -> *const c_char {
     let it = unsafe { &*it };
     match it.cur {
-        Cursor::Object(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => {
+        Cursor::Object(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => {
                 unsafe { *len = head.0.len() };
                 head.0.as_ptr() as *const c_char
             }
-            List::Nil => {
+            metamodelica::ListNode::Nil => {
                 unsafe { *len = 0 };
                 ptr::null()
             }
@@ -291,13 +291,13 @@ pub extern "C" fn omc_json_iter_advance(it: *mut OmcJsonIter) {
     let it = unsafe { &mut *it };
     match &mut it.cur {
         Cursor::List(p) => {
-            if let List::Cons { tail, .. } = unsafe { &**p } {
-                *p = Arc::as_ptr(tail);
+            if let metamodelica::ListNode::Cons { tail, .. } = unsafe { &***p } {
+                *p = tail as *const _;
             }
         }
         Cursor::Object(p) => {
-            if let List::Cons { tail, .. } = unsafe { &**p } {
-                *p = Arc::as_ptr(tail);
+            if let metamodelica::ListNode::Cons { tail, .. } = unsafe { &***p } {
+                *p = tail as *const _;
             }
         }
     }

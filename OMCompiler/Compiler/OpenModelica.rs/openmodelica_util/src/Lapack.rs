@@ -28,15 +28,14 @@
 
 extern crate openmodelica_lapack;
 
-use std::sync::Arc;
 
 use arcstr::ArcStr;
 use core::ffi::c_char;
 use metamodelica::{List, OrderedFloat, Real, nil};
 
-type Mat = Arc<List<Arc<List<Real>>>>;
-type Vec64 = Arc<List<Real>>;
-type IVec = Arc<List<i32>>;
+type Mat = List<List<Real>>;
+type Vec64 = List<Real>;
+type IVec = List<i32>;
 
 unsafe extern "C" {
     fn dgeev_(
@@ -135,9 +134,9 @@ fn mat_in(rows: i32, cols: i32, data: &Mat) -> Vec<f64> {
 /// Build a `list<list<Real>>` of `rows`×`cols` from a column-major buffer.
 fn mat_out(rows: i32, cols: i32, m: &[f64]) -> Mat {
     let (r, c) = (rows.max(0) as usize, cols.max(0) as usize);
-    Arc::new(List::from_iter((0..r).map(|i| {
-        Arc::new(List::from_iter((0..c).map(|j| OrderedFloat(m[j * r + i]))))
-    })))
+    List::from_iter((0..r).map(|i| {
+        List::from_iter((0..c).map(|j| OrderedFloat(m[j * r + i])))
+    }))
 }
 
 fn vec_in(n: i32, data: &Vec64) -> Vec<f64> {
@@ -154,7 +153,7 @@ fn vec_in(n: i32, data: &Vec64) -> Vec<f64> {
 
 fn vec_out(n: i32, v: &[f64]) -> Vec64 {
     let len = n.max(0) as usize;
-    Arc::new(List::from_iter((0..len).map(|i| OrderedFloat(v[i]))))
+    List::from_iter((0..len).map(|i| OrderedFloat(v[i])))
 }
 
 fn ivec_in(n: i32, data: &IVec) -> Vec<i32> {
@@ -171,7 +170,7 @@ fn ivec_in(n: i32, data: &IVec) -> Vec<i32> {
 
 fn ivec_out(n: i32, v: &[i32]) -> IVec {
     let len = n.max(0) as usize;
-    Arc::new(List::from_iter((0..len).map(|i| v[i])))
+    List::from_iter((0..len).map(|i| v[i]))
 }
 
 /// First byte of a LAPACK single-character option (`"N"`, `"T"`, `"V"`, …).

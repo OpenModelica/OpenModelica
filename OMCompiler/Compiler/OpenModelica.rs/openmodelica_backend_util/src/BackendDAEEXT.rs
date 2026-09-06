@@ -47,7 +47,6 @@
 
 use std::cell::RefCell;
 use std::collections::BTreeSet;
-use std::sync::Arc;
 use metamodelica::Result;
 use metamodelica::Array;
 
@@ -88,7 +87,7 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> R {
 // Build a `list<Integer>` from a set, mirroring the C
 // `for it in set: res = cons(*it, res)` (ascending iteration, prepend → the
 // returned list is in descending order).
-fn set_to_list(set: &BTreeSet<i32>) -> Arc<metamodelica::List<i32>> {
+fn set_to_list(set: &BTreeSet<i32>) -> metamodelica::List<i32> {
     let mut res = metamodelica::nil();
     for &x in set.iter() {
         res = metamodelica::cons(x, res);
@@ -118,11 +117,11 @@ pub fn getVMark(inInteger: i32) -> bool {
     with_state(|s| s.v_mark.contains(&inInteger))
 }
 
-pub fn getMarkedEqns() -> Arc<metamodelica::List<i32>> {
+pub fn getMarkedEqns() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.e_mark))
 }
 
-pub fn getDifferentiatedEqns() -> Arc<metamodelica::List<i32>> {
+pub fn getDifferentiatedEqns() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.differentiated_mark))
 }
 
@@ -134,7 +133,7 @@ pub fn markDifferentiated(inInteger: i32) {
     with_state(|s| { s.differentiated_mark.insert(inInteger); });
 }
 
-pub fn getMarkedVariables() -> Arc<metamodelica::List<i32>> {
+pub fn getMarkedVariables() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.v_mark))
 }
 
@@ -180,7 +179,7 @@ pub fn getNumber(inInteger: i32) -> i32 {
 
 // ── Matching: adjacency + assignment plumbing ──────────────────────────────────
 
-pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<Arc<metamodelica::List<i32>>>) {
+pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<metamodelica::List<i32>>) {
     with_state(|s| {
         s.col_ptrs = vec![0i32; (ne + 1) as usize];
         s.col_ptrs[ne as usize] = nz;

@@ -90,7 +90,7 @@ fn collect_functions<'a>(
 
 /// Pull the declared component names out of a `localDecls` list.
 fn collect_local_names(
-    decls: &Arc<metamodelica::List<Arc<Absyn::ElementItem>>>,
+    decls: &metamodelica::List<Arc<Absyn::ElementItem>>,
     out: &mut BTreeSet<String>,
 ) {
     for item in (&**decls).into_iter() {
@@ -245,9 +245,9 @@ impl<'a> Scan<'a> {
     fn process_match(
         &mut self,
         match_ty: &Absyn::MatchType,
-        match_locals: &Arc<metamodelica::List<Arc<Absyn::ElementItem>>>,
+        match_locals: &metamodelica::List<Arc<Absyn::ElementItem>>,
         input_exp: &Absyn::Exp,
-        cases: &Arc<metamodelica::List<Arc<Absyn::Case>>>,
+        cases: &metamodelica::List<Arc<Absyn::Case>>,
         env: &BTreeSet<String>,
     ) {
         let kind = match match_ty {

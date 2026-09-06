@@ -49,7 +49,7 @@ use std::io::Write;
 
 use metamodelica::Result;
 use arcstr::{literal, ArcStr};
-use metamodelica::{list, List};
+use metamodelica::list;
 
 use openmodelica_simcode_types::SimCode;
 use openmodelica_util::Error;
@@ -63,7 +63,7 @@ pub fn serialize(code: SimCode::SimCode) -> Result<ArcStr> {
         // Pick sparsity and coloring depending on the isAdjoint flag.
         let (pattern, colorList) = if jac.isAdjoint {
             // For the adjoint Jacobian a row coloring must exist.
-            if matches!(&*jac.coloredRows, List::Nil) {
+            if jac.coloredRows.is_empty() {
                 Error::addMessage(
                     Error::INTERNAL_ERROR.clone(),
                     list![literal!(
@@ -77,7 +77,7 @@ pub fn serialize(code: SimCode::SimCode) -> Result<ArcStr> {
             (&jac.sparsity, &jac.coloredCols)
         };
 
-        if matches!(&**pattern, List::Nil) {
+        if pattern.is_empty() {
             continue;
         }
 
