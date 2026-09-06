@@ -6146,13 +6146,10 @@ fn build_sim_model(
         destruct_order = extobj_vars.clone();
     }
     destruct_order.reverse();
-    // Always emitted + exported (empty when the model has no external objects) so
-    // the standalone `wasm-merge` and interactive table always resolve it. It is
-    // the first body after the fixed base functions, so its index stays `eq_base+8`.
-    let destructors_idx = {
-        use we::Instruction as I;
-        let mut f = we::Function::new([]);
-        for sv in &destruct_order {
+    // `(destructor index, SimData slot)` per object, in that order.
+    let destruct_calls: Vec<(u32, u32)> = destruct_order
+        .iter()
+        .map(|sv| {
             let key = extobj_destructor_key(sv)?;
             let didx = by_name
                 .get(&key)
@@ -6161,6 +6158,16 @@ fn build_sim_model(
             let slot = *extobj_slot
                 .get(&sim_cref_key(&sv.name)?)
                 .ok_or_else(|| "CodegenWasmJit: external object has no SimData slot")?;
+            Ok((didx, slot))
+        })
+        .collect::<Result<_>>()?;
+    // Always emitted + exported (empty when the model has no external objects) so
+    // the standalone `wasm-merge` and interactive table always resolve it. It is
+    // the first body after the fixed base functions, so its index stays `eq_base+8`.
+    let destructors_idx = {
+        use we::Instruction as I;
+        let mut f = we::Function::new([]);
+        for &(didx, slot) in &destruct_calls {
             f.instruction(&I::LocalGet(0)); // SimData*
             f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(slot, 2))); // handle
             f.instruction(&I::Call(didx));
@@ -6168,6 +6175,25 @@ fn build_sim_model(
         f.instruction(&I::End);
         bodies.push(f);
         eq_base + 8
+    };
+    // C's `updateBoundParameters` prologue: an existing object is destructed before
+    // its constructor runs again.
+    let destruct_existing_idx = {
+        use we::Instruction as I;
+        let idx = import_base + bodies.len() as u32;
+        let mut f = we::Function::new([(1, we::ValType::I32)]);
+        for &(didx, slot) in &destruct_calls {
+            f.instruction(&I::LocalGet(0));
+            f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(slot, 2)));
+            f.instruction(&I::LocalTee(1));
+            f.instruction(&I::If(we::BlockType::Empty));
+            f.instruction(&I::LocalGet(1));
+            f.instruction(&I::Call(didx));
+            f.instruction(&I::End);
+        }
+        f.instruction(&I::End);
+        bodies.push(f);
+        idx
     };
 
     // --- Nonlinear-system callbacks: per system a `residual`/`load` function.
@@ -6349,6 +6375,9 @@ fn build_sim_model(
     let update_bound_params_idx = {
         let idx = import_base + bodies.len() as u32;
         splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
+        if !destruct_calls.is_empty() {
+            splits.last_mut().expect("just pushed").pre_calls.push(destruct_existing_idx);
+        }
         idx
     };
     // The optimizer's per-real-variable attributes (C reads them out of the
@@ -6512,9 +6541,10 @@ fn build_sim_model(
     functions.function(meta_fn_type); // om_meta_ptr
     functions.function(meta_fn_type); // om_meta_len
     // Optional eq functions — always emitted (order must match the `bodies` pushes:
-    // destructors, nls callbacks, initSample, zc, statesetJac, lambda0, …, then
-    // the closure thunks and `start` below).
+    // destructors, destruct-existing, nls callbacks, initSample, zc, statesetJac,
+    // lambda0, …, then the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
+    functions.function(eqfn_type); // the `functionUpdateBoundParameters` prologue
     if let Some((residual_type, load_type, strict_type)) = nls_types {
         for sys in &nls_systems {
             functions.function(residual_type);

@@ -2528,20 +2528,34 @@ fn report_init_failure() -> &'static str {
     INIT_FAILED_ERR
 }
 
-/// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
-/// `updateBoundVariableAttributes`: every variable back at its start value with
-/// the bound parameters recomputed. Run before each attempt at the initial system.
-/// C's `fmi2Instantiate`/`fmi2Reset` run `setAllParamsToStart` +
-/// `setAllVarsToStart` there too, not only in `initializeModel`: a get before
-/// Initialization Mode is left must report the `start` attributes, and an equation
-/// over a zeroed `SimData` can produce a NaN instead.
+/// C's `fmi3Instantiate`/`fmi3Reset`: `setAllParamsToStart` + `setAllVarsToStart`,
+/// not the bound parameters — their equations construct the external objects,
+/// which `initialization` alone does.
 pub fn seed_start_state(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     // `functionInitDelay` before any equation function, as in `init_model`.
     write_time(e, sim_data, model.start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
-    seed_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))
+    set_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))?;
+    apply_start_overrides(e, sim_data)?;
+    set_all_vars_to_start(e, sim_data, &model.layout, Some(model), true)
 }
 
+/// C's `setAllParamsToStart` and the start values, up to `setAllVarsToStart`.
+fn set_start_values(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    e.call1("functionParameters", sim_data)?;
+    apply_param_overrides(e, sim_data)?;
+    e.call1("functionInitStartValues", sim_data)?;
+    apply_external_input(e, sim_data, inputs)?;
+    copy_start_values_to_init_values(e, sim_data, layout, model)
+}
+
+/// C's `initialization` up to the initial system; run before each attempt.
 fn seed_start_values(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -2549,13 +2563,7 @@ fn seed_start_values(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
-    // C's `initialization` order: `setAllParamsToStart`, the start values (here the
-    // start expressions, then `-iif`/`-override`), `setAllVarsToStart`.
-    e.call1("functionParameters", sim_data)?;
-    apply_param_overrides(e, sim_data)?;
-    e.call1("functionInitStartValues", sim_data)?;
-    apply_external_input(e, sim_data, inputs)?;
-    copy_start_values_to_init_values(e, sim_data, layout, model)?;
+    set_start_values(e, sim_data, layout, inputs, model)?;
     // C's `read_init_from_file` branch runs them *before* `importStartValues`, giving
     // the file the last word on a start value.
     let from_file = crate::simflags::with_flags(|f| f.init_file.is_some());
