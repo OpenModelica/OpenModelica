@@ -367,6 +367,19 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
+    /* Event Mode evaluates with asserts live. */
+    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+
+    /* simulationUpdate's order: the timers (a tick coincident with an event samples
+     * the values before it), then the event, then the timers again below. */
+    if (comp->_need_update) {
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+    }
+    syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
+    if (syncRet != 0) {
+      eventInfo->valuesOfContinuousStatesChanged = fmi3True;
+    }
 
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 1)) {

@@ -949,7 +949,7 @@ pub fn log_init_assert_notice() {
 
 /// The assertion `rt_assert` recorded, as `[msg, file, sline, scol, eline, ecol,
 /// read_only, cond, initial]` String handles and flags.
-fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
+pub fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
     let info = AssertInfo {
         msg: read_rt_string(e, pa[0]).unwrap_or_default(),
         file: read_rt_string(e, pa[1]).unwrap_or_default(),
@@ -3079,7 +3079,7 @@ fn eval_event_left(
     update_relations_pre(e, sim_data, layout)
 }
 
-pub(crate) fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
     }
@@ -5544,8 +5544,6 @@ unsafe fn dassl_jac(
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::JACOBIAN);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
-    // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
-    // here: a model error at a perturbed point leaves the assembly as it stands.
     let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let colored = jac_method_colored(ctx.jac_method);
     // C's `jacA_num` / `jacA_sym`: one column at a time, every row of it.
@@ -8668,8 +8666,16 @@ impl CsDriver {
         } else if !clock_due {
             self.core.state_events += 1;
         }
+        // C's `simulationUpdate`: the timers, then the event, then the timers again
+        // for an event clock.
+        let mut ticked = false;
+        if clock_due {
+            write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+            eval_continuous(e, sim_data, layout)?;
+            ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
+        }
         let mut up = self.event_update_master(e, layout, time)?;
-        let ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
+        ticked |= fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
         up.states_changed |= ticked;
         let tc = self.sync.next_time();
         if tc.is_finite() {
