@@ -1090,6 +1090,25 @@ macro_rules! shared_instance_methods {
         let time = st.read_f64(TIME_OFF);
         let mut e = Engine;
 
+        // C's `simulationUpdate`: the timers, then the event, then (below) the
+        // timers again for an event clock. The CS driver orders its own schedule.
+        let mut ticked = false;
+        #[cfg(feature = "cs")]
+        let cs_owns_clocks = st.cs.is_some();
+        #[cfg(not(feature = "cs"))]
+        let cs_owns_clocks = false;
+        if !cs_owns_clocks && st.sync.as_ref().is_some_and(|s| s.next_time() <= time + openmodelica_sim_meta::sync::SYNC_EPS) {
+            let mut sync = st.sync.take().expect("checked");
+            st.write_i32(layout.rel_fresh_off, 0);
+            let r = driver::eval_continuous(&mut e, sim_data, &layout)
+                .and_then(|()| driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time));
+            st.sync = Some(sync);
+            match r {
+                Ok(fired) => ticked = fired,
+                Err(err) => return Err(err_status(err)),
+            }
+        }
+
         // The CS driver owns the instance's clock schedule and fires the timers
         // itself, so `fmi_handle_timers` below must not fire them a second time.
         #[cfg(feature = "cs")]
@@ -1134,17 +1153,16 @@ macro_rules! shared_instance_methods {
         st.dae_current = false;
         }
 
-        // C's `internalEventUpdate`: the timers, then the earliest of the next
-        // sample and the next activation.
+        // The event clocks the update fired; the earliest of the next sample and
+        // the next activation.
         let mut next = up.next_event_time;
-        let mut ticked = false;
         let pending_sync = if clocks_handled { None } else { st.sync.take() };
         if let Some(mut sync) = pending_sync {
             let r = driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time);
             let tc = sync.next_time();
             st.sync = Some(sync);
             match r {
-                Ok(fired) => ticked = fired,
+                Ok(fired) => ticked |= fired,
                 Err(err) => return Err(err_status(err)),
             }
             if tc.is_finite() {
