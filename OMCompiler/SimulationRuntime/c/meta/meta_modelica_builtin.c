@@ -175,6 +175,22 @@ modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_in
   return djb2_hash_continue((const unsigned char*)str, (uint32_t)hash) & MMC_HASH_MASK;
 }
 
+/* Same result as stringHashDjb2Continue(intString(i), hash), without building
+ * the string. Cannot live in MetaModelica: MMC_HASH_MASK is not a legal
+ * Integer literal where modelica_integer holds 31 bits. */
+modelica_integer intHashDjb2Continue(modelica_integer i, modelica_integer hash)
+{
+  unsigned char buf[24];
+  int n = sizeof(buf) - 1;
+  mmc_uint_t v = i < 0 ? -(mmc_uint_t) i : (mmc_uint_t) i;
+
+  buf[n] = '\0';
+  do { buf[--n] = '0' + (unsigned char) (v % 10); v /= 10; } while (v);
+  if (i < 0) buf[--n] = '-';
+
+  return djb2_hash_continue(buf + n, (uint32_t) hash) & MMC_HASH_MASK;
+}
+
 /* adrpo: see the comment above about djb2 hash */
 modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer mod)
 {

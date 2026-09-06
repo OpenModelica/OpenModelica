@@ -1076,6 +1076,7 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
         | "intMax" | "intMin" | "intNeg" | "intBitAnd" | "intBitOr" | "intBitXor"
         | "intBitNot" | "intBitLShift" | "intBitRShift" | "intFromChar"
         | "stringLength" | "stringCompare" | "stringHash" | "stringHashDjb2"
+        | "stringHashDjb2Continue" | "intHashDjb2Continue"
         | "stringGet" | "stringInt" | "realInt"
         | "stringGetNoBoundsChecking" | "Dangerous.stringGetNoBoundsChecking" | "MetaModelica.Dangerous.stringGetNoBoundsChecking"
         | "arrayLength" | "listLength" => Ty::I32,
