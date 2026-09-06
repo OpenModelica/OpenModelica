@@ -204,6 +204,9 @@ pub struct Options<'a> {
     /// `-variableFilter`: which variables the result file keeps; `None` keeps all.
     /// Borrowed, since the caller owns the compiled regex; this crate has none.
     pub keep: Option<&'a dyn Fn(&str) -> bool>,
+    /// Where the rows stream to ([`record::Recorder::stream_to`]); `None` keeps
+    /// them in the recorder.
+    pub result_file: Option<std::path::PathBuf>,
 }
 
 impl Options<'_> {
@@ -235,6 +238,7 @@ impl Options<'_> {
             cancelled: None,
             alarm: None,
             keep: None,
+            result_file: None,
         }
     }
 

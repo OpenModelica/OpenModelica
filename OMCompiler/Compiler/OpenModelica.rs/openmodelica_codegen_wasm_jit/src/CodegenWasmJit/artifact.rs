@@ -673,8 +673,11 @@ fn run_fmi(
     if re.is_some() {
         opts.keep = Some(&keep);
     }
+    if !(flags.noemit || flags.output_format.as_deref() == Some("empty")) {
+        opts.result_file = Some(PathBuf::from(out));
+    }
     let t = Instant::now();
-    let (recorder, summary, elapsed) = match &loaded.form {
+    let (mut recorder, summary, elapsed) = match &loaded.form {
         Form::Component(a) => {
             let mut inst = match kind {
                 InterfaceKind::ModelExchange => a.model_exchange(&instance_name(md), opts.logging_on),
@@ -728,12 +731,7 @@ fn run_fmi(
         recorder.len(),
         took(elapsed)
     ));
-    if flags.noemit || flags.output_format.as_deref() == Some("empty") {
-        return Ok(());
-    }
-    recorder
-        .write(Path::new(out), opts.start_time, opts.stop_time, &md.units)
-        .map_err(|e| format!("cannot write {out}: {e}"))
+    recorder.finish().map_err(|e| format!("cannot write {out}: {e}"))
 }
 
 /// Run one of the two FMI interfaces to the end, whichever backend serves it.
