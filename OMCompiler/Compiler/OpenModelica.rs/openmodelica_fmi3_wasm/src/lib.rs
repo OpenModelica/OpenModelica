@@ -575,6 +575,12 @@ struct MeState {
     dae_current: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
+    /// The destructors ran (`fmi3Terminate`); free must not run them again.
+    terminated: bool,
+    /// Event Mode, where asserts are live.
+    event_mode: bool,
+    /// A violated `assert()`, held for `completed_integrator_step` to make an event.
+    assert_held: bool,
     /// Every set made before Initialization Mode is left, applied by
     /// `run_initialization`: states as start overrides (see `FmiVr::start_off`),
     /// everything else as parameters. C's `setReal` writes the `start` attribute
@@ -632,6 +638,16 @@ impl MeState {
     /// C's `fmi2Instantiate`/`fmi2Reset`: the `start` attributes, readable before
     /// the importer leaves Initialization Mode. A failure here is left to the
     /// initial solve, which is where it is reported.
+    /// C's `callExternalObjectDestructors`, once: `fmi3Terminate` runs it, else
+    /// `fmi3FreeInstance`/`fmi3Reset`.
+    fn destruct_external_objects(&mut self) {
+        if self.terminated {
+            return;
+        }
+        self.terminated = true;
+        let _ = Engine.call1_if_present("callExternalObjectDestructors", self.sim_data);
+    }
+
     fn seed_start_state(&self) {
         let mut e = Engine;
         let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
@@ -824,6 +840,18 @@ pub struct Instance {
     st: RefCell<MeState>,
 }
 
+impl Instance {
+    /// `fmi3FreeInstance`: the destructors unless `fmi3Terminate` ran them, then
+    /// the model's memory.
+    pub fn free(self) {
+        let mut st = self.st.into_inner();
+        st.destruct_external_objects();
+        #[cfg(feature = "cs")]
+        drop(st.cs.take());
+        openmodelica_codegen_wasm_jit_runtime::rt_free(st.sim_data);
+    }
+}
+
 /// Allocate and zero the model's `SimData` and build the instance state. Shared by
 /// both worlds' instantiate.
 /// The simulation flags the export hard-coded into the metadata. The export linked
@@ -888,6 +916,9 @@ fn new_state() -> Option<MeState> {
         configuring: false,
         dae_current: false,
         need_update: true,
+        terminated: false,
+        event_mode: false,
+        assert_held: false,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
@@ -1098,9 +1129,8 @@ macro_rules! shared_instance_methods {
     }
 
     fn terminate(&self) -> Status {
-        let st = self.st.borrow();
-        let mut e = Engine;
-        let _ = e.call1_if_present("callExternalObjectDestructors", st.sim_data);
+        let mut st = self.st.borrow_mut();
+        st.destruct_external_objects();
         Status::Ok
     }
 
@@ -1109,6 +1139,7 @@ macro_rules! shared_instance_methods {
     /// from the last one.
     fn reset(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        st.destruct_external_objects();
         unsafe {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
@@ -1117,6 +1148,7 @@ macro_rules! shared_instance_methods {
         st.dae_mode = false;
         st.configuring = false;
         st.need_update = true;
+        st.terminated = false;
         st.dae_current = false;
         st.init_overrides.clear();
         st.init_start_overrides.clear();

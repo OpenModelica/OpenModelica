@@ -132,7 +132,9 @@ pub extern "C" fn om_fmi3InstantiateCoSimulation(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3FreeInstance() {
-    unsafe { INSTANCE = None };
+    if let Some(inst) = unsafe { INSTANCE.take() } {
+        inst.free();
+    }
 }
 
 fn read_str(p: u32, len: u32) -> String {
