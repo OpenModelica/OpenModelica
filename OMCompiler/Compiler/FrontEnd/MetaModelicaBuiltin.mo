@@ -616,6 +616,15 @@ function stringHashDjb2Continue
 external "builtin";
 end stringHashDjb2Continue;
 
+function intHashDjb2Continue
+  "Same result as stringHashDjb2Continue(intString(i), hash), without building
+   the string."
+  input Integer i;
+  input Integer hash;
+  output Integer outHash;
+external "builtin";
+end intHashDjb2Continue;
+
 function stringHashDjb2Mod "Does hashing+modulo without intermediate results."
   input String str;
   input Integer mod;

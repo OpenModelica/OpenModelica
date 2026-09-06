@@ -141,7 +141,7 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         "stringAppend" => Infallible,
         "stringEq" | "stringEqual" | "stringCompare" => Infallible,
         "stringHash" | "stringHashDjb2" | "stringHashDjb2Continue"
-        | "stringHashDjb2Mod" | "stringHashSdbm" => Infallible,
+        | "stringHashDjb2Mod" | "stringHashSdbm" | "intHashDjb2Continue" => Infallible,
         "substring" => Fallible,           // bails on bogus range
         "listStringCharString" | "stringCharListString" => Infallible,
 

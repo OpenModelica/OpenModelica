@@ -1375,7 +1375,7 @@ public
     hash := match sub
       local
         Integer i;
-      case INDEX(index = Expression.INTEGER(value = i)) then Util.hashIntegerDjb2Continue(i, hash);
+      case INDEX(index = Expression.INTEGER(value = i)) then intHashDjb2Continue(i, hash);
       else stringHashDjb2Continue(toString(sub), hash);
     end match;
   end hashStringContinue;
