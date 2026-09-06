@@ -2005,14 +2005,17 @@ fn format_g15(v: f64) -> String {
 /// else — initialization, the terminal step — as `warning`.
 fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, level: omclog::LogType) -> Result<()> {
     e.call1_if_present("functionCheckAsserts", sim_data)?;
-    drain_asserts(e, sim_data, level)?;
+    drain_asserts(e, sim_data, level, true)?;
     Ok(())
 }
 
 /// Log the violations recorded since the last call, every one: the generated code
 /// latches a warning-level site itself (C's static `warningTriggered`). A suppressed
 /// error also arms the re-throw, which the `true` return reports.
-fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -> Result<bool> {
+///
+/// `log` is clear where a held violation has already been reported and only its
+/// re-throw still matters (an FMU logs one per continuous-time stretch).
+fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, log: bool) -> Result<bool> {
     let pending = e.take_pending_warnings();
     if pending.is_empty() {
         return Ok(false);
@@ -2036,7 +2039,9 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
         };
         let line = assert_block(&info, &cond, time, w[9] != 0);
         if suppressed {
-            omclog::info(omclog::ASSERT, false, &line);
+            if log {
+                omclog::info(omclog::ASSERT, false, &line);
+            }
             rethrow_store::arm(info);
             armed = true;
         } else if level == omclog::WARNING {
@@ -2054,7 +2059,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
 /// which [`run_wasm`] settles once the loop is out.
 pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
     let level = if warn != 0 { omclog::WARNING } else { omclog::INFO };
-    drain_asserts(e, sim_data, level).unwrap_or(true) as i32
+    drain_asserts(e, sim_data, level, true).unwrap_or(true) as i32
 }
 
 /// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). C wraps the
@@ -2182,11 +2187,12 @@ pub fn asserts_suppressed() -> bool {
     NO_THROW.load(Ordering::Relaxed)
 }
 
-/// Leave the window, logging what it caught at info level; `true` when it caught
-/// an `assert()` the caller settles itself (an FMU turns it into an event).
-pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32) -> Result<bool> {
+/// Leave the window, logging what it caught at info level unless `log` is clear;
+/// `true` when it caught an `assert()` the caller settles itself (an FMU turns it
+/// into an event).
+pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32, log: bool) -> Result<bool> {
     set_no_throw(false);
-    let armed = drain_asserts(e, sim_data, omclog::INFO)?;
+    let armed = drain_asserts(e, sim_data, omclog::INFO, log)?;
     let noted = e.take_noted_assert();
     let (info, _, self_noted) = rethrow_store::take();
     Ok(armed || noted || info.is_some() || self_noted)
@@ -2196,7 +2202,7 @@ pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32) -> Result<bo
 /// makes the point they were raised at obsolete, otherwise the run fails now.
 fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_no_throw(false);
-    drain_asserts(e, sim_data, omclog::INFO)?;
+    drain_asserts(e, sim_data, omclog::INFO, true)?;
     let noted = e.take_noted_assert();
     let (info, found_event, self_noted) = rethrow_store::take();
     if info.is_none() && !noted && !self_noted {
@@ -3860,7 +3866,7 @@ fn update_zero_crossings(
     keep: bool,
 ) -> Result<()> {
     // Flush older ones, so only this pass's are in hand below.
-    drain_asserts(e, sim_data, omclog::INFO)?;
+    drain_asserts(e, sim_data, omclog::INFO, true)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
     write_time(e, sim_data, time)?;

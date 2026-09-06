@@ -600,6 +600,9 @@ struct MeState {
     event_mode: bool,
     /// A violated `assert()`, held for `completed_integrator_step` to make an event.
     assert_held: bool,
+    /// One held violation is logged per continuous-time stretch: the master
+    /// evaluates the same point many times and only an event settles it.
+    assert_logged: bool,
     /// Every set made before Initialization Mode is left, applied by
     /// `run_initialization`: states as start overrides (see `FmiVr::start_off`),
     /// everything else as parameters. C's `setReal` writes the `start` attribute
@@ -721,7 +724,10 @@ impl MeState {
         }
         let run = f(self);
         if hold {
-            self.assert_held |= driver::take_suppressed_assert(&mut e, self.sim_data).map_err(err_status)?;
+            let held = driver::take_suppressed_assert(&mut e, self.sim_data, !self.assert_logged)
+                .map_err(err_status)?;
+            self.assert_held |= held;
+            self.assert_logged |= held;
         }
         let absorbed = region.is_some_and(|save| driver::close_fmi_call_region(&mut e, save));
         let unsolved = driver::take_nls_failure(&mut e, self.sim_data, &self.layout);
@@ -950,6 +956,7 @@ fn new_state() -> Option<MeState> {
         terminated: false,
         event_mode: false,
         assert_held: false,
+        assert_logged: false,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
@@ -1078,6 +1085,7 @@ macro_rules! shared_instance_methods {
         st.continuous_time = false;
         st.event_mode = true;
         st.assert_held = false;
+        st.assert_logged = false;
         Status::Ok
     }
 
@@ -1105,7 +1113,7 @@ macro_rules! shared_instance_methods {
             st.sync = Some(sync);
             match r {
                 Ok(fired) => ticked = fired,
-                Err(err) => return Err(err_status(err)),
+                Err(err) => return Err(failed(&mut e, sim_data, err)),
             }
         }
 
@@ -1120,18 +1128,18 @@ macro_rules! shared_instance_methods {
             st.cs = Some(d);
             match r {
                 Ok(up) => (up, true),
-                Err(err) => return Err(err_status(err)),
+                Err(err) => return Err(failed(&mut e, sim_data, err)),
             }
         } else {
             match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
                 Ok(up) => (up, false),
-                Err(err) => return Err(err_status(err)),
+                Err(err) => return Err(failed(&mut e, sim_data, err)),
             }
         };
         #[cfg(not(feature = "cs"))]
         let (up, clocks_handled) = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
             Ok(up) => (up, false),
-            Err(err) => return Err(err_status(err)),
+            Err(err) => return Err(failed(&mut e, sim_data, err)),
         };
 
         // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
@@ -1145,7 +1153,7 @@ macro_rules! shared_instance_methods {
             let m = &mut *st;
             match m.dss.reselect(&mut e, sim_data, &m.meta) {
                 Ok(changed) => changed,
-                Err(err) => return Err(err_status(err)),
+                Err(err) => return Err(failed(&mut e, sim_data, err)),
             }
         };
         if reselected {
@@ -1163,7 +1171,7 @@ macro_rules! shared_instance_methods {
             st.sync = Some(sync);
             match r {
                 Ok(fired) => ticked |= fired,
-                Err(err) => return Err(err_status(err)),
+                Err(err) => return Err(failed(&mut e, sim_data, err)),
             }
             if tc.is_finite() {
                 next = Some(next.map_or(tc, |n: f64| n.min(tc)));
