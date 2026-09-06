@@ -32,9 +32,9 @@ impl ResultFile {
     /// Every variable name in the file, parameters and aliases included.
     pub fn variables(&self) -> Vec<String> {
         match &self.reader {
-            r @ (ResultReader::Mat(_) | ResultReader::Arrow(_)) => r.table().unwrap().all_info().iter().map(|v| v.name.clone()).collect(),
             ResultReader::Plt(r) => r.variables().into_iter().map(str::to_owned).collect(),
             ResultReader::Csv(r) => r.variables.iter().filter(|v| !v.is_empty()).cloned().collect(),
+            r => r.table().unwrap().all_info().iter().map(|v| v.name.clone()).collect(),
         }
     }
 

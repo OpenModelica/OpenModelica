@@ -1,0 +1,25 @@
+# The two HDF5 result formats: SDF (one dataset per variable, hierarchical) and
+# MTSF (a variable table plus one 2-D matrix per type category). Unlike the
+# `.mat` and `.arrow` writers these cannot write into a caller-owned byte sink:
+# HDF5 owns its file handle, so the writers take a path and do their own I/O.
+#
+# `library` gates the HDF5 dependency, so a bare `cargo build --workspace`
+# neither needs nor builds HDF5; the crate is then empty, like
+# `openmodelica_hdf5`. `static-hdf5` swaps the system library for the
+# `hdf5-metno-src` copy that the wasm target already uses.
+[package]
+name = "openmodelica_hdf5_result"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+hdf5-metno-sys = { version = "0.12", optional = true }
+
+[features]
+default = []
+library = ["dep:hdf5-metno-sys"]
+static-hdf5 = ["library", "hdf5-metno-sys/static"]

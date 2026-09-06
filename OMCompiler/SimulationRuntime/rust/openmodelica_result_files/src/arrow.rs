@@ -306,9 +306,22 @@ impl ArrowReader {
         Ok(ArrowReader { allInfo, nparam: params.len(), params, string_params, nrows, nvar: cols.len(), span, meta, enums, cols, strs, text_only, ree, units })
     }
 
-    /// The definition of `name`: the file's own entry, else the predefined one.
+    /// The definition of `name`: the file's own entry over the predefined one.
+    ///
+    /// An entry carries only what it declares, so the predefined display units
+    /// of the same name are added to it — a file that spells a unit out for one
+    /// display unit does not repeat the twenty a reader already knows. Where the
+    /// two disagree about the dimensions they are different units that share a
+    /// name, and the file's stands alone.
     pub fn unit_def(&self, name: &str) -> Option<UnitDef> {
-        self.units.iter().find(|u| u.name == name).cloned().or_else(|| units::predefined(name))
+        let own = self.units.iter().find(|u| u.name == name).cloned();
+        match own {
+            Some(mut u) => {
+                u.add_predefined_display_units();
+                Some(u)
+            }
+            None => units::predefined(name),
+        }
     }
 
     /// Every unit the file's variables name, defined. A display unit is not one:

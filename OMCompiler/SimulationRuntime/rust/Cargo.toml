@@ -30,6 +30,7 @@ exclude = [
   "openmodelica_mat_reader",
   "openmodelica_mat_writer",
   "openmodelica_arrow_writer",
+  "openmodelica_hdf5_result",
   "openmodelica_nls",
   "openmodelica_plt_writer",
   "openmodelica_regex",

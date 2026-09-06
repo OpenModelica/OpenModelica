@@ -4,9 +4,14 @@
 pub mod arrow;
 pub mod cmp;
 pub mod file;
+#[cfg(feature = "hdf5")]
+pub mod hdf5;
 pub mod readers;
+pub mod threads;
 
 pub use arrow::ArrowReader;
+#[cfg(feature = "hdf5")]
+pub use hdf5::{MtsfReader, SdfReader};
 pub use file::{ResultFile, Tolerances, TubeDiff};
 pub use openmodelica_mat_reader::{MatReader, ResultTable};
 pub use readers::{CsvReader, PltReader, PltVal};
@@ -19,6 +24,10 @@ pub enum ResultReader {
     Arrow(ArrowReader),
     Plt(PltReader),
     Csv(CsvReader),
+    #[cfg(feature = "hdf5")]
+    Sdf(SdfReader),
+    #[cfg(feature = "hdf5")]
+    Mtsf(MtsfReader),
 }
 
 pub enum OpenError {
@@ -36,6 +45,16 @@ impl ResultReader {
             PltReader::open(filename).map(ResultReader::Plt).map_err(OpenError::Failed)
         } else if filename.ends_with(".csv") {
             CsvReader::open(filename).map(ResultReader::Csv).map_err(OpenError::Failed)
+        } else if cfg!(feature = "hdf5") && filename.ends_with(".sdf") {
+            #[cfg(feature = "hdf5")]
+            return SdfReader::open(filename).map(ResultReader::Sdf).map_err(OpenError::Failed);
+            #[cfg(not(feature = "hdf5"))]
+            return Err(OpenError::UnknownSuffix);
+        } else if cfg!(feature = "hdf5") && filename.ends_with(".mtsf") {
+            #[cfg(feature = "hdf5")]
+            return MtsfReader::open(filename).map(ResultReader::Mtsf).map_err(OpenError::Failed);
+            #[cfg(not(feature = "hdf5"))]
+            return Err(OpenError::UnknownSuffix);
         } else {
             Err(OpenError::UnknownSuffix)
         }
@@ -46,6 +65,10 @@ impl ResultReader {
         match self {
             ResultReader::Mat(r) => Some(r),
             ResultReader::Arrow(r) => Some(r),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Sdf(r) => Some(r),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Mtsf(r) => Some(r),
             _ => None,
         }
     }
@@ -54,6 +77,10 @@ impl ResultReader {
         match self {
             ResultReader::Mat(r) => Some(r),
             ResultReader::Arrow(r) => Some(r),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Sdf(r) => Some(r),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Mtsf(r) => Some(r),
             _ => None,
         }
     }
@@ -66,6 +93,10 @@ impl ResultReader {
             ResultReader::Arrow(r) => Some(r.nrows),
             ResultReader::Csv(r) => Some(r.numsteps),
             ResultReader::Plt(r) => r.interval_size(),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Sdf(r) => Some(r.nrows),
+            #[cfg(feature = "hdf5")]
+            ResultReader::Mtsf(r) => Some(r.nrows),
         }
     }
 
@@ -99,12 +130,12 @@ impl ResultReader {
             };
         }
         match self {
-            ResultReader::Mat(_) | ResultReader::Arrow(_) => unreachable!(),
             ResultReader::Plt(reader) => {
                 let nrows = reader.interval_size().unwrap_or(0);
                 reader.dataset(varname, nrows)
             }
             ResultReader::Csv(reader) => reader.dataset(varname).map(<[f64]>::to_vec),
+            _ => unreachable!("every column-store reader answered table_mut"),
         }
     }
 
@@ -131,12 +162,12 @@ impl ResultReader {
             return out;
         }
         match self {
-            ResultReader::Mat(_) | ResultReader::Arrow(_) => unreachable!(),
             // Reverse document order — see readVariables.
             ResultReader::Plt(reader) => reader.variables().into_iter().rev().map(str::to_owned).collect(),
             ResultReader::Csv(reader) => {
                 reader.variables.iter().filter(|v| !v.is_empty()).cloned().collect()
             }
+            _ => unreachable!("every column-store reader answered table()"),
         }
     }
 }

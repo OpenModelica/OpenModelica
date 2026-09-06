@@ -47,8 +47,9 @@ pub mod units;
 pub use units::{BaseUnit, DisplayUnit, UnitDef};
 
 /// Turns an interned String id (what a String column or parameter holds in the
-/// result rows) back into its text.
-pub type Resolve = Box<dyn Fn(u32) -> String>;
+/// result rows) back into its text. `Send`, so a writer holding one can be
+/// handed to a thread of its own.
+pub type Resolve = Box<dyn Fn(u32) -> String + Send>;
 
 /// Schema metadata key holding the variable table (JSON, see the crate docs).
 pub const VARIABLES_KEY: &str = "modelica.variables";

@@ -12,3 +12,8 @@ workspace = "../../../Compiler/OpenModelica.rs"
 arrow-array = { version = "59", default-features = false }
 arrow-schema = { version = "59", default-features = false }
 arrow-ipc = { version = "59", default-features = false }
+
+# The examples write a compressed stream; the library itself never compresses,
+# so the codec stays out of a normal build (and out of the wasm runtime).
+[dev-dependencies]
+arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }

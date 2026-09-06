@@ -13,7 +13,14 @@ openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_was
 openmodelica_mat_reader = { path = "../openmodelica_mat_reader" }
 openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer" }
 openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_hdf5_result = { path = "../openmodelica_hdf5_result", optional = true }
 arrow-array = { version = "59", default-features = false }
 arrow-schema = { version = "59", default-features = false }
 arrow-ipc = { version = "59", default-features = false }
 serde_json = "1"
+
+[features]
+default = []
+# SDF and MTSF, i.e. the readers that need the HDF5 C library.
+hdf5 = ["dep:openmodelica_hdf5_result", "openmodelica_hdf5_result/library"]
+static-hdf5 = ["hdf5", "openmodelica_hdf5_result/static-hdf5"]
