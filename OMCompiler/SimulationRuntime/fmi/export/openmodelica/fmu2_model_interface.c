@@ -505,6 +505,9 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
     }
     else
     {
+      /* As in simulationUpdate, a violated assert() is held (needToReThrow);
+       * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
+      comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
@@ -512,6 +515,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
       comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
       storePreValues(comp->fmuData);
+      comp->fmuData->simulationInfo->noThrowAsserts = 0;
     }
     comp->_need_update = 0;
     success = 1;
@@ -524,6 +528,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *func)
 
     omc_util_restore_pool_state(mem_pool_state);
     resetThreadData(comp);
+    comp->fmuData->simulationInfo->noThrowAsserts = 0;
     if (!success)
     {
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "%s: terminated by an assertion.", func)
@@ -1949,6 +1954,7 @@ fmi2Status fmi2EnterEventMode(fmi2Component c)
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "fmi2EnterEventMode")
   comp->state = model_state_me_event_mode;
+  comp->fmuData->simulationInfo->needToReThrow = 0;
 
   // Reset eventInfo
   comp->eventInfo.newDiscreteStatesNeeded = fmi2False;
@@ -2005,13 +2011,22 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, const char *func, f
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
+    comp->fmuData->simulationInfo->noThrowAsserts = 1;
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
     storePreValues(comp->fmuData);
+    comp->fmuData->simulationInfo->noThrowAsserts = 0;
     *enterEventMode = fmi2False;
     *terminateSimulation = fmi2False;
+    if (comp->fmuData->simulationInfo->needToReThrow)
+    {
+      /* A held assert() asks for Event Mode. */
+      comp->fmuData->simulationInfo->needToReThrow = 0;
+      *enterEventMode = fmi2True;
+      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "%s: Need to iterate, an assertion was violated at this point!", func)
+    }
     /******** check state selection ********/
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 0))
@@ -2033,6 +2048,7 @@ fmi2Status internal_CompletedIntegratorStep(fmi2Component c, const char *func, f
   threadData->mmc_jumper = old_jmp;
   resetThreadData(comp);
   omc_util_restore_pool_state(mem_pool_state);
+  comp->fmuData->simulationInfo->noThrowAsserts = 0;
 
   if (done) {
     return fmi2OK;
@@ -2119,11 +2135,14 @@ fmi2Status internalGetDerivatives(fmi2Component c, const char *func, fmi2Real de
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
+    /* A violated assert() is held, see updateIfNeeded. */
+    comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
     }
+    comp->fmuData->simulationInfo->noThrowAsserts = 0;
 
 #if NUMBER_OF_STATES > 0
     for (i = 0; i < nx; i++) {
@@ -2174,11 +2193,14 @@ fmi2Status internalGetEventIndicators(fmi2Component c, const char *func, fmi2Rea
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
     /* eval needed equations*/
+    /* A violated assert() is held, see updateIfNeeded. */
+    comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->_need_update = 0;
     }
+    comp->fmuData->simulationInfo->noThrowAsserts = 0;
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
