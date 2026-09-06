@@ -18,6 +18,7 @@ use openmodelica_frontend_types::Values;
 use super::SigTy;
 use openmodelica_wasm_jit::sig::ExtCallSig;
 use openmodelica_wasi::wasi::WasiCtx;
+use openmodelica_wasm_jit::host::HostState;
 
 /// wasmtime errors carry their own (re-exported) `anyhow`, which does not unify
 /// with ours under the feature set we build with; flatten via the message.
@@ -49,7 +50,7 @@ struct JitCache {
     engine: wasmtime::Engine,
     /// Host-imported math builtins (module `"env"`); identical for every module,
     /// so built once and reused for every instantiation.
-    env_linker: wasmtime::Linker<WasiCtx>,
+    env_linker: wasmtime::Linker<HostState>,
     /// The static linear-memory runtime ([`RUNTIME_WASM`]), compiled once. A
     /// fresh instance is created per call to give each evaluation its own heap.
     runtime_module: wasmtime::Module,
@@ -92,8 +93,8 @@ fn get_or_compile_module(cache: &JitCache, bytes: &[u8]) -> Result<wasmtime::Mod
 }
 
 /// The runtime does not export this one; it is the host's.
-fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime::Memory) -> Result<()> {
-    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, WasiCtx>, handle: i32| {
+fn define_print_import(linker: &mut wasmtime::Linker<HostState>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, HostState>, handle: i32| {
         if handle == 0 {
             return;
         }
@@ -112,8 +113,8 @@ fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime:
 /// Load the `external "C"` libraries the sidecar names and bind the module's
 /// `ext.<name>` imports to them, with the loader a simulation uses.
 fn define_external_imports(
-    store: &mut wasmtime::Store<WasiCtx>,
-    linker: &mut wasmtime::Linker<WasiCtx>,
+    store: &mut wasmtime::Store<HostState>,
+    linker: &mut wasmtime::Linker<HostState>,
     rt_inst: wasmtime::Instance,
     memory: wasmtime::Memory,
     sig: &Sig,
@@ -122,7 +123,7 @@ fn define_external_imports(
     if sig.ext_imports.is_empty() {
         return Ok(());
     }
-    openmodelica_wasm_jit::host::set_sim_memory(memory);
+    store.data_mut().memory = Some(memory);
     let ext_rt = dl::ExtRt {
         str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
         str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
@@ -286,7 +287,7 @@ pub(super) fn load_and_execute(
     // module name "rt", plus the `env` math builtins.
     let cache = jit_cache();
     let module = get_or_compile_module(cache, &bytes)?;
-    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new("/", Vec::new()));
+    let mut store = wasmtime::Store::new(&cache.engine, HostState::new(WasiCtx::new("/", Vec::new())));
     let rt_inst = wt(cache.env_linker.instantiate(&mut store, &cache.runtime_module))?;
     let mut linker = cache.env_linker.clone();
     wt(linker.instance(&mut store, "rt", rt_inst))?;
@@ -432,7 +433,7 @@ struct RtFns {
 }
 
 // A WASI context so a loaded library (and its libc) has real file I/O.
-type Store = wasmtime::Store<WasiCtx>;
+type Store = wasmtime::Store<HostState>;
 
 /// Build a `wasmtime::Val` (scalar, or an `i32` handle into the heap) for the
 /// argument value `v` of the given Modelica type. Heap values (strings, arrays)
@@ -716,7 +717,7 @@ mod tests {
     fn runtime_instance() -> (Store, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new("/", Vec::new()));
+        let mut store = wasmtime::Store::new(&engine, HostState::new(WasiCtx::new("/", Vec::new())));
         let mut linker = wasmtime::Linker::new(&engine);
         openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();

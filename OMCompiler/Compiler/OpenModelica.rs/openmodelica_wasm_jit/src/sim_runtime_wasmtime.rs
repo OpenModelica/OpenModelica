@@ -32,6 +32,7 @@ use crate::host::add_host_builtins;
 /// The runtime module, embedded the same way the function half embeds it.
 use crate::{RUNTIME_WASM, RUNTIME_WASM_INTERACTIVE_WASIP1};
 use crate::wasi_shim;
+use crate::host::HostState;
 use openmodelica_wasi::wasi::WasiCtx;
 
 /// The runtime module the interactive host instantiates: the std wasip1 build
@@ -77,8 +78,8 @@ fn host_libm() -> bool {
 }
 
 fn shadow_math_with_host_libm(
-    linker: &mut wasmtime::Linker<WasiCtx>,
-    store: &mut wasmtime::Store<WasiCtx>,
+    linker: &mut wasmtime::Linker<HostState>,
+    store: &mut wasmtime::Store<HostState>,
     rt_inst: &wasmtime::Instance,
 ) -> std::result::Result<(), wasmtime::Error> {
     // `^` lowers to `rt_real_pow`, which owns C's negative-base and odd-root
@@ -88,7 +89,7 @@ fn shadow_math_with_host_libm(
     linker.func_wrap(
         "rt",
         "rt_real_pow",
-        move |mut caller: wasmtime::Caller<'_, WasiCtx>, base: f64, exp: f64, loc: u32| {
+        move |mut caller: wasmtime::Caller<'_, HostState>, base: f64, exp: f64, loc: u32| {
             if base >= 0.0 || exp == 0.0 {
                 let r = base.powf(exp);
                 if r.is_finite() {
@@ -425,7 +426,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
     }
 }
 
-type Store = wasmtime::Store<WasiCtx>;
+type Store = wasmtime::Store<HostState>;
 
 /// `SimEngine`-trait errors: collapse to the crate `&'static str` (a model
 /// `assert()` is decoded downstream by `enrich_trap`).
@@ -665,8 +666,8 @@ const USERTAB: &str = "usertab";
 /// natively and binds a marshalling trampoline sharing the runtime's linear
 /// memory (`memory`).
 fn define_external_imports(
-    linker: &mut wasmtime::Linker<WasiCtx>,
-    store: &mut wasmtime::Store<WasiCtx>,
+    linker: &mut wasmtime::Linker<HostState>,
+    store: &mut wasmtime::Store<HostState>,
     model: &SimModel,
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
@@ -780,7 +781,7 @@ fn prepare_cif(sig: &crate::sig::ExtCallSig) -> Option<PreparedCif> {
 /// Bind `ext.<sig.name>` to native `addr` through the libffi trampoline. Shared
 /// with the `-d=gen` function JIT, whose externals resolve the same way.
 pub fn define_native_external(
-    linker: &mut wasmtime::Linker<WasiCtx>,
+    linker: &mut wasmtime::Linker<HostState>,
     sig: &crate::sig::ExtCallSig,
     functype: wasmtime::FuncType,
     addr: usize,
@@ -802,8 +803,8 @@ pub fn define_native_external(
 /// The `print` builtin's host import (`rt.rt_print`): read the String handle's
 /// bytes from the shared linear memory and write them to the model's captured
 /// stdout. The handle stays owned by the generated code, which releases it after.
-fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime::Memory) -> Result<()> {
-    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, WasiCtx>, handle: i32| {
+fn define_print_import(linker: &mut wasmtime::Linker<HostState>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, HostState>, handle: i32| {
         if handle == 0 {
             return;
         }
@@ -844,7 +845,7 @@ unsafe fn call_external(
     addr: usize,
     sig: &crate::sig::ExtCallSig,
     prepared: Option<&PreparedCif>,
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    caller: &mut wasmtime::Caller<'_, HostState>,
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
     args: &[wasmtime::Val],
@@ -1188,7 +1189,7 @@ fn record_to_native(
 /// callee wrote into `src`. An array member has no inverse — this record is a new
 /// one, and the callee wrote the model's array in place — as in C, which asserts.
 fn record_from_native(
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    caller: &mut wasmtime::Caller<'_, HostState>,
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
     fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
@@ -1233,7 +1234,7 @@ fn record_from_native(
 /// offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
 /// re-fetched after).
 fn wasm_string(
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    caller: &mut wasmtime::Caller<'_, HostState>,
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
     cptr: *const std::os::raw::c_char,
@@ -1249,7 +1250,7 @@ fn wasm_string(
 fn ext_result(
     ty: &crate::sig::SigTy,
     cell: &[u8],
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    caller: &mut wasmtime::Caller<'_, HostState>,
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
 ) -> Result<wasmtime::Val> {
@@ -1427,7 +1428,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
 
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
-    let mut store = wasmtime::Store::new(engine, WasiCtx::new("/", Vec::new()));
+    let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new("/", Vec::new())));
     if let secs @ 1.. = alarm_secs() {
         ALARM_FIRED.with(|f| f.set(false));
         store.set_epoch_deadline(secs as u64);
@@ -1456,7 +1457,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         note: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,
     };
     // `rt_row_asserts` is called by the model, which only imports `memory`.
-    crate::host::set_sim_memory(memory);
+    store.data_mut().memory = Some(memory);
     let ext_rt = crate::dylink_engine::ExtRt {
         str_new: rt_str_new,
         str_data: rt_str_data,
@@ -1467,8 +1468,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         nls: Some(nls),
     };
     let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
-    crate::host::set_shadow_stack(ext_libs.shadow_stack());
-    wts(crate::host::set_model_error_tag(&mut store, None))?;
+    store.data_mut().shadow_stack = ext_libs.shadow_stack();
     define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs)?;
     define_print_import(&mut linker, memory)?;
     crate::host::define_uri_import(&mut linker, memory, ext_rt.str_new.clone(), ext_rt.str_data.clone())?;
@@ -2202,7 +2202,7 @@ fn native_ext_host_import(
     use std::sync::{Arc, Mutex};
 
     struct HostGuest<'a, 'b> {
-        caller: &'a mut wasmtime::Caller<'b, WasiCtx>,
+        caller: &'a mut wasmtime::Caller<'b, HostState>,
         memory: wasmtime::Memory,
         alloc: wasmtime::TypedFunc<u32, u32>,
         free: wasmtime::TypedFunc<u32, ()>,
@@ -2328,7 +2328,7 @@ impl DylinkFmu {
         add_host_builtins(&mut linker)?;
         wasi_shim::add_to_linker(&mut linker)?;
         let runtime_module = runtime_module()?;
-        let mut store = wasmtime::Store::new(engine, WasiCtx::new(resources, Vec::new()));
+        let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new(resources, Vec::new())));
         let rt_inst = wts(linker.instantiate(&mut store, runtime_module))?;
         wts(linker.instance(&mut store, "rt", rt_inst))?;
         let memory = rt_inst
@@ -2337,7 +2337,7 @@ impl DylinkFmu {
         let table = rt_inst
             .get_table(&mut store, "__indirect_function_table")
             .ok_or_else(|| "CodegenWasmJit: runtime has no table export".to_string())?;
-        crate::host::set_sim_memory(memory);
+        store.data_mut().memory = Some(memory);
         // The model's equations call *this* instance's `rt_solve_nls`, not the copy
         // the adapter carries, so the run's flags have to reach it too.
         let rt_alloc_fn = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
@@ -2405,7 +2405,7 @@ impl DylinkFmu {
                 &ext_libs,
                 &utilities,
             )?;
-            crate::host::set_shadow_stack(libs.shadow_stack());
+            store.data_mut().shadow_stack = libs.shadow_stack();
             let wanted: Vec<String> = model_module
                 .imports()
                 .filter(|i| i.module() == "ext")
@@ -2420,6 +2420,9 @@ impl DylinkFmu {
             }
         }
         let model_inst = wts(linker.instantiate(&mut store, &model_module))?;
+        if let Some(wasmtime::Extern::Tag(tag)) = model_inst.get_export(&mut store, "model_error") {
+            wts(crate::host::set_model_error_tag(&mut store, Some(tag)))?;
+        }
         // What the adapter calls into: the model's entry points, and the runtime's
         // primitives, both as ordinary cross-instance calls.
         let mut host: std::collections::HashMap<String, wasmtime::Func> =
@@ -2437,7 +2440,7 @@ impl DylinkFmu {
         }
         let loaded =
             crate::dylink_engine::load(&mut store, engine, memory, table, &ext_rt.alloc, &[Library::builtin("fmi3adapter", adapter)], &host)?;
-        crate::host::set_shadow_stack(loaded.shadow_stack());
+        store.data_mut().shadow_stack = loaded.shadow_stack();
         Ok(DylinkFmu {
             store,
             loaded: Some(loaded),
@@ -2480,7 +2483,7 @@ impl DylinkFmu {
         wasi_shim::add_to_linker(&mut linker)?;
         // Fixed and model-independent: compiled once into the on-disk cache.
         let fused_module = aot_module(engine, "fused", fused_bytes, alarm_secs() != 0)?;
-        let mut store = wasmtime::Store::new(engine, WasiCtx::new(resources, Vec::new()));
+        let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new(resources, Vec::new())));
 
         // Everything the fused module takes from the model, forwarded once the
         // model exists. Untyped: the signature is whatever the import declares, so
@@ -2605,7 +2608,7 @@ impl DylinkFmu {
             let libs = crate::dylink_engine::load(
                 &mut store, engine, memory, table, &ext_rt.alloc, &ext_libs, &utilities,
             )?;
-            crate::host::set_shadow_stack(libs.shadow_stack());
+            store.data_mut().shadow_stack = libs.shadow_stack();
             let wanted: Vec<String> = model_module
                 .imports()
                 .filter(|i| i.module() == "ext")
@@ -2620,6 +2623,9 @@ impl DylinkFmu {
             }
         }
         let model_inst = wts(linker.instantiate(&mut store, &model_module))?;
+        if let Some(wasmtime::Extern::Tag(tag)) = model_inst.get_export(&mut store, "model_error") {
+            wts(crate::host::set_model_error_tag(&mut store, Some(tag)))?;
+        }
         *model_cell.lock().unwrap_or_else(|e| e.into_inner()) = Some(model_inst);
         Ok(DylinkFmu {
             store,
