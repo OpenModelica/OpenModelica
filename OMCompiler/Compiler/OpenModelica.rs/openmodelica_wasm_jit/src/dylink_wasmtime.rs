@@ -185,6 +185,9 @@ pub fn load(
             &mut got_func,
             &mut loaded,
         )?;
+        if lib.name == "libc.so" {
+            store.data_mut().vsnprintf = loaded.funcs.get("vsnprintf").and_then(|f| f.typed(&*store).ok());
+        }
     }
     for (sym, target) in &deferred {
         if let Some(f) = loaded.funcs.get(sym) {
@@ -834,11 +837,47 @@ fn shared_cstr(caller: &mut wasmtime::Caller<'_, HostState>, ptr: i32) -> String
     String::from_utf8_lossy(&rest[..len]).into_owned()
 }
 
+/// Format a `ModelicaFormat*` message with the guest's `vsnprintf` (the `va_list`
+/// is laid out for its C compiler). `Some(buffer)` to free; without a libc the
+/// format stands for the message.
+fn format_va(
+    caller: &mut wasmtime::Caller<'_, HostState>,
+    rt: &ExtRt,
+    fmt: i32,
+    va: i32,
+) -> std::result::Result<Option<u32>, wasmtime::Error> {
+    let Some(vsnprintf) = caller.data().vsnprintf.clone() else { return Ok(None) };
+    const LOG_BUFFER: u32 = 2048; // C's SIZE_LOG_BUFFER
+    let buf = rt.alloc.call(&mut *caller, LOG_BUFFER)?;
+    vsnprintf.call(&mut *caller, (buf as i32, LOG_BUFFER as i32, fmt, va))?;
+    Ok(Some(buf))
+}
+
+fn formatted(
+    caller: &mut wasmtime::Caller<'_, HostState>,
+    rt: &ExtRt,
+    fmt: i32,
+    va: i32,
+) -> std::result::Result<(String, Option<u32>), wasmtime::Error> {
+    let buf = format_va(caller, rt, fmt, va)?;
+    Ok((shared_cstr(caller, buf.map_or(fmt, |b| b as i32)), buf))
+}
+
+fn free_formatted(
+    caller: &mut wasmtime::Caller<'_, HostState>,
+    rt: &ExtRt,
+    buf: Option<u32>,
+) -> std::result::Result<(), wasmtime::Error> {
+    match buf {
+        Some(b) => rt.free.call(&mut *caller, b),
+        None => Ok(()),
+    }
+}
+
 /// The ModelicaUtilities a library may call: host imports, because the messages
-/// belong in the run's log (or, outside a run, in omc's error buffer). A formatted
-/// variant gets `(format, va_list)` and is not interpolated, as on the web target.
+/// belong in the run's log (or, outside a run, in omc's error buffer).
 pub fn modelica_utilities_imports(
-    store: &mut wasmtime::Store<WasiCtx>,
+    store: &mut wasmtime::Store<HostState>,
     rt: &ExtRt,
 ) -> HashMap<String, wasmtime::Func> {
     use wasmtime::{Caller, Func};
@@ -846,59 +885,67 @@ pub fn modelica_utilities_imports(
     let mut m: HashMap<String, Func> = HashMap::new();
 
     let nls = rt.nls.clone();
-    let err_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+    let err_fn = |store: &mut wasmtime::Store<HostState>, nls: Option<NlsHooks>| Func::wrap(
         store,
-        move |mut caller: Caller<'_, WasiCtx>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
+        move |mut caller: Caller<'_, HostState>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
             raise_model_error(&nls, &mut caller, ptr)
         },
     );
-    let err_fmt_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+    let err_fmt_fn = |store: &mut wasmtime::Store<HostState>, nls: Option<NlsHooks>, rt: ExtRt| Func::wrap(
         store,
-        move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| -> std::result::Result<(), wasmtime::Error> {
-            raise_model_error(&nls, &mut caller, fmt)
+        move |mut caller: Caller<'_, HostState>, fmt: i32, va: i32| -> std::result::Result<(), wasmtime::Error> {
+            let buf = format_va(&mut caller, &rt, fmt, va)?;
+            let r = raise_model_error(&nls, &mut caller, buf.map_or(fmt, |b| b as i32));
+            if let Some(b) = buf {
+                rt.free.call(&mut caller, b)?;
+            }
+            r
         },
     );
     // C sends both to `OMC_LOG_STDOUT`. The `-d=gen` function JIT has no run and no
     // such log, and neither does the compiler process in C.
     let in_run = rt.nls.is_some();
-    let warning = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
-        let msg = shared_cstr(&mut caller, ptr);
+    let warn = move |msg: &str| {
         if in_run {
-            omclog::warning(omclog::STDOUT, false, &msg);
+            omclog::warning(omclog::STDOUT, false, msg);
         } else {
-            openmodelica_error::ErrorExt::runtime_warning(&msg);
+            openmodelica_error::ErrorExt::runtime_warning(msg);
         }
     };
-    let warning_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
-        let msg = shared_cstr(&mut caller, fmt);
-        if in_run {
-            omclog::warning(omclog::STDOUT, false, &msg);
-        } else {
-            openmodelica_error::ErrorExt::runtime_warning(&msg);
-        }
+    let warning = move |mut caller: Caller<'_, HostState>, ptr: i32| {
+        warn(&shared_cstr(&mut caller, ptr));
+    };
+    let rt_w = rt.clone();
+    let warning_fmt = move |mut caller: Caller<'_, HostState>, fmt: i32, va: i32| -> std::result::Result<(), wasmtime::Error> {
+        let (msg, buf) = formatted(&mut caller, &rt_w, fmt, va)?;
+        warn(&msg);
+        free_formatted(&mut caller, &rt_w, buf)
     };
 
-    let message = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
+    let message = move |mut caller: Caller<'_, HostState>, ptr: i32| {
         if in_run {
             let msg = shared_cstr(&mut caller, ptr);
             omclog::info(omclog::STDOUT, false, &msg);
         }
     };
-    let message_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
-        if in_run {
-            let msg = shared_cstr(&mut caller, fmt);
-            omclog::info(omclog::STDOUT, false, &msg);
+    let rt_m = rt.clone();
+    let message_fmt = move |mut caller: Caller<'_, HostState>, fmt: i32, va: i32| -> std::result::Result<(), wasmtime::Error> {
+        if !in_run {
+            return Ok(());
         }
+        let (msg, buf) = formatted(&mut caller, &rt_m, fmt, va)?;
+        omclog::info(omclog::STDOUT, false, &msg);
+        free_formatted(&mut caller, &rt_m, buf)
     };
 
     m.insert("ModelicaError".into(), err_fn(&mut *store, nls.clone()));
-    m.insert("ModelicaFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
-    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
+    m.insert("ModelicaFormatError".into(), err_fmt_fn(&mut *store, nls.clone(), rt.clone()));
+    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls.clone(), rt.clone()));
     m.insert("ModelicaWarning".into(), Func::wrap(&mut *store, warning));
-    m.insert("ModelicaFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
+    m.insert("ModelicaFormatWarning".into(), Func::wrap(&mut *store, warning_fmt.clone()));
     m.insert("ModelicaVFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaMessage".into(), Func::wrap(&mut *store, message));
-    m.insert("ModelicaFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
+    m.insert("ModelicaFormatMessage".into(), Func::wrap(&mut *store, message_fmt.clone()));
     m.insert("ModelicaVFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
 
     // A side module carrying `external_c_callbacks.c` has the `Modelica*` entry
