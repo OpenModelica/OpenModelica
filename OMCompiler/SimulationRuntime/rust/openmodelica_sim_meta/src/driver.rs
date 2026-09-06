@@ -901,12 +901,25 @@ fn note_throw_past_step() {
     THROW_PAST_STEP.store(true, Ordering::Relaxed);
 }
 
-/// C's `va_throwStreamPrint(NULL, …)`, which an external function's `ModelicaError`
-/// reaches: log the message on `LOG_ASSERT` and unwind. It has no condition and no
-/// source position, so the trap that follows must not go looking for the assertion
-/// block a model `assert()` would have left.
+/// C's `omc_assert` for a `ModelicaError`: `LOG_ASSERT` in the simulation runtime
+/// (`va_throwStreamPrint(NULL, …)`), the logger in an FMU (`omc_assert_fmi`).
+static EXT_ERROR_REPORTER: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_ext_error_reporter(f: fn(&str)) {
+    EXT_ERROR_REPORTER.store(f as usize, Ordering::Relaxed);
+}
+
+/// An external function's `ModelicaError`: report it and flag the unwind that
+/// follows. It has no condition and no source position, so the trap must not go
+/// looking for the assertion block a model `assert()` would have left.
 pub fn note_runtime_error(msg: &str) {
-    omclog::debug(omclog::ASSERT, false, msg);
+    match EXT_ERROR_REPORTER.load(Ordering::Relaxed) {
+        0 => omclog::debug(omclog::ASSERT, false, msg),
+        p => {
+            let f: fn(&str) = unsafe { core::mem::transmute(p) };
+            f(msg);
+        }
+    }
     note_runtime_error_flag();
 }
 
