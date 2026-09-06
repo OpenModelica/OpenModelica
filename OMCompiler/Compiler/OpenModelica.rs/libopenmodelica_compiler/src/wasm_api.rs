@@ -409,12 +409,15 @@ pub fn omc_sim_units() -> JsValue {
     map.into()
 }
 
-/// `{ model, start, stop, rows }` for the last run, or `null` if none.
+/// `{ model, file, start, stop, rows }` for the last run, or `null` if none.
+/// `file` is the result file the run actually wrote, whose suffix is the format
+/// it was written in (`-outputFormat` can have moved it off the requested one).
 #[wasm_bindgen]
 pub fn omc_sim_info() -> JsValue {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
         let o = js_sys::Object::new();
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("model"), &JsValue::from_str(&sim.model_name));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("file"), &JsValue::from_str(&sim.result_file));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.n_rows() as f64));
@@ -429,6 +432,15 @@ pub fn omc_sim_info() -> JsValue {
         o.into()
     })
     .unwrap_or(JsValue::NULL)
+}
+
+/// The last run's result file as `format` (`arrow`, `mat` or `csv`), for a
+/// download in a format other than the one the run wrote. The file's own format
+/// is returned unconverted; converting to `mat`/`csv` drops the String variables
+/// they cannot hold. `None` on failure — read `getErrorString()`.
+#[wasm_bindgen]
+pub fn omc_sim_result_as(format: &str) -> Option<Vec<u8>> {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::last_sim_result_as(format)
 }
 
 /// The independent `time` column of the last run as a `Float64Array`, or `None`.

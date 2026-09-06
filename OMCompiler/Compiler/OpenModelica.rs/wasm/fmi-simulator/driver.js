@@ -267,11 +267,12 @@ export class Driver {
     return result;
   }
 
-  // Write the result file through WASI, and hand back what landed there.
-  writeMat(path) {
+  // Write the result file through WASI, and hand back what landed there. The
+  // name's suffix picks the format.
+  writeResult(path) {
     const bytes = this.encoder.encode(path);
     const ptr = this.pass(bytes);
-    const ok = this.exports.om_fmi_write_mat(ptr, bytes.length);
+    const ok = this.exports.om_fmi_write_result(ptr, bytes.length);
     this.exports.om_fmi_free(ptr, bytes.length);
     if (!ok) throw new Error(this.lastError());
     return this.wasi.read(path);

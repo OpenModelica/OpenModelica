@@ -277,6 +277,12 @@ impl ResultFile {
                 Some((st, u, du, ty, en)) => (Some(st), u, du, ty, en),
                 None => (None, String::new(), String::new(), "Real".to_owned(), None),
             };
+            // A String variable has no numeric trajectory, and none of the
+            // formats this plan feeds can hold one: drop it rather than fail the
+            // whole conversion.
+            if ty == "String" {
+                continue;
+            }
             let read = |me: &mut Self| me.reader.trajectory(var).ok_or_else(|| format!("Could not read variable {var}"));
             let kind = match storage {
                 Some((true, _)) => {

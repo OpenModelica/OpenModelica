@@ -77,7 +77,13 @@
   .doc-body h1, .doc-body h2, .doc-body h3, .doc-body h4 { color:var(--fg); font-size:1.05em; margin:.8em 0 .3em; }
   .doc-body .svgiconhead { width:24px; height:24px; object-fit:contain; vertical-align:middle; }
 
-  @media (max-width:820px), (orientation:portrait) {
+  .dl { display:inline-flex; align-items:stretch; }
+  .dl[hidden] { display:none; }
+  .dl button.ghost { border-top-right-radius:0; border-bottom-right-radius:0; }
+  .dl select { background:transparent; color:var(--muted); border:1px solid var(--border); border-left:0;
+    border-top-left-radius:0; border-bottom-left-radius:0; font-size:12px; padding:0 4px; }
+
+@media (max-width:820px), (orientation:portrait) {
     main { grid-template-columns:1fr; }
     .left { border-right:0; border-bottom:1px solid var(--border); overflow:visible; }
     .grid2 .wide { grid-column:2; }
@@ -128,7 +134,10 @@
   <button class="ghost" id="nativeBtn" title="Compile this FMU's component for native platforms and repack it" hidden disabled>Native binaries…</button>
   <button class="ghost" id="figToggle" title="Switch between the FMU's figures and all recorded variables" hidden>All variables</button>
   <button id="run" disabled>Simulate</button>
-  <button class="ghost icon-only" id="download" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+  <span class="dl" id="downloadWrap" hidden>
+    <button class="ghost icon-only" id="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+    <select id="resFormat" title="Result format to download"><option value="arrow" selected>.arrow</option><option value="mat">.mat</option></select>
+  </span>
 </header>
 
 <main>
@@ -226,6 +235,7 @@ import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 const el = (id) => document.getElementById(id);
 const statusEl = el('status'), runBtn = el('run'), openBtn = el('open'), fileEl = el('file');
 const downloadEl = el('download');
+const downloadWrap = el('downloadWrap'), resFormatEl = el('resFormat');
 const infoEl = el('info'), dropEl = el('drop'), icGrid = el('icGrid'), icEmpty = el('icEmpty');
 const docBody = el('docBody');
 const chartsEl = el('charts'), chartsEmpty = el('chartsEmpty'), logEl = el('log');
@@ -244,6 +254,7 @@ let lastRec = null;     // the most recent simulation record, for re-rendering
 let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
 let animView = null;    // shared 3D animation panel, if the FMU carries a <Visualization>
 let resultName = null;  // the last run's result file, or null when there is none
+let resultStem = null;  // its name without the format suffix
 let archive = null;     // the .fmu bytes, kept only for the native repack
 
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
@@ -636,23 +647,33 @@ function toRecord(result) {
   };
 }
 
-// Written on demand: serialising the whole result is the expensive part.
+// The plot reads the recorder's rows directly, so this is the only place the
+// result becomes a file — written on demand, since serialising it is the
+// expensive part.
+function resultFileName() {
+  return `${resultStem}_res.${resFormatEl.value}`;
+}
+
 function offerResultFile() {
-  resultName = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
-  downloadEl.hidden = false;
+  resultStem = (fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_');
+  resultName = resultFileName();
+  downloadWrap.hidden = false;
   downloadEl.title = downloadEl.ariaLabel = `Download ${resultName}`;
 }
 
 function hideResultFile() {
   resultName = null;
-  downloadEl.hidden = true;
+  resultStem = null;
+  downloadWrap.hidden = true;
 }
+
+resFormatEl.addEventListener('change', () => { if (resultStem) offerResultFile(); });
 
 downloadEl.onclick = async () => {
   if (!resultName || downloadEl.disabled) return;
   downloadEl.disabled = true;
   try {
-    const bytes = await session.mat(`/${resultName}`);
+    const bytes = await session.result(`/${resultName}`);
     if (!bytes || !bytes.length) throw new Error('the driver wrote no result file');
     downloadBlob(resultName, bytes);
     setStatus(`${resultName} — ${bytes.length} bytes.`, 'ok');

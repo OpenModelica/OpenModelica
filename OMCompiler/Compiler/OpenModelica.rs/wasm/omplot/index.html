@@ -32,6 +32,7 @@
   .var input { width:auto; margin:0; }
   .var .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .var .p { color:var(--muted); font-size:11px; }
+  .var .u { color:var(--muted); font-size:11px; flex:0 0 auto; }
   .var .diff { width:8px; height:8px; border-radius:50%; background:var(--err); flex:0 0 auto; }
   .vars-note { color:var(--muted); font-size:12px; padding:4px 12px; }
 
@@ -125,7 +126,8 @@
 
 <script type="module">
 import init, { ResultFile, diff_all, diff_variable } from './openmodelica_result_web.js';
-import { COLORS, createCharts } from '../plot.js';
+import { COLORS, createCharts, unitHTML, unitLabel } from '../plot.js';
+import { scale, relative } from '../units.js';
 import { bindModal, downloadBlob } from '../ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -139,11 +141,12 @@ const charts = createCharts(chartsEl);
 const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002 };
 
 // --- state -----------------------------------------------------------------
-const files = [];       // { id, name, rf, vars, params:Set, nrows, selected:Set }
+const files = [];       // { id, name, rf, vars, params:Set, units, nrows, selected:Set }
 let active = null;      // the file whose variables are listed
 let mode = 'plot';      // 'plot' | 'compare'
 let cmp = null;         // { actual, reference, opts, diffVars:Set, compared, current }
 let nextId = 1;
+const unitPick = new Map();  // unit -> the display unit the reader chose for that axis
 
 function setStatus(text, cls = '') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
 function fail(e) { console.error(e); setStatus(String(e && e.message || e), 'err'); }
@@ -154,7 +157,11 @@ function addFile(name, bytes) {
   const vars = rf.variables();
   const timeName = rf.time_name();
   const params = new Set(vars.filter((v) => rf.is_parameter(v)));
-  const f = { id: nextId++, name, rf, vars, params, timeName, nrows: rf.nrows(), selected: new Set() };
+  // The file's own display units, keyed by unit name — `.arrow` carries them,
+  // the other formats define none and leave every unit alone.
+  let units = {};
+  try { units = JSON.parse(rf.unit_defs_json()); } catch (e) { console.warn('unit table', e); }
+  const f = { id: nextId++, name, rf, vars, params, units, timeName, nrows: rf.nrows(), selected: new Set() };
   files.push(f);
   active = f;
   return f;
@@ -261,6 +268,13 @@ function renderVars() {
       row.appendChild(cb);
     }
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v; row.appendChild(nm);
+    if (u) {
+      const us = document.createElement('span'); us.className = 'u';
+      const du = f.rf.display_unit(v);
+      us.innerHTML = unitHTML(du || u);
+      us.title = du && du !== u ? 'displayUnit ' + unitLabel(du) + ', unit ' + unitLabel(u) : 'unit ' + unitLabel(u);
+      row.appendChild(us);
+    }
     if (f.params.has(v)) { const p = document.createElement('span'); p.className = 'p'; p.textContent = 'param'; row.appendChild(p); }
     varsEl.appendChild(row);
   }
@@ -274,6 +288,18 @@ filterEl.oninput = renderVars;
 
 function showEmpty(text) { chartsEl.appendChild(chartsEmpty); chartsEmpty.textContent = text; }
 
+// The display unit named `to`, or null for the unit itself. A relative quantity
+// is a difference, so its conversion keeps the factor and drops the offset.
+function displayUnitDef(f, base, to, rel) {
+  if (!base || !to || to === base) return null;
+  const d = ((f.units && f.units[base]) || []).find((u) => u.name === to) || null;
+  return rel ? relative(d) : d;
+}
+
+function unitAlternatives(f, base) {
+  return base ? [base, ...((f.units && f.units[base]) || []).map((d) => d.name)] : [];
+}
+
 function renderCharts() {
   charts.clear();
   if (mode === 'compare') { renderDiffChart(); return; }
@@ -286,11 +312,40 @@ function renderCharts() {
       const ys = f.rf.trajectory(v); if (!ys) continue;
       const n = Math.min(time.length, ys.length);
       curves.push({ label: multi ? v + ' @ ' + f.name : v, color: COLORS[curves.length % COLORS.length],
-        xs: time.subarray(0, n), ys: ys.subarray(0, n) });
+        xs: time.subarray(0, n), ys: ys.subarray(0, n),
+        file: f, unit: f.rf.unit(v), displayUnit: f.rf.display_unit(v), relative: f.rf.relative_quantity(v) });
     }
   }
   if (!curves.length) { showEmpty(files.length ? 'Tick variables to plot them.' : 'Open a result file to plot it.'); return; }
-  charts.add({ curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'plot');
+  const spec = { curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true };
+  // One unit across the plotted curves makes the y-axis a unit the reader can
+  // switch; mixed units leave the axis unlabelled.
+  const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+  if (bases.length === 1 && curves.every((c) => c.unit)) applyUnit(spec, bases[0]);
+  charts.add(spec, 'plot');
+}
+
+// Draw the curves in `unitPick`'s unit (else the declared displayUnit), and let
+// the axis switch between the alternatives the files define. Two files can
+// define different display units for one unit, so the choices are their union.
+function applyUnit(spec, base) {
+  const alternatives = [base];
+  for (const f of new Set(spec.curves.map((c) => c.file))) {
+    for (const u of unitAlternatives(f, base)) if (!alternatives.includes(u)) alternatives.push(u);
+  }
+  const declared = spec.curves[0].displayUnit;
+  const shown = unitPick.has(base) ? unitPick.get(base)
+              : (declared && alternatives.includes(declared) ? declared : base);
+  for (const c of spec.curves) {
+    const d = displayUnitDef(c.file, base, shown, c.relative);
+    if (!d) continue;
+    const fn = scale(d), out = new Float64Array(c.ys.length);
+    for (let i = 0; i < c.ys.length; i++) out[i] = fn(c.ys[i]);
+    c.ys = out; c.unit = shown;
+  }
+  spec.yUnit = shown;
+  spec.unitChoices = alternatives;
+  spec.onUnit = (u) => { unitPick.set(base, u); renderCharts(); };
 }
 
 // --- comparison ------------------------------------------------------------

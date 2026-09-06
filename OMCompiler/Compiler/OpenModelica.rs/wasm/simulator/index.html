@@ -67,7 +67,13 @@
   /* charts area: one card per plot, scrollable */
   /* Modelica units: superscript exponents and stacked (num-over-den) fractions */
 
-  @media (max-width:820px), (orientation:portrait) {
+  .dl { display:inline-flex; align-items:stretch; }
+  .dl[hidden] { display:none; }
+  .dl button.ghost { border-top-right-radius:0; border-bottom-right-radius:0; }
+  .dl select { background:transparent; color:var(--muted); border:1px solid var(--border); border-left:0;
+    border-top-left-radius:0; border-bottom-left-radius:0; font-size:12px; padding:0 4px; }
+
+@media (max-width:820px), (orientation:portrait) {
     body { overflow:auto; height:auto; min-height:100vh; }
     main { grid-template-columns:1fr; }
     .left { border-right:0; border-bottom:1px solid var(--border); }
@@ -114,7 +120,10 @@
   </button>
   <button id="exportFmu" class="ghost" disabled title="Export an FMI 3.0 wasm FMU of the active model">Export FMU</button>
   <button id="run" disabled>Run</button>
-  <button id="downloadRes" class="ghost icon-only" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+  <span class="dl" id="downloadWrap" hidden>
+    <button id="downloadRes" class="ghost icon-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
+    <select id="resFormat" title="Result format to download"><option value="arrow" selected>.arrow</option><option value="mat">.mat</option><option value="csv">.csv</option></select>
+  </span>
 </header>
 
 <main>
@@ -252,6 +261,7 @@ const charts = createCharts(chartsEl);
 const icGrid = el('icGrid'), icEmpty = el('icEmpty'), tolEl = el('tol'), toggleBtn = el('viewToggle');
 const exSel = el('examples'), docBody = el('docBody');
 const settingsBtn = el('settingsBtn'), downloadResBtn = el('downloadRes');
+const downloadWrap = el('downloadWrap'), resFormatEl = el('resFormat');
 const rightEl = el('right');
 
 // Documentation collapse/expand, driven from inside the widget: a chevron in the
@@ -452,7 +462,7 @@ let copyName = null;          // top-level name of the current library copy (cop
 let preloaded = null;         // a class already loaded by copyClass (skip the first redundant loadSource)
 let freshModel = true;        // true until a model's own experiment settings have been read back from a run
 let animView = null;          // the shared 3D animation panel (lazily created on first use)
-let resultReady = false;      // the built worker's VFS holds a complete `<model>_res.mat`
+let resultReady = false;      // the built worker's VFS holds a complete `<model>_res.arrow`
 let resultCache = null;       // { name, bytes } — kept when the worker holding it had to go
 
 // Only the parameters the user actually edited. Sending the whole grid back would
@@ -663,23 +673,51 @@ async function run(kind) {                       // 'full' | 'resim'
 // gone. Offered only for a run that finished: a failed one leaves a truncated file.
 function syncResultDownload() {
   const name = resultCache ? resultCache.name
-             : (resultReady && builtModel && builtWorker) ? `${builtModel}_res.mat` : null;
-  downloadResBtn.hidden = !name;
-  if (name) downloadResBtn.title = downloadResBtn.ariaLabel = `Download ${name}`;
+             : (resultReady && builtModel && builtWorker)
+               ? ((snap && snap.info && snap.info.file) || `${builtModel}_res.arrow`) : null;
+  downloadWrap.hidden = !name;
+  if (name) syncResultTitle(name);
 }
 
-async function fetchResultFile(worker, model) {
+function syncResultTitle(name) {
+  const fmt = resFormatEl.value;
+  const shown = name.replace(/\.[^.]*$/, '') + '.' + fmt;
+  downloadResBtn.title = downloadResBtn.ariaLabel = `Download ${shown}`;
+}
+
+async function fetchResultFile(worker, model, format) {
   if (!worker || !model) return null;
-  const r = await call(worker, 'resultFile', { name: model });
+  const r = await call(worker, 'resultFile', { name: model, format });
   if (!r.ok) throw new Error(r.error);
   return { name: r.filename, bytes: r.bytes };
 }
 
+// The retired worker's copy is the run's own format, and converting it needs a
+// reader. The OMPlot module is one: the same `ResultFile::write`, without omc.
+async function convertCached(cached, format) {
+  if (cached.name.endsWith('.' + format)) return cached;
+  const mod = await import('../omplot/openmodelica_result_web.js');
+  await mod.default();
+  const rf = new mod.ResultFile(cached.name, new Uint8Array(cached.bytes));
+  try {
+    const out = format === 'csv' ? new TextEncoder().encode(rf.write_csv([], 0))
+              : format === 'mat' ? rf.write_mat([], 0) : rf.write_arrow([], 0);
+    return { name: cached.name.replace(/\.[^.]*$/, '') + '.' + format, bytes: out };
+  } finally { rf.free(); }
+}
+
+resFormatEl.addEventListener('change', () => {
+  const name = resultCache ? resultCache.name : (snap && snap.info && snap.info.file);
+  if (name) syncResultTitle(name);
+});
+
 downloadResBtn.addEventListener('click', async () => {
   if (downloadResBtn.disabled) return;
   downloadResBtn.disabled = true;
+  const format = resFormatEl.value;
   try {
-    const r = resultCache || await fetchResultFile(builtWorker, builtModel);
+    const r = resultCache ? await convertCached(resultCache, format)
+                          : await fetchResultFile(builtWorker, builtModel, format);
     if (!r) return;
     downloadBlob(r.name, r.bytes);
     setStatus(`${r.name} — ${r.bytes.length} bytes.`);

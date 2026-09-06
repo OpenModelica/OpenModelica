@@ -25,6 +25,16 @@ pub fn known(format: &str) -> bool {
     matches!(format, "mat" | "csv" | "plt" | "arrow" | "empty")
 }
 
+/// The writer a result file's name asks for: its suffix when this runtime has
+/// that writer, else `fallback` (the model's `outputFormat`). Diverges from C,
+/// which always writes the `outputFormat` under whatever name it was given.
+pub fn format_of<'a>(path: &'a str, fallback: &'a str) -> &'a str {
+    match path.rsplit_once('.') {
+        Some((_, suffix)) if known(suffix) => suffix,
+        _ => fallback,
+    }
+}
+
 /// Where a streamed result file's bytes go: a file, the web store, or a host
 /// import from inside wasm. `false` reports a failed write.
 pub trait ResultOut {
@@ -62,11 +72,11 @@ pub fn open_stream(
     e: &mut dyn crate::driver::SimEngine,
     model: &SimMeta,
     sim_data: u32,
+    format: &str,
     keep: &[bool],
     precision: Precision,
     out: impl FnOnce() -> Option<Box<dyn ResultOut>>,
 ) -> crate::driver::Result<ResultStream> {
-    let format = model.output_format.as_str();
     let out: Box<dyn ResultOut> = match format {
         "mat" | "csv" | "plt" | "arrow" => out().ok_or("CodegenWasmJit: cannot open the result file")?,
         _ => Box::new(NullOut),
@@ -262,124 +272,30 @@ impl ResultStream {
         self.n_rows
     }
 
-    /// The `.mat` layout, for a reader of the file being written; `None` for the
-    /// other formats.
-    pub fn mat(&self) -> Option<&Mat4Stream> {
-        match &self.kind {
-            Kind::Mat(s) => Some(s),
-            _ => None,
-        }
-    }
-
     /// The initial result row (`n_reals` values).
     pub fn first_row(&self) -> &[f64] {
         &self.first_row
     }
 
-    /// [`MatLayout`] of the written `.mat`, encoded for a host across the wasm
-    /// boundary ([`MatLayout::decode`]); empty for the other formats.
-    pub fn layout_blob(&self) -> Vec<u8> {
-        let Some(m) = self.mat() else { return Vec::new() };
-        let mut o = Vec::new();
-        o.extend_from_slice(&(m.n_rows() as u32).to_le_bytes());
-        o.extend_from_slice(&(m.n_reals2() as u32).to_le_bytes());
-        o.extend_from_slice(&m.data2_pos().to_le_bytes());
-        o.push(m.precision().size() as u8);
-        o.extend_from_slice(&(m.data_info().len() as u32).to_le_bytes());
-        for info in m.data_info() {
-            for v in info {
-                o.extend_from_slice(&v.to_le_bytes());
-            }
-        }
-        for values in [m.data_1(), &self.first_row] {
-            o.extend_from_slice(&(values.len() as u32).to_le_bytes());
-            for v in values {
-                o.extend_from_slice(&v.to_le_bytes());
-            }
+    /// The initial result row encoded for a host across the wasm boundary
+    /// ([`decode_first_row`]).
+    pub fn first_row_blob(&self) -> Vec<u8> {
+        let mut o = Vec::with_capacity(4 + self.first_row.len() * 8);
+        o.extend_from_slice(&(self.first_row.len() as u32).to_le_bytes());
+        for v in &self.first_row {
+            o.extend_from_slice(&v.to_le_bytes());
         }
         o
     }
 }
 
-/// Where each kept signal lives in a written `.mat`, enough to read a column
-/// back out of the file without parsing it.
-pub struct MatLayout {
-    pub n_rows: usize,
-    /// Columns per `data_2` row, time included.
-    pub n_reals2: usize,
-    /// Absolute byte position of the first `data_2` element.
-    pub data2_pos: u64,
-    pub precision: Precision,
-    /// Per kept signal: `[channel, index, interp, extrap]`.
-    pub data_info: Vec<[i32; 4]>,
-    /// `data_1`'s first column.
-    pub data_1: Vec<f64>,
-    /// The initial result row, every column.
-    pub first_row: Vec<f64>,
-}
-
-impl MatLayout {
-    pub fn decode(b: &[u8]) -> Option<MatLayout> {
-        let u32_at = |p: usize| Some(u32::from_le_bytes(b.get(p..p + 4)?.try_into().ok()?));
-        let n_rows = u32_at(0)? as usize;
-        let n_reals2 = u32_at(4)? as usize;
-        let data2_pos = u64::from_le_bytes(b.get(8..16)?.try_into().ok()?);
-        let precision = if *b.get(16)? == 4 { Precision::Single } else { Precision::Double };
-        let n = u32_at(17)? as usize;
-        let mut data_info = Vec::with_capacity(n);
-        for i in 0..n {
-            let base = 21 + i * 16;
-            let at = |k: usize| Some(i32::from_le_bytes(b.get(base + k * 4..base + k * 4 + 4)?.try_into().ok()?));
-            data_info.push([at(0)?, at(1)?, at(2)?, at(3)?]);
-        }
-        let mut p = 21 + n * 16;
-        let mut f64s = || -> Option<Vec<f64>> {
-            let n = u32_at(p)? as usize;
-            p += 4;
-            let mut v = Vec::with_capacity(n);
-            for _ in 0..n {
-                v.push(f64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?));
-                p += 8;
-            }
-            Some(v)
-        };
-        let data_1 = f64s()?;
-        let first_row = f64s()?;
-        Some(MatLayout { n_rows, n_reals2, data2_pos, precision, data_info, data_1, first_row })
-    }
-
-    /// The `data_2` column (0-based) `data_info` entry `i` reads, with its sign.
-    pub fn data2_col(&self, i: usize) -> Option<(usize, bool)> {
-        let [ch, ix, ..] = *self.data_info.get(i)?;
-        ((ch == 2 || ch == 0) && ix != 0).then(|| ((ix.unsigned_abs() - 1) as usize, ix < 0))
-    }
-
-    /// The time-invariant value `data_info` entry `i` holds in `data_1`.
-    pub fn data1_value(&self, i: usize) -> Option<f64> {
-        let [ch, ix, ..] = *self.data_info.get(i)?;
-        if ch != 1 || ix == 0 {
-            return None;
-        }
-        let v = *self.data_1.get(ix.unsigned_abs() as usize - 1)?;
-        Some(if ix < 0 { -v } else { v })
-    }
-
-    /// Read `data_2` column `col` of `file` (the whole `.mat`), negated if `neg`.
-    pub fn column(&self, file: &[u8], col: usize, neg: bool) -> Vec<f64> {
-        let w = self.precision.size();
-        let stride = self.n_reals2 * w;
-        let start = self.data2_pos as usize + col * w;
-        let mut out = Vec::with_capacity(self.n_rows);
-        for r in 0..self.n_rows {
-            let Some(b) = file.get(start + r * stride..start + r * stride + w) else { break };
-            let v = match self.precision {
-                Precision::Double => f64::from_le_bytes(b.try_into().unwrap()),
-                Precision::Single => f32::from_le_bytes(b.try_into().unwrap()) as f64,
-            };
-            out.push(if neg { -v } else { v });
-        }
-        out
-    }
+/// Decode what [`ResultStream::first_row_blob`] wrote.
+pub fn decode_first_row(b: &[u8]) -> Vec<f64> {
+    let Some(head) = b.get(..4) else { return Vec::new() };
+    let n = u32::from_le_bytes(head.try_into().expect("4 bytes")) as usize;
+    (0..n)
+        .map_while(|i| b.get(4 + i * 8..12 + i * 8).map(|w| f64::from_le_bytes(w.try_into().expect("8 bytes"))))
+        .collect()
 }
 
 /// The file for `format`, or `None` for `empty`. `rows` is row-major

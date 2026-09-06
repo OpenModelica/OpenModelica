@@ -16,6 +16,9 @@ openmodelica_plt_writer.workspace = true
 # `-iif=<file>`: C's `importStartValues` reads the initialization file with the
 # MATLAB v4 reader.
 openmodelica_mat_reader.workspace = true
+# Reading a finished run's result file back by variable name, whatever format it
+# was written in (the web simulator's plot data).
+openmodelica_result_files.workspace = true
 openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true

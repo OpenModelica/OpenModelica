@@ -4,15 +4,16 @@
 
 use std::cell::RefCell;
 
-use openmodelica_sim_meta::result::{MatLayout, Precision, ResultOut, ResultStream};
+use openmodelica_sim_meta::result::{Precision, ResultOut, ResultStream};
 use openmodelica_sim_meta::{SimMeta, driver};
 use openmodelica_wasi::fs;
 
-/// The result file of the next run: the resolved path, the `-variableFilter`
-/// decision per result signal, and `-single`.
+/// The result file of the next run: the resolved path, the writer its name asks
+/// for, the `-variableFilter` decision per result signal, and `-single`.
 #[derive(Clone)]
 pub struct ResultTarget {
     pub path: String,
+    pub format: String,
     pub keep: Vec<bool>,
     pub single: bool,
 }
@@ -23,11 +24,11 @@ impl ResultTarget {
     }
 }
 
-/// What a run wrote: how many rows, and where the kept signals sit in a `.mat`.
+/// What a run wrote: how many rows, and the initial result row.
 #[derive(Default)]
 pub struct Written {
     pub n_rows: usize,
-    pub layout: Option<MatLayout>,
+    pub first_row: Vec<f64>,
 }
 
 struct FileOut(fs::Writer);
@@ -54,7 +55,7 @@ thread_local! {
 
 fn open(e: &mut dyn driver::SimEngine, model: &SimMeta, sim_data: u32) -> driver::Result<()> {
     let Some(t) = TARGET.with(|c| c.borrow_mut().take()) else { return Ok(()) };
-    let st = openmodelica_sim_meta::result::open_stream(e, model, sim_data, &t.keep, t.precision(), || {
+    let st = openmodelica_sim_meta::result::open_stream(e, model, sim_data, &t.format, &t.keep, t.precision(), || {
         fs::Writer::create(&t.path).ok().map(|w| Box::new(FileOut(w)) as Box<dyn ResultOut>)
     })?;
     STREAM.with(|c| *c.borrow_mut() = Some(st));
@@ -96,7 +97,7 @@ pub fn take() -> Written {
     match STREAM.with(|c| c.borrow_mut().take()) {
         Some(mut st) => {
             st.finish();
-            Written { n_rows: st.n_rows(), layout: MatLayout::decode(&st.layout_blob()) }
+            Written { n_rows: st.n_rows(), first_row: st.first_row().to_vec() }
         }
         None => Written::default(),
     }

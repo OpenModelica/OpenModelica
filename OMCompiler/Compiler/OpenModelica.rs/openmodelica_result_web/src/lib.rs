@@ -21,6 +21,19 @@ impl Drop for ResultFile {
     }
 }
 
+fn json_str(out: &mut String, s: &str) {
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+}
+
 fn js_err(msg: String) -> JsError {
     JsError::new(&msg)
 }
@@ -64,6 +77,45 @@ impl ResultFile {
     /// The variable's unit (`.arrow` files carry one; the others give "").
     pub fn unit(&self, var: &str) -> String {
         self.inner.unit(var)
+    }
+
+    /// The unit it is preferably plotted in, a display unit of [`Self::unit`].
+    pub fn display_unit(&self, var: &str) -> String {
+        self.inner.display_unit(var)
+    }
+
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub fn relative_quantity(&self, var: &str) -> bool {
+        self.inner.relative_quantity(var)
+    }
+
+    /// The display units of every unit the file names, as the JSON object
+    /// `{"K":[{"name","factor","offset","inverse"}],...}` — the shape
+    /// `omc_sim_units()` hands the simulator. `JSON.parse` it.
+    pub fn unit_defs_json(&self) -> String {
+        let mut o = String::from("{");
+        for (i, u) in self.inner.unit_defs().iter().enumerate() {
+            if i > 0 {
+                o.push(',');
+            }
+            json_str(&mut o, &u.name);
+            o.push_str(":[");
+            for (j, d) in u.display_units.iter().enumerate() {
+                if j > 0 {
+                    o.push(',');
+                }
+                o.push_str("{\"name\":");
+                json_str(&mut o, &d.name);
+                o.push_str(&format!(
+                    ",\"factor\":{},\"offset\":{},\"inverse\":{}}}",
+                    d.factor, d.offset, d.inverse
+                ));
+            }
+            o.push(']');
+        }
+        o.push('}');
+        o
     }
 
     pub fn is_parameter(&self, var: &str) -> bool {

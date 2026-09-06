@@ -26,6 +26,9 @@ openmodelica_solvers = { path = "../../../SimulationRuntime/rust/openmodelica_so
 # The result file: the same `.mat` a simulated model writes, so OMPlot and
 # omc-diff read an FMU run like any other.
 openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica_mat_writer" }
+# The Arrow result file, which keeps the column types, the discrete-time encoding
+# and the FMU's own unit definitions that a `.mat` has nowhere to put.
+openmodelica_arrow_writer = { path = "../../../SimulationRuntime/rust/openmodelica_arrow_writer" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 libloading = { version = "0.8", optional = true }

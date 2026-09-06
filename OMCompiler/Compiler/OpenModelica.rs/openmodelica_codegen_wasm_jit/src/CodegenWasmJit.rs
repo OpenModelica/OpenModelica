@@ -86,7 +86,6 @@ use openmodelica_sim_meta::{
 // guards). The `SimModel` below stores compiled modules as `sim_runtime::Module`.
 // Engine, model data and driver flags live in `openmodelica_wasm_jit`; the
 // orchestration below keeps its `sim_runtime::`/`SimModel` paths via these.
-use openmodelica_sim_meta::result::MatLayout;
 use openmodelica_wasm_jit::result_sink::{ResultTarget, Written};
 use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
@@ -167,11 +166,11 @@ fn fmu_kernels() -> &'static Mutex<HashMap<String, Arc<FmuKernel>>> {
     KERNELS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// Where a captured signal's values live: a `data_2` column of the result file
-/// (negated for a `-v` alias), or one time-invariant value.
+/// Where a captured signal's values come from: the result file under the
+/// signal's own name, or one time-invariant value.
 #[derive(Clone, Copy)]
 pub enum SeriesData {
-    Column { col: usize, negate: bool },
+    File,
     Scalar(f64),
 }
 
@@ -208,16 +207,17 @@ pub struct CapturedParam {
     pub enum_names: Vec<String>,
 }
 
-/// The last run's results: the per-signal metadata plus where each kept signal
-/// sits in the `.mat` the run wrote, so a host (the web simulator) reads a column
-/// straight out of that file. `series` excludes `time`.
+/// The last run's results: the per-signal metadata over the result file the run
+/// wrote, which a host (the web simulator) reads a signal out of by name.
+/// `series` excludes `time`.
 pub struct CapturedSim {
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
     pub result_file: String,
     n_rows: usize,
-    layout: Option<MatLayout>,
+    /// Opened on the first read and kept for the rest.
+    reader: Mutex<Option<openmodelica_result_files::ResultFile>>,
     pub series: Vec<SimSeries>,
     pub params: Vec<CapturedParam>,
     /// The units the signals and parameters name, defined: what a host needs to
@@ -233,21 +233,40 @@ impl CapturedSim {
         self.n_rows
     }
 
-    fn column(&self, col: usize, negate: bool) -> Vec<f64> {
-        let Some(l) = &self.layout else { return Vec::new() };
-        openmodelica_wasi::fs::with_bytes(&self.result_file, |b| l.column(b, col, negate)).unwrap_or_default()
+    /// Run `f` over the result file, opening it the first time.
+    fn with_file<R>(&self, f: impl FnOnce(&mut openmodelica_result_files::ResultFile) -> R) -> Option<R> {
+        let mut cell = self.reader.lock().unwrap_or_else(|e| e.into_inner());
+        if cell.is_none() {
+            *cell = openmodelica_result_files::ResultFile::open(&self.result_file).ok();
+        }
+        cell.as_mut().map(f)
     }
 
     /// The independent `time` column.
     pub fn time(&self) -> Vec<f64> {
-        self.column(0, false)
+        self.with_file(|r| r.time().map(<[f64]>::to_vec).unwrap_or_default()).unwrap_or_default()
+    }
+
+    /// The result file as `format`. Its own format is handed back unconverted,
+    /// so that download loses nothing; the others drop the String variables they
+    /// cannot hold.
+    pub fn result_as(&self, format: &str) -> std::result::Result<Vec<u8>, String> {
+        if self.result_file.rsplit_once('.').is_some_and(|(_, s)| s == format) {
+            return openmodelica_wasi::fs::read(&self.result_file).map_err(|e| e.to_string());
+        }
+        self.with_file(|r| r.write(format, Vec::new(), 0, false))
+            .unwrap_or_else(|| Err(format!("cannot read the result file {}", self.result_file)))
     }
 
     /// The values of `series[index]` over the run (length 1 for a time-invariant
     /// signal), or `None` when out of range.
     pub fn values(&self, index: usize) -> Option<Vec<f64>> {
-        Some(match self.series.get(index)?.data {
-            SeriesData::Column { col, negate } => self.column(col, negate),
+        let v = self.series.get(index)?;
+        Some(match v.data {
+            SeriesData::File => {
+                let name = v.name.clone();
+                self.with_file(|r| r.trajectory(&name).unwrap_or_default()).unwrap_or_default()
+            }
             SeriesData::Scalar(v) => vec![v],
         })
     }
@@ -268,13 +287,10 @@ fn capture_last_sim(
     keep: &[bool],
     result_file: &str,
 ) {
-    let Written { n_rows, layout } = written;
-    let first_row: &[f64] = layout.as_ref().map_or(&[], |l| &l.first_row);
+    let Written { n_rows, first_row } = written;
     let unit_of = |name: &str| model.var_units.get(name).cloned().unwrap_or_default();
     let mut series = Vec::new();
     let mut param_idx = 0usize;
-    // The kept signals are the file's, in order; `file_ix` is the next one's index.
-    let mut file_ix = 0usize;
     // A signal aliases an earlier one when it reads the same underlying data: the
     // same result column, or the same parameter slot (the `.mat`'s `dataInfo`
     // aliasing — several names, one stored column). Distinct columns are distinct
@@ -286,19 +302,14 @@ fn capture_last_sim(
     // Row 0 of every signal, for the start values of the editable parameters.
     let mut row0_by_name: HashMap<&str, f64> = HashMap::new();
     for (v, &kept) in model.result_vars.iter().zip(keep) {
-        let k = kept.then(|| {
-            file_ix += 1;
-            file_ix - 1
-        });
         let (alias, row0, data) = match &v.kind {
             ResultKind::Time => continue,
             ResultKind::Column { col, negate } => {
                 let col = *col as usize;
                 let row0 = negate.apply_f64(first_row.get(col).copied().unwrap_or(0.0));
-                let data = k.zip(layout.as_ref()).and_then(|(k, l)| match l.data2_col(k) {
-                    Some((col, negate)) => Some(SeriesData::Column { col, negate }),
-                    None => l.data1_value(k).map(SeriesData::Scalar),
-                });
+                // Both writers store an `unvarying` column as a parameter, so it
+                // is its row-0 value rather than a trajectory.
+                let data = Some(if v.unvarying { SeriesData::Scalar(row0) } else { SeriesData::File });
                 (!seen_cols.insert(col), row0, data)
             }
             ResultKind::Param { off, negate, .. } => {
@@ -349,7 +360,7 @@ fn capture_last_sim(
         stop_time: model.stop_time,
         result_file: result_file.to_string(),
         n_rows,
-        layout,
+        reader: Mutex::new(None),
         series,
         params,
         units: model.meta.units.iter().cloned().map(|mut u| {
@@ -358,6 +369,18 @@ fn capture_last_sim(
         }).collect(),
         stats: stats.clone(),
     });
+}
+
+/// [`CapturedSim::result_as`] for a host, recording a failure for
+/// `getErrorString()`.
+pub fn last_sim_result_as(format: &str) -> Option<Vec<u8>> {
+    match with_last_sim(|sim| sim.result_as(format))? {
+        Ok(bytes) => Some(bytes),
+        Err(e) => {
+            record_error(format!("wasm-jit: {e}"));
+            None
+        }
+    }
 }
 
 /// Run `f` with the last captured simulation results, if any. Lets a host read
@@ -923,15 +946,14 @@ fn run_experiment(model: &SimModel, flags: &simflags::SimFlags) -> (SimMeta, Str
     (meta, openmodelica_wasi::wasi::take_stdout_capture())
 }
 
-/// C's `initializeResultData`: the formats this runtime has a writer for, over the
-/// model's own `outputFormat` as `-outputFormat` may have replaced it.
-fn check_output_format(meta: &SimMeta) -> std::result::Result<(), String> {
-    match meta.output_format.as_str() {
-        f if openmodelica_sim_meta::result::known(f) => Ok(()),
-        other => Err(format!(
-            "CodegenWasmJit: this runtime writes `mat`/`csv`/`plt` results, or `empty` for none (got `{other}`)"
-        )),
+/// C's `initializeResultData`: the formats this runtime has a writer for.
+fn check_output_format(format: &str) -> std::result::Result<(), String> {
+    if openmodelica_sim_meta::result::known(format) {
+        return Ok(());
     }
+    Err(format!(
+        "CodegenWasmJit: this runtime writes `mat`/`csv`/`plt`/`arrow` results, or `empty` for none (got `{format}`)"
+    ))
 }
 
 /// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
@@ -953,14 +975,12 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
     }
 }
 
-/// The result file of a run: its resolved path, the `-variableFilter` decision
-/// per signal, and `-single`.
+/// The result file of a run: its resolved path, the writer that name asks for,
+/// the `-variableFilter` decision per signal, and `-single`.
 fn result_target(model: &SimModel, meta: &SimMeta, flags: &simflags::SimFlags, derived: &str) -> ResultTarget {
-    ResultTarget {
-        path: result_path(flags, meta, derived),
-        keep: output_selection(model),
-        single: flags.single_precision,
-    }
+    let path = result_path(flags, meta, derived);
+    let format = openmodelica_sim_meta::result::format_of(&path, &meta.output_format).to_string();
+    ResultTarget { path, format, keep: output_selection(model), single: flags.single_precision }
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
@@ -1232,8 +1252,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     let res = (|| -> std::result::Result<(), String> {
         // `empty` (and `-noemit`) runs the integration but writes no result file —
         // useful for benchmarking the solver in isolation from the `.mat` writer.
-        check_output_format(&meta)?;
         let target = result_target(&model, &meta, &flags, result_file);
+        check_output_format(&target.format)?;
         let (path, keep) = (target.path.clone(), target.keep.clone());
         let (run, written) = sim_runtime::run(&model, &meta, target)?;
         // The driver already printed the `-output` line that precedes this block.
@@ -1439,7 +1459,8 @@ mod session {
         sim_driver::init_host_hooks();
         sim_driver::set_result_file_reader(read_result_values);
         let (meta, experiment_log) = run_experiment(&model, &flags);
-        check_output_format(&meta).map_err(|e| {
+        let target = result_target(&model, &meta, &flags, result_file);
+        check_output_format(&target.format).map_err(|e| {
             record_error(e);
             "CodegenWasmJit: unsupported output format"
         })?;
@@ -1450,7 +1471,6 @@ mod session {
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
         let inwasm = inwasm_driver_enabled();
-        let target = result_target(&model, &meta, &flags, result_file);
         let (path, keep) = (target.path.clone(), target.keep.clone());
         let built = (|| -> std::result::Result<SessionBackend, String> {
             if inwasm {

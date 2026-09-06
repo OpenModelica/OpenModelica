@@ -1799,8 +1799,8 @@ pub struct InWasmSession {
     rows_ptr: wasmtime::TypedFunc<(), u32>,
     rows_len: wasmtime::TypedFunc<(), u32>,
     n_rows_f: wasmtime::TypedFunc<(), u32>,
-    layout_ptr: wasmtime::TypedFunc<(), u32>,
-    layout_len: wasmtime::TypedFunc<(), u32>,
+    first_row_ptr: wasmtime::TypedFunc<(), u32>,
+    first_row_len: wasmtime::TypedFunc<(), u32>,
     n_reals_f: wasmtime::TypedFunc<(), u32>,
     params_ptr: wasmtime::TypedFunc<(), u32>,
     params_len: wasmtime::TypedFunc<(), u32>,
@@ -1891,8 +1891,8 @@ pub fn build_inwasm_session(
         rows_ptr: gf(&mut store, "rt_sim_rows_ptr")?,
         rows_len: gf(&mut store, "rt_sim_rows_len")?,
         n_rows_f: gf(&mut store, "rt_sim_n_rows")?,
-        layout_ptr: gf(&mut store, "rt_sim_layout_ptr")?,
-        layout_len: gf(&mut store, "rt_sim_layout_len")?,
+        first_row_ptr: gf(&mut store, "rt_sim_first_row_ptr")?,
+        first_row_len: gf(&mut store, "rt_sim_first_row_len")?,
         n_reals_f: gf(&mut store, "rt_sim_n_reals")?,
         params_ptr: gf(&mut store, "rt_sim_params_ptr")?,
         params_len: gf(&mut store, "rt_sim_params_len")?,
@@ -2017,15 +2017,11 @@ impl InWasmSession {
     /// What the runtime wrote to the result file it was given.
     pub fn take_written(&mut self) -> Result<crate::result_sink::Written> {
         let n_rows = wt(self.n_rows_f.call(&mut self.store, ()))? as usize;
-        let p = wt(self.layout_ptr.call(&mut self.store, ()))? as usize;
-        let n = wt(self.layout_len.call(&mut self.store, ()))? as usize;
-        let layout = match n {
-            0 => None,
-            _ => openmodelica_sim_meta::result::MatLayout::decode(
-                self.memory.data(&self.store).get(p..p + n).ok_or("CodegenWasmJit: layout read")?,
-            ),
-        };
-        Ok(crate::result_sink::Written { n_rows, layout })
+        let p = wt(self.first_row_ptr.call(&mut self.store, ()))? as usize;
+        let n = wt(self.first_row_len.call(&mut self.store, ()))? as usize;
+        let blob = self.memory.data(&self.store).get(p..p + n).ok_or("CodegenWasmJit: first-row read")?;
+        let first_row = openmodelica_sim_meta::result::decode_first_row(blob);
+        Ok(crate::result_sink::Written { n_rows, first_row })
     }
 
     /// The runtime's `-l` blob (`<file name>\0<content>`), empty when unasked.

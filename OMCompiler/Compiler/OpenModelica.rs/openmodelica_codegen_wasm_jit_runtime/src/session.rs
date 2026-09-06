@@ -228,8 +228,9 @@ struct Session {
     /// `+profiling`'s collected state (`profiling::snapshot`), for the host to
     /// render into the report once it has written the result file.
     prof: Vec<u8>,
-    /// The written `.mat`'s [`openmodelica_sim_meta::result::MatLayout`].
-    layout: Vec<u8>,
+    /// The initial result row, encoded for the host
+    /// ([`openmodelica_sim_meta::result::decode_first_row`]).
+    first_row: Vec<u8>,
 }
 
 /// The result file the next [`rt_sim_start`] writes.
@@ -364,7 +365,8 @@ fn open_result_stream(engine: &mut InWasmEngine, model: &SimMeta, sim_data: u32)
         driver::set_row_sink(None, None);
         return 0;
     };
-    match openmodelica_sim_meta::result::open_stream(engine, model, sim_data, &cfg.keep, cfg.precision, || {
+    let format = openmodelica_sim_meta::result::format_of(&cfg.path, &model.output_format);
+    match openmodelica_sim_meta::result::open_stream(engine, model, sim_data, format, &cfg.keep, cfg.precision, || {
         open_result(&cfg.path)
     }) {
         Ok(st) => *result_stream() = Some(st),
@@ -557,7 +559,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         stats: SolveStats::default(),
         lin: Vec::new(),
         prof: Vec::new(),
-        layout: Vec::new(),
+        first_row: Vec::new(),
     });
     // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
     // for the analyses the nonlinear solver runs from inside a solve.
@@ -629,7 +631,7 @@ fn finish(s: &mut Session) {
     openmodelica_sim_meta::parmod::finish();
     driver::finish_rows(&mut s.rows);
     if let Some(st) = result_stream().take() {
-        s.layout = st.layout_blob();
+        s.first_row = st.first_row_blob();
         s.rows_written = st.n_rows() as u32;
     }
     rtclock::accumulate(rtclock::TOTAL);
@@ -671,15 +673,15 @@ pub extern "C" fn rt_sim_n_reals() -> u32 {
 pub extern "C" fn rt_sim_n_rows() -> u32 {
     session().as_ref().map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
 }
-/// The written `.mat`'s layout blob (`result::MatLayout::decode`); empty when this
-/// run wrote no `.mat`.
+/// The initial result row (`result::decode_first_row`); empty when the run was
+/// given no result file to write.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_sim_layout_ptr() -> u32 {
-    session().as_ref().map_or(0, |s| s.layout.as_ptr() as u32)
+pub extern "C" fn rt_sim_first_row_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.first_row.as_ptr() as u32)
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_sim_layout_len() -> u32 {
-    session().as_ref().map_or(0, |s| s.layout.len() as u32)
+pub extern "C" fn rt_sim_first_row_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.first_row.len() as u32)
 }
 /// `-l`'s linearized model as `<file name>\0<content>`; the host writes the file
 /// (this runtime's WASI is the browser's VFS).

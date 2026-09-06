@@ -732,7 +732,7 @@ fn run_fmi(
         return Ok(());
     }
     recorder
-        .write_mat(Path::new(out), opts.start_time, opts.stop_time)
+        .write(Path::new(out), opts.start_time, opts.stop_time, &md.units)
         .map_err(|e| format!("cannot write {out}: {e}"))
 }
 

@@ -275,17 +275,19 @@ pub extern "C" fn om_fmi_rows_len() -> usize {
 }
 
 /// Write the result file, through WASI like every other file a simulation
-/// writes.
+/// writes. The name's suffix picks the format (`.arrow` or `.mat`).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn om_fmi_write_mat(ptr: *const u8, len: usize) -> i32 {
+pub unsafe extern "C" fn om_fmi_write_result(ptr: *const u8, len: usize) -> i32 {
     let path = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
     with(|s| {
+        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let units = fmu.model_description.units.clone();
         let Some(run) = s.run.as_ref() else { return fail("nothing has been simulated") };
         let (start, stop) = (
             run.summary["startTime"].as_f64().unwrap_or(0.0),
             run.summary["stopTime"].as_f64().unwrap_or(0.0),
         );
-        match run.recorder.write_mat(std::path::Path::new(&path), start, stop) {
+        match run.recorder.write(std::path::Path::new(&path), start, stop, &units) {
             Ok(()) => 1,
             Err(e) => fail(e),
         }

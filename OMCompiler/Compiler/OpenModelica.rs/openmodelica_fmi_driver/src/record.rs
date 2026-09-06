@@ -2,17 +2,20 @@
 //!
 //! The columns are chosen the way a plot wants them: every numeric variable
 //! that can change, grouped by type so one `fmi3Get*` call fetches a whole
-//! group. Parameters and constants are read once, after initialization, and go
-//! into the `.mat`'s time-invariant half — the same layout a simulated
-//! OpenModelica model writes, so OMPlot and `omc-diff` read an FMU run
-//! unchanged. An alias (an FMI 3.0 `<Alias>` child, or an FMI 1.0 `alias`
-//! variable) shares its variable's column.
+//! group. Parameters and constants are read once, after initialization, and are
+//! stored as the time-invariant values a simulated OpenModelica model writes, so
+//! OMPlot and `omc-diff` read an FMU run unchanged. An alias (an FMI 3.0
+//! `<Alias>` child, or an FMI 1.0 `alias` variable) shares its variable's
+//! column. `.mat` and `.arrow` are written from the same columns; only the
+//! latter has anywhere to put their types, units and `relativeQuantity`.
 
 use crate::api::Fmi3;
 use crate::{Error, Result};
 use openmodelica_fmi::{
     Alias, Causality, Dimension, ModelDescription, VarType, Variability, Variable,
 };
+use openmodelica_arrow_writer as arrow;
+use openmodelica_fmi::description as fmi_unit;
 use openmodelica_mat_writer as mat;
 use std::collections::HashMap;
 
@@ -20,9 +23,34 @@ pub struct Column {
     pub name: String,
     pub description: String,
     pub unit: Option<String>,
+    /// The unit it is preferably shown in, a display unit of `unit`.
+    pub display_unit: Option<String>,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
+    pub ty: VarType,
+    /// Changes only at events, so the Arrow file run-end encodes it.
+    pub discrete: bool,
     pub causality: Causality,
     /// A continuous state (something differentiates it).
     pub is_state: bool,
+}
+
+/// A name that is not a column of its own: a time-invariant value, or an affine
+/// function of a column. It carries the same metadata a column does, because the
+/// result file records it per name.
+pub struct Entry {
+    pub name: String,
+    pub description: String,
+    pub unit: Option<String>,
+    pub display_unit: Option<String>,
+    pub relative_quantity: bool,
+    pub ty: VarType,
+    /// For an alias, the column (or parameter slot) it reads; unused otherwise.
+    pub target: usize,
+    pub negated: bool,
+    /// A parameter's value, read once after initialization; 0 for an alias.
+    pub value: f64,
 }
 
 /// Variables of one type, fetched together. An array variable is one value
@@ -43,12 +71,12 @@ pub struct Recorder {
     /// Row-major, `1 + columns.len()` values per row, starting with the time.
     rows: Vec<f64>,
     /// The time-invariant signals, and their values once initialization is over.
-    parameters: Vec<(String, String, f64)>,
+    parameters: Vec<Entry>,
     param_groups: Vec<Group>,
-    /// Aliases: `(name, description, column of the variable it aliases, negated)`.
-    aliases: Vec<(String, String, usize, bool)>,
-    /// Aliases of parameters: `(name, description, index into `parameters`, negated)`.
-    param_aliases: Vec<(String, String, usize, bool)>,
+    /// Aliases, each naming the column it reads.
+    aliases: Vec<Entry>,
+    /// Aliases of parameters, each naming its slot in `parameters`.
+    param_aliases: Vec<Entry>,
     scratch: Vec<f64>,
 }
 
@@ -165,6 +193,21 @@ fn element_names(name: &str, dimensions: &[usize]) -> Vec<String> {
     out.into_iter().map(|index| format!("{name}[{index}]")).collect()
 }
 
+/// One non-column name, taking its metadata from the variable it belongs to.
+fn entry(name: String, description: &str, v: &Variable, target: usize, negated: bool, value: f64) -> Entry {
+    Entry {
+        name,
+        description: description.to_string(),
+        unit: v.unit.clone(),
+        display_unit: v.display_unit.clone(),
+        relative_quantity: v.relative_quantity,
+        ty: v.ty,
+        target,
+        negated,
+        value,
+    }
+}
+
 impl Recorder {
     pub fn new(md: &ModelDescription, keep: Option<&dyn Fn(&str) -> bool>) -> Recorder {
         // Dropped here, not at write time: the sampling is the cost.
@@ -184,13 +227,17 @@ impl Recorder {
                     name: element,
                     description: description.to_string(),
                     unit: v.unit.clone(),
+                    display_unit: v.display_unit.clone(),
+                    relative_quantity: v.relative_quantity,
+                    ty: v.ty,
+                    discrete: v.variability == Variability::Discrete,
                     causality: v.causality,
                     is_state: states.contains(&v.value_reference),
                 });
             }
             for (alias, description, negated) in &names[1..] {
                 for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
-                    aliases.push((element, description.to_string(), first + k, *negated));
+                    aliases.push(entry(element, description, v, first + k, *negated, 0.0));
                 }
             }
             recorded.push((v, first, columns.len() + 1 - first));
@@ -212,11 +259,12 @@ impl Recorder {
                 _ => Vec::new(),
             };
             for (k, element) in element_names(name, &extents).into_iter().enumerate() {
-                parameters.push((element, description.to_string(), starts.get(k).copied().unwrap_or(0.0)));
+                let start = starts.get(k).copied().unwrap_or(0.0);
+                parameters.push(entry(element, description, v, 0, false, start));
             }
             for (alias, description, negated) in &names[1..] {
                 for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
-                    param_aliases.push((element, description.to_string(), first + k, *negated));
+                    param_aliases.push(entry(element, description, v, first + k, *negated, 0.0));
                 }
             }
             params.push((v, first, parameters.len() - first));
@@ -246,7 +294,7 @@ impl Recorder {
     /// The time-invariant signals and the values they were read with, for a
     /// host that shows them beside the plot.
     pub fn parameters(&self) -> impl Iterator<Item = (&str, f64)> {
-        self.parameters.iter().map(|(name, _, value)| (name.as_str(), *value))
+        self.parameters.iter().map(|p| (p.name.as_str(), p.value))
     }
 
     /// The samples as they are stored: `stride()` values per row, the time
@@ -297,7 +345,7 @@ impl Recorder {
             let mut k = 0;
             for (slot, len) in &g.spans {
                 for j in 0..*len {
-                    self.parameters[slot + j].2 = out[k + j];
+                    self.parameters[slot + j].value = out[k + j];
                 }
                 k += len;
             }
@@ -321,35 +369,35 @@ impl Recorder {
                 unvarying: false,
             });
         }
-        for (name, description, col, negated) in &self.aliases {
+        for a in &self.aliases {
             signals.push(mat::MatVar {
-                name,
-                comment: description,
+                name: &a.name,
+                comment: &a.description,
                 kind: mat::MatKind::Column {
-                    col: *col as u32,
-                    negate: if *negated { mat::Neg::Arith } else { mat::Neg::None },
+                    col: a.target as u32,
+                    negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None },
                 },
                 unvarying: false,
             });
         }
         let mut params: Vec<f64> = Vec::with_capacity(self.parameters.len() + self.param_aliases.len());
-        for (name, description, value) in &self.parameters {
+        for p in &self.parameters {
             signals.push(mat::MatVar {
-                name,
-                comment: description,
+                name: &p.name,
+                comment: &p.description,
                 kind: mat::MatKind::Param { negate: mat::Neg::None },
                 unvarying: false,
             });
-            params.push(*value);
+            params.push(p.value);
         }
-        for (name, description, index, negated) in &self.param_aliases {
+        for a in &self.param_aliases {
             signals.push(mat::MatVar {
-                name,
-                comment: description,
-                kind: mat::MatKind::Param { negate: if *negated { mat::Neg::Arith } else { mat::Neg::None } },
+                name: &a.name,
+                comment: &a.description,
+                kind: mat::MatKind::Param { negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None } },
                 unvarying: false,
             });
-            params.push(self.parameters[*index].2);
+            params.push(self.parameters[a.target].value);
         }
         mat::write_mat4(
             &signals,
@@ -362,10 +410,132 @@ impl Recorder {
         )
     }
 
-    /// Write the result file. On the web this goes through WASI like every other
-    /// file the simulation writes.
-    pub fn write_mat(&self, path: &std::path::Path, start_time: f64, stop_time: f64) -> Result<()> {
-        std::fs::write(path, self.to_mat(start_time, stop_time))
-            .map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    /// Serialize as the Arrow result file, which unlike the `.mat` keeps the
+    /// column types, the discrete-time encoding, the units the FMU defines and
+    /// `relativeQuantity`. `units` are the FMU's `<UnitDefinitions>`.
+    pub fn to_arrow(&self, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Vec<u8> {
+        let n_reals = self.columns.len() as u32 + 1;
+        let mut vars = vec![arrow::ArrowVar {
+            name: "time",
+            comment: "Simulation time [s]",
+            unit: "s",
+            display_unit: "",
+            relative_quantity: false,
+            ty: arrow::VarTy::Real,
+            discrete: false,
+            kind: arrow::ArrowKind::Time,
+            unvarying: false,
+            enumeration: None,
+        }];
+        for (i, c) in self.columns.iter().enumerate() {
+            vars.push(arrow::ArrowVar {
+                name: &c.name,
+                comment: &c.description,
+                unit: c.unit.as_deref().unwrap_or_default(),
+                display_unit: c.display_unit.as_deref().unwrap_or_default(),
+                relative_quantity: c.relative_quantity,
+                ty: arrow_ty(c.ty),
+                discrete: c.discrete,
+                kind: arrow::ArrowKind::Column { col: i as u32 + 1, affine: arrow::Affine::IDENTITY },
+                unvarying: false,
+                enumeration: None,
+            });
+        }
+        let affine = |e: &Entry| {
+            if !e.negated {
+                arrow::Affine::IDENTITY
+            } else if arrow_ty(e.ty) == arrow::VarTy::Boolean {
+                arrow::Affine::NOT
+            } else {
+                arrow::Affine::NEGATE
+            }
+        };
+        for a in &self.aliases {
+            vars.push(entry_var(a, arrow::ArrowKind::Column { col: a.target as u32, affine: affine(a) }));
+        }
+        let mut params: Vec<f64> = Vec::with_capacity(self.parameters.len() + self.param_aliases.len());
+        for p in &self.parameters {
+            vars.push(entry_var(p, arrow::ArrowKind::Param { affine: arrow::Affine::IDENTITY }));
+            params.push(p.value);
+        }
+        for a in &self.param_aliases {
+            vars.push(entry_var(a, arrow::ArrowKind::Param { affine: affine(a) }));
+            params.push(self.parameters[a.target].value);
+        }
+        let mut col_types = vec![arrow::ColTy::F64];
+        col_types.extend(self.columns.iter().map(|c| match arrow_ty(c.ty) {
+            arrow::VarTy::Integer => arrow::ColTy::I32,
+            arrow::VarTy::Boolean => arrow::ColTy::Bool,
+            _ => arrow::ColTy::F64,
+        }));
+        let defs = arrow::units::declared(units.iter().map(unit_def));
+        arrow::write_arrow(
+            &vars,
+            &self.rows,
+            n_reals,
+            &params,
+            &col_types,
+            arrow::no_strings(),
+            &arrow::FileMeta { span: Some((start_time, stop_time)), units: &defs },
+        )
+    }
+
+    /// Write the result file as its name's suffix asks (`.arrow` or `.mat`). On
+    /// the web this goes through WASI like every other file the simulation writes.
+    pub fn write(&self, path: &std::path::Path, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Result<()> {
+        let bytes = match path.extension().and_then(|e| e.to_str()) {
+            Some("arrow") => self.to_arrow(start_time, stop_time, units),
+            _ => self.to_mat(start_time, stop_time),
+        };
+        std::fs::write(path, bytes).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    }
+}
+
+fn entry_var<'a>(e: &'a Entry, kind: arrow::ArrowKind) -> arrow::ArrowVar<'a> {
+    arrow::ArrowVar {
+        name: &e.name,
+        comment: &e.description,
+        unit: e.unit.as_deref().unwrap_or_default(),
+        display_unit: e.display_unit.as_deref().unwrap_or_default(),
+        relative_quantity: e.relative_quantity,
+        ty: arrow_ty(e.ty),
+        discrete: false,
+        kind,
+        unvarying: false,
+        enumeration: None,
+    }
+}
+
+/// An FMI variable type as the result file's Modelica type. An enumeration is
+/// stored as its Integer value; the FMU's literal names are not carried.
+fn arrow_ty(ty: VarType) -> arrow::VarTy {
+    match ty {
+        VarType::Boolean => arrow::VarTy::Boolean,
+        VarType::String | VarType::Binary => arrow::VarTy::String,
+        VarType::Float32 | VarType::Float64 => arrow::VarTy::Real,
+        _ => arrow::VarTy::Integer,
+    }
+}
+
+/// An FMU's `<Unit>` as a `modelica.units` entry; the two are FMI 3.0's own
+/// definitions, so this only reshapes the base exponents into their array.
+fn unit_def(u: &fmi_unit::Unit) -> arrow::units::UnitDef {
+    arrow::units::UnitDef {
+        name: u.name.clone(),
+        base: u.base_unit.as_ref().map(|b| arrow::units::BaseUnit {
+            exponents: [b.kg, b.m, b.s, b.a, b.k, b.mol, b.cd, b.rad],
+            factor: b.factor,
+            offset: b.offset,
+        }),
+        display_units: u
+            .display_units
+            .iter()
+            .map(|d| arrow::units::DisplayUnit {
+                name: d.name.clone(),
+                factor: d.factor,
+                offset: d.offset,
+                inverse: d.inverse,
+            })
+            .collect(),
     }
 }

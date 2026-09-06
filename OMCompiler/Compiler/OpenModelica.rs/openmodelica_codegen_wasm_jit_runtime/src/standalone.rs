@@ -282,8 +282,10 @@ fn arm_result(m: &SimMeta) {
 
 fn open_result(e: &mut dyn driver::SimEngine, m: &SimMeta, sim_data: u32) -> driver::Result<()> {
     let Some((keep, precision)) = (unsafe { (*RESULT.0.get()).0.take() }) else { return Ok(()) };
-    let st = openmodelica_sim_meta::result::open_stream(e, m, sim_data, &keep, precision, || {
-        crate::result_out::open(&m.result_file())
+    let path = m.result_file();
+    let format = openmodelica_sim_meta::result::format_of(&path, &m.output_format);
+    let st = openmodelica_sim_meta::result::open_stream(e, m, sim_data, format, &keep, precision, || {
+        crate::result_out::open(&path)
     })?;
     *result_stream() = Some(st);
     Ok(())

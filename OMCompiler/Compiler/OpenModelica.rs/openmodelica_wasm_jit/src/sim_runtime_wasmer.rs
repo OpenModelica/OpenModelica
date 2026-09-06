@@ -1323,8 +1323,8 @@ pub struct InWasmSession {
     rows_ptr: wasmer::TypedFunction<(), u32>,
     rows_len: wasmer::TypedFunction<(), u32>,
     n_rows_f: wasmer::TypedFunction<(), u32>,
-    layout_ptr: wasmer::TypedFunction<(), u32>,
-    layout_len: wasmer::TypedFunction<(), u32>,
+    first_row_ptr: wasmer::TypedFunction<(), u32>,
+    first_row_len: wasmer::TypedFunction<(), u32>,
     n_reals_f: wasmer::TypedFunction<(), u32>,
     params_ptr: wasmer::TypedFunction<(), u32>,
     params_len: wasmer::TypedFunction<(), u32>,
@@ -1411,8 +1411,8 @@ pub fn build_inwasm_session(
         rows_ptr: gf(&store, "rt_sim_rows_ptr")?,
         rows_len: gf(&store, "rt_sim_rows_len")?,
         n_rows_f: gf(&store, "rt_sim_n_rows")?,
-        layout_ptr: gf(&store, "rt_sim_layout_ptr")?,
-        layout_len: gf(&store, "rt_sim_layout_len")?,
+        first_row_ptr: gf(&store, "rt_sim_first_row_ptr")?,
+        first_row_len: gf(&store, "rt_sim_first_row_len")?,
         n_reals_f: gf(&store, "rt_sim_n_reals")?,
         params_ptr: gf(&store, "rt_sim_params_ptr")?,
         params_len: gf(&store, "rt_sim_params_len")?,
@@ -1525,15 +1525,15 @@ impl InWasmSession {
     /// What the runtime wrote to the result file it was given.
     pub fn take_written(&mut self) -> Result<crate::result_sink::Written> {
         let n_rows = wt(self.n_rows_f.call(&mut self.store))? as usize;
-        let p = wt(self.layout_ptr.call(&mut self.store))?;
-        let n = wt(self.layout_len.call(&mut self.store))? as usize;
+        let p = wt(self.first_row_ptr.call(&mut self.store))?;
+        let n = wt(self.first_row_len.call(&mut self.store))? as usize;
         let mut bytes = vec![0u8; n];
         if n > 0 {
-            self.memory.view(&self.store).read(p as u64, &mut bytes).map_err(|_| "CodegenWasmJit: layout read")?;
+            self.memory.view(&self.store).read(p as u64, &mut bytes).map_err(|_| "CodegenWasmJit: first-row read")?;
         }
         Ok(crate::result_sink::Written {
             n_rows,
-            layout: openmodelica_sim_meta::result::MatLayout::decode(&bytes),
+            first_row: openmodelica_sim_meta::result::decode_first_row(&bytes),
         })
     }
 
