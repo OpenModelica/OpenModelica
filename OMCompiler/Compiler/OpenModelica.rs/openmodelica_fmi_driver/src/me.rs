@@ -752,6 +752,9 @@ pub fn simulate(
 ) -> Result<Run> {
     let mut inputs = Inputs::new(opts);
     let mut rec = Recorder::new(md, opts.keep);
+    if let Some(path) = &opts.result_file {
+        rec.stream_to(path, opts.start_time, opts.stop_time, &md.units)?;
+    }
     if let Some(m) = &opts.dae {
         let common: &mut dyn Fmi3 = inst;
         common.enter_configuration_mode()?;
