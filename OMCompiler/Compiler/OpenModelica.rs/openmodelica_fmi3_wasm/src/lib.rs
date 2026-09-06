@@ -231,6 +231,18 @@ const UNKNOWN_MODEL_FN: &str = "fmi3-me: unknown model function";
 ///
 /// Those three have logged their own reason already (`LOG_ASSERT` / `LOG_INIT` /
 /// `model terminate`), as the standalone driver's reporting also assumes.
+/// A call that ends on a trap: the `assert()` behind it goes to the logger (C's
+/// `omc_assert_fmi`), anything else to [`err_status`].
+fn failed(e: &mut Engine, sim_data: u32, err: &'static str) -> Status {
+    if let Some(pa) = e.take_pending_assert() {
+        let (info, cond) = driver::assert_info(e, &pa);
+        let time = driver::read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
+        driver::log_assert_block(&info, &cond, time, pa[8] != 0);
+        return Status::Error;
+    }
+    err_status(driver::enrich_trap(e, err))
+}
+
 fn err_status(msg: &str) -> Status {
     if msg != driver::ASSERT_ERR && msg != driver::INIT_FAILED_ERR && msg != driver::SOLVER_FAILED_ERR
     {
@@ -299,6 +311,14 @@ fn assert_message(msg: i32, file: i32, sline: i32) -> String {
     alloc::format!("{file}:{sline}: {msg}")
 }
 
+/// The `assert()`s a driver window suppressed, drained by `take_pending_warnings`.
+static mut SUPPRESSED: Vec<[i32; 10]> = Vec::new();
+
+/// The `assert()` behind the model's next trap, laid out as the host's
+/// `PendingAssert`. A residual recovers from it silently; the call that ends on it
+/// reports it.
+static mut PENDING: Option<[i32; 9]> = None;
+
 /// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
 /// `fmi3Error` with the instance usable — so answer that the code must unwind.
 /// `cond` picks which C implementation is mirrored: `fmi2Instantiate` swaps in
@@ -318,17 +338,13 @@ pub extern "C" fn rt_assert(
     sim_data: i32,
 ) -> i32 {
     if cond != 0 {
-        let info = driver::AssertInfo {
-            msg: rt_string(msg),
-            file: rt_string(file),
-            read_only: read_only != 0,
-            line_start: sline,
-            col_start: scol,
-            line_end: eline,
-            col_end: ecol,
-        };
-        let time = driver::read_f64(&Engine, sim_data as u32 + TIME_OFF).unwrap_or(0.0);
-        driver::log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        if driver::asserts_suppressed() {
+            unsafe {
+                SUPPRESSED.push([driver::ASSERT_SUPPRESSED, cond, msg, file, sline, scol, eline, ecol, read_only, initial]);
+            }
+            return 0;
+        }
+        unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial]) };
         return 1;
     }
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
@@ -467,7 +483,10 @@ impl SimEngine for Engine {
         Err("fmi3-me: simulate not used")
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
-        None
+        unsafe { PENDING.take() }
+    }
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
+        unsafe { core::mem::take(&mut SUPPRESSED) }
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         openmodelica_codegen_wasm_jit_runtime::take_reinit_notes()
@@ -687,14 +706,26 @@ impl MeState {
     /// C's try block around one FMI call: a model error or an unsolved nonlinear
     /// system is the master's to retry in Continuous Time Mode (`fmi3Discard`,
     /// C's `IRES = -1`) and fails the call anywhere else.
+    ///
+    /// Outside Initialization and Event Mode a violated `assert()` is held instead
+    /// (C's `noThrowAsserts`; an FMU cannot tell an accepted point from a trial) and
+    /// `completed_integrator_step` asks for Event Mode, which evaluates live: the
+    /// event settles it, or it fails there.
     fn evaluate(&mut self, f: impl FnOnce(&mut Self) -> driver::Result<()>) -> Result<(), Status> {
         let mut e = Engine;
         self.write_i32(self.layout.nls_fail_off, 0);
         let region = self.continuous_time.then(|| driver::open_fmi_call_region(&mut e));
+        let hold = self.mode != Mode::Init && !self.event_mode;
+        if hold {
+            driver::open_assert_window();
+        }
         let run = f(self);
+        if hold {
+            self.assert_held |= driver::take_suppressed_assert(&mut e, self.sim_data).map_err(err_status)?;
+        }
         let absorbed = region.is_some_and(|save| driver::close_fmi_call_region(&mut e, save));
         let unsolved = driver::take_nls_failure(&mut e, self.sim_data, &self.layout);
-        run.map_err(err_status)?;
+        run.map_err(|err| failed(&mut e, self.sim_data, err))?;
         if absorbed || unsolved {
             return Err(if self.continuous_time { Status::Discard } else { Status::Error });
         }
@@ -1014,6 +1045,8 @@ macro_rules! shared_instance_methods {
             return status;
         }
         st.mode = Mode::Ready;
+        // Exiting Initialization Mode leaves the instance in Event Mode.
+        st.event_mode = true;
         // `run_initialization` has run `initSample`, so the schedule is readable.
         if st.layout.n_samples > 0 {
             let start_time = st.read_f64(TIME_OFF);
@@ -1041,7 +1074,10 @@ macro_rules! shared_instance_methods {
     }
 
     fn enter_event_mode(&self) -> Status {
-        self.st.borrow_mut().continuous_time = false;
+        let mut st = self.st.borrow_mut();
+        st.continuous_time = false;
+        st.event_mode = true;
+        st.assert_held = false;
         Status::Ok
     }
 
@@ -1559,6 +1595,7 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
     fn enter_step_mode(&self) -> Status {
+        self.st.borrow_mut().event_mode = false;
         Status::Ok
     }
 
@@ -1602,7 +1639,9 @@ impl GuestModelExchangeInstance for Instance {
     }
 
     fn enter_continuous_time_mode(&self) -> Status {
-        self.st.borrow_mut().continuous_time = true;
+        let mut st = self.st.borrow_mut();
+        st.continuous_time = true;
+        st.event_mode = false;
         Status::Ok
     }
 
@@ -1691,8 +1730,9 @@ impl GuestModelExchangeInstance for Instance {
         let sim_data = st.sim_data;
         let m = &mut *st;
         let switching = m.dss.would_change(&mut Engine, sim_data, &m.meta).map_err(err_status)?;
+        let assert_held = core::mem::take(&mut m.assert_held);
         Ok(CompletedStepResult {
-            enter_event_mode: switching,
+            enter_event_mode: switching || assert_held,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,
         })
     }
@@ -1766,6 +1806,8 @@ impl GuestCoSimulationInstance for Instance {
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
+        let sim_data = st.sim_data;
+        st.event_mode = false;
         let outcome = driver.step_to(&mut e, &meta, target, defer, &mut st.dss);
         let last = driver.time();
         st.cs = Some(driver);
@@ -1794,7 +1836,7 @@ impl GuestCoSimulationInstance for Instance {
                 terminate_simulation: true,
                 early_return: false,
             }),
-            Err(e) => Err(err_status(e)),
+            Err(err) => Err(failed(&mut e, sim_data, err)),
         }
     }
 

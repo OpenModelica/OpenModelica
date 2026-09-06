@@ -2173,8 +2173,23 @@ pub fn note_no_throw_assert() -> bool {
 
 /// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
 /// Idempotent, so a chunk that yields mid-step just re-enters it.
-fn open_assert_window() {
+pub fn open_assert_window() {
     set_no_throw(true);
+}
+
+/// The window is open: `rt_assert` records a violated `assert()` instead of throwing.
+pub fn asserts_suppressed() -> bool {
+    NO_THROW.load(Ordering::Relaxed)
+}
+
+/// Leave the window, logging what it caught at info level; `true` when it caught
+/// an `assert()` the caller settles itself (an FMU turns it into an event).
+pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32) -> Result<bool> {
+    set_no_throw(false);
+    let armed = drain_asserts(e, sim_data, omclog::INFO)?;
+    let noted = e.take_noted_assert();
+    let (info, _, self_noted) = rethrow_store::take();
+    Ok(armed || noted || info.is_some() || self_noted)
 }
 
 /// Leave it and settle what was recorded (C's `simulationUpdate` tail): an event
@@ -5187,6 +5202,22 @@ impl LambdaRamp {
     }
 }
 
+/// A root probe under `noThrowAsserts` (C: "asserts can be ignored when searching
+/// for the event"): not an accepted point, and its out-of-domain value still gives
+/// the root function a sign. What it caught is dropped.
+fn probe_holding_asserts(
+    e: &mut dyn SimEngine,
+    probe: impl FnOnce(&mut dyn SimEngine) -> Result<()>,
+) -> Result<()> {
+    let window = asserts_suppressed();
+    set_no_throw(true);
+    let probed = probe(e);
+    set_no_throw(window);
+    let _ = e.take_pending_warnings();
+    let _ = rethrow_store::take();
+    probed
+}
+
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
 /// whose sign change is a state event. Writes the candidate `t`/`y` into SimData,
 /// evaluates the continuous equations (`functionODE`) so any algebraics a
@@ -5221,8 +5252,10 @@ unsafe fn dassl_rt(
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
-        e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
+        probe_holding_asserts(e, |e| {
+            e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
+            e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)
+        })?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
         e.read_bytes(ctx.sim_data + ctx.zc_probe_off, rval_bytes)?;
@@ -5556,26 +5589,36 @@ unsafe fn dassl_jac(
                     ctx.jac_del[ci] = del;
                     unsafe { *y.add(ci) = yi + del };
                 }
-                // One residual evaluation at the perturbed point.
+                // One residual evaluation at the perturbed point. No `IRES` here: a
+                // model error leaves this colour's columns as they stand, as IDA's does.
                 write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
                 let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
                 e.write_bytes(ctx.states_base, y_bytes)?;
-                e.call1("functionODE", ctx.sim_data)?;
-                e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
-                for row in 0..n {
-                    let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
-                    ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+                let evaluated = match e.call1("functionODE", ctx.sim_data) {
+                    Ok(()) => true,
+                    Err(err) if residual_model_throw(e, err, unsafe { *t }) => false,
+                    Err(err) => return Err(err),
+                };
+                if evaluated {
+                    e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
+                    for row in 0..n {
+                        let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
+                        ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+                    }
+                    // Scatter the finite difference into the affected rows.
+                    for &col in group {
+                        let ci = col as usize;
+                        let del = ctx.jac_del[ci];
+                        let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
+                        for &row in rows {
+                            let ri = row as usize;
+                            let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
+                            unsafe { *pd.add(ci * n + ri) = d / del };
+                        }
+                    }
                 }
-                // Scatter the finite difference into the affected rows, restore y.
                 for &col in group {
                     let ci = col as usize;
-                    let del = ctx.jac_del[ci];
-                    let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
-                    for &row in rows {
-                        let ri = row as usize;
-                        let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
-                        unsafe { *pd.add(ci * n + ri) = d / del };
-                    }
                     unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
                 }
             }
@@ -8440,6 +8483,28 @@ impl CsDriver {
         defer: CsDefer,
         dss: &mut StateSelection,
     ) -> Result<CsStep> {
+        // C's `simulationUpdate` window over the step, as `drive` holds it over a
+        // row; the integrator suspends it over its trials. An event handed to the
+        // master counts as found.
+        open_assert_window();
+        let out = self.step(e, model, t_target, defer, dss);
+        if matches!(out, Ok(CsStep::Event { .. })) {
+            rethrow_store::note_event();
+        }
+        let settled = close_assert_window(e, self.core.sim_data);
+        let out = out?;
+        settled?;
+        Ok(out)
+    }
+
+    fn step(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+        defer: CsDefer,
+        dss: &mut StateSelection,
+    ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
         // No continuous states: samples, clock activations, and zero crossings on
@@ -9242,12 +9307,15 @@ unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, go
     write_time(e, ctx.sim_data, t)?;
     unsafe { ida_push_unknowns(ctx, y, yp) }?;
     set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-    if unsafe { ctx.ida.dae.as_ref() }.is_some() {
-        e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
-    } else {
-        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
-    }
-    e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
+    let dae = unsafe { ctx.ida.dae.as_ref() }.is_some();
+    probe_holding_asserts(e, |e| {
+        if dae {
+            e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
+        } else {
+            e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
+        }
+        e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)
+    })?;
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
     e.read_bytes(ctx.sim_data + ctx.zc_probe_off, out)

@@ -160,6 +160,13 @@ pub extern "C" fn rt_nls_assert_failed(
     }
 }
 
+/// Model side (emitted by `emit_assert`): is the `noThrowAsserts` window open?
+/// Checked before anything else, as C's generated assert does; arms `needToReThrow`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_suppressed() -> i32 {
+    note_no_throw_assert() as i32
+}
+
 /// Arm C's `needToReThrow` where the `noThrowAsserts` window is open. The driver
 /// holding it is this module's or the host's, never both.
 fn note_no_throw_assert() -> bool {

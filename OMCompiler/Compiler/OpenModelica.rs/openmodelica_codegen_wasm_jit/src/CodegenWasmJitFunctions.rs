@@ -529,6 +529,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    ("rt_assert_suppressed", &[], &[WTy::I32]),
     // C's `assertCommonVar` when a catcher is open: `(msg, sim_data, initial)`,
     // non-zero when the caller must return instead of trapping.
     ("rt_assert_common", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
@@ -4725,8 +4726,12 @@ fn emit_assert(
         Ok(())
     };
     // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
-    // then unwound into the solver.
+    // then unwound into the solver — unless the `noThrowAsserts` window is open,
+    // which C checks first; `rt_assert` then records it and the evaluation goes on.
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
+    ctx.emit(we::Instruction::I32Eqz);
+    ctx.emit(we::Instruction::I32And);
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     report_args(ctx)?;
     emit_initial_flag(ctx);
