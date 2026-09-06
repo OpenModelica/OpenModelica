@@ -613,9 +613,14 @@ pub unsafe extern "C" fn fmi2NewDiscreteStates(c: *mut c_void, event_info: *mut 
             info.next_event_time = u.next_event_time;
             OK
         }
-        Ok(Err(s)) => st(s),
+        // C reports the failure from `internalEventUpdate`'s catch, whether the
+        // assertion unwound inside the FMU or trapped.
+        Ok(Err(s)) => {
+            store.data_mut().log_fmi2_call(ERROR, "internalEventUpdate: terminated by an assertion.");
+            st(s)
+        }
         Err(_) => {
-            store.data_mut().log_fmi2_call(ERROR, "fmi2NewDiscreteStates: terminated by an assertion.");
+            store.data_mut().log_fmi2_call(ERROR, "internalEventUpdate: terminated by an assertion.");
             ERROR
         }
    })

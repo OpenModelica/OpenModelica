@@ -541,6 +541,28 @@ size_t copyStringArray(char* destination, char *stringArray, int elements) {
 }
 
 /**
+ * @brief Open C's `noThrowAsserts` for one evaluation.
+ *
+ * The master cannot say which of its evaluations is an accepted point, so a held
+ * violation is logged once and stays quiet until an event settles it.
+ */
+static void holdAsserts(ModelInstance *comp, int hold)
+{
+  comp->fmuData->simulationInfo->noThrowAsserts = hold;
+  omc_useStream[OMC_LOG_ASSERT] = !hold || !comp->_held_assert_logged;
+}
+
+/**
+ * @brief Close the window, latching whether it caught a violation.
+ */
+static void releaseAsserts(ModelInstance *comp)
+{
+  comp->_held_assert_logged |= comp->fmuData->simulationInfo->needToReThrow;
+  comp->fmuData->simulationInfo->noThrowAsserts = 0;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
+}
+
+/**
  * @brief Helper function for omcGetXXX to update the component if needed.
  *
  * @param comp          FMI component
@@ -573,7 +595,7 @@ fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
     {
       /* As in simulationUpdate, a violated assert() is held (needToReThrow);
        * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
-      comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
+      holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
@@ -581,7 +603,7 @@ fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
       comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
       storePreValues(comp->fmuData);
-      comp->fmuData->simulationInfo->noThrowAsserts = 0;
+      releaseAsserts(comp);
     }
     comp->_need_update = 0;
     success = 1;
@@ -594,7 +616,7 @@ fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
 
     omc_util_restore_pool_state(mem_pool_state);
     resetThreadData(comp);
-    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+    releaseAsserts(comp);
     if (!success)
     {
       FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "%s: terminated by an assertion.", func)
@@ -2005,6 +2027,7 @@ fmi3Status omcEnterEventMode(ModelInstance* c)
   FILTERED_LOG(comp, fmi3OK, LOG_EVENTS, "omcEnterEventMode")
   comp->state = model_state_me_event_mode;
   comp->fmuData->simulationInfo->needToReThrow = 0;
+  comp->_held_assert_logged = 0;
 
   // Reset eventInfo
   comp->eventInfo.newDiscreteStatesNeeded = fmi3False;
@@ -2061,13 +2084,13 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
-    comp->fmuData->simulationInfo->noThrowAsserts = 1;
+    holdAsserts(comp, 1);
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
     storePreValues(comp->fmuData);
-    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+    releaseAsserts(comp);
     *enterEventMode = fmi3False;
     *terminateSimulation = fmi3False;
     if (comp->fmuData->simulationInfo->needToReThrow)
@@ -2098,7 +2121,7 @@ fmi3Status internal_CompletedIntegratorStep(ModelInstance* c, const char *func, 
   threadData->mmc_jumper = old_jmp;
   resetThreadData(comp);
   omc_util_restore_pool_state(mem_pool_state);
-  comp->fmuData->simulationInfo->noThrowAsserts = 0;
+  releaseAsserts(comp);
 
   if (done) {
     return fmi3OK;
@@ -2186,13 +2209,13 @@ fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float6
     threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
     /* A violated assert() is held, see updateIfNeeded. */
-    comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
+    holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
     }
-    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+    releaseAsserts(comp);
 
 #if NUMBER_OF_STATES > 0
     for (i = 0; i < nx; i++) {
@@ -2209,6 +2232,7 @@ fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float6
   threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
+  releaseAsserts(comp);
 
   if (done) {
     return fmi3OK;
@@ -2244,13 +2268,13 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Fl
 #if NUMBER_OF_EVENT_INDICATORS > 0
     /* eval needed equations*/
     /* A violated assert() is held, see updateIfNeeded. */
-    comp->fmuData->simulationInfo->noThrowAsserts = (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0;
+    holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->_need_update = 0;
     }
-    comp->fmuData->simulationInfo->noThrowAsserts = 0;
+    releaseAsserts(comp);
     comp->fmuData->callback->function_ZeroCrossings(comp->fmuData, comp->threadData, comp->fmuData->simulationInfo->zeroCrossings);
     for (i = 0; i < nx; i++) {
       eventIndicators[i] = comp->fmuData->simulationInfo->zeroCrossings[i];
@@ -2264,6 +2288,7 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Fl
   threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
+  releaseAsserts(comp);
 
   if (done) {
     return fmi3OK;
