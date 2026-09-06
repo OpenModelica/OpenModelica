@@ -495,11 +495,16 @@ fn run_simulation(
     let t = Instant::now();
     let run = match &loaded.form {
         Form::Component(a) => {
-            let r = a.run_simulation(&args).map_err(|e| e.to_string())?;
-            log.push_str(&r.output);
-            for (_, category, message) in &r.log {
+            let r = a.run_simulation(&args);
+            let (output, fmi_log) = match &r {
+                Ok(r) => (&r.output, &r.log),
+                Err(f) => (&f.output, &f.log),
+            };
+            log.push_str(output);
+            for (_, category, message) in fmi_log {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
+            let r = r.map_err(|f| f.error.to_string())?;
             super::dylink_fmi::SimRun {
                 file: r.file,
                 linear_file: r.linear_file,
