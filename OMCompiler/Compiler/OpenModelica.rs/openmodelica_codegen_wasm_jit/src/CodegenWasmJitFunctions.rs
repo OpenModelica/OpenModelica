@@ -2854,7 +2854,8 @@ fn emit_shared_external_call(
             Ok(())
         };
         match &ty {
-            SigTy::Array { .. } if fortran => {
+            // Host-served: the handle, as for C; the host reorders itself.
+            SigTy::Array { .. } if fortran && !native => {
                 // The array handle, then its Fortran-visible address. Both are kept:
                 // the copy-back needs the handle and the scratch pointer together.
                 push_value(ctx, "an array", WTy::I32)?;
@@ -11665,7 +11666,8 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     let mut sig = format!("{in_codes}\n{out_codes}\n");
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
-        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
+        let fortran = ext_imports.iter().any(|s| s.lang == ExtLang::Fortran77);
+        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, fortran, &mut notes)?;
         let wasm_libs = resolved.wasm;
         for lib in &wasm_libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
@@ -11694,7 +11696,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         // The model's own code first: it shadows a same-named symbol in a `Library`
         // shared object, as the C target's own link order does.
         #[cfg(not(target_arch = "wasm32"))]
-        for lib in native_fallbacks(&base, fn_code, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
+        for lib in native_fallbacks(&base, fn_code, &resolved.native, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for lib in &resolved.native {
@@ -11721,6 +11723,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
 fn native_fallbacks(
     base: &str,
     fn_code: &SimCodeFunction::FunctionCode,
+    libs: &[String],
     archives: &[String],
     sources: &[String],
     dirs: &[String],
@@ -11738,6 +11741,7 @@ fn native_fallbacks(
         let inc = openmodelica_wasm_jit::model::ExtIncludes {
             sources: sources.to_vec(),
             include_dirs: dirs.to_vec(),
+            libs: libs.to_vec(),
             archives: archives.to_vec(),
             symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
             ccompiler: mp.ccompiler.to_string(),

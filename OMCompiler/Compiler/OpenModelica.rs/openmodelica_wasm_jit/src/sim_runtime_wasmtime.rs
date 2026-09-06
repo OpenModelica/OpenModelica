@@ -489,6 +489,7 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
         .iter()
         .map(|l| l.name.as_str())
         .chain(model.ext_native_libs.iter().map(|s| s.as_str()))
+        .chain(model.ext_native_fallback.iter().map(|s| s.as_str()))
         .chain(model.ext_archives.iter().flat_map(|a| a.archives.iter().map(|s| s.as_str())))
         .chain(model.ext_includes.iter().flat_map(|i| i.archives.iter().map(|s| s.as_str())))
         .collect();
@@ -535,7 +536,9 @@ struct NativeExternals {
     /// Only a symbol in `handles` counts: see `external_symbol_or_wrapper_shippable`.
     shippable_only: bool,
     handles: Vec<usize>,
-    /// The files behind `handles`, in load order.
+    /// Searched after `handles` and the process image.
+    fallback: Vec<usize>,
+    /// The files behind `handles` and `fallback`, in load order.
     paths: Vec<String>,
     loaded: bool,
     built_includes: bool,
@@ -567,6 +570,12 @@ impl NativeExternals {
         }
         self.handles = handles;
         self.errors = errors;
+        let (fallback, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_fallback);
+        if errors.is_empty() {
+            self.paths.extend(model.ext_native_fallback.iter().cloned());
+        }
+        self.fallback = fallback;
+        self.errors.extend(errors);
         if let Some(archives) = &model.ext_archives {
             match archives.link() {
                 Ok(path) => {
@@ -636,6 +645,7 @@ impl NativeExternals {
             true => model::external_symbol_or_wrapper_shippable(&self.handles, name),
             false => model::external_symbol_or_wrapper(&self.handles, name),
         }
+        .or_else(|| openmodelica_util::dynload::symbol_in(&self.fallback, name))
     }
 
     /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.
@@ -2246,6 +2256,9 @@ fn native_ext_host_import(
             let ndims = self.word(handle + 8);
             handle + ((16 + ndims * 4 + 7) & !7)
         }
+        fn array_dims(&self, handle: u32) -> Vec<u32> {
+            (0..self.word(handle + 8)).map(|k| self.word(handle + 16 + 4 * k)).collect()
+        }
         fn alloc(&mut self, len: u32) -> u32 {
             self.alloc.call(&mut *self.caller, len.max(1)).unwrap_or(0)
         }
@@ -2280,10 +2293,11 @@ fn native_ext_host_import(
                 openmodelica_util::dynload::load_external_libraries(&[]);
                 openmodelica_ext_native::error::set_message_source(openmodelica_error::ErrorExt::take_last_runtime_error);
                 let table = &st.table.as_ref().unwrap().1;
-                let dir = resources
-                    .parent()
-                    .and_then(openmodelica_ext_native::binaries_dir)
-                    .ok_or("the artifact has no binaries/ directory for this platform")?;
+                let dir = match resources.parent().and_then(openmodelica_ext_native::binaries_dir) {
+                    Some(d) => d,
+                    None if table.libs.is_empty() => std::path::PathBuf::new(),
+                    None => return Err("the artifact has no binaries/ directory for this platform".to_string()),
+                };
                 st.natives = Some(Natives::open(table, &dir));
             }
             let State { natives, table: parsed, scratch } = &mut *st;
