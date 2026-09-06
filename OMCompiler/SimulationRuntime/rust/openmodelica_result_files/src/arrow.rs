@@ -225,21 +225,41 @@ impl ArrowReader {
                     if name.is_empty() {
                         continue;
                     }
-                    let (isParam, index) = match e.get("kind").and_then(|v| v.as_str()).unwrap_or("variable") {
-                        "parameter" => {
-                            params.push(e.get("value").and_then(|v| v.as_f64()).unwrap_or(f64::NAN));
-                            if let Some(text) = e.get("value").and_then(|v| v.as_str()) {
+                    // A stored variable's type and enumeration are its column's
+                    // field metadata; only a time-invariant value carries its own.
+                    let mut ty = String::new();
+                    let mut enum_ix = None;
+                    let (isParam, index) = match e.get("column").and_then(|v| v.as_u64()) {
+                        None => {
+                            let value = e.get("value");
+                            params.push(match value {
+                                Some(serde_json::Value::Bool(b)) => f64::from(u8::from(*b)),
+                                Some(v) => v.as_f64().unwrap_or(f64::NAN),
+                                None => f64::NAN,
+                            });
+                            if let Some(text) = value.and_then(|v| v.as_str()) {
                                 string_params.insert(params.len() - 1, text.to_owned());
                             }
+                            ty = match (str_of("type"), value) {
+                                (t, _) if !t.is_empty() => t,
+                                (_, Some(serde_json::Value::Bool(_))) => "Boolean".to_owned(),
+                                (_, Some(serde_json::Value::String(_))) => "Utf8".to_owned(),
+                                _ => String::new(),
+                            };
+                            enum_ix = e.get("enumeration").and_then(|v| v.as_u64());
                             (true, params.len() as i32)
                         }
-                        _ => {
-                            let field = e.get("column").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+                        Some(col) => {
+                            let col = col as usize;
+                            if let Some(md) = schema.fields().get(col).map(|f| f.metadata()) {
+                                ty = md.get("type").cloned().unwrap_or_default();
+                                enum_ix = md.get("enumeration").and_then(|s| s.parse().ok());
+                            }
                             // The time column was moved to 0 above.
-                            let field = match schema.fields().get(field) {
+                            let field = match schema.fields().get(col) {
                                 Some(f) if f.name() == "time" || f.name() == "Time" => 0,
-                                _ if field == 0 => field_pos("time").or_else(|| field_pos("Time")).unwrap_or(0),
-                                _ => field,
+                                _ if col == 0 => field_pos("time").or_else(|| field_pos("Time")).unwrap_or(0),
+                                _ => col,
                             };
                             let num = |k: &str, dflt: f64| e.get(k).and_then(|v| v.as_f64()).unwrap_or(dflt);
                             let (scale, offset) = (num("scale", 1.0), num("offset", 0.0));
@@ -259,11 +279,8 @@ impl ArrowReader {
                         }
                     };
                     allInfo.push(MatVariable { name, descr: str_of("description"), isParam, index });
-                    meta.push((str_of("unit"), str_of("displayUnit"), {
-                        let t = str_of("type");
-                        if t.is_empty() { "Real".to_owned() } else { t }
-                    }, e.get("relativeQuantity").and_then(|v| v.as_bool()).unwrap_or(false)));
-                    enums.push(e.get("enumeration").and_then(|v| v.as_u64()).and_then(|i| enum_types.get(i as usize).cloned()));
+                    meta.push((str_of("unit"), str_of("displayUnit"), if ty.is_empty() { "Real".to_owned() } else { ty }, e.get("relativeQuantity").and_then(|v| v.as_bool()).unwrap_or(false)));
+                    enums.push(enum_ix.and_then(|i| enum_types.get(i as usize).cloned()));
                 }
             }
             Some(Err(e)) => return Err(format!("bad {VARIABLES_KEY} metadata: {e}")),
@@ -440,7 +457,7 @@ mod tests {
         let schema = Schema::new_with_metadata(
             vec![Field::new("time", DataType::Float64, false), Field::new("e", dict_type, false).with_metadata(e_md)],
             HashMap::from([
-                (VARIABLES_KEY.to_owned(), r#"[{"name":"time","kind":"time","column":0},{"name":"e","kind":"variable","column":1,"type":"enumeration","enumeration":0}]"#.to_owned()),
+                (VARIABLES_KEY.to_owned(), r#"[{"name":"time","column":0},{"name":"e","column":1}]"#.to_owned()),
                 (ENUMERATIONS_KEY.to_owned(), r#"[["one","two","three"]]"#.to_owned()),
             ]),
         );
@@ -479,6 +496,37 @@ mod tests {
         assert_eq!(r.read_strings(index), None, "an Int32 column carries no texts; ResultFile::strings maps the literals");
         let p = r.find_var("ep").expect("ep");
         assert_eq!(r.val(p, 0.0), Some(2.0));
+    }
+
+    /// A `Boolean` parameter's JSON boolean and an `Integer` one's JSON integer
+    /// read back as the 0/1 and the value `ResultTable` hands out.
+    #[test]
+    fn typed_parameters_read_back() {
+        let param = |name, ty| ArrowVar {
+            name,
+            comment: "",
+            unit: "",
+            display_unit: "",
+            relative_quantity: false,
+            ty,
+            discrete: false,
+            kind: ArrowKind::Param { affine: Affine::IDENTITY },
+            unvarying: false,
+            enumeration: None,
+        };
+        let vars = [
+            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
+            param("b", VarTy::Boolean),
+            param("n", VarTy::Integer),
+        ];
+        let bytes = write_arrow(&vars, &[0.0, 1.0], 1, &[1.0, -3.0], &[ColTy::F64], no_strings(), &FileMeta::default());
+        let mut r = ArrowReader::from_bytes(bytes).expect("readable");
+        let b = r.find_var("b").expect("b");
+        assert_eq!(r.var_type(b), "Boolean");
+        assert_eq!(r.val(b, 0.0), Some(1.0));
+        let n = r.find_var("n").expect("n");
+        assert_eq!(r.var_type(n), "Integer");
+        assert_eq!(r.val(n, 0.0), Some(-3.0));
     }
 
     #[test]
