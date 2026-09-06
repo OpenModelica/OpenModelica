@@ -4729,10 +4729,14 @@ fn emit_assert(
     // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
     // then unwound into the solver — unless the `noThrowAsserts` window is open,
     // which C checks first; `rt_assert` then records it and the evaluation goes on.
+    // C's `FUNCTION_CONTEXT` arm has no such check, so a function's assert throws
+    // whatever the window says (a domain guard the solver must back off from).
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-    ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
-    ctx.emit(we::Instruction::I32Eqz);
-    ctx.emit(we::Instruction::I32And);
+    if !in_function {
+        ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
+        ctx.emit(we::Instruction::I32Eqz);
+        ctx.emit(we::Instruction::I32And);
+    }
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     report_args(ctx)?;
     emit_initial_flag(ctx);
