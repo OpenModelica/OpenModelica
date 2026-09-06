@@ -33,8 +33,10 @@
 QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
-  greaterThan(QT_MINOR_VERSION, 4) {
+  qtHaveModule(httpserver) {
     QT += httpserver
+  } else {
+    message("QtHttpServer not found; building without the MCP server")
   }
 }
 
