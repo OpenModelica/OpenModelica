@@ -83,6 +83,22 @@ static inline size_t round_up(size_t num, size_t factor)
   return num + factor - 1 - ((num + factor - 1) % factor);
 }
 
+#if !(defined(_MSC_VER) || !defined(__APPLE__))
+#include <execinfo.h> /* backtrace, backtrace_symbols_fd */
+#include <unistd.h> /* STDOUT_FILENO */
+
+void print_stacktrace(void) {
+    size_t size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    fprintf(stdout, "\n-------------- stack trace --------------\n");
+    backtrace_symbols_fd(array, size, STDOUT_FILENO);
+}
+#else
+void print_stacktrace(void) { /* do nothing */ }
+#endif
+
 static inline void pool_expand(size_t len)
 {
   OMCMemPoolBlock *newBlock = NULL;
@@ -97,6 +113,7 @@ static inline void pool_expand(size_t len)
   // Only the geometric growth is checked here: a single allocation that is legitimately larger
   // than the limit is not a sign of broken memory management and is served below.
   if (new_size >= OMC_ERROR_AT_EXPAND_REQUEST) {
+    print_stacktrace();
     omc_assert_macro(0 && "Attempt to allocate an unusually large memory. The memory management does not seem to be working as intended. Please create an issue on https://github.com/OpenModelica/OpenModelica/issues.");
   }
 
