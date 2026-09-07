@@ -111,8 +111,9 @@ my %suite_enabled = (
                       # opt-in like wasm rather than off-by-build.
   arrow        => 1,  # Needs the Rust result library libomc_result, which reads
                       # and writes the arrow format (OM_RUST_RESULT_READERS/
-                      # OM_RUST_RESULT_WRITERS). Every CMake build has it; the
-                      # autotools build is the one that turns this off.
+                      # OM_RUST_RESULT_WRITERS). A CMake build has it wherever
+                      # cargo is on PATH, which is what those options default to;
+                      # a build without a Rust toolchain turns this off.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too

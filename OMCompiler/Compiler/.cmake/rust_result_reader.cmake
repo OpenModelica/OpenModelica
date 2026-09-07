@@ -7,9 +7,10 @@ function(omc_result_reader_library)
   find_program(CARGO_EXECUTABLE cargo)
   if(NOT CARGO_EXECUTABLE)
     message(FATAL_ERROR
-      "OM_RUST_RESULT_READERS/OM_RUST_RESULT_WRITERS is ON but cargo was not found. Install a "
-      "stable Rust toolchain, or configure with -DOM_RUST_RESULT_READERS=OFF "
-      "-DOM_RUST_RESULT_WRITERS=OFF to use the C result readers and writers.")
+      "OM_RUST_RESULT_READERS/OM_RUST_RESULT_WRITERS was turned on explicitly, but cargo was "
+      "not found (both default to OFF without one). Install a stable Rust toolchain, or "
+      "configure with -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF to use the C "
+      "result readers and writers, which can not handle .arrow.")
   endif()
   set(_workspace ${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/SimulationRuntime/rust)
   set(_crate ${_workspace}/openmodelica_result_capi)
