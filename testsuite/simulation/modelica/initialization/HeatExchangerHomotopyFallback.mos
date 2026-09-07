@@ -1,0 +1,30 @@
+// name:      HeatExchangerHomotopyFallback
+// keywords:  initialization, homotopy, fallback
+// status:    correct
+//
+// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation does not
+// initialize with the default global homotopy method (it stalls at lambda=0).
+// The automatic clean-restart fallback re-allocates the nonlinear systems and
+// retries the initialization once without homotopy, after which the model
+// initializes and simulates successfully.
+//
+// Regression test for the init fallback (#14104 / #15886). A non-empty result
+// file means the fallback recovered the failed homotopy initialization; without
+// the fallback the simulation produces no result.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+// echo(false) suppresses the (numerically volatile) homotopy-failure log of the
+// first initialization attempt, so the test only checks the stable outcome.
+echo(false);
+sr := simulate(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation, stopTime = 1.0);
+echo(true);
+// A non-empty result file means the fallback recovered the failed homotopy
+// initialization and the model simulated to completion.
+sr.resultFile <> "";
+
+// Result:
+// true
+// ""
+// true
+//
+// endResult
