@@ -18,7 +18,7 @@ use std::sync::{Arc, Barrier};
 use arrow_array::Array;
 use arrow_ipc::reader::FileReader;
 use openmodelica_mat_reader::{MatReader, ResultTable};
-use openmodelica_result_files::{ArrowReader, MtsfReader, SdfReader};
+use openmodelica_result_files::{ArrowJsonReader, MtsfReader, SdfReader};
 
 use crate::bench::{Span, Stopwatch};
 use crate::writers::Format;
@@ -39,14 +39,14 @@ pub enum Access {
 
 pub enum Reader {
     Mat(MatReader),
-    ArrowJson(ArrowReader),
+    ArrowJson(ArrowJsonReader),
     Arrow(crate::arrow_modelica::Reader),
     #[cfg(feature = "minarrow")]
     Minarrow(crate::minarrow::Reader),
     Sdf(SdfReader),
     Mtsf(MtsfReader),
-    /// Arrow read through `arrow-ipc`'s own projection rather than
-    /// `ArrowReader`, which decodes every column at open.
+    /// `arrow-json` read through `arrow-ipc`'s own projection rather than
+    /// `ArrowJsonReader`, which decodes every column at open.
     ArrowProjected(ProjectedArrow),
 }
 
@@ -54,7 +54,7 @@ impl Reader {
     pub fn open(format: Format, path: &str, access: Access) -> Result<Reader, String> {
         Ok(match (format, access) {
             (Format::Mat, _) => Reader::Mat(MatReader::open(path)?),
-            (Format::ArrowJson, Access::PerVar) => Reader::ArrowJson(ArrowReader::open(path)?),
+            (Format::ArrowJson, Access::PerVar) => Reader::ArrowJson(ArrowJsonReader::open(path)?),
             (Format::ArrowJson, Access::Bulk | Access::List) => {
                 Reader::ArrowProjected(ProjectedArrow::open(path)?)
             }
@@ -193,7 +193,7 @@ impl ProjectedArrow {
             .map(|(i, f)| (f.name().clone(), i))
             .collect();
         let mut entries = 0;
-        if let Some(table) = schema.metadata().get(openmodelica_arrow_writer::VARIABLES_KEY) {
+        if let Some(table) = schema.metadata().get(openmodelica_arrow_writer::json::VARIABLES_KEY) {
             let (named, total) = variable_columns(table);
             entries = total;
             columns.extend(named);

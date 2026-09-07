@@ -239,7 +239,7 @@ impl ResultFile {
             })
             .collect();
         let units = units::declared(self.unit_defs());
-        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units }))
+        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units, zstd: None }))
     }
 
     /// The selected signals over the distinct columns they read (time first),

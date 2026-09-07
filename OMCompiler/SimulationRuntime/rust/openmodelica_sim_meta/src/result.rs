@@ -190,7 +190,7 @@ impl ResultStream {
                     &col_types(meta, precision),
                     openmodelica_arrow_writer::block_rows(sync),
                     resolve_strings(),
-                    &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units },
+                    &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units, zstd: None },
                 );
                 s.set_sync(sync > 0);
                 Kind::Arrow(s)
@@ -411,7 +411,7 @@ pub fn arrow(meta: &SimMeta, rows: &[f64], n_reals: u32, params: &[f64], keep: &
     let kept = kept_params(meta, params, |i, _| keep[i]);
     let vars = arrow_vars(meta, keep);
     let units = openmodelica_arrow_writer::units::declared(meta.units.iter().cloned());
-    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units })
+    openmodelica_arrow_writer::write_arrow(&vars, rows, n_reals, &kept, &col_types(meta, precision), resolve_strings(), &FileMeta { span: Some((meta.start_time, meta.stop_time)), units: &units, zstd: None })
 }
 
 /// C's `simulation_result_plt` omits integer and boolean parameters.

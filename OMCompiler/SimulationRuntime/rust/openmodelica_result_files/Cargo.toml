@@ -24,3 +24,6 @@ default = []
 # SDF and MTSF, i.e. the readers that need the HDF5 C library.
 hdf5 = ["dep:openmodelica_hdf5_result", "openmodelica_hdf5_result/library"]
 static-hdf5 = ["hdf5", "openmodelica_hdf5_result/static-hdf5"]
+# The pre-`arrow.modelica` layout's reader, for the result-format benchmark
+# only. Nothing in OpenModelica should enable this.
+json-layout = ["openmodelica_arrow_writer/json-layout"]

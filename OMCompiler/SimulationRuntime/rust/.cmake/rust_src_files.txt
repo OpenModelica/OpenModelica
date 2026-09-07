@@ -21,8 +21,8 @@ minpack/LICENSE
 minpack/src/lib.rs
 openmodelica_arrow_writer/Cargo.toml
 openmodelica_arrow_writer/SPECIFICATION.md
-openmodelica_arrow_writer/examples/predefined_units.rs
 openmodelica_arrow_writer/src/lib.rs
+openmodelica_arrow_writer/src/json.rs
 openmodelica_arrow_writer/src/units.rs
 openmodelica_hdf5_result/Cargo.toml
 openmodelica_hdf5_result/src/h5.rs
@@ -54,7 +54,6 @@ openmodelica_result_bench/src/arrow_modelica.rs
 openmodelica_result_bench/src/bench.rs
 openmodelica_result_bench/src/dataset.rs
 openmodelica_result_bench/src/html.rs
-openmodelica_result_bench/src/ipc.rs
 openmodelica_result_bench/src/main.rs
 openmodelica_result_bench/src/minarrow.rs
 openmodelica_result_bench/src/readers.rs
@@ -67,6 +66,7 @@ openmodelica_result_cli/Cargo.toml
 openmodelica_result_cli/src/main.rs
 openmodelica_result_files/Cargo.toml
 openmodelica_result_files/src/arrow.rs
+openmodelica_result_files/src/arrow_json.rs
 openmodelica_result_files/src/cmp.rs
 openmodelica_result_files/src/file.rs
 openmodelica_result_files/src/hdf5.rs

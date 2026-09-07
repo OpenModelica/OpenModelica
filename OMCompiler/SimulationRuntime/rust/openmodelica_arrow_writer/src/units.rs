@@ -1,19 +1,13 @@
-//! The `modelica.units` table: unit definitions in FMI 3.0's terms, shared by
-//! the writer and the reader, and the predefined set both sides agree on
-//! without the file saying anything.
+//! Unit definitions in FMI 3.0's terms, shared by the writer and the reader,
+//! and the predefined set both sides agree on without the file saying anything.
 //!
-//! ```text
-//! {"name": "K", "baseUnit": {"K": 1}, "displayUnits": [{"name": "degC", "offset": -273.15}]}
-//! ```
-//!
-//! A variable names its `unit` and `displayUnit`; the conversions live here
-//! once, because a model has far more variables than units.
-
-use crate::json_str;
+//! A variable names its `unit` and `displayUnit`; the conversions live in the
+//! `modelica.units` and `modelica.displayUnits` tables once, because a model
+//! has far more variables than units.
 
 /// A `baseUnit`'s exponents, in FMI's attribute order. OpenModelica has no
 /// `rad` dimension and always computes 0 for it; the predefined table below
-/// follows FMI, which treats `rad` as 1 for dimensional analysis anyway.
+/// follows FMI.
 pub const BASE_EXPONENTS: [&str; 8] = ["kg", "m", "s", "A", "K", "mol", "cd", "rad"];
 
 /// FMI 3.0 `<BaseUnit>`: `v_SI = factor * v_unit + offset` over [`BASE_EXPONENTS`].
@@ -70,7 +64,7 @@ impl UnitDef {
     /// cannot express the `rad` exponent, so that one dimension is not compared;
     /// a unit with no dimensions at all is taken to be the predefined one, since
     /// it says nothing that could disagree.
-    fn same_base_as_predefined(&self) -> Option<UnitDef> {
+    pub(crate) fn same_base_as_predefined(&self) -> Option<UnitDef> {
         let p = predefined(&self.name)?;
         match (&self.base, &p.base) {
             (Some(a), Some(b)) if a.exponents[..7] == b.exponents[..7] && a.factor == b.factor && a.offset == b.offset => Some(p),
@@ -120,7 +114,8 @@ pub fn declared(units: impl IntoIterator<Item = UnitDef>) -> Vec<UnitDef> {
     units.into_iter().filter(|u| !u.is_predefined()).collect()
 }
 
-/// The `modelica.units` JSON for the units a file must spell out.
+/// The `modelica.units` JSON of the pre-`arrow.modelica` layout.
+#[cfg(feature = "json-layout")]
 pub fn units_json(units: &[UnitDef]) -> String {
     let mut json = String::from("[");
     for (i, u) in units.iter().enumerate() {
@@ -128,7 +123,7 @@ pub fn units_json(units: &[UnitDef]) -> String {
             json.push(',');
         }
         json.push_str("{\"name\":");
-        json_str(&mut json, &u.name);
+        crate::json::json_str(&mut json, &u.name);
         if let Some(b) = &u.base {
             json.push_str(",\"baseUnit\":{");
             let mut first = true;
@@ -164,7 +159,7 @@ pub fn units_json(units: &[UnitDef]) -> String {
                     json.push(',');
                 }
                 json.push_str("{\"name\":");
-                json_str(&mut json, &d.name);
+                crate::json::json_str(&mut json, &d.name);
                 if d.factor != 1.0 {
                     json.push_str(&format!(",\"factor\":{:?}", d.factor));
                 }
@@ -190,10 +185,10 @@ type Predef = (&'static str, [i32; 8], f64, f64, &'static [(&'static str, f64, f
 const DEG: f64 = 180.0 / core::f64::consts::PI;
 const RPM: f64 = 30.0 / core::f64::consts::PI;
 
-/// The units a reader of format version `1` knows without the file declaring
-/// them, so a writer omits them. The set is tied to the format version: growing
-/// it would leave an older reader not knowing a unit a newer writer omitted, so
-/// it may only grow together with `FORMAT_VERSION`.
+/// The units a reader of this format knows without the file declaring them, so
+/// a writer omits them. SPECIFICATION.md lists the same table, and a test below
+/// holds the two together; the set may only grow, and only with the minor
+/// version, since an older reader would not know a unit a newer writer omitted.
 #[rustfmt::skip]
 const PREDEFINED: &[Predef] = &[
     //        kg  m  s  A  K mol cd rad
@@ -377,11 +372,64 @@ mod tests {
         assert_eq!(declared([k.clone()]), vec![k]);
     }
 
+    #[cfg(feature = "json-layout")]
     #[test]
     fn the_json_omits_every_default() {
         let mut k = UnitDef::new("K");
         k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
         k.display_units.push(DisplayUnit::new("degC", 1.0, -273.15));
         assert_eq!(units_json(&[k]), r#"[{"name":"K","baseUnit":{"K":1},"displayUnits":[{"name":"degC","offset":-273.15}]}]"#);
+    }
+
+    /// SPECIFICATION.md's predefined-unit table is this table.
+    #[test]
+    fn the_specification_lists_the_same_units() {
+        let spec = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/SPECIFICATION.md")).expect("SPECIFICATION.md");
+        let rows: Vec<&str> = spec.lines().filter(|l| l.starts_with("| `")).collect();
+        let mut listed = 0;
+        for row in rows {
+            let cells: Vec<&str> = row.trim_matches('|').split('|').map(str::trim).collect();
+            let [name, exponents, display] = cells[..] else { continue };
+            let name = name.trim_matches('`');
+            let Some(p) = PREDEFINED.iter().find(|p| p.0 == name) else { continue };
+            listed += 1;
+            let exponents: Vec<i32> = exponents.trim_matches('`').split_whitespace().map(|e| e.parse().unwrap()).collect();
+            assert_eq!(exponents, p.1, "{name}: exponents");
+            let display: Vec<&str> = display.split(',').map(str::trim).filter(|d| !d.is_empty()).collect();
+            assert_eq!(display.len(), p.4.len(), "{name}: display units {display:?}");
+            for (d, &(dname, factor, offset)) in display.iter().zip(p.4) {
+                let (n, rest) = d.split_once('`').and_then(|(_, r)| r.split_once('`')).expect(d);
+                assert_eq!(n, dname, "{name}");
+                let want = format!("{}{}", spec_number(factor, true), if offset == 0.0 { String::new() } else { format!(" {}", spec_number(offset, false)) });
+                assert_eq!(rest.trim(), want, "{name}: {dname}");
+            }
+        }
+        assert_eq!(listed, PREDEFINED.len(), "every predefined unit is in the specification");
+        let units: Vec<UnitDef> = predefined_units().collect();
+        assert_eq!(units.len(), 42);
+        assert_eq!(units.iter().map(|u| u.display_units.len()).sum::<usize>(), 576);
+        assert!(spec.contains("42 units and 576"));
+    }
+
+    /// The way the specification writes a factor (`×1e-3`, `×30/π`) or an offset.
+    fn spec_number(v: f64, factor: bool) -> String {
+        let text = if v == DEG {
+            "180/π".to_owned()
+        } else if v == RPM {
+            "30/π".to_owned()
+        } else if v == 1.0 / 60.0 {
+            "1/60".to_owned()
+        } else if v == 1.0 / 3600.0 {
+            "1/3600".to_owned()
+        } else if v == 1.0 / 86400.0 {
+            "1/86400".to_owned()
+        } else if v.abs().log10().fract() == 0.0 && v.abs().log10().abs() >= 2.0 {
+            format!("{}1e{}", if v < 0.0 { "-" } else { "" }, v.abs().log10().round() as i32)
+        } else if v.fract() == 0.0 {
+            format!("{}", v as i64)
+        } else {
+            format!("{v}")
+        };
+        if factor { format!("×{text}") } else if v < 0.0 { format!("−{}", &text[1..]) } else { format!("+{text}") }
     }
 }

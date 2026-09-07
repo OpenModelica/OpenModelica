@@ -458,7 +458,7 @@ fn open_where(
                 // The C runtime reads its variable attributes from `_init.xml`,
                 // which carries no unit definitions: a file it writes leans on
                 // the predefined units alone.
-                &FileMeta { span: Some((start, stop)), units: &[] },
+                &FileMeta { span: Some((start, stop)), units: &[], zstd: None },
             );
             s.set_sync(sync > 0);
             Kind::Arrow(s)

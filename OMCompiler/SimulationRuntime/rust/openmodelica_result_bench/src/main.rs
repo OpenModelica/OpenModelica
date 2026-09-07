@@ -17,7 +17,6 @@ mod bench;
 mod dataset;
 mod arrow_modelica;
 mod html;
-mod ipc;
 #[cfg(feature = "minarrow")]
 mod minarrow;
 mod readers;
@@ -664,9 +663,9 @@ fn structure(data: &Dataset, format: Format, setting: Setting, opts: &WriteOpts)
         // One field per stored column, `time` included; a parameter is schema
         // metadata rather than a field (and in minarrow's file, nowhere).
         Format::ArrowJson => (data.n_cols, rows.div_ceil(opts.block_rows.max(1))),
-        // The data fields, plus the variable table's eight, the parameter
-        // table's four and the index's one; a block each for those three.
-        Format::Arrow => (data.n_cols + 13, rows.div_ceil(opts.block_rows.max(1)) + 3),
+        // The data fields, plus the variable table's nine, the parameter
+        // table's one and the index's one; a block each for those three.
+        Format::Arrow => (data.n_cols + 11, rows.div_ceil(opts.block_rows.max(1)) + 3),
         #[cfg(feature = "minarrow")]
         Format::Minarrow => (data.n_cols, rows.div_ceil(opts.block_rows.max(1))),
         Format::Sdf => {

@@ -767,6 +767,7 @@ name = "openmodelica_arrow_writer"
 version = "0.1.0"
 dependencies = [
  "arrow-array",
+ "arrow-buffer",
  "arrow-ipc",
  "arrow-schema",
 ]
