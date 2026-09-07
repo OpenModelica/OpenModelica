@@ -153,7 +153,7 @@ void freeJacobianCopy(JACOBIAN *jac)
  */
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
 {
-  int color, column, row, nz;
+  unsigned int color, ci, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* Dispatch to bidirectional evaluation if applicable */
@@ -195,32 +195,31 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
-    for (column = 0; column < jacobian->sizeCols; column++)
-      if (sp->colorCols[column]-1 == color)
-        jacobian->seedVars[column] = 1.0;
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+      column = sp->color_index[ci];
+      jacobian->seedVars[column] = 1.0;
+    }
 
     /* evaluate Jacobian column */
     jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
-    for (column = 0; column < jacobian->sizeCols; column++) {
-      if (sp->colorCols[column]-1 == color) {
-        for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
-          row = sp->index[nz];
-          if (!isDense) {
-            /* sparse case */
-            jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
-          }
-          else if (row < denseRows) {
-            /* dense case: column-major, denseRows rows per column.
-             * Skip auxiliary rows (row >= denseRows) that lie outside the NLS matrix
-             * (only relevant when sizeRows > sizeCols; never true for rectangular
-             * Jacobians where denseRows == sizeRows). */
-            jac[column * denseRows + row] = jacobian->resultVars[row];
-          }
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+      column = sp->color_index[ci];
+      for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
+        row = sp->index[nz];
+        if (!isDense) {
+          /* sparse case */
+          jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+        } else if (row < denseRows) {
+          /* dense case: column-major, denseRows rows per column.
+            * Skip auxiliary rows (row >= denseRows) that lie outside the NLS matrix
+            * (only relevant when sizeRows > sizeCols; never true for rectangular
+            * Jacobians where denseRows == sizeRows). */
+          jac[column * denseRows + row] = jacobian->resultVars[row];
         }
-        /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[column] = 0.0;
       }
+      /* de-activate seed variable for the corresponding color */
+      jacobian->seedVars[column] = 0.0;
     }
   }
 }
@@ -233,7 +232,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
  *  - sparsePattern is in CSR format:
  *      leadindex: sizeRows + 1 (row pointers)
  *      index:     nnz (column indices)
- *  - colorCols encodes row coloring (1-based color ids)
  *
  * Output:
  *  - If isDense == false: jac is nnz-sized buffer aligned with CSR index order.
@@ -244,7 +242,7 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
                      JACOBIAN* jacobian, JACOBIAN* parentJacobian,
                      modelica_real* jac, modelica_boolean isDense)
 {
-  int color, row, col, nz;
+  unsigned int color, ci, row, col, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   const unsigned int nRows = jacobian->sizeRows;
   const unsigned int nCols = jacobian->sizeCols;
@@ -270,31 +268,29 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
   /* evaluate Jacobian row-wise using row-coloring */
   for (color = 0; color < (int)sp->maxColors; color++) {
     /* activate seed variable(s) for the corresponding color (rows) */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        jacobian->seedVars[row] = 1.0;
-      }
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+      row = sp->color_index[ci];
+      jacobian->seedVars[row] = 1.0;
     }
 
     /* evaluate all active rows at once (evalColumn acts as evalRow here) */
     jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
     /* scatter results */
-    for (row = 0; row < (int)nRows; row++) {
-      if ((int)sp->colorCols[row] - 1 == color) {
-        for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
-          col = sp->index[nz];
-          if (!isDense) {
-            /* sparse case (CSR value buffer aligned with index order) */
-            jac[nz] = jacobian->resultVars[col];
-          } else {
-            /* dense case */
-            jac[col * nRows + row] = jacobian->resultVars[col];
-          }
+    for (ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+      row = sp->color_index[ci];
+      for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
+        col = sp->index[nz];
+        if (!isDense) {
+          /* sparse case (CSR value buffer aligned with index order) */
+          jac[nz] = jacobian->resultVars[col];
+        } else {
+          /* dense case */
+          jac[col * nRows + row] = jacobian->resultVars[col];
         }
-        /* de-activate seed variable for the corresponding color (row) */
-        jacobian->seedVars[row] = 0.0;
       }
+      /* de-activate seed variable for the corresponding color (row) */
+      jacobian->seedVars[row] = 0.0;
     }
 
     /* Row evaluators accumulate adjoints; reset between colors. */
@@ -418,67 +414,67 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
   JACOBIAN* adj = fwd->adjointJacobian;
   const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
   const SPARSE_PATTERN* adjsp = adj->sparsePattern;
-  const int nRows = (int)fwd->sizeRows;
-  const int nCols = (int)fwd->sizeCols;
-  int color, column, row, nz, j;
+  const size_t nRows = fwd->sizeRows;
+  const size_t nCols = fwd->sizeCols;
+  unsigned int color, column, row, nz, ci;
 
   if (fwd->constantEqns) fwd->constantEqns(data, threadData, fwd, parentJacobian);
   if (adj->constantEqns) adj->constantEqns(data, threadData, adj, parentJacobian);
 
   if (isDense) {
-    memset(jac, 0, (size_t)nRows * (size_t)nCols * sizeof(modelica_real));
+    memset(jac, 0, nRows * nCols * sizeof(modelica_real));
   }
 
   /* Column phase (forward mode, CSC + column coloring) */
   for (color = 0; color < (int)fwdsp->maxColors; color++) {
-    for (column = 0; column < nCols; column++)
-      if ((int)fwdsp->colorCols[column] - 1 == color)
-        fwd->seedVars[column] = 1.0;
+    for (ci = fwdsp->color_leadindex[color]; ci < fwdsp->color_leadindex[color+1]; ci++) {
+      column = fwdsp->color_index[ci];
+      fwd->seedVars[column] = 1.0;
+    }
 
     fwd->evalColumn(data, threadData, fwd, parentJacobian);
 
-    for (column = 0; column < nCols; column++) {
-      if ((int)fwdsp->colorCols[column] - 1 == color) {
-        for (nz = (int)fwdsp->leadindex[column]; nz < (int)fwdsp->leadindex[column + 1]; nz++) {
-          if (fwd->recoverMask[nz]) {
-            row = (int)fwdsp->index[nz];
-            if (isDense)
-              jac[column * nRows + row] = fwd->resultVars[row];
-            else
-              jac[nz] = fwd->resultVars[row];
-          }
+    for (ci = fwdsp->color_leadindex[color]; ci < fwdsp->color_leadindex[color+1]; ci++) {
+      column = fwdsp->color_index[ci];
+      for (nz = fwdsp->leadindex[column]; nz < fwdsp->leadindex[column + 1]; nz++) {
+        if (fwd->recoverMask[nz]) {
+          row = fwdsp->index[nz];
+          if (isDense)
+            jac[column * nRows + row] = fwd->resultVars[row];
+          else
+            jac[nz] = fwd->resultVars[row];
         }
-        fwd->seedVars[column] = 0.0;
       }
+      fwd->seedVars[column] = 0.0;
     }
   }
 
   /* Row phase (adjoint mode, CSR + row coloring) */
-  for (color = 0; color < (int)adjsp->maxColors; color++) {
-    for (row = 0; row < nRows; row++)
-      if ((int)adjsp->colorCols[row] - 1 == color)
-        adj->seedVars[row] = 1.0;
+  for (color = 0; color < adjsp->maxColors; color++) {
+    for (ci = adjsp->color_leadindex[color]; ci < adjsp->color_leadindex[color+1]; ci++) {
+      row = adjsp->color_index[ci];
+      adj->seedVars[row] = 1.0;
+    }
 
     adj->evalColumn(data, threadData, adj, parentJacobian);
 
-    for (row = 0; row < nRows; row++) {
-      if ((int)adjsp->colorCols[row] - 1 == color) {
-        for (nz = (int)adjsp->leadindex[row]; nz < (int)adjsp->leadindex[row + 1]; nz++) {
-          if (adj->recoverMask[nz]) {
-            column = (int)adjsp->index[nz];
-            if (isDense)
-              jac[column * nRows + row] = adj->resultVars[column];
-            else
-              jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
-          }
+    for (ci = adjsp->color_leadindex[color]; ci < adjsp->color_leadindex[color+1]; ci++) {
+      row = adjsp->color_index[ci];
+      for (nz = adjsp->leadindex[row]; nz < adjsp->leadindex[row + 1]; nz++) {
+        if (adj->recoverMask[nz]) {
+          column = adjsp->index[nz];
+          if (isDense)
+            jac[column * nRows + row] = adj->resultVars[column];
+          else
+            jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
         }
-        adj->seedVars[row] = 0.0;
       }
+      adj->seedVars[row] = 0.0;
     }
     /* Reset adjoint result vars to zero after reading to prevent accumulation across colors */
-    memset(adj->resultVars, 0, (size_t)nRows * sizeof(modelica_real));
+    memset(adj->resultVars, 0, nRows * sizeof(modelica_real));
     // also for tmp vars
-    memset(adj->tmpVars, 0, (size_t)adj->sizeTmpVars * sizeof(modelica_real));
+    memset(adj->tmpVars, 0, adj->sizeTmpVars * sizeof(modelica_real));
   }
 }
 
@@ -592,7 +588,7 @@ void vjp(DATA* data, threadData_t *threadData,
  * @param n_leadIndex         Number of rows or columns of Matrix.
  *                            Depending on compression type CSR (-->rows) or CSC (-->columns).
  * @param nnz                 Number of non-zero elements in Matrix.
- * @param maxColors           Maximum number of colors of Matrix.
+ * @param maxColors           Number of colors of sparsity pattern.
  * @return SPARSE_PATTERN*    Pointer to allocated sparsity pattern of Matrix.
  */
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors)
@@ -604,6 +600,8 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
   sparsePattern->colorCols = (unsigned int*) malloc(n_leadIndex*sizeof(unsigned int));
   sparsePattern->maxColors = maxColors;
   sparsePattern->sizeCols = n_leadIndex;
+  sparsePattern->color_leadindex = (unsigned int*) malloc((maxColors+1)*sizeof(unsigned int));
+  sparsePattern->color_index = (unsigned int*) malloc(n_leadIndex*sizeof(unsigned int));
 
   return sparsePattern;
 }
@@ -631,7 +629,7 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
   const unsigned int nnz = csc->nnz;
 
   /* Allocate CSR pattern: leadindex size = nRows+1, index size = nnz */
-  SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, /*maxColors*/ 0);
+  SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, 0);
   if (!csr) return NULL;
 
   /* Aliases for clarity */
@@ -691,8 +689,8 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
   }
 
   /* We don't have row coloring here; keep defaults (zeros). */
-  csr->maxColors = 0;
-  /* nnz was set by allocSparsePattern */
+  // csr->maxColors = 0;
+  /* nnz and maxColors were set by allocSparsePattern */
 
   return csr;
 }
@@ -706,6 +704,8 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
 void freeSparsePattern(SPARSE_PATTERN *spp)
 {
   if (spp) {
+    free(spp->color_index);
+    free(spp->color_leadindex);
     free(spp->index);
     free(spp->colorCols);
     free(spp->leadindex);
@@ -734,7 +734,7 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  */
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
-  if (!sp || !sp->colorCols) return;
+  if (!sp || !sp->colorCols || !sp->color_leadindex || !sp->color_index) return;
   if (nCols == 0) {
     sp->maxColors = 0;
     return;
@@ -743,6 +743,16 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
 #if defined(OMC_HAVE_COLPACK)
   if (computeColPackColumnColoring(
           nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors) == 0) {
+    // Convert to coloring storage
+    unsigned int i = 0;
+    for (unsigned int color = 0; color < sp->maxColors; ++color) {
+      sp->color_leadindex[color] = i;
+      for (unsigned int column = 0; column < nCols; ++column) {
+        if (sp->colorCols[column] - 1 == color) {
+          sp->color_index[i++] = column;
+        }
+      }
+    }
     return;
   }
 #endif
@@ -752,6 +762,8 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
     /* Fallback: trivial one-column-per-color coloring. */
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
     sp->maxColors = nCols;
+    for (unsigned int c = 0; c < sp->maxColors + 1; c++) sp->color_leadindex[c] = c;
+    for (unsigned int c = 0; c < nCols; c++) sp->color_index[c] = c;
     return;
   }
 
@@ -766,6 +778,8 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
     freeSparsePattern(csr);
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
     sp->maxColors = nCols;
+    for (unsigned int c = 0; c < sp->maxColors + 1; c++) sp->color_leadindex[c] = c;
+    for (unsigned int c = 0; c < nCols; c++) sp->color_index[c] = c;
     return;
   }
 
@@ -801,6 +815,16 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   }
 
   sp->maxColors = maxColor;
+  // Convert to coloring storage
+  unsigned int i = 0;
+  for (unsigned int color = 0; color < sp->maxColors; ++color) {
+    sp->color_leadindex[color] = i;
+    for (unsigned int column = 0; column < nCols; ++column) {
+      if (sp->colorCols[column] - 1 == color) {
+        sp->color_index[i++] = column;
+      }
+    }
+  }
 
   free(setColors);
   free(forbidden);
@@ -868,28 +892,37 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
 }
 
 /**
- * @brief Reads one color of sparsity pattern and sets colorCols.
+ * @brief Reads coloring information of sparsity pattern.
  *
  * @param threadData    Used for error handling.
  * @param pFile         Pointer to file stream.
- * @param colorCols     Array of column coloring.
- * @param color         Current color index.
- * @param length        Number of columns in color `color`.
+ * @param nColors       Number of colors.
+ * @param maxIndex      Number of color indices (Rows/Columns).
+ * @param leadindex     Array of color sizes.
+ * @param index         Array of color indices.
  */
-void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex)
+void readSparsePatternColoring(threadData_t* threadData, FILE * pFile, SPARSE_PATTERN* sp)
 {
-  unsigned int i, index;
   size_t count;
 
-  for (i = 0; i < length; i++) {
-    count = omc_fread(&index, sizeof(unsigned int), 1, pFile, FALSE);
-    if (count != 1) {
-      throwStreamPrint(threadData, "Error while reading color %u of sparsity pattern.", color);
+  /* read coloring lead index */
+  count = omc_fread(sp->color_leadindex, sizeof(unsigned int), sp->maxColors + 1, pFile, FALSE);
+  if (count != (size_t)(sp->maxColors + 1)) {
+    throwStreamPrint(threadData, "Error while reading lead index list of sparsity pattern coloring. Expected %u, got %zu", sp->maxColors + 1, count);
+  }
+
+  /* read coloring index */
+  count = omc_fread(sp->color_index, sizeof(unsigned int), sp->sizeCols, pFile, FALSE);
+  if (count != (size_t)sp->sizeCols) {
+    throwStreamPrint(threadData, "Error while reading row index list of sparsity pattern coloring. Expected %u, got %zu", sp->sizeCols, count);
+  }
+
+  /* convert to colorCols */
+  for (unsigned int color = 0; color < sp->maxColors; color++) {
+    for (unsigned int ci = sp->color_leadindex[color]; ci < sp->color_leadindex[color+1]; ci++) {
+      unsigned int column = sp->color_index[ci];
+      sp->colorCols[column] = color + 1;
     }
-    if (index < 0 || index >= maxIndex) {
-      throwStreamPrint(threadData, "Error while reading color %u of sparsity pattern. Index %d out of bounds", color, index);
-    }
-    colorCols[index] = color;
   }
 }
 

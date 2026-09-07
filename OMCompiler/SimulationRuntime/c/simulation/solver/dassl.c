@@ -1194,61 +1194,59 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
                     double *matrixA, double *cj, double *h, double *wt,
                     double *rpar, int *ipar)
 {
-
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   const int index = data->callback->INDEX_JAC_A;
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   double delta_hhh;
   int ires;
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
-  unsigned int i,j,l,k,ii;
+  unsigned int i,j,l,k,ii, ci;
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
   setContext(data, *t, CONTEXT_JACOBIAN);
 
-  for(i = 0; i < jacobian->sparsePattern->maxColors; i++)
+  for(i = 0; i < sp->maxColors; i++)
   {
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-    {
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-      {
-        delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = numericalJacobianStep(y[ii], delta_hhh, fabs(1./wt[ii]),
-                                             dasslData->jacNominalFactor * dasslData->nominal[ii]);
-        delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
-        delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
 
-        ysave[ii] = y[ii];
-        y[ii] += delta_hh[ii];
+    for (ci = sp->color_leadindex[i]; ci < sp->color_leadindex[i+1]; ci++) {
+      ii = sp->color_index[ci];
 
-        delta_hh[ii] = 1. / delta_hh[ii];
-      }
+      delta_hhh = *h * yprime[ii];
+      delta_hh[ii] = numericalJacobianStep(y[ii], delta_hhh, fabs(1./wt[ii]),
+                                            dasslData->jacNominalFactor * dasslData->nominal[ii]);
+      delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
+      delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];    // Due to floating-point arithmetic rounding errors can result in: delta_hh[ii] != y[ii] + delta_hh[ii] - y[ii]
+
+      ysave[ii] = y[ii];
+      y[ii] += delta_hh[ii];
+
+      delta_hh[ii] = 1. / delta_hh[ii];
     }
+
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
 
     increaseJacContext(data);
 
-    for(ii = 0; ii < jacobian->sizeCols; ii++)
-    {
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
+    for (ci = sp->color_leadindex[i]; ci < sp->color_leadindex[i+1]; ci++) {
+      ii = sp->color_index[ci];
+
+      j = sp->leadindex[ii];
+      while(j < sp->leadindex[ii+1])
       {
-        j = jacobian->sparsePattern->leadindex[ii];
-        while(j < jacobian->sparsePattern->leadindex[ii+1])
-        {
-          l  =  jacobian->sparsePattern->index[j];
-          k  = l + ii*jacobian->sizeRows;
-          matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
-          // -I*cj will be added in callJacobian()
-          j++;
-        };
-        y[ii] = ysave[ii];
-      }
+        l = sp->index[j];
+        k = l + ii*jacobian->sizeRows;
+        matrixA[k] = (dasslData->newdelta[l] - delta[l]) * delta_hh[ii];
+        // -I*cj will be added in callJacobian()
+        j++;
+      };
+      y[ii] = ysave[ii];
     }
   }
 

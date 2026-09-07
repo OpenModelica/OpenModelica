@@ -107,7 +107,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       if(jacobian->sizeRows != size || jacobian->sizeCols != size)
       {
         linsys[i].jacobianIndex = -1;
-        throwStreamPrint(threadData, "Jacobian of torn linear system %d is %ux%u, but the system has size %d.", (int)linsys[i].equationIndex, jacobian->sizeRows, jacobian->sizeCols, size);
+        throwStreamPrint(threadData, "Jacobian of torn linear system %d is %zux%zu, but the system has size %d.", (int)linsys[i].equationIndex, jacobian->sizeRows, jacobian->sizeCols, size);
       }
       nnz = jacobian->sparsePattern->nnz;
       linsys[i].nnz = nnz;

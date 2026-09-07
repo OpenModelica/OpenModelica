@@ -111,7 +111,7 @@ int freeKluData(void **voiddata)
 static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
                                  LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,j,l,nth;
+  unsigned int i, ci, j,l,nth;
   JACOBIAN* jacobian = systemData->jacobian;
   JACOBIAN* parentJacobian = systemData->parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
@@ -124,22 +124,22 @@ static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   /* evaluate Jacobian */
   for (i = 0; i < sp->maxColors; i++) {
     /* activate seed variable for the corresponding color */
-    for (j = 0; j < jacobian->sizeCols; j++)
-      if (sp->colorCols[j]-1 == i)
-        jacobian->seedVars[j] = 1.0;
+    for (ci = sp->color_leadindex[i]; ci < sp->color_leadindex[i+1]; ci++) {
+      j = sp->color_index[ci];
+      jacobian->seedVars[j] = 1.0;
+    }
 
     /* Evaluate Jacobian column */
     jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
-    for (j = 0; j < jacobian->sizeCols; j++) {
-      if (sp->colorCols[j]-1 == i) {
-        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
-          l = sp->index[nth];
-          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
-        }
-        /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[j] = 0.0;
+    for (ci = sp->color_leadindex[i]; ci < sp->color_leadindex[i+1]; ci++) {
+      j = sp->color_index[ci];
+      for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+        l = sp->index[nth];
+        systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
       }
+      /* de-activate seed variable for the corresponding color */
+      jacobian->seedVars[j] = 0.0;
     }
   }
 }
