@@ -993,6 +993,27 @@ pub const LSS_UMFPACK: c_int = 4;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 
+/// `omc_alloc_interface_t` (gc/omc_gc.h): the allocator libOpenModelicaRuntimeC
+/// builds Strings with. Arrays that hold `modelica_string`s must come from its
+/// `malloc_uncollectable`, or the collector does not see them as roots.
+#[repr(C)]
+pub struct omc_alloc_interface_t {
+    pub init: Option<unsafe extern "C" fn()>,
+    pub malloc: Option<unsafe extern "C" fn(usize) -> *mut c_void>,
+    pub malloc_atomic: Option<unsafe extern "C" fn(usize) -> *mut c_void>,
+    pub malloc_string: Option<unsafe extern "C" fn(usize) -> *mut c_char>,
+    pub malloc_strdup: Option<unsafe extern "C" fn(*const c_char) -> *mut c_char>,
+    pub collect_a_little: Option<unsafe extern "C" fn() -> c_int>,
+    pub malloc_uncollectable: Option<unsafe extern "C" fn(usize) -> *mut c_void>,
+    pub free_uncollectable: Option<unsafe extern "C" fn(*mut c_void)>,
+    pub malloc_string_persist: Option<unsafe extern "C" fn(usize) -> *mut c_void>,
+    pub free_string_persist: Option<unsafe extern "C" fn(*mut c_void)>,
+}
+
+unsafe extern "C" {
+    pub static omc_alloc_interface: omc_alloc_interface_t;
+}
+
 /// `enum _FLAG` (util/simulation_options.h), indexing `omc_flag`/`omc_flagValue`.
 /// Only the entries the generated code or this runtime reads are named;
 /// `tests/abi_layout.rs` checks every one against the header.
