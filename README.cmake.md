@@ -96,6 +96,11 @@ dependencies (If you need help, follow the instructions
 [quick start](#1-quick-start) section above or choose your own combination of
 [configuration options](#4-configuration-options) (e.g. build type, generator, install dir ...).
 
+Note that a default build needs `cargo` and `rustc` on the `PATH` for the Rust
+result-file library (see
+[1.3 Rust toolchain](https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/README.Linux.md#13-rust-toolchain)).
+A stable toolchain of version 1.85 or newer is enough.
+
 ### 3.2.1 QTWebKit
 
 Note that most of the latest Linux releases do not support Qt5 QTWebKit anymore so one needs to configure with Qt6
@@ -285,6 +290,8 @@ The main ones (with their default values) are
 OM_USE_CCACHE=ON
 OM_ENABLE_GUI_CLIENTS=ON
 OM_ENABLE_ENCRYPTION=OFF
+OM_RUST_RESULT_READERS=ON
+OM_RUST_RESULT_WRITERS=ON
 OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
 OM_OMC_ENABLE_OPTIMIZATION=ON
@@ -308,6 +315,17 @@ their dependencies) such as the Qt libs, OpenSceneGraph, OpenThreads ...
 encryption support. Note that, for this to work, you need an additional module which is
 not distributed in the default OpenModelcia source repository. Contact the OpenModelica
 team if you need encryption support.
+
+`OM_RUST_RESULT_WRITERS` makes the C simulation runtime write result files through
+`libomc_result`, the Rust result-file library, and `OM_RUST_RESULT_READERS` makes the GUI
+clients read them back through it. Both need `cargo` on the `PATH` (a stable toolchain of
+version 1.85 or newer). Turning them off falls back to the C readers and writers, which
+cannot handle the `.arrow` format.
+
+The Rust port of the compiler itself (`OM_OMC_ENABLE_RUST`) and the Rust simulation runtime
+that `--simCodeTarget=C+Rust` links (`OM_ENABLE_RUST_SIM_RUNTIME`) are separate options,
+both off by default. `OM_OMC_ENABLE_RUST` needs a pinned nightly toolchain; see
+[OMCompiler/Compiler/OpenModelica.rs/README.md](OMCompiler/Compiler/OpenModelica.rs/README.md).
 
 ### 4.1.2. OpenModelica/OMCompiler Options
 
