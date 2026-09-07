@@ -944,6 +944,7 @@ typedef struct SIMULATION_INFO
 
   /* delay vars */
   RINGBUFFER **delayStructure;         /* Array of ring buffers for delay expressions */
+  LIST **delayEvents;                  /* List of events coming from delay expressions */
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;

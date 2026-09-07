@@ -1293,14 +1293,19 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* initial delay */
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-  data->simulationInfo->delayStructure = (RINGBUFFER**)malloc(data->modelData->nDelayExpressions * sizeof(RINGBUFFER*));
-  assertStreamPrint(threadData, 0 == data->modelData->nDelayExpressions || 0 != data->simulationInfo->delayStructure, "out of memory");
+  if (data->modelData->nDelayExpressions != 0) {
+    data->simulationInfo->delayStructure = (RINGBUFFER**)malloc(data->modelData->nDelayExpressions * sizeof(RINGBUFFER*));
+    assertStreamPrint(threadData, data->simulationInfo->delayStructure, "out of memory");
+    data->simulationInfo->delayEvents = (LIST**)malloc(data->modelData->nDelayExpressions * sizeof(LIST*));
+    assertStreamPrint(threadData, data->simulationInfo->delayEvents, "out of memory");
 
-  for(i=0; i<data->modelData->nDelayExpressions; i++)
-  {
-    // TODO: Calculate how big ringbuffer should be for each delay expression
-    // can be estimated by lower bound delayMax/stepSize
-    data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
+    for(i=0; i<data->modelData->nDelayExpressions; i++)
+    {
+      // TODO: Calculate how big ringbuffer should be for each delay expression
+      // can be estimated by lower bound delayMax/stepSize
+      data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
+      data->simulationInfo->delayEvents[i] = allocList(allocListNodeDataFunc_t* allocListNodeFunc, freeListNodeDataFunc_t* freeListNodeFunc, copyListNodeDataFunc_t* copyListNodeDataFunc);
+    }
   }
 #endif
 
