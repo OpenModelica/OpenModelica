@@ -267,7 +267,7 @@ fn sink_finish() {
 }
 
 #[cfg(target_os = "wasi")]
-use crate::result_out::open as open_result;
+use openmodelica_sim_meta::result::file::open as open_result;
 
 #[cfg(not(target_os = "wasi"))]
 use openmodelica_sim_meta::result::ResultOut;

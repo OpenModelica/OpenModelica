@@ -207,7 +207,6 @@ openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
 openmodelica_codegen_wasm_jit_runtime/src/prof.rs
-openmodelica_codegen_wasm_jit_runtime/src/result_out.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
