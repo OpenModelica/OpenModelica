@@ -56,6 +56,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import MetaModelica.Dangerous.listReverseInPlace;
   import NBVariable.VariablePointers;
 
   // Old Backend imports
@@ -265,6 +266,172 @@ public
       end match;
       Pointer.update(indices_ptr, simCodeIndices);
     end traverseCreate;
+
+    function createList
+      "SimVars for scalar variables in list order, with running indices."
+      input list<Pointer<Variable>> vars;
+      input VarType varType;
+      output list<SimVar> simVars = {};
+      input output SimCode.SimCodeIndices indices;
+    protected
+      Integer uniq = indices.uniqueIndex;
+      Integer idx = getTypeIndex(indices, varType);
+      Variable var;
+    algorithm
+      for var_ptr in vars loop
+        var := Pointer.access(var_ptr);
+        simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
+        uniq := uniq + 1;
+        idx := idx + 1;
+      end for;
+      simVars := listReverseInPlace(simVars);
+      indices.uniqueIndex := uniq;
+      indices := setTypeIndex(indices, varType, idx);
+    end createList;
+
+    function createListsByType
+      "One SimVar list per basic type (real, integer, boolean, string, enumeration),
+      each with its own running index."
+      input list<Pointer<Variable>> vars;
+      input VarType varType;
+      output list<list<SimVar>> simVars;
+      input output SimCode.SimCodeIndices indices;
+    protected
+      Integer uniq = indices.uniqueIndex;
+      Integer real_idx, int_idx, bool_idx, string_idx, enum_idx;
+      list<SimVar> real_lst = {}, int_lst = {}, bool_lst = {}, string_lst = {}, enum_lst = {};
+      Variable var;
+      Alias alias;
+    algorithm
+      (real_idx, int_idx, bool_idx, string_idx, enum_idx) := getTypeIndices(indices, varType);
+      for var_ptr in vars loop
+        var := Pointer.access(var_ptr);
+        alias := if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS();
+        () := match Type.arrayElementType(var.ty)
+          case Type.REAL() algorithm
+            real_lst := create(var, uniq, real_idx, alias) :: real_lst;
+            real_idx := real_idx + 1;
+            uniq := uniq + 1;
+          then ();
+
+          case Type.INTEGER() algorithm
+            int_lst := create(var, uniq, int_idx, alias) :: int_lst;
+            int_idx := int_idx + 1;
+            uniq := uniq + 1;
+          then ();
+
+          case Type.BOOLEAN() algorithm
+            bool_lst := create(var, uniq, bool_idx, alias) :: bool_lst;
+            bool_idx := bool_idx + 1;
+            uniq := uniq + 1;
+          then ();
+
+          case Type.STRING() algorithm
+            string_lst := create(var, uniq, string_idx, alias) :: string_lst;
+            string_idx := string_idx + 1;
+            uniq := uniq + 1;
+          then ();
+
+          case Type.ENUMERATION() algorithm
+            enum_lst := create(var, uniq, enum_idx, alias) :: enum_lst;
+            enum_idx := enum_idx + 1;
+            uniq := uniq + 1;
+          then ();
+
+          // clock variables do not exist anymore
+          case Type.CLOCK() then ();
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
+          then fail();
+        end match;
+      end for;
+      simVars := {listReverseInPlace(real_lst), listReverseInPlace(int_lst), listReverseInPlace(bool_lst),
+                  listReverseInPlace(string_lst), listReverseInPlace(enum_lst)};
+      indices.uniqueIndex := uniq;
+      indices := setTypeIndices(indices, varType, real_idx, int_idx, bool_idx, string_idx, enum_idx);
+    end createListsByType;
+
+    function getTypeIndex
+      input SimCode.SimCodeIndices indices;
+      input VarType varType;
+      output Integer idx;
+    algorithm
+      idx := match varType
+        case VarType.SIMULATION       then indices.realVarIndex;
+        case VarType.PARAMETER        then indices.realParamIndex;
+        case VarType.ALIAS            then indices.realAliasIndex;
+        case VarType.RESIDUAL         then indices.residualIndex;
+        case VarType.EXTERNAL_OBJECT  then indices.extObjIndex;
+      end match;
+    end getTypeIndex;
+
+    function setTypeIndex
+      input output SimCode.SimCodeIndices indices;
+      input VarType varType;
+      input Integer idx;
+    algorithm
+      () := match varType
+        case VarType.SIMULATION       algorithm indices.realVarIndex := idx;   then ();
+        case VarType.PARAMETER        algorithm indices.realParamIndex := idx; then ();
+        case VarType.ALIAS            algorithm indices.realAliasIndex := idx; then ();
+        case VarType.RESIDUAL         algorithm indices.residualIndex := idx;  then ();
+        case VarType.EXTERNAL_OBJECT  algorithm indices.extObjIndex := idx;    then ();
+      end match;
+    end setTypeIndex;
+
+    function getTypeIndices
+      input SimCode.SimCodeIndices indices;
+      input VarType varType;
+      output Integer real_idx;
+      output Integer int_idx;
+      output Integer bool_idx;
+      output Integer string_idx;
+      output Integer enum_idx;
+    algorithm
+      (real_idx, int_idx, bool_idx, string_idx, enum_idx) := match varType
+        case VarType.SIMULATION then (indices.realVarIndex, indices.integerVarIndex, indices.booleanVarIndex, indices.stringVarIndex, indices.enumerationVarIndex);
+        case VarType.PARAMETER  then (indices.realParamIndex, indices.integerParamIndex, indices.booleanParamIndex, indices.stringParamIndex, indices.enumerationParamIndex);
+        case VarType.ALIAS      then (indices.realAliasIndex, indices.integerAliasIndex, indices.booleanAliasIndex, indices.stringAliasIndex, indices.enumerationAliasIndex);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled VarType."});
+        then fail();
+      end match;
+    end getTypeIndices;
+
+    function setTypeIndices
+      input output SimCode.SimCodeIndices indices;
+      input VarType varType;
+      input Integer real_idx;
+      input Integer int_idx;
+      input Integer bool_idx;
+      input Integer string_idx;
+      input Integer enum_idx;
+    algorithm
+      () := match varType
+        case VarType.SIMULATION algorithm
+          indices.realVarIndex := real_idx;
+          indices.integerVarIndex := int_idx;
+          indices.booleanVarIndex := bool_idx;
+          indices.stringVarIndex := string_idx;
+          indices.enumerationVarIndex := enum_idx;
+        then ();
+        case VarType.PARAMETER algorithm
+          indices.realParamIndex := real_idx;
+          indices.integerParamIndex := int_idx;
+          indices.booleanParamIndex := bool_idx;
+          indices.stringParamIndex := string_idx;
+          indices.enumerationParamIndex := enum_idx;
+        then ();
+        case VarType.ALIAS algorithm
+          indices.realAliasIndex := real_idx;
+          indices.integerAliasIndex := int_idx;
+          indices.booleanAliasIndex := bool_idx;
+          indices.stringAliasIndex := string_idx;
+          indices.enumerationAliasIndex := enum_idx;
+        then ();
+      end match;
+    end setTypeIndices;
 
     function createFromResidualComponent
       input output StrongComponent comp;
@@ -1136,179 +1303,20 @@ public
       input SplitType splitType;
       input VarType varType;
     protected
-      VariablePointers sim_vars = if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars;
-      Pointer<list<SimVar>> acc = Pointer.create({});
-      Pointer<list<SimVar>> real_lst = Pointer.create({});
-      Pointer<list<SimVar>> int_lst = Pointer.create({});
-      Pointer<list<SimVar>> bool_lst = Pointer.create({});
-      Pointer<list<SimVar>> string_lst = Pointer.create({});
-      Pointer<list<SimVar>> enum_lst = Pointer.create({});
-      Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
+      // scalarize goes through fromList, whose cref dedupe a record and its elements rely on
+      list<Pointer<Variable>> sim_vars = VariablePointers.toList(if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars);
+      list<SimVar> lst;
     algorithm
+
       if splitType == SplitType.NONE then
-        // Do not split and return everything as one single list
-        VariablePointers.map(sim_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
-        simVars := {listReverse(Pointer.access(acc))};
-        simCodeIndices := Pointer.access(indices_ptr);
+        (lst, simCodeIndices) := SimVar.createList(sim_vars, varType, simCodeIndices);
+        simVars := {lst};
       elseif splitType == SplitType.TYPE then
-        // Split the variables by basic type (real, integer, boolean, string)
-        // and return a list for each type
-        VariablePointers.map(sim_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
-        simVars := {listReverse(Pointer.access(real_lst)),
-                    listReverse(Pointer.access(int_lst)),
-                    listReverse(Pointer.access(bool_lst)),
-                    listReverse(Pointer.access(string_lst)),
-                    listReverse(Pointer.access(enum_lst))};
-        simCodeIndices := Pointer.access(indices_ptr);
+        (simVars, simCodeIndices) := SimVar.createListsByType(sim_vars, varType, simCodeIndices);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of invalid splitType."});
       end if;
     end createSimVarLists;
-
-    function splitByType
-      "Traverser function for splitting process. Target for SplitType.TYPE"
-      input output Variable var;
-      input Pointer<list<SimVar>> real_lst;
-      input Pointer<list<SimVar>> int_lst;
-      input Pointer<list<SimVar>> bool_lst;
-      input Pointer<list<SimVar>> string_lst;
-      input Pointer<list<SimVar>> enum_lst;
-      input Pointer<SimCode.SimCodeIndices> indices_ptr;
-      input VarType varType;
-    protected
-      SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
-    algorithm
-      () := match (Type.arrayElementType(var.ty), varType)
-
-        case (Type.REAL(), VarType.SIMULATION)
-          algorithm
-            Pointer.update(real_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.realVarIndex) :: Pointer.access(real_lst));
-            simCodeIndices.realVarIndex := simCodeIndices.realVarIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.INTEGER(), VarType.SIMULATION)
-          algorithm
-            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerVarIndex) :: Pointer.access(int_lst));
-            simCodeIndices.integerVarIndex := simCodeIndices.integerVarIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.BOOLEAN(), VarType.SIMULATION)
-          algorithm
-            Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.booleanVarIndex) :: Pointer.access(bool_lst));
-            simCodeIndices.booleanVarIndex := simCodeIndices.booleanVarIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.STRING(), VarType.SIMULATION)
-          algorithm
-            Pointer.update(string_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.stringVarIndex) :: Pointer.access(string_lst));
-            simCodeIndices.stringVarIndex := simCodeIndices.stringVarIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.ENUMERATION(), VarType.SIMULATION)
-          algorithm
-            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationVarIndex) :: Pointer.access(enum_lst));
-            simCodeIndices.enumerationVarIndex := simCodeIndices.enumerationVarIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.REAL(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(real_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.realParamIndex) :: Pointer.access(real_lst));
-            simCodeIndices.realParamIndex := simCodeIndices.realParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.INTEGER(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
-            simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.BOOLEAN(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.booleanParamIndex) :: Pointer.access(bool_lst));
-            simCodeIndices.booleanParamIndex := simCodeIndices.booleanParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.STRING(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(string_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.stringParamIndex) :: Pointer.access(string_lst));
-            simCodeIndices.stringParamIndex := simCodeIndices.stringParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.ENUMERATION(), VarType.PARAMETER)
-          algorithm
-            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationParamIndex) :: Pointer.access(enum_lst));
-            simCodeIndices.enumerationParamIndex := simCodeIndices.enumerationParamIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.REAL(), VarType.ALIAS)
-          algorithm
-            Pointer.update(real_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.realAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(real_lst));
-            simCodeIndices.realAliasIndex := simCodeIndices.realAliasIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.INTEGER(), VarType.ALIAS)
-          algorithm
-            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.integerAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(int_lst));
-            simCodeIndices.integerAliasIndex := simCodeIndices.integerAliasIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.BOOLEAN(), VarType.ALIAS)
-          algorithm
-            Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.booleanAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(bool_lst));
-            simCodeIndices.booleanAliasIndex := simCodeIndices.booleanAliasIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.STRING(), VarType.ALIAS)
-          algorithm
-            Pointer.update(string_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.stringAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(string_lst));
-            simCodeIndices.stringAliasIndex := simCodeIndices.stringAliasIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        case (Type.ENUMERATION(), VarType.ALIAS)
-          algorithm
-            Pointer.update(enum_lst, SimVar.create(var, simCodeIndices.uniqueIndex, simCodeIndices.enumerationAliasIndex, Alias.fromBinding(var.binding)) :: Pointer.access(enum_lst));
-            simCodeIndices.enumerationAliasIndex := simCodeIndices.enumerationAliasIndex + 1;
-            simCodeIndices.uniqueIndex := simCodeIndices.uniqueIndex + 1;
-            Pointer.update(indices_ptr, simCodeIndices);
-        then ();
-
-        // clock variables do not exist anymore
-        case (Type.CLOCK(), _) then ();
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
-        then fail();
-
-      end match;
-    end splitByType;
 
     function getPartitionVars
       input Partition partition;
@@ -1546,14 +1554,9 @@ public
       input output SimVars vars;
       input output SimCodeIndices simCodeIndices;
     protected
-      Pointer<SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
-      Pointer<list<SimVar>> acc = Pointer.create({});
-      VarType varType = VarType.EXTERNAL_OBJECT;
       list<SimVar> var_lst;
     algorithm
-      VariablePointers.map(external_objects, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
-      simCodeIndices := Pointer.access(indices_ptr);
-      var_lst := listReverse(Pointer.access(acc));
+      (var_lst, simCodeIndices) := SimVar.createList(VariablePointers.toList(external_objects), VarType.EXTERNAL_OBJECT, simCodeIndices);
       vars.extObjVars := var_lst;
       // todo: alias
       info := EXT_OBJ_INFO(var_lst, {});

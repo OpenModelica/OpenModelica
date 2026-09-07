@@ -55,6 +55,8 @@ protected
   import Absyn;
   import EvalTarget = NFCeval.EvalTarget;
   import Array;
+  import Util;
+  import List;
 
 public
   function expand
@@ -462,6 +464,11 @@ public
     Mutable<Expression> iter;
     list<Mutable<Expression>> iters = {};
   algorithm
+    if Type.hasKnownSize(ty) and not List.any(iterators, function usesIterator(exp = exp)) then
+      result := fillArrayConstructor(expand(SimplifyExp.simplify(exp)), ty, listLength(iterators));
+      return;
+    end if;
+
     for i in iterators loop
       (node, range) := i;
       iter := Mutable.create(Expression.EMPTY(InstNode.getType(node)));
@@ -473,6 +480,24 @@ public
 
     result := expandArrayConstructor2(e, ty, ranges, iters);
   end expandArrayConstructor;
+
+  function usesIterator
+    input tuple<InstNode, Expression> iterator;
+    input Expression exp;
+    output Boolean used = Expression.containsIterator(exp, Util.tuple21(iterator));
+  end usesIterator;
+
+  function fillArrayConstructor
+    "The body does not depend on the iterators: every element is the same expression."
+    input Expression value;
+    input Type ty;
+    input Integer levels;
+    output Expression result;
+  algorithm
+    result := if levels == 0 then value else
+      Expression.makeArray(ty, arrayCreate(Dimension.size(Type.nthDimension(ty, 1)),
+        fillArrayConstructor(value, Type.unliftArray(ty), levels - 1)));
+  end fillArrayConstructor;
 
   function expandArrayConstructor2
     input Expression exp;
