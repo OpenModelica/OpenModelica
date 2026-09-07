@@ -112,6 +112,38 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL
 }
 
 /**
+ * @brief Get the Jacobian method GBODE can use for the given non-linear solver.
+ *
+ * The adjoint and bidirectional evaluation modes produce a full Jacobian matrix in one
+ * go. GBODE's KINSOL and Newton non-linear solvers instead request single columns of the
+ * ODE Jacobian (see jacobian_SR_column() and friends in gbode_nls.c,
+ * These could be adapted of course aswell to allow adjoints), which is a genuine
+ * solver API restriction. Only the internal non-linear solver evaluates the whole ODE
+ * Jacobian at once and can therefore use all evaluation directions.
+ *
+ * @param threadData          Used for error handling.
+ * @param nlsSolverMethod     Non-linear solver method used by GBODE.
+ * @return JACOBIAN_METHOD    Requested method, downgraded to the default if unusable.
+ */
+static JACOBIAN_METHOD getGbodeJacobianMethod(threadData_t* threadData, enum GB_NLS_METHOD nlsSolverMethod)
+{
+  JACOBIAN_METHOD jacobianMethod = getRequestedJacobianMethod(threadData);
+
+  /* non-internal non-linear solvers cannot use the adjoint or bidirectional Jacobian evaluation methods,
+   * because they only request single columns of the ODE Jacobian and not the whole matrix at once. */
+  if ((jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC)
+      && nlsSolverMethod != GB_NLS_INTERNAL) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s requires the internal non-linear solver of GBODE. "
+                                          "Use `-gbnls=internal` / `-gbfnls=internal`. "
+                                          "Switching to the forward symbolic Jacobian.",
+                       JACOBIAN_METHOD_NAME[jacobianMethod]);
+    jacobianMethod = JAC_UNKNOWN;
+  }
+
+  return jacobianMethod;
+}
+
+/**
  * @brief Function allocates memory needed for chosen gbodef method.
  *
  * @param data          Runtime data struct.
@@ -238,18 +270,13 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     // Free is done in gbode_freeData
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (gbData->isExplicit) {
-      data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-      if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
-        infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
-        messageClose(OMC_LOG_SOLVER);
-      }
-      else {
+      JACOBIAN_METHOD jacobianMethod = getGbodeJacobianMethod(threadData, gbfData->nlsSolverMethod);
+      /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
+       * multi-rate path so set requireForwardJacobian=TRUE. */
+      jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
+      if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
-
-      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
       gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
       // change GBODE specific jacobian method
@@ -263,11 +290,15 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       }
     } else {
       gbfData->symJacAvailable = gbData->symJacAvailable;
+      jacobian = getSymbolicOdeJacobian(data);
     }
-    if (jacobian->availability == JACOBIAN_AVAILABLE) {
-      data->callback->getDAG_JacA(data, threadData, jacobian);
+    /* The evaluation DAG is generated and consumed for the forward Jacobian A,
+     * even when the selected Jacobian evaluates adjoint directions. */
+    JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    if (forwardJacobian->availability == JACOBIAN_AVAILABLE) {
+      data->callback->getDAG_JacA(data, threadData, forwardJacobian);
     }
-    if (!jacobian->dag) {
+    if (!forwardJacobian->dag) {
       throwStreamPrint(threadData,
                        "Cannot create multirate data structures without a valid Jacobian DAG. Use a symbolic Jacobian "
                        "(--generateDynamicJacobian=symbolic), an explicit integrator, or switch to single-rate integration.");
@@ -495,19 +526,13 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   /* initialize analytic Jacobian, if available and needed */
   if (!gbData->isExplicit) {
-    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-    if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
-      infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
-      messageClose(OMC_LOG_SOLVER);
-    }
-    else {
+    JACOBIAN_METHOD jacobianMethod = getGbodeJacobianMethod(threadData, gbData->nlsSolverMethod);
+    /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
+     * multi-rate path, see gbInternal_evalJacobian() and initRK_NLS_DATA_MR(). */
+    jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
+    if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
       throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
-
-    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
     gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
     // change GBODE specific jacobian method
@@ -674,8 +699,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
  */
 void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 {
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  freeJacobian(jacobian);
+  freeSymbolicOdeJacobian(data);
 
   /* Free non-linear system data */
   freeRK_NLS_DATA(gbData->nlsSolverMethod, gbData->nlsData);
