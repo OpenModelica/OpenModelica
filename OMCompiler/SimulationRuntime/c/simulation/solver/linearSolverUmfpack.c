@@ -133,8 +133,8 @@ void getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, LINEAR_S
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, parentJacobian);
   }
 
   /* evaluate Jacobian */

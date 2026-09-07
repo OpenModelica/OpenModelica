@@ -239,7 +239,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (gbData->isExplicit) {
       data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-      if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+      if (jacobian->sparsePattern) {
         infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
         infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
@@ -249,9 +249,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
 
-      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
+      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian);
 
-      gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+      gbfData->symJacAvailable = jacobian->evalColumn != NULL;
       // change GBODE specific jacobian method
       if (jacobianMethod == SYMJAC) {
         warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
@@ -264,7 +264,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     } else {
       gbfData->symJacAvailable = gbData->symJacAvailable;
     }
-    if (jacobian->availability == JACOBIAN_AVAILABLE) {
+    if (jacobian->evalColumn) {
       data->callback->getDAG_JacA(data, threadData, jacobian);
     }
     if (!jacobian->dag) {
@@ -497,7 +497,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   if (!gbData->isExplicit) {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-    if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    if(jacobian->sparsePattern) {
       infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
       infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
@@ -507,9 +507,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
 
-    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
+    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian);
 
-    gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+    gbData->symJacAvailable = jacobian->evalColumn != NULL;
     // change GBODE specific jacobian method
     if (jacobianMethod == SYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
@@ -865,7 +865,7 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
 static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
 {
   size_t k;
-  EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelection;
+  EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelectionCol;
 
   clearEvalSelection(selection);
 
