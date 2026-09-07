@@ -566,6 +566,11 @@ impl SimEngine for CEngine {
         (k < md.nSamples.max(0) as usize).then(|| unsafe { (*md.samplesInfo.add(k)).index as i32 })
     }
 
+    fn store_pre_strings(&mut self) {
+        let n = self.rt.model().nVariablesString.max(0) as usize;
+        unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
+    }
+
     fn update_static_system_data(&mut self, linear: bool) {
         let (data, td) = (self.rt.data, self.rt.thread_data);
         let md = self.rt.model();

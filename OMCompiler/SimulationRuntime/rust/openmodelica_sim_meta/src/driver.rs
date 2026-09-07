@@ -515,6 +515,10 @@ pub trait SimEngine {
     /// `nominal`/`min`/`max` from the attributes once those are final. A wasm model
     /// reads the attributes live and has nothing to do. Default: nothing.
     fn update_static_system_data(&mut self, _linear: bool) {}
+    /// The part of C's `storePreValues` the layout has no region for: a host whose
+    /// model keeps `pre()` of its String variables copies them here. Default:
+    /// nothing.
+    fn store_pre_strings(&mut self) {}
     /// Whether the model itself reported a violated `assert()` inside the current
     /// `noThrowAsserts` window and carried on (C's `needToReThrow`). A model that
     /// hands its violations back through [`take_pending_warnings`] leaves this
@@ -3346,6 +3350,7 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
         e.read_bytes(sim_data + live, &mut buf)?;
         e.write_bytes(sim_data + pre, &buf)?;
     }
+    e.store_pre_strings();
     Ok(())
 }
 
