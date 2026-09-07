@@ -307,11 +307,6 @@ parmodauto: tbb
 parmodauto_clean: tbb_clean
 	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
-breakprocess:
-	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
-	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
-
-
 runtimeCPPinstall: all-runtimeCPPinstall
 
 all-runtimeCPPinstall: omc-and-runtimeCPPinstall
