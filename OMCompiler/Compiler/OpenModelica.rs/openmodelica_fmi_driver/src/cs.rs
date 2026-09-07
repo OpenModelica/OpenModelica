@@ -66,10 +66,13 @@ pub fn simulate(
     let mut cancelled = false;
     if event_mode {
         let info = event_iteration(as_common(inst))?;
+        // `terminate()` from an initial equation ends the run at `startTime`, as it
+        // does outside an FMU; the row below is the result.
         if info.terminate {
-            return Err(Error::TerminatedAtInit);
+            terminated_at = Some(opts.start_time);
+        } else {
+            inst.enter_step_mode()?;
         }
-        inst.enter_step_mode()?;
     }
     rec.snapshot_parameters(as_common(inst))?;
     rec.sample(as_common(inst), opts.start_time)?;
@@ -77,7 +80,7 @@ pub fn simulate(
     let deadline = Deadline::arm(opts);
     let mut t = opts.start_time;
     let mut grid = opts.grid(step).skip(1);
-    let mut next = grid.next();
+    let mut next = if terminated_at.is_some() { None } else { grid.next() };
     while let Some(target) = next {
         if deadline.expired() {
             return Err(Error::Alarm);
