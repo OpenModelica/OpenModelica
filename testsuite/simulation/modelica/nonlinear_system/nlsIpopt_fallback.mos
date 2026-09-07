@@ -1,0 +1,38 @@
+// name: nlsIpopt_fallback
+// status: correct
+// teardown_command: rm -f IpoptFallback* _IpoptFallback* output.log
+// cflags: -d=-newInst
+//
+// Tests the -nlsIpopt fallback together with -nlsEnforceMinMax (ticket #14104).
+// The cubic has roots {2, 8, -3}; start 7 leads the standard solver to 8, which
+// violates max = 5 and is rejected by -nlsEnforceMinMax. The standard solve then
+// fails, and the IPOPT fallback (-nlsIpopt) finds a feasible root (-3 <= 5).
+
+loadString("
+model IpoptFallback
+  Real x(start = 7, max = 5);
+equation
+  (x - 2)*(x - 8)*(x + 3) = 0;
+end IpoptFallback;
+"); getErrorString();
+
+rFb := simulate(IpoptFallback, stopTime = 0.0, simflags = "-nlsEnforceMinMax -nlsIpopt"); getErrorString();
+print("x<=max  = " + String(val(x,0.0) <= 5.0) + "\n");
+print("res ~ 0 = " + String(abs((val(x,0.0) - 2.0)*(val(x,0.0) - 8.0)*(val(x,0.0) + 3.0)) < 1e-6) + "\n");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IpoptFallback_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'IpoptFallback', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlsEnforceMinMax -nlsIpopt'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// x<=max  = true
+//
+// res ~ 0 = true
+//
+// endResult
