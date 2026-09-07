@@ -64,6 +64,13 @@ Sign.mo \
 Sin.mo \
 Sinh.mo \
 Skew.mo \
+SpatialDistribution1.mo \
+SpatialDistribution2.mo \
+SpatialDistribution3.mo \
+SpatialDistribution4.mo \
+SpatialDistribution5.mo \
+SpatialDistribution6.mo \
+SpatialDistribution7.mo \
 Sqrt.mo \
 Sum.mo \
 SumArray.mo \
