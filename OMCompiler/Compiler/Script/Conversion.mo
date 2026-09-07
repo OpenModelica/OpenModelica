@@ -852,9 +852,9 @@ protected
       case ConversionRule.MODIFIERS()
         algorithm
           print("convertModifiers: ");
-          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
+          print(List.toString(rule.oldMods, Dump.unparseElementArgStr, List.Style.CURLY));
           print(" => ");
-          print(List.toString(rule.newMods, Dump.unparseElementArgStr, List.Style.FLAT_CURLY));
+          print(List.toString(rule.newMods, Dump.unparseElementArgStr, List.Style.CURLY));
         then
           ();
 

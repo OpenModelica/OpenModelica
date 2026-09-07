@@ -3041,7 +3041,7 @@ algorithm
       dim1_str := ExpressionBasics.dimensionString(dim1);
       dim2_str := ExpressionBasics.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toString(expl, ExpressionBasics.printExpStr, List.Style.CURLY);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
         {pre_str, el_str, dim1_str, dim2_str}, inInfo);
     end if;
@@ -3054,7 +3054,7 @@ algorithm
       ty2_str := TypesDump.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toStringCustom(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toString(expl, ExpressionBasics.printExpStr, List.Style.CURLY);
       Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
         {pre_str, el_str, ty1_str, ty2_str}, inInfo);
     end try;

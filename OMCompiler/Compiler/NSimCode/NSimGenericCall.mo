@@ -224,7 +224,7 @@ public
     algorithm
       str := match iter
         case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + Expression.toString(iter.start) + ", step:" + Expression.toString(iter.step) + ", stop:" + Expression.toString(iter.stop) + ", size: " + Expression.toString(iter.size) + "}" + subIterString(iter.sub_iter);
-        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, List.Style.FLAT_CURLY_SHORT) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, List.Style.CURLY_SHORT) + "}" + subIterString(iter.sub_iter);
       end match;
     end toString;
 

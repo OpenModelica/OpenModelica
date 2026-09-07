@@ -188,7 +188,7 @@ public
       else
         algorithm
           Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {"size" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
+            {"size" + List.toString(posArgs, Expression.toString, List.Style.ROUND),
              "size(Any[:, ...]) => Integer[:]\n  size(Any[:, ...], Integer) => Integer"}, info);
         then
           fail();
@@ -207,7 +207,7 @@ public
     // array can take any number of arguments, but needs at least one.
     if listEmpty(posArgs) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {"array" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
+        {"array" + List.toString(posArgs, Expression.toString, List.Style.ROUND),
          "array(Any, Any, ...) => Any[:]"}, info);
       fail();
     end if;

@@ -3543,7 +3543,7 @@ function printWrongArgsError
   input SourceInfo info;
 algorithm
   Error.addInternalError(evalFunc + " got invalid arguments " +
-    List.toString(args, Expression.toString, List.Style.FLAT_BRACKETS), info);
+    List.toString(args, Expression.toString, List.Style.ROUND), info);
 end printWrongArgsError;
 
 annotation(__OpenModelica_Interface="nf_frontend");

@@ -786,7 +786,7 @@ public
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, List.Style.FLAT_CURLY);
+        then List.toString(subscript.indices, toString, List.Style.CURLY);
       case WHOLE() then ":";
       case SPLIT_PROXY()
         then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
