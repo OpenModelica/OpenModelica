@@ -336,16 +336,23 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       data->simulationInfo->jacobianEvals = jacobian->sparsePattern->maxColors;
       dasslData->jacobianFunction = jacA_numColored;
       break;
-    case BICOLOREDSYMJAC:
-      data->simulationInfo->jacobianEvals = jacobian->sparsePattern->maxColors
-          + jacobian->adjointJacobian->sparsePattern->maxColors;
-      dasslData->jacobianFunction = jacA_symColored;
-      break;
     case COLOREDSYMJAC:
     case COLOREDSYMJACADJ:
       data->simulationInfo->jacobianEvals = jacobian->sparsePattern->maxColors;
       dasslData->jacobianFunction = jacA_symColored;
       break;
+    case BICOLOREDSYMJAC: {
+      JACOBIAN* jac_A = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+      data->simulationInfo->jacobianEvals = (jac_A->sparsePattern ? jac_A->sparsePattern->maxColors : 0)
+          + (jac_A->sparsePatternT ? jac_A->sparsePatternT->maxColors : 0);
+      if (!(jac_A->evalColumn && jac_A->evalRow)) {
+        warningStreamPrint(OMC_LOG_SOLVER, 0,
+            "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; "
+            "falling back to standard colored symbolic evaluation.");
+      }
+      dasslData->jacobianFunction = jacA_symColored;
+      break;
+    }
     case SYMJAC:
       dasslData->jacobianFunction = jacA_sym;
       break;
@@ -959,8 +966,8 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   unsigned int i, j;
 
   /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
+  if (jac->constColEqns) {
+      jac->constColEqns(data, threadData, jac, NULL);
   }
 
   for(i=0; i < columns; i++)

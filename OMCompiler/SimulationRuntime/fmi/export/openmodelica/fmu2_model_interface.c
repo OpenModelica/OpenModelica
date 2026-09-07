@@ -1897,8 +1897,8 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
   int dependent = comp->fmiDerJacInitialization->sizeRows;
 
   /* TODO: Evaluate only once for one evaluation of jacobian */
-  if (comp->fmiDerJacInitialization->constantEqns != NULL) {
-    comp->fmiDerJacInitialization->constantEqns(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  if (comp->fmiDerJacInitialization->constColEqns) {
+    comp->fmiDerJacInitialization->constColEqns(fmudata, td, comp->fmiDerJacInitialization, NULL);
   }
 
   /* clear out the seeds */
@@ -1979,8 +1979,8 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   */
   /* eval constant part of jacobian */
   /* TODO: Evaluate only once for one evaluation of jacobian */
-  if (comp->fmiDerJac->constantEqns != NULL) {
-    comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
+  if (comp->fmiDerJac->constColEqns) {
+    comp->fmiDerJac->constColEqns(fmudata, td, comp->fmiDerJac, NULL);
   }
 
   /* clear out the seeds */
