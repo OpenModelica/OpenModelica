@@ -5,6 +5,7 @@
 - [1 Build dependencies](#1-build-dependencies)
   - [1.1 Debian/Ubuntu](#11-debianubuntu)
   - [1.2 Linux/BSD](#12-linuxbsd)
+  - [1.3 Rust toolchain](#13-rust-toolchain)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 CMake build](#21-cmake-build)
   - [2.2 Make build](#22-make-build)
@@ -94,6 +95,47 @@ First you need to install the dependencies:
 - ncurses, readline (optional, used by OMShell-terminal)
 - OpenSceneGraph (optional, used by OMEdit)
 - Qt6 or Qt5, Webkit, QtOpenGL (optional, used by OMEdit)
+- rustc and cargo (optional if you disable it; see [1.3 Rust toolchain](#13-rust-toolchain)
+for how to install or disable)
+
+### 1.3 Rust toolchain
+
+Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed for
+a default build: the C simulation runtime writes its result files through
+`libomc_result` (`OM_RUST_RESULT_WRITERS`) and the GUI clients read them back
+through the same library (`OM_RUST_RESULT_READERS`). Both are on by default and
+CMake stops at configure time if `cargo` is not on the `PATH`.
+
+Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
+so `rustc`/`cargo` 1.85 or newer:
+
+```bash
+sudo apt-get install rustc cargo
+cargo --version
+```
+
+If your distribution packages something older (Ubuntu 24.04 for instance),
+install [rustup](https://rustup.rs) and let it manage the toolchain instead:
+
+```bash
+sudo apt-get install rustup
+# Or, if there is no rustup package:
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup default stable
+```
+
+To build without Rust, turn both options off. You then lose the `.arrow` result
+format; the C readers and writers handle `.mat`, `.csv` and `.plt` only:
+
+```bash
+cmake -S . -B build_cmake -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
+```
+
+Two larger Rust components are off by default. `-DOM_ENABLE_RUST_SIM_RUNTIME=ON`
+builds the simulation runtime `--simCodeTarget=C+Rust` links, and also works
+with a stable toolchain. `-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as
+the Rust port, which needs the pinned nightly toolchain described in
+[Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 ## 2 Compile OpenModelica
 
@@ -188,4 +230,4 @@ and then sent us an email at
 
 --------------
 
-Last updated 2026-02-16.
+Last updated 2026-09-07.
