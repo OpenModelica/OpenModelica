@@ -379,7 +379,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
   initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
-  gbfData->jacobian->evalSelection = allocEvalSelection(gbfData->jacobian->dag);
+  gbfData->jacobian->evalSelectionCol = allocEvalSelection(gbfData->jacobian->dag);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -943,9 +943,9 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   // call jacobian_ODE with the mapped seedVars
   // activate fast state evalSelection here!
-  jacobian_ODE->evalSelection = jacobian->evalSelection;
+  jacobian_ODE->evalSelectionCol = jacobian->evalSelectionCol;
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
-  jacobian_ODE->evalSelection = NULL;
+  jacobian_ODE->evalSelectionCol = NULL;
 
   /* Update resultVars array */
   if (gbfData->type == MS_TYPE_IMPLICIT) {

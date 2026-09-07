@@ -372,14 +372,14 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
   }
-  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+  if(jacobian->sparsePattern) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
     messageClose(OMC_LOG_SIMULATION);
   }
 
-  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability);
+  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian);
 
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;
@@ -400,9 +400,9 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       break;
     case BICOLOREDSYMJAC: {
       JACOBIAN* jac_A = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-      data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors
-          + (jac_A->adjointJacobian ? jac_A->adjointJacobian->sparsePattern->maxColors : 0);
-      if (!jac_A->isBidirectional) {
+      data->simulationInfo->jacobianEvals = (jac_A->sparsePattern ? jac_A->sparsePattern->maxColors : 0)
+          + (jac_A->sparsePatternT ? jac_A->sparsePatternT->maxColors : 0);
+      if (!(jac_A->evalColumn && jac_A->evalRow)) {
         warningStreamPrint(OMC_LOG_SOLVER, 0,
             "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; "
             "falling back to standard colored symbolic evaluation.");
@@ -1087,8 +1087,8 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   unsigned int i, j;
 
   /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
+  if (jac->constColEqns) {
+      jac->constColEqns(data, threadData, jac, NULL);
   }
 
   for(i=0; i < columns; i++)

@@ -367,14 +367,14 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
   sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
-  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+  if(jacobian->sparsePattern) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
     messageClose(OMC_LOG_SIMULATION);
   }
 
-  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
+  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian);
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {
@@ -1517,8 +1517,8 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
+  if (jac->constColEqns) {
+      jac->constColEqns(data, threadData, jac, NULL);
   }
 
   for(i = 0; i < sparsePattern->maxColors; i++)

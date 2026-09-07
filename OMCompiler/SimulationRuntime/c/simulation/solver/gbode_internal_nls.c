@@ -151,7 +151,7 @@ static void gbInternal_evalJacobianMR(DATA* data,
   int* fast_idx = gbData->fastStatesIdx;
   unsigned int  size_fast = gbData->nFastStates;
 
-  fullJac->evalSelection = NULL;
+  fullJac->evalSelectionCol = NULL;
   memset(fullJac->seedVars, 0, fullJac->sizeCols * sizeof(modelica_real));
 
   int color, col, nz;
@@ -189,7 +189,7 @@ static void gbInternal_evalJacobianMR(DATA* data,
     }
   }
 
-  fullJac->evalSelection = NULL;
+  fullJac->evalSelectionCol = NULL;
 }
 
 static void gbInternal_evalNumericalJacobian(DATA *data,
@@ -306,11 +306,11 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   rt_tick(SIM_TIMER_JACOBIAN);
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
+  if (nls->multirate && jacobian_ODE->evalColumn)
   {
     gbInternal_evalJacobianMR(data, threadData, gbData, jacobian_ODE, nls, nls->jacobian_callback);
   }
-  else if (!nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
+  else if (!nls->multirate && jacobian_ODE->evalColumn)
   {
     evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
   }

@@ -5945,8 +5945,6 @@ match sparsity
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
-    let isRowEval = if isAdjoint then "1" else "0"
-    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
@@ -5959,7 +5957,6 @@ match sparsity
       <%auxFunction%>
 
       initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
-      jacobian->isRowEval = <%isRowEval%>;
 
       /* Phase 1: count non-zeros per column */
       memset(col_counts, 0, <%patternCols%> * sizeof(unsigned int));
@@ -5998,7 +5995,6 @@ match sparsity
        * here guarantees that no two same-color columns share a non-zero row. */
       computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
 
-      jacobian->availability = <%availability%>;
       return 0;
     }
     >>
@@ -6791,14 +6787,13 @@ match sparsepattern
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
-      jacobian->availability = JACOBIAN_NOT_AVAILABLE;
+      /* TODO set all relevant pointers to NULL? */
       return 1;
     }
     >>
   case _ then
     let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
-    let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => listLength(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
@@ -6806,7 +6801,6 @@ match sparsepattern
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
-    let isRowEval = if isAdjoint then "1" else "0"
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -6817,8 +6811,6 @@ match sparsepattern
 
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
-      jacobian->availability = <%availability%>;
-      jacobian->isRowEval = <%isRowEval%>;
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -6932,7 +6924,7 @@ case JACOBIAN_CONTEXT() then
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelection')%>
+    <%equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelectionCol')%>
 
     return 0;
   }

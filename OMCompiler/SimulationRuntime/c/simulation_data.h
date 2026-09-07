@@ -135,14 +135,6 @@ typedef enum
   IMPROPER_INPUT
 } EQUATION_SYSTEM_ERROR;
 
-typedef enum
-{
-  JACOBIAN_UNKNOWN = 0,       /* availability of jacobian unknown (not initialized) */
-  JACOBIAN_NOT_AVAILABLE,     /* no symbolic jacobian and no sparsity pattern available */
-  JACOBIAN_ONLY_SPARSITY,     /* only sparsity pattern available */
-  JACOBIAN_AVAILABLE          /* symbolic jacobian and sparsity pattern available */
-} JACOBIAN_AVAILABILITY;
-
 /**
  * @brief Sparse pattern for Jacobian matrix.
  *
@@ -196,24 +188,35 @@ typedef struct NONLINEAR_PATTERN
  */
 typedef struct JACOBIAN
 {
-  JACOBIAN_AVAILABILITY availability;   /* Availability status */
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC/CSR format including column/row coloring */
-  modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
+  size_t sizeTmpVarsAdj;                /* maybe we don't need this, same as sizeTmpVars? */
+
+  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC format including column coloring */
+  SPARSE_PATTERN* sparsePatternT;       /* Contains sparse pattern in CSR format including row coloring */
+
+  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
-  modelica_real* resultVars;            /* Result column/row for given seed vector */
+  modelica_real* resultVars;            /* Result column for given seed vector */
+
+  // Maybe we don't need these separately, can we re-use the above for row evaluation?
+  modelica_real* seedVarsAdj;           /* Seed vector for specifying which rows to evaluate */
+  modelica_real* tmpVarsAdj;            /* Partial derivatives used to compute resultVarsAdj */
+  modelica_real* resultVarsAdj;         /* Result row for given seed vector */
+
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+
   EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
-  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
-  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
-  jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
-  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
-                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
-  /* Bidirectional (star bicoloring) support */
-  modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
-  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  EVAL_SELECTION* evalSelectionCol;     /* selection for evalColumn (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  jacobianColumn_func_ptr constColEqns; /* Constant column equations independent of seed vector */
+
+  EVAL_DAG* dagT;                       /* dependency of columns and inner partial derivatives, transpose of dag? */
+  EVAL_SELECTION* evalSelectionRow;     /* selection for evalRow (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalRow;      /* symbolic jacobian row based on seed vector */
+  jacobianColumn_func_ptr constRowEqns; /* Constant row equations independent of seed vector */
+
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
 } JACOBIAN;
