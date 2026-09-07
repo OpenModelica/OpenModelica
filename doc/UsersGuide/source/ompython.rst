@@ -1,21 +1,38 @@
-OpenModelica Python Interface
-=============================
+OMPython - OpenModelica Python Interface
+========================================
 
 This chapter describes the OpenModelica Python integration facilities.
 
--  OMPython - the OpenModelica Python scripting interface, see :ref:`ompython`.
--  EnhancedOMPython - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
+-  OMPython.om_session_* - the OpenModelica Python scripting interface, see :ref:`om_session`.
+-  OMPython.modelica_system_* - enhanced OMPython scripting interface, see :ref:`modelica_system`.
+-  OMPython.modelica_doe_* - running design of experiments (DOE) using OpenModelica, see :ref:`modelica_doe`
 
-.. _ompython:
+Besides these main parts, additional helper functionality exists:
 
-OMPython - OpenModelica Python Interface
-----------------------------------------
+-  OMPython.OMParser and OMPython.OMTypedParser - parser for OpenModelica return data, see :ref:`parser`
+-  OMPython.model_execution - execute compiled models, see :ref:`model_execution`
+
+Each of the main sections listed above is differentiated in
+
+-  OMPython.*_abc - basic functionality which is used by the two available implementations
+-  OMPython.*_omc - run OpenModelica based on an OMC server
+-  OMPython.*_runner - run simulations using pre-compiled binaries
+
+The following data is based on OMPython version v4.x.x (to be released); it contains a compatibility layer which
+supports the main interface based on OMPython v4.0.0. During a transition period, both options will be available. The
+main differences between both implementations as well as limitations of the compatibility layer are described in
+:ref:`compatibility`.
+
+.. _om_session:
+
+OMPython.OMCSession - OpenModelica Python Interface
+---------------------------------------------------
 
 OMPython - OpenModelica Python API is a free, open source, highly
 portable Python based interactive session handler for Modelica
 scripting. It provides the modeler with components for creating a
 complete Modelica modeling, compilation and simulation environment based
-on the latest OpenModelica library standard available. OMPython is
+on the latest OpenModelica tools standard available. OMPython is
 architectured to combine both the solving strategy and model building.
 So domain experts (people writing the models) and computational
 engineers (people writing the solver code) can work on one unified tool
@@ -37,7 +54,7 @@ OMPython provides user friendly features like:
 -  Interactive session handling, parsing, interpretation of commands and
    Modelica expressions for evaluation, simulation, plotting, etc.
 
--  Interface to the latest OpenModelica API calls.
+-  Interface to the latest OpenModelica API calls. **depreciated**; see :ref:`compatibility`
 
 -  Optimized parser results that give control over every element of the output.
 
@@ -45,20 +62,41 @@ OMPython provides user friendly features like:
 
 -  Easy access to the library and testing of OpenModelica commands.
 
+-  Possibility to run DoEs (design of experiments) based on parameter variation of an existing model.
+
+-  Run models in different environments like Linux, Windows, docker or WSL.
+
+-  Run compiled models without any dependency on OMC / ZMQ.
+
 Test Commands
 ~~~~~~~~~~~~~
 
-OMPython provides a OMCSessionZMQ class that uses ZeroMQ to communicate with OpenModelica.
+OMPython provides a set of classes named OMCSession* that uses ZeroMQ to communicate with the OpenModelica Compiler
+(OMC). The following options exist:
 
-To test the command outputs, simply create an OMCSessionZMQ object by
-importing from the OMPython library within Python interepreter. The
+-  OMCSessionLocal
+
+-  OMCSessionPort
+
+-  OMCSessionDocker
+
+-  OMCSessionContainer
+
+-  OMCSessionWSL
+
+The handling of any paths within the communication is covered by OMCPath class. It is an implementation base on pathlib
+which uses OMC to run the different filesystem related commands. Therefore, it can be used also for remote / separated
+systems like docker or WSL.
+
+To test the command outputs, simply create an OMCSessionLocal object by
+importing from the OMPython library within Python interpreter. The
 module allows you to interactively send commands to the OMC server and
 display their output.
 
-To get started, create an OMCSessionZMQ object:
+To get started, create an OMCSessionLocal object:
 
->>> from OMPython import OMCSessionZMQ
->>> omc = OMCSessionZMQ()
+>>> import OMPython
+>>> omc = OMPython.OMCSessionZMQ()
 
 .. omc-mos ::
   :ompython-output:
@@ -102,20 +140,20 @@ doing a plot:
 Import As Library
 ^^^^^^^^^^^^^^^^^
 
-To use the module from within another python program, simply import
-OMCSessionZMQ from within the using program.
+To use the module from within another python program, simply import the selected OMCSession* class from within the
+selected program.
 
 For example:
 
 .. code-block:: python
 
   # test.py
-  from OMPython import OMCSessionZMQ
-  omc = OMCSessionZMQ()
+  import OMPython
+  omc = OMPython.OMCSessionLocal()
   cmds = [
     'loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")',
     "simulate(BouncingBall)",
-    "plot(h)"
+    "plot(h)",
     ]
   for cmd in cmds:
     answer = omc.sendExpression(cmd)
@@ -142,62 +180,101 @@ OMPython is designed to,
 
 -  Return or display the results.
 
-.. _enhancedompython :
+The main function to execute commands (like in OMShell) would be:
 
-Enhanced OMPython Features
---------------------------
-Some more improvements are added to OMPython functionality for querying more information about the models
-and simulate them. A list of new user friendly API functionality allows user to extract information about models using python
-objects. A list of API functionality is described below.
+.. code-block:: python
+
+  # test.py
+  import OMPython
+  omc = OMPython.OMCSessionLocal()
+  cmds = [
+    "getVersion()",
+    ]
+  for cmd in cmds:
+    answer = omc.sendExpression(cmd)
+    print("\n{}:\n{}".format(cmd, answer))
+
+.. _modelica_system :
+
+OMPython.ModelicaSystem - Enhanced OMPython Features
+----------------------------------------------------
+The ModelicaSystem class adds more functionality to OMPython. It provides methods to querying information about the
+models, to modify data (parameters, inputs, ...) and to simulate them. The corresponding API is described below.
 
 To get started, create a ModelicaSystem object:
 
->>> from OMPython import OMCSessionZMQ
->>> omc = OMCSessionZMQ()
->>> model_path=omc.sendExpression("getInstallationDirectoryPath()") + "/share/doc/omc/testmodels/"
->>> from OMPython import ModelicaSystem
->>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall")
+>>> import OMPython
+>>> mod = OMPython.ModelicaSystemOMC()
 
-The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument.
+The constructor for an ModelicaSystemOMC object creates an OMCSessionLocal by default. If this is not desired or
+additional configuration is needed, several options exist:
 
-- The first input argument must be a string with the file name of the Modelica code, with Modelica file extension ".mo".
-  If the Modelica file is not in the current directory of Python, then the file path must also be included.
+-  Via the argument command_line_options (optional), additional command line options for OMC can be defined:
 
--  The second input argument must be a string with the name of the Modelica model
-   including the namespace if the model is wrapped within a Modelica package.
+>>> mod = OMPython.ModelicaSystemOMC(command_line_options="-d=newInst")
 
--  The third input argument (optional) is used to specify the list of dependent libraries or dependent Modelica files e.g.,
+-  TODO: work_directory, omhome, session
 
->>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall",["Modelica"])
+After a ModelicaSystem object is created, the model can be defined:
 
--  The fourth input argument (optional), is a keyword argument which is used to set the command line options e.g.,
+>>> model_path = mod.get_session().sendExpression("getInstallationDirectoryPath()") + "/share/doc/omc/testmodels/"
+>>> mod.model(model_name="BouncingBall", model_file=ModelicaSystem(model_path + "BouncingBall.mo"))
 
->>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall",commandLineOptions="-d=newInst")
+The class method model() allows several arguments:
+
+-  model_name - The model name (as string). If the model is wrapped within a Modelica package, the namespace must also
+   be included.
+
+-  model_file - The path where to find the model file (as string or pathlib.Path object). The file should use the
+   Modelica file extension ".mo". If the Modelica file is not in the current directory of Python, then the file path
+   must also be included.
+
+-  libraries - A third input argument (optional) is used to specify the list of dependent libraries or dependent
+   Modelica files. Here, it is possible to just provide the library name or a tuple of library name and version:
+
+>>> mod.model(model_name="BouncingBall", model_file=ModelicaSystem(model_path + "BouncingBall.mo"), libraries=["Modelica"])
+>>> mod.model(model_name="BouncingBall", model_file=ModelicaSystem(model_path + "BouncingBall.mo"), libraries=[("Modelica","3.2.3"), "PowerSystems"])
+
+-  variable_filter - Optional string which sets a filter for the output variables. It is defined as a regular
+   expression. Only variables fully matching the regexp will be stored in the result file. Leaving it unspecified is
+   equivalent to ".*".
+
+-  build - Optional boolean controlling whether the model should be built when constructor is called. If False, the
+   constructor simply loads the model without compiling.
 
 BuildModel
 ~~~~~~~~~~
-The buildModel API can be used after ModelicaSystem(), in case the model needs to be updated or additional simulationflags needs to be set using sendExpression()
+The buildModel API can either directly be executed on model definition (see above) or be called separately, in case the
+model needs to be updated or additional simulation options needs to be set using sendExpression()
 
 >>> mod.buildModel()
-
 
 Standard get methods
 ~~~~~~~~~~~~~~~~~~~~
 
-- getQuantities()
-- getContinuous()
-- getInputs()
-- getOutputs()
-- getParameters()
-- getSimulationOptions()
+- getContinuous() [*] - possibility to use getContinuousInitial() or getContinuousFinal() for the defined cases
+- getInputs() [*]
+- getLinearInputs()
+- getLinearisationOptions() [*]
+- getLinearOutputs()
+- getLinearStates()
+- getOptimisationOptions() [*]
+- getOutputs() [*] - possibility to use getContinuousInitial() or getContinuousFinal() for the defined cases
+- getParameters() [*]
+- getQuantities() [*]
+- getSimulationOptions() [*]
 - getSolutions()
 
+Three calling possibilities are accepted by the marked get*() functions like getParameters():
 
-Three calling possibilities are accepted using getXXX() where "XXX" can be any of the above functions (eg:) getParameters().
+-  get*() without input argument - returns a dictionary with names as keys and values as values.
 
--  getXXX() without input argument, returns a dictionary with names as keys and values as values.
--  getXXX(S), where S is a string of names.
--  getXXX(["S1","S2"]) where S1 and S1 are list of string elements
+-  get*(S), where S is a string of names - returns the value for S.
+
+-  get*(["S1", "S2", ...]) where S1 and S1 define a list of string elements - returns a list of values matching the
+   requested parameters
+
+[TODO point]
 
 Usage of getMethods
 ~~~~~~~~~~~~~~~~~~~
@@ -327,5 +404,22 @@ Usage of Linearization methods
 >>> mod.getLinearOutputs() //returns a list of strings of names of outputs used when forming matrices
 
 >>> mod.getLinearStates() // returns a list of strings of names of states used when forming matrices.
+
+
+.. _modelica_doe:
+
+more text
+
+.. _model_execution:
+
+more text
+
+.. _parser:
+
+more text
+
+.. _compatibility:
+
+more text
 
 .. omc-reset ::
