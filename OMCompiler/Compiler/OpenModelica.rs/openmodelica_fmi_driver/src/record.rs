@@ -405,7 +405,7 @@ impl Recorder {
                 &col_types,
                 arrow::block_rows(0),
                 arrow::no_strings(),
-                &arrow::FileMeta { span: Some((start, stop)), units: &defs },
+                &arrow::FileMeta { span: Some((start, stop)), units: &defs, zstd: None },
             );
             StreamKind::Arrow(s)
         } else {
