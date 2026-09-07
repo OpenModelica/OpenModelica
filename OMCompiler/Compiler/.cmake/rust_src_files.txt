@@ -357,6 +357,7 @@ openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml
 openmodelica_susan/src/main.rs
 openmodelica_tpl/Cargo.toml
+openmodelica_tpl/src/Tpl.handwritten.rs
 openmodelica_util/Cargo.toml
 openmodelica_util/build.rs
 openmodelica_util/src/Autoconf.rs

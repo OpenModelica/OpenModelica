@@ -52,6 +52,56 @@ const EXTERNAL_DEFAULTABLE_QNAMES: &[&str] = &[
     "SOURCEINFO", "SourceInfo",
 ];
 
+/// A package can hand-write part of itself in `<Package>.handwritten.rs` next
+/// to the generated `<Package>.rs`. Its leading comment lines name the .mo
+/// items it takes over:
+///
+/// ```text
+/// // mmtorust-replaces: Text emptyTxt writeTok    (defined in the file, re-exported)
+/// // mmtorust-drops: tokString blockString        (made obsolete, not generated)
+/// ```
+///
+/// The generated file skips both and re-exports the first set from the
+/// hand-written module, so callers keep their `Package::item` paths.
+/// Fallibility and the other analyses still come from the .mo declarations,
+/// so the Rust signatures must agree with them.
+#[derive(Clone, Default)]
+struct HandwrittenItems {
+    replaces: Vec<String>,
+    drops: HashSet<String>,
+}
+
+impl HandwrittenItems {
+    fn read(dir: &str, name: &str) -> std::io::Result<Self> {
+        let path = format!("{dir}/{name}.handwritten.rs");
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::default()),
+            Err(e) => return Err(e),
+        };
+        let mut items = Self::default();
+        for line in content.lines() {
+            if let Some(rest) = line.strip_prefix("// mmtorust-replaces:") {
+                items.replaces.extend(rest.split_whitespace().map(str::to_owned));
+            } else if let Some(rest) = line.strip_prefix("// mmtorust-drops:") {
+                items.drops.extend(rest.split_whitespace().map(str::to_owned));
+            }
+        }
+        if items.replaces.is_empty() && items.drops.is_empty() {
+            return Err(std::io::Error::other(format!("{path} declares no `// mmtorust-replaces:` or `// mmtorust-drops:` items")));
+        }
+        Ok(items)
+    }
+
+    fn contains(&self, name: &str) -> bool {
+        self.drops.contains(name) || self.replaces.iter().any(|n| n == name)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.replaces.is_empty() && self.drops.is_empty()
+    }
+}
+
 /// Top-level package names whose generated `.rs` is *skipped* in the driver
 /// and replaced by a hand-written file (see the `match *name` near
 /// `dir_classes` in the driver). Types declared inside these packages get no
@@ -423,6 +473,9 @@ struct GenCtx {
     /// `pub(crate)`. Populated by [`crate::visibility::analyze`]; consulted by
     /// [`emit_function`] when choosing the visibility keyword.
     keep_public: BTreeSet<String>,
+    /// Items of this package provided by a hand-written sibling file, see
+    /// [`HandwrittenItems`]. Skipped by [`emit_node`].
+    handwritten: HandwrittenItems,
     /// While true, [`Self::type_vis`] forces `pub` regardless of the analysis.
     /// Set around emitting a single-record uniontype's backing struct, whose
     /// `pub type <record> = <struct>;` alias is always emitted `pub`: a
@@ -711,6 +764,7 @@ impl GenCtx {
             variant_shapes: HashMap::new(),
             fallible_functions,
             keep_public: BTreeSet::new(),
+            handwritten: HandwrittenItems::default(),
             force_pub_type: false,
             partial_eq_required,
             reference_eq_required,
@@ -1753,7 +1807,8 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             eprintln!("[mmtorust] codegen start {file_path}");
         }
         let file_t0 = std::time::Instant::now();
-        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames);
+        let handwritten = HandwrittenItems::read(dir, name)?;
+        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames, &handwritten);
         if !file_missing.is_empty() {
             missing_imports.lock().unwrap().extend(file_missing);
         }
@@ -2323,9 +2378,10 @@ fn collect_no_mod_uniontypes(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &st
     }
 }
 
-fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>) -> (String, BTreeSet<String>) {
+fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>, handwritten: &HandwrittenItems) -> (String, BTreeSet<String>) {
     let mut ctx = GenCtx::new(top_name, current_crate, crate_map.clone(), nullable_global_roots.clone(), top_level_uniontype_names.clone(), recursive_types, types_containing_mutable, types_containing_array, types_containing_dyn_fn, types_directly_containing_dyn_fn, fn_type_vars.clone(), fallible_functions.clone(), partial_eq_required.clone(), reference_eq_required.clone(), default_required.clone(), defaultable_struct_qnames.clone(), types_needing_default.clone(), copy_type_qnames.clone());
     ctx.keep_public = keep_public.clone();
+    ctx.handwritten = handwritten.clone();
     ctx.no_mod_uniontypes = no_mod_uniontypes.clone();
     if let NodeKind::Class(c) = &node.kind {
         // Diagnostics (`sourceInfo()`) report the .mo relative to
@@ -2457,6 +2513,12 @@ use arcstr::{{ArcStr, literal, format}};
     if !ctx.unqual_modules.is_empty() || !ctx.named.is_empty() || !ctx.implicit_modules.is_empty() {
         writeln!(out).unwrap();
     }
+    if !handwritten.is_empty() {
+        writeln!(out, "#[path = \"{top_name}.handwritten.rs\"]\nmod handwritten;").unwrap();
+        if !handwritten.replaces.is_empty() {
+            writeln!(out, "pub use handwritten::{{{}}};\n", handwritten.replaces.join(", ")).unwrap();
+        }
+    }
     out.push_str(&body);
     // Strict-import check: `implicit_modules` holds the top-level packages this
     // file references in emitted code but does not explicitly import (a plain
@@ -2477,6 +2539,9 @@ use arcstr::{{ArcStr, literal, format}};
 // ── Node emission ─────────────────────────────────────────────────────────────
 
 fn emit_node<'a>(out: &mut String, name: &str, node: &NameNode<'_>, indent: &str, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) {
+    if ctx.current_path.is_empty() && name != ctx.top_name && ctx.handwritten.contains(name) {
+        return;
+    }
     if let NodeKind::Component(m) = &node.kind {
         if m.variability == Absyn::Variability::CONST
             // `override_default_exp` wins over the AST default. It carries the

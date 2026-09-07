@@ -1941,6 +1941,16 @@ algorithm
 end strTokText;
 
 
+public function isEmpty
+  input Text txt;
+  output Boolean b;
+algorithm
+  b := match txt
+    case MEM_TEXT(tokens = {}) then true;
+    else false;
+  end match;
+end isEmpty;
+
 public function textStrTok
   input Text inText;
   output StringToken outStringToken;
