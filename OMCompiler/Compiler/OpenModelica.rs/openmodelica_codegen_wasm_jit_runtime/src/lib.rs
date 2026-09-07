@@ -2207,6 +2207,90 @@ pub extern "C" fn rt_streq(a: u32, b: u32) -> i32 {
     (unsafe { str_bytes(a) == str_bytes(b) }) as i32
 }
 
+// The arguments the live external object in a `SimData` slot was constructed
+// with, one entry per (slot, position). A constructor re-run with equal
+// arguments keeps the object (they can be very expensive to build).
+enum ExtObjArg {
+    Bits(u64),
+    Str(u32),
+    Arr(u32),
+}
+struct ExtObjArgs(core::cell::UnsafeCell<alloc::vec::Vec<((u32, u32), ExtObjArg)>>);
+// Single-threaded wasm: no concurrent access.
+unsafe impl Sync for ExtObjArgs {}
+static EXTOBJ_ARGS: ExtObjArgs = ExtObjArgs(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+
+/// Compare `new` with the stored argument and replace it; 1 when equal. Takes
+/// ownership of a heap handle.
+fn extobj_arg_same(slot: u32, pos: u32, new: ExtObjArg) -> i32 {
+    let table = unsafe { &mut *EXTOBJ_ARGS.0.get() };
+    let entry = table.iter_mut().find(|(k, _)| *k == (slot, pos));
+    let same = match (&entry, &new) {
+        (Some((_, ExtObjArg::Bits(a))), ExtObjArg::Bits(b)) => a == b,
+        (Some((_, ExtObjArg::Str(a))), ExtObjArg::Str(b)) => unsafe { str_bytes(*a) == str_bytes(*b) },
+        (Some((_, ExtObjArg::Arr(a))), ExtObjArg::Arr(b)) => arr_same(*a, *b),
+        _ => false,
+    };
+    match entry {
+        Some(e) => match core::mem::replace(&mut e.1, new) {
+            ExtObjArg::Str(old) => rt_release(old),
+            ExtObjArg::Arr(old) => rt_array_release(old),
+            ExtObjArg::Bits(_) => {}
+        },
+        None => table.push(((slot, pos), new)),
+    }
+    same as i32
+}
+
+/// Same shape, element kind and elements (strings by content, nested arrays
+/// recursively); records are never equal.
+fn arr_same(a: u32, b: u32) -> bool {
+    if a == 0 || b == 0 {
+        return a == b;
+    }
+    unsafe {
+        let kind = load_u32(a + ARR_KIND_OFF);
+        let ndims = load_u32(a + ARR_NDIMS_OFF);
+        let total = load_u32(a + ARR_TOTAL_OFF);
+        if kind != load_u32(b + ARR_KIND_OFF) || ndims != load_u32(b + ARR_NDIMS_OFF) || total != load_u32(b + ARR_TOTAL_OFF) {
+            return false;
+        }
+        if (0..ndims).any(|d| load_u32(a + ARR_DIMS_OFF + 4 * d) != load_u32(b + ARR_DIMS_OFF + 4 * d)) {
+            return false;
+        }
+        let (da, db) = (arr_data(a), arr_data(b));
+        match kind {
+            EK_STR => (0..total).all(|i| str_bytes(load_u32(da + 4 * i)) == str_bytes(load_u32(db + 4 * i))),
+            EK_ARRAY => (0..total).all(|i| arr_same(load_u32(da + 4 * i), load_u32(db + 4 * i))),
+            EK_RECORD => false,
+            _ => {
+                let n = (total * elem_stride(kind)) as usize;
+                core::slice::from_raw_parts(da as *const u8, n) == core::slice::from_raw_parts(db as *const u8, n)
+            }
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_extobj_arg_f64(slot: u32, pos: u32, v: f64) -> i32 {
+    extobj_arg_same(slot, pos, ExtObjArg::Bits(v.to_bits()))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_extobj_arg_i32(slot: u32, pos: u32, v: i32) -> i32 {
+    extobj_arg_same(slot, pos, ExtObjArg::Bits(v as u32 as u64))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_extobj_arg_str(slot: u32, pos: u32, s: u32) -> i32 {
+    extobj_arg_same(slot, pos, ExtObjArg::Str(s))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_extobj_arg_arr(slot: u32, pos: u32, a: u32) -> i32 {
+    extobj_arg_same(slot, pos, ExtObjArg::Arr(a))
+}
+
 /// `stringCompare(a, b)` → -1 / 0 / 1 (lexicographic over bytes).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_strcmp(a: u32, b: u32) -> i32 {

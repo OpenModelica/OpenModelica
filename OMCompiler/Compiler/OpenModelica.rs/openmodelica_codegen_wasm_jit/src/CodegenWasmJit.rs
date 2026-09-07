@@ -60,7 +60,7 @@ use crate::CodegenWasmJitFunctions::{
     ProfPlan, ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
-    NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
+    IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
     emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
@@ -3806,6 +3806,8 @@ pub(crate) struct SimVarMap {
     consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
     const_groups: Arc<HashMap<String, ConstGroup>>,
     const_acc: HashMap<String, Vec<(Vec<i32>, Arc<DAE::Exp>, WTy)>>,
+    /// External object cref key -> the mangled name of its class's destructor.
+    extobj_dtors: Arc<HashMap<String, String>>,
     /// Transient accumulator: base cref key -> the scalarized elements seen.
     /// Finalized into `array_groups` / `scatter_groups` at the end of
     /// [`build_var_map`].
@@ -4287,6 +4289,7 @@ fn build_var_map(
         consts: Arc::default(),
         const_groups: Arc::default(),
         const_acc: HashMap::new(),
+        extobj_dtors: Arc::default(),
         array_acc: HashMap::new(),
         terminate_off: layout.terminate_off,
         terminal_off: layout.terminal_off,
@@ -4488,6 +4491,7 @@ fn build_var_map(
     // frees the native object. No result column.
     for (i, sv) in lst(&vars.extObjVars).enumerate() {
         insert_var(&mut map, sv, layout.eobj_off + (i as u32) * 4, WTy::I32, false)?;
+        Arc::make_mut(&mut map.extobj_dtors).insert(sim_cref_key(&sv.name)?, extobj_destructor_key(sv)?);
     }
 
     // Compile-time constants (real / integer / boolean): no SimData slot — their
@@ -6199,25 +6203,6 @@ fn build_sim_model(
         bodies.push(f);
         eq_base + 8
     };
-    // C's `updateBoundParameters` prologue: an existing object is destructed before
-    // its constructor runs again.
-    let destruct_existing_idx = {
-        use we::Instruction as I;
-        let idx = import_base + bodies.len() as u32;
-        let mut f = we::Function::new([(1, we::ValType::I32)]);
-        for &(didx, slot) in &destruct_calls {
-            f.instruction(&I::LocalGet(0));
-            f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(slot, 2)));
-            f.instruction(&I::LocalTee(1));
-            f.instruction(&I::If(we::BlockType::Empty));
-            f.instruction(&I::LocalGet(1));
-            f.instruction(&I::Call(didx));
-            f.instruction(&I::End);
-        }
-        f.instruction(&I::End);
-        bodies.push(f);
-        idx
-    };
 
     // --- Nonlinear-system callbacks: per system a `residual`/`load` function.
     // The module's `start` (built last, shared with the closure thunks) appends
@@ -6398,9 +6383,6 @@ fn build_sim_model(
     let update_bound_params_idx = {
         let idx = import_base + bodies.len() as u32;
         splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
-        if !destruct_calls.is_empty() {
-            splits.last_mut().expect("just pushed").pre_calls.push(destruct_existing_idx);
-        }
         idx
     };
     // The optimizer's per-real-variable attributes (C reads them out of the
@@ -6564,10 +6546,9 @@ fn build_sim_model(
     functions.function(meta_fn_type); // om_meta_ptr
     functions.function(meta_fn_type); // om_meta_len
     // Optional eq functions — always emitted (order must match the `bodies` pushes:
-    // destructors, destruct-existing, nls callbacks, initSample, zc, statesetJac,
+    // destructors, nls callbacks, initSample, zc, statesetJac,
     // lambda0, …, then the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
-    functions.function(eqfn_type); // the `functionUpdateBoundParameters` prologue
     if let Some((residual_type, load_type, strict_type)) = nls_types {
         for sys in &nls_systems {
             functions.function(residual_type);
@@ -8167,6 +8148,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         scatter_groups: var_map.scatter_groups.clone(),
         consts: var_map.consts.clone(),
         const_groups: var_map.const_groups.clone(),
+        extobj_dtors: var_map.extobj_dtors.clone(),
         terminate_off: var_map.terminate_off,
         terminal_off: var_map.terminal_off,
         initial_off: var_map.initial_off,
@@ -9814,7 +9796,7 @@ fn real_alg_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
         .collect()
 }
 
-/// Map each scalar real variable's cref key to its `(nominal, min, max)` attributes,
+/// Map each scalar Real (and Integer) variable's cref key to its `(nominal, min, max)` attributes,
 /// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
 fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
     let mut map = HashMap::new();
@@ -9823,6 +9805,7 @@ fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f6
         .chain(lst(&vars.derivativeVars))
         .chain(lst(&vars.algVars))
         .chain(lst(&vars.discreteAlgVars))
+        .chain(lst(&vars.intAlgVars))
         .chain(lst(&vars.paramVars))
         .chain(lst(&vars.aliasVars));
     for sv in all {
@@ -10089,25 +10072,27 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
 /// The `SimData` slot a torn system's iteration variable reads and writes. An
 /// initialization system can solve for a start value, and C's `cref` makes
 /// `$START.<var>` an lvalue into that variable's `attribute.start` — its start
-/// slot here. `Ok(None)` leaves naming the system to the caller.
+/// slot here. A discrete (Integer/Boolean) unknown the tearing could not avoid
+/// keeps its own type: C truncates the solver's `x` on write and widens on
+/// read. `Ok(None)` leaves naming the system to the caller.
 pub(crate) fn iteration_var_slot(
     vars: &HashMap<String, SimSlot>,
     start_slots: &HashMap<String, u32>,
     cr: &Arc<DAE::ComponentRef>,
-) -> Result<Option<u32>> {
+) -> Result<Option<IterSlot>> {
     let key = sim_cref_key(cr)?;
     if let Some(off) = key.strip_prefix("$START.").and_then(|k| start_slots.get(k)) {
-        return Ok(Some(*off));
+        return Ok(Some(IterSlot { off: *off, wty: WTy::F64 }));
     }
     match vars.get(&key) {
         None => Ok(None),
-        Some(slot) if slot.wty != WTy::F64 => {
+        Some(slot) if slot.heap => {
             record_error(format!(
-                "CodegenWasmJit: torn-system unknown `{key}` is not a Real variable"
+                "CodegenWasmJit: torn-system unknown `{key}` is not a numeric variable"
             ));
-            Err("CodegenWasmJit: torn-system unknown is not a Real variable")
+            Err("CodegenWasmJit: torn-system unknown is not a numeric variable")
         }
-        Some(slot) => Ok(Some(slot.off)),
+        Some(slot) => Ok(Some(IterSlot { off: slot.off, wty: slot.wty })),
     }
 }
 
@@ -10894,16 +10879,15 @@ fn build_nls_fns(
         nlsystem.index
     ));
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
-    // Resolve each unknown to its (real) SimData slot offset.
-    let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());
+    let mut slots: Vec<IterSlot> = Vec::with_capacity(iter_vars.len());
     for cr in &iter_vars {
         if is_homotopy_lambda(Some(cr)) {
-            slots.push(var_map.lambda_off);
+            slots.push(IterSlot { off: var_map.lambda_off, wty: WTy::F64 });
             continue;
         }
-        let off = iteration_var_slot(&var_map.vars, &var_map.start_slots, cr)?
+        let slot = iteration_var_slot(&var_map.vars, &var_map.start_slots, cr)?
             .ok_or("CodegenWasmJit: nonlinear-system unknown has no slot")?;
-        slots.push(off);
+        slots.push(slot);
     }
     let mk_sim = || sim_ctx(var_map);
     let finish = |ctx: FnCtx| -> we::Function {

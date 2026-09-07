@@ -306,9 +306,14 @@ impl ExtIncludes {
         if archives {
             cmd.args(&self.archives);
         }
+        // A system soname goes back to `-l<name>`: the linker then also accepts a
+        // `lib<name>.a`, which is all glibc 2.34+ has for `pthread`.
+        let (prefix, suffix) = (std::env::consts::DLL_PREFIX, std::env::consts::DLL_SUFFIX);
         for lib in &self.libs {
             if lib.contains(['/', '\\']) {
                 cmd.arg(lib);
+            } else if let Some(name) = lib.strip_prefix(prefix).and_then(|l| l.strip_suffix(suffix)) {
+                cmd.arg(format!("-l{name}"));
             } else {
                 cmd.arg(format!("-l:{lib}"));
             }
