@@ -50,11 +50,6 @@ writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/ClockIndexes.jl", OpenMod
 deleteClass(ClockIndexes);getErrorString();
 
 
-
-//Corba
-writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Corba.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-deleteClass(Corba);getErrorString();
-
 //Zeromq
 loadFile("Compiler/Util/ZeroMQ.mo");getErrorString();
 writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/ZeroMQ.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
