@@ -208,7 +208,6 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     // clocks past `nProfileBlocks`, which only the `_info.json` knows.
     crate::info_json::init_profiling(md);
     let rt = crate::data::initialize(data, thread_data);
-    simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
     si.minStepSize = 4.0 * f64::EPSILON * si.startTime.abs().max(si.stopTime.abs());
     RUN.set(Box::new(Run { rt, xml, prefix }));
     0

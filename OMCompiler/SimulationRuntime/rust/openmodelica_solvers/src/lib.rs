@@ -69,6 +69,7 @@ pub mod events;
 pub mod fixedstep;
 pub mod delay;
 pub mod gbode;
+pub mod klu;
 pub mod omclog;
 pub mod simflags;
 pub mod solverflags;

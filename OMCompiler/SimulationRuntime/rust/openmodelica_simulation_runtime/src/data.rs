@@ -584,6 +584,9 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.external_input.n = 0;
     si.external_input.i = 0;
 
+    // `-ls`/`-lss`/`-nls` before the systems are allocated: the choice of a sparse
+    // or a dense solver is made there, as C's `readFlag`s precede its `initialize*`.
+    openmodelica_sim_meta::simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
     // The systems' own allocation, once `analyticJacobians` exists for a torn
     // system's Jacobian to be initialized into.
     crate::systems::initialize_linear_systems(data, thread_data);

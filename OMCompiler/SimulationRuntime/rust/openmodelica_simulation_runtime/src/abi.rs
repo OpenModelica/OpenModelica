@@ -987,6 +987,9 @@ pub const NLS_LS_TOTALPIVOT: c_int = 2;
 pub const NLS_LS_LAPACK: c_int = 3;
 pub const NLS_LS_KLU: c_int = 4;
 pub const LSS_DEFAULT: c_int = 1;
+pub const LSS_LIS: c_int = 2;
+pub const LSS_KLU: c_int = 3;
+pub const LSS_UMFPACK: c_int = 4;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
 
