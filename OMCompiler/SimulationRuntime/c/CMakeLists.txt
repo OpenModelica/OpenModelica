@@ -107,10 +107,8 @@ install(TARGETS OpenModelicaRuntimeC
 add_subdirectory(dataReconciliation)
 add_subdirectory(linearization)
 add_subdirectory(math-support)
-if(OM_OMC_ENABLE_MOO)
-  add_subdirectory(moo)
-endif()
 if(OM_OMC_ENABLE_OPTIMIZATION)
+  add_subdirectory(moo)
   add_subdirectory(optimization)
 endif()
 add_subdirectory(simulation)
@@ -125,15 +123,10 @@ target_link_libraries(SimulationRuntimeC
     omc::simrt::simruntime::math-support
     omc::simrt::simruntime::simulation
 )
-if(OM_OMC_ENABLE_MOO)
-  target_link_libraries(SimulationRuntimeC
-    PUBLIC
-      omc::simrt::simruntime::moo
-  )
-endif()
 if(OM_OMC_ENABLE_OPTIMIZATION)
   target_link_libraries(SimulationRuntimeC
     PUBLIC
+      omc::simrt::simruntime::moo
       omc::simrt::simruntime::optimization
   )
 endif()
