@@ -150,6 +150,7 @@ fn main() {
             ("pub const FLAG_", ": usize = "),
             ("pub const ERROR_", ": i32 = "),
             ("pub const LS_", ": c_int = "),
+            ("pub const LSS_", ": c_int = "),
             ("pub const NLS_", ": c_int = "),
         ] {
             let Some(rest) = t.strip_prefix(prefix) else { continue };
