@@ -52,8 +52,6 @@ omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica
 # skips its host-only prerequisites (a JDK and ANTLR for the parser, libintl).
 omc_option(OM_OMC_ENABLE_COMPILER "Build the omc compiler itself, not just the simulation runtime." ON)
 
-omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
-
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 # Build the Rust (mmtorust) omc port instead of the bootstrapped C omc. When ON,

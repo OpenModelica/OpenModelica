@@ -122,12 +122,6 @@ const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // reader); hand-written in `openmodelica_util/src/TaskGraphResults.rs`
     // using `roxmltree`.
     "TaskGraphResults",
-    // All bodies are `external "C"` into the CORBA communication runtime
-    // (`runtime/Corba_omc.cpp`, or the `corbaimpl_stub_omc.c` stub build). The
-    // Rust port is built WITHOUT CORBA, mirroring the stub: `haveCorba`
-    // reports false and the rest fail. Hand-written in
-    // `openmodelica_util/src/Corba.rs`.
-    "Corba",
     // All bodies are `external "C"` wrappers over `runtime/zeromqimpl.c` (the
     // interactive `--interactive=zmq` server socket used by OMEdit). Hand-
     // written FFI against the system `libzmq.so.5` in

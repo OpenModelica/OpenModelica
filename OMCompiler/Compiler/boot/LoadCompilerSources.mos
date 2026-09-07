@@ -158,7 +158,6 @@ if true then /* Suppress output */
     "../Util/BaseHashSet.mo",
     "../Util/ClockIndexes.mo",
     "../Util/Config.mo",
-    "../Util/Corba.mo",
     "../Util/Debug.mo",
     "../Util/DoubleEnded.mo",
     "../Util/DynLoad.mo",
