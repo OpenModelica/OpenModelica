@@ -64,7 +64,9 @@ namespace {
  */
 LSPClient::LSPClient(QObject *pParent)
   : QObject(pParent),
+#if QT_CONFIG(process)
     mpProcess(new QProcess(this)),
+#endif
     mNextId(1),
     mInitialized(false),
     mpFileWatcher(new LSPFileWatcher(this)),
@@ -73,6 +75,7 @@ LSPClient::LSPClient(QObject *pParent)
   qRegisterMetaType<LSP::Location>("LSP::Location");
   connect(mpFileWatcher, &LSPFileWatcher::filesChanged, this, &LSPClient::onWatchedFilesChanged);
   connect(mpFileWatcher, &LSPFileWatcher::watchLimitReached, this, &LSPClient::onWatchLimitReached);
+#if QT_CONFIG(process)
   // The server logs to stderr. Nothing here reads that channel, and an unread
   // channel accumulates in QProcess for the life of the process, so hand it to
   // OMEdit's own stderr instead of growing a buffer that is never drained.
@@ -80,6 +83,7 @@ LSPClient::LSPClient(QObject *pParent)
   connect(mpProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadyRead()));
   connect(mpProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(onProcessError(QProcess::ProcessError)));
   connect(mpProcess, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProcessFinished(int,QProcess::ExitStatus)));
+#endif
 }
 
 LSPClient::~LSPClient()
@@ -96,6 +100,14 @@ LSPClient::~LSPClient()
  */
 bool LSPClient::start(const QString &executable, const QString &rootUri, const QStringList &libraries)
 {
+#if !QT_CONFIG(process)
+  // No QProcess on the web build, so there is nothing to launch. Report failure
+  // the same way a missing executable does; callers already handle that.
+  Q_UNUSED(executable)
+  Q_UNUSED(rootUri)
+  Q_UNUSED(libraries)
+  return false;
+#else
   if (mpProcess->state() != QProcess::NotRunning) {
     return true;
   }
@@ -158,6 +170,7 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
   request["params"] = initializeParams;
   sendMessage(request);
   return true;
+#endif // QT_CONFIG(process)
 }
 
 /*!
@@ -166,6 +179,7 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
  */
 void LSPClient::stop()
 {
+#if QT_CONFIG(process)
   if (mpProcess->state() == QProcess::NotRunning) {
     return;
   }
@@ -189,11 +203,16 @@ void LSPClient::stop()
   mOpenDocuments.clear();
   mWatchedFileRegistrations.clear();
   updateFileWatcher();
+#endif // QT_CONFIG(process)
 }
 
 bool LSPClient::isRunning() const
 {
+#if QT_CONFIG(process)
   return mpProcess->state() == QProcess::Running && mInitialized;
+#else
+  return false;
+#endif
 }
 
 /*!
@@ -481,6 +500,7 @@ int LSPClient::requestDefinition(const QString &uri, int line, int character)
  */
 void LSPClient::onReadyRead()
 {
+#if QT_CONFIG(process)
   mReadBuffer.append(mpProcess->readAllStandardOutput());
   while (true) {
     // Look for the header/body separator
@@ -515,8 +535,10 @@ void LSPClient::onReadyRead()
       processMessage(doc.object());
     }
   }
+#endif // QT_CONFIG(process)
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief LSPClient::onProcessError
  */
@@ -566,6 +588,7 @@ void LSPClient::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
     start(executable, rootUri, libraries);
   });
 }
+#endif // QT_CONFIG(process)
 
 /*!
  * \brief LSPClient::logCrashEvent
@@ -588,10 +611,14 @@ void LSPClient::logCrashEvent(const QString &line)
  */
 void LSPClient::sendMessage(const QJsonObject &message)
 {
+#if QT_CONFIG(process)
   QByteArray body = QJsonDocument(message).toJson(QJsonDocument::Compact);
   QByteArray header = QStringLiteral("Content-Length: %1\r\n\r\n").arg(body.size()).toUtf8();
   mpProcess->write(header);
   mpProcess->write(body);
+#else
+  Q_UNUSED(message)
+#endif
 }
 
 /*!

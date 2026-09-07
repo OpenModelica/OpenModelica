@@ -38,6 +38,10 @@
 #include "LSP/LSPProtocol.h"
 
 #include <QObject>
+// Qt for WebAssembly has no QProcess (QT_CONFIG(process) is off). The header is
+// still available there, but QProcess is an empty shell without ProcessError or
+// ExitStatus, so every member and slot that names them is guarded below and the
+// client simply never starts a server on the web build.
 #include <QProcess>
 #include <QByteArray>
 #include <QHash>
@@ -89,8 +93,10 @@ private slots:
   void onReadyRead();
   void onWatchedFilesChanged(QList<LSP::FileEvent> events);
   void onWatchLimitReached(int limit);
+#if QT_CONFIG(process)
   void onProcessError(QProcess::ProcessError error);
   void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 
 private:
   // Tracks documents opened on the server so a file shared by several editors
@@ -100,7 +106,9 @@ private:
     int refCount = 0;
   };
 
+#if QT_CONFIG(process)
   QProcess *mpProcess;
+#endif
   QByteArray mReadBuffer;
   int mNextId;
   bool mInitialized;
