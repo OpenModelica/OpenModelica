@@ -216,6 +216,12 @@ package builtin
     output Real z;
   end realDiv;
 
+  function realSub
+    input Real x;
+    input Real y;
+    output Real z;
+  end realSub;
+
   function stringLength
     input String str;
     output Integer length;
@@ -1058,6 +1064,14 @@ end SparsityRow;
     end FMIINITIALUNKNOWNS;
   end FmiInitialUnknowns;
 
+  uniontype FmiArray
+    record FMIARRAY
+      DAE.ComponentRef first;
+      Integer fmiIndex;
+      Integer numElements;
+    end FMIARRAY;
+  end FmiArray;
+
   uniontype FmiModelStructure
     record FMIMODELSTRUCTURE
       FmiOutputs fmiOutputs;
@@ -1066,6 +1080,7 @@ end SparsityRow;
       Option<JacobianMatrix> initialPartialDerivatives;
       FmiDiscreteStates fmiDiscreteStates;
       FmiInitialUnknowns fmiInitialUnknowns;
+      list<FmiArray> fmiArrays;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
@@ -1459,11 +1474,37 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReference;
 
+  function fmi3UnknownDependencyAttributes
+    input SimCode.SimCode simCode;
+    input SimCode.FmiUnknown unknown;
+    output String attributes;
+  end fmi3UnknownDependencyAttributes;
+
   function getFMI3ValueReferenceFromFMIIndex
     input SimCode.SimCode inSimCode;
     input Integer inFMIIndex;
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
+
+  function fmiDependenciesString
+    input list<Integer> dependencies;
+    output String str;
+  end fmiDependenciesString;
+
+  function fmiDependenciesKindString
+    input list<String> kinds;
+    output String str;
+  end fmiDependenciesKindString;
+
+  function fmi3ArrayView
+    input SimCode.SimCode simCode;
+    output SimCode.SimCode view;
+  end fmi3ArrayView;
+
+  function fmi3ArrayDefines
+    input SimCode.SimCode simCode;
+    output String defines;
+  end fmi3ArrayDefines;
 
   function cacheFMI3ValueReferences
     input SimCode.SimCode simCode;
@@ -1540,17 +1581,14 @@ package SimCodeUtil
     output String vr;
   end getFMI3DaeModeValueReference;
 
-  function getFMI3DaeResidualValueReference
-    input SimCodeVar.SimVar residualVar;
+  function fmi3DaeResiduals
     input SimCode.SimCode simCode;
-    output String vr;
-  end getFMI3DaeResidualValueReference;
+    output list<tuple<String, String>> residuals;
+  end fmi3DaeResiduals;
 
-  function getFMI3DaeResidualDependencyAttributes
-    input SimCode.SimCode simCode;
-    input Integer index;
-    output String attributes;
-  end getFMI3DaeResidualDependencyAttributes;
+  function fmiLsDaeVersion
+    output String version;
+  end fmiLsDaeVersion;
 
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
@@ -1657,6 +1695,11 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output SimCodeVar.SimVar outSimVar;
   end cref2simvar;
+
+  function isContiguousArrayCref
+    input DAE.ComponentRef inCref;
+    output Boolean outContiguous;
+  end isContiguousArrayCref;
 
   function simVarFromHT
     input DAE.ComponentRef inCref;

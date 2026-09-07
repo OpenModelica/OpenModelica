@@ -775,11 +775,7 @@ void ElementWidget::filterElements()
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpElementTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
-#else
-  mpElementTreeProxyModel->setFilterRegExp(TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax));
-#endif
 }
 
 /*!

@@ -196,18 +196,18 @@ protected function notification2 "help-function"
   output String outS;
 protected
   ComponentRef cr1 = ComponentRef.EMPTY();
-  Real factor=0;
+  Real factor=0, offset=0;
   Integer s=0, m=0, g=0, A=0, K=0, mol=0, cd=0;
 algorithm
   outS := stringAppendList(list(
   // We already assigned the variables before
-  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor), inHtU2S) + "\"\n"
+  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor, offset), inHtU2S) + "\"\n"
   // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
   // And we only use a try-block for MASTER nodes
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(s, m, g, A, K, mol, cd, factor) :=
+      Unit.UNIT(s, m, g, A, K, mol, cd, factor, offset) :=
         UnorderedMap.getOrFail(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else

@@ -163,39 +163,39 @@ impl Spatial {
             return;
         }
         for n in &self.profile {
-            omclog::info(omclog::SPATIALDISTR, false, &format!("({},{})", e(n.pos), e(n.val)));
+            omclog::info!(omclog::SPATIALDISTR, false, "({},{})", e(n.pos), e(n.val));
         }
         omclog::info(omclog::SPATIALDISTR, false, "List of events");
         for ev in &self.events {
-            omclog::info(omclog::SPATIALDISTR, false, &format!("({},{})", e(ev.pos), e(ev.sign)));
+            omclog::info!(omclog::SPATIALDISTR, false, "({},{})", e(ev.pos), e(ev.sign));
         }
     }
 
     /// C `initSpatialDistribution`: the parameter profile becomes the initial one,
     /// with an event for every pair of `initialPoints` sharing a position.
     fn init_profile(&mut self, index: u32, points: &[f64], values: &[f64]) {
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             true,
-            &format!("Initializing spatial distributions (index={index})"),
+            "Initializing spatial distributions (index={index})",
         );
         let n = points.len();
         if n < 2 || values.len() != n {
             fatal("Initialization of spatial distribution failed: initialPoints and initialValues must have the same size >= 2.");
         }
         if points[0].abs() > SPATIAL_EPS {
-            omclog::error(
+            omclog::error!(
                 omclog::STDOUT,
                 true,
-                &format!("Initialization of spatial distribution with index {index} failed."),
+                "Initialization of spatial distribution with index {index} failed.",
             );
             fatal(&format!("initialPoints[0] = {} is not zero.", e(points[0])));
         }
         if (points[n - 1] - 1.0).abs() > SPATIAL_EPS {
-            omclog::error(
+            omclog::error!(
                 omclog::STDOUT,
                 true,
-                &format!("Initialization of spatial distribution with index {index} failed."),
+                "Initialization of spatial distribution with index {index} failed.",
             );
             fatal(&format!("initialPoints[end] = {} is not one.", e(points[n - 1])));
         }
@@ -206,15 +206,16 @@ impl Spatial {
         let mut sign = -1.0;
         for i in 0..n - 1 {
             if points[i] > points[i + 1] {
-                omclog::error(
+                omclog::error!(
                     omclog::STDOUT,
                     true,
-                    &format!("Initialization of spatial distribution with index {index} failed."),
+                    "Initialization of spatial distribution with index {index} failed.",
                 );
-                omclog::error(
+                omclog::error!(
                     omclog::STDOUT,
                     false,
-                    &format!("initialPoints[{i}] > initialPoints[{}]", i + 1),
+                    "initialPoints[{i}] > initialPoints[{}]",
+                    i + 1,
                 );
                 fatal(&format!("{} > {}", f(points[i]), f(points[i + 1])));
             }
@@ -222,19 +223,17 @@ impl Spatial {
             if points[i] == points[i + 1] {
                 num_same += 1;
                 if num_same > 1 {
-                    omclog::error(
+                    omclog::error!(
                         omclog::STDOUT,
                         true,
-                        &format!("Initialization of spatial distribution with index {index} failed."),
+                        "Initialization of spatial distribution with index {index} failed.",
                     );
-                    omclog::error(
+                    omclog::error!(
                         omclog::STDOUT,
                         false,
-                        &format!(
-                            "initialPoints[{}] = initialPoints[{i}] = initialPoints[{}]",
-                            i - 1,
-                            i + 1
-                        ),
+                        "initialPoints[{}] = initialPoints[{i}] = initialPoints[{}]",
+                        i - 1,
+                        i + 1,
                     );
                     fatal("Only events with one pre-value and one value are allowed.");
                 }
@@ -248,10 +247,10 @@ impl Spatial {
         self.initialized = true;
         self.log_lists();
         omclog::close(omclog::SPATIALDISTR);
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!("Finished initializing spatial distribution (index={index})"),
+            "Finished initializing spatial distribution (index={index})",
         );
     }
 
@@ -293,21 +292,20 @@ impl Spatial {
     /// becomes a new node at the input edge and whatever left the domain is dropped.
     fn store(&mut self, index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: bool) {
         let pos_x = self.shift(pos_x);
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             true,
-            &format!("Calling storeSpatialDistribution (index={index}, time={})", e(time)),
+            "Calling storeSpatialDistribution (index={index}, time={})",
+            e(time),
         );
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!(
-                "spatialDistribution({}, {}, {}, {})",
-                f(in0),
-                f(in1),
-                f(pos_x),
-                if positive { "true" } else { "false" }
-            ),
+            "spatialDistribution({}, {}, {}, {})",
+            f(in0),
+            f(in1),
+            f(pos_x),
+            if positive { "true" } else { "false" },
         );
         self.log_lists();
 
@@ -338,13 +336,11 @@ impl Spatial {
                 true,
                 "Removed more then one event from spatialDistribution. Step size to big!",
             );
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "time: {}, spatialDistribution index: {index}, number of events: {walked}",
-                    f(time)
-                ),
+                "time: {}, spatialDistribution index: {index}, number of events: {walked}",
+                f(time),
             );
             omclog::close_warning(omclog::STDOUT);
         }
@@ -355,15 +351,13 @@ impl Spatial {
     /// C `addNewNodeSpatialDistribution`: a new node at the front (positive
     /// velocity) or the back, plus its event when it is a discontinuity.
     fn add_node(&mut self, front: bool, pos: f64, val: f64, is_event: bool) {
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!(
-                "Adding ({},{}) at {}.",
-                e(pos),
-                e(val),
-                if front { "front" } else { "back" }
-            ),
+            "Adding ({},{}) at {}.",
+            e(pos),
+            e(val),
+            if front { "front" } else { "back" },
         );
         if front {
             if pos > self.front().pos {
@@ -410,15 +404,13 @@ impl Spatial {
         } else {
             self.events.push_back(ev);
         }
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!(
-                "Adding event ({},{}) at {}.",
-                e(ev.pos),
-                e(ev.sign),
-                if front { "front" } else { "back" }
-            ),
+            "Adding event ({},{}) at {}.",
+            e(ev.pos),
+            e(ev.sign),
+            if front { "front" } else { "back" },
         );
         self.log_lists();
     }
@@ -463,10 +455,11 @@ impl Spatial {
                 (self.profile[prev], self.profile[i])
             };
             self.profile[prev] = Node { pos: target, val: interpolate(left, right, target) };
-            omclog::info(
+            omclog::info!(
                 omclog::SPATIALDISTR,
                 false,
-                &format!("Interpolate at {}", if positive { "end" } else { "front" }),
+                "Interpolate at {}",
+                if positive { "end" } else { "front" },
             );
         }
         if positive {
@@ -586,21 +579,20 @@ impl Spatial {
         mode: u32,
     ) -> (f64, f64) {
         let pos_x = self.shift(pos_x);
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             true,
-            &format!("Calling spatialDistribution (index={index}, time={})", e(time)),
+            "Calling spatialDistribution (index={index}, time={})",
+            e(time),
         );
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!(
-                "(out0,out1) = spatialDistribution(in0={}, in1={}, x={}, isPositiveVelocity={})",
-                f(in0),
-                f(in1),
-                f(pos_x),
-                if positive { "true" } else { "false" }
-            ),
+            "(out0,out1) = spatialDistribution(in0={}, in1={}, x={}, isPositiveVelocity={})",
+            f(in0),
+            f(in1),
+            f(pos_x),
+            if positive { "true" } else { "false" },
         );
         self.log_lists();
 
@@ -628,14 +620,12 @@ impl Spatial {
                     true,
                     "Need to output more then one event from spatialDistribution. Step size to big!",
                 );
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!(
-                        "time: {}, spatialDistribution index: {index}, number of events: {}",
-                        f(time),
-                        read.events
-                    ),
+                    "time: {}, spatialDistribution index: {index}, number of events: {}",
+                    f(time),
+                    read.events,
                 );
                 omclog::close_warning(omclog::STDOUT);
             }
@@ -645,10 +635,11 @@ impl Spatial {
             let mut out = read.out;
             if read.events > 0 && !discrete {
                 if let Some(pre) = read.event_pre {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SPATIALDISTR,
                         false,
-                        &format!("Found event in spatial distribution at time {}", f(time)),
+                        "Found event in spatial distribution at time {}",
+                        f(time),
                     );
                     out = pre;
                 }
@@ -677,11 +668,7 @@ impl Spatial {
                 (out, out1)
             }
         };
-        omclog::info(
-            omclog::SPATIALDISTR,
-            false,
-            &format!("(out0,out1) = ({}, {})", f(out0), f(out1)),
-        );
+        omclog::info!(omclog::SPATIALDISTR, false, "(out0,out1) = ({}, {})", f(out0), f(out1));
         omclog::close(omclog::SPATIALDISTR);
         self.out1 = out1;
         (out0, out1)
@@ -695,14 +682,12 @@ impl Spatial {
     /// (the signs alternate, so "the one above, not negated" is the same value).
     fn zc(&self, pos_x: f64, positive: bool, zc_pre: f64) -> f64 {
         if self.events.is_empty() {
-            omclog::info(
+            omclog::info!(
                 omclog::SPATIALDISTR,
                 false,
-                &format!(
-                    "spatialDistributionZeroCrossing({}) = {} (no stored events, returning previous value)",
-                    e(pos_x),
-                    e(zc_pre)
-                ),
+                "spatialDistributionZeroCrossing({}) = {} (no stored events, returning previous value)",
+                e(pos_x),
+                e(zc_pre),
             );
             return zc_pre;
         }
@@ -722,14 +707,12 @@ impl Spatial {
         // is reached, leaving no sign change to find.
         let below = self.events.partition_point(|ev| ev.pos <= read + SPATIAL_EPS);
         let value = if below == 0 { self.events[0].sign } else { -self.events[below - 1].sign };
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!(
-                "List of events for spatialDistributionZeroCrossing({}) = {}",
-                e(pos_x),
-                e(value)
-            ),
+            "List of events for spatialDistributionZeroCrossing({}) = {}",
+            e(pos_x),
+            e(value),
         );
         self.log_lists();
         value
@@ -744,10 +727,10 @@ pub struct SpatialState {
 impl SpatialState {
     /// C `allocSpatialDistribution`: `n` uninitialized operators for a fresh run.
     pub fn new(n: usize) -> Self {
-        omclog::info(
+        omclog::info!(
             omclog::SPATIALDISTR,
             false,
-            &format!("Allocating memory for {n} spatial distribution(s)."),
+            "Allocating memory for {n} spatial distribution(s).",
         );
         SpatialState { ops: (0..n).map(|_| Spatial::new()).collect() }
     }

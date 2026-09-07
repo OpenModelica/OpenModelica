@@ -267,11 +267,12 @@ export class Driver {
     return result;
   }
 
-  // Write the result file through WASI, and hand back what landed there.
-  writeMat(path) {
+  // Write the result file through WASI, and hand back what landed there. The
+  // name's suffix picks the format.
+  writeResult(path) {
     const bytes = this.encoder.encode(path);
     const ptr = this.pass(bytes);
-    const ok = this.exports.om_fmi_write_mat(ptr, bytes.length);
+    const ok = this.exports.om_fmi_write_result(ptr, bytes.length);
     this.exports.om_fmi_free(ptr, bytes.length);
     if (!ok) throw new Error(this.lastError());
     return this.wasi.read(path);
@@ -312,6 +313,8 @@ export class Driver {
         inst.enterInitializationMode(tolDefined, tol, start, stopDefined, stop)),
       fmu_exit_initialization_mode: guard('fmu_exit_initialization_mode', (inst) => inst.exitInitializationMode()),
       fmu_enter_event_mode: guard('fmu_enter_event_mode', (inst) => inst.enterEventMode()),
+      fmu_enter_configuration_mode: guard('fmu_enter_configuration_mode', (inst) => inst.enterConfigurationMode()),
+      fmu_exit_configuration_mode: guard('fmu_exit_configuration_mode', (inst) => inst.exitConfigurationMode()),
       fmu_enter_continuous_time_mode: guard('fmu_enter_continuous_time_mode', (inst) => inst.enterContinuousTimeMode()),
       fmu_enter_step_mode: guard('fmu_enter_step_mode', (inst) => inst.enterStepMode()),
       fmu_terminate: guard('fmu_terminate', (inst) => inst.terminate()),

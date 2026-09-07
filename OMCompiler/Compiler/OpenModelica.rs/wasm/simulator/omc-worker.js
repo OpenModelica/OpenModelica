@@ -13,7 +13,8 @@ import init, {
   omc_fmu_cs_solvers,
   omc_take_pending_downloads, wasi_write_file,
   wasi_path_open, wasi_fd_read, wasi_fd_close,
-  omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters,
+  omc_sim_info, omc_sim_series, omc_sim_time, omc_sim_column, omc_sim_parameters, omc_sim_units,
+  omc_sim_result_as,
 } from '../omc/OpenModelicaCompiler.js';
 // Shared MultiBody animation core (standalone wasm), the same module the FMI
 // simulator uses; fed here from the omc result store rather than an FMU.
@@ -169,7 +170,8 @@ function snapshot() {
   });
   const time = prof('sim_time', () => omc_sim_time()) || null;
   if (time) transfer.push(time.buffer);
-  return { snap: { ok: true, info, parameters, series, cols, time }, transfer };
+  const units = prof('sim_units', () => omc_sim_units()) || {};
+  return { snap: { ok: true, info, parameters, series, cols, time, units }, transfer };
 }
 
 function simError(fallback) {
@@ -184,6 +186,10 @@ function logCompilerMessages(what) {
   if (msg) console.warn('[omc ' + what + ']\n' + msg);
 }
 
+// `omc_sim_start` takes the writer from the name's suffix, so this is where the
+// page's result format is chosen.
+const RESULT_SUFFIX = '_res.arrow';
+
 // Chunked, cancellable integration of a prepared model. Each `omc_sim_advance`
 // runs ~BUDGET_MS of wall-clock (it times itself), then we yield to the message
 // loop so a queued {cmd:'cancelSim'} can set `simCancel`. A run that finishes in
@@ -191,7 +197,7 @@ function logCompilerMessages(what) {
 async function runResumable(prefix, simflags, onStatus) {
   simCancel = false;   // discard a cancel that raced in after the previous run
   const _t0 = performance.now();
-  if (!omc_sim_start(prefix, prefix + '_res.mat', simflags)) { logModelOutput(prefix); return -1; }
+  if (!omc_sim_start(prefix, prefix + RESULT_SUFFIX, simflags)) { logModelOutput(prefix); return -1; }
   // Split off `omc_sim_start` (compile lookup, instantiate, init, row 0) and count
   // the chunks: a run that suddenly costs more is either paying instantiation again
   // or being yielded far more often than its budget should need.
@@ -255,6 +261,13 @@ function simflagsFor(a) {
   if (a.tolerance) flags.push(`-tolerance=${a.tolerance}`);
   if (a.override) flags.push(a.override);
   return flags.join(' ');
+}
+
+// `--daeMode` decides what the backend emits, so it has to be set before a
+// translation rather than passed as a simflag. The worker outlives many runs and
+// the flag is global compiler state, so every translation states it either way.
+function setDaeMode(on) {
+  oeval(`setCommandLineOptions("--daeMode=${on ? 'true' : 'false'}")`);
 }
 
 // The model's own startTime, which the page never edits.
@@ -375,11 +388,12 @@ self.onmessage = async (ev) => {
       }
       case 'simulate': {
         // translateModelFMU (translate + JIT) then runResumable (a cancellable
-        // chunked run + `.mat`). The kernel it lowers is the very module an Export
+        // chunked run + result file). The kernel it lowers is the very module an Export
         // FMU links its adapter onto, so pressing Export costs a link and an XML
         // render rather than a second translation. The experiment travels in the
         // simflags rather than being baked in, so changing it needs no rebuild.
         const _tb = performance.now();
+        setDaeMode(a.daeMode);
         const built = (await evalWithDownloads(
           `translateModelFMU(${a.name}, version="3.0", fmuType="me_cs", platforms={"wasm"})`, status)).trim();
         const buildMs = performance.now() - _tb;
@@ -451,6 +465,7 @@ self.onmessage = async (ev) => {
         // Co-Simulation export, whose preOptModules differ (see the dialog's hint).
         status('Exporting FMU…');
         clearCancel();   // discard a cancel that raced in before this export
+        setDaeMode(a.daeMode);
         const fmuType = a.fmuType || 'me';
         const method = a.method ? `, method="${a.method}"` : '';
         // Each extra platform adds a machine-code build of the same component
@@ -475,15 +490,18 @@ self.onmessage = async (ev) => {
       }
       case 'resultFile': {
         // runResumable already wrote it, so this is a read, not a re-simulation.
+        // The file's own format is handed back unconverted.
         const info = omc_sim_info();
         const model = (info && info.model) || a.name;
         if (!model) return reply({ ok: false, error: 'no simulation has been run' });
-        const file = model + '_res.mat';
-        const bytes = wasiReadFile(file);
-        if (!bytes || !bytes.length) return reply({ ok: false, error: 'no result file at ' + file });
-        // Copy out of wasm memory before transferring (wasiReadFile may view it).
-        const buf = bytes.slice();
-        reply({ ok: true, filename: file, bytes: buf }, [buf.buffer]);
+        const file = (info && info.file) || model + RESULT_SUFFIX;
+        const format = a.format || (file.split('.').pop() || 'arrow');
+        const bytes = omc_sim_result_as(format);
+        if (!bytes || !bytes.length) {
+          return reply({ ok: false, error: unquote(omc_eval('getErrorString()')).trim() || 'no result file at ' + file });
+        }
+        const name = file.replace(/\.[^.]*$/, '') + '.' + format;
+        reply({ ok: true, filename: name, bytes }, [bytes.buffer]);
         break;
       }
       case 'eval':

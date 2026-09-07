@@ -50,6 +50,13 @@ endif ()
 
 target_link_libraries(OMPlotLib PUBLIC omqwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
+# Result files: the Rust omc_result library (also opens .arrow), or the C readers.
+# PUBLIC, so OMEdit (which links OMPlotLib) follows the same choice.
+if(OM_RUST_RESULT_READERS)
+  target_link_libraries(OMPlotLib PUBLIC omc::result)
+else()
+  target_compile_definitions(OMPlotLib PUBLIC OM_LEGACY_RESULT_READERS)
+endif()
 
 if(APPLE)
   set(MACOSX_BUNDLE_ICON_FILE omplot.ico)

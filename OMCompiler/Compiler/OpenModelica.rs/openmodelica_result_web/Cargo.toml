@@ -1,0 +1,14 @@
+# The OMPlot web page's module (wasm-bindgen'd into web/omplot/): the JS
+# bindings over `openmodelica_result_files::ResultFile`.
+[package]
+name = "openmodelica_result_web"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+openmodelica_result_files.workspace = true
+openmodelica_wasi.workspace = true
+wasm-bindgen = "=0.2.125"

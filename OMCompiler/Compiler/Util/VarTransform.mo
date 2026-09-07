@@ -315,7 +315,8 @@ protected function applyReplacementsVarAttr "Help function to applyReplacementsD
 algorithm
   outAttr := match attr
     local
-      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,startOrigin;
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
+      Option<DAE.StartOrigin> startOrigin;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> dist;

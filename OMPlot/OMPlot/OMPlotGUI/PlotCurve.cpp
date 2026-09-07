@@ -70,7 +70,7 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   setCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle());
 #if QWT_VERSION > 0x060000
   setLegendAttribute(QwtPlotCurve::LegendShowLine);
-  setLegendIconSize(QSize(30, 30));
+  setLegendIconSize(QSize(25, 8));
 #endif
   mpPlotDirectPainter = new QwtPlotDirectPainter();
   mpPointMarker = new QwtPlotMarker();

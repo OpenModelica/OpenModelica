@@ -87,6 +87,10 @@ pub use openmodelica_util::System::{omc_set_loadmodel_callback, omc_set_plot_cal
 // keep the `#[no_mangle]` symbols in `libOpenModelicaCompiler.so`.
 pub use openmodelica_util::ModelInstanceReference::*;
 
+// Ipopt/MUMPS's LAPACK entry points (same `pub use` rationale as above).
+#[cfg(not(target_arch = "wasm32"))]
+pub use openmodelica_sim_meta::lapack_dyn::*;
+
 /// Report this build's revision as the compiler version (`getVersion()`,
 /// `omc --version`); called by every entry point that starts a session.
 fn set_revision() {
@@ -147,7 +151,7 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             })
             .collect()
     };
-    let arglist = std::sync::Arc::new(args.into_iter().collect());
+    let arglist: metamodelica::List<_> = args.into_iter().collect();
     let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
     // `process::exit` drops no thread-local, so flush the buffered writers here.
     openmodelica_util::File::flush_all_registered();

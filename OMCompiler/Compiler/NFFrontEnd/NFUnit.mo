@@ -69,7 +69,8 @@ public uniontype Unit
     Integer mol "mole";
     Integer cd  "candela";
     Real factor "prefix";
-    //Real K_shift;
+    Real offset "v_SI = factor*v + offset; nonzero only for a bare affine unit
+                 (degC, degF), since composing units drops it";
   end UNIT;
 
   record MASTER "unknown unit that belongs to all the variables from varList"
@@ -81,8 +82,8 @@ public uniontype Unit
   end UNKNOWN;
 end Unit;
 
-public constant Unit ONE = UNIT(0, 0, 0, 0, 0, 0, 0, 1e0);
-public constant Unit SECOND = UNIT(1, 0, 0, 0, 0, 0, 0, 1e0);
+public constant Unit ONE = UNIT(0, 0, 0, 0, 0, 0, 0, 1e0, 0.0);
+public constant Unit SECOND = UNIT(1, 0, 0, 0, 0, 0, 0, 1e0, 0.0);
 //public constant Unit THRICE = ?
 
 protected uniontype Token
@@ -105,68 +106,68 @@ public constant ComponentRef UPDATECREF = ComponentRef.CREF(InstNode.NAME_NODE("
 
 /* from https://www.bipm.org/documents/d/guest/si-brochure-9-en-pdf */
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
-  /*                 s, m, g, A, K,mol,cd,factor */
-  ("1",         UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // 1
+  /*                 s, m, g, A, K,mol,cd,factor,offset */
+  ("1",         UNIT(0, 0, 0, 0, 0, 0, 0, 1e0, 0.0)), // 1
 
   /* base units */
-  ("s",         UNIT(1, 0, 0, 0, 0, 0, 0, 1e0)), // second
-  ("m",         UNIT(0, 1, 0, 0, 0, 0, 0, 1e0)), // meter
-  ("g",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e0)), // gram
-  ("A",         UNIT(0, 0, 0, 1, 0, 0, 0, 1e0)), // ampere
-  ("K",         UNIT(0, 0, 0, 0, 1, 0, 0, 1e0)), // kelvin
-  ("mol",       UNIT(0, 0, 0, 0, 0, 1, 0, 1e0)), // mole
-  ("cd",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0)), // candela
+  ("s",         UNIT(1, 0, 0, 0, 0, 0, 0, 1e0, 0.0)), // second
+  ("m",         UNIT(0, 1, 0, 0, 0, 0, 0, 1e0, 0.0)), // meter
+  ("g",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e0, 0.0)), // gram
+  ("A",         UNIT(0, 0, 0, 1, 0, 0, 0, 1e0, 0.0)), // ampere
+  ("K",         UNIT(0, 0, 0, 0, 1, 0, 0, 1e0, 0.0)), // kelvin
+  ("mol",       UNIT(0, 0, 0, 0, 0, 1, 0, 1e0, 0.0)), // mole
+  ("cd",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0, 0.0)), // candela
 
   /* derived units */
-  ("rad",       UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // radian
-//("sr",        UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // steradian
-  ("Hz",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0)), // hertz
-  ("N",         UNIT(-2,1, 1, 0, 0, 0, 0, 1e3)), // newton
-  ("Pa",        UNIT(-2,-1,1, 0, 0, 0, 0, 1e3)), // pascal
-  ("J",         UNIT(-2,2, 1, 0, 0, 0, 0, 1e3)), // joule
-  ("W",         UNIT(-3,2, 1, 0, 0, 0, 0, 1e3)), // watt
-  ("C",         UNIT(1, 0, 0, 1, 0, 0, 0, 1e0)), // coulomb
-  ("V",         UNIT(-3,2, 1,-1, 0, 0, 0, 1e3)), // volt
-  ("F",         UNIT(4,-2,-1, 2, 0, 0, 0,1e-3)), // farad
-  ("Ohm",       UNIT(-3,2, 1,-2, 0, 0, 0, 1e3)), // ohm
-  ("S",         UNIT(3,-2,-1, 2, 0, 0, 0,1e-3)), // siemens
-  ("Wb",        UNIT(-2,2, 1,-1, 0, 0, 0, 1e3)), // weber
-  ("T",         UNIT(-2,0, 1,-1, 0, 0, 0, 1e3)), // tesla
-  ("H",         UNIT(-2,2, 1,-2, 0, 0, 0, 1e3)), // henry
-  ("degC",      UNIT(0, 0, 0, 0, 1, 0, 0, 1e0)), // °Celsius
-//("lm",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0)), // lumen
-//("lx",        UNIT(0,-2, 0, 0, 0, 0, 1, 1e0)), // lux
-//("Bq",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0)), // becquerel
-//("Gy",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // gray
-//("Sv",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // sievert
-  ("kat",       UNIT(-1,0, 0, 0, 0, 1, 0, 1e0)), // katal
+  ("rad",       UNIT(0, 0, 0, 0, 0, 0, 0, 1e0, 0.0)), // radian
+//("sr",        UNIT(0, 0, 0, 0, 0, 0, 0, 1e0, 0.0)), // steradian
+  ("Hz",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0, 0.0)), // hertz
+  ("N",         UNIT(-2,1, 1, 0, 0, 0, 0, 1e3, 0.0)), // newton
+  ("Pa",        UNIT(-2,-1,1, 0, 0, 0, 0, 1e3, 0.0)), // pascal
+  ("J",         UNIT(-2,2, 1, 0, 0, 0, 0, 1e3, 0.0)), // joule
+  ("W",         UNIT(-3,2, 1, 0, 0, 0, 0, 1e3, 0.0)), // watt
+  ("C",         UNIT(1, 0, 0, 1, 0, 0, 0, 1e0, 0.0)), // coulomb
+  ("V",         UNIT(-3,2, 1,-1, 0, 0, 0, 1e3, 0.0)), // volt
+  ("F",         UNIT(4,-2,-1, 2, 0, 0, 0,1e-3, 0.0)), // farad
+  ("Ohm",       UNIT(-3,2, 1,-2, 0, 0, 0, 1e3, 0.0)), // ohm
+  ("S",         UNIT(3,-2,-1, 2, 0, 0, 0,1e-3, 0.0)), // siemens
+  ("Wb",        UNIT(-2,2, 1,-1, 0, 0, 0, 1e3, 0.0)), // weber
+  ("T",         UNIT(-2,0, 1,-1, 0, 0, 0, 1e3, 0.0)), // tesla
+  ("H",         UNIT(-2,2, 1,-2, 0, 0, 0, 1e3, 0.0)), // henry
+  ("degC",      UNIT(0, 0, 0, 0, 1, 0, 0, 1e0, 273.15)), // °Celsius
+//("lm",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0, 0.0)), // lumen
+//("lx",        UNIT(0,-2, 0, 0, 0, 0, 1, 1e0, 0.0)), // lux
+//("Bq",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0, 0.0)), // becquerel
+//("Gy",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0, 0.0)), // gray
+//("Sv",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0, 0.0)), // sievert
+  ("kat",       UNIT(-1,0, 0, 0, 0, 1, 0, 1e0, 0.0)), // katal
 
   /* accepted non-SI units */
-  ("min",       UNIT(1, 0, 0, 0, 0, 0, 0,  60)), // minute
-  ("h",         UNIT(1, 0, 0, 0, 0, 0, 0,3600)), // hour
-  ("d",         UNIT(1, 0, 0, 0, 0, 0, 0,86400)), // day
-//("au",        UNIT(0, 1, 0, 0, 0, 0, 0,149597870700)), // astronomical unit
-//("deg",       UNIT(0, 0, 0, 0, 0, 0, 0,1.7453292519943295e-2)), // degree
-//("???",       UNIT(0, 0, 0, 0, 0, 0, 0,2.908882086657216e-4)), // arcminute
-//("???",       UNIT(0, 0, 0, 0, 0, 0, 0,4.84813681109536e-6)), // arcsecond
-//("ha",        UNIT(0, 2, 0, 0, 0, 0, 0, 1e4)), // hectare
-  ("l",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3)), // liter
-//("L",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3)), // liter
-//("t",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e6)), // tonne
-//("eV",        UNIT(-2,2, 1, 0, 0, 0, 0,1.602176634e-16)), // electronvolt
-//("B",         UNIT(0, 0, 0, 0, 0, 0, 0,1e-2)), // bel (dezibel dB)
+  ("min",       UNIT(1, 0, 0, 0, 0, 0, 0,  60, 0.0)), // minute
+  ("h",         UNIT(1, 0, 0, 0, 0, 0, 0,3600, 0.0)), // hour
+  ("d",         UNIT(1, 0, 0, 0, 0, 0, 0,86400, 0.0)), // day
+//("au",        UNIT(0, 1, 0, 0, 0, 0, 0,149597870700, 0.0)), // astronomical unit
+//("deg",       UNIT(0, 0, 0, 0, 0, 0, 0,1.7453292519943295e-2, 0.0)), // degree
+//("???",       UNIT(0, 0, 0, 0, 0, 0, 0,2.908882086657216e-4, 0.0)), // arcminute
+//("???",       UNIT(0, 0, 0, 0, 0, 0, 0,4.84813681109536e-6, 0.0)), // arcsecond
+//("ha",        UNIT(0, 2, 0, 0, 0, 0, 0, 1e4, 0.0)), // hectare
+  ("l",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3, 0.0)), // liter
+//("L",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3, 0.0)), // liter
+//("t",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e6, 0.0)), // tonne
+//("eV",        UNIT(-2,2, 1, 0, 0, 0, 0,1.602176634e-16, 0.0)), // electronvolt
+//("B",         UNIT(0, 0, 0, 0, 0, 0, 0,1e-2, 0.0)), // bel (dezibel dB)
 
   /* custom units */
-  ("bar",       UNIT(-2,-1,1, 0, 0, 0, 0, 1e8)), // bar = 100kPa
-  ("degF",      UNIT(0, 0, 0, 0, 0, 0, 1, 0.5555555555555556))//°Fahrenheit
+  ("bar",       UNIT(-2,-1,1, 0, 0, 0, 0, 1e8, 0.0)), // bar = 100kPa
+  ("degF",      UNIT(0, 0, 0, 0, 1, 0, 0, 5.0/9.0, 459.67*5.0/9.0))//°Fahrenheit
 
 /* old implementation */
 /*                   fac,mol,cd, m, s, A, K, g*/
-//("VA",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Voltampere=Watt
-//("var",       UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Var=Watt
-//("R",         UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
-//("phon",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Phon
-//("sone",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Sone
+//("VA",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1, 0.0)), //Voltampere=Watt
+//("var",       UNIT(1e3, 0, 0, 2,-3, 0, 0, 1, 0.0)), //Var=Watt
+//("R",         UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1, 0.0)), //Röntgen    2, 58*10^-4 C/kg
+//("phon",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0, 0.0)), //Phon
+//("sone",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0, 0.0)), //Sone
 };
 
 public function getKnownUnits
@@ -240,6 +241,9 @@ algorithm
 end realAlmostEqRel;
 
 public function isEqual
+  "Dimensional equality: the offset is deliberately not compared, so degC and K
+   remain the same unit to the unit checker (and to `hash`, which goes through
+   unit2string). The offset exists to be exported, not to split unit identity."
   input Unit unit1;
   input Unit unit2;
   output Boolean res;
@@ -334,7 +338,22 @@ algorithm
   end match;
 end unit2string;
 
+protected function isOne
+  "The dimensionless identity, which composing against changes nothing."
+  input Unit unit;
+  output Boolean res;
+algorithm
+  res := match unit
+    case UNIT() then unit.s == 0 and unit.m == 0 and unit.g == 0 and unit.A == 0
+      and unit.K == 0 and unit.mol == 0 and unit.cd == 0
+      and unit.factor == 1.0 and unit.offset == 0.0;
+    else false;
+  end match;
+end isOne;
+
 public function unitMul
+  "An affine unit only survives multiplication by the identity: degC*s is a
+   ratio scale, not a shifted one, and parser3 builds every unit as ONE*u."
   input Unit inUnit1;
   input Unit inUnit2;
   output Unit outUnit;
@@ -349,7 +368,9 @@ algorithm
       K   = inUnit1.K + inUnit2.K,
       mol = inUnit1.mol + inUnit2.mol,
       cd  = inUnit1.cd + inUnit2.cd,
-      factor = inUnit1.factor * inUnit2.factor
+      factor = inUnit1.factor * inUnit2.factor,
+      offset = if isOne(inUnit1) then inUnit2.offset
+               elseif isOne(inUnit2) then inUnit1.offset else 0.0
     );
   end match;
 end unitMul;
@@ -369,7 +390,8 @@ algorithm
       K   = inUnit1.K - inUnit2.K,
       mol = inUnit1.mol - inUnit2.mol,
       cd  = inUnit1.cd - inUnit2.cd,
-      factor = inUnit1.factor / inUnit2.factor
+      factor = inUnit1.factor / inUnit2.factor,
+      offset = if isOne(inUnit2) then inUnit1.offset else 0.0
     );
   end match;
 end unitDiv;
@@ -389,7 +411,8 @@ algorithm
       K   = inUnit.K * inExp,
       mol = inUnit.mol * inExp,
       cd  = inUnit.cd * inExp,
-      factor = inUnit.factor^inExp
+      factor = inUnit.factor^inExp,
+      offset = if inExp == 1 then inUnit.offset else 0.0
     );
   end match;
 end unitPow;
@@ -404,6 +427,7 @@ algorithm
       Unit unit;
     case unit as UNIT() algorithm
       unit.factor := unit.factor * inFactor;
+      unit.offset := unit.offset * inFactor;
     then unit;
   end match;
 end unitMulReal;
@@ -450,7 +474,7 @@ algorithm
       r := realDiv(intReal(inUnit.cd),inExponent);
       cd := intDiv(inUnit.cd, i);
       true := realEq(r, intReal(cd));
-    then UNIT(s, m, g, A, K, mol, cd, factor);
+    then UNIT(s, m, g, A, K, mol, cd, factor, 0.0);
   end match;
 end unitRoot;
 

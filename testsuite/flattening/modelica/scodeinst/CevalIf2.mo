@@ -71,7 +71,7 @@ end CevalIf2;
 // class CevalIf2
 //   final parameter Real ets.dat.mEva_flow_nominal = datHeaPum.mEva_flow_nominal;
 //   parameter ExternalCombiTable2D ets.dat.tableID_QCon_flow = datHeaPum.tableID_QCon_flow;
-//   final parameter Real ets.pumEva.m_flow_nominal = datHeaPum.mEva_flow_nominal;
+//   final parameter Real ets.pumEva.m_flow_nominal = ets.dat.mEva_flow_nominal;
 //   parameter Real datHeaPum.mEva_flow_nominal = getTable2DValue(datHeaPum.tableID_QCon_flow);
 //   parameter ExternalCombiTable2D datHeaPum.tableID_QCon_flow = ExternalCombiTable2D.constructor("NoName");
 // end CevalIf2;

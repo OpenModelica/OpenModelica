@@ -56,7 +56,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Source.mo:16:3-17:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourceP.mo:17:3-18:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SinkQ.mo:16:3-18:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}
 // endResult

@@ -784,6 +784,14 @@ public uniontype FmiInitialUnknowns
   end FMIINITIALUNKNOWNS;
 end FmiInitialUnknowns;
 
+public uniontype FmiArray "An array the FMI 3.0 modelDescription.xml lists as one variable"
+  record FMIARRAY
+    DAE.ComponentRef first "the SimVar of the first scalar element";
+    Integer fmiIndex "of that element";
+    Integer numElements;
+  end FMIARRAY;
+end FmiArray;
+
 public uniontype FmiModelStructure
   record FMIMODELSTRUCTURE
     FmiOutputs fmiOutputs;
@@ -792,6 +800,7 @@ public uniontype FmiModelStructure
     Option<JacobianMatrix> initialPartialDerivatives;
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
+    list<FmiArray> fmiArrays;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 

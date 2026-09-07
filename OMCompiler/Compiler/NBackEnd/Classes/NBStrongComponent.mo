@@ -164,6 +164,12 @@ public
     Boolean mixed               "true for systems that have discrete variables";
     Boolean homotopy            "true if contains homotopy()";
     Solve.Status status;
+    Boolean implicitlyCreated   "true if this component was promoted straight from a
+                                 single/multi/resizable component by NBSolve.mo's
+                                 Tearing.implicit() rather than found and torn by
+                                 NBTearing.mo's own tearing pass. The two are numbered
+                                 (idx) via separate counters that can coincide, so this
+                                 flag lets the generated Jacobian's name stay unique.";
   end ALGEBRAIC_LOOP;
 
   record ALIAS
@@ -1212,7 +1218,8 @@ public
             linear  = false,
             mixed   = false,
             homotopy = Pointer.access(homotopy),
-            status  = NBSolve.Status.IMPLICIT);
+            status  = NBSolve.Status.IMPLICIT,
+            implicitlyCreated = false);
         end match;
       then comp;
 

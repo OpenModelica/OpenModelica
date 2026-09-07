@@ -81,11 +81,11 @@ fn ipopt() {
     for l in IPOPT_LIBS {
         println!("cargo:rustc-link-lib=static={l}");
     }
-    // Ipopt's dense algebra and MUMPS' rank-revealing QR call LAPACK/BLAS; Ipopt is
-    // C++; MUMPS is Fortran (whose runtime needs quadmath). Named `lapack`/`blas`
-    // like `openmodelica_util` does rather than a specific implementation, so both
-    // resolve to whatever this system installed.
-    for l in ["lapack", "blas", "stdc++", "gfortran", "quadmath"] {
+    // Ipopt is C++; MUMPS is Fortran (quadmath). LAPACK/BLAS: `lapack_dyn` on
+    // unix, linked by name elsewhere.
+    let unix = std::env::var_os("CARGO_CFG_UNIX").is_some();
+    let libs: &[&str] = if unix { &["stdc++", "gfortran", "quadmath"] } else { &["lapack", "blas", "stdc++", "gfortran", "quadmath"] };
+    for l in libs {
         println!("cargo:rustc-link-lib=dylib={l}");
     }
     println!("cargo:rustc-cfg=ipopt");

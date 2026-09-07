@@ -56,14 +56,14 @@ simulate(conflictingStartValues2, stopTime=0.0, simflags="-output S2.S.x,S2.S.y,
 //     resultFile = "conflictingStartValues2_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'conflictingStartValues2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output S2.S.x,S2.S.y,S2.S.z'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// time=0,S2.S.x=-3,S2.S.y=-3,S2.S.z=-3
+// time=0,S2.S.x=3,S2.S.y=3,S2.S.z=3
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: Alias set with conflicting start values
-//  * Candidate: S2.S.x(start = S2.S.Start.s = 1.0, confidence number = 3)
-//  * Candidate: S2.S.z(start = f(2.0 * p) = f(-1.0), confidence number = 1)
-//  * Candidate: S2.S.y(start = S2.p2 = 3.0, confidence number = 2)
-// => Select value from S2.S.z(start = f(2.0 * p) = f(-1.0)) for variable: S2.S.x
+//  * Candidate: S2.S.x(start = S2.S.Start.s = 1.0)
+//  * Candidate: S2.S.z(start = f(2.0 * p) = f(-1.0))
+//  * Candidate: S2.S.y(start = S2.p2 = 3.0)
+// => Select value from S2.S.x(start = S2.S.Start.s) for variable: S2.S.x
 // "
 // endResult

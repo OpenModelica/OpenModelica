@@ -372,7 +372,7 @@ fn is_nf_builtin(info: &Info) -> bool {
 }
 
 fn convert_element_items(
-    items: Arc<metamodelica::List<Arc<Absyn::ElementItem>>>,
+    items: metamodelica::List<Arc<Absyn::ElementItem>>,
     visibility: Visibility,
     class_info: &Info,
     members: &mut Vec<ClassMember>,

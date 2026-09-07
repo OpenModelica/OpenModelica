@@ -159,6 +159,9 @@ pub struct SimFlags {
     /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
     /// in double; this only narrows the result file.
     pub single_precision: bool,
+    /// `-mat_sync=<n>`: rewrite the `.mat` header (flush a record batch of an
+    /// `.arrow`) every `n` emitted rows, so the file is readable during the run.
+    pub mat_sync: Option<u32>,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
     /// `-measureTimePlotFormat=<fmt>`: the `+profiling` plots' gnuplot terminal.
@@ -341,6 +344,8 @@ pub struct SimFlags {
     pub no_restart: bool,
     /// `-noRootFinding`: take the end of the step as the event time.
     pub no_root_finding: bool,
+    /// `-lv_time=<start>,<stop>`: C's time-dependent logging window.
+    pub lv_time: Option<(f64, f64)>,
     /// `-l=<t>`: linearize at `t`, which also becomes the run's stop time.
     pub linearize: Option<f64>,
     /// `-l_datarec`: also emit the data-recovery matrices `Cz`/`Dz`.
@@ -785,6 +790,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
             "single" => f.single_precision = true,
+            "mat_sync" => f.mat_sync = Some(int(name, &value(name)?)?.max(0) as u32),
             "outputPath" => f.output_path = Some(value(name)?),
             "measureTimePlotFormat" => f.measure_time_plot_format = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),
@@ -940,6 +946,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "noHomotopyOnFirstTry" => f.homotopy_on_first_try = Some(false),
             "noRestart" => f.no_restart = true,
             "noRootFinding" => f.no_root_finding = true,
+            "lv_time" => f.lv_time = Some(lv_time_window(&value(name)?)?),
             "l" => f.linearize = Some(real(name, &value(name)?)?),
             "l_datarec" => f.linearize_datarec = true,
             "deltaXLinearize" => f.delta_x_linearize = Some(real(name, &value(name)?)?),
@@ -1291,6 +1298,20 @@ fn int(flag: &str, v: &str) -> Result<i32, String> {
     v.parse().map_err(|_| format!("-{flag} needs an integer"))
 }
 
+/// C's `setLogTimeWindow` (`simulation_runtime.cpp`), messages included.
+fn lv_time_window(v: &str) -> Result<(f64, f64), String> {
+    let bad = || format!("Simulation flag lv_time expects two real numbers, separated by a commas. Got: {v}");
+    let (a, b) = v.split_once(',').ok_or_else(bad)?;
+    let t0 = a.trim().parse::<f64>().map_err(|_| bad())?;
+    let t1 = b.trim().parse::<f64>().map_err(|_| bad())?;
+    if t0 > t1 {
+        return Err(format!(
+            "Simulation flag lv_time expects first number to be smaller then second number. Got: {v}"
+        ));
+    }
+    Ok((t0, t1))
+}
+
 fn real(flag: &str, v: &str) -> Result<f64, String> {
     v.parse().map_err(|_| format!("-{flag} needs a number"))
 }
@@ -1477,6 +1498,9 @@ mod store {
 pub fn set_flags(f: SimFlags) {
     crate::omclog::set_mask(f.log_mask);
     crate::omclog::set_xml(f.log_xml);
+    if f.lv_time.is_some() {
+        crate::omclog::deactivate();
+    }
     store::set(f);
 }
 

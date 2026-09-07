@@ -139,10 +139,11 @@ fn open_natives(resources: Option<&Path>) -> std::result::Result<openmodelica_ex
     let text = std::fs::read_to_string(res.join(openmodelica_ext_native::TABLE_FILE))
         .map_err(|e| format!("cannot read {}: {e}", openmodelica_ext_native::TABLE_FILE))?;
     let table = openmodelica_ext_native::marshal::parse(&text)?;
-    let binaries = res
-        .parent()
-        .and_then(openmodelica_ext_native::binaries_dir)
-        .ok_or_else(|| "the artifact has no binaries/ directory for this platform".to_string())?;
+    let binaries = match res.parent().and_then(openmodelica_ext_native::binaries_dir) {
+        Some(d) => d,
+        None if table.libs.is_empty() => std::path::PathBuf::new(),
+        None => return Err("the artifact has no binaries/ directory for this platform".to_string()),
+    };
     openmodelica_ext_native::Natives::open(&table, &binaries)
 }
 
@@ -313,23 +314,29 @@ impl WasmArtifact {
 
     /// Run the model's own simulation runtime inside the artifact (`om:sim/run`).
     /// `args` are the runtime flags a simulation executable would be given.
-    pub fn run_simulation(&self, args: &[String]) -> Result<SimRun> {
-        let (mut store, world) = self.instantiate()?;
-        let out = world
+    pub fn run_simulation(&self, args: &[String]) -> std::result::Result<SimRun, SimFailed> {
+        let (mut store, world) =
+            self.instantiate().map_err(|error| SimFailed { error, log: Vec::new(), output: String::new() })?;
+        let run = world
             .om_sim_simulation()
             .call_run(&mut store, args)
-            .map_err(|e| trap("om:sim/simulation.run", e))?
-            .map_err(Error::Simulation)?;
-        Ok(SimRun {
-            file: out.file,
-            linear_file: out.linear_file,
-            prof_files: out.prof_files,
-            prof_html: out.prof_html,
-            rows: out.rows,
-            solver: out.solver,
-            log: std::mem::take(&mut store.data_mut().log),
-            output: stdout_of(&store),
-        })
+            .map_err(|e| trap("om:sim/simulation.run", e))
+            .and_then(|r| r.map_err(Error::Simulation));
+        let log = std::mem::take(&mut store.data_mut().log);
+        let output = stdout_of(&store);
+        match run {
+            Ok(out) => Ok(SimRun {
+                file: out.file,
+                linear_file: out.linear_file,
+                prof_files: out.prof_files,
+                prof_html: out.prof_html,
+                rows: out.rows,
+                solver: out.solver,
+                log,
+                output,
+            }),
+            Err(error) => Err(SimFailed { error, log, output }),
+        }
     }
 
     /// What `fmi3Instantiate*` is told its resources are. The component's own
@@ -358,6 +365,13 @@ pub struct SimRun {
     pub solver: String,
     pub log: Vec<(Status, String, String)>,
     /// What the run printed: the `-lv` streams and the model's own `print`.
+    pub output: String,
+}
+
+/// A failed run, with its output.
+pub struct SimFailed {
+    pub error: Error,
+    pub log: Vec<(Status, String, String)>,
     pub output: String,
 }
 

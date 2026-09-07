@@ -56,7 +56,7 @@ protected
   import Variable = NFVariable;
 
   // NB imports
-  import NBAdjacency.{Mapping, Mode, CausalizeModes, Dependency};
+  import NBAdjacency.{IntMatrix, Mapping, Mode, ModeTable, Modes, Dependency};
   import BackendUtil = NBBackendUtil;
   import NBEquation.{Equation, Iterator, Frame, FrameLocation, RecollectStatus, FrameOrderingStatus};
   import Replacements = NBReplacements;
@@ -1190,9 +1190,9 @@ public
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   algorithm
     for cref in dependencies loop
       resolveDependency(cref, eqn_name, eqn_arr_idx, iter, ty, dep, rep, map, fullmap, m, mapping, modes);
@@ -1409,9 +1409,9 @@ protected
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Integer> fullmap       "unordered map to check for general relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     Dependency d;
     list<tuple<Integer, Type>> skip_lst;
@@ -1476,29 +1476,31 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
-    Mode mode;
+    Integer mode;
     list<ComponentRef> scalarized;
-    UnorderedMap<ComponentRef, Val2> map3;
-    Integer scal_size, shift;
+    list<Val2> scal_indices = {};
+    Val2 idx_lst;
+    Integer scal_size = 0, shift;
   algorithm
-    mode        := Mode.create(eqn_name, {original_cref}, false);
+    mode        := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
     for scal in scalarized loop
-      UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map, true), map3);
+      idx_lst       := getCrefInFrameIndices(scal, frames, mapping, map, true);
+      scal_indices  := idx_lst :: scal_indices;
+      scal_size     := scal_size + listLength(idx_lst);
     end for;
-    scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
+    scal_indices := listReverse(scal_indices);
     // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
     if scal_size > 0 and (size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0)) then
       shift := 0;
       for i in 1:size/scal_size loop
-        for scal in scalarized loop
-          for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
-            addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+        for indices in scal_indices loop
+          for scal_idx in indices loop
+            addMatrixEntry(m, skip_idx + shift, scal_idx, mode);
             shift := shift + 1;
           end for;
         end for;
@@ -1525,9 +1527,9 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input list<Boolean> regulars;
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     ComponentRef stripped;
     list<Subscript> subs;
@@ -1576,7 +1578,7 @@ protected
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(lst, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(lst, map2, key, m, Modes.add(modes, Mode.create(eqn_name, {original_cref}, false)), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1618,36 +1620,32 @@ protected
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedSet<ComponentRef> rep                    "repetition set";
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping                                   "array <-> scalar index mapping";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
     Boolean repeated;
     list<ComponentRef> scalarized;
-    UnorderedMap<ComponentRef, Val2> map3;
+    list<Val2> scal_indices = {};
     Integer shift;
-    Mode mode;
+    Integer mode;
   algorithm
     repeated    := UnorderedSet.contains(cref, rep);
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
     for scal in scalarized loop
-      UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map, true), map3);
+      scal_indices := getCrefInFrameIndices(scal, frames, mapping, map, true) :: scal_indices;
     end for;
+    scal_indices := listReverse(scal_indices);
 
     // if its repeated, use the same cref always; otherwise use local cref
-    if repeated then
-      mode := Mode.create(eqn_name, {original_cref}, false);
-    else
-      mode := Mode.create(eqn_name, {original_cref}, true);
-    end if;
+    mode := Modes.add(modes, Mode.create(eqn_name, {original_cref}, not repeated));
 
     for i in skip_idx:iter_size:skip_idx+size-iter_size loop
       shift := 0;
-      for scal in scalarized loop
-        for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+      for indices in scal_indices loop
+        for scal_idx in indices loop
           if intMod(shift, iter_size) == 0 then shift := 0; end if;
-          addMatrixEntry(m, modes, i + shift, scal_idx, mode);
+          addMatrixEntry(m, i + shift, scal_idx, mode);
           shift := shift + 1;
         end for;
       end for;
@@ -1665,11 +1663,11 @@ protected
     input Integer skip_idx, size, iter_size;
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input UnorderedMap<ComponentRef, Integer> map;
-    input array<list<Integer>> m;
+    input IntMatrix.Builder m;
     input Mapping mapping;
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input ModeTable modes;
   protected
-    Mode mode;
+    Integer mode;
     ComponentRef final_cref;
     Integer var_arr_idx, var_start;
     list<Integer> sizes;
@@ -1678,7 +1676,7 @@ protected
     Pointer<Integer> row;
     UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    mode          := Mode.create(eqn_name, {original_cref}, false);
+    mode          := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
     (final_cref, var_arr_idx) := getVarArrIdx(cref, mapping, map);
     (var_start, _)            := mapping.var_AtS[var_arr_idx];
     sizes         := ComponentRef.sizes(final_cref, false, true);
@@ -1686,7 +1684,7 @@ protected
     body_size     := intDiv(size, iter_size);
     row           := Pointer.create(skip_idx);
     replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    resolveFrames(frames, sizes, subs, var_start, replacements, true, m, modes, mode, body_size, row);
+    resolveFrames(frames, sizes, subs, var_start, replacements, true, m, mode, body_size, row);
   end resolveAllRegularPartial;
 
   function resolveFrames
@@ -1699,9 +1697,8 @@ protected
     input Integer var_start;
     input UnorderedMap<ComponentRef, Expression> replacements;
     input Boolean resize;
-    input array<list<Integer>> m;
-    input UnorderedMap<Mode.Key, Mode> modes;
-    input Mode mode;
+    input IntMatrix.Builder m;
+    input Integer mode                "index into the mode table";
     input Integer body_size;
     input Pointer<Integer> row;
   algorithm
@@ -1721,7 +1718,7 @@ protected
         r      := Pointer.access(row);
         values := resolveDimensionsSubscripts(sizes, subs, replacements, resize);
         for v in listReverse(values) loop
-          addMatrixEntry(m, modes, r, locationToIndex(sizes, v, var_start), mode);
+          addMatrixEntry(m, r, locationToIndex(sizes, v, var_start), mode);
         end for;
         Pointer.update(row, r + body_size);
       then ();
@@ -1746,7 +1743,7 @@ protected
         for index in iterator_lst loop
           UnorderedMap.add(iterator, Expression.INTEGER(index), replacements);
           Iterator.createMappedLocationReplacement(fmap, sub_idx, replacements);
-          resolveFrames(rest, sizes, subs, var_start, replacements, resize, m, modes, mode, body_size, row);
+          resolveFrames(rest, sizes, subs, var_start, replacements, resize, m, mode, body_size, row);
           sub_idx := sub_idx + 1;
         end for;
       then ();
@@ -1764,9 +1761,8 @@ protected
     input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
     input Array<Integer> key                    "mutable key";
-    input array<list<Integer>> m                "adjacency matrix";
-    input UnorderedMap<Mode.Key, Mode> modes;
-    input Mode mode;
+    input IntMatrix.Builder m         "adjacency matrix builder";
+    input Integer mode                "index into the mode table";
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
@@ -1782,7 +1778,7 @@ protected
         eqn_idx := Pointer.access(eqn_idx_ptr);
         scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
         for scal_idx in scal_lst loop
-          addMatrixEntry(m, modes, eqn_idx, scal_idx, mode);
+          addMatrixEntry(m, eqn_idx, scal_idx, mode);
         end for;
         Pointer.update(eqn_idx_ptr, eqn_idx + 1);
       then ();
@@ -1790,7 +1786,7 @@ protected
       case (dim, false)::rest algorithm
         // reduced dimension, keep key index at 0 and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
 
@@ -1799,32 +1795,23 @@ protected
         // and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
           arrayUpdate(key, index, i);
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
     end match;
   end resolveEquationDimensions;
 
   function addMatrixEntry
-    input array<list<Integer>> m                "adjacency matrix";
-    input UnorderedMap<Mode.Key, Mode> modes;
+    input IntMatrix.Builder m         "adjacency matrix builder";
     input Integer eqn_idx;
     input Integer var_idx;
-    input Mode mode;
+    input Integer mode                "index into the mode table";
   algorithm
-    try
-      // only add the variable if its a viable index. due to unresolved if-expressions in for-loops some branches can access variables
-      // that seem out of scope but are in fact valid because the if-condition ensures it.
-      if var_idx > 0 then
-        //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
-        arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
-        UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
-      end if;
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because index " + intString(eqn_idx)
-        + " could not be added. Matrix size: " + intString(arrayLength(m)) + "."});
-      fail();
-    end try;
+    // only add the variable if its a viable index. due to unresolved if-expressions in for-loops some branches can access variables
+    // that seem out of scope but are in fact valid because the if-condition ensures it.
+    if var_idx > 0 then
+      IntMatrix.builderAddAux(m, eqn_idx, var_idx, mode);
+    end if;
   end addMatrixEntry;
 
   function resolveReductions
@@ -1945,6 +1932,224 @@ protected
     end match;
   end combineFrames2Indices;
 
+  function combineFramesIndices
+    "Turns the subscripts of a cref into scalar indices over all frame values.
+    Tries the arithmetic evaluation first and falls back to the general
+    expression machinery."
+    input Integer first;
+    input list<Integer> sizes;
+    input list<Expression> subs;
+    input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
+    input Boolean resize;
+    output list<Integer> indices;
+  protected
+    Boolean ok;
+  algorithm
+    (ok, indices) := combineFramesArithmetic(first, sizes, subs, frames);
+    if not ok then
+      indices := listReverse(combineFrames2Indices(first, sizes, subs, frames,
+        UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), resize));
+    end if;
+  end combineFramesIndices;
+
+  function combineFramesArithmetic
+    "Fast path for combineFrames2Indices: every frame has to be a literal
+    integer range without a mapped location and every subscript has to be
+    integer arithmetic over the frame iterators. ok is false if it is not,
+    the general path has to be used then."
+    input Integer first;
+    input list<Integer> sizes;
+    input list<Expression> subs;
+    input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
+    output Boolean ok = true;
+    output list<Integer> indices = {};
+  protected
+    Integer n = listLength(frames);
+    Integer sz = if n > 0 then n else 1;
+    array<ComponentRef> names = arrayCreate(sz, ComponentRef.EMPTY());
+    array<Integer> values = arrayCreate(sz, 0);
+    array<Integer> starts = arrayCreate(sz, 0);
+    array<Integer> steps = arrayCreate(sz, 0);
+    array<Integer> stops = arrayCreate(sz, 0);
+    Integer i = 1;
+    ComponentRef name;
+    Expression range;
+    Option<Iterator> map;
+  algorithm
+    // an unsubscripted cref yields no combination at all, same as List.combination({})
+    if listEmpty(subs) then
+      return;
+    end if;
+
+    for frame in frames loop
+      (name, range, map) := frame;
+      if isSome(map) then
+        ok := false;
+        return;
+      end if;
+      arrayUpdate(names, i, name);
+      () := match range
+        local
+          Integer rstart, rstep, rstop;
+        case Expression.RANGE(start = Expression.INTEGER(value = rstart), stop = Expression.INTEGER(value = rstop))
+          algorithm
+            rstep := match range.step
+              case NONE() then if rstart > rstop then -1 else 1;
+              case SOME(Expression.INTEGER(value = rstep)) then rstep;
+              else 0;
+            end match;
+            if rstep == 0 then
+              ok := false;
+            else
+              arrayUpdate(starts, i, rstart);
+              arrayUpdate(steps, i, rstep);
+              arrayUpdate(stops, i, rstop);
+            end if;
+        then ();
+        else algorithm
+          ok := false;
+        then ();
+      end match;
+      if not ok then
+        return;
+      end if;
+      i := i + 1;
+    end for;
+
+    (ok, indices) := combineFramesArithmeticWork(first, sizes, subs, names, values, starts, steps, stops, 1, n, ok, indices);
+    if ok then
+      indices := listReverse(indices);
+    end if;
+  end combineFramesArithmetic;
+
+  function combineFramesArithmeticWork
+    input Integer first;
+    input list<Integer> sizes;
+    input list<Expression> subs;
+    input array<ComponentRef> names;
+    input array<Integer> values;
+    input array<Integer> starts;
+    input array<Integer> steps;
+    input array<Integer> stops;
+    input Integer level;
+    input Integer nframes;
+    input output Boolean ok;
+    input output list<Integer> indices;
+  protected
+    Integer v, step, stop, index;
+    Boolean inBounds;
+  algorithm
+    if level > nframes then
+      (ok, inBounds, index) := evalFrameIndex(subs, sizes, names, values, nframes, first);
+      if ok and inBounds then
+        indices := index :: indices;
+      end if;
+    else
+      step := steps[level];
+      stop := stops[level];
+      v := starts[level];
+      while (step > 0 and v <= stop) or (step < 0 and v >= stop) loop
+        arrayUpdate(values, level, v);
+        (ok, indices) := combineFramesArithmeticWork(first, sizes, subs, names, values, starts, steps, stops, level + 1, nframes, ok, indices);
+        if not ok then
+          return;
+        end if;
+        v := v + step;
+      end while;
+    end if;
+  end combineFramesArithmeticWork;
+
+  function evalFrameIndex
+    "Evaluates all subscripts at the current frame values and folds them into the
+    scalar index, like locationToIndex() does for the general path. inBounds is
+    false if one of them is outside its dimension, which is no dependency at all."
+    input list<Expression> subs;
+    input list<Integer> sizes;
+    input array<ComponentRef> names;
+    input array<Integer> values;
+    input Integer nframes;
+    input Integer first;
+    output Boolean ok = true;
+    output Boolean inBounds = true;
+    output Integer index = first;
+  protected
+    list<Integer> rest_sizes = sizes;
+    Integer size, value, factor = 1;
+  algorithm
+    for sub in subs loop
+      if listEmpty(rest_sizes) then
+        ok := false;
+        return;
+      end if;
+      size :: rest_sizes := rest_sizes;
+      (ok, value) := evalFrameExp(sub, names, values, nframes);
+      if not ok then
+        return;
+      end if;
+      if value < 1 or value > size then
+        inBounds := false;
+        return;
+      end if;
+      index := index + (value - 1) * factor;
+      factor := factor * size;
+    end for;
+  end evalFrameIndex;
+
+  function evalFrameExp
+    "Evaluates an integer expression at the current frame values. ok is false
+    for anything but integer literals, frame iterators and integer +, - and *."
+    input Expression exp;
+    input array<ComponentRef> names;
+    input array<Integer> values;
+    input Integer nframes;
+    output Boolean ok;
+    output Integer value;
+  algorithm
+    (ok, value) := match exp
+      local
+        Integer v1, v2;
+        Boolean ok1, ok2;
+
+      case Expression.INTEGER() then (true, exp.value);
+
+      case Expression.CREF() algorithm
+        ok := false;
+        value := 0;
+        for i in 1:nframes loop
+          if ComponentRef.isEqual(exp.cref, names[i]) then
+            value := values[i];
+            ok := true;
+            break;
+          end if;
+        end for;
+      then (ok, value);
+
+      case Expression.BINARY() guard(Type.isInteger(Operator.typeOf(exp.operator))) algorithm
+        (ok1, v1) := evalFrameExp(exp.exp1, names, values, nframes);
+        (ok2, v2) := evalFrameExp(exp.exp2, names, values, nframes);
+        value := 0;
+        if ok1 and ok2 then
+          (ok, value) := match exp.operator.op
+            case NFOperator.Op.ADD then (true, v1 + v2);
+            case NFOperator.Op.SUB then (true, v1 - v2);
+            case NFOperator.Op.MUL then (true, v1 * v2);
+            else (false, 0);
+          end match;
+        else
+          ok := false;
+        end if;
+      then (ok, value);
+
+      case Expression.UNARY() guard(Type.isInteger(Operator.typeOf(exp.operator))
+          and exp.operator.op == NFOperator.Op.UMINUS) algorithm
+        (ok, value) := evalFrameExp(exp.exp, names, values, nframes);
+        value := -value;
+      then (ok, value);
+
+      else (false, 0);
+    end match;
+  end evalFrameExp;
+
   function getCrefInFrameIndices
     input ComponentRef cref                                               "cref to get indices from";
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames  "iterator frames at which to evaluate cref";
@@ -2002,10 +2207,10 @@ public
       case SOME(complex_size) algorithm
         scal_lst := {};
         for i in complex_size:-1:1 loop
-          scal_lst := listAppend(listReverse(combineFrames2Indices(var_start, complex_size :: sizes, Expression.INTEGER(i) :: subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), resize)), scal_lst);
+          scal_lst := listAppend(combineFramesIndices(var_start, complex_size :: sizes, Expression.INTEGER(i) :: subs, frames, resize), scal_lst);
          end for;
       then scal_lst;
-      else listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), resize));
+      else combineFramesIndices(var_start, sizes, subs, frames, resize);
     end match;
   end getCrefInFrameIndicesLocal;
 

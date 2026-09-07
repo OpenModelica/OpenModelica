@@ -22,7 +22,6 @@
 #![allow(non_snake_case)]
 
 use std::io::Read;
-use std::sync::Arc;
 
 use arcstr::ArcStr;
 use metamodelica::List;
@@ -34,7 +33,7 @@ use openmodelica_error::ErrorTypes;
 /// to push the message are ignored — this function is itself only used on
 /// error paths that already return `false`.
 fn add_error(template: &str, tokens: &[&str]) {
-    let mut toks: Arc<List<ArcStr>> = Arc::new(List::Nil);
+    let mut toks: List<ArcStr> = metamodelica::nil();
     for t in tokens.iter().rev() {
         toks = metamodelica::cons(ArcStr::from(*t), toks);
     }

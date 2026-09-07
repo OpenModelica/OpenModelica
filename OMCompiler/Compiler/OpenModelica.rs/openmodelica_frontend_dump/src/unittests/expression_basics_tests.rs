@@ -274,7 +274,7 @@ fn subscript_int_from_index() -> Result<()> {
 
 #[test]
 fn subscripts_int_list() -> Result<()> {
-    let subs: Arc<metamodelica::List<Arc<DAE::Subscript>>> =
+    let subs: metamodelica::List<Arc<DAE::Subscript>> =
         list![index_sub(iconst(2)), index_sub(iconst(7))];
     let result = ExpressionBasics::subscriptsInt(subs)?;
     let v: Vec<i32> = result.into_iter().cloned().collect();
@@ -359,7 +359,7 @@ fn print_list_str_empty() -> Result<()> {
 #[test]
 fn print_list_str_multiple() -> Result<()> {
     init_flags();
-    let subs: Arc<metamodelica::List<Arc<DAE::Subscript>>> =
+    let subs: metamodelica::List<Arc<DAE::Subscript>> =
         list![index_sub(iconst(3)), index_sub(iconst(5))];
     let result = ExpressionBasics::printListStr(
         subs,

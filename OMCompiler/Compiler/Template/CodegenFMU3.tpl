@@ -107,21 +107,22 @@ case SIMCODE(__) then
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
-    <%fmiModelVariablesAndStructure3(simCode, FMUType, modelStructure)%>
+    <%fmiModelVariablesAndStructure3(simCode, FMUType)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
 
-template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType, Option<FmiModelStructure> modelStructure)
- "<ModelVariables> and <ModelStructure>, with the two tables they are looked up
-  through built for the length of them: each variable asks which aliases nest
-  under it, and each structure entry asks which value reference its index is, and
-  both answers are a search of every variable the model has without a table."
+template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType)
+ "<ModelVariables> and <ModelStructure>, from the view with one variable per
+  array, with the alias and value reference tables built for the length of them:
+  without them each entry searches every variable the model has."
 ::=
   let _ = SimCodeUtil.cacheFMI3VariableAliases(simCode)
-  let variables = fmiModelVariables3(simCode, FMUType)
-  let structure = modelStructure3(simCode, modelStructure)
+  match SimCodeUtil.fmi3ArrayView(simCode)
+  case view as SIMCODE(modelStructure=viewStructure) then
+  let variables = fmiModelVariables3(view, FMUType)
+  let structure = modelStructure3(view, viewStructure)
   let _ = SimCodeUtil.clearFMI3VariableAliases()
   <<
   <%variables%>
@@ -130,18 +131,19 @@ template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType, Option<
 end fmiModelVariablesAndStructure3;
 
 template fmiOpenModelicaAnnotations(SimCode simCode)
- "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Tool
-  element; empty when the model has neither. C and wasm FMU export."
+ "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Annotation
+  element; empty when the model has neither. FMI 3.0 replaced 2.0\'s <Tool name=...>
+  with <Annotation type=...>, which is what fmi3Annotation.xsd validates."
 ::=
   let figures = fmiFiguresBody(simCode)
   let visualization = fmiVisualizationElement(simCode)
   if boolAnd(stringEq(figures,""), stringEq(visualization,"")) then '' else
   <<
   <Annotations>
-    <Tool name="OpenModelica">
+    <Annotation type="org.openmodelica">
       <%figures%>
       <%visualization%>
-    </Tool>
+    </Annotation>
   </Annotations>
   >>
 end fmiOpenModelicaAnnotations;
@@ -507,18 +509,19 @@ template DaeModeVariables3(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__))) then
+  let daeModeVR = SimCodeUtil.getFMI3DaeModeValueReference(simCode)
   <<
-  <Boolean name="_D_daeMode" valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
-  <%dmd.residualVars |> var => DaeResidualVariable3(var, simCode) ;separator="\n"%>
+  <Boolean name="_D_daeMode" valueReference="<%daeModeVR%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
+  <%dmd.residualVars |> var => DaeResidualVariable3(var, daeModeVR) ;separator="\n"%>
   >>
 end DaeModeVariables3;
 
-template DaeResidualVariable3(SimVar simVar, SimCode simCode)
+template DaeResidualVariable3(SimVar simVar, String daeModeVR)
 ::=
 match simVar
 case SIMVAR(__) then
   let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(name),"$", "_D_"))
-  '<Float64 name="<%nm%>" valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(simVar, simCode)%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
+  '<Float64 name="<%nm%>" valueReference="<%intAdd(stringInt(daeModeVR), intAdd(1, index))%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
 end DaeResidualVariable3;
 
 template fmiLsDaeManifest(SimCode simCode)
@@ -526,7 +529,7 @@ template fmiLsDaeManifest(SimCode simCode)
   for a --daeMode Model Exchange FMU: the switch, the algebraic variables the
   importer solves for beside the states, and a ModelStructure that restates the
   model description's and adds the residuals — the fully implicit form
-  F(der(x), x, z, t) = 0, so no ContinuousStateDerivative entries."
+  F(der(x), x, a, t) = 0, so no ContinuousStateDerivative entries."
 ::=
 match simCode
 case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure) then
@@ -539,16 +542,15 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
       >>
     else ''
   let indicators = EventIndicators3(simCode)
-  let residuals = (dmd.residualVars |> var hasindex i0 => DaeResidual3(simCode, var, i0) ;separator="\n")
+  let residuals = (SimCodeUtil.fmi3DaeResiduals(simCode) |> (vr, dependencyAttributes) => DaeResidual3(vr, dependencyAttributes) ;separator="\n")
   let _ = SimCodeUtil.clearFMI3ValueReferences()
   <<
-  <fmi-ls-dae
-    xmlns="http://fmi-standard.org/fmi-ls-manifest"
+  <fmiDAEManifest
     xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
     fmi-ls:fmi-ls-name="org.fmi-standard.fmi-ls-dae"
-    fmi-ls:fmi-ls-version="0.1.0"
+    fmi-ls:fmi-ls-version="<%SimCodeUtil.fmiLsDaeVersion()%>"
     fmi-ls:fmi-ls-description="Layered standard for DAE support in FMI.">
-    <EnableDAE valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
+    <EnableDAEParameter valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
     <AlgebraicVariables>
       <%dmd.algebraicVars |> var => '<AlgebraicVariable valueReference="<%SimCodeUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
     </AlgebraicVariables>
@@ -557,17 +559,13 @@ case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStruc
       <%indicators%>
       <%residuals%>
     </ModelStructure>
-  </fmi-ls-dae>
+  </fmiDAEManifest>
   >>
 end fmiLsDaeManifest;
 
-template DaeResidual3(SimCode simCode, SimVar residualVar, Integer row)
+template DaeResidual3(String vr, String dependencyAttributes)
 ::=
-  <<
-  <Residual>
-    <Formulation valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(residualVar, simCode)%>"<%SimCodeUtil.getFMI3DaeResidualDependencyAttributes(simCode, row)%>/>
-  </Residual>
-  >>
+  '<Residual valueReference="<%vr%>"<%dependencyAttributes%>/>'
 end DaeResidual3;
 
 template EventIndicatorVariables3(SimCode simCode)
@@ -611,9 +609,9 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Int32>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
       '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Boolean>'
     case T_STRING(__) then
@@ -635,7 +633,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString3(simVar, simCode)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
@@ -858,12 +856,8 @@ template FmiUnknown3(SimCode simCode, FmiUnknown fmiUnknown, String element)
 ::=
 match fmiUnknown
 case FMIUNKNOWN(__) then
-  let vr = SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, index)
-  let deps = (dependencies |> d => SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, d) ;separator=" ")
-  let depsAttr = if dependencies then ' dependencies="<%deps%>"'
-  let depsKindAttr = if dependenciesKind then ' dependenciesKind="<%dependenciesKind |> k => k ;separator=" "%>"'
   <<
-  <<%element%> valueReference="<%vr%>"<%depsAttr%><%depsKindAttr%>/>
+  <<%element%> valueReference="<%SimCodeUtil.getFMI3ValueReferenceFromFMIIndex(simCode, index)%>"<%SimCodeUtil.fmi3UnknownDependencyAttributes(simCode, fmiUnknown)%>/>
   >>
 end FmiUnknown3;
 

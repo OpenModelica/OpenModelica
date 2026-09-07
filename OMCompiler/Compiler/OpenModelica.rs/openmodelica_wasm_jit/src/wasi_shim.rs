@@ -16,15 +16,16 @@ pub use openmodelica_wasi::wasi::*;
 //
 // Native default engine. Host functions reach the guest memory and the fd table
 // together via `Memory::data_and_store_mut`, which hands back
-// `(&mut [u8], &mut WasiCtx)` from the `Caller`. `proc_exit` records its code and
+// `(&mut [u8], &mut HostState)` from the `Caller`. `proc_exit` records its code and
 // traps; `run_command` turns that trap back into the exit code.
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 mod wasmtime_impl {
     use super::*;
+    use crate::host::HostState;
     use wasmtime::Caller;
 
-    type Linker = wasmtime::Linker<WasiCtx>;
+    type Linker = wasmtime::Linker<HostState>;
 
     /// Borrow `(SliceMem, ctx)` from the caller, or ERRNO_FAULT if there is no
     /// memory. A shared library imports the memory rather than exporting one, so
@@ -34,11 +35,11 @@ mod wasmtime_impl {
             let mem = $caller
                 .get_export("memory")
                 .and_then(|e| e.into_memory())
-                .or_else(crate::host::get_sim_memory);
+                .or_else(|| $caller.data().memory);
             match mem {
                 Some(m) => {
                     let (data, ctx) = m.data_and_store_mut(&mut $caller);
-                    (SliceMem(data), ctx)
+                    (SliceMem(data), &mut ctx.wasi)
                 }
                 None => return ERRNO_FAULT,
             }
@@ -50,128 +51,133 @@ mod wasmtime_impl {
         let m = "wasi_snapshot_preview1";
         let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
 
-        wt(linker.func_wrap(m, "fd_write", |mut c: Caller<'_, WasiCtx>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_write", |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_read", |mut c: Caller<'_, WasiCtx>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_read", |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_seek", |mut c: Caller<'_, WasiCtx>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_seek", |mut c: Caller<'_, HostState>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_open", |mut c: Caller<'_, WasiCtx>, dirfd: i32, dirflags: i32, path: i32, plen: i32, oflags: i32, rb: i64, ri: i64, fdflags: i32, ofd: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_open", |mut c: Caller<'_, HostState>, dirfd: i32, dirflags: i32, path: i32, plen: i32, oflags: i32, rb: i64, ri: i64, fdflags: i32, ofd: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_open(&mut mem, dirfd as u32, dirflags as u32, path as u32, plen as u32, oflags, rb as u64, ri as u64, fdflags, ofd as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_filestat_get", |mut c: Caller<'_, WasiCtx>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_filestat_get", |mut c: Caller<'_, HostState>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_filestat_get(&mut mem, dirfd as u32, flags as u32, path as u32, plen as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_filestat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_filestat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_create_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_create_directory", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_unlink_file", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_unlink_file", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_remove_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_remove_directory", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
-        wt(linker.func_wrap(m, "path_rename", |mut c: Caller<'_, WasiCtx>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
+        wt(linker.func_wrap(m, "path_rename", |mut c: Caller<'_, HostState>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_readdir", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_readdir", |mut c: Caller<'_, HostState>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_fdstat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_set_flags", |_c: Caller<'_, WasiCtx>, _fd: i32, _flags: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_fdstat_set_flags", |_c: Caller<'_, HostState>, _fd: i32, _flags: i32| -> i32 {
             ERRNO_SUCCESS
         }))?;
-        wt(linker.func_wrap(m, "fd_close", |mut c: Caller<'_, WasiCtx>, fd: i32| -> i32 {
-            c.data_mut().fd_close(fd as u32)
+        wt(linker.func_wrap(m, "fd_close", |mut c: Caller<'_, HostState>, fd: i32| -> i32 {
+            c.data_mut().wasi.fd_close(fd as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_prestat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_prestat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_prestat_dir_name", |mut c: Caller<'_, WasiCtx>, fd: i32, path: i32, plen: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_prestat_dir_name", |mut c: Caller<'_, HostState>, fd: i32, path: i32, plen: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
         }))?;
-        wt(linker.func_wrap(m, "args_sizes_get", |mut c: Caller<'_, WasiCtx>, argc: i32, bs: i32| -> i32 {
+        wt(linker.func_wrap(m, "args_sizes_get", |mut c: Caller<'_, HostState>, argc: i32, bs: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
         }))?;
-        wt(linker.func_wrap(m, "args_get", |mut c: Caller<'_, WasiCtx>, argv: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "args_get", |mut c: Caller<'_, HostState>, argv: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.args_get(&mut mem, argv as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "environ_sizes_get", |mut c: Caller<'_, WasiCtx>, count: i32, bs: i32| -> i32 {
+        wt(linker.func_wrap(m, "environ_sizes_get", |mut c: Caller<'_, HostState>, count: i32, bs: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
         }))?;
-        wt(linker.func_wrap(m, "environ_get", |mut c: Caller<'_, WasiCtx>, env: i32, buf: i32| -> i32 {
+        wt(linker.func_wrap(m, "environ_get", |mut c: Caller<'_, HostState>, env: i32, buf: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.environ_get(&mut mem, env as u32, buf as u32)
         }))?;
-        wt(linker.func_wrap(m, "clock_time_get", |mut c: Caller<'_, WasiCtx>, id: i32, prec: i64, time: i32| -> i32 {
+        wt(linker.func_wrap(m, "clock_time_get", |mut c: Caller<'_, HostState>, id: i32, prec: i64, time: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
         }))?;
-        wt(linker.func_wrap(m, "random_get", |mut c: Caller<'_, WasiCtx>, buf: i32, len: i32| -> i32 {
+        wt(linker.func_wrap(m, "random_get", |mut c: Caller<'_, HostState>, buf: i32, len: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c);
             ctx.random_get(&mut mem, buf as u32, len as u32)
         }))?;
         // `proc_exit` is a normal termination: record the code and unwind via a
         // wasmtime error, which `run_command` turns back into the exit code.
-        wt(linker.func_wrap(m, "proc_exit", |mut c: Caller<'_, WasiCtx>, code: i32| -> std::result::Result<(), wasmtime::Error> {
-            c.data_mut().exit_code = Some(code as u32);
+        wt(linker.func_wrap(m, "proc_exit", |mut c: Caller<'_, HostState>, code: i32| -> std::result::Result<(), wasmtime::Error> {
+            c.data_mut().wasi.exit_code = Some(code as u32);
             Err(wasmtime::Error::msg("wasi proc_exit"))
         }))?;
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls
-        // in. Real: clock_res_get + fd_tell. No-op success: advisory / sync / metadata
-        // ops. EINVAL: pread/pwrite / links / poll / sockets — all off the file-read
-        // path but must exist for the module to instantiate.
-        wt(linker.func_wrap(m, "clock_res_get", |mut c: Caller<'_, WasiCtx>, id: i32, out: i32| -> i32 {
+        // in. Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's sec2 driver
+        // uses for every access. No-op success: advisory / sync / metadata ops.
+        // EINVAL: links / poll / sockets — off the file path but must exist for the
+        // module to instantiate.
+        wt(linker.func_wrap(m, "clock_res_get", |mut c: Caller<'_, HostState>, id: i32, out: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c); ctx.clock_res_get(&mut mem, id as u32, out as u32)
         }))?;
-        wt(linker.func_wrap(m, "fd_tell", |mut c: Caller<'_, WasiCtx>, fd: i32, out: i32| -> i32 {
+        wt(linker.func_wrap(m, "fd_tell", |mut c: Caller<'_, HostState>, fd: i32, out: i32| -> i32 {
             let (mut mem, ctx) = mem_ctx!(c); ctx.fd_tell(&mut mem, fd as u32, out as u32)
         }))?;
-        wt(linker.func_wrap(m, "sched_yield", |_c: Caller<'_, WasiCtx>| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_sync", |_c: Caller<'_, WasiCtx>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_datasync", |_c: Caller<'_, WasiCtx>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_advise", |_c: Caller<'_, WasiCtx>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_allocate", |_c: Caller<'_, WasiCtx>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_set_rights", |_c: Caller<'_, WasiCtx>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_filestat_set_size", |_c: Caller<'_, WasiCtx>, _fd: i32, _s: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_filestat_set_times", |_c: Caller<'_, WasiCtx>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_renumber", |_c: Caller<'_, WasiCtx>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "path_filestat_set_times", |_c: Caller<'_, WasiCtx>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_pread", |_c: Caller<'_, WasiCtx>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "fd_pwrite", |_c: Caller<'_, WasiCtx>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "path_link", |_c: Caller<'_, WasiCtx>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "path_readlink", |_c: Caller<'_, WasiCtx>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "path_symlink", |_c: Caller<'_, WasiCtx>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "poll_oneoff", |_c: Caller<'_, WasiCtx>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_accept", |_c: Caller<'_, WasiCtx>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_recv", |_c: Caller<'_, WasiCtx>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_send", |_c: Caller<'_, WasiCtx>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_shutdown", |_c: Caller<'_, WasiCtx>, _fd: i32, _how: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "sched_yield", |_c: Caller<'_, HostState>| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_sync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_datasync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_advise", |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_allocate", |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_fdstat_set_rights", |_c: Caller<'_, HostState>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_filestat_set_size", |_c: Caller<'_, HostState>, _fd: i32, _s: i64| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_filestat_set_times", |_c: Caller<'_, HostState>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_renumber", |_c: Caller<'_, HostState>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "path_filestat_set_times", |_c: Caller<'_, HostState>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }))?;
+        wt(linker.func_wrap(m, "fd_pread", |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }))?;
+        wt(linker.func_wrap(m, "fd_pwrite", |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }))?;
+        wt(linker.func_wrap(m, "path_link", |_c: Caller<'_, HostState>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "path_readlink", |_c: Caller<'_, HostState>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "path_symlink", |_c: Caller<'_, HostState>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "poll_oneoff", |_c: Caller<'_, HostState>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "sock_accept", |_c: Caller<'_, HostState>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "sock_recv", |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "sock_send", |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(linker.func_wrap(m, "sock_shutdown", |_c: Caller<'_, HostState>, _fd: i32, _how: i32| -> i32 { ERRNO_INVAL }))?;
         Ok(())
     }
 
@@ -185,7 +191,7 @@ mod wasmtime_impl {
         let module = wasmtime::Module::new(&engine, wasm).map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let mut linker = Linker::new(&engine);
         add_to_linker(&mut linker)?;
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(cwd, args));
+        let mut store = wasmtime::Store::new(&engine, HostState::new(WasiCtx::new(cwd, args)));
         let instance = linker.instantiate(&mut store, &module).map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let start = instance
             .get_typed_func::<(), ()>(&mut store, "_start")
@@ -194,7 +200,7 @@ mod wasmtime_impl {
             Ok(()) => Ok(0),
             // A `proc_exit` unwinds as an error after setting `exit_code`; that is
             // a normal termination, not a trap.
-            Err(e) => match store.data().exit_code {
+            Err(e) => match store.data().wasi.exit_code {
                 Some(code) => Ok(code),
                 None => Err("wasi command trapped"),
             },
@@ -363,9 +369,10 @@ mod wasmer_impl {
             Err(RuntimeError::new("wasi proc_exit"))
         }));
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls in
-        // (see add_to_linker). Real: clock_res_get + fd_tell. No-op success: advisory /
-        // sync / metadata ops. EINVAL: pread/pwrite / links / poll / sockets — off the
-        // file-read path but must exist or the module fails to instantiate.
+        // (see add_to_linker). Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's
+        // sec2 driver uses for every access. No-op success: advisory / sync / metadata
+        // ops. EINVAL: links / poll / sockets — off the file path but must exist or the
+        // module fails to instantiate.
         def("clock_res_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, id: i32, out: i32| -> i32 {
             view_ctx!(env, mem, ctx); ctx.clock_res_get(&mut mem, id as u32, out as u32)
         }));
@@ -382,8 +389,12 @@ mod wasmer_impl {
         def("fd_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }));
         def("fd_renumber", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }));
         def("path_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_pread", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }));
-        def("fd_pwrite", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _i: i32, _il: i32, _o: i64, _n: i32| -> i32 { ERRNO_INVAL }));
+        def("fd_pread", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            view_ctx!(env, mem, ctx); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }));
+        def("fd_pwrite", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+            view_ctx!(env, mem, ctx); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+        }));
         def("path_link", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }));
         def("path_readlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }));
         def("path_symlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }));

@@ -31,6 +31,8 @@ pub mod linearize;
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
 // (and the paths the codegen already uses) still name them.
 pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
+pub use openmodelica_arrow_writer::units::{BaseUnit, DisplayUnit, UnitDef};
+pub use openmodelica_arrow_writer::VarTy;
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
@@ -41,6 +43,7 @@ pub mod datarecon;
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
 pub mod result;
+pub mod strings;
 /// The writer every file a run leaves beside its result goes through.
 pub mod files;
 pub mod optimization;
@@ -50,6 +53,10 @@ pub mod rtclock;
 /// The `LOG_STATS` block a finished run prints.
 pub mod stats;
 pub mod sync;
+#[cfg(all(feature = "std", unix, ipopt))]
+pub mod lapack_dyn;
+#[cfg(not(all(feature = "std", unix, ipopt)))]
+pub mod lapack_dyn {}
 #[cfg(sundials)]
 pub use openmodelica_solvers::sundials;
 
@@ -142,8 +149,8 @@ pub struct Layout {
     /// `algVars ++ discreteAlgVars` (the real algebraic variables emitted as
     /// time-variant result signals after the states and derivatives).
     pub n_real_alg: u32,
-    /// `functionAlgebraics` also runs the discrete update / saves `pre`, so
-    /// drivers call it only in the once-per-step order.
+    /// `functionAlgebraics` ends with C's `storePreValues`, so a driver calls it
+    /// only in the once-per-step order.
     pub has_when: bool,
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
@@ -489,10 +496,19 @@ impl Layout {
     pub fn n_bool_alg(&self) -> u32 {
         (self.bparam_off - self.bool_off) / 4
     }
+    /// String algebraic variables (between `str_off` and `sparam_off`).
+    pub fn n_str_alg(&self) -> u32 {
+        (self.sparam_off - self.str_off) / 4
+    }
     /// Total f64 columns in a result row: the real part, the integer and boolean
-    /// algebraics (captured per row as f64), then the sensitivities.
+    /// algebraics (captured per row as f64), the sensitivities, then the String
+    /// algebraics as interned ids ([`crate::strings`]).
     pub fn n_row_total(&self) -> u32 {
-        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens
+        self.n_reals_row() + self.n_int_alg() + self.n_bool_alg() + self.n_sens + self.n_str_alg()
+    }
+    /// First result-row column of the String block.
+    pub fn str_col0(&self) -> u32 {
+        self.sens_col0() + self.n_sens
     }
     /// First result-row column of the sensitivity block.
     pub fn sens_col0(&self) -> u32 {
@@ -585,6 +601,22 @@ impl MetaKind {
         }
     }
 
+    /// Project onto the `.arrow` writer's kind.
+    pub fn arrow(&self) -> openmodelica_arrow_writer::ArrowKind {
+        use openmodelica_arrow_writer::{Affine, ArrowKind};
+        let affine = |n: &Neg| match n {
+            Neg::None => Affine::IDENTITY,
+            Neg::Arith => Affine::NEGATE,
+            Neg::Not => Affine::NOT,
+        };
+        match self {
+            MetaKind::Time => ArrowKind::Time,
+            MetaKind::Column { col, negate } => ArrowKind::Column { col: *col, affine: affine(negate) },
+            MetaKind::Param { negate, .. } => ArrowKind::Param { affine: affine(negate) },
+            MetaKind::Const { value } => ArrowKind::Const { value: *value },
+        }
+    }
+
     /// Project onto the `.plt` writer's kind.
     pub fn plt(&self) -> openmodelica_plt_writer::PltKind {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
@@ -608,9 +640,22 @@ impl MetaKind {
 pub struct MetaVar {
     pub name: String,
     pub comment: String,
+    pub unit: String,
+    pub display_unit: String,
+    /// FMI's `relativeQuantity`: the value is a difference in its unit, so a
+    /// conversion scales it but adds no offset.
+    pub relative_quantity: bool,
+    pub ty: VarTy,
+    /// A discrete-time variable (changes only at events).
+    pub discrete: bool,
     pub kind: MetaKind,
     /// C's `filterOutput`, split into its reasons ([`var_filter`]).
     pub filter: u8,
+    /// C's `time_unvarying`: a `Column` computed once during initialization
+    /// (a literal parameter equation), which the `.mat` stores in `data_1`.
+    pub unvarying: bool,
+    /// The literals of an enumeration variable (`ty` is `Integer`).
+    pub enumeration: Option<Vec<String>>,
 }
 
 /// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
@@ -1009,6 +1054,9 @@ pub struct FmiVr {
     /// `-d=fmuExperimental` adds), 0 for everything else. What
     /// `fmi2GetRealOutputDerivatives` reports.
     pub der_off: u32,
+    /// An FMI 3.0 array variable's element count (the elements follow at
+    /// `vr + 1`..), 1 for a scalar.
+    pub len: u32,
 }
 
 /// The `--parmodauto` ODE task graph C reads from `<model>_ode.json`: one task per
@@ -1054,6 +1102,10 @@ pub struct SimMeta {
     /// The model's name (diagnostics).
     pub model_name: String,
     pub vars: Vec<MetaVar>,
+    /// The units [`MetaVar::unit`] and [`MetaVar::display_unit`] name, defined:
+    /// the SI dimensions and the conversion to each display unit. Only the
+    /// `.arrow` writer uses them; the other formats carry no unit table.
+    pub units: Vec<UnitDef>,
     /// ODE state Jacobian sparsity + coloring; `None` ⇒ numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
     /// Dynamic state selection metadata (one per `$STATESET`); empty otherwise.
@@ -1061,7 +1113,7 @@ pub struct SimMeta {
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
-    /// fmi-ls-dae's `EnableDAE` structural parameter, the value reference that
+    /// fmi-ls-dae's `EnableDAEParameter` structural parameter, the value reference that
     /// switches a `--daeMode` FMU into DAE mode; 0 for an FMU without one.
     pub fmi_dae_enable_vr: u32,
     /// Per-zero-crossing description (Modelica source of the relation, e.g.
@@ -1378,28 +1430,24 @@ impl SimMeta {
         };
         let min_step = 4.0 * f64::EPSILON * libm::fmax(libm::fabs(self.start_time), libm::fabs(self.stop_time));
         if step < min_step && span > 0.0 {
-            omclog::warning(
+            omclog::warning!(
                 STDOUT,
                 false,
-                &alloc::format!(
-                    "The step-size {} is too small. Adjust the step-size to {}.",
-                    crate::driver::format_g(step, 6),
-                    crate::driver::format_g(min_step, 6)
-                ),
+                "The step-size {} is too small. Adjust the step-size to {}.",
+                crate::driver::format_g(step, 6),
+                crate::driver::format_g(min_step, 6),
             );
             step = min_step;
         }
         if step > span + 1e-7 {
             omclog::warning(STDOUT, true, "Integrator step size greater than length of experiment");
-            omclog::info(
+            omclog::info!(
                 STDOUT,
                 false,
-                &alloc::format!(
-                    "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
-                    self.start_time,
-                    self.stop_time,
-                    step
-                ),
+                "start time: {:.6}, stop time: {:.6}, integrator step size: {:.6}",
+                self.start_time,
+                self.stop_time,
+                step,
             );
             omclog::close_warning(STDOUT);
         }
@@ -1420,11 +1468,7 @@ impl SimMeta {
         // C's `startNonInteractiveSimulation`, after `read_experiment`.
         if let Some(t) = f.linearize {
             self.stop_time = t;
-            omclog::info(
-                STDOUT,
-                false,
-                &alloc::format!("Linearization will be performed at point of time: {t:.6}"),
-            );
+            omclog::info!(STDOUT, false, "Linearization will be performed at point of time: {t:.6}");
         }
     }
 
@@ -1445,7 +1489,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 18;
+const VERSION: u32 = 21;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1568,8 +1612,24 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for v in &m.vars {
         put_str(&mut o, &v.name);
         put_str(&mut o, &v.comment);
+        put_str(&mut o, &v.unit);
+        put_str(&mut o, &v.display_unit);
+        o.push(v.relative_quantity as u8);
+        o.push(v.ty.code());
+        o.push(v.discrete as u8);
         put_kind(&mut o, &v.kind);
         o.push(v.filter);
+        o.push(v.unvarying as u8);
+        match &v.enumeration {
+            None => o.push(0),
+            Some(literals) => {
+                o.push(1);
+                put_u32(&mut o, literals.len() as u32);
+                for l in literals {
+                    put_str(&mut o, l);
+                }
+            }
+        }
     }
     put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
@@ -1596,6 +1656,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
         put_u32(&mut o, v.der_off);
+        put_u32(&mut o, v.len);
     }
     put_u32(&mut o, m.fmi_dae_enable_vr);
     put_u32(&mut o, m.zc_desc.len() as u32);
@@ -1849,6 +1910,28 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             }
         }
     }
+    put_u32(&mut o, m.units.len() as u32);
+    for u in &m.units {
+        put_str(&mut o, &u.name);
+        match &u.base {
+            None => o.push(0),
+            Some(b) => {
+                o.push(1);
+                for e in b.exponents {
+                    put_u32(&mut o, e as u32);
+                }
+                put_f64(&mut o, b.factor);
+                put_f64(&mut o, b.offset);
+            }
+        }
+        put_u32(&mut o, u.display_units.len() as u32);
+        for d in &u.display_units {
+            put_str(&mut o, &d.name);
+            put_f64(&mut o, d.factor);
+            put_f64(&mut o, d.offset);
+            o.push(d.inverse as u8);
+        }
+    }
     o
 }
 
@@ -2013,6 +2096,12 @@ impl<'a> Reader<'a> {
         l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
+    fn enumeration(&mut self) -> Result<Option<Vec<String>>, &'static str> {
+        if self.u8()? == 0 {
+            return Ok(None);
+        }
+        (0..self.u32()?).map(|_| self.string()).collect::<Result<Vec<_>, _>>().map(Some)
+    }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
             0 => MetaKind::Time,
@@ -2052,7 +2141,19 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nvars = r.u32()? as usize;
     let mut vars = Vec::with_capacity(nvars);
     for _ in 0..nvars {
-        vars.push(MetaVar { name: r.string()?, comment: r.string()?, kind: r.kind()?, filter: r.u8()? });
+        vars.push(MetaVar {
+            name: r.string()?,
+            comment: r.string()?,
+            unit: r.string()?,
+            display_unit: r.string()?,
+            relative_quantity: r.u8()? != 0,
+            ty: VarTy::from_code(r.u8()?),
+            discrete: r.u8()? != 0,
+            kind: r.kind()?,
+            filter: r.u8()?,
+            unvarying: r.u8()? != 0,
+            enumeration: r.enumeration()?,
+        });
     }
     let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
@@ -2083,7 +2184,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let start_off = r.u32()?;
         let is_string = r.u8()? != 0;
         let der_off = r.u32()?;
-        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off });
+        let len = r.u32()?;
+        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off, len });
     }
     let fmi_dae_enable_vr = r.u32()?;
     let ndesc = r.u32()? as usize;
@@ -2363,10 +2465,29 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             Some(ParmodInfo { tasks })
         }
     };
+    let mut units = Vec::new();
+    for _ in 0..r.u32()? {
+        let name = r.string()?;
+        let base = match r.u8()? {
+            0 => None,
+            _ => {
+                let mut exponents = [0i32; 8];
+                for e in &mut exponents {
+                    *e = r.u32()? as i32;
+                }
+                Some(BaseUnit { exponents, factor: r.f64()?, offset: r.f64()? })
+            }
+        };
+        let mut display_units = Vec::new();
+        for _ in 0..r.u32()? {
+            display_units.push(DisplayUnit { name: r.string()?, factor: r.f64()?, offset: r.f64()?, inverse: r.u8()? != 0 });
+        }
+        units.push(UnitDef { name, base, display_units });
+    }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
+        model_name, vars, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod,
     })
@@ -2395,13 +2516,18 @@ mod tests {
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),
             model_name: "MyModel".to_string(),
+            units: vec![UnitDef {
+                name: "K".to_string(),
+                base: Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], factor: 1.0, offset: 0.0 }),
+                display_units: vec![DisplayUnit { name: "degC".to_string(), factor: 1.0, offset: -273.15, inverse: false }],
+            }],
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0 },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
+                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::ALIAS, unvarying: false, enumeration: None },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::HIDE_RESULT, unvarying: false, enumeration: None },
+                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::FILTERED, unvarying: false, enumeration: None },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
@@ -2426,8 +2552,8 @@ mod tests {
                 candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0 },
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0, len: 1 },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0, len: 1 },
             ],
             fmi_dae_enable_vr: 9,
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],

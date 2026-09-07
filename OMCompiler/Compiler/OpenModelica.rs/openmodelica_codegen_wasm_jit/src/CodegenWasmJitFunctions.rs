@@ -98,10 +98,10 @@ fn fn_context() -> String {
 }
 
 /// Sets `CURRENT_PART` until it drops, restoring the previous value.
-struct PartGuard(String);
+pub(crate) struct PartGuard(String);
 
 impl PartGuard {
-    fn new(part: String) -> Self {
+    pub(crate) fn new(part: String) -> Self {
         PartGuard(CURRENT_PART.with(|p| p.replace(part)))
     }
 }
@@ -109,6 +109,22 @@ impl PartGuard {
 impl Drop for PartGuard {
     fn drop(&mut self) {
         CURRENT_PART.with(|p| *p.borrow_mut() = std::mem::take(&mut self.0));
+    }
+}
+
+/// [`PartGuard`] for `CURRENT_FN`, which the equation functions have no
+/// `SimCodeFunction` to take a name from.
+pub(crate) struct FnNameGuard(String);
+
+impl FnNameGuard {
+    pub(crate) fn new(name: &str) -> Self {
+        FnNameGuard(CURRENT_FN.with(|f| f.replace(name.to_owned())))
+    }
+}
+
+impl Drop for FnNameGuard {
+    fn drop(&mut self) {
+        CURRENT_FN.with(|f| *f.borrow_mut() = std::mem::take(&mut self.0));
     }
 }
 
@@ -513,6 +529,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    ("rt_assert_suppressed", &[], &[WTy::I32]),
     // C's `assertCommonVar` when a catcher is open: `(msg, sim_data, initial)`,
     // non-zero when the caller must return instead of trapping.
     ("rt_assert_common", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
@@ -621,6 +638,7 @@ pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
         lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
         args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
         ret: if ret == "-" { None } else { parse_sig_types(ret)?.into_iter().next() },
+        declare: f.next() == Some("1"),
     })
 }
 
@@ -640,7 +658,8 @@ fn write_ext_sig(e: &ExtCallSig) -> String {
         None => ret.push('-'),
     }
     let lang = if e.lang == ExtLang::Fortran77 { 'F' } else { 'C' };
-    format!("{}\t{lang}\t{ret}\t{args}\t{outs}", e.name)
+    let declare = if e.declare { '1' } else { '0' };
+    format!("{}\t{lang}\t{ret}\t{args}\t{outs}\t{declare}", e.name)
 }
 
 /// A lowered function module and what its sidecar has to record: the main
@@ -1075,7 +1094,9 @@ pub(crate) fn external_general_why(f: &SimCodeFunction::Function::Function) -> s
 /// wrapper's own signature).
 pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Result<ExtCallSig> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, extArgs, extReturn, language, includes, .. } =
+        f
+    else {
         return Err("CodegenWasmJit: external_import_sig on a non-external function");
     };
     let lang = ext_lang(language).ok_or("CodegenWasmJit: unsupported external language")?;
@@ -1099,7 +1120,7 @@ pub(crate) fn external_import_sig(f: &SimCodeFunction::Function::Function) -> Re
         ExtLang::C => extName.to_string(),
         ExtLang::Fortran77 => format!("{extName}_"),
     };
-    Ok(ExtCallSig { name, lang, args, ret })
+    Ok(ExtCallSig { name, lang, args, ret, declare: includes.is_empty() })
 }
 
 /// The input/output scalar `SigTy`s of the main function, for the sidecar.
@@ -1112,7 +1133,7 @@ fn main_sig_types(f: &SimCodeFunction::Function::Function) -> Result<(Vec<SigTy>
     }
 }
 
-fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Result<Vec<SigTy>> {
+fn var_sigtys(vars: &List<Arc<SimCodeFunction::Variable::Variable>>) -> Result<Vec<SigTy>> {
     let mut out = Vec::new();
     for v in &**vars {
         out.push(match &**v {
@@ -1131,7 +1152,7 @@ fn var_sigtys(vars: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>) -> Res
 /// is the scalar element type with the dimensions in `instDims`. So a `T_ARRAY`
 /// `ty` is authoritative (its `dims` are complete); otherwise a non-empty
 /// `instDims` makes the scalar `ty` the element type of a rank-`|instDims|` array.
-fn variable_sigty(ty: &DAE::Type, inst_dims: &Arc<List<Arc<DAE::Dimension>>>) -> Result<SigTy> {
+fn variable_sigty(ty: &DAE::Type, inst_dims: &List<Arc<DAE::Dimension>>) -> Result<SigTy> {
     // Quiet: `external_known`/`external_general` map a function's variables only to
     // decide whether they can lower the call at all.
     let base = sig_ty_quiet(ty)?;
@@ -1894,7 +1915,7 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Lower a list of algorithm statements into this context.
-    pub(crate) fn sim_stmts(&mut self, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Result<()> {
+    pub(crate) fn sim_stmts(&mut self, stmts: &List<Arc<DAE::Statement>>) -> Result<()> {
         compile_stmts(self, stmts)
     }
 
@@ -2357,8 +2378,8 @@ impl<'a> FnCtx<'a> {
     /// must be saved after each step.
     pub(crate) fn sim_when(
         &mut self,
-        conditions: &Arc<List<Arc<DAE::ComponentRef>>>,
-        stmts: &Arc<List<openmodelica_backend_types::BackendDAE::WhenOperator>>,
+        conditions: &List<Arc<DAE::ComponentRef>>,
+        stmts: &List<openmodelica_backend_types::BackendDAE::WhenOperator>,
         else_when: &Option<Arc<openmodelica_simcode_types::SimCode::SimEqSystem>>,
     ) -> Result<()> {
         use we::Instruction as I;
@@ -2735,7 +2756,7 @@ fn compile_external_function(
 fn emit_shared_external_call(
     ctx: &mut FnCtx,
     sig: &ExtCallSig,
-    extArgs: &Arc<List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>>,
+    extArgs: &List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>,
     extReturn: &Arc<SimCodeFunction::SimExtArg::SimExtArg>,
     fn_path: &dyn Fn() -> ArcStr,
 ) -> Result<()> {
@@ -2755,6 +2776,9 @@ fn emit_shared_external_call(
         F77Array { handle: u32, ptr: u32, is_out: bool },
         /// C's `<record>_external`: copy its fields into `out`, then free it.
         CRecord { ptr: u32, fields: Arc<Vec<(ArcStr, SigTy)>>, out: Target },
+        /// A String argument: the callee got a `rt_str_data` pointer into it, so
+        /// this side still owns the handle and releases it once the call is done.
+        Owned { handle: u32 },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -2831,7 +2855,8 @@ fn emit_shared_external_call(
             Ok(())
         };
         match &ty {
-            SigTy::Array { .. } if fortran => {
+            // Host-served: the handle, as for C; the host reorders itself.
+            SigTy::Array { .. } if fortran && !native => {
                 // The array handle, then its Fortran-visible address. Both are kept:
                 // the copy-back needs the handle and the scratch pointer together.
                 push_value(ctx, "an array", WTy::I32)?;
@@ -2853,6 +2878,9 @@ fn emit_shared_external_call(
             }
             SigTy::Str if !is_out => {
                 push_value(ctx, "a String", WTy::I32)?;
+                let handle = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalTee(handle));
+                cleanups.push(Cleanup::Owned { handle });
                 if !native {
                     ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
                 }
@@ -2942,6 +2970,10 @@ fn emit_shared_external_call(
                 Cleanup::CRecord { ptr, .. } => {
                     ctx.emit(we::Instruction::LocalGet(*ptr));
                     ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                }
+                Cleanup::Owned { handle } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
                 }
             }
         }
@@ -3037,6 +3069,10 @@ fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
             }
+            Cleanup::Owned { handle } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+            }
         }
     }
     Ok(())
@@ -3058,7 +3094,7 @@ fn emit_known_external_call(
     // not C symbols. Their Integer and Real overloads share one `extName`, so a host
     // import would bind both to the same signature and hand libc's `abs(int)` a double.
     if matches!(ext_name, "abs" | "div" | "mod") {
-        let args = Arc::new(args.iter().cloned().collect::<List<Arc<DAE::Exp>>>());
+        let args = args.iter().cloned().collect::<List<Arc<DAE::Exp>>>();
         let attr = match out {
             SigTy::Int => DAE::callAttrBuiltinInteger(),
             _ => DAE::callAttrBuiltinReal(),
@@ -3203,17 +3239,38 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         ));
     }
 
+    // A heap argument reaches the host as an owned reference (reading a String
+    // local retains), and the trampoline only copies out of it — so this side
+    // owns it still and must release it after the call, as `str_binop` does.
+    // `Strings.compare` takes two per call, which is why `Strings.find` leaked one
+    // substring per position it tried.
+    let mut arg_temps: Vec<(u32, &'static str)> = Vec::new();
     for (a, p) in args.iter().zip(params.iter()) {
         let w = compile_exp(ctx, a)?;
         coerce(ctx, w, p.wty());
+        if let Some(release_fn) = p.release_fn() {
+            let t = ctx.alloc_temp(p.wty());
+            ctx.emit(we::Instruction::LocalTee(t));
+            arg_temps.push((t, release_fn));
+        }
     }
     ctx.emit(we::Instruction::Call(index));
+    // The results sit on the stack (or in `temps`); `rt_release` leaves nothing
+    // behind, so releasing here does not disturb them.
+    let release_args = |ctx: &mut FnCtx| -> Result<()> {
+        for (t, release_fn) in &arg_temps {
+            ctx.emit(we::Instruction::LocalGet(*t));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+        Ok(())
+    };
     if catch.is_some() {
         // Out of the `try_table` region: the results travel through locals so every
         // block here is empty-typed but the one the caught `exnref` lands in.
         for t in temps.iter().rev() {
             ctx.emit(we::Instruction::LocalSet(*t));
         }
+        release_args(ctx)?;
         ctx.emit(we::Instruction::End); // try_table
         ctx.emit(we::Instruction::Br(1)); // done
         ctx.emit(we::Instruction::End); // handler: the exception is on the stack
@@ -3222,6 +3279,7 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         ctx.emit(we::Instruction::LocalGet(saved_stack));
         ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
         ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        release_args(ctx)?;
         release_heap_locals(ctx)?;
         push_outputs(ctx);
         ctx.emit(we::Instruction::Return);
@@ -3232,6 +3290,8 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         for t in &temps {
             ctx.emit(we::Instruction::LocalGet(*t));
         }
+    } else {
+        release_args(ctx)?;
     }
     Ok(results)
 }
@@ -3282,7 +3342,7 @@ fn init_var(
     array_allocs: &mut Vec<(u32, Arc<SigTy>, Vec<Arc<DAE::Dimension>>)>,
     done: &mut Vec<u32>,
 ) -> Result<()> {
-    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = v else {
+    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, kind, bind_from_outside, .. } = v else {
         return Ok(());
     };
     let (vname, sty) = var_name_ty(v)?;
@@ -3292,6 +3352,19 @@ fn init_var(
     }
     done.push(slot);
     let _g = PartGuard::new(format!("the declaration of `{vname}`"));
+    // A `constant` is never assigned, so it aliases its shared literal instead of
+    // copying it on every call (C's `arrayVarConstLiteralAlias`).
+    if matches!(kind, DAE::VarKind::CONST)
+        && !*bind_from_outside
+        && let Some(val) = value
+        && shared_lits::is_shared(val)
+    {
+        array_allocs.retain(|(i, ..)| *i != slot);
+        let w = compile_exp(ctx, val)?;
+        coerce(ctx, w, sty.wty());
+        ctx.emit(we::Instruction::LocalSet(slot));
+        return Ok(());
+    }
     if let Some(k) = array_allocs.iter().position(|(i, ..)| *i == slot) {
         let (_, elem, dims) = array_allocs.remove(k);
         emit_array_alloc(ctx, slot, &elem, &dims)?;
@@ -3465,7 +3538,7 @@ fn cref_ident(cr: &DAE::ComponentRef) -> Result<String> {
     }
 }
 
-fn compile_stmts(ctx: &mut FnCtx, stmts: &Arc<List<Arc<DAE::Statement>>>) -> Result<()> {
+fn compile_stmts(ctx: &mut FnCtx, stmts: &List<Arc<DAE::Statement>>) -> Result<()> {
     for s in &**stmts {
         compile_stmt(ctx, s)?;
     }
@@ -3666,7 +3739,7 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
 /// generated function (which leaves its results on the stack, first result
 /// deepest), then move each owned result into its target local. A `_` (wildcard)
 /// target discards its value (releasing it if heap).
-fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &DAE::Exp) -> Result<()> {
+fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &List<Arc<DAE::Exp>>, call: &DAE::Exp) -> Result<()> {
     let DAE::Exp::CALL { path, expLst, attr } = call else {
         return Err("CodegenWasmJit: tuple assignment rhs is not a function call");
     };
@@ -4117,7 +4190,7 @@ fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE::Type) -> R
 
 /// A record literal `R(field=…, …)` (`E::RECORD`): the field values are matched
 /// to the type's declaration order by component name.
-fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &Arc<List<Arc<DAE::Exp>>>, comp: &Arc<List<ArcStr>>) -> Result<()> {
+fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &List<Arc<DAE::Exp>>, comp: &List<ArcStr>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor with non-record type");
     };
@@ -4160,8 +4233,8 @@ fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
 fn compile_metarecord(
     ctx: &mut FnCtx,
     path: &Arc<Absyn::Path>,
-    args: &Arc<List<Arc<DAE::Exp>>>,
-    fieldNames: &Arc<List<ArcStr>>,
+    args: &List<Arc<DAE::Exp>>,
+    fieldNames: &List<ArcStr>,
 ) -> Result<()> {
     let SigTy::Record { fields, .. } = metarecord_sigty(path)? else {
         return Err("CodegenWasmJit: boxed record constructor with non-record type");
@@ -4185,7 +4258,7 @@ fn compile_metarecord(
 /// A record-constructor *call* `R(v1, v2, …)` (a `CALL` whose result is a record
 /// and which is not a generated function): the positional arguments are the
 /// fields in declaration order.
-fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
+fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &List<Arc<DAE::Exp>>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor call with non-record type");
     };
@@ -4268,7 +4341,7 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
 fn push_record_base(
     ctx: &mut FnCtx,
     ident: &str,
-    subs: &Arc<List<Arc<DAE::Subscript>>>,
+    subs: &List<Arc<DAE::Subscript>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
     let (idx, sty) = ctx
         .locals
@@ -4338,7 +4411,7 @@ fn step_into_record(
     rec: u32,
     fields: &[(ArcStr, SigTy)],
     field: &str,
-    fsubs: &Arc<List<Arc<DAE::Subscript>>>,
+    fsubs: &List<Arc<DAE::Subscript>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
     let (vt, fty) = load_field(ctx, rec, fields, field)?;
     if fsubs.is_empty() {
@@ -4419,7 +4492,7 @@ fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<W
 fn navigate_qual<'c>(
     ctx: &mut FnCtx,
     cref: &'c DAE::ComponentRef,
-) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c Arc<List<Arc<DAE::Subscript>>>)> {
+) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c List<Arc<DAE::Subscript>>)> {
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
@@ -4654,8 +4727,16 @@ fn emit_assert(
         Ok(())
     };
     // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
-    // then unwound into the solver.
+    // then unwound into the solver — unless the `noThrowAsserts` window is open,
+    // which C checks first; `rt_assert` then records it and the evaluation goes on.
+    // C's `FUNCTION_CONTEXT` arm has no such check, so a function's assert throws
+    // whatever the window says (a domain guard the solver must back off from).
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    if !in_function {
+        ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
+        ctx.emit(we::Instruction::I32Eqz);
+        ctx.emit(we::Instruction::I32And);
+    }
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     report_args(ctx)?;
     emit_initial_flag(ctx);
@@ -5022,8 +5103,8 @@ fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
 /// for when-equations ([`FnCtx::sim_when`]).
 fn compile_stmt_when(
     ctx: &mut FnCtx,
-    conditions: &Arc<List<Arc<DAE::ComponentRef>>>,
-    stmts: &Arc<List<Arc<DAE::Statement>>>,
+    conditions: &List<Arc<DAE::ComponentRef>>,
+    stmts: &List<Arc<DAE::Statement>>,
     else_when: &Option<Arc<DAE::Statement>>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -5110,7 +5191,7 @@ fn compile_else(ctx: &mut FnCtx, e: &DAE::Else) -> Result<()> {
 fn compile_loop_body(
     ctx: &mut FnCtx,
     break_level: u32,
-    body: &Arc<List<Arc<DAE::Statement>>>,
+    body: &List<Arc<DAE::Statement>>,
 ) -> Result<()> {
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
     let continue_level = ctx.ctrl_depth;
@@ -5144,7 +5225,7 @@ fn compile_for(
     ctx: &mut FnCtx,
     iter: &ArcStr,
     range: &DAE::Exp,
-    body: &Arc<List<Arc<DAE::Statement>>>,
+    body: &List<Arc<DAE::Statement>>,
     ty: &DAE::Type,
 ) -> Result<()> {
     if let DAE::Exp::RANGE { .. } = range {
@@ -5160,7 +5241,7 @@ fn compile_for_int_range(
     ctx: &mut FnCtx,
     iter: &ArcStr,
     range: &DAE::Exp,
-    body: &Arc<List<Arc<DAE::Statement>>>,
+    body: &List<Arc<DAE::Statement>>,
 ) -> Result<()> {
     let DAE::Exp::RANGE { start, step, stop, .. } = range else {
         return Err("CodegenWasmJit: for-loop over non-range expression not supported");
@@ -5219,7 +5300,7 @@ fn compile_for_array(
     ctx: &mut FnCtx,
     iter: &ArcStr,
     range: &DAE::Exp,
-    body: &Arc<List<Arc<DAE::Statement>>>,
+    body: &List<Arc<DAE::Statement>>,
 ) -> Result<()> {
     let SigTy::Array { elem, rank } = exp_sigty(range)? else {
         return Err("CodegenWasmJit: for-loop over non-array, non-range expression not supported");
@@ -6132,8 +6213,15 @@ fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
 }
 
 /// Address of the sub-clock block `interval()`/`firstTick()` read.
-fn sub_clock_off(sim: &SimCtx) -> Result<u32> {
-    sim.sub_clock_off.ok_or("CodegenWasmJit: clock builtin outside a clocked partition")
+fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<u32> {
+    sim.sub_clock_off.ok_or_else(|| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: `{name}()` reads the active sub-clock, but the equation is not in a \
+             clocked partition{}",
+            fn_context()
+        ));
+        "CodegenWasmJit: clock builtin outside a clocked partition"
+    })
 }
 
 /// The `der(cr)` component reference: `cr` wrapped in a `$DER` qualifier, as the
@@ -6188,7 +6276,7 @@ fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
     })
 }
 
-fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Result<()> {
+fn sim_subs_into(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> Result<()> {
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match &**exp {
@@ -6213,7 +6301,7 @@ fn sim_subs_into(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> Resul
 /// Append an intermediate component's subscripts to an array base key, spelled as
 /// [`sim_cref_key`] spells them (`bodybox[1].body.R_start.T`). `false` when a
 /// subscript is not a constant index, so there is no static base key.
-pub(crate) fn push_qual_subs(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut String) -> bool {
+pub(crate) fn push_qual_subs(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> bool {
     for sub in &**subs {
         match &**sub {
             DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
@@ -6376,7 +6464,7 @@ fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<D
 
 /// `base[subs]` (subscripts on the final component) -> `(base key, raw subscript
 /// list)`. Unlike [`sim_slice_of`], any `INDEX`/`SLICE`/whole mix.
-fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<Arc<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut node = cr;
@@ -6404,7 +6492,7 @@ fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<Lis
 
 /// [`sim_array_base_subs`] over a flattened group: `module[$i].x[2:3]` selects from
 /// `module.x`. `None` unless an outer component is subscripted.
-fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, List<Arc<DAE::Subscript>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
     let mut subs: Vec<Arc<DAE::Subscript>> = Vec::new();
@@ -6427,13 +6515,13 @@ fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Ar
                 node = n;
             }
             None => {
-                return Ok(qualified_subs.then(|| (base, Arc::new(subs.into_iter().collect()))));
+                return Ok(qualified_subs.then(|| (base, subs.into_iter().collect())));
             }
         }
     }
 }
 
-fn subs_select_array(subs: &Arc<List<Arc<DAE::Subscript>>>, group: &ArrayGroup) -> bool {
+fn subs_select_array(subs: &List<Arc<DAE::Subscript>>, group: &ArrayGroup) -> bool {
     let rank = group.dims.len() as u32;
     (&**subs).into_iter().count() as u32 <= rank && !is_scalar_index(subs, rank)
 }
@@ -6790,6 +6878,11 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
         }
     }
+    if sim_cref_key(cref).is_err() {
+        if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
+            return Ok(Some(wty));
+        }
+    }
     let key = sim_cref_key_fatal(cref)?;
     let slot = match ctx.sim()?.vars.get(&key) {
         Some(s) => *s,
@@ -6816,11 +6909,15 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             if try_emit_empty_sim_array(ctx, cref)? {
                 return Ok(Some(WTy::I32));
             }
+            if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
+                return Ok(Some(wty));
+            }
             if let Some(wty) = emit_sim_const_index_error(ctx, cref, &key)? {
                 return Ok(Some(wty));
             }
             crate::CodegenWasmJit::record_error(format!(
-                "CodegenWasmJit: simulation reference to unknown variable `{key}`"
+                "CodegenWasmJit: simulation reference to unknown variable `{key}`{}",
+                fn_context()
             ));
             return Err("CodegenWasmJit: simulation reference to unknown variable")
         }
@@ -7210,6 +7307,197 @@ fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result
     emit_array_alloc(ctx, obj, &elem, &dims)?;
     ctx.emit(we::Instruction::LocalGet(obj));
     Ok(true)
+}
+
+/// A whole array or slice whose elements have slots but no group (mixed variable
+/// kinds, Jacobian seed/pDER scratch): C's `daeExpCrefRhsArrayBox`. A constant
+/// selection is boxed directly; run-time subscripts box the whole array and index
+/// or slice it at run time.
+fn try_emit_sim_array_box(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
+    let Some((leaf_ty, leaf_subs)) = cref_leaf(cref) else { return Ok(None) };
+    let Ok(dims) = const_dims(leaf_ty) else { return Ok(None) };
+    let elem = match sig_ty_quiet(array_elem_type(leaf_ty)) {
+        Ok(s @ (SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Record { .. })) => s,
+        _ => return Ok(None),
+    };
+    let subs: Vec<&Arc<DAE::Subscript>> = (&**leaf_subs).into_iter().collect();
+    if dims.is_empty() || subs.len() > dims.len() {
+        return Ok(None);
+    }
+    // Per axis: the selected 1-based indices, and whether the axis survives.
+    let mut axes: Vec<(Vec<i32>, bool)> = Vec::with_capacity(dims.len());
+    for (k, &d) in dims.iter().enumerate() {
+        let whole = ((1..=d as i32).collect(), true);
+        axes.push(match subs.get(k).map(|s| &***s) {
+            None | Some(DAE::Subscript::WHOLEDIM) | Some(DAE::Subscript::WHOLE_NONEXP { .. }) => whole,
+            Some(DAE::Subscript::INDEX { exp }) => match const_index_value(exp) {
+                Some(i) => (vec![i], false),
+                None => return box_then_select(ctx, cref, &dims, &elem, leaf_subs),
+            },
+            Some(DAE::Subscript::SLICE { exp }) => match const_index_list(exp) {
+                Some(v) => (v, true),
+                None => return box_then_select(ctx, cref, &dims, &elem, leaf_subs),
+            },
+        });
+    }
+    if axes.iter().all(|(_, keep)| !keep) {
+        return Ok(None);
+    }
+    emit_sim_array_box(ctx, cref, &axes, &elem)?;
+    Ok(Some(WTy::I32))
+}
+
+/// Box the whole array, then apply the run-time subscripts to the boxed value.
+fn box_then_select(
+    ctx: &mut FnCtx,
+    cref: &DAE::ComponentRef,
+    dims: &[u32],
+    elem: &SigTy,
+    subs: &List<Arc<DAE::Subscript>>,
+) -> Result<Option<WTy>> {
+    let axes: Vec<(Vec<i32>, bool)> = dims.iter().map(|&d| ((1..=d as i32).collect(), true)).collect();
+    emit_sim_array_box(ctx, cref, &axes, elem)?;
+    let rank = dims.len() as u32;
+    if !is_scalar_index(subs, rank) {
+        return slice_loaded(ctx, subs).map(Some);
+    }
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(obj));
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    emit_sim_flat_index(ctx, dims, &index_subscripts(subs, rank)?)?;
+    let (_, stride) = sim_array_elem_kind_stride(elem.wty());
+    ctx.emit(we::Instruction::I32Const(stride as i32));
+    ctx.emit(we::Instruction::I32Mul);
+    ctx.emit(we::Instruction::I32Add);
+    let wty = elem.wty();
+    match wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(0, 2))),
+    }
+    emit_retain_top(ctx, elem.is_heap())?;
+    release_temp_array(ctx, obj)?;
+    Ok(Some(wty))
+}
+
+/// A fresh array of the elements `axes` select, row-major, each read through its
+/// own cref (a record element gathers its fields). Leaves the owned handle.
+fn emit_sim_array_box(
+    ctx: &mut FnCtx,
+    cref: &DAE::ComponentRef,
+    axes: &[(Vec<i32>, bool)],
+    elem: &SigTy,
+) -> Result<()> {
+    let out_dims: Vec<u32> = axes.iter().filter(|(_, keep)| *keep).map(|(v, _)| v.len() as u32).collect();
+    let total: u32 = out_dims.iter().product();
+    let (ek, stride) = (elem.elem_kind(), sim_array_elem_kind_stride(elem.wty()).1);
+    let obj = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::I32Const(ek as i32));
+    ctx.emit(we::Instruction::I32Const(out_dims.len() as i32));
+    ctx.emit(we::Instruction::I32Const(total as i32));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_new")?));
+    ctx.emit(we::Instruction::LocalSet(obj));
+    for (axis, d) in out_dims.iter().enumerate() {
+        ctx.emit(we::Instruction::LocalGet(obj));
+        ctx.emit(we::Instruction::I32Const(axis as i32));
+        ctx.emit(we::Instruction::I32Const(*d as i32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_array_set_dim")?));
+    }
+    let data = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalGet(obj));
+    ctx.emit(we::Instruction::I32Const(1));
+    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+    ctx.emit(we::Instruction::LocalSet(data));
+    for k in 0..total {
+        let mut rem = k as usize;
+        let mut index = vec![0i32; axes.len()];
+        for (axis, (sel, _)) in axes.iter().enumerate().rev() {
+            index[axis] = sel[rem % sel.len()];
+            rem /= sel.len();
+        }
+        let elem_cref = cref_with_leaf_subs(cref, &index);
+        ctx.emit(we::Instruction::LocalGet(data));
+        let w = if matches!(elem, SigTy::Record { .. }) {
+            if !try_emit_sim_record_gather(ctx, &elem_cref)? {
+                return Err("CodegenWasmJit: array element is not a record variable");
+            }
+            WTy::I32
+        } else {
+            compile_sim_cref_read(ctx, &elem_cref)?
+                .ok_or("CodegenWasmJit: array element is not a simulation variable")?
+        };
+        coerce(ctx, w, elem.wty());
+        let off = k * stride;
+        match elem.wty() {
+            WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(off, 3))),
+            WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(off, 2))),
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(())
+}
+
+fn cref_leaf(cr: &DAE::ComponentRef) -> Option<(&DAE::Type, &List<Arc<DAE::Subscript>>)> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_QUAL { componentRef, .. } => cref_leaf(componentRef),
+        C::CREF_IDENT { identType, subscriptLst, .. } => Some((identType, subscriptLst)),
+        _ => None,
+    }
+}
+
+fn array_elem_type(ty: &DAE::Type) -> &DAE::Type {
+    match ty {
+        DAE::Type::T_ARRAY { ty, .. } => array_elem_type(ty),
+        other => other,
+    }
+}
+
+/// `cr` with its leaf subscripts replaced by the constant element index.
+fn cref_with_leaf_subs(cr: &DAE::ComponentRef, index: &[i32]) -> Arc<DAE::ComponentRef> {
+    use DAE::ComponentRef as C;
+    match cr {
+        C::CREF_IDENT { ident, identType, .. } => Arc::new(C::CREF_IDENT {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: index
+                .iter()
+                .map(|i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: *i }) }))
+                .collect(),
+        }),
+        C::CREF_QUAL { ident, identType, subscriptLst, componentRef } => Arc::new(C::CREF_QUAL {
+            ident: ident.clone(),
+            identType: identType.clone(),
+            subscriptLst: subscriptLst.clone(),
+            componentRef: cref_with_leaf_subs(componentRef, index),
+        }),
+        other => Arc::new(other.clone()),
+    }
+}
+
+/// The 1-based indices a constant `SLICE` subscript selects: `lo:hi`, `lo:s:hi`
+/// or `{i, j, …}` of literals.
+fn const_index_list(exp: &DAE::Exp) -> Option<Vec<i32>> {
+    match exp {
+        DAE::Exp::RANGE { start, step, stop, .. } => {
+            let lo = const_index_value(start)?;
+            let hi = const_index_value(stop)?;
+            let step = step.as_ref().map_or(Some(1), |e| const_index_value(e))?;
+            if step == 0 {
+                return None;
+            }
+            let mut out = Vec::new();
+            let mut i = lo;
+            while if step > 0 { i <= hi } else { i >= hi } {
+                out.push(i);
+                i += step;
+            }
+            Some(out)
+        }
+        DAE::Exp::ARRAY { array, .. } => (&**array).into_iter().map(|e| const_index_value(e)).collect(),
+        _ => None,
+    }
 }
 
 /// C's `Expression.hasZeroDimension` for one dimension: a size known to be zero.
@@ -8562,7 +8850,7 @@ fn relation_operand_sigty(op: &DAE::Operator) -> Result<SigTy> {
 fn compile_call(
     ctx: &mut FnCtx,
     path: &Absyn::Path,
-    args: &Arc<List<Arc<DAE::Exp>>>,
+    args: &List<Arc<DAE::Exp>>,
     attr: &DAE::CallAttributes,
 ) -> Result<Vec<SigTy>> {
     // A call through a function-reference variable: `call_indirect` on the
@@ -8655,7 +8943,7 @@ pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Resu
 /// prepended — leaving both outputs on the stack, first result deepest.
 /// `initialPoints`/`initialValues` are only used during initialization
 /// (`functionInitSpatialDistribution`), as in C.
-fn compile_spatial_distribution(ctx: &mut FnCtx, args: &Arc<List<Arc<DAE::Exp>>>) -> Result<()> {
+fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<Arc<DAE::Exp>>) -> Result<()> {
     use we::Instruction as I;
     let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != 7 {
@@ -8867,7 +9155,7 @@ fn compile_math_event(
 fn compile_math_builtin(
     ctx: &mut FnCtx,
     name: &str,
-    args: &Arc<List<Arc<DAE::Exp>>>,
+    args: &List<Arc<DAE::Exp>>,
     attr: &DAE::CallAttributes,
 ) -> Result<SigTy> {
     let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
@@ -9207,10 +9495,9 @@ fn compile_math_builtin(
             let w = compile_exp(ctx, argv[0])?;
             Ok(if w == WTy::F64 { SigTy::Real } else { SigTy::Int })
         }
-        // `homotopy(actual, simplified)` = `simplified + lambda*(actual-simplified)`
-        // (C's `homotopy_` with `data->simulationInfo->lambda`). lambda is 1.0
-        // outside the continuation, so this is `actual` for the normal init and the
-        // non-initial partitions; the init driver sweeps lambda 0->1 on fallback.
+        // C's macro, and not interchangeable with the algebraically equal
+        // `s + lambda*(a - s)`: that rounds `a - s` to the ulp of the larger operand,
+        // quantizing a residual whose simplified branch is much bigger than itself.
         "homotopy" => {
             need_args(&argv, 2, name)?;
             let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
@@ -9222,13 +9509,17 @@ fn compile_math_builtin(
             coerce(ctx, s, WTy::F64);
             let st = ctx.alloc_temp(WTy::F64);
             ctx.emit(we::Instruction::LocalSet(st));
-            // simplified + lambda*(actual - simplified)
-            ctx.emit(we::Instruction::LocalGet(st));
+            let lam = ctx.alloc_temp(WTy::F64);
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
-            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalSet(lam));
             ctx.emit(we::Instruction::LocalGet(st));
+            ctx.emit(we::Instruction::F64Const(1.0.into()));
+            ctx.emit(we::Instruction::LocalGet(lam));
             ctx.emit(we::Instruction::F64Sub);
+            ctx.emit(we::Instruction::F64Mul);
+            ctx.emit(we::Instruction::LocalGet(at));
+            ctx.emit(we::Instruction::LocalGet(lam));
             ctx.emit(we::Instruction::F64Mul);
             ctx.emit(we::Instruction::F64Add);
             Ok(SigTy::Real)
@@ -9358,13 +9649,13 @@ fn compile_math_builtin(
         // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
         // `daeExpCall` does: the backend already put the reference in that partition.
         "interval" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "interval")?) };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::F64Load(mem_arg(off + clock_field::SUB_PREV_INTERVAL, 3)));
             Ok(SigTy::Real)
         }
         "firstTick" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s)?) };
+            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "firstTick")?) };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
             ctx.emit(we::Instruction::I32Const(1));
@@ -10513,12 +10804,45 @@ const OP_POW: i32 = 4;
 const OP_AND: i32 = 5;
 const OP_OR: i32 = 6;
 
+/// The element type of an array operation: the operator's own type, else an
+/// operand's, since both frontends leave arithmetic operators `T_UNKNOWN`. A
+/// *definite* scalar operator type over array operands is an inconsistent DAE, so
+/// that case is named rather than lowered.
+fn array_op_elem(ty: &DAE::Type, operands: [&DAE::Exp; 2]) -> Result<Arc<SigTy>> {
+    match sig_ty(ty) {
+        Ok(SigTy::Array { elem, .. }) => return Ok(elem),
+        Ok(_) => {}
+        Err(_) => {
+            for e in operands {
+                if let Ok(Some(elem)) = array_elem(e) {
+                    return Ok(elem);
+                }
+            }
+        }
+    }
+    let show = |x: &DAE::Exp| {
+        openmodelica_frontend_dump::ExpressionBasics::printExpStr(Arc::new(x.clone()))
+            .map(|s| s.to_string())
+            .unwrap_or_default()
+    };
+    crate::CodegenWasmJit::record_error(format!(
+        "CodegenWasmJit: array operator between `{}` and `{}` types neither as an array{}",
+        show(operands[0]),
+        show(operands[1]),
+        fn_context()
+    ));
+    Err("CodegenWasmJit: array operator with non-array type")
+}
+
+/// `exp_sigty` is best-effort: an `Err` means "unknown", not "not an array".
+fn is_array_exp(e: &DAE::Exp) -> bool {
+    matches!(exp_sigty(e), Ok(SigTy::Array { .. }))
+}
+
 /// Element-wise `a op b` over two same-shape arrays: produces a fresh array; the
 /// operand arrays are released after.
 fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, ty: &DAE::Type) -> Result<WTy> {
-    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        return Err("CodegenWasmJit: element-wise array op with non-array type");
-    };
+    let elem = array_op_elem(ty, [e1, e2])?;
     let rt = if elem.wty() == WTy::F64 { "rt_array_ew_f64" } else { "rt_array_ew_i32" };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
@@ -10582,12 +10906,16 @@ fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> 
 /// and scalar operands are found by type (so commutative forms accept either
 /// order); the array operand is released after.
 fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, rev: bool, ty: &DAE::Type) -> Result<WTy> {
-    let SigTy::Array { elem, .. } = sig_ty(ty)? else {
-        return Err("CodegenWasmJit: array-scalar op with non-array type");
-    };
+    let elem = array_op_elem(ty, [e1, e2])?;
     let elem_wty = elem.wty();
     let rt = if elem_wty == WTy::F64 { "rt_array_scalar_f64" } else { "rt_array_scalar_i32" };
-    let (arr_e, scal_e) = if matches!(exp_sigty(e1)?, SigTy::Array { .. }) { (e1, e2) } else { (e2, e1) };
+    // By type where the frontend typed one, else by the operator's own convention:
+    // `rev` marks the scalar-first forms.
+    let arr_first = match (is_array_exp(e1), is_array_exp(e2)) {
+        (a, b) if a != b => a,
+        _ => !rev,
+    };
+    let (arr_e, scal_e) = if arr_first { (e1, e2) } else { (e2, e1) };
     compile_exp(ctx, arr_e)?;
     let at = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(at));
@@ -10607,7 +10935,7 @@ fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: 
 /// Lower `a[i, j, ...]`: one `INDEX` per dimension reads a scalar element,
 /// anything else slices to a lower-rank sub-array. `base` produces the owned
 /// array handle. Returns the result's wasm type.
-fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
+fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &List<Arc<DAE::Subscript>>) -> Result<WTy> {
     let SigTy::Array { elem, rank } = exp_sigty(base)? else {
         return Err("CodegenWasmJit: subscripting a non-array expression");
     };
@@ -10624,7 +10952,7 @@ fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &Arc<List<Arc<DAE::Subs
 /// dimension — and so yields a scalar element. Anything else (a `WHOLEDIM` /
 /// `SLICE`, or fewer subscripts than the rank, i.e. trailing whole dimensions)
 /// slices the array to a lower-rank sub-array and goes through [`slice_loaded`].
-fn is_scalar_index(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> bool {
+fn is_scalar_index(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> bool {
     let mut n = 0u32;
     let mut all_index = true;
     for s in &**subs {
@@ -10638,7 +10966,7 @@ fn is_scalar_index(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> bool {
 
 /// Extract one `INDEX` expression per dimension from a subscript list. Callers
 /// gate on [`is_scalar_index`] first, so anything else is a codegen bug.
-fn index_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
+fn index_subscripts(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> Result<Vec<Arc<DAE::Exp>>> {
     let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
     if subs.len() as u32 != rank {
         return Err("CodegenWasmJit: partial indexing on the scalar-index path");
@@ -10768,7 +11096,7 @@ fn emit_slice_spec(ctx: &mut FnCtx, subs: &[&Arc<DAE::Subscript>]) -> Result<(u3
 /// subscripts than the rank), build the per-axis spec and call `rt_array_slice`,
 /// leaving a fresh (owned) lower-rank sub-array handle. The source array and any
 /// `SLICE` index arrays are released. Returns `WTy::I32` (an array handle).
-fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<WTy> {
+fn slice_loaded(ctx: &mut FnCtx, subs: &List<Arc<DAE::Subscript>>) -> Result<WTy> {
     let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
     let nspec = subs.len() as u32;
 
@@ -10802,7 +11130,7 @@ fn slice_loaded(ctx: &mut FnCtx, subs: &Arc<List<Arc<DAE::Subscript>>>) -> Resul
 fn compile_slice_assign(
     ctx: &mut FnCtx,
     arr_idx: u32,
-    subs: &Arc<List<Arc<DAE::Subscript>>>,
+    subs: &List<Arc<DAE::Subscript>>,
     rhs: RhsSource,
 ) -> Result<()> {
     let subs: Vec<&Arc<DAE::Subscript>> = (&**subs).into_iter().collect();
@@ -10836,30 +11164,64 @@ fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
     Ok(())
 }
 
+/// The wasm local and rank of a whole array local (not a model variable), which
+/// a read can borrow: the local outlives the expression.
+fn array_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<(u32, u32)> {
+    if ctx.sim.is_some() {
+        return None;
+    }
+    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
+    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else { return None };
+    if !subscriptLst.is_empty() {
+        return None;
+    }
+    match ctx.locals.get(ident.as_str()) {
+        Some((idx, SigTy::Array { rank, .. })) => Some((*idx, *rank)),
+        _ => None,
+    }
+}
+
 /// Lower `size(a, d)` (a single dimension size, scalar Integer) or `size(a)`
-/// (the whole dimension vector, an `Integer[ndims]`). `a`'s owned handle is
-/// released after.
+/// (the whole dimension vector, an `Integer[ndims]`). A local `a` is borrowed;
+/// any other operand's owned handle is released after.
 fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
+    let local = array_local(ctx, exp);
     // Only the whole-vector form needs the rank statically — as well, since the
     // frontend leaves a dimension expression's operand `T_UNKNOWN`.
-    let rank = match sz {
-        Some(_) => 0,
-        None => match exp_sigty(exp)? {
+    let rank = match (sz, local) {
+        (Some(_), _) => 0,
+        (None, Some((_, rank))) => rank,
+        (None, None) => match exp_sigty(exp)? {
             SigTy::Array { rank, .. } => rank,
             _ => return Err("CodegenWasmJit: size() of a non-array expression"),
         },
     };
-    compile_exp(ctx, exp)?; // owned array handle
-    let arr_t = ctx.alloc_temp(WTy::I32);
-    ctx.emit(we::Instruction::LocalSet(arr_t));
+    let arr_t = match local {
+        Some((idx, _)) => idx,
+        None => {
+            compile_exp(ctx, exp)?; // owned array handle
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            t
+        }
+    };
 
     if let Some(d) = sz {
-        // size(a, d): one dimension.
+        // size(a, d): one dimension; a constant axis of a local is a header load.
         ctx.emit(we::Instruction::LocalGet(arr_t));
-        let w = compile_exp(ctx, d)?;
-        coerce(ctx, w, WTy::I32);
-        ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
-        release_temp_array(ctx, arr_t)?; // leaves the dim value
+        match (local, const_index_value(d)) {
+            (Some((_, rank)), Some(axis)) if axis >= 1 && axis as u32 <= rank => {
+                ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + 4 * (axis as u32 - 1), 2)));
+            }
+            _ => {
+                let w = compile_exp(ctx, d)?;
+                coerce(ctx, w, WTy::I32);
+                ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
+            }
+        }
+        if local.is_none() {
+            release_temp_array(ctx, arr_t)?; // leaves the dim value
+        }
         return Ok(());
     }
 
@@ -10884,7 +11246,9 @@ fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Resul
         ctx.emit(we::Instruction::Call(rt_index("rt_array_dim")?));
         elem_store(ctx, &SigTy::Int);
     }
-    release_temp_array(ctx, arr_t)?;
+    if local.is_none() {
+        release_temp_array(ctx, arr_t)?;
+    }
     ctx.emit(we::Instruction::LocalGet(res));
     Ok(())
 }
@@ -11309,7 +11673,8 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     let mut sig = format!("{in_codes}\n{out_codes}\n");
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
-        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
+        let fortran = ext_imports.iter().any(|s| s.lang == ExtLang::Fortran77);
+        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, fortran, &mut notes)?;
         let wasm_libs = resolved.wasm;
         for lib in &wasm_libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
@@ -11338,7 +11703,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         // The model's own code first: it shadows a same-named symbol in a `Library`
         // shared object, as the C target's own link order does.
         #[cfg(not(target_arch = "wasm32"))]
-        for lib in native_fallbacks(&base, fn_code, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
+        for lib in native_fallbacks(&base, fn_code, &resolved.native, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for lib in &resolved.native {
@@ -11365,6 +11730,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
 fn native_fallbacks(
     base: &str,
     fn_code: &SimCodeFunction::FunctionCode,
+    libs: &[String],
     archives: &[String],
     sources: &[String],
     dirs: &[String],
@@ -11382,6 +11748,9 @@ fn native_fallbacks(
         let inc = openmodelica_wasm_jit::model::ExtIncludes {
             sources: sources.to_vec(),
             include_dirs: dirs.to_vec(),
+            libs: libs.to_vec(),
+            archives: archives.to_vec(),
+            symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
             ccompiler: mp.ccompiler.to_string(),
             cflags: mp.cflags.to_string(),
             dllext: mp.dllext.to_string(),
@@ -11415,7 +11784,7 @@ fn native_fallbacks(
 /// call the exported `main`, marshalling `args` in and the result out. Returns
 /// `Values.META_FAIL` on any failure (missing/invalid module, a wasm trap from
 /// a failed assertion or division by zero, …), mirroring `DynLoad.executeFunction`.
-pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: Arc<List<Arc<Values::Value>>>) -> Arc<Values::Value> {
+pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: List<Arc<Values::Value>>) -> Arc<Values::Value> {
     match runtime::load_and_execute(&fileName, &name, &args) {
         Ok(v) => v,
         // Failure is a normal MetaModelica value the caller handles; no stderr.

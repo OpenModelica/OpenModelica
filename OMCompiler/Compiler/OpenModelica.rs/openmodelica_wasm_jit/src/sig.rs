@@ -177,6 +177,9 @@ pub struct ExtCallSig {
     pub lang: ExtLang,
     pub args: Vec<(SigTy, bool)>,
     pub ret: Option<SigTy>,
+    /// The function carried no `Include`, so a unit calling it must declare it
+    /// itself (C's `extFunDef`).
+    pub declare: bool,
 }
 
 impl ExtCallSig {
@@ -318,6 +321,7 @@ mod tests {
             lang: ExtLang::C,
             args: vec![(ints.clone(), false), (ints.clone(), true), (SigTy::Real, true)],
             ret: None,
+            declare: false,
         };
         let host = sig.wasm_sig();
         assert_eq!(host.params, vec![ints.clone(), ints.clone()]);
@@ -331,6 +335,7 @@ mod tests {
             lang: ExtLang::C,
             args: vec![(SigTy::Str, false), (SigTy::Int, false), (SigTy::Int, false)],
             ret: Some(SigTy::Str),
+            declare: false,
         };
         assert_eq!(ret.wasm_sig_c_shared().params, vec![SigTy::Str, SigTy::Int, SigTy::Int]);
         assert_eq!(ret.wasm_sig_c_shared().results, vec![SigTy::Str]);

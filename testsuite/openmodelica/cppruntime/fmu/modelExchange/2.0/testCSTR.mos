@@ -81,8 +81,13 @@ getErrorString();
 //     <Unit name=\"s\">
 //       <BaseUnit s=\"1\" />
 //     </Unit>
+//     <Unit name=\"g/cm3\">
+//       <BaseUnit m=\"-3\" kg=\"1\" factor=\"1000.0\" />
+//       <DisplayUnit name=\"kg/m3\" factor=\"1000.0\" offset=\"0.0\"/>
+//     </Unit>
 //     <Unit name=\"kg/m3\">
 //       <BaseUnit m=\"-3\" kg=\"1\" />
+//       <DisplayUnit name=\"g/cm3\" factor=\"0.001\" offset=\"0.0\"/>
 //     </Unit>
 //     <Unit name=\"kg\">
 //       <BaseUnit kg=\"1\" />
@@ -112,7 +117,7 @@ getErrorString();
 //       <BaseUnit mol=\"1\" m=\"-3\" factor=\"1000.0\" />
 //     </Unit>
 //     <Unit name=\"degC\">
-//       <BaseUnit K=\"1\" />
+//       <BaseUnit K=\"1\" offset=\"273.15\" />
 //     </Unit>
 //   </UnitDefinitions>
 //   <TypeDefinitions>

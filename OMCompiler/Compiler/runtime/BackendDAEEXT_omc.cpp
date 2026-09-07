@@ -139,6 +139,29 @@ extern void BackendDAEEXT_setAdjacencyMatrix(modelica_integer nvars, modelica_in
   }
 }
 
+extern void BackendDAEEXT_setAdjacencyMatrixFlat(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype start, modelica_metatype len, modelica_metatype data)
+{
+  int i, j=0, k, first, n;
+
+  if (col_ptrs) free(col_ptrs);
+  col_ptrs = (int*) malloc((neqns+1) * sizeof(int));
+  col_ptrs[neqns]=nz;
+  if (col_ids) free(col_ids);
+  col_ids = (int*) malloc(nz * sizeof(int));
+
+  for(i=0; i<neqns; ++i) {
+    first = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(start)[i]);
+    n = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(len)[i]);
+    col_ptrs[i] = j;
+    for(k=first; k<first+n; ++k) {
+      mmc_sint_t i1 = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(data)[k-1]);
+      if (i1>0) {
+        col_ids[j++] = (int)i1-1;
+      }
+    }
+  }
+}
+
 extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, modelica_integer matchingID, modelica_integer cheapID, modelica_real relabel_period, modelica_integer clear_match)
 {
   int i=0;

@@ -1,0 +1,88 @@
+// name: FunctionPointerRecordOutput
+// keywords: function pointer, record
+// status: correct
+// teardown_command: rm -rf FunctionPointerRecordOutput.Test* output.log
+//
+// The result of a function pointer call is boxed, and a record is boxed field
+// by field. Check that such a result is unboxed field by field again, both in
+// a plain assignment and in an array constructor.
+//
+
+loadString("
+package FunctionPointerRecordOutput
+  record Inner
+    Real p;
+    Integer q;
+  end Inner;
+
+  record R
+    Real a;
+    Boolean b;
+    Inner nested;
+  end R;
+
+  partial function pfunc
+    input Real u;
+    output R y;
+  end pfunc;
+
+  function func
+    extends pfunc;
+  algorithm
+    y := R(u, u > 0.5, Inner(2*u, 3));
+  end func;
+
+  function evalScalar
+    input FunctionPointerRecordOutput.pfunc f;
+    input Real u;
+    output Real y;
+  protected
+    R r;
+  algorithm
+    r := f(u);
+    y := r.a + r.nested.p + r.nested.q + (if r.b then 100 else 0);
+  end evalScalar;
+
+  function evalArrayConstructor
+    input FunctionPointerRecordOutput.pfunc f;
+    input Real u;
+    input Integer n = 2;
+    output Real y;
+  protected
+    R rs[n];
+  algorithm
+    rs := {f(u*k) for k in 1:n};
+    y := sum(rs[i].a + rs[i].nested.p for i in 1:n);
+  end evalArrayConstructor;
+
+  model Test
+    input Real u = 0; // prevent presolving
+    Real x, y;
+  equation
+    x = evalScalar(function func(), u + 1);
+    y = evalArrayConstructor(function func(), u + 1);
+    annotation(experiment(StopTime = 0));
+  end Test;
+end FunctionPointerRecordOutput;
+");
+getErrorString();
+
+simulate(FunctionPointerRecordOutput.Test);
+val(x, 0);
+val(y, 0);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionPointerRecordOutput.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionPointerRecordOutput.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 106.0
+// 9.0
+// ""
+// endResult

@@ -165,8 +165,13 @@ readFile("modelDescription.tmp.xml");
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>
+//     <Unit name=\"bar\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
+//       <DisplayUnit name=\"Pa\" factor=\"1e5\" offset=\"0.0\"/>
+//     </Unit>
 //     <Unit name=\"Pa\">
 //       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" />
+//       <DisplayUnit name=\"bar\" factor=\"1e-5\" offset=\"0.0\"/>
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>

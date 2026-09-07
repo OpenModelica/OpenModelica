@@ -236,30 +236,26 @@ impl<T: MMTrace + ?Sized> MMTrace for RefCell<T> {
 /// Iterative, not recursive: lists are routinely tens of thousands of
 /// elements long and a recursive traversal would overflow the stack. Every
 /// spine cell is itself a shared allocation (tail sharing is pervasive), so
-/// each tail handle is reported like any other `Arc`.
+/// each cell is reported like any other `Arc`.
 impl<T: MMTrace + Clone> MMTrace for List<T> {
     fn mm_accept(&self, visitor: &mut dyn MMVisitor) -> Result<(), ()> {
         let mut depth = 0usize;
         let mut cur = self;
         let r = loop {
-            match cur {
-                List::Cons { head, tail } => {
-                    if let e @ Err(()) = head.mm_accept(visitor) {
-                        break e;
-                    }
-                    if visitor.visit_shared(
-                        Arc::as_ptr(tail) as *const (),
-                        Arc::strong_count(tail),
-                        std::any::type_name::<List<T>>(),
-                    ) {
-                        depth += 1;
-                        cur = tail;
-                    } else {
-                        break Ok(());
-                    }
-                }
-                List::Nil => break Ok(()),
+            let Some(cell) = &cur.0 else { break Ok(()) };
+            if !visitor.visit_shared(
+                Arc::as_ptr(cell) as *const (),
+                Arc::strong_count(cell),
+                std::any::type_name::<crate::ListNode<T>>(),
+            ) {
+                break Ok(());
             }
+            depth += 1;
+            let crate::ListNode::Cons { head, tail } = &**cell else { break Ok(()) };
+            if let e @ Err(()) = head.mm_accept(visitor) {
+                break e;
+            }
+            cur = tail;
         };
         for _ in 0..depth {
             visitor.leave_shared();
@@ -643,7 +639,7 @@ mod tests {
     #[test]
     fn representative_shapes_are_traceable() {
         assert_mm_trace::<crate::Array<i32>>();
-        assert_mm_trace::<Arc<List<(ArcStr, i32)>>>();
+        assert_mm_trace::<List<(ArcStr, i32)>>();
         assert_mm_trace::<Option<Box<(String, Vec<f64>)>>>();
     }
 }

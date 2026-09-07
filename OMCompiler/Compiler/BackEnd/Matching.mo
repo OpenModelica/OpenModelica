@@ -127,7 +127,7 @@ public function ContinueMatching "
 protected
   Integer i, j;
   array<Integer> eMarkIx, vMarkIx;
-  Integer eMarkN=0, vMarkN=0;
+  Integer eMarkN=0, vMarkN=0, eDead=0, vDead=0;
   Boolean success;
 algorithm
   vMark := arrayCreate(nVars, false);
@@ -139,11 +139,16 @@ algorithm
   while i <= nEqns loop
     j := ass2[i];
     if not (j>0 and ass1[j] == i) then
-      clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
-      clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
-      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
-      if not success then
+      // What a failed search visited is closed under alternating paths, so it
+      // stays marked and later searches skip it.
+      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eDead, vDead);
+      if success then
+        clearMarks(eMark, eMarkIx, eDead, eMarkN);
+        clearMarks(vMark, vMarkIx, vDead, vMarkN);
+      else
         perfectMatching := false;
+        eDead := eMarkN;
+        vDead := vMarkN;
         if stopAtSingularity then
           return;
         end if;
@@ -152,6 +157,16 @@ algorithm
     i := i+1;
   end while;
 end ContinueMatching;
+
+protected function clearMarks "Sets arr[arrIx[from+1:to]] to false"
+  input array<Boolean> arr;
+  input array<Integer> arrIx;
+  input Integer from, to;
+algorithm
+  for i in from+1:to loop
+    arrayUpdate(arr, arrIx[i], false);
+  end for;
+end clearMarks;
 
 public function BBMatching
   input BackendDAE.EqSystem inSys;

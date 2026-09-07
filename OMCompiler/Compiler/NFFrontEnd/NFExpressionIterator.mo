@@ -46,6 +46,7 @@ protected
 public
   import Expression = NFExpression;
   import Binding = NFBinding;
+  import Util;
 
   record ARRAY_ITERATOR
     array<Expression> arr;
@@ -166,6 +167,38 @@ public
         then EACH_ITERATOR(binding.bindingExp);
     end match;
   end fromBinding;
+
+  function isUniform
+    "Whether every element the iterator yields is the same expression object,
+     so one element stands for all of them."
+    input ExpressionIterator iterator;
+    output Boolean uniform;
+  algorithm
+    uniform := match iterator
+      case ARRAY_ITERATOR() then isUniformArrays(iterator.arr :: iterator.arrays);
+      case EACH_ITERATOR() then true;
+      case NONE_ITERATOR() then true;
+      else false;
+    end match;
+  end isUniform;
+
+  function isUniformArrays
+    input list<array<Expression>> arrays;
+    output Boolean uniform = true;
+  protected
+    Option<Expression> first = NONE();
+  algorithm
+    for arr in arrays loop
+      for e in arr loop
+        if isNone(first) then
+          first := SOME(e);
+        elseif not referenceEq(e, Util.getOption(first)) then
+          uniform := false;
+          return;
+        end if;
+      end for;
+    end for;
+  end isUniformArrays;
 
   function hasNext
     input ExpressionIterator iterator;

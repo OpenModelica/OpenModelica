@@ -6437,15 +6437,62 @@ fn collect_pat_names(pat: &TypedPat, out: &mut HashSet<String>) {
 /// must be a complete module-level item with a signature compatible with every
 /// call site (the generator still resolves calls to `Module::fn`).
 fn function_source_replacement(qname: &str) -> Option<&'static str> {
-    // No replacements at present. Two used to live here, both working around
-    // referenceEq lowerings that have since been fixed properly:
+    // Two used to live here, both working around referenceEq lowerings that
+    // have since been fixed properly:
     //  * `List.allReferenceEq` — generic element compare was an always-false
     //    address compare; now lowered through `metamodelica::ReferenceEq`.
     //  * `Expression.traverseCases` — `referenceEq(cases, {})` was false for
     //    the freshly-allocated `Nil` even though MMC's `{}` is a shared
     //    singleton; the `list<T>` lowering is now List-aware (Nil == Nil).
-    None
+    match qname {
+        // The MetaModelica mergesort conses a node per merge step, cheap under
+        // MMC's bump allocator and the main cost of sorting an adjacency row
+        // here. Same halving and tie rule on a Vec: for two elements the input
+        // is kept iff comp(e2, e1); merge takes from the left iff
+        // comp(right, left).
+        "List.sort" => Some(LIST_SORT_SRC),
+        _ => None,
+    }
 }
+
+const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: metamodelica::List<T>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<metamodelica::List<T>> {
+    fn sort_slice<T: Clone>(v: &[T], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<T>> {
+        let n = v.len();
+        if n < 2 {
+            return Ok(v.to_vec());
+        }
+        if n == 2 {
+            return Ok(if comp(v[1].clone(), v[0].clone())? { v.to_vec() } else { vec![v[1].clone(), v[0].clone()] });
+        }
+        let (l, r) = v.split_at(n / 2);
+        let left = sort_slice(l, comp)?;
+        let right = sort_slice(r, comp)?;
+        let mut res = Vec::with_capacity(n);
+        let (mut i, mut j) = (0, 0);
+        while i < left.len() && j < right.len() {
+            if comp(right[j].clone(), left[i].clone())? {
+                res.push(left[i].clone());
+                i += 1;
+            } else {
+                res.push(right[j].clone());
+                j += 1;
+            }
+        }
+        res.extend_from_slice(&left[i..]);
+        res.extend_from_slice(&right[j..]);
+        Ok(res)
+    }
+    let v: Vec<T> = (&*inList).into_iter().cloned().collect();
+    if v.len() < 2 || (v.len() == 2 && inCompFunc(v[1].clone(), v[0].clone())?) {
+        return Ok(inList);
+    }
+    let sorted = sort_slice(&v, &*inCompFunc)?;
+    let mut out = metamodelica::nil();
+    for e in sorted.into_iter().rev() {
+        out = metamodelica::cons(e, out);
+    }
+    Ok(out)
+}"#;
 
 // ── Inherited-algorithm (`extends`) instantiation ───────────────────────────
 //
@@ -6518,10 +6565,10 @@ fn cref_dotted2(cref: &Absyn::ComponentRef) -> Option<String> {
     match cref {
         C::CREF_FULLYQUALIFIED { componentRef } => cref_dotted2(componentRef),
         C::CREF_QUAL { name, subscripts, componentRef }
-            if matches!(&**subscripts, metamodelica::List::Nil) =>
+            if matches!(&**subscripts, metamodelica::ListNode::Nil) =>
         {
             if let C::CREF_IDENT { name: n2, subscripts: s2 } = &**componentRef
-                && matches!(&**s2, metamodelica::List::Nil)
+                && matches!(&**s2, metamodelica::ListNode::Nil)
             {
                 return Some(format!("{name}.{n2}"));
             }
@@ -6534,19 +6581,19 @@ fn cref_dotted2(cref: &Absyn::ComponentRef) -> Option<String> {
 fn subst_exp_list(
     l: &metamodelica::List<Arc<Absyn::Exp>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::Exp>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|e| subst_exp(e, map))))
+) -> metamodelica::List<Arc<Absyn::Exp>> {
+    metamodelica::List::from_iter(l.into_iter().map(|e| subst_exp(e, map)))
 }
 
 fn subst_subscripts(
     l: &metamodelica::List<Arc<Absyn::Subscript>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::Subscript>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|s| match &**s {
+) -> metamodelica::List<Arc<Absyn::Subscript>> {
+    metamodelica::List::from_iter(l.into_iter().map(|s| match &**s {
         Absyn::Subscript::SUBSCRIPT { subscript } =>
             Arc::new(Absyn::Subscript::SUBSCRIPT { subscript: subst_exp(subscript, map) }),
         Absyn::Subscript::NOSUB => s.clone(),
-    })))
+    }))
 }
 
 /// Rewrite every `Pkg.const` component reference in an expression.
@@ -6569,9 +6616,9 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
             ifExp: subst_exp(ifExp, map),
             trueBranch: subst_exp(trueBranch, map),
             elseBranch: subst_exp(elseBranch, map),
-            elseIfBranch: Arc::new(metamodelica::List::from_iter(
+            elseIfBranch: metamodelica::List::from_iter(
                 elseIfBranch.into_iter().map(|(c, t)| (subst_exp(c, map), subst_exp(t, map))),
-            )),
+            ),
         }),
         E::CALL { function_, functionArgs, typeVars } => Arc::new(E::CALL {
             function_: function_.clone(), functionArgs: subst_fargs(functionArgs, map), typeVars: typeVars.clone(),
@@ -6581,7 +6628,7 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
         }),
         E::ARRAY { arrayExp } => Arc::new(E::ARRAY { arrayExp: subst_exp_list(arrayExp, map) }),
         E::MATRIX { matrix } => Arc::new(E::MATRIX {
-            matrix: Arc::new(metamodelica::List::from_iter(matrix.into_iter().map(|row| subst_exp_list(row, map)))),
+            matrix: metamodelica::List::from_iter(matrix.into_iter().map(|row| subst_exp_list(row, map))),
         }),
         E::RANGE { start, step, stop } => Arc::new(E::RANGE {
             start: subst_exp(start, map), step: step.as_ref().map(|s| subst_exp(s, map)), stop: subst_exp(stop, map),
@@ -6599,7 +6646,7 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
         }),
         E::MATCHEXP { matchTy, inputExp, localDecls, cases, comment } => Arc::new(E::MATCHEXP {
             matchTy: matchTy.clone(), inputExp: subst_exp(inputExp, map), localDecls: localDecls.clone(),
-            cases: Arc::new(metamodelica::List::from_iter(cases.into_iter().map(|cse| subst_case(cse, map)))),
+            cases: metamodelica::List::from_iter(cases.into_iter().map(|cse| subst_case(cse, map))),
             comment: comment.clone(),
         }),
         // Leaves with no sub-expressions.
@@ -6613,10 +6660,10 @@ fn subst_fargs(fa: &Arc<Absyn::FunctionArgs>, map: &HashMap<String, Arc<Absyn::E
     match &**fa {
         F::FUNCTIONARGS { args, argNames } => Arc::new(F::FUNCTIONARGS {
             args: subst_exp_list(args, map),
-            argNames: Arc::new(metamodelica::List::from_iter(argNames.into_iter().map(|na| {
+            argNames: metamodelica::List::from_iter(argNames.into_iter().map(|na| {
                 let Absyn::NamedArg { argName, argValue } = &**na;
                 Arc::new(Absyn::NamedArg { argName: argName.clone(), argValue: subst_exp(argValue, map) })
-            }))),
+            })),
         }),
         F::FOR_ITER_FARG { exp, iterType, iterators } => Arc::new(F::FOR_ITER_FARG {
             exp: subst_exp(exp, map), iterType: iterType.clone(), iterators: subst_for_iterators(iterators, map),
@@ -6628,30 +6675,30 @@ fn subst_for_iterators(
     l: &Absyn::ForIterators,
     map: &HashMap<String, Arc<Absyn::Exp>>,
 ) -> Absyn::ForIterators {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|it| {
+    metamodelica::List::from_iter(l.into_iter().map(|it| {
         let Absyn::ForIterator { name, guardExp, range } = &**it;
         Arc::new(Absyn::ForIterator {
             name: name.clone(),
             guardExp: guardExp.as_ref().map(|g| subst_exp(g, map)),
             range: range.as_ref().map(|r| subst_exp(r, map)),
         })
-    })))
+    }))
 }
 
 fn subst_alg_item_list(
     l: &metamodelica::List<Arc<Absyn::AlgorithmItem>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|it| subst_alg_item(it, map))))
+) -> metamodelica::List<Arc<Absyn::AlgorithmItem>> {
+    metamodelica::List::from_iter(l.into_iter().map(|it| subst_alg_item(it, map)))
 }
 
 fn subst_alg_elseif(
-    l: &metamodelica::List<(Arc<Absyn::Exp>, Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>>)>,
+    l: &metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<(Arc<Absyn::Exp>, Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>>)>> {
-    Arc::new(metamodelica::List::from_iter(
+) -> metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)> {
+    metamodelica::List::from_iter(
         l.into_iter().map(|(cond, body)| (subst_exp(cond, map), subst_alg_item_list(body, map))),
-    ))
+    )
 }
 
 fn subst_alg_item(it: &Arc<Absyn::AlgorithmItem>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::AlgorithmItem> {
@@ -9791,7 +9838,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // unconditionally `metamodelica::cons`, and a glob-imported bare
             // `cons` is shadowed when the function has a local binding named
             // `cons` (e.g. a `Constraint` list in BackendDAEUtil), turning the
-            // call into `Arc<List<..>>(..)` — E0618 "expected function".
+            // call into `List<..>(..)` — E0618 "expected function".
             format!("metamodelica::cons({head_s}, {tail_s})")
         }
 
@@ -10555,7 +10602,7 @@ fn emit_reduction<'a>(
             // The reduction body's static type carries type variables from a
             // callee's signature (e.g. `tuple21<T1,T2>`'s `T1` flowing into
             // the accumulator) that aren't in scope at the caller. Emitting
-            // them verbatim would produce `Arc<List<T1>>` against an
+            // them verbatim would produce `List<T1>` against an
             // undeclared name; defer to Rust inference instead. The body
             // assignment to `__x` pins the concrete type from the call site.
             "_".to_owned()
@@ -10578,7 +10625,7 @@ fn emit_reduction<'a>(
             // over the cons-cells and avoids the Vec allocation entirely.
             let elem_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{elem_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{elem_ty}> = metamodelica::nil();"),
                 "__acc = cons(__x, __acc);".to_owned(),
                 "__acc.reverse()".to_owned(),
             )
@@ -10587,7 +10634,7 @@ fn emit_reduction<'a>(
             // Reverse-iteration order: cons directly onto the accumulator.
             let elem_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{elem_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{elem_ty}> = metamodelica::nil();"),
                 "__acc = cons(__x, __acc);".to_owned(),
                 "__acc".to_owned(),
             )
@@ -10668,7 +10715,7 @@ fn emit_reduction<'a>(
             // matches the existing helper's argument order: prepend __x onto acc.
             let inner_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{inner_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{inner_ty}> = metamodelica::nil();"),
                 "__acc = __x.append(&__acc);".to_owned(),
                 "__acc".to_owned(),
             )
@@ -11761,7 +11808,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // where the loop binds a `&_` whose `_` Rust can't resolve from the
             // body alone).
             let arg = args.first().map(|a| emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(format!("Arc::new({arg}.borrow().iter().cloned().collect::<metamodelica::List<_>>())"))
+            Ok(format!("{arg}.borrow().iter().cloned().collect::<metamodelica::List<_>>()"))
         },
         // Modelica trigonometric, exponential and square-root builtins.
         // The MetaModelica compiler accepts these bare-name builtins (declared
@@ -12526,7 +12573,7 @@ fn find_record_split<'a>(segments: &[CrefSegment], ctx: &GenCtx, top_level: &'a 
                     .map(|n| n.children.contains_key(&segments[1].name))
                     .unwrap_or(true)
             }
-            // For non-record local types (Arc<List<_>>, enums, primitives, …)
+            // For non-record local types (List<_>, enums, primitives, …)
             // we keep the original shadowing behaviour. A field access on
             // those is either via `var_field!` (enum) or a downstream
             // type-error that points at the real bug.
@@ -14511,7 +14558,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // The macro provides stable-Rust replacements for nightly's `deref_patterns`:
     // a `::match_deref::Deref @ <inner>` token sequence inside an arm pattern
     // desugars to `if let inner = Deref::deref(binding) { … }`. This lets us match
-    // through `Arc<List<T>>`, recursive `Arc<Enum>` variants, and `ArcStr` literal
+    // through `List<T>`, recursive `Arc<Enum>` variants, and `ArcStr` literal
     // patterns — all of which were the previous use cases for the
     // `#![feature(deref_patterns)]` attribute.
     //
@@ -14547,12 +14594,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // own match ergonomics on `&T` then makes the bindings by-reference,
     // which matches the implicit_ref regime in
     // `emit_pat_with_implicit_bind`. We extend this to `Ty::List`
-    // (`Arc<metamodelica::List<T>>`).
+    // (`metamodelica::List<T>`).
     let input_is_arc_recursive = is_arc_wrapped(&input_ty, ctx)
         || matches!(input_ty, Ty::List(_));
     // A `matchcontinue` with a tuple scrutinee whose elements include `Arc<…>`
     // values needs the subject rebuilt as a tuple of references: each
-    // `Arc<List<T>>` / `Arc<Enum>` element gets `.as_ref()` (yielding
+    // `List<T>` / `Arc<Enum>` element gets `.as_ref()` (yielding
     // `&List<T>` / `&Enum`), every other element is passed by value. Rust's
     // match ergonomics then makes all bindings inside the tuple pattern
     // by-reference, which is exactly the regime `emit_pat_with_implicit_bind`
@@ -15350,7 +15397,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // body in `::match_deref::match_deref!{}` (each arm is a
                 // separate `let pat = … else { bail }`), but we *can* wrap a
                 // single arm's destructure when its pattern crosses an Arc
-                // edge (e.g. `Cons { tail: Nil }` against `Arc<List<T>>`) or
+                // edge (e.g. `Cons { tail: Nil }` against `List<T>`) or
                 // matches a `String` literal against an `ArcStr`. The arm
                 // then becomes `match_deref!{ match &__mc_input { <pat> => …
                 // _ => bail }}` inside the IIFE — the `_` branch falls
@@ -15876,10 +15923,10 @@ fn emit_pat<'a>(pat: &TypedPat, ctx: &mut GenCtx, top_level: &'a BTreeMap<String
 /// Return true if matching `pat` against a scrutinee of `ty` will cross an
 /// Arc edge — i.e. the pattern destructures through an `Arc<T>` wrapper.
 /// Crossing an Arc edge happens for:
-///   - `Ty::List(_)` (lowered to `Arc<metamodelica::List<T>>`).
+///   - `Ty::List(_)` (lowered to `metamodelica::List<T>`).
 ///   - Any type marked recursive in `ctx.recursive_types` (uniontype enums and
 ///     their variant records are stored behind `Arc`).
-///   - The `tail` field of a `Cons` pattern (typed as `Arc<List<T>>` regardless
+///   - The `tail` field of a `Cons` pattern (typed as `List<T>` regardless
 ///     of the outer scrutinee, since the field itself is Arc-wrapped).
 /// Once we cross an Arc edge, the `deref_patterns` feature binds every
 /// nested name by reference; `mut <name>` is therefore rejected as a
@@ -15916,7 +15963,7 @@ fn pat_has_str_lit(pat: &TypedPat) -> bool {
 /// the following holds for the input or its destructured sub-elements:
 ///
 ///   * The scrutinee is `Arc<…>` over a recursive uniontype (`is_arc_wrapped`).
-///   * The scrutinee is `Arc<metamodelica::List<T>>` (every `Ty::List`).
+///   * The scrutinee is `metamodelica::List<T>` (every `Ty::List`).
 ///   * A `(_, _, …)` tuple scrutinee contains at least one Arc-crossing
 ///     element — `type_destructure_needs_borrow` already recurses through
 ///     tuples.
@@ -15936,7 +15983,7 @@ fn match_uses_match_deref(input_ty: &Ty, cases: &[TypedCase], ctx: &GenCtx, top_
 
 /// True when destructuring `pat` against a scrutinee of type `scrut_ty`
 /// would require descending through an `Arc<…>` edge — e.g. a constructor
-/// pattern whose field type is `Arc<List<…>>` and whose sub-pattern is
+/// pattern whose field type is `List<…>` and whose sub-pattern is
 /// anything other than a bare `_` / variable binding (which doesn't
 /// destructure further). When this returns true the match must be wrapped
 /// in `::match_deref::match_deref!{ … }` so the inner pattern can match
@@ -15947,7 +15994,7 @@ fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: 
         !matches!(p, TypedPat::Wildcard | TypedPat::Var(_))
     }
     // A Constructor / Cons / EmptyList pattern matched against an Arc-wrapped
-    // (or List, which is itself Arc<List<...>>) scrutinee must peel the smart
+    // (or List, which is itself List<...>) scrutinee must peel the smart
     // pointer with `Deref @ ...`. This applies whether the Arc edge is the
     // outer scrutinee or sits behind a Some/Cons.tail; the caller already
     // recurses with the inner type, so checking the *current* scrutinee here
@@ -16175,7 +16222,7 @@ fn pat_deref_bindings(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: &B
     // Otherwise, recurse type-aware to find where Arc edges are crossed.
     match pat {
         TypedPat::Cons { head, tail } => {
-            // The Cons.tail field is `Arc<List<T>>` — itself an Arc edge —
+            // The Cons.tail field is `List<T>` — itself an Arc edge —
             // so everything below the tail subtree is in deref. The head
             // is bound by value (type T) without crossing an Arc edge, so
             // recurse type-aware into it.
@@ -16407,14 +16454,14 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     //    within an implicitly-borrowing pattern"). Emit bare names. Once
     //    set, it propagates to every nested sub-pattern.
     //
-    // 2. `in_deref` (regime 2): subject is `Arc<List<T>>` matched directly
+    // 2. `in_deref` (regime 2): subject is `List<T>` matched directly
     //    via `deref_patterns`, or we're inside the `Cons.tail` of one. A
     //    bare `head: x` would try to move from behind the Arc (E0507), so
     //    we emit explicit `ref x`.
     //
     // `implicit_ref` only enters via the outer `emit_match` call (which
     // tracks whether the match is wrapped in `match_deref!{ ... }`). Don't
-    // re-derive it from inner scrut_ty: a nested `(Arc<List<T>>, Arc<Tree>)`
+    // re-derive it from inner scrut_ty: a nested `(List<T>, Arc<Tree>)`
     // tuple scrutinee is *not* implicit-borrowed even though its second
     // element is a recursive Arc-wrapped uniontype — `emit_match` decides at
     // the outer level whether match_deref is in scope. Just propagate what
@@ -16444,7 +16491,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     // pattern (see `match_uses_match_deref` in `emit_match`).
     // Pattern-shape fallback: when scrut_ty is Unknown (typedexp couldn't
     // pin a generic call's return type, etc.) but the pattern itself proves
-    // the scrutinee is wrapped in an `Arc<List<_>>`, force the Arc-edge
+    // the scrutinee is wrapped in an `List<_>`, force the Arc-edge
     // prefix. Without this, the outermost `Cons` of a Cons/Nil chain over a
     // generic-returning call's result emits without `Deref @` and Rust
     // rejects the pattern with E0308.
@@ -16484,7 +16531,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     // `#[tailcall::tailcall]` bodies where match_deref would hide arms from
     // the tailcall rewriter), the OUTER scrutinee has already been peeled
     // by `.as_ref()` — and inner Arc edges (e.g. `Cons.tail` typed
-    // `Arc<List<T>>`) are not destructured further by the legacy lowering,
+    // `List<T>`) are not destructured further by the legacy lowering,
     // so no Deref prefix is needed there either. Hence we gate the prefix
     // on `in_match_deref` alone, not on `implicit_ref`.
     let arc_prefix: &str = if in_match_deref && at_arc_edge { "Deref @ " } else { "" };
@@ -16496,7 +16543,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             Some(renamed) => bind_var(&renamed.clone()),
             None => bind_var(name),
         },
-        TypedPat::EmptyList   => format!("{arc_prefix}metamodelica::List::Nil"),
+        TypedPat::EmptyList   => format!("{arc_prefix}metamodelica::ListNode::Nil"),
         TypedPat::Some_(inner) => {
             // Propagate the Option's inner type into the sub-pattern so it can
             // decide whether a `Deref @` prefix is required at an Arc edge
@@ -16560,14 +16607,14 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             // that itself crosses an Arc edge (e.g. an element which is a
             // recursive uniontype) gets `in_deref` set correctly.
             let elem_ty: Ty = match scrut_ty { Some(Ty::List(t)) => (**t).clone(), _ => Ty::Unknown };
-            // The `tail` field of `metamodelica::List::Cons` is `Arc<List<T>>`
+            // The `tail` field of `metamodelica::ListNode::Cons` is `List<T>`
             // (itself an Arc edge), so emit the tail sub-pattern with a
             // synthetic `Ty::List(elem)` scrutinee. Inside `match_deref!`
             // this triggers another `::match_deref::Deref @` prefix on the
             // tail's variant pattern; outside it forces `ref <name>` binding
             // (the legacy Arc<List> behavior).
             let tail_ty = Ty::List(Box::new(elem_ty.clone()));
-            let body = format!("metamodelica::List::Cons {{ head: {}, tail: {} }}",
+            let body = format!("metamodelica::ListNode::Cons {{ head: {}, tail: {} }}",
                 emit_pat_with_implicit_bind_md(head, allow_implicit_bind, mut_bindings, in_deref, implicit_ref, in_match_deref, Some(&elem_ty), ctx, top_level),
                 emit_pat_with_implicit_bind_md(tail, allow_implicit_bind, mut_bindings, true, implicit_ref, in_match_deref, Some(&tail_ty), ctx, top_level));
             format!("{arc_prefix}{body}")
@@ -16949,9 +16996,9 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             // `var @ inner` matches the same value against both sides, so the
             // inner needs the same `scrut_ty` to decide whether to emit a
             // `Deref @ ` prefix (e.g. an `As` pattern sitting on `Cons.tail`,
-            // which is itself `Arc<List<T>>`, must wrap its inner Cons/Nil
+            // which is itself `List<T>`, must wrap its inner Cons/Nil
             // sub-pattern in `Deref @ …`). Passing `None` here previously
-            // dropped that information, producing `tail: rest @ List::Cons{…}`
+            // dropped that information, producing `tail: rest @ metamodelica::ListNode::Cons{…}`
             // and a `&Arc<…>` vs `List<…>` mismatch.
             format!("{} @ {}", outer, emit_pat_with_implicit_bind_md(pat, false, false, in_deref || force_ref, implicit_ref, in_match_deref, scrut_ty, ctx, top_level))
         }
@@ -17439,7 +17486,7 @@ fn is_static_const_emittable(exp: &TypedExp, ctx: &GenCtx, top_level: &BTreeMap<
 /// True if the lowered Rust type for `ty` implements `Sync` for the purposes of
 /// `pub static` storage. The only non-`Sync` MetaModelica primitive we generate
 /// today is `Array<T> = Rc<RefCell<Vec<T>>>` (see `metamodelica::Array`); every
-/// other built-in maps to a `Sync` Rust type (`Arc<List<T>>`, `ArcStr`,
+/// other built-in maps to a `Sync` Rust type (`List<T>`, `ArcStr`,
 /// `Mutable<T> = Arc<Mutex<T>>`, primitives, function pointers, etc.).
 ///
 /// User-defined struct/enum types are checked against
@@ -17486,7 +17533,7 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
 
 /// Whether a value of this type is represented at the Rust level as a
 /// shared-pointer *handle* (`Arc<Enum>` for recursive uniontypes,
-/// `Arc<List<T>>` for lists, `ArcStr` for strings, `Rc<RefCell<Vec<T>>>` for
+/// `List<T>` for lists, `ArcStr` for strings, `Rc<RefCell<Vec<T>>>` for
 /// arrays) whose clones all designate the same MetaModelica heap object.
 ///
 /// `referenceEq` lowers to a pointer comparison; for handle-represented
@@ -17496,7 +17543,7 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
 /// result always-false. See [`try_emit_reference_eq`].
 fn referenceeq_derefs_to_pointee(ty: &Ty, ctx: &GenCtx) -> bool {
     match ty {
-        // list<T> → Arc<List<T>>; String → ArcStr; array<T> → Rc<RefCell<Vec<T>>>.
+        // list<T> → List<T>; String → ArcStr; array<T> → Rc<RefCell<Vec<T>>>.
         Ty::List(_) | Ty::Str | Ty::Array(_) => true,
         // Recursive uniontypes / variant-narrowed values / recursive generics
         // → Arc<Enum>.
@@ -17577,7 +17624,7 @@ fn try_emit_reference_eq<'a>(
         // and Cons by head identity + tail allocation — O(1), true whenever
         // the MMC pointer compare would be.
         Ty::List(_) => Some(format!(
-            "metamodelica::ReferenceEq::reference_eq(&*({lhs}), &*({rhs}))"
+            "metamodelica::ReferenceEq::reference_eq(&({lhs}), &({rhs}))"
         )),
         _ if referenceeq_derefs_to_pointee(ty, ctx) => {
             Some(format!("referenceEq(&*({lhs}),&*({rhs}))"))
@@ -17747,7 +17794,7 @@ fn type_destructure_needs_borrow(ty: &Ty, ctx: &GenCtx) -> bool {
 }
 
 /// True when the *pattern's shape* already proves the scrutinee is wrapped in
-/// an `Arc<_>` (or `Arc<List<_>>`/`Arc<Option<_>>`/etc.) and must be matched
+/// an `Arc<_>` (or `List<_>`/`Arc<Option<_>>`/etc.) and must be matched
 /// through `match_deref!` rather than a bare `let … = … else { fail };`.
 ///
 /// Used as a fallback when typedexp can't fully resolve the scrutinee's type
@@ -17771,8 +17818,8 @@ fn pat_requires_arc_deref(pat: &TypedPat, ctx: &GenCtx) -> bool {
         //     callback `fun()` whose return type is `Ty::Unknown` — has no such
         //     scrutinee type, so we recover it from the pattern's own `ty`); or
         //   * a nested field is itself an Arc-edge pattern (e.g. a
-        //     `FCore::Cache { …, scope: List::Cons{…}, .. }` destructure) —
-        //     the inner List::Cons is on an `Arc<List<_>>` field even though
+        //     `FCore::Cache { …, scope: metamodelica::ListNode::Cons{…}, .. }` destructure) —
+        //     the inner metamodelica::ListNode::Cons is on an `List<_>` field even though
         //     the outer Constructor's own type is a plain struct.
         TypedPat::Constructor { fields, named_fields, ty, .. } => {
             // `is_arc_wrapped` only recognises the bare recursive-uniontype
@@ -18070,7 +18117,7 @@ fn emit_pat_assign<'a>(
             // Render shallow with deferrals for Arc-edge crossings.
             let mut deferrals: Vec<(String, TypedPat, Ty)> = Vec::new();
             let surface = render_shallow(pat_for_render, scrut_ty, ctx, env, top_level, fresh, &mut deferrals, /*force_ref=*/false, scrut_borrowed);
-            // When the scrutinee is Arc-wrapped (list<T> → Arc<List<T>>; recursive
+            // When the scrutinee is Arc-wrapped (list<T> → List<T>; recursive
             // uniontypes wrapped in Arc), destructuring a variant pattern such as
             // `Cons { head, tail }` only succeeds via the `deref_patterns`
             // feature, which deref's through the Arc. The deref produces a
@@ -18083,7 +18130,7 @@ fn emit_pat_assign<'a>(
             //
             // We must also recurse through Tuple types: a let-let pattern
             // `(STRING{r#str=key}, tokens) := parse_string(..)` has
-            // scrut_ty = (Arc<JSON>, Arc<List<Token>>), where the outer tuple
+            // scrut_ty = (Arc<JSON>, List<Token>), where the outer tuple
             // itself isn't Arc-wrapped but the first element is. Without
             // borrowing the whole tuple, the inner Constructor pattern would
             // still trigger Arc deref_patterns and fail to move non-Copy
@@ -18147,8 +18194,8 @@ fn emit_pat_assign<'a>(
             //
             // The legacy `let PAT = &(expr) else { fail };` form relied on the
             // nightly `deref_patterns` feature to peel the `Arc<…>` around
-            // `&Arc<List<T>>` etc. On stable we have no auto-deref, so the
-            // raw pattern fails to compile (E0308 "expected `Arc<List<T>>`,
+            // `&List<T>` etc. On stable we have no auto-deref, so the
+            // raw pattern fails to compile (E0308 "expected `List<T>`,
             // found `List<_>`"). Replace it with a `::match_deref::match_deref!`
             // wrapped `match` that yields a tuple of the pattern's clones:
             //
@@ -18467,7 +18514,7 @@ fn render_shallow<'a>(
                 escape_ident(name)
             }
         }
-        TypedPat::EmptyList => "metamodelica::List::Nil".to_owned(),
+        TypedPat::EmptyList => "metamodelica::ListNode::Nil".to_owned(),
         TypedPat::None_ => "None".to_owned(),
         TypedPat::Some_(inner) => {
             let inner_ty = match scrut_ty {
@@ -18483,21 +18530,21 @@ fn render_shallow<'a>(
         TypedPat::Cons { head, tail } => {
             let elem_ty = match scrut_ty { Ty::List(t) => (**t).clone(), _ => Ty::Unknown };
             let h = render_shallow(head, &elem_ty, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed);
-            // The `tail` field of `metamodelica::List::Cons` is `Arc<List<T>>`, and
+            // The `tail` field of `metamodelica::ListNode::Cons` is `List<T>`, and
             // the surface MetaModelica type `list<T>` is also lowered to
-            // `Arc<List<T>>`, so binding the tail directly in the pattern yields a
+            // `List<T>`, so binding the tail directly in the pattern yields a
             // value of exactly the right user-visible type. We still route the
             // tail through a fresh `__tN` temporary so that a non-trivial sub-pattern
             // (e.g. another `Cons`, a constructor, or a name that shadows an
             // already-bound variable) can be re-emitted by `emit_pat_assign` against
-            // an owned `Arc<List<T>>` scrutinee. The deferred expression is therefore
+            // an owned `List<T>` scrutinee. The deferred expression is therefore
             // `__tN.clone()` (an Arc bump), NOT `(*__tN).clone()` — the latter would
             // strip the Arc and produce a `List<T>` value, which no longer matches
             // the surface type.
             // Wildcards pass through unchanged — there is nothing to bind.
             // A simple `Var(name)` sub-pattern can also be bound directly in the
-            // pattern: by-value matching on an `Arc<List<T>>` moves the `tail`
-            // field out as an `Arc<List<T>>`, which is exactly the surface type
+            // pattern: by-value matching on an `List<T>` moves the `tail`
+            // field out as an `List<T>`, which is exactly the surface type
             // of the user's variable. No fresh temporary or follow-up clone is
             // needed in that case. Note that `rewrite_pat_for_existing_bindings`
             // has already substituted any name that collides with the current
@@ -18514,7 +18561,7 @@ fn render_shallow<'a>(
                     tmp
                 }
             };
-            format!("metamodelica::List::Cons {{ head: {h}, tail: {t} }}")
+            format!("metamodelica::ListNode::Cons {{ head: {h}, tail: {t} }}")
         }
         TypedPat::Tuple(pats) => {
             let tys: Vec<Ty> = match scrut_ty {
@@ -19486,7 +19533,7 @@ fn record_pattern_variants_inner<'a>(
     record_constructor_pattern_bindings(inner_pat, &scrut_ty, env, top_level, shapes, ctx, md);
     // (5) List-cons patterns: walk through `head :: tail` (= TypedPat::Cons).
     //     `head` is a single element; `tail` is the same list type. When the
-    //     scrutinee is `Arc<List<T>>` and the list crosses Arc (always true
+    //     scrutinee is `List<T>` and the list crosses Arc (always true
     //     for `Ty::List`), every name binding inside the pattern is by-ref
     //     under match_deref!. Record the shape so downstream `var_field!`
     //     and `.field` emission deref correctly, and recurse so nested
@@ -21270,7 +21317,7 @@ fn fmt_param_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
         // Same for `Option<F>` / `List<F>` / `Array<F>`: any container whose
         // element is itself a function type needs the trait-object form.
         Ty::Option(inner) => format!("Option<{}>", fmt_param_ty(inner, ctx)),
-        Ty::List(inner) => format!("Arc<metamodelica::List<{}>>", fmt_param_ty(inner, ctx)),
+        Ty::List(inner) => format!("metamodelica::List<{}>", fmt_param_ty(inner, ctx)),
         Ty::Array(inner) => format!("metamodelica::Array<{}>", fmt_param_ty(inner, ctx)),
         _ => fmt_ty(ty, ctx),
     }
@@ -23687,7 +23734,7 @@ fn fmt_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
             fmt_ty(&Ty::RustEnum(union_qname.clone()), ctx)
         }
         Ty::Option(inner) => format!("Option<{}>", fmt_ty(inner, ctx)),
-        Ty::List(inner) => format!("Arc<metamodelica::List<{}>>", fmt_ty(inner, ctx)),
+        Ty::List(inner) => format!("metamodelica::List<{}>", fmt_ty(inner, ctx)),
         // MetaModelica `array<T>` has reference (aliasing) semantics: arrayUpdate
         // mutates in place and the change is visible through every alias. We model
         // that with `metamodelica::Array<T>` (alias for `Rc<RefCell<Vec<T>>>`).
@@ -23861,7 +23908,7 @@ fn component_fields<'a>(c: &'a MM::Class, children: &'a BTreeMap<String, NameNod
 /// Same as [`component_fields`] but also returns each component's original
 /// AST `TypeSpec`. The TypeSpec lets the emitter recover the type *name as
 /// written* (e.g. `Key`, `Value`) rather than its fully resolved Rust type
-/// (e.g. `ArcStr`, `Arc<metamodelica::List<TplAbsyn::ASTDef>>`). This is what
+/// (e.g. `ArcStr`, `metamodelica::List<TplAbsyn::ASTDef>`). This is what
 /// lets uniontype record fields reference sibling type aliases instead of
 /// inlining the resolved type — keeping the generated code stable across
 /// future redeclarations of the alias.
@@ -24080,10 +24127,10 @@ fn component_ref_simple_name(cref: &Absyn::ComponentRef) -> String {
 /// function input parameter — anything more complex (a literal, a nested
 /// expression) is rejected with a placeholder so the broken case shows
 /// up at compile time instead of silently dropping arguments.
-fn collect_external_arg_names(args: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::Exp>>>) -> Vec<String> {
+fn collect_external_arg_names(args: &metamodelica::List<std::sync::Arc<Absyn::Exp>>) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = args.clone();
-    while let metamodelica::List::Cons { head, tail } = &*cur {
+    while let metamodelica::ListNode::Cons { head, tail } = &*cur {
         match crate::hierarchy::strip_exp_wrappers(head) {
             // `OpenModelica.threadData()` — drop.
             Absyn::Exp::CALL { function_, .. }

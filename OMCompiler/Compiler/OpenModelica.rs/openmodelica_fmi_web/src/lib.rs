@@ -275,17 +275,19 @@ pub extern "C" fn om_fmi_rows_len() -> usize {
 }
 
 /// Write the result file, through WASI like every other file a simulation
-/// writes.
+/// writes. The name's suffix picks the format (`.arrow` or `.mat`).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn om_fmi_write_mat(ptr: *const u8, len: usize) -> i32 {
+pub unsafe extern "C" fn om_fmi_write_result(ptr: *const u8, len: usize) -> i32 {
     let path = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
     with(|s| {
+        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let units = fmu.model_description.units.clone();
         let Some(run) = s.run.as_ref() else { return fail("nothing has been simulated") };
         let (start, stop) = (
             run.summary["startTime"].as_f64().unwrap_or(0.0),
             run.summary["stopTime"].as_f64().unwrap_or(0.0),
         );
-        match run.recorder.write_mat(std::path::Path::new(&path), start, stop) {
+        match run.recorder.write(std::path::Path::new(&path), start, stop, &units) {
             Ok(()) => 1,
             Err(e) => fail(e),
         }
@@ -359,6 +361,7 @@ fn describe(fmu: &Fmu) -> Value {
                     Variability::Continuous => "continuous",
                 },
                 "unit": v.unit,
+                "displayUnit": v.display_unit,
                 "start": v.start.as_ref().and_then(|s| s.first_f64()),
                 "numeric": v.ty.is_numeric(),
                 "settable": v.is_settable(),
@@ -381,6 +384,25 @@ fn describe(fmu: &Fmu) -> Value {
         .flat_map(|v| v.aliases.iter().map(move |a| (a.name.clone(), Value::from(v.name.clone()))))
         .collect::<serde_json::Map<String, Value>>()
         .into();
+    // What each unit converts into, for the page's display-unit switch.
+    let units: Value = md
+        .units
+        .iter()
+        .map(|u| {
+            let displays: Vec<Value> = u
+                .display_units
+                .iter()
+                .map(|d| json!({
+                    "name": d.name,
+                    "factor": d.factor,
+                    "offset": d.offset,
+                    "inverse": d.inverse,
+                }))
+                .collect();
+            (u.name.clone(), Value::from(displays))
+        })
+        .collect::<serde_json::Map<String, Value>>()
+        .into();
     json!({
         "fmiVersion": md.fmi_version_string,
         "modelName": md.model_name,
@@ -401,6 +423,10 @@ fn describe(fmu: &Fmu) -> Value {
         "numberOfEventIndicators": md.number_of_event_indicators,
         "variables": variables,
         "aliases": aliases,
+        "units": units,
+        // Whether the FMU declares fmi-ls-dae, so Model Exchange can be run over
+        // its residuals instead of the ODE face the same FMU also serves.
+        "lsDae": fmu.ls_dae_manifest().is_some(),
         "figures": md.figures().iter().map(figure_json).collect::<Vec<_>>(),
         "visualization": md.visualization().map(|v| json!({"file": v.file})),
         // Not the FMU's: what a run of it can be given, for the page's chooser.
@@ -524,7 +550,7 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
         _ => None,
     };
     let kind = openmodelica_fmi_driver::choose_interface(md, wanted)?;
-    let opts = options_from(md, o)?;
+    let mut opts = options_from(md, o)?;
 
     match kind {
         InterfaceKind::CoSimulation => {
@@ -553,6 +579,19 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
             })
         }
         InterfaceKind::ModelExchange => {
+            // fmi-ls-dae: the FMU stays an ODE FMU until the master enables DAE
+            // mode, after which the master sets the states, their derivatives and
+            // the algebraic variables and reads the residuals back. Only IDA takes
+            // that form, so the driver rejects any other solver itself.
+            if o.get("daeMode").and_then(Value::as_bool).unwrap_or(false) {
+                opts.dae = Some(match fmu.ls_dae_manifest() {
+                    Some(Ok(m)) => m,
+                    Some(Err(e)) => return Err(Error::Unsupported(format!("fmi-ls-dae manifest: {e}"))),
+                    None => return Err(Error::Unsupported(
+                        "DAE mode asks for fmi-ls-dae, which this FMU does not declare".to_string(),
+                    )),
+                });
+            }
             let mut inst =
                 HostFmu::instantiate(KIND_MODEL_EXCHANGE, false, false, opts.logging_on)?;
             let r = me::simulate(&mut inst as &mut dyn Fmi3ModelExchange, md, &opts)?;
@@ -570,6 +609,7 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
                     "terminatedAt": r.terminated_at,
                     "cancelled": r.cancelled,
                     "solver": opts.solver.as_str(),
+                    "daeMode": opts.dae.is_some(),
                 }),
                 recorder: r.recorder,
             })

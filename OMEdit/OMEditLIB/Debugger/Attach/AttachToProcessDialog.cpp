@@ -47,10 +47,6 @@
 #include <QMessageBox>
 #include <QGridLayout>
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#define setFilterRegularExpression setFilterRegExp
-#endif
-
 /*!
  * \class AttachToProcessDialog
  * \brief Provides interface for attaching a debugger to a running process.

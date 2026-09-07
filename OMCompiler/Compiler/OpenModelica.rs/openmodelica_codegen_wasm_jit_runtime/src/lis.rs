@@ -175,13 +175,11 @@ fn solve_cached(
         return 0;
     }
     let code = usize::try_from(err).ok().and_then(|i| RETURNCODE.get(i)).copied().unwrap_or("LIS_ERR");
-    crate::omclog::warning(crate::omclog::LS_V, false, &alloc::format!("lis_solve : {code}(code={err})"));
-    crate::omclog::warning(
+    crate::omclog::warning!(crate::omclog::LS_V, false, "lis_solve : {code}(code={err})");
+    crate::omclog::warning!(
         crate::omclog::LS,
         false,
-        &alloc::format!(
-            "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system status {err}."
-        ),
+        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system status {err}.",
     );
     1
 }

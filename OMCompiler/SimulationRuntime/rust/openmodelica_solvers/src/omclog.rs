@@ -370,9 +370,24 @@ pub fn reactivate() {
     });
 }
 
+// The macros the `_fmt` entry points below exist for; `omclog::info!` and the
+// function `omclog::info` are different namespaces, so both names stay.
+pub use crate::{
+    omclog_debug as debug, omclog_error as error, omclog_info as info,
+    omclog_warning as warning, omclog_warning_with_limit as warning_with_limit,
+};
+
 pub fn info(stream: Stream, indent_next: bool, msg: &str) {
     if active(stream) {
         message_text(INFO, stream, indent_next, msg);
+    }
+}
+
+/// [`info`] over `format_args!`: nothing is built for a stream that is off. The
+/// `omclog::info!` macro is how to reach it.
+pub fn info_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
+    if active(stream) {
+        message_text(INFO, stream, indent_next, &alloc::fmt::format(args));
     }
 }
 
@@ -380,6 +395,25 @@ pub fn info(stream: Stream, indent_next: bool, msg: &str) {
 pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
         message_text(WARNING, stream, indent_next, msg);
+    }
+}
+
+/// [`warning`] over `format_args!`; see [`info_fmt`].
+pub fn warning_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
+    if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
+        message_text(WARNING, stream, indent_next, &alloc::fmt::format(args));
+    }
+}
+
+/// [`warning_with_limit`] over `format_args!`; see [`info_fmt`].
+pub fn warning_with_limit_fmt(
+    stream: Stream,
+    n_displayed: u64,
+    max_displayed: u64,
+    args: core::fmt::Arguments<'_>,
+) {
+    if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
+        warning_with_limit(stream, n_displayed, max_displayed, &alloc::fmt::format(args));
     }
 }
 
@@ -411,8 +445,20 @@ pub fn debug(stream: Stream, indent_next: bool, msg: &str) {
     }
 }
 
+/// [`debug`] over `format_args!`; see [`info_fmt`].
+pub fn debug_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
+    if active(stream) {
+        message_text(DEBUG_TYPE, stream, indent_next, &alloc::fmt::format(args));
+    }
+}
+
 pub fn error(stream: Stream, indent_next: bool, msg: &str) {
     message_text(ERROR, stream, indent_next, msg);
+}
+
+/// [`error`] over `format_args!`; unconditional, as [`error`] is.
+pub fn error_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
+    message_text(ERROR, stream, indent_next, &alloc::fmt::format(args));
 }
 
 /// C's `messageClose`: end a block opened with `indent_next`.
@@ -652,14 +698,14 @@ pub fn debug_string(stream: Stream, msg: &str) {
 /// `infoStreamPrint` is — the nonlinear solver calls these per iteration.
 pub fn debug_int(stream: Stream, msg: &str, v: i32) {
     if active(stream) {
-        info(stream, false, &format!("{msg} {v}"));
+        info!(stream, false, "{msg} {v}");
     }
 }
 
 /// C's `debugDouble`: `"%s %18.10e"`; guarded as [`debug_int`] is.
 pub fn debug_double(stream: Stream, msg: &str, v: f64) {
     if active(stream) {
-        info(stream, false, &format!("{msg} {}", e(v, 18, 10)));
+        info!(stream, false, "{msg} {}", e(v, 18, 10));
     }
 }
 
@@ -669,7 +715,7 @@ pub fn debug_vector_double(stream: Stream, name: &str, v: &[f64]) {
     if !active(stream) {
         return;
     }
-    info(stream, true, &format!("{name} [{}-dim]", v.len()));
+    info!(stream, true, "{name} [{}-dim]", v.len());
     let mut line = String::new();
     for (i, x) in v.iter().enumerate() {
         if i > 0 {
@@ -694,7 +740,7 @@ pub fn debug_matrix_double(stream: Stream, name: &str, a: &[f64], n: usize, m: u
     if !active(stream) {
         return;
     }
-    info(stream, true, &format!("{name} [{n}x{m}-dim]"));
+    info!(stream, true, "{name} [{n}x{m}-dim]");
     for i in 0..n {
         let mut line = String::new();
         for j in 0..m {
@@ -711,7 +757,7 @@ pub fn debug_vector_int(stream: Stream, name: &str, v: &[i32]) {
     if !active(stream) {
         return;
     }
-    info(stream, true, &format!("{name} [{}-dim]", v.len()));
+    info!(stream, true, "{name} [{}-dim]", v.len());
     let mut line = String::new();
     for (i, x) in v.iter().enumerate() {
         if i > 0 {

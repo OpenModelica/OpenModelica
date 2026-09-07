@@ -62,3 +62,24 @@ data_2
   Each row contains the values of a variable at the sampled times.
   The corresponding time stamps are stored in ``data_2(1,:)``. ``data_2(2,1)``
   is the value of some variable at time ``data_2(1,1)``.
+  The simulation flag ``-single`` stores ``data_1`` and ``data_2`` in single
+  precision (matrix type 10, 4-byte elements) instead of double.
+The Arrow Result File Format
+----------------------------
+
+``outputFormat="arrow"`` (the simulation flag ``-outputFormat=arrow``) writes the
+result as `Apache Arrow <https://arrow.apache.org/>`__ IPC.
+
+Compared to the MATv4 file it stores each variable as a typed column, so one
+variable is read without striding through the others; it carries the unit,
+description and type of every variable inside the file; it stores a variable
+that changes only at events only where it changes; and it can hold ``String``
+variables, which the MATv4 file cannot.
+
+The format is specified in ``OMCompiler/SimulationRuntime/rust/openmodelica_arrow_writer/SPECIFICATION.md``.
+Nothing in it is specific to OpenModelica: it is meant to carry a Modelica
+result or an FMI one, and to be readable by any Arrow implementation without a
+Modelica tool in the loop.
+
+Under ``-mat_sync=N`` a batch holds at most ``N`` rows and reaches the file as
+soon as it is complete, so the file can be read while the simulation runs.

@@ -218,7 +218,7 @@ void OMSimulatorHighlighter::initializeSettings()
   mCommentFormat.setForeground(mpOMSimulatorEditorPage->getColor("Comment"));
   mQuotationFormat.setForeground(QColor(mpOMSimulatorEditorPage->getColor("Quotes")));
 
-  rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+  rule.mPattern = QRegularExpression("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
@@ -231,7 +231,7 @@ void OMSimulatorHighlighter::initializeSettings()
        << ">"
        << "/>";
   foreach (const QString &tag, tags) {
-    rule.mPattern = QRegExp(tag);
+    rule.mPattern = QRegularExpression(tag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
@@ -263,14 +263,14 @@ void OMSimulatorHighlighter::initializeSettings()
                   << "\\bssd:DefaultExperiment\\b";
   foreach (const QString &elementPattern, elementPatterns)
   {
-    rule.mPattern = QRegExp(elementPattern);
+    rule.mPattern = QRegularExpression(elementPattern);
     rule.mFormat = mElementFormat;
     mHighlightingRules.append(rule);
   }
 
   // Comments
-  mCommentStartExpression = QRegExp("<!--");
-  mCommentEndExpression = QRegExp("-->");
+  mCommentStartExpression = QRegularExpression("<!--");
+  mCommentEndExpression = QRegularExpression("-->");
 }
 
 /*!
@@ -346,12 +346,13 @@ void OMSimulatorHighlighter::highlightBlock(const QString &text)
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpOMSimulatorEditorPage->getColor("Text"));
   foreach (const HighlightingRule &rule, mHighlightingRules) {
-    QRegExp expression(rule.mPattern);
-    int index = expression.indexIn(text);
-    while (index >= 0) {
-      int length = expression.matchedLength();
+    QRegularExpression expression(rule.mPattern);
+    QRegularExpressionMatch match = expression.match(text);
+    while (match.hasMatch()) {
+      int index = match.capturedStart();
+      int length = match.capturedLength();
       setFormat(index, length, rule.mFormat);
-      index = expression.indexIn(text, index + length);
+      match = expression.match(text, index + length);
     }
   }
   highlightMultiLine(text);

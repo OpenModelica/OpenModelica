@@ -1,8 +1,8 @@
 //! The SimulationRuntime C ABI OMEdit uses for plotting/animation/formatting,
 //! backed by the Rust port so OMEdit links no OpenModelica C runtime library:
 //!
-//!  * MATLAB v4 result reader (`omc_*matlab4*`) over `read_matlab4::MatReader`,
-//!  * CSV result reader (`read_csv`/`read_csv_dataset`) over `result_readers::CsvReader`,
+//!  * MATLAB v4 result reader (`omc_*matlab4*`) over `openmodelica_result_files::MatReader`,
+//!  * CSV result reader (`read_csv`/`read_csv_dataset`) over `openmodelica_result_files::CsvReader`,
 //!  * the realtime stopwatch (`rt_ext_tp_*`) OMEdit's animation TimeManager uses,
 //!  * `ryu_hr_tdzp` number formatting (`StringHandler::number`).
 //!
@@ -17,8 +17,7 @@ use std::ffi::{CStr, CString, c_char, c_double, c_int, c_void};
 use std::panic::catch_unwind;
 use std::ptr;
 
-use openmodelica_script_util::SimulationResults::read_matlab4::MatReader;
-use openmodelica_script_util::SimulationResults::result_readers::CsvReader;
+use openmodelica_result_files::{CsvReader, MatReader};
 
 // ───────────────────────────── MATLAB v4 reader ──────────────────────────────
 

@@ -44,7 +44,6 @@
  */
 #![allow(non_upper_case_globals, non_snake_case, dead_code)]
 
-use std::sync::Arc;
 
 use arcstr::{literal, ArcStr};
 use metamodelica::list;
@@ -213,6 +212,13 @@ pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_G
     },
 };
 
+/// `@OMC_HDF5_LDFLAGS@`: the HDF5 a link line naming ModelicaMatIO needs, empty
+/// unless CMake found HDF5 (`OM_ENABLE_HDF5`).
+pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
+    Some(s) => s,
+    None => "",
+};
+
 /// Libraries linked into generated simulation code when --parmodauto
 /// (ParModelica auto) is enabled. Mirrors `Util/Autoconf.mo`, which hardcodes
 /// the pair below: the ParModelica auto runtime (`libParModelicaAuto`) ships
@@ -225,7 +231,7 @@ pub const corbaLibs: &str = "";
 /// requested at configure time; mirror the default.
 pub const hwloc: &str = "";
 
-pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
+pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
     std::sync::LazyLock::new(|| {
         if isWindows {
             // Autoconf.mo.omdev.mingw: constant list<String> systemLibs = {};
@@ -245,7 +251,7 @@ pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
 /// `$host_cpu` for the compilation target. Extend the chain when porting to
 /// a new architecture — an explicit "unknown" keeps path construction
 /// greppable rather than silently wrong.
-const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
+pub(crate) const target_arch_str: &str = if cfg!(target_arch = "x86_64") {
     "x86_64"
 } else if cfg!(target_arch = "aarch64") {
     "aarch64"

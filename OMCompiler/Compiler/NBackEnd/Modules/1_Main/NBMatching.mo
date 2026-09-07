@@ -49,6 +49,7 @@ protected
   // NF import
   import NFFunction.Function;
   import Variable = NFVariable;
+  import ComponentRef = NFComponentRef;
 
   // NB import
   import Adjacency = NBAdjacency;
@@ -65,6 +66,7 @@ protected
   // Util import
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
+  import Vector;
   import NBSlice.IntLst;
   import StringUtil;
 public
@@ -234,13 +236,13 @@ public
   function getAssignments
     "expands the assignments with -1 if needed"
     input Matching matching;
-    input array<list<Integer>> m;
-    input array<list<Integer>> mT;
+    input Adjacency.IntMatrix m;
+    input Adjacency.IntMatrix mT;
     output array<Integer> var_to_eqn;
     output array<Integer> eqn_to_var;
   protected
-    Integer nVars = arrayLength(mT);
-    Integer nEqns = arrayLength(m);
+    Integer nVars = Adjacency.IntMatrix.rows(mT);
+    Integer nEqns = Adjacency.IntMatrix.rows(m);
   algorithm
     var_to_eqn := Array.expandToSize(nVars, matching.var_to_eqn, -1);
     eqn_to_var := Array.expandToSize(nEqns, matching.eqn_to_var, -1);
@@ -317,6 +319,32 @@ public
       end for;
     end if;
   end getMatches;
+
+  function getMatchedVars
+    "returns the variables from the map that have at least one matched scalar element"
+    input Matching matching;
+    input Option<Adjacency.Mapping> mapping_opt;
+    input UnorderedMap<ComponentRef, Integer> vars_map;
+    input VariablePointers variables;
+    output list<VariablePointer> matched = {};
+  protected
+    Integer start, size;
+  algorithm
+    for arr_idx in UnorderedMap.valueList(vars_map) loop
+      (start, size) := match mapping_opt
+        local
+          Adjacency.Mapping mapping;
+        case SOME(mapping) then mapping.var_AtS[arr_idx];
+        else (arr_idx, 1);
+      end match;
+      for scal_idx in start:start+size-1 loop
+        if scal_idx <= arrayLength(matching.var_to_eqn) and matching.var_to_eqn[scal_idx] > 0 then
+          matched := ExpandableArray.get(arr_idx, variables.varArr) :: matched;
+          break;
+        end if;
+      end for;
+    end for;
+  end getMatchedVars;
 
 protected
   function toStringSingle
@@ -426,18 +454,18 @@ protected
   end augmentPath;
 
   function PFPlusExternal
-    input array<list<Integer>> m;
+    input Adjacency.IntMatrix m;
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input Boolean clear;
     // this needs partially = true to get computed. Otherwise it fails on singular partitions
     output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
-    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
+    Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = Adjacency.IntMatrix.nonZeroCount(m);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";
   algorithm
     BackendDAEEXT.setAssignment(n2, n1, ass2, ass1);
-    BackendDAEEXT.setAdjacencyMatrix(n1, n2, nonZero, m);
+    BackendDAEEXT.setAdjacencyMatrixFlat(n1, n2, nonZero, m.start, m.len, Vector.rawArray(m.data));
     BackendDAEEXT.matching(n1, n2, algIndx, cheap, 1.0, if clear then 1 else 0);
     BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;

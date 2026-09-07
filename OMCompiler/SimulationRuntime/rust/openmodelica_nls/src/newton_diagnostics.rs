@@ -35,12 +35,12 @@ pub struct Callbacks<'a> {
     pub jacobian: &'a mut dyn FnMut(&[f64], &mut [f64]),
 }
 
-fn info(msg: &str) {
-    omclog::info(STREAM, false, msg);
+macro_rules! info {
+    ($($arg:tt)*) => { omclog::info!(STREAM, false, $($arg)*) };
 }
 
-fn open(msg: &str) {
-    omclog::info(STREAM, true, msg);
+macro_rules! open {
+    ($($arg:tt)*) => { omclog::info!(STREAM, true, $($arg)*) };
 }
 
 fn close() {
@@ -114,7 +114,7 @@ pub fn newton_diagnostics(
     let m = x0.len();
     let name = |j: usize| names.get(j).map_or("", |s| s.as_str());
     let mut lambda = 1.0f64;
-    info(&format!("Running newton diagnostics for system {eq_index}"));
+    info!("Running newton diagnostics for system {eq_index}");
 
     // fx[i][j] = ∂f_i/∂x_j
     let mut fj = vec![0.0f64; m * m];
@@ -134,9 +134,9 @@ pub fn newton_diagnostics(
         let mut ipiv = vec![0i32; m];
         let info_ = openmodelica_lapack::dgesv(m, 1, &mut a, m, &mut ipiv, &mut b, m);
         if info_ > 0 {
-            info(&format!(
-                "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : {info_}"
-            ));
+            info!(
+                "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : {info_}",
+            );
         } else {
             for j in 0..m {
                 dx[j] = -b[j];
@@ -162,7 +162,7 @@ pub fn newton_diagnostics(
             for i in 0..m {
                 let v = (fj_pls[j * m + i] - fj_min[j * m + i]) / (2.0 * delta_x);
                 if v.is_nan() {
-                    info(&format!(
+                    info!(
                         "NaN detected: fxx[{}][{}][{}]: fxPls[{}][{}] = {}, fxMin[{}][{}] = {}, delta_x = {}\n",
                         i + 1,
                         j + 1,
@@ -173,8 +173,8 @@ pub fn newton_diagnostics(
                         i + 1,
                         j + 1,
                         omclog::f(fj_min[j * m + i], 0, 6),
-                        omclog::f(delta_x, 0, 6)
-                    ));
+                        omclog::f(delta_x, 0, 6),
+                    );
                     return;
                 }
                 fxx[i][k][j] = v;
@@ -190,11 +190,11 @@ pub fn newton_diagnostics(
     while failed {
         if !first {
             let d_lambda = 0.7;
-            info(&format!(
+            info!(
                 "Dampening factor lowered from {} to {}",
                 omclog::f(lambda, 7, 3),
-                omclog::f(lambda * d_lambda, 7, 3)
-            ));
+                omclog::f(lambda * d_lambda, 7, 3),
+            );
             lambda *= d_lambda;
         }
         first = false;
@@ -208,7 +208,7 @@ pub fn newton_diagnostics(
         (0..m).filter(|&i| libm::fabs(f_x1[i] + (lambda - 1.0) * f[i]) > eps_nl).collect();
     let p = n_idx.len();
     if p == 0 {
-        info("Newton diagnostics terminated: no non-linear equations!");
+        info!("Newton diagnostics terminated: no non-linear equations!");
         return;
     }
 
@@ -219,56 +219,56 @@ pub fn newton_diagnostics(
     let q = w_idx.len();
     let z_idx: Vec<usize> = (0..m).filter(|i| !w_idx.contains(i)).collect();
 
-    open("Information about the system from non-linear pattern");
-    info(&format!("Total number of equations    = {}", diag.pattern[0]));
-    info(&format!("Number of unknowns           = {}", diag.pattern[1]));
-    info(&format!("Number of non-linear entries = {}", diag.pattern[2]));
+    open!("Information about the system from non-linear pattern");
+    info!("Total number of equations = {}", diag.pattern[0]);
+    info!("Number of unknowns = {}", diag.pattern[1]);
+    info!("Number of non-linear entries = {}", diag.pattern[2]);
     close();
 
-    open("Information about the initial guess");
-    open("Vector x0 of unknowns");
+    open!("Information about the initial guess");
+    open!("Vector x0 of unknowns");
     for i in 0..m {
-        info(&format!("x0[{}] = {}  ({})", idx(i + 1, m, true), f14(x0[i]), name(i)));
+        info!("x0[{}] = {} ({})", idx(i + 1, m, true), f14(x0[i]), name(i));
     }
     close();
-    open("Residual function values of all equations f(x0)");
+    open!("Residual function values of all equations f(x0)");
     for i in 0..m {
         if libm::fabs(f[i]) > 1.0e-9 {
-            info(&format!("f[{}] = {}", idx(i + 1, m, false), f14(f[i])));
+            info!("f[{}] = {}", idx(i + 1, m, false), f14(f[i]));
         }
     }
     close();
-    open("Vector w0 of nonlinear unknowns");
+    open!("Vector w0 of nonlinear unknowns");
     for i in 0..q {
         // C numbers w0 from q+1 on in the two widest branches.
         let no = if m < 1000 { i + 1 } else { i + q + 1 };
-        info(&format!(
+        info!(
             "w0[{}] = x0[{}] = {}  ({})",
             idx(no, m, false),
             idx(w_idx[i] + 1, m, false),
             f14(x0[w_idx[i]]),
-            name(w_idx[i])
-        ));
+            name(w_idx[i]),
+        );
     }
     close();
     if m > q {
-        open("Vector z0 of nonlinear unknowns");
+        open!("Vector z0 of nonlinear unknowns");
         for i in 0..m - q {
-            info(&format!("z0[{}] = {}  ({})", idx(i + 1, m - q, false), f14(x0[z_idx[i]]), name(z_idx[i])));
+            info!("z0[{}] = {} ({})", idx(i + 1, m - q, false), f14(x0[z_idx[i]]), name(z_idx[i]));
         }
         close();
     }
-    open("Residual function values of all nonlinear equations n(w0)");
+    open!("Residual function values of all nonlinear equations n(w0)");
     for i in 0..p {
-        info(&format!(
+        info!(
             "n[{}] = f[{}] = {}",
             idx(i + 1, m, false),
             idx(n_idx[i] + 1, m, false),
-            f14(f[n_idx[i]])
-        ));
+            f14(f[n_idx[i]]),
+        );
     }
     close();
-    info(&format!("Final damping factor lambda = {}", omclog::g(lambda, 0, 3)));
+    info!("Final damping factor lambda = {}", omclog::g(lambda, 0, 3));
     close();
 
     // Largest residual of the nonlinear part: f + fz·dz over the linear unknowns.
@@ -323,7 +323,7 @@ pub fn newton_diagnostics(
 
     // Sigma = |diag(dw)⁻¹| · (-fx⁻¹ · (dxᵀ·fxx))[w,w] · diag(dw)
     let Some(mut inv_fx) = invert(m, &fx) else {
-        info("getInvJacobian: LU factorization could not be computed; the info status is : 1");
+        info!("getInvJacobian: LU factorization could not be computed; the info status is : 1");
         return;
     };
     let mut h_i = vec![vec![0.0f64; m]; m];
@@ -346,7 +346,7 @@ pub fn newton_diagnostics(
         w_diag[i][i] = dx[w_idx[i]];
     }
     let Some(mut inv_w) = invert(q, &w_diag) else {
-        info("getInvJacobian: LU factorization could not be computed; the info status is : 1");
+        info!("getInvJacobian: LU factorization could not be computed; the info status is : 1");
         return;
     };
     for row in inv_w.iter_mut() {
@@ -357,7 +357,7 @@ pub fn newton_diagnostics(
     let sigma = mat_mult(&mat_mult(&inv_w, &tmp2), &w_diag);
 
     print_results(m, p, q, &n_idx, &w_idx, x0, &alpha, &gamma, &sigma, names, diag);
-    info("Newton diagnostics complete!");
+    info!("Newton diagnostics complete!");
 }
 
 /// C's `PrintResults`: the indicators above `eps`, then ranked by variable and by
@@ -377,40 +377,40 @@ fn print_results(
 ) {
     let name = |j: usize| names.get(j).map_or("", |s| s.as_str());
     let eps = 1.0e-2;
-    open("Values of relevant indicators");
-    open(&format!("alpha_i > {}", omclog::f(eps, 5, 3)));
+    open!("Values of relevant indicators");
+    open!("alpha_i > {}", omclog::f(eps, 5, 3));
     for i in 0..p {
         if alpha[i] > eps {
-            info(&format!("alpha_{:<3} =  {}", n_idx[i] + 1, omclog::f(alpha[i], 5, 2)));
+            info!("alpha_{:<3} = {}", n_idx[i] + 1, omclog::f(alpha[i], 5, 2));
         }
     }
     close();
-    open(&format!("Gamma_ijk > {}", omclog::f(eps, 5, 3)));
+    open!("Gamma_ijk > {}", omclog::f(eps, 5, 3));
     for i in 0..p {
         for j in 0..q {
             for k in j..q {
                 if gamma[i][j][k] > eps {
-                    info(&format!(
+                    info!(
                         "Gamma_{:<4}_{:<4}_{:<4} =  {}",
                         n_idx[i] + 1,
                         w_idx[j] + 1,
                         w_idx[k] + 1,
-                        omclog::f(gamma[i][j][k], 5, 2)
-                    ));
+                        omclog::f(gamma[i][j][k], 5, 2),
+                    );
                 }
             }
         }
     }
     close();
-    open(&format!("sigma_jj > {}", omclog::f(eps, 5, 3)));
+    open!("sigma_jj > {}", omclog::f(eps, 5, 3));
     for i in 0..q {
         if libm::fabs(sigma[i][i]) > eps {
-            info(&format!(
+            info!(
                 "sigma_{:<4}_{:<4} = {}",
                 w_idx[i] + 1,
                 w_idx[i] + 1,
-                omclog::f(libm::fabs(sigma[i][i]), 5, 2)
-            ));
+                omclog::f(libm::fabs(sigma[i][i]), 5, 2),
+            );
         }
     }
     close();
@@ -461,23 +461,23 @@ fn print_results(
         picks
     };
 
-    open("Ranked indicators");
-    open("By variable");
-    info("Var no.  Var name                                  Initial guess  max(Gamma,sigma)");
-    info("-------  ----------------------------------------  -------------  ----------------");
+    open!("Ranked indicators");
+    open!("By variable");
+    info!("Var no.  Var name                                  Initial guess  max(Gamma,sigma)");
+    info!("-------  ----------------------------------------  -------------  ----------------");
     let sig_diag: Vec<f64> = (0..q).map(|i| libm::fabs(sigma[i][i])).collect();
     let mut printed: Vec<usize> = Vec::new();
     for pick in rank(&sig_diag, &|i| sig_diag[i]) {
         match pick {
             Pick::Scalar(s) => {
                 if !printed.contains(&s) {
-                    info(&format!(
+                    info!(
                         "{:>7}  {:>40}  {}    {}",
                         w_idx[s] + 1,
                         name(w_idx[s]),
                         omclog::g(x0[w_idx[s]], 13, 7),
-                        omclog::f(sig_diag[s], 5, 2)
-                    ));
+                        omclog::f(sig_diag[s], 5, 2),
+                    );
                     printed.push(s);
                 }
             }
@@ -486,13 +486,13 @@ fn print_results(
                 let pk = printed.contains(&k);
                 for (already, v) in [(pj, j), (pk, k)] {
                     if !already {
-                        info(&format!(
+                        info!(
                             "{:>7}  {:>40}  {}  {}",
                             w_idx[v] + 1,
                             name(w_idx[v]),
                             omclog::g(x0[w_idx[v]], 13, 7),
-                            omclog::f(gamma[i][j][k], 5, 2)
-                        ));
+                            omclog::f(gamma[i][j][k], 5, 2),
+                        );
                         printed.push(v);
                     }
                 }
@@ -501,9 +501,9 @@ fn print_results(
     }
     close();
 
-    open("By equation");
-    info("Eq no.  Eq idx    max(alpha,Gamma)");
-    info("------  ------    ----------------");
+    open!("By equation");
+    info!("Eq no.  Eq idx    max(alpha,Gamma)");
+    info!("------  ------    ----------------");
     let eq_idx = |i: usize| diag.eqns.get(i).copied().unwrap_or(0);
     let mut printed: Vec<usize> = Vec::new();
     for pick in rank(alpha, &|i| alpha[i]) {
@@ -511,18 +511,18 @@ fn print_results(
             Pick::Scalar(a) => {
                 if !printed.contains(&a) {
                     let v = if alpha[a] < 1.0e3 { omclog::f(alpha[a], 5, 2) } else { omclog::e(alpha[a], 5, 2) };
-                    info(&format!("{:>6}  {:>6}  {}", n_idx[a] + 1, eq_idx(n_idx[a]), v));
+                    info!("{:>6} {:>6} {}", n_idx[a] + 1, eq_idx(n_idx[a]), v);
                     printed.push(a);
                 }
             }
             Pick::Gamma(i, j, k) => {
                 if !printed.contains(&i) {
-                    info(&format!(
+                    info!(
                         "{:>6}  {:>6}  {}",
                         n_idx[i] + 1,
                         eq_idx(n_idx[i]),
-                        omclog::f(gamma[i][j][k], 5, 2)
-                    ));
+                        omclog::f(gamma[i][j][k], 5, 2),
+                    );
                     printed.push(i);
                 }
             }

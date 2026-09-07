@@ -2229,7 +2229,7 @@ algorithm
     Option<DAE.Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
-    Option<DAE.Exp> startOrigin;
+    Option<DAE.StartOrigin> startOrigin;
   case DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin)
     algorithm
@@ -2242,7 +2242,6 @@ algorithm
     fixed := replaceOptionExp(fixed,repl);
     nominal := replaceOptionExp(nominal,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2255,7 +2254,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2265,7 +2263,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2274,7 +2271,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2285,7 +2281,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   else

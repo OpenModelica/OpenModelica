@@ -234,7 +234,7 @@ pub(crate) fn build_recon_info(
     if !plan.present {
         return Ok(None);
     }
-    let list = |l: &Arc<List<SimCodeVar::SimVar>>| -> Result<Vec<ReconVar>> {
+    let list = |l: &List<SimCodeVar::SimVar>| -> Result<Vec<ReconVar>> {
         let mut out = Vec::new();
         for sv in lst(l) {
             let key = sim_cref_key(&sv.name)?;

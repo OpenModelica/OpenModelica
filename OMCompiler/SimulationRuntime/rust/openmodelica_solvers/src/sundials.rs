@@ -92,16 +92,14 @@ unsafe extern "C" fn err_handler(
         false => unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned(),
     };
     crate::omclog::info(crate::omclog::SOLVER, true, "#### SUNDIALS error message #####");
-    crate::omclog::info(
+    crate::omclog::info!(
         crate::omclog::SOLVER,
         false,
-        &alloc::format!(
-            " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
-            text(func),
-            text(file)
-        ),
+        " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
+        text(func),
+        text(file),
     );
-    crate::omclog::info(crate::omclog::SOLVER, false, &alloc::format!(" Message: {}", text(msg)));
+    crate::omclog::info!(crate::omclog::SOLVER, false, " Message: {}", text(msg));
     crate::omclog::close(crate::omclog::SOLVER);
 }
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
@@ -579,6 +577,13 @@ struct Sens {
 }
 
 impl Ida {
+    /// The `IDA` handle, for a callback that has to ask IDA something the callback
+    /// signature does not carry — [`ida_current_step`], which a difference-quotient
+    /// Jacobian's increment scales with, and which changes step by step.
+    pub fn mem_ptr(&self) -> *mut c_void {
+        self.mem
+    }
+
     /// `nnz` is the sparse pattern's nonzero count ([`IdaLs::Klu`] only); `jac`
     /// is `None` for IDA's internal difference-quotient Jacobian. `user_data` is
     /// bound separately, by [`set_user_data`](Ida::set_user_data).
@@ -743,16 +748,31 @@ impl Ida {
     }
 
     fn log_calc_ic(&self, flag: c_int) {
-        crate::omclog::info(
+        crate::omclog::info!(
             crate::omclog::SOLVER,
             false,
-            &alloc::format!("##IDA## IDACalcIC run status {flag}.\nIterations : {}\n", self.nonlin_iters()),
+            "##IDA## IDACalcIC run status {flag}.\nIterations : {}\n",
+            self.nonlin_iters(),
         );
     }
 
     /// Read what `IDACalcIC` settled on back into `y`/`yp`.
     pub fn consistent_ic(&mut self) -> bool {
         unsafe { IDAGetConsistentIC(self.mem, self.y, self.yp) == IDA_SUCCESS }
+    }
+
+    /// C's `updateSolverNominals`: the tolerances again, once the nominals the block
+    /// was built with are final. `IDASVtolerances` clears `ida_edata` for
+    /// `IDAInitialSetup` to put back, which `IDACalcIC` has already run — hence the
+    /// re-initialize.
+    pub fn set_tolerances(&mut self, t: f64, rtol: f64, atol: &[f64]) -> bool {
+        unsafe {
+            core::ptr::copy_nonoverlapping(atol.as_ptr(), N_VGetArrayPointer(self.atol), atol.len());
+            if IDASVtolerances(self.mem, rtol, self.atol) != IDA_SUCCESS {
+                return false;
+            }
+        }
+        self.reinit(t)
     }
 
     /// C's `ida_event_update`: `IDACalcIC` over the algebraic unknowns and every
@@ -764,10 +784,11 @@ impl Ida {
         if h < f64::EPSILON {
             h = f64::EPSILON;
             self.set_init_step(h);
-            crate::omclog::info(
+            crate::omclog::info!(
                 crate::omclog::SOLVER,
                 false,
-                &alloc::format!("##IDA## corrected step-size at {}", crate::omclog::g(h, 0, 15)),
+                "##IDA## corrected step-size at {}",
+                crate::omclog::g(h, 0, 15),
             );
         }
         let mut flag = self.calc_ic(t + h);

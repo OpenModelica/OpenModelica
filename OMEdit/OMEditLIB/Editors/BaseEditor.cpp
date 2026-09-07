@@ -50,6 +50,7 @@
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <QTextDocumentFragment>
 #include <QDockWidget>
 
@@ -2927,7 +2928,7 @@ void FindReplaceWidget::validateRegularExpression(const QString &text)
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
     return; // nothing to validate
   }
-  QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+  QRegularExpression reg(text, (mpCaseSensitiveCheckBox->isChecked() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption));
   if (!reg.isValid()) {
     QMessageBox::critical( this, "Find", reg.errorString());
   }

@@ -51,6 +51,7 @@ import BackendDAEUtil;
 import BaseHashSet;
 import BaseHashTable;
 import ComponentReference;
+import ClassInf;
 import ComponentReferenceBasics;
 import CommonSubExpression;
 import DAEUtil;
@@ -69,6 +70,7 @@ import SCodeUtil;
 import StringUtil;
 import System;
 import Types;
+import TypesDump;
 import Util;
 import ExpressionBasics;
 import Dump;
@@ -168,7 +170,7 @@ end setVarStartValueOption;
 public function setVarStartOrigin "author: Frenkel TUD
   Sets the startOrigin attribute of a variable."
   input BackendDAE.Var inVar;
-  input Option<DAE.Exp> startOrigin;
+  input Option<DAE.StartOrigin> startOrigin;
   output BackendDAE.Var outVar = inVar;
 protected
   Option<DAE.VariableAttributes> oattr;
@@ -316,7 +318,7 @@ end varHasNoStartValue;
 public function varStartOrigin "author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
-  output Option<DAE.Exp> so;
+  output Option<DAE.StartOrigin> so;
 protected
    Option<DAE.VariableAttributes> attr;
 algorithm
@@ -2369,6 +2371,7 @@ public function copyVariables
 algorithm
   outVariables := inVariables;
   outVariables.crefIndices := arrayCopy(inVariables.crefIndices);
+  outVariables.prefixIndices := arrayCopy(inVariables.prefixIndices);
   outVariables.varArr := copyArray(inVariables.varArr);
 end copyVariables;
 
@@ -2382,11 +2385,40 @@ protected
   BackendDAE.VariableArray arr;
 algorithm
   arr_size := max(inSize, BaseHashTable.lowBucketSize);
-  buckets := realInt(intReal(arr_size) * 1.4);
+  buckets := bucketCount(arr_size);
   indices := arrayCreate(buckets, {});
   arr := vararrayEmpty(arr_size);
-  outVariables := BackendDAE.VARIABLES(indices, arr, buckets, 0);
+  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0);
 end emptyVars;
+
+protected function bucketCount
+  input Integer numVars;
+  output Integer buckets = realInt(intReal(max(numVars, BaseHashTable.lowBucketSize)) * 1.4);
+end bucketCount;
+
+protected function growBuckets
+  "Rebuilds the cref and prefix indices with buckets for twice the current
+   number of variables; the variable array is kept as it is."
+  input output BackendDAE.Variables vars;
+protected
+  array<list<BackendDAE.CrefIndex>> indices;
+  Integer buckets, idx;
+  BackendDAE.Var v;
+algorithm
+  buckets := bucketCount(2 * vars.numberOfVars);
+  indices := arrayCreate(buckets, {});
+  vars.crefIndices := indices;
+  vars.prefixIndices := arrayCreate(buckets, {});
+  vars.bucketSize := buckets;
+  for i in 1:vars.varArr.numberOfElements loop
+    if isSome(vars.varArr.varOptArr[i]) then
+      SOME(v) := vars.varArr.varOptArr[i];
+      idx := intMod(ComponentReferenceBasics.hashComponentRef(v.varName), buckets) + 1;
+      arrayUpdate(indices, idx, BackendDAE.CREFINDEX(v.varName, i - 1) :: indices[idx]);
+      updatePrefixIndices(v.varName, i - 1, vars);
+    end if;
+  end for;
+end growBuckets;
 
 public function emptyVarsSized
   "Returns a BackendDAE.Variables data structure that is empty."
@@ -2823,7 +2855,9 @@ algorithm
 end removeAliasVars;
 
 public function removeVar
-  "Removes a var from the vararray but does not scaling down the array"
+  "Removes a var from the vararray but does not scaling down the array.
+   The prefix index keeps the index: getVar skips it once the slot is empty,
+   and indices are never reused, so dropping it there would only cost a scan."
   input Integer inIndex;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
@@ -2835,13 +2869,15 @@ protected
   Integer buckets, num_vars, hash_idx;
   DAE.ComponentRef cr;
 algorithm
-  BackendDAE.VARIABLES(indices, arr, buckets, num_vars) := inVariables;
+  BackendDAE.VARIABLES(crefIndices = indices, varArr = arr, bucketSize = buckets, numberOfVars = num_vars) := inVariables;
   (arr, outVar as BackendDAE.VAR(varName = cr)) := vararrayDelete(arr, inIndex);
   hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(cr), buckets) + 1;
   cr_indices := indices[hash_idx];
   cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
-  outVariables := BackendDAE.VARIABLES(indices, arr, buckets, num_vars-1);
+  outVariables := inVariables;
+  outVariables.varArr := arr;
+  outVariables.numberOfVars := num_vars - 1;
 end removeVar;
 
 protected function removeVar2
@@ -3019,18 +3055,25 @@ public function addVar
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables = inVariables;
 protected
-  Integer hash_idx, arr_idx;
+  Integer hash, hash_idx, arr_idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(inVar.varName), inVariables.bucketSize) + 1;
+  hash := ComponentReferenceBasics.hashComponentRef(inVar.varName);
+  hash_idx := intMod(hash, inVariables.bucketSize) + 1;
   indices := arrayGet(inVariables.crefIndices, hash_idx);
 
   try
     BackendDAE.CREFINDEX(index=arr_idx) := List.getMemberOnTrue(inVar.varName, indices, crefIndexEqualCref);
     outVariables.varArr := vararraySetnth(inVariables.varArr, arr_idx+1, inVar);
   else
+    if outVariables.numberOfVars >= outVariables.bucketSize then
+      outVariables := growBuckets(outVariables);
+      hash_idx := intMod(hash, outVariables.bucketSize) + 1;
+      indices := arrayGet(outVariables.crefIndices, hash_idx);
+    end if;
     outVariables.varArr := vararrayAdd(outVariables.varArr, inVar);
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
+    updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
   end try;
 end addVar;
@@ -3066,12 +3109,15 @@ protected
   Integer bsize, num_vars, idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
+  outVariables := if inVariables.numberOfVars >= inVariables.bucketSize then growBuckets(inVariables) else inVariables;
+  BackendDAE.VARIABLES(crefIndices = hashvec, varArr = varr, bucketSize = bsize, numberOfVars = num_vars) := outVariables;
   idx := intMod(ComponentReferenceBasics.hashComponentRef(inVar.varName), bsize) + 1;
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
   arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
-  outVariables := BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars + 1);
+  updatePrefixIndices(inVar.varName, num_vars, outVariables);
+  outVariables.varArr := varr;
+  outVariables.numberOfVars := num_vars + 1;
 end addNewVar;
 
 public function addVariables
@@ -3187,56 +3233,369 @@ public function getVar
   outputs: (Var list, int list /* indexes */)"
   input DAE.ComponentRef cr;
   input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst;
+  output list<BackendDAE.Var> outVarLst = {};
+  output list<Integer> outIntegerLst = {};
+protected
+  BackendDAE.Var v;
+  Integer hash, indx, depth;
+  Boolean found;
+  list<DAE.ComponentRef> crlst;
+  DAE.ComponentRef cr1;
+  list<Integer> indices, live = {};
+  Integer nsubs, bucket;
+  Boolean died = false;
+  Option<BackendDAE.Var> var_opt;
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
 algorithm
-  (outVarLst,outIntegerLst) := matchcontinue inVariables
-    local
-      BackendDAE.Var v;
-      Integer indx;
-      list<Integer> indxs;
-      list<BackendDAE.Var> vLst;
-      list<DAE.ComponentRef> crlst;
-      DAE.ComponentRef cr1;
-    case _
-      algorithm
-        (v,indx) := getVar2(cr, inVariables) "if scalar found, return it";
-      then
-        ({v},if isPresent(outIntegerLst) then {indx} else {});
-    case _ /* check if array or record */
-      algorithm
-        crlst := ComponentReference.expandCref(cr,true);
-        if isPresent(outIntegerLst) then
-          (vLst as _::_,indxs) := getVarLst(crlst,inVariables);
-        else
-          (vLst as _::_,_) := getVarLst(crlst,inVariables);
-          indxs := {};
+  hash := ComponentReferenceBasics.hashComponentRef(cr);
+  try
+    (v, indx) := getVarHashed(cr, hash, inVariables);
+    outVarLst := {v};
+    outIntegerLst := if isPresent(outIntegerLst) then {indx} else {};
+    found := true;
+  else
+    found := false;
+  end try;
+  if found then
+    return;
+  end if;
+
+  if isPrefixQuery(cr) then
+    (indices, depth, nsubs, bucket) := getPrefixIndices(cr, hash, inVariables);
+    (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
+    // latest added first, as expanding cr and looking its elements up gave
+    for i in listReverse(indices) loop
+      var_opt := arrayGet(inVariables.varArr.varOptArr, i + 1);
+      if isSome(var_opt) then
+        // walking oldest first, so consing restores the stored order
+        live := i :: live;
+        SOME(v) := var_opt;
+        if isElementOf(v.varName, depth, ty, listLength(dims)) then
+          outVarLst := v :: outVarLst;
+          outIntegerLst := (i + 1) :: outIntegerLst;
         end if;
-      then
-        (vLst,indxs);
+      else
+        died := true;
+      end if;
+    end for;
+    if died then
+      setPrefixIndices(cr, depth, nsubs, bucket, live, inVariables);
+    end if;
+    if listEmpty(outVarLst) then
+      fail();
+    end if;
+    return;
+  end if;
+
+  if isScalarQuery(cr) then
+    fail();
+  end if;
+
+  try
+    crlst := ComponentReference.expandCref(cr, true);
+    (outVarLst as _::_, outIntegerLst) := getVarLst(crlst, inVariables);
+  else
     // try again check if variable indexes used
-    case _
-      algorithm
-        // replace variables with WHOLEDIM()
-        (cr1,true) := replaceVarWithWholeDim(cr, false);
-        crlst := ComponentReference.expandCref(cr1,true);
-        if isPresent(outIntegerLst) then
-          (vLst as _::_,indxs) := getVarLst(crlst,inVariables);
-        else
-          (vLst as _::_,_) := getVarLst(crlst,inVariables);
-          indxs := {};
-        end if;
-      then
-        (vLst,indxs);
-    /* failure
-    case (_,_)
-      algorithm
-        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReferenceBasics.printComponentRefStr(cr));
-      then
-        fail();
-     */
-  end matchcontinue;
+    (cr1, true) := replaceVarWithWholeDim(cr, false);
+    crlst := ComponentReference.expandCref(cr1, true);
+    (outVarLst as _::_, outIntegerLst) := getVarLst(crlst, inVariables);
+  end try;
 end getVar;
+
+protected function isPrefixQuery
+  "Whether getVar can answer cr from the prefix index: an array or record
+   with constant indices, every qualifier but the last fully indexed, so that
+   expandCref would only append subscripts and record fields to cr."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_IDENT()
+      then List.all(cr.subscriptLst, isIntSubscript) and isExpandableType(cr.identType);
+    case DAE.CREF_QUAL()
+      then List.all(cr.subscriptLst, isIntSubscript)
+        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+        and isPrefixQuery(cr.componentRef);
+    else false;
+  end match;
+end isPrefixQuery;
+
+protected function isExpandableType
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_ARRAY() then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then true;
+    else false;
+  end match;
+end isExpandableType;
+
+protected function isScalarQuery
+  "Whether expandCref would return cr itself: every identifier fully indexed
+   with constant subscripts and the last one not a record. The hash miss
+   before this check is then final."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_IDENT()
+      then List.all(cr.subscriptLst, isIntSubscript)
+        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+        and not Types.isRecord(Types.arrayElementType(cr.identType));
+    case DAE.CREF_QUAL()
+      then List.all(cr.subscriptLst, isIntSubscript)
+        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+        and isScalarQuery(cr.componentRef);
+    else false;
+  end match;
+end isScalarQuery;
+
+protected function isElementOf
+  "Whether var, which the query (depth qualifiers, last one of element type ty
+   with ndims dimensions) is a proper prefix of, is one of the elements
+   expandCref lists for it: fully indexed, then only record fields. Jacobian
+   seeds like x.SeedNLSJac0 extend the scalar x without being part of it."
+  input DAE.ComponentRef var;
+  input Integer depth;
+  input DAE.Type ty;
+  input Integer ndims;
+  output Boolean b = false;
+protected
+  DAE.ComponentRef v = var;
+  DAE.Type t = ty;
+  Integer n = ndims;
+  list<DAE.Dimension> dims;
+  Option<DAE.Type> fty;
+algorithm
+  for i in 2:depth loop
+    v := ComponentReference.crefRest(v);
+  end for;
+  while listLength(ComponentReference.crefFirstSubs(v)) == n loop
+    if ComponentReference.crefIsIdent(v) then
+      b := true;
+      return;
+    end if;
+    v := ComponentReference.crefRest(v);
+    fty := recordFieldType(t, ComponentReferenceBasics.crefFirstIdent(v));
+    if isNone(fty) then
+      return;
+    end if;
+    (t, dims) := TypesDump.flattenArrayType(Util.getOption(fty));
+    n := listLength(dims);
+  end while;
+end isElementOf;
+
+protected function recordFieldType
+  input DAE.Type ty;
+  input String name;
+  output Option<DAE.Type> fty = NONE();
+algorithm
+  fty := match ty
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+      algorithm
+        for f in ty.varLst loop
+          if f.name == name then
+            fty := SOME(f.ty);
+            break;
+          end if;
+        end for;
+      then fty;
+    else NONE();
+  end match;
+end recordFieldType;
+
+protected function isIntSubscript
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.INDEX(DAE.ICONST()) then true;
+    else false;
+  end match;
+end isIntSubscript;
+
+protected function getPrefixIndices
+  "0-based indices of the variables cr is a proper prefix of, latest added
+   first. Removed variables keep their index here; the caller drops the ones
+   whose slot in the variable array is gone and hands the rest back to
+   setPrefixIndices."
+  input DAE.ComponentRef cr;
+  input Integer hash;
+  input BackendDAE.Variables vars;
+  output list<Integer> indices;
+  output Integer depth = 0 "qualifiers of cr";
+  output Integer nsubs = 0 "subscripts on the last qualifier";
+  output Integer bucket;
+protected
+  DAE.ComponentRef c = cr;
+  Boolean last = false;
+algorithm
+  while not last loop
+    (nsubs, last, c) := match c
+      case DAE.CREF_IDENT() then (listLength(c.subscriptLst), true, c);
+      case DAE.CREF_QUAL() then (0, false, c.componentRef);
+    end match;
+    depth := depth + 1;
+  end while;
+  bucket := intMod(hash, vars.bucketSize) + 1;
+  for e in arrayGet(vars.prefixIndices, bucket) loop
+    if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
+      indices := e.indices;
+      return;
+    end if;
+  end for;
+  fail();
+end getPrefixIndices;
+
+protected function setPrefixIndices
+  "Narrows the entry cr names to indices, dropping the entry when none is left.
+   getVar uses it to retire the indices of removed variables it just walked
+   past, so a prefix is scanned for them at most once."
+  input DAE.ComponentRef cr;
+  input Integer depth;
+  input Integer nsubs;
+  input Integer bucket;
+  input list<Integer> indices;
+  input BackendDAE.Variables vars;
+protected
+  list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, bucket), acc = {};
+  BackendDAE.PrefixIndex e;
+algorithm
+  while not listEmpty(entries) loop
+    e :: entries := entries;
+    if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
+      e.indices := indices;
+      arrayUpdate(vars.prefixIndices, bucket, List.append_reverse(acc, if listEmpty(indices) then entries else e :: entries));
+      return;
+    end if;
+    acc := e :: acc;
+  end while;
+end setPrefixIndices;
+
+protected function updatePrefixIndices
+  "Adds index under every proper prefix of cr that isPrefixQuery
+   can name: each qualifier of an array or record type, with each leading part
+   of its subscripts. The hash of a prefix is the sum
+   ComponentReferenceBasics.hashComponentRef would give it, so every qualifier
+   is walked even where nothing is stored."
+  input DAE.ComponentRef cr;
+  input Integer index;
+  input BackendDAE.Variables vars;
+protected
+  DAE.ComponentRef c = cr;
+  Integer hash = 0, depth = 0, nsubs, factor, count;
+  list<DAE.Subscript> subs;
+  DAE.Type ty;
+  Boolean last, ok, store;
+algorithm
+  while true loop
+    (subs, ty, last, ok) := match c
+      case DAE.CREF_IDENT() then (c.subscriptLst, c.identType, true, true);
+      case DAE.CREF_QUAL() then (c.subscriptLst, c.identType, false, true);
+      else ({}, DAE.T_UNKNOWN_DEFAULT, true, false);
+    end match;
+    if not ok then
+      return;
+    end if;
+    depth := depth + 1;
+    hash := hash + stringHashDjb2(ComponentReferenceBasics.crefFirstIdent(c));
+    count := listLength(subs);
+    nsubs := 0;
+    factor := 1;
+    store := isExpandableType(ty);
+    if store and not (last and count == 0) then
+      updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
+    end if;
+    for sub in subs loop
+      hash := hash + ComponentReferenceBasics.hashSubscript(sub) * factor;
+      factor := factor * 1000;
+      nsubs := nsubs + 1;
+      if store and not (last and nsubs == count) then
+        updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
+      end if;
+    end for;
+    if last then
+      return;
+    end if;
+    c := match c case DAE.CREF_QUAL() then c.componentRef; end match;
+  end while;
+end updatePrefixIndices;
+
+protected function updatePrefixIndex
+  input DAE.ComponentRef cr;
+  input Integer depth;
+  input Integer nsubs;
+  input Integer hash;
+  input Integer index;
+  input BackendDAE.Variables vars;
+protected
+  Integer b = intMod(hash, vars.bucketSize) + 1;
+  list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, b), acc = {};
+  BackendDAE.PrefixIndex e;
+algorithm
+  while not listEmpty(entries) loop
+    e :: entries := entries;
+    if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
+      e.indices := index :: e.indices;
+      arrayUpdate(vars.prefixIndices, b, List.append_reverse(acc, e :: entries));
+      return;
+    end if;
+    acc := e :: acc;
+  end while;
+  arrayUpdate(vars.prefixIndices, b, BackendDAE.PREFIXINDEX(cr, depth, nsubs, {index}) :: arrayGet(vars.prefixIndices, b));
+end updatePrefixIndex;
+
+protected function prefixEqual
+  "Whether the first depth qualifiers of cr1 and cr2 are equal, comparing only
+   the first nsubs subscripts of the last one. Both must be at least that long."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  input Integer depth;
+  input Integer nsubs;
+  output Boolean equal = false;
+protected
+  DAE.ComponentRef c1 = cr1, c2 = cr2;
+  list<DAE.Subscript> s1, s2;
+  DAE.Subscript sub1, sub2;
+algorithm
+  for i in 1:depth-1 loop
+    if not (ComponentReferenceBasics.crefFirstIdent(c1) == ComponentReferenceBasics.crefFirstIdent(c2)
+            and ExpressionBasics.subscriptEqual(ComponentReference.crefFirstSubs(c1), ComponentReference.crefFirstSubs(c2))) then
+      return;
+    end if;
+    c1 := ComponentReference.crefRest(c1);
+    c2 := ComponentReference.crefRest(c2);
+  end for;
+  if ComponentReferenceBasics.crefFirstIdent(c1) <> ComponentReferenceBasics.crefFirstIdent(c2) then
+    return;
+  end if;
+  s1 := ComponentReference.crefFirstSubs(c1);
+  s2 := ComponentReference.crefFirstSubs(c2);
+  for i in 1:nsubs loop
+    sub1 :: s1 := s1;
+    sub2 :: s2 := s2;
+    if not subscriptEq(sub1, sub2) then
+      return;
+    end if;
+  end for;
+  equal := true;
+end prefixEqual;
+
+protected function subscriptEq
+  input DAE.Subscript sub1;
+  input DAE.Subscript sub2;
+  output Boolean equal;
+algorithm
+  equal := match (sub1, sub2)
+    case (DAE.WHOLEDIM(), DAE.WHOLEDIM()) then true;
+    case (DAE.INDEX(), DAE.INDEX()) then ExpressionBasics.expEqual(sub1.exp, sub2.exp);
+    case (DAE.SLICE(), DAE.SLICE()) then ExpressionBasics.expEqual(sub1.exp, sub2.exp);
+    case (DAE.WHOLE_NONEXP(), DAE.WHOLE_NONEXP()) then ExpressionBasics.expEqual(sub1.exp, sub2.exp);
+    else false;
+  end match;
+end subscriptEq;
 
 public function getVarSingle
 " Return a variable and its index in the vector.
@@ -3464,6 +3823,16 @@ public function getVar2
   input BackendDAE.Variables inVariables;
   output BackendDAE.Var outVar;
   output Integer outIndex;
+algorithm
+  (outVar, outIndex) := getVarHashed(inCref, ComponentReferenceBasics.hashComponentRef(inCref), inVariables);
+end getVar2;
+
+protected function getVarHashed
+  input DAE.ComponentRef inCref;
+  input Integer hash;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Var outVar;
+  output Integer outIndex;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
   BackendDAE.VariableArray arr;
@@ -3472,13 +3841,13 @@ protected
   DAE.ComponentRef cr;
 algorithm
   BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
-  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(inCref), buckets) + 1;
+  hash_idx := intMod(hash, buckets) + 1;
   cr_indices := indices[hash_idx];
   BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
   outIndex := outIndex + 1;
   outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
   true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
-end getVar2;
+end getVarHashed;
 
 protected function crefIndexEqualCref
   input DAE.ComponentRef inCref;
@@ -3759,17 +4128,17 @@ public function traverseBackendDAEVarsWithUpdate<ArgT>
     output ArgT outArg;
   end FuncType;
 protected
-  array<list<BackendDAE.CrefIndex>> indices;
-  Integer buckets, num_vars1, num_vars2;
+  Integer num_vars1, num_vars2;
   array<Option<BackendDAE.Var>> vars;
 algorithm
-  BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, vars), buckets, num_vars2) := inVariables;
+  BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(num_vars1, vars), numberOfVars = num_vars2) := inVariables;
   if num_vars1 <> num_vars2 then
     Error.addInternalError("function traverseBackendDAEVarsWithUpdate failed", sourceInfo());
     fail();
   end if;
   (vars, outArg) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(vars, inFunc, traverseBackendDAEVarsWithUpdate2, inArg, num_vars1);
-  outVariables := BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, vars), buckets, num_vars2);
+  outVariables := inVariables;
+  outVariables.varArr := BackendDAE.VARIABLE_ARRAY(num_vars1, vars);
 end traverseBackendDAEVarsWithUpdate;
 
 protected function traverseBackendDAEVarsWithUpdate2<ArgT>
@@ -3980,7 +4349,8 @@ public function mergeAliasVars "author: Frenkel TUD 2011-04"
 protected
   BackendDAE.Var v1,v2;
   Boolean fixed,fixeda;
-  Option<DAE.Exp> sv,sva,so,soa;
+  Option<DAE.Exp> sv,sva;
+  Option<DAE.StartOrigin> so,soa;
 algorithm
   // get attributes
   // fixed
@@ -4003,11 +4373,11 @@ protected function mergeStartFixed
   input BackendDAE.Var inVar;
   input Boolean fixed;
   input Option<DAE.Exp> sv;
-  input Option<DAE.Exp> so;
+  input Option<DAE.StartOrigin> so;
   input BackendDAE.Var inAVar;
   input Boolean fixeda;
   input Option<DAE.Exp> sva;
-  input Option<DAE.Exp> soa;
+  input Option<DAE.StartOrigin> soa;
   input Boolean negate;
   input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output BackendDAE.Var outVar;
@@ -4019,7 +4389,7 @@ algorithm
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
       Integer i,ia;
-      Option<DAE.Exp> origin;
+      Option<DAE.StartOrigin> origin;
       DAE.Type ty,tya;
     // legal cases one fixed the other one not fixed, use the fixed one
     case (v, true, _, _, false, _)
@@ -4133,7 +4503,7 @@ protected function mergeStartFixed1 "author: Frenkel TUD 2011-04"
   input DAE.Exp sv;
   input DAE.ComponentRef cra;
   input DAE.Exp sva;
-  input Option<DAE.Exp> soa;
+  input Option<DAE.StartOrigin> soa;
   input Boolean negate;
   input String s4;
   output BackendDAE.Var outVar;
@@ -4203,35 +4573,29 @@ protected function getNonZeroStart
 "author: Frenkel TUD 2011-04"
   input Boolean mustBeEqual;
   input DAE.Exp exp1;
-  input Option<DAE.Exp> so "StartOrigin";
+  input Option<DAE.StartOrigin> so;
   input DAE.Exp exp2;
-  input Option<DAE.Exp> sao "StartOrigin";
+  input Option<DAE.StartOrigin> sao;
   input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output DAE.Exp outExp;
-  output Option<DAE.Exp> outStartOrigin;
+  output Option<DAE.StartOrigin> outStartOrigin;
 algorithm
   (outExp,outStartOrigin) :=
   matchcontinue mustBeEqual
     local
       DAE.Exp exp2_1,exp1_1;
-      Integer i,ia;
       Boolean b1,b2;
-      Option<DAE.Exp> origin;
+      Option<DAE.StartOrigin> origin;
     case _
       algorithm
         true := ExpressionBasics.expEqual(exp1,exp2);
-        // use highest origin
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        origin := if intGt(ia,i) then sao else so;
+        origin := if startOriginCompare(sao,so) < 0 then sao else so;
       then (exp1,origin);
     case false
       algorithm
-        // if one is bound and the other not use the bound one
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        false := intEq(i,ia);
-        (exp1_1,origin) := if intGt(ia,i) then (exp2,sao) else (exp1,so);
+        // strongest origin wins
+        false := startOriginCompare(so,sao) == 0;
+        (exp1_1,origin) := if startOriginCompare(sao,so) < 0 then (exp2,sao) else (exp1,so);
       then
         (exp1_1,origin);
     case _
@@ -4243,26 +4607,54 @@ algorithm
         (exp2_1,_) := ExpressionSimplify.condsimplify(b2,exp2_1);
         true := ExpressionBasics.expEqual(exp1_1, exp2_1);
         exp1_1 := if b1 then exp1 else exp2;
-        // use highest origin
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        origin := if intGt(ia,i) then sao else so;
+        origin := if startOriginCompare(sao,so) < 0 then sao else so;
       then
         (exp1_1,origin);
   end matchcontinue;
 end getNonZeroStart;
 
-public function startOriginToValue
-  input Option<DAE.Exp> startOrigin;
-  output Integer i;
+public function startOriginCompare
+  "Compares two start origins by MLS 8.6.2 priority:
+   negative if so1 is stronger, 0 if equal, positive if so2 is stronger."
+  input Option<DAE.StartOrigin> so1;
+  input Option<DAE.StartOrigin> so2;
+  output Integer cmp;
+protected
+  Integer k1,a1,r1,k2,a2,r2;
 algorithm
-  i := match startOrigin
-    case NONE() then 0;
-    case SOME(DAE.SCONST("undefined")) then 1;
-    case SOME(DAE.SCONST("type")) then 2;
-    case SOME(DAE.SCONST("binding")) then 3;
+  (k1,a1,r1) := startOriginRank(so1);
+  (k2,a2,r2) := startOriginRank(so2);
+  cmp := if k1 <> k2 then k1 - k2 elseif a1 <> a2 then a1 - a2 else r1 - r2;
+end startOriginCompare;
+
+protected function startOriginRank
+  "Rank triple for a start origin, lexicographic, lower = stronger.
+   A start set on a component (CONFIDENCE) beats one set by its type
+   (TYPE_CONFIDENCE), which beats the legacy old-frontend origins in their old
+   relative order."
+  input Option<DAE.StartOrigin> so;
+  output Integer kind;
+  output Integer actual = 0;
+  output Integer raw = 0;
+algorithm
+  kind := match so
+    local
+      DAE.StartOrigin origin;
+    case SOME(origin as DAE.StartOrigin.CONFIDENCE())
+      algorithm
+        actual := origin.actual;
+        raw := origin.raw;
+      then 0;
+    case SOME(origin as DAE.StartOrigin.TYPE_CONFIDENCE())
+      algorithm
+        actual := origin.level;
+      then 1;
+    case SOME(DAE.StartOrigin.BINDING_ORIGIN()) then 2;
+    case SOME(DAE.StartOrigin.TYPE_ORIGIN()) then 3;
+    case SOME(DAE.StartOrigin.UNDEFINED_ORIGIN()) then 4;
+    case NONE() then 5;
   end match;
-end startOriginToValue;
+end startOriginRank;
 
 public function mergeNominalAttribute
   input BackendDAE.Var inAVar;

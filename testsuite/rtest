@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use Cwd;
 use File::Temp qw/ tempfile /;
+use File::Glob qw/ bsd_glob /;
+use File::Path qw/ remove_tree /;
 
 my $OPENMODELICAHOME = "";
 
@@ -207,10 +209,92 @@ sub setup_command_toolchain
 # command, because $log is a native Windows path and sh would eat its backslashes
 # as escapes (C:\OMDev\tools -> C:OMDevtools). Other platforms keep the plain
 # shell redirection they always had.
+# Nearly every setup_command/teardown_command does nothing but delete files:
+# 1498 of the 1511 in the testsuite are a plain rm, and only 17 contain any shell
+# syntax at all. Handing those to a shell costs a shell process plus an rm process
+# per test, and on Windows that is where the parallel run would occasionally wedge
+# for good: MSYS2 emulates fork(), the stuck processes spin instead of failing, and
+# nothing bounds a setup_command or a teardown_command the way --alarm bounds omc,
+# so one wedged teardown hangs the whole job. Delete the files from Perl instead
+# and leave the shell to the commands that actually need one.
+#
+# Returns undef when the command is not a plain rm, so the caller falls back to
+# running it as before.
+sub builtin_rm
+{
+  my $cmd = shift;
+  my $logfile = shift;
+
+  # Anything carrying shell syntax - a variable, quoting, an operator - is not
+  # ours to interpret. Globs are, and are expanded below.
+  return undef if $cmd =~ m{[\$&|;<>`'"\\(){}\n]};
+  return undef unless $cmd =~ m{^\s*rm\s+(\S.*?)\s*$};
+
+  my @words = split(' ', $1);
+  my $force = 0;
+  my $recursive = 0;
+  my @operands;
+  for my $word (@words) {
+    if (!@operands and $word =~ m{^-}) {
+      return undef unless $word =~ m{^-[rRf]+$};
+      $force = 1 if $word =~ m{f};
+      $recursive = 1 if $word =~ m{[rR]};
+      next;
+    }
+    push @operands, $word;
+  }
+  return undef unless @operands;
+
+  my @errors;
+  for my $operand (@operands) {
+    # A pattern that matches nothing is left as it is, the way a shell without
+    # nullglob hands it to rm: -f then skips it silently and a bare rm reports it
+    # as missing, which is what the tests already rely on.
+    my @paths = $operand =~ m{[*?]} ? bsd_glob($operand) : ($operand);
+    @paths = ($operand) unless @paths;
+    for my $path (@paths) {
+      $path =~ s{/+$}{};  # a teardown may spell a directory as "foo.fmutmp/"
+      next unless length $path;
+      if (-d $path and !-l $path) {  # a symlink to a directory is unlinked, not descended into
+        if (!$recursive) {
+          push @errors, "rm: cannot remove '$path': Is a directory";
+          next;
+        }
+        remove_tree($path, {error => \my $tree_errors});
+        for my $tree_error (@{$tree_errors || []}) {
+          my ($file, $message) = %$tree_error;
+          push @errors, "rm: cannot remove '" . ($file eq '' ? $path : $file) . "': $message";
+        }
+      }
+      elsif (-e $path or -l $path) {
+        # A read-only file is what -f is for, and Windows refuses to unlink one.
+        unlink $path or (chmod(0666, $path) and unlink $path)
+          or push @errors, "rm: cannot remove '$path': $!";
+      }
+      elsif (!$force) {
+        push @errors, "rm: cannot remove '$path': No such file or directory";
+      }
+    }
+  }
+
+  return 0 unless @errors;
+
+  if (defined $logfile and open(my $log, '>>', $logfile)) {
+    print $log "$_\n" for @errors;
+    close $log;
+  } else {
+    print "$_\n" for @errors;
+  }
+  return 1;
+}
+
 sub run_test_command
 {
   my $cmd = shift;
   my $logfile = shift;
+
+  my $builtin = builtin_rm($cmd, $logfile);
+  return $builtin if defined $builtin;
 
   if ($^O ne 'MSWin32') {
     $cmd = "$cmd >>$logfile 2>&1" if defined $logfile;

@@ -1322,9 +1322,12 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
-      if Autoconf.os == "Windows_NT" then
-        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) ::
-                 (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
+      // Windows and macOS also install under the openModelicaPlatform name.
+      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" then
+        if not stringEmpty(System.openModelicaPlatformAlternative()) then
+          paths := (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
+        end if;
+        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) :: paths;
       end if;
 
     end for;

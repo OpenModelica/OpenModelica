@@ -49,7 +49,9 @@ mod model_ctx;
 mod nls;
 pub mod prof;
 mod omclog;
-pub use nls::{rt_nls_clean_history, rt_set_step_size};
+pub use nls::{
+    rt_context_addr, rt_error_stage_addr, rt_nls_clean_history, rt_no_throw_div_zero_addr, rt_set_step_size,
+};
 mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
@@ -338,6 +340,12 @@ mod ext_report {
         crate::trap()
     }
 
+    /// The report alone; the host does the throw.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error_report(msg: u32) {
+        crate::note_runtime_error(cstr(msg));
+    }
+
     /// C's `infoStreamPrint(OMC_LOG_STDOUT, 0, …)`.
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_message(msg: u32) {
@@ -401,6 +409,9 @@ mod ext_report_hosted {
 #[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
 
+#[cfg(all(target_os = "wasi", any(feature = "standalone", feature = "session")))]
+mod result_out;
+
 // The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
 // in-wasm so the model is reached wasm->wasm via the shared table. Both JIT
 // runtimes (unknown-unknown for web, wasip1 for native) enable it via the
@@ -450,7 +461,58 @@ pub use openmodelica_solvers::counters::*;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_stat(kind: u32) -> u64 {
+    // The live-block histogram is only knowable by walking the list, and the
+    // reader asks for `live_rc1` first (slot order), so scan there.
+    #[cfg(feature = "heap_stats")]
+    if kind == STAT_LIVE_RC1 {
+        scan_live();
+    }
     openmodelica_solvers::counters::stat(kind)
+}
+
+/// Walk the live-block list, bucketing each object by its reference count (the
+/// first word of every object). Idempotent: the slots are set, not added to.
+#[cfg(feature = "heap_stats")]
+fn scan_live() {
+    let (mut rc1, mut rc2, mut rcn, mut maxrc) = (0u64, 0u64, 0u64, 0u64);
+    let mut raw = unsafe { *LIVE.0.get() };
+    while raw != 0 {
+        let rc = unsafe { load_u32(raw + HEADER as u32) } as u64;
+        match rc {
+            1 => rc1 += 1,
+            2 => rc2 += 1,
+            _ => rcn += 1,
+        }
+        if rc > maxrc {
+            maxrc = rc;
+        }
+        raw = unsafe { load_u32(raw + LIVE_NEXT) };
+    }
+    for (slot, v) in [(STAT_LIVE_RC1, rc1), (STAT_LIVE_RC2, rc2), (STAT_LIVE_RCN, rcn), (STAT_LIVE_MAXRC, maxrc)] {
+        openmodelica_solvers::counters::stat_set(slot, v);
+    }
+    // What the survivors *are*: the first few that read as `[rc][len][utf8]`.
+    let mut shown = 0;
+    let mut raw = unsafe { *LIVE.0.get() };
+    while raw != 0 && shown < 8 {
+        let obj = raw + HEADER as u32;
+        let (total, rc, len) =
+            unsafe { (load_u32(raw) as usize, load_u32(obj), load_u32(obj + STR_LEN_OFF) as usize) };
+        if rc == 1 && len > 0 && len + HEADER + STR_DATA_OFF as usize + 1 <= total + 8 {
+            let bytes = unsafe {
+                core::slice::from_raw_parts((obj + STR_DATA_OFF) as *const u8, len.min(60))
+            };
+            if bytes.iter().all(|b| *b >= 0x20 && *b < 0x7f) {
+                omclog::info(
+                    omclog::STDOUT,
+                    false,
+                    &alloc::format!("live string rc=1 len={len}: {}", core::str::from_utf8(bytes).unwrap_or("?")),
+                );
+                shown += 1;
+            }
+        }
+        raw = unsafe { load_u32(raw + LIVE_NEXT) };
+    }
 }
 
 /// Called per run (`rt_sim_start`), so the counters are per-run.
@@ -465,8 +527,83 @@ pub fn reset_stats() {
 /// Bytes reserved before every object for the allocation size (used by
 /// `rt_free`). 8 rather than 4 so the returned object is 8-byte aligned, which
 /// keeps `f64` array/record elements naturally aligned.
+/// `[size:u32][spare:u32]` before every object. With `heap_stats` the spare pair
+/// grows to `[size][pad][prev][next]` so every live block is on one list and the
+/// run can be asked what is still holding memory, and at what reference count.
+#[cfg(not(feature = "heap_stats"))]
 const HEADER: usize = 8;
+#[cfg(feature = "heap_stats")]
+const HEADER: usize = 16;
 const ALIGN: usize = 8;
+#[cfg(feature = "heap_stats")]
+const LIVE_PREV: u32 = 8;
+#[cfg(feature = "heap_stats")]
+const LIVE_NEXT: u32 = 12;
+
+/// Head of the live-block list (`raw` pointers), newest first.
+#[cfg(feature = "heap_stats")]
+struct LiveHead(core::cell::UnsafeCell<u32>);
+#[cfg(feature = "heap_stats")]
+unsafe impl Sync for LiveHead {}
+#[cfg(feature = "heap_stats")]
+static LIVE: LiveHead = LiveHead(core::cell::UnsafeCell::new(0));
+
+#[cfg(feature = "heap_stats")]
+fn live_link(raw: u32) {
+    let head = unsafe { &mut *LIVE.0.get() };
+    unsafe {
+        store_u32(raw + LIVE_PREV, 0);
+        store_u32(raw + LIVE_NEXT, *head);
+        if *head != 0 {
+            store_u32(*head + LIVE_PREV, raw);
+        }
+    }
+    *head = raw;
+}
+
+#[cfg(feature = "heap_stats")]
+fn live_unlink(raw: u32) {
+    let head = unsafe { &mut *LIVE.0.get() };
+    let (prev, next) = unsafe { (load_u32(raw + LIVE_PREV), load_u32(raw + LIVE_NEXT)) };
+    unsafe {
+        if prev != 0 {
+            store_u32(prev + LIVE_NEXT, next);
+        } else if *head == raw {
+            *head = next;
+        }
+        if next != 0 {
+            store_u32(next + LIVE_PREV, prev);
+        }
+    }
+}
+
+/// A block held back so the out-of-memory report has room to format its message:
+/// `memory.grow` refusing means the reporting path would otherwise trap too, and
+/// the bare `unreachable` that follows reads as a codegen fault.
+struct Reserve(core::cell::UnsafeCell<u32>);
+unsafe impl Sync for Reserve {}
+static RESERVE: Reserve = Reserve(core::cell::UnsafeCell::new(0));
+static RESERVE_ARMED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+const RESERVE_BYTES: usize = 64 * 1024;
+
+fn reserve_layout() -> Layout {
+    Layout::from_size_align(RESERVE_BYTES, ALIGN).expect("bad layout")
+}
+
+/// Taken straight from `dlmalloc`, not `rt_alloc`, so arming cannot recurse.
+fn arm_reserve() {
+    if RESERVE_ARMED.swap(true, core::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    unsafe { *RESERVE.0.get() = GLOBAL.alloc(reserve_layout()) as u32 };
+}
+
+fn release_reserve() {
+    let p = core::mem::replace(unsafe { &mut *RESERVE.0.get() }, 0);
+    if p != 0 {
+        unsafe { GLOBAL.dealloc(p as *mut u8, reserve_layout()) };
+    }
+}
 
 /// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
 /// one array/record per array/record-typed function local on every call (an IF97
@@ -498,23 +635,47 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
     if total <= CACHE_MAX {
         total = (total + ALIGN - 1) & !(ALIGN - 1);
     }
+    #[cfg(feature = "heap_stats")]
+    stat_add(STAT_ALLOC_BYTES, total as u64);
     if let Some(class) = cache_class(total) {
         let lists = unsafe { &mut *FREE.0.get() };
         let head = lists[class];
         if head != 0 {
             lists[class] = unsafe { load_u32(head + HEADER as u32) };
             unsafe { store_u32(head, total as u32) };
+            #[cfg(feature = "heap_stats")]
+            live_link(head);
             return head + HEADER as u32;
         }
     }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
+    // Off the recycling path: the first allocation of a size class comes through
+    // here, so the reserve is armed long before the heap can fill.
+    arm_reserve();
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
-        // Out of memory: trap.
+        // `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
+        release_reserve();
+        note_runtime_error(&alloc::format!(
+            "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
+        ));
         trap();
     }
     unsafe { store_u32(raw, total as u32) };
+    #[cfg(feature = "heap_stats")]
+    live_link(raw);
     raw + HEADER as u32
+}
+
+/// `SimData`: [`rt_alloc`] hands back a recycled block with the previous object's
+/// bytes in it, and the emitted code releases the old handle of every heap slot
+/// (String, array, external object) before overwriting it. Every driver allocates
+/// the block through here so no slot starts on a stale pointer.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_data_new(total: u32) -> u32 {
+    let obj = rt_alloc(total);
+    unsafe { core::ptr::write_bytes(obj as *mut u8, 0, total as usize) };
+    obj
 }
 
 /// Free an object previously returned by `rt_alloc`.
@@ -525,6 +686,12 @@ pub extern "C" fn rt_free(obj: u32) {
     }
     let raw = obj - HEADER as u32;
     let total = unsafe { load_u32(raw) } as usize;
+    #[cfg(feature = "heap_stats")]
+    {
+        stat_inc(STAT_FREE);
+        stat_add(STAT_FREE_BYTES, total as u64);
+        live_unlink(raw);
+    }
     if let Some(class) = cache_class(total) {
         let lists = unsafe { &mut *FREE.0.get() };
         unsafe { store_u32(raw + HEADER as u32, lists[class]) };
@@ -689,7 +856,7 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        nls::model_error();
+        nls::throw_stream(&format!("Model error. size(a, {axis}) of an array with {ndims} dimensions"));
         return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
@@ -893,7 +1060,7 @@ fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
     }
     if arr_total == 0 {
         if count != 0 {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. {count} indices into an empty array"));
         }
         return (rt_alloc(0), 0);
     }
@@ -908,7 +1075,7 @@ fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
             lin = lin * rt_array_dim(arr, axis as i32 + 1) + spec.coord(axis, p);
         }
         if lin >= arr_total {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. Index {} out of bounds for array of size {arr_total}", lin + 1));
             lin = arr_total - 1;
         }
         unsafe { store_u32(out + i * 4, lin) };
@@ -994,7 +1161,10 @@ pub extern "C" fn rt_array_indexed_assign(dst: u32, nspec: u32, spec: u32, src: 
     let (positions, count) = spec_positions(dst, &spec);
     if count != rt_array_total(src) {
         rt_free(positions);
-        nls::model_error();
+        nls::throw_stream(&format!(
+            "Model error. Assigning {} elements to an array slice of {count}",
+            rt_array_total(src)
+        ));
         return;
     }
 
@@ -1367,7 +1537,7 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     let neg = n < 0;
     if neg {
         if base == 0.0 {
-            nls::model_error();
+            nls::throw_stream(&format!("Model error. 0^({n}) is not defined"));
             return 0.0;
         }
         n = -n;
@@ -1501,7 +1671,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64, loc: u32) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_mod_int(x: i32, y: i32) -> i32 {
     if y == 0 {
-        nls::model_error();
+        nls::throw_stream(&format!("Model error. Division by zero in mod({x}, 0)"));
         return 0;
     }
     let r = x.wrapping_rem(y);
@@ -1737,7 +1907,7 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
         OP_OR => x | y,
         _ => {
             if y == 0 {
-                nls::model_error();
+                nls::throw_stream(&format!("Model error. Division by zero in {x} div 0"));
                 return 0;
             }
             x.wrapping_div(y)
@@ -2694,14 +2864,12 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
             Some(k) => {
                 let count = ls_note_failure(eq_index);
                 // C prints `dgesv`'s 1-based `info` one too high; keep the text.
-                omclog::warning_with_limit(
+                omclog::warning_with_limit!(
                     omclog::LS,
                     count,
                     openmodelica_solvers::solverflags::max_warn_displays(),
-                    &alloc::format!(
-                        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
-                        p = k + 2
-                    ),
+                    "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
+                    p = k + 2,
                 );
                 // Only C's `LS_DEFAULT` has a fallback: `-ls=lapack` leaves the
                 // system unsolved, which is what `tearingStrictness` relies on to
@@ -2743,7 +2911,7 @@ fn lis_initial_guess(x_ptr: u32, n: usize) -> alloc::vec::Vec<f64> {
 fn ls_print_vector(name: &str, v: &[f64]) {
     omclog::info(omclog::LS_V, true, name);
     for (i, x) in v.iter().enumerate() {
-        omclog::info(omclog::LS_V, false, &alloc::format!("[{:2}] {}", i + 1, omclog::g(*x, 20, 12)));
+        omclog::info!(omclog::LS_V, false, "[{:2}] {}", i + 1, omclog::g(*x, 20, 12));
     }
     omclog::close(omclog::LS_V);
 }
@@ -2762,15 +2930,17 @@ fn ls_print_matrix(name: &str, a: &[f64], n: usize) {
     omclog::close(omclog::LS_V);
 }
 
-/// C's per-solver `Start solving Linear System …` line.
+/// C's per-solver `Start solving Linear System …` line. `format_g` allocates, so
+/// check the stream before the arguments are built.
 fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
-    omclog::info(
+    if !omclog::active(omclog::LS) {
+        return;
+    }
+    omclog::info!(
         omclog::LS,
         false,
-        &alloc::format!(
-            "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
-            openmodelica_sim_meta::driver::format_g(time, 6)
-        ),
+        "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
+        openmodelica_sim_meta::driver::format_g(time, 6),
     );
 }
 
@@ -2780,10 +2950,10 @@ fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) 
     if nls::total_pivot_solve(a, b, n) {
         return 0;
     }
-    omclog::warning(
+    omclog::warning!(
         omclog::STDOUT,
         false,
-        &alloc::format!("Error solving linear system of equations (no. {eq_index}) at time {time:.6}."),
+        "Error solving linear system of equations (no. {eq_index}) at time {time:.6}.",
     );
     1
 }
@@ -2794,13 +2964,11 @@ fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) 
 pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
     use openmodelica_sim_meta::driver::format_g;
     if nls::throw_reports() {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             true,
-            &alloc::format!(
-                "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
-                format_g(time, 6)
-            ),
+            "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
+            format_g(time, 6),
         );
         omclog::close_warning(omclog::STDOUT);
     }
@@ -2825,7 +2993,7 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
     if dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot) {
         return 0;
     }
-    if core::mem::replace(&mut ls_failure_entry(eq_index).fell_back, false) {
+    if ls_took_fallback(eq_index) {
         return 0;
     }
     let n = n as usize;
@@ -2836,14 +3004,12 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
         return 0;
     }
     let count = ls_note_failure(eq_index);
-    omclog::warning_with_limit(
+    omclog::warning_with_limit!(
         omclog::LS,
         count,
         openmodelica_solvers::solverflags::max_warn_displays(),
-        &alloc::format!(
-            "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
-            openmodelica_sim_meta::driver::format_g(norm, 15)
-        ),
+        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
+        openmodelica_sim_meta::driver::format_g(norm, 15),
     );
     if casual == 0 && dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Default) {
         ls_report_fallback(eq_index, time, count);
@@ -2858,28 +3024,37 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
 
 /// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
 /// a success warns on stdout, a run of them only on `LOG_LS`.
+#[derive(Default)]
 struct LsFailure {
-    eq_index: i32,
     failed: bool,
     failures: u64,
     /// The last solve was the total-pivot fallback, whose step C takes unchecked.
     fell_back: bool,
 }
-struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<LsFailure>>);
+/// Keyed, not scanned: [`ls_solved`] runs per solve, and a model can solve O(n)
+/// systems per `functionODE`.
+struct LsFailures(core::cell::UnsafeCell<alloc::collections::BTreeMap<i32, LsFailure>>);
 unsafe impl Sync for LsFailures {}
-static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+static LS_FAILURES: LsFailures =
+    LsFailures(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {
-    let v = unsafe { &mut *LS_FAILURES.0.get() };
-    if let Some(i) = v.iter().position(|e| e.eq_index == eq_index) {
-        return &mut v[i];
-    }
-    v.push(LsFailure { eq_index, failed: false, failures: 0, fell_back: false });
-    v.last_mut().unwrap()
+    unsafe { &mut *LS_FAILURES.0.get() }.entry(eq_index).or_default()
 }
 
+/// No entry means the system never failed, so `failed` is already clear.
 fn ls_solved(eq_index: i32) {
-    ls_failure_entry(eq_index).failed = false;
+    if let Some(e) = unsafe { &mut *LS_FAILURES.0.get() }.get_mut(&eq_index) {
+        e.failed = false;
+    }
+}
+
+/// Takes the total-pivot-fallback flag: C's step after it goes unchecked.
+fn ls_took_fallback(eq_index: i32) -> bool {
+    match unsafe { &mut *LS_FAILURES.0.get() }.get_mut(&eq_index) {
+        Some(e) => core::mem::replace(&mut e.fell_back, false),
+        None => false,
+    }
 }
 
 /// C's `++systemData->numberOfFailures`, shared by both warnings of one failure.
@@ -2894,13 +3069,11 @@ fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
     let e = ls_failure_entry(eq_index);
     let stream = if e.failed { omclog::LS } else { omclog::STDOUT };
     e.failed = true;
-    omclog::warning_with_limit(
+    omclog::warning_with_limit!(
         stream,
         count,
         openmodelica_solvers::solverflags::max_warn_displays(),
-        &alloc::format!(
-            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
-        ),
+        "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS.",
     );
 }
 
@@ -3094,11 +3267,13 @@ pub(crate) fn lin_sparse_cached(
     let n = n as usize;
     let nnz = nnz as usize;
 
+    // An FMU may have stubbed these out, and the density rule picks them, not a
+    // flag: `Rsparse` stands in.
     #[cfg(sundials)]
     match backend {
-        openmodelica_solvers::solverflags::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        openmodelica_solvers::solverflags::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        openmodelica_solvers::solverflags::Sparse::Rsparse => {}
+        openmodelica_solvers::solverflags::Sparse::Klu if sundials::have_klu() => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        openmodelica_solvers::solverflags::Sparse::Umfpack if sundials::have_umfpack() => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        _ => {}
     }
     #[cfg(not(sundials))]
     let _ = backend;

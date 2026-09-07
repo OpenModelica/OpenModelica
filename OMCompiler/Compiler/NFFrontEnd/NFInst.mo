@@ -465,7 +465,7 @@ algorithm
 
   if instPartial or not InstNode.isPartial(node) or
      InstContext.inRelaxed(context) or InstContext.inRedeclared(context) then
-    node := instClass(node, mod, NFAttributes.DEFAULT_ATTR, true, 0, parent, context);
+    node := instClass(node, mod, NFAttributes.DEFAULT_ATTR, true, 0, 0, parent, context);
   end if;
 end instantiate;
 
@@ -1130,6 +1130,7 @@ function instClass
   input output Attributes attributes = NFAttributes.DEFAULT_ATTR;
   input Boolean useBinding;
   input Integer instLevel;
+  input Integer typeConfidence "confidence of the class's own modifiers, see classConfidence";
   input InstNode parent = InstNode.EMPTY_NODE();
   input InstContext.Type context;
 protected
@@ -1148,7 +1149,7 @@ algorithm
     fail();
   end if;
 
-  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel, context);
+  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel, typeConfidence, context);
 end instClass;
 
 function instClassDef
@@ -1159,6 +1160,7 @@ function instClassDef
   input output InstNode node;
   input InstNode parent;
   input Integer instLevel;
+  input Integer typeConfidence;
   input InstContext.Type context;
 protected
   InstNode par, base_node;
@@ -1185,13 +1187,14 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := instElementModifier(InstNode.definition(node), node, par, instLevel);
+        mod := instElementModifier(InstNode.definition(node), node, par, typeConfidence);
         mod := Modifier.propagate(mod, node, par);
         mod := Modifier.merge(mod, cls.ccMod);
         // Merge with any outer modifications.
         outer_mod := Modifier.propagate(cls.modifier, node, par);
-        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
+        mod := markTypeModifier(mod, res, typeConfidence);
+        mod := Modifier.merge(outerMod, mod);
 
         // Apply the modifiers of extends nodes.
         ClassTree.mapExtends(cls_tree,
@@ -1239,17 +1242,18 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node), instLevel);
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node), typeConfidence);
         mod := Modifier.propagate(mod, node, par);
         mod := Modifier.merge(mod, cls.ccMod);
         outer_mod := Modifier.propagate(cls.modifier, node, par);
-        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
+        mod := markTypeModifier(mod, cls.restriction, typeConfidence);
+        mod := Modifier.merge(outerMod, mod);
         attrs := Attributes.updateClassConnectorType(cls.restriction, cls.attributes);
         attributes := Attributes.mergeDerivedAttributes(attrs, attributes, parent);
 
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par, context);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, typeConfidence, par, context);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -1279,9 +1283,10 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node), instLevel);
-        outer_mod := Modifier.merge(outerMod, cls.modifier);
-        mod := Modifier.merge(outer_mod, mod);
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node), typeConfidence);
+        mod := Modifier.merge(cls.modifier, mod);
+        mod := markTypeModifier(mod, Restriction.TYPE(), typeConfidence);
+        mod := Modifier.merge(outerMod, mod);
         applyModifier(mod, cls_tree, node, context);
 
         inst_cls := Class.INSTANCED_BUILTIN(ty, cls_tree, res);
@@ -1297,7 +1302,7 @@ algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node, context);
-        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent, context);
+        node := instClass(node, outerMod, attributes, useBinding, instLevel, typeConfidence, parent, context);
         updateComponentType(parent, node);
       then
         ();
@@ -1672,7 +1677,7 @@ algorithm
           if Modifier.isRedeclare(mod) then
             Modifier.REDECLARE(element = redecl_node, outerMod = mod, constrainingMod = cc_mod) := mod;
             cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod, instLevel);
-            cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod, context);
+            cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod, instLevel, context);
             Mutable.update(cls_ptr, cls_node);
           end if;
         end for;
@@ -1696,7 +1701,7 @@ algorithm
 
   if InstNode.isClass(node) then
     for cls_ptr in listRest(chain) loop
-      node_ptr := redeclareClassElement(cls_ptr, node_ptr, context);
+      node_ptr := redeclareClassElement(cls_ptr, node_ptr, instLevel, context);
     end for;
     node := Mutable.access(node_ptr);
   else
@@ -1714,6 +1719,7 @@ end redeclareElements;
 function redeclareClassElement
   input Mutable<InstNode> redeclareCls;
   input Mutable<InstNode> replaceableCls;
+  input Integer instLevel;
   input InstContext.Type context;
   output Mutable<InstNode> outCls;
 protected
@@ -1721,7 +1727,7 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareCls);
   repl_node := Mutable.access(replaceableCls);
-  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), context);
+  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), instLevel, context);
   outCls := Mutable.create(rdcl_node);
 end redeclareClassElement;
 
@@ -1746,6 +1752,7 @@ function redeclareClass
   input InstNode originalNode;
   input Modifier outerMod;
   input Modifier constrainingMod;
+  input Integer instLevel;
   input InstContext.Type context;
   output InstNode redeclaredNode;
 protected
@@ -1830,7 +1837,7 @@ algorithm
   orig_opt := if InstContext.inInstanceAPI(context) then SOME(originalNode) else NONE();
 
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
-  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode), orig_opt);
+  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode), orig_opt, instLevel);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
 
@@ -1982,7 +1989,7 @@ algorithm
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
-        condition := Binding.fromAbsyn(component.condition, false, false, parent, instLevel, info);
+        condition := Binding.fromAbsyn(component.condition, false, parent, instLevel, info);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
@@ -2299,6 +2306,71 @@ algorithm
   end if;
 end checkOuterComponentMod;
 
+function classConfidence
+  "Returns the confidence of the start attributes a component gets from its
+   type (MLS 8.6.2 with the type rule from ModelicaSpecification#3933): the
+   instance level of the innermost redeclare the type is looked up through, or
+   the component's own level if the type is not redeclared."
+  input InstNode clsNode;
+  input InstNode scope "The scope the type was looked up from.";
+  input Integer instLevel;
+  output Integer confidence = instLevel;
+protected
+  InstNode node = scope;
+  list<InstNode> enclosing = {};
+  InstNodeType ty;
+algorithm
+  // Redeclares of the scopes enclosing the component did not determine its type.
+  while not (InstNode.isEmpty(node) or InstNode.isTopScope(node)) loop
+    enclosing := node :: enclosing;
+    node := instanceScope(node);
+  end while;
+
+  node := clsNode;
+  while not (InstNode.isEmpty(node) or InstNode.isTopScope(node) or
+             List.exist1(enclosing, InstNode.refEqual, node)) loop
+    () := match node
+      case InstNode.CLASS_NODE(nodeType = ty as InstNodeType.REDECLARED_CLASS())
+        algorithm
+          confidence := min(confidence, ty.confidence);
+        then
+          ();
+
+      else ();
+    end match;
+
+    node := instanceScope(node);
+  end while;
+end classConfidence;
+
+function instanceScope
+  "Returns the scope a node was instantiated in, for a redeclared class the
+   scope of the class it replaced."
+  input InstNode node;
+  output InstNode scope;
+algorithm
+  scope := match node
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = scope)) then scope;
+    case InstNode.CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope)) then scope;
+    else InstNode.parent(node);
+  end match;
+end instanceScope;
+
+function markTypeModifier
+  "Marks the modifiers a type applies to its attributes as coming from the type,
+   with the type's confidence. Modifiers on other classes modify components and
+   are left alone."
+  input output Modifier mod;
+  input Restriction res;
+  input Integer confidence;
+algorithm
+  mod := match res
+    case Restriction.TYPE() then Modifier.setSource(mod, NFBinding.Source.TYPE, confidence);
+    case Restriction.ENUMERATION() then Modifier.setSource(mod, NFBinding.Source.TYPE, confidence);
+    else mod;
+  end match;
+end markTypeModifier;
+
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
@@ -2322,7 +2394,8 @@ algorithm
         end if;
 
         node := expand(node, context);
-        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent, context);
+        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel,
+          classConfidence(node, scope, instLevel), parent, context);
       then
         node;
 

@@ -1,0 +1,70 @@
+// name: InitialUnknownsArrayParameter.mos
+// keywords: FMI 2.0 export InitialUnknowns array parameter
+// status: correct
+// teardown_command: rm -rf InitialUnknownsArrayParameter.fmu InitialUnknownsArrayParameter.xml InitialUnknownsArrayParameter_tmp.xml InitialUnknownsArrayParameter.fmutmp/ InitialUnknownsArrayParameter_info.json InitialUnknownsArrayParameter.log InitialUnknownsArrayParameter_FMU.libs InitialUnknownsArrayParameter_FMU.makefile InitialUnknownsArrayParameter_external_functions.json InitialUnknownsArrayParameter_*.bin index.html resources
+//
+// A parameter bound to an array function call is one variable in the backend
+// and N scalars in the FMU (#7512): every element is a calculated parameter
+// and must appear among the InitialUnknowns, depending on all of q.
+
+loadString("
+package ArrPkg
+  function f
+    input Real[:] q;
+    output Real[size(q, 1)] y;
+  algorithm
+    y := 2*q;
+  end f;
+  model M
+    parameter Integer N = 3;
+    parameter Real q[N] = linspace(1, 2, N);
+    parameter Real p[N] = f(q);
+    Real x(start = 1, fixed = true);
+  equation
+    der(x) = -p[1]*x;
+  end M;
+end ArrPkg;
+"); getErrorString();
+
+buildModelFMU(ArrPkg.M, fileNamePrefix="InitialUnknownsArrayParameter", version="2.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq InitialUnknownsArrayParameter.fmu modelDescription.xml > InitialUnknownsArrayParameter_tmp.xml"); getErrorString();
+system("tr -d '\\n' < InitialUnknownsArrayParameter_tmp.xml | grep -o '<ScalarVariable[^>]*' | grep -o 'name=\"[^\"]*\"' > InitialUnknownsArrayParameter.xml"); getErrorString();
+readFile("InitialUnknownsArrayParameter.xml"); getErrorString();
+system("sed -n \"/<InitialUnknowns>/,/<\\/InitialUnknowns>/p\" InitialUnknownsArrayParameter_tmp.xml > InitialUnknownsArrayParameter.xml"); getErrorString();
+readFile("InitialUnknownsArrayParameter.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "InitialUnknownsArrayParameter.fmu"
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// 0
+// ""
+// "name=\"x\"
+// name=\"der(x)\"
+// name=\"p[1]\"
+// name=\"p[2]\"
+// name=\"p[3]\"
+// name=\"q[1]\"
+// name=\"q[2]\"
+// name=\"q[3]\"
+// name=\"N\"
+// "
+// ""
+// 0
+// ""
+// "    <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"3\" dependencies=\"6 7 8\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"6 7 8\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"5\" dependencies=\"6 7 8\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"9\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+// "
+// ""
+// endResult

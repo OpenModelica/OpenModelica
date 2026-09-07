@@ -53,13 +53,6 @@ pub(crate) fn throw_stream(s: &str) {
     nls::throw_stream(s)
 }
 
-/// A model error where the generated code calls `throwStreamPrint` -- an invalid
-/// root, a zero divisor, an index out of range.
-pub(crate) fn model_error() {
-    install_hooks();
-    nls::model_error()
-}
-
 /// A string literal the module's pool owns, borrowed for the length of the call.
 fn borrowed_str<'a>(h: u32) -> &'a str {
     core::str::from_utf8(unsafe { crate::str_bytes(h) }).unwrap_or("")
@@ -167,6 +160,13 @@ pub extern "C" fn rt_nls_assert_failed(
     }
 }
 
+/// Model side (emitted by `emit_assert`): is the `noThrowAsserts` window open?
+/// Checked before anything else, as C's generated assert does; arms `needToReThrow`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_suppressed() -> i32 {
+    note_no_throw_assert() as i32
+}
+
 /// Arm C's `needToReThrow` where the `noThrowAsserts` window is open. The driver
 /// holding it is this module's or the host's, never both.
 fn note_no_throw_assert() -> bool {
@@ -198,14 +198,12 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if note_no_throw_assert() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::info(
+        crate::omclog::info!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if msg != 0 {
             crate::rt_release(msg as u32);
@@ -216,14 +214,12 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if nls::throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if nls::throw_logged() {
             crate::omclog::debug(crate::omclog::ASSERT, false, &rt_string(msg));
@@ -284,13 +280,11 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
         // domain check somewhere downstream.
         return 0.0;
     } else if no_throw_div_zero() {
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::DIVISION,
             false,
-            &alloc::format!(
-                "solver will try to handle division by zero at time {}: {s}",
-                format_g(time, 16)
-            ),
+            "solver will try to handle division by zero at time {}: {s}",
+            format_g(time, 16),
         );
         a / b
     } else {
@@ -316,6 +310,51 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
         }
     }
     res
+}
+
+/// [`nls::kinsol`]'s `numeric_csc` for the runtime's own sparse Newton: C's
+/// `nlsSparseJac`, one residual evaluation per colour group. `fx` is the residual at
+/// `x`; an empty `colors` leaves every column its own colour.
+#[allow(clippy::too_many_arguments)]
+fn numeric_csc(
+    n: usize,
+    colptr: &[usize],
+    rowidx: &[usize],
+    colors: &[u32],
+    max: &[f64],
+    x: &mut [f64],
+    fx: &[f64],
+    vals: &mut [f64],
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) {
+    /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
+    const DELTA_H: f64 = 6.664001874625056e-08;
+    let n_colors = colors.iter().max().map_or(n, |&c| c as usize + 1);
+    let in_color = |c: usize, color: usize| match colors.is_empty() {
+        true => c == color,
+        false => colors[c] as usize == color,
+    };
+    let mut fres = vec![0.0f64; n];
+    let mut xsave = vec![0.0f64; n];
+    let mut inv = vec![0.0f64; n];
+    for color in 0..n_colors {
+        for c in (0..n).filter(|&c| in_color(c, color)) {
+            xsave[c] = x[c];
+            let mut dh = DELTA_H * (libm::fabs(xsave[c]) + 1.0);
+            if xsave[c] + dh >= max.get(c).copied().unwrap_or(f64::MAX) {
+                dh = -dh;
+            }
+            x[c] = xsave[c] + dh;
+            inv[c] = 1.0 / dh;
+        }
+        eval(x, &mut fres);
+        for c in (0..n).filter(|&c| in_color(c, color)) {
+            for k in colptr[c]..colptr[c + 1] {
+                vals[k] = (fres[rowidx[k]] - fx[rowidx[k]]) * inv[c];
+            }
+            x[c] = xsave[c];
+        }
+    }
 }
 
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
@@ -396,25 +435,34 @@ impl History for MemHistory {
 }
 
 /// C's `simulationInfo->nonlinearSystemData`: each system's (state address, size),
-/// filled by the module `start`.
-struct RosterCell(UnsafeCell<alloc::vec::Vec<(u32, usize)>>);
+/// filled by the module `start`. `index` is the reverse map, wanted per solve.
+struct Roster {
+    sys: alloc::vec::Vec<(u32, usize)>,
+    index: alloc::collections::BTreeMap<u32, u32>,
+}
+struct RosterCell(UnsafeCell<Roster>);
 // Single-threaded wasm: no concurrent access.
 unsafe impl Sync for RosterCell {}
-static ROSTER: RosterCell = RosterCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static ROSTER: RosterCell =
+    RosterCell(UnsafeCell::new(Roster { sys: alloc::vec::Vec::new(), index: alloc::collections::BTreeMap::new() }));
 
 /// `k == 0` starts a fresh roster, so a second model replaces the first.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     let roster = unsafe { &mut *ROSTER.0.get() };
-    roster.truncate(k as usize);
-    roster.push((hist_addr, n as usize));
+    let keep = roster.sys.len().min(k as usize);
+    for (addr, _) in roster.sys.drain(keep..) {
+        roster.index.remove(&addr);
+    }
+    roster.index.insert(hist_addr, roster.sys.len() as u32);
+    roster.sys.push((hist_addr, n as usize));
 }
 
 /// C's `sysNumber`: the index in `nonlinearSystemData` the homotopy messages quote
 /// (not the equation index). The roster is registered in that order.
 fn nls_sys_number(hist_addr: u32) -> u32 {
     let roster = unsafe { &*ROSTER.0.get() };
-    roster.iter().position(|(h, _)| *h == hist_addr).unwrap_or(0) as u32
+    roster.index.get(&hist_addr).copied().unwrap_or(0)
 }
 
 /// [`set_var_names`] across the module boundary: `ptr`/`len` are a NUL-separated
@@ -472,7 +520,7 @@ pub(crate) fn set_diag(systems: &[openmodelica_sim_meta::NlsVars]) {
 /// C's `cleanUpOldValueListAfterEvent`, called once per event.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
-    for &(addr, n) in unsafe { &*ROSTER.0.get() } {
+    for &(addr, n) in &unsafe { &*ROSTER.0.get() }.sys {
         let mut hist = MemHistory { count_addr: addr, base: addr + 16 + 2 * (n * 8) as u32, n };
         history_clean(&mut hist, time);
     }
@@ -497,8 +545,9 @@ fn scaled_max_norm(v: &[f64], scale: &[f64]) -> f64 {
 
 /// The sparse nonlinear solver a system with an analytic sparsity pattern gets, as
 /// in C: KINSOL over the Jacobian assembled straight into CSC, factorized by KLU.
-/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, and
-/// serves `-nlsLS=rsparse`. `pattern` is `colptr[n+1] ++ rowidx[nnz]`.
+/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, where an
+/// FMU left the two libraries out, and for `-nlsLS=rsparse`. `pattern` is
+/// `colptr[n+1] ++ rowidx[nnz]`.
 #[allow(clippy::too_many_arguments)]
 fn kinsol_sparse_solve(
     n: usize,
@@ -514,28 +563,39 @@ fn kinsol_sparse_solve(
     eq_index: u32,
     time: f64,
     has_jacobian: bool,
+    colors: &[u32],
+    max: &[f64],
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     #[cfg(sundials)]
-    if nls_ls_backend() == solverflags::Sparse::Klu {
+    if nls_ls_backend() == solverflags::Sparse::Klu
+        && crate::sundials::have_kinsol()
+        && crate::sundials::have_klu()
+    {
         // C's retry ladder re-picks the start point, but only through settings its
         // loop head overrides; `warm` is the caller's own second attempt.
         let colptr: alloc::vec::Vec<i32> = pattern[..n + 1].iter().map(|v| *v as i32).collect();
         let rowidx: alloc::vec::Vec<i32> =
             pattern[n + 1..n + 1 + nnz].iter().map(|v| *v as i32).collect();
-        let gather = (!jac_csc).then(|| pattern.to_vec());
+        // Without a column function KINSOL differences the pattern itself, so
+        // `make_assemble`'s dense gather buffer is never needed.
+        let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
+        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max };
         return crate::sundials::kinsol_solve_selected(
-            handle, n, nnz, &colptr, &rowidx, nominal, guess, old_values, x, eq_index, time,
-            has_jacobian, load_guess, eval, &mut assemble,
+            handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
+            load_guess, eval, &mut assemble,
         );
     }
-    // only the KINSOL path names the system it dumps, or differences its own Jacobian
-    let _ = (eq_index, time, has_jacobian, old_values);
+    // only the KINSOL path names the system it dumps
+    let _ = (eq_index, time, old_values);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
-    newton_sparse_solve(n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, eval)
+    newton_sparse_solve(
+        n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
+        eval,
+    )
 }
 
 /// C's `-nls=experimental-kinsol` on a system with no sparsity pattern: the dense
@@ -585,6 +645,9 @@ fn newton_sparse_solve(
     nnz: usize,
     jac_csc: bool,
     handle: u32,
+    has_jacobian: bool,
+    colors: &[u32],
+    max: &[f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     let colptr: alloc::vec::Vec<usize> = (0..=n).map(|k| pattern[k] as usize).collect();
@@ -604,7 +667,7 @@ fn newton_sparse_solve(
     }
 
     let mut vals = vec![0.0f64; nnz];
-    let gather = (!jac_csc).then(|| pattern.to_vec());
+    let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
     let mut assemble = make_assemble(n, jac, gather);
 
     let mut f = vec![0.0f64; n];
@@ -633,7 +696,13 @@ fn newton_sparse_solve(
             *s = 1.0;
         }
         if scaled {
-            assemble(x, &mut vals);
+            match has_jacobian {
+                true => assemble(x, &mut vals),
+                false => {
+                    eval(x, &mut f);
+                    numeric_csc(n, &colptr, &rowidx, colors, max, x, &f, &mut vals, eval);
+                }
+            }
             let mut rowmax = vec![1.0e-12f64; n];
             for c in 0..n {
                 for k in colptr[c]..colptr[c + 1] {
@@ -658,7 +727,11 @@ fn newton_sparse_solve(
                 solved = true;
                 break;
             }
-            assemble(x, &mut vals);
+            match has_jacobian {
+                true => assemble(x, &mut vals),
+                // `f` is the residual at `x`, which the norm above just took.
+                false => numeric_csc(n, &colptr, &rowidx, colors, max, x, &f, &mut vals, eval),
+            }
             for (k, v) in vals.iter().enumerate() {
                 unsafe { store_f64(val_ptr + (k * 8) as u32, *v) };
             }
@@ -859,8 +932,8 @@ impl NlsBackend for WasmBackend<'_> {
     ) -> bool {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
-            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.old_values,
-            load_guess, eval,
+            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
+            req.max, req.old_values, load_guess, eval,
         )
     }
 
@@ -888,6 +961,10 @@ struct MemBlock {
 }
 
 impl MemBlock {
+    /// The header's spare word, zeroed by `rt_alloc`: 0 is C's `useXScaling = 1`.
+    fn xscaling_off(&self) -> u32 {
+        self.hist_addr + 4
+    }
     fn last_solved(&self) -> u32 {
         self.hist_addr + 8
     }
@@ -974,8 +1051,12 @@ pub extern "C" fn rt_solve_nls(
     for (i, v) in bounds.iter_mut().enumerate() {
         *v = unsafe { load_f64(bounds_addr + (i * 8) as u32) };
     }
-    let pattern: alloc::vec::Vec<u32> = if has_jacobian && nnz != 0 {
-        (0..size + 1 + nnz as usize).map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) }).collect()
+    // `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; C keeps `sparsePattern`
+    // whether or not the model carries an analytic Jacobian, and so does this.
+    let pattern: alloc::vec::Vec<u32> = if nnz != 0 {
+        (0..2 * size + 1 + nnz as usize)
+            .map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) })
+            .collect()
     } else {
         alloc::vec::Vec::new()
     };
@@ -986,6 +1067,7 @@ pub extern "C" fn rt_solve_nls(
     block.read(block.scale(), &mut res_scaling);
     block.read(block.extrap(), &mut extrapolation);
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
+    let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
     let mut hist =
         MemHistory { count_addr: hist_addr, base: block.extrap() + (hist_n * 8) as u32, n: hist_n };
 
@@ -1013,12 +1095,14 @@ pub extern "C" fn rt_solve_nls(
             res_scaling: &mut res_scaling,
             extrapolation: &mut extrapolation,
             last_solved: &mut last_solved,
+            use_xscaling: &mut use_xscaling,
         };
         solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
     block.write(block.scale(), &res_scaling);
     block.write(block.extrap(), &extrapolation);
     unsafe { store_f64(block.last_solved(), last_solved) };
+    unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
     rt_free(model.x_ptr);
     rt_free(model.r_ptr);

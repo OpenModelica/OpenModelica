@@ -1640,7 +1640,7 @@ public
 
           if not strip then
             for s in cref.subscripts loop
-              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
+              hash := Subscript.hashStringContinue(s, hash);
             end for;
           end if;
         then

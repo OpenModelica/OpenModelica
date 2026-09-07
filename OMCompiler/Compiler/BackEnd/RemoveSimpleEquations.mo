@@ -135,16 +135,20 @@ end SimpleContainer;
 
 protected type AccTuple = tuple<BackendDAE.Variables, BackendDAE.Shared, list<BackendDAE.Equation>, list<SimpleContainer>, Integer, array<list<Integer>>, Boolean>;
 
+protected type StartValues =
+  tuple<Option<DAE.StartOrigin>, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>>
+  "strongest origin seen so far, start values with that origin";
+
 protected type VarSetAttributes =
   tuple<
     Boolean,
-    tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>>,
+    StartValues,
     list<tuple<DAE.Exp, DAE.ComponentRef>>,
     tuple<Option<DAE.Exp>,
           Option<DAE.Exp>>
-  > "fixed, list<startvalue, origin, cr>, nominal, (min, max)";
+  > "fixed, startvalues, nominal, (min, max)";
 
-protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
+protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (NONE(), {}), {}, (NONE(), NONE()));
 
 // =============================================================================
 // Starting point for preOpt and postOpt removeSimpleEquations module
@@ -2983,10 +2987,11 @@ protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
   output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
 protected
   Boolean fixed, fixedset;
-  Option<DAE.Exp> start, origin;
+  Option<DAE.Exp> start;
+  Option<DAE.StartOrigin> origin;
   list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
   tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
-  tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
+  StartValues startvalues;
 algorithm
   (fixedset, startvalues, nominalset, minmaxset) := iAttributes;
   // get attributes
@@ -3008,38 +3013,35 @@ protected function addStartValue "author: Frenkel TUD 2012-12"
   input Boolean fixedset;
   input DAE.ComponentRef cr;
   input Option<DAE.Exp> start;
-  input Option<DAE.Exp> origin;
+  input Option<DAE.StartOrigin> origin;
   input Boolean negate;
   input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
-  input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> iStartvalues;
+  input StartValues iStartvalues;
   output Boolean oFixed;
-  output tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> oStartvalues;
+  output StartValues oStartvalues;
 algorithm
   (oFixed, oStartvalues) := matchcontinue(fixed, fixedset, start, iStartvalues)
     local
       DAE.Exp startexp;
-      Integer setorigin, originvalue;
+      Integer cmp;
+      Option<DAE.StartOrigin> setorigin;
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> startvalues;
     case (false, true, _, _) then (fixedset, iStartvalues);
     case (true, false, NONE(), _)
-      algorithm
-        originvalue := BackendVariable.startOriginToValue(origin);
-      then
-        (true, (originvalue, {(start, cr)}));
+      then (true, (origin, {(start, cr)}));
     case (true, false, SOME(startexp), _)
       algorithm
         startexp := negateExpression(negate, startexp, startexp, " start_1 ");
-        originvalue := BackendVariable.startOriginToValue(origin);
       then
-        (true, (originvalue, {(SOME(startexp), cr)}));
+        (true, (origin, {(SOME(startexp), cr)}));
     case (_, _, NONE(), (setorigin, startvalues))
       algorithm
-        originvalue := BackendVariable.startOriginToValue(origin);
-        if originvalue > setorigin then
-          setorigin := originvalue;
+        cmp := BackendVariable.startOriginCompare(origin, setorigin);
+        if cmp < 0 then
+          setorigin := origin;
           startvalues := if fixed then {(start, cr)} else {};
-        elseif originvalue == setorigin and fixed then
+        elseif cmp == 0 and fixed then
           startvalues := (start, cr) :: startvalues;
         end if;
       then
@@ -3047,11 +3049,11 @@ algorithm
     case (_, _, SOME(startexp), (setorigin, startvalues))
       algorithm
         startexp := negateExpression(negate, startexp, startexp, " start_2 ");
-        originvalue := BackendVariable.startOriginToValue(origin);
-        if originvalue > setorigin then
-          setorigin := originvalue;
+        cmp := BackendVariable.startOriginCompare(origin, setorigin);
+        if cmp < 0 then
+          setorigin := origin;
           startvalues := {(SOME(startexp), cr)};
-        elseif originvalue == setorigin then
+        elseif cmp == 0 then
           startvalues := (SOME(startexp), cr) :: startvalues;
         end if;
       then
@@ -3067,7 +3069,7 @@ end addStartValue;
 protected function mergeStartFixedAttributes "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean fixed;
-  input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
+  input StartValues startvalues;
   input BackendDAE.Shared ishared;
   output BackendDAE.Var outVar;
   output Boolean warnAliasConflicts = false;
@@ -3076,30 +3078,31 @@ algorithm
     local
       DAE.ComponentRef cr;
       Option<DAE.Exp> start, start1;
+      Option<DAE.StartOrigin> origin;
       DAE.Exp startExp;
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
       BackendDAE.Variables globalKnownVars;
       String str;
-      Integer i;
-      Boolean hardcoded;
 
     // default value
     case (_, (_, {}), _) then inVar;
 
     // fixed true only one start value -> nothing changed
-    case (true, (_, {(start, _)}), _) algorithm
+    case (true, (origin, {(start, _)}), _) algorithm
       v := BackendVariable.setVarFixed(inVar, true);
-    then BackendVariable.setVarStartValueOption(v, start);
+      v := BackendVariable.setVarStartValueOption(v, start);
+    then BackendVariable.setVarStartOrigin(v, origin);
 
     // fixed true several start values, this need some investigation
-    case (true, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+    case (true, (origin, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
       v := BackendVariable.setVarFixed(inVar, true);
       start1 := optExpReplaceCrefWithBindExp(start, globalKnownVars);
       (_, start, _) := equalNonFreeStartValues(values, globalKnownVars, (start1, start, cr));
       warnAliasConflicts := not Flags.isSet(Flags.ALIAS_CONFLICTS);
-    then BackendVariable.setVarStartValueOption(v, start);
+      v := BackendVariable.setVarStartValueOption(v, start);
+    then BackendVariable.setVarStartOrigin(v, origin);
 
     case (true, (_, values), BackendDAE.SHARED()) algorithm
       if not Flags.isSet(Flags.ALIAS_CONFLICTS) then
@@ -3110,31 +3113,32 @@ algorithm
         str := "Conflicting start values for fixed states:\n";
         for value in zerofreevalues loop
           (startExp, cr) := value;
-          (_, (i, hardcoded)) := Expression.traverseExpTopDown(startExp, selectMinDepth, (ComponentReference.crefDepth(cr), true));
-          if hardcoded then
-            i := i + 5;
-          end if;
-          str := str + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(start = " + ExpressionBasics.printExpStr(startExp) + ", confidence number = " + intString(i) + ")\n";
+          str := str + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(start = " + ExpressionBasics.printExpStr(startExp) + ")\n";
         end for;
         Error.addCompilerError(str);
       end if;
     then
-      fail(); //selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
+      fail();
 
     // fixed false only one start value -> nothing changed
-    case (false, (_, {(start, _)}), _)
-    then BackendVariable.setVarStartValueOption(inVar, start);
+    case (false, (origin, {(start, _)}), _) algorithm
+      v := BackendVariable.setVarStartValueOption(inVar, start);
+    then BackendVariable.setVarStartOrigin(v, origin);
 
     // fixed false several start value, this need some investigation
-    case (false, (_, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+    case (false, (origin, (start, cr)::values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
       start1 := optExpReplaceCrefWithBindExp(start, globalKnownVars);
       (_, start, _) := equalFreeStartValues(values, globalKnownVars, (start1, start, cr));
-    then BackendVariable.setVarStartValueOption(inVar, start);
+      v := BackendVariable.setVarStartValueOption(inVar, start);
+    then BackendVariable.setVarStartOrigin(v, origin);
 
-    case (false, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+    case (false, (origin, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
       // get all nonzero values
       zerofreevalues := List.fold(values, getZeroFreeValues, {});
       (v, warnAliasConflicts) := selectFreeValue(zerofreevalues, inVar, globalKnownVars);
+      if not listEmpty(zerofreevalues) then
+        v := BackendVariable.setVarStartOrigin(v, origin);
+      end if;
     then v;
   end matchcontinue;
 end mergeStartFixedAttributes;
@@ -3180,7 +3184,7 @@ algorithm
     else
       algorithm
         warnAliasConflicts := not Flags.isSet(Flags.ALIAS_CONFLICTS);
-      then selectFreeValue1(nominalList, {}, "Alias set with conflicting nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar, globalKnownVars);
+      then selectFreeValue1(nominalList, "Alias set with conflicting nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar, globalKnownVars);
   end matchcontinue;
 end mergeNominalAttribute;
 
@@ -3319,7 +3323,7 @@ algorithm
       Boolean fixedset, isdiscrete, b1=false, b2=false;
       list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
-      tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
+      StartValues startvalues;
       BackendDAE.Var v = inVar;
       BackendDAE.Variables vars, globalKnownVars;
       Option<DAE.Exp> min, max;
@@ -3511,37 +3515,34 @@ algorithm
     case _
       algorithm
         warnAliasConflicts := not Flags.isSet(Flags.ALIAS_CONFLICTS);
-      then selectFreeValue1(iZeroFreeValues, {}, "Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, inVar, globalKnownVars);
+      then selectFreeValue1(iZeroFreeValues, "Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, inVar, globalKnownVars);
   end match;
 end selectFreeValue;
 
 protected function selectNonZeroExpression
-"adrpo: select one that is non zero if possible"
-  input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
-  output tuple<DAE.Exp, DAE.ComponentRef, Integer> selected;
+"adrpo: select the first non-zero candidate, or the last one if all are zero"
+  input list<tuple<DAE.Exp, DAE.ComponentRef>> iCandidates;
+  output DAE.Exp outExp;
+  output DAE.ComponentRef outCr;
 algorithm
-  selected := match iFavorit
+  (outExp, outCr) := match iCandidates
     local
       DAE.Exp e;
-      tuple<DAE.Exp, DAE.ComponentRef, Integer> tpl;
-      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
+      DAE.ComponentRef cr;
+      list<tuple<DAE.Exp, DAE.ComponentRef>> rest;
 
-    case {tpl} then tpl;
+    case {(e, cr)} then (e, cr);
 
-    case (tpl as (e, _, _))::_ guard not Expression.isZero(e) then tpl;
+    case (e, cr)::_ guard not Expression.isZero(e) then (e, cr);
 
-    case (_, _, _)::rest
-      then
-        selectNonZeroExpression(rest);
+    case _::rest then selectNonZeroExpression(rest);
   end match;
 end selectNonZeroExpression;
 
 protected function selectFreeValue1 "author: Frenkel TUD 2012-12
-  adrpo: the value is selected as follows:
-  - if the exp is a cref with less depth
-  - for the ones with the minimum depth equal, select one that is non-zero"
+  All candidates have the same MLS 8.6.2 priority here, so the choice is
+  arbitrary: prefer the kept variable's own value, then any non-zero value."
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iZeroFreeValues;
-  input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
   input String iStr;
   input String iAttributeName;
   input FuncSetAttribute inFunc;
@@ -3553,108 +3554,40 @@ protected function selectFreeValue1 "author: Frenkel TUD 2012-12
     input DAE.Exp iExp;
     output BackendDAE.Var oVar;
   end FuncSetAttribute;
+protected
+  DAE.Exp e, e1;
+  DAE.ComponentRef cr, cr1, crVar;
+  list<tuple<DAE.Exp, DAE.ComponentRef>> candidates;
+  Boolean b;
+  String s, s2;
 algorithm
-  outVar := matchcontinue(iZeroFreeValues, iFavorit)
-    local
-      DAE.Exp e, e1, es;
-      DAE.ComponentRef cr, crs, crVar;
-      BackendDAE.Var v;
-      list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
-      Integer i, is;
-      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> favorit;
-      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
-      String s="", s2;
-      Boolean b, hardcoded;
+  if listEmpty(iZeroFreeValues) then
+    outVar := inVar;
+    return;
+  end if;
 
-    case ({}, {}) then inVar;
+  crVar := BackendVariable.varCref(inVar);
+  candidates := listReverse(iZeroFreeValues);
+  candidates := listAppend(
+    list(c for c guard ComponentReferenceBasics.crefEqual(crVar, Util.tuple22(c)) in candidates),
+    list(c for c guard not ComponentReferenceBasics.crefEqual(crVar, Util.tuple22(c)) in candidates));
+  (e, cr) := selectNonZeroExpression(candidates);
 
-    // end of list analyse what we got
-    case ({}, rest) algorithm
-      (e, cr, _) := selectNonZeroExpression(rest);
-      crVar := BackendVariable.varCref(inVar);
-      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
-        (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
-        s := iStr + "=> Select value from " +  ComponentReferenceBasics.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ") for variable: " +  ComponentReferenceBasics.printComponentRefStr(crVar) + "\n";
-        Error.addMessage(Error.COMPILER_WARNING, {s});
-      end if;
-      v := inFunc(inVar, e);
-    then v;
+  if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+    s := iStr;
+    for c in iZeroFreeValues loop
+      (e1, cr1) := c;
+      (e1, b) := replaceCrefWithBindExp(e1, globalKnownVars);
+      (e1, _) := ExpressionSimplify.condsimplify(b, e1);
+      s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
+      s := s + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr1) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(Util.tuple21(c)) + s2 + ")\n";
+    end for;
+    s := s + "=> Select value from " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + ") for variable: " + ComponentReferenceBasics.printComponentRefStr(crVar) + "\n";
+    Error.addMessage(Error.COMPILER_WARNING, {s});
+  end if;
 
-    // none, push it in
-    case ((e, cr)::zerofreevalues, {}) algorithm
-      (_, (i, hardcoded)) := Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
-      if hardcoded then
-        i := i + 5;
-      end if;
-      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
-        (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
-      end if;
-    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar, globalKnownVars);
-
-    // equal, put it in
-    case ((e, cr)::zerofreevalues, (es, crs, is)::rest) algorithm
-      (_, (i, hardcoded)) := Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
-      if hardcoded then
-        i := i + 5;
-      end if;
-      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
-        (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
-      end if;
-      true := intEq(i, is);
-      crVar := BackendVariable.varCref(inVar);
-      favorit := if ComponentReferenceBasics.crefEqual(crVar, crs) then
-       (es, crs, is) :: (e, cr, i) :: rest else (e, cr, i) :: (es, crs, is) :: rest;
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
-
-    // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, (_, _, is)::_) algorithm
-      (_, (i, hardcoded)) := Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
-      if hardcoded then
-        i := i + 5;
-      end if;
-      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
-        (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
-      end if;
-      favorit := if intLt(i, is) then {(e, cr, i)} else iFavorit;
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
-  end matchcontinue;
+  outVar := inFunc(inVar, e);
 end selectFreeValue1;
-
-protected function selectMinDepth "author: adrpo
-  if the start expression is a cref
-  with less depth than the one given
-  return the minimum depth between the
-  two. Maybe we should o min of all the
-  cref in the expression! - ptaeuber: Now we do."
-  input DAE.Exp e;
-  input tuple<Integer, Boolean> inMin;
-  output DAE.Exp eOut=e;
-  output Boolean cont=true;
-  output tuple<Integer, Boolean> outMin;
-algorithm
-  outMin := match(e, inMin)
-    local
-      Integer i,d;
-      DAE.ComponentRef cr;
-
-    case (DAE.CREF(cr, _), (d, _)) algorithm
-      i := ComponentReference.crefDepth(cr);
-    then (intMin(i, d), false);
-
-    else inMin;
-  end match;
-end selectMinDepth;
 
 
 // =============================================================================

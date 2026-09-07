@@ -67,6 +67,7 @@ import SCode;
 uniontype AttributeIterator
   record ATTRIBUTE_ITERATOR
     String name;
+    NFBinding.Source source;
     Integer confidence;
     Mutable<ExpressionIterator> iterator;
   end ATTRIBUTE_ITERATOR;
@@ -79,7 +80,8 @@ uniontype AttributeIterator
     Binding binding;
   algorithm
     (name, binding) := attribute;
-    iter := ATTRIBUTE_ITERATOR(name, Binding.confidence(binding), Mutable.create(ExpressionIterator.fromBinding(binding)));
+    iter := ATTRIBUTE_ITERATOR(name, Binding.source(binding), Binding.confidence(binding),
+      Mutable.create(ExpressionIterator.fromBinding(binding)));
   end create;
 
   function nextBinding
@@ -91,7 +93,7 @@ uniontype AttributeIterator
   algorithm
     (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
     Mutable.update(iter.iterator, it);
-    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING, iter.confidence));
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, iter.source, iter.confidence));
   end nextBinding;
 end AttributeIterator;
 
@@ -166,11 +168,10 @@ algorithm
         bind_var := Binding.variability(binding);
 
         // Avoid scalarizing the variable if it would result in indexing a
-        // function call (#6267), unless we're building an FMU or the variable
-        // has attributes that must be scalarized (#7485).
+        // function call (#6267), unless the variable has attributes that must
+        // be scalarized (#7485).
         if not forceScalarize and
            ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
-           not Flags.getConfigBool(Flags.BUILDING_FMU) and
            not variableHasForcedScalarAttribute(var) then
           vars := var :: vars;
           return;

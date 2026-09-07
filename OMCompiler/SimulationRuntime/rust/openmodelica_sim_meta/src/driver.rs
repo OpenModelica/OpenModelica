@@ -160,12 +160,10 @@ fn state_selection_set(
     if !pivot(&mut jac, nd, nc, &mut st.row_pivot, &mut st.col_pivot) && report_error {
         log_state_set_jacobian(omclog::WARNING, omclog::DSS, info, &jac, set_index);
         let t = read_f64(e, sim_data + TIME_OFF)?;
-        omclog::error(
+        omclog::error!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Error, singular Jacobian for dynamic state selection at time {t:.6}\nUse -lv LOG_DSS_JAC to get the Jacobian"
-            ),
+            "Error, singular Jacobian for dynamic state selection at time {t:.6}\nUse -lv LOG_DSS_JAC to get the Jacobian",
         );
         return Err("CodegenWasmJit: singular Jacobian for dynamic state selection");
     }
@@ -197,7 +195,7 @@ fn state_selection_set(
         }
         if omclog::active(omclog::DSS) {
             let t = read_f64(e, sim_data + TIME_OFF)?;
-            omclog::info(omclog::DSS, true, &format!("StateSelection Set {set_index} at time = {t:.6}"));
+            omclog::info!(omclog::DSS, true, "StateSelection Set {set_index} at time = {t:.6}");
             print_state_selection_info(e, sim_data, info)?;
             omclog::close(omclog::DSS);
         }
@@ -215,17 +213,17 @@ fn print_state_selection_info(e: &mut dyn SimEngine, sim_data: u32, info: &State
     let ns = info.n_states as usize;
     let name = |i: usize| info.candidate_names.get(i).map(String::as_str).unwrap_or("?");
     let plural = if ns == 1 { "" } else { "s" };
-    omclog::info(omclog::DSS, false, &format!("Select {ns} state{plural} from {nc} candidates."));
+    omclog::info!(omclog::DSS, false, "Select {ns} state{plural} from {nc} candidates.");
     omclog::info(omclog::DSS, true, "State candidates:");
     for k in 0..nc {
-        omclog::info(omclog::DSS, false, &format!("[{}] {}", k + 1, name(k)));
+        omclog::info!(omclog::DSS, false, "[{}] {}", k + 1, name(k));
     }
     omclog::close(omclog::DSS);
-    omclog::info(omclog::DSS, true, &format!("Selected state{plural}"));
+    omclog::info!(omclog::DSS, true, "Selected state{plural}");
     for row in 0..ns {
         for col in 0..nc {
             if read_i32(e, sim_data + info.a_offs[row * nc + col])? == 1 {
-                omclog::info(omclog::DSS, false, &format!("[{}] {}", col + 1, name(col)));
+                omclog::info!(omclog::DSS, false, "[{}] {}", col + 1, name(col));
                 break;
             }
         }
@@ -350,6 +348,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionInitSpatialDistribution",
     "functionUpdateBoundParameters",
     "functionUpdateBoundVariableAttributes",
+    "functionAttrDefaults",
     "evaluateDAEResiduals",
     "functionInitSynchronous",
     "functionUpdateSynchronous",
@@ -427,6 +426,9 @@ pub trait SimEngine {
     /// Call the exported `fn(u32, u32) -> ()` `name` — only [`MODEL_FN_DAE`],
     /// whose second argument is the evaluation stage.
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()>;
+    /// Install `mask` as the active log streams of the runtime the model links, whose
+    /// solvers log from inside it. A no-op where that runtime's store is this one.
+    fn set_log_mask(&mut self, _mask: omclog::Mask) {}
     /// [`SimEngine::call1_raw`] under the clock C's generated entry point ticks
     /// around its own body ([`model_fn_clock`]); every driver goes through here.
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
@@ -457,12 +459,13 @@ pub trait SimEngine {
         out
     }
     fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        if name != MODEL_FN_DAE {
-            return self.call2_raw(name, a, b);
-        }
-        rtclock::tick(rtclock::DAE);
+        // `functionZeroCrossings` takes `gout`, so it lands here rather than in
+        // [`SimEngine::call1`]; C clocks it just the same.
+        let ix = model_fn_clock(name).or((name == MODEL_FN_DAE).then_some(rtclock::DAE));
+        let Some(ix) = ix else { return self.call2_raw(name, a, b) };
+        rtclock::tick(ix);
         let out = self.call2_raw(name, a, b);
-        rtclock::accumulate(rtclock::DAE);
+        rtclock::accumulate(ix);
         out
     }
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
@@ -592,12 +595,6 @@ pub trait SimEngine {
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         0
     }
-    /// Whether [`eval_discrete`] should call the model's own `functionDAE` (C's
-    /// generated one, `allEquations` with `discreteCall` raised). A wasm-jit module
-    /// always exports one, so there `has_when` decides instead.
-    fn has_discrete_entry(&self) -> bool {
-        false
-    }
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
@@ -648,10 +645,13 @@ pub const ERROR_SIMULATION_STEP: i32 = 3;
 /// C's `handleEvents` stage: `getBestJumpBuffer` sends a model error raised here
 /// past the step's catch, so it ends the run instead of being retried.
 pub const ERROR_EVENTHANDLING: i32 = 4;
+/// An exported FMU's try block around one FMI call: it catches as
+/// [`ERROR_INTEGRATOR`] does, and reports as [`ERROR_SIMULATION`] does.
+pub const ERROR_FMI_CALL: i32 = 5;
 
 /// What a region displaced (C's `saveJumpState`), so regions nest.
 #[derive(Clone, Copy, Default)]
-struct StageSave {
+pub struct StageSave {
     stage: i32,
     hit: i32,
 }
@@ -668,6 +668,19 @@ fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) -> StageSave {
     let _ = write_i32(e, addr, stage);
     let _ = write_i32(e, addr + 4, 0);
     save
+}
+
+/// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` in an exported FMU, whose integrator
+/// is the importer's — so the callback is one FMI call.
+pub fn open_fmi_call_region(e: &mut dyn SimEngine) -> StageSave {
+    let addr = e.error_stage_addr();
+    set_error_stage(e, addr, ERROR_FMI_CALL)
+}
+
+/// Close it, reporting the absorbed model error the caller answers `IRES = -1` to.
+pub fn close_fmi_call_region(e: &mut dyn SimEngine, save: StageSave) -> bool {
+    let addr = e.error_stage_addr();
+    took_error_stage(e, addr, save)
 }
 
 fn stage_hit(e: &dyn SimEngine, addr: u32) -> bool {
@@ -721,9 +734,12 @@ struct StepRetry {
 }
 
 impl StepRetry {
-    fn open(&mut self, e: &mut dyn SimEngine, rows: usize) {
+    /// Open a step. The rows so far are final: they go to the row sink, if one is
+    /// installed, before the mark is taken.
+    fn open(&mut self, e: &mut dyn SimEngine, rows: &mut Vec<f64>) {
+        commit_rows(rows);
         let addr = e.error_stage_addr();
-        self.rows_mark = rows;
+        self.rows_mark = rows.len();
         self.in_step = true;
         self.threw = false;
         THROW_PAST_STEP.store(false, Ordering::Relaxed);
@@ -781,10 +797,11 @@ impl StepRetry {
         if self.armed {
             // C's catch with `retry` already spent: the run ends here.
             let t = read_f64(e, sim_data + TIME_OFF).unwrap_or(f64::NAN);
-            omclog::info(
+            omclog::info!(
                 omclog::STDOUT,
                 false,
-                &format!("model terminate | Simulation terminated by an assert at time: {}", format_g(t, 6)),
+                "model terminate | Simulation terminated by an assert at time: {}",
+                format_g(t, 6),
             );
             return Ok(None);
         }
@@ -808,13 +825,14 @@ impl StepRetry {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 25;
+pub const RT_STATS: usize = 32;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
     "nls_vary_start", "nls_stale", "newton_irregular", "newton_lambda", "newton_negstep",
     "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular", "homotopy_steps",
+    "free", "alloc_bytes", "free_bytes", "live_rc1", "live_rc2", "live_rcn", "live_maxrc",
 ];
 
 /// Lambda steps the runtime's locally-continued systems took, part of the same
@@ -883,12 +901,25 @@ fn note_throw_past_step() {
     THROW_PAST_STEP.store(true, Ordering::Relaxed);
 }
 
-/// C's `va_throwStreamPrint(NULL, …)`, which an external function's `ModelicaError`
-/// reaches: log the message on `LOG_ASSERT` and unwind. It has no condition and no
-/// source position, so the trap that follows must not go looking for the assertion
-/// block a model `assert()` would have left.
+/// C's `omc_assert` for a `ModelicaError`: `LOG_ASSERT` in the simulation runtime
+/// (`va_throwStreamPrint(NULL, …)`), the logger in an FMU (`omc_assert_fmi`).
+static EXT_ERROR_REPORTER: AtomicUsize = AtomicUsize::new(0);
+
+pub fn set_ext_error_reporter(f: fn(&str)) {
+    EXT_ERROR_REPORTER.store(f as usize, Ordering::Relaxed);
+}
+
+/// An external function's `ModelicaError`: report it and flag the unwind that
+/// follows. It has no condition and no source position, so the trap must not go
+/// looking for the assertion block a model `assert()` would have left.
 pub fn note_runtime_error(msg: &str) {
-    omclog::debug(omclog::ASSERT, false, msg);
+    match EXT_ERROR_REPORTER.load(Ordering::Relaxed) {
+        0 => omclog::debug(omclog::ASSERT, false, msg),
+        p => {
+            let f: fn(&str) = unsafe { core::mem::transmute(p) };
+            f(msg);
+        }
+    }
     note_runtime_error_flag();
 }
 
@@ -916,6 +947,50 @@ pub fn log_init_assert_notice() {
     }
 }
 
+/// The assertion `rt_assert` recorded, as `[msg, file, sline, scol, eline, ecol,
+/// read_only, cond, initial]` String handles and flags.
+pub fn assert_info(e: &dyn SimEngine, pa: &[i32; 9]) -> (AssertInfo, String) {
+    let info = AssertInfo {
+        msg: read_rt_string(e, pa[0]).unwrap_or_default(),
+        file: read_rt_string(e, pa[1]).unwrap_or_default(),
+        read_only: pa[6] != 0,
+        line_start: pa[2],
+        col_start: pa[3],
+        line_end: pa[4],
+        col_end: pa[5],
+    };
+    (info, read_rt_string(e, pa[7]).unwrap_or_default())
+}
+
+/// C's residual catch (`MMC_CATCH_INTERNAL` in `functionODE_residual` /
+/// `residualFunctionIDA`): a model error unwinding through the residual is
+/// recoverable, and `omc_assert_simulation` logs it in the integrator stage only
+/// under `LOG_SOLVER`. Consumes what the throw left; false for an engine failure.
+fn residual_model_throw(e: &mut dyn SimEngine, err: &str, t: f64) -> bool {
+    caught_model_throw(e, err, t, omclog::active(omclog::SOLVER))
+}
+
+/// C's `finishSimulation`: the simulation stage logs the block unconditionally, and
+/// the terminal row still follows.
+fn terminal_model_throw(e: &mut dyn SimEngine, err: &str, t: f64) -> bool {
+    caught_model_throw(e, err, t, true)
+}
+
+fn caught_model_throw(e: &mut dyn SimEngine, err: &str, t: f64, logged: bool) -> bool {
+    let pending = e.take_pending_assert();
+    if !is_model_throw(err) && pending.is_none() {
+        return false;
+    }
+    clear_runtime_error();
+    if let Some(pa) = pending
+        && logged
+    {
+        let (info, cond) = assert_info(e, &pa);
+        log_assert_block(&info, &cond, t, pa[8] != 0);
+    }
+    true
+}
+
 fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
     THROW_PAST_STEP.store(false, Ordering::Relaxed);
     if RUNTIME_ERROR.swap(false, Ordering::Relaxed) {
@@ -932,16 +1007,7 @@ fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<
         }
         return err;
     };
-    let cond = read_rt_string(e, pa[7]).unwrap_or_default();
-    let info = AssertInfo {
-        msg: read_rt_string(e, pa[0]).unwrap_or_default(),
-        file: read_rt_string(e, pa[1]).unwrap_or_default(),
-        read_only: pa[6] != 0,
-        line_start: pa[2],
-        col_start: pa[3],
-        line_end: pa[4],
-        col_end: pa[5],
-    };
+    let (info, cond) = assert_info(e, &pa);
     if let Some(t) = init_time {
         log_assert_block(&info, &cond, t, pa[8] != 0);
         log_init_assert_notice();
@@ -1080,6 +1146,22 @@ fn arm_alarm() {
     });
 }
 
+/// C's per-step `-lv_time` check (`perform_simulation.c.inc`): the streams come on
+/// for a step that reaches the window and go off once past it.
+fn logging_window(e: &mut dyn SimEngine, t: f64, t_next: f64) {
+    let Some((t0, t1)) = crate::simflags::with_flags(|f| f.lv_time) else { return };
+    let before = omclog::mask();
+    if (t >= t0 || t_next >= t0) && t_next < t1 {
+        omclog::reactivate();
+    }
+    if t > t1 {
+        omclog::deactivate();
+    }
+    if omclog::mask() != before {
+        e.set_log_mask(omclog::mask());
+    }
+}
+
 pub(crate) fn check_alarm() -> Result<()> {
     match past_deadline(alarm_store::get()) {
         true => Err(ALARM_ABORT_ERR),
@@ -1092,6 +1174,54 @@ pub(crate) fn check_alarm() -> Result<()> {
 // only polls it, so a host installs a hook; unset means "never cancelled". The
 // host re-exports `request_cancel`/`clear_cancel`/`set_cancel_poll` from
 // `metamodelica::cancel` and wires `check_cancel` in here.
+// Where a run's result rows go. A driver commits its buffer at every step
+// boundary (`StepRetry::open`) and `drive` commits the rest before the run's
+// clock stops, so a sink sees every row exactly once, in order, while the run is
+// still timed. The sink returns `false` while it has nowhere to put them yet (its
+// file opens after initialization, see `set_result_opener`); the rows then stay
+// in the buffer. Unset, they stay there until `take_rows`.
+static ROW_SINK: AtomicUsize = AtomicUsize::new(0);
+static ROW_SINK_FINISH: AtomicUsize = AtomicUsize::new(0);
+pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
+    ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
+    ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+/// Hand `rows` to the sink and empty the buffer; nothing without a sink.
+pub fn commit_rows(rows: &mut Vec<f64>) {
+    let p = ROW_SINK.load(Ordering::Relaxed);
+    if p == 0 || rows.is_empty() {
+        return;
+    }
+    let f: fn(&[f64]) -> bool = unsafe { core::mem::transmute(p) };
+    if f(rows) {
+        rows.clear();
+    }
+}
+// Opens the embedder's result file: called once initialization is done (C's
+// `writeParameterData`), with the engine, so the file's parameter section can be
+// read out of `SimData`.
+static RESULT_OPENER: AtomicUsize = AtomicUsize::new(0);
+pub fn set_result_opener(f: Option<fn(&mut dyn SimEngine, &SimModel, u32) -> Result<()>>) {
+    RESULT_OPENER.store(f.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+pub fn open_result(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<()> {
+    let p = RESULT_OPENER.load(Ordering::Relaxed);
+    if p == 0 {
+        return Ok(());
+    }
+    let f: fn(&mut dyn SimEngine, &SimModel, u32) -> Result<()> = unsafe { core::mem::transmute(p) };
+    f(e, model, sim_data)
+}
+/// Commit `rows` and close the sink's file, inside the run's total time.
+pub fn finish_rows(rows: &mut Vec<f64>) {
+    commit_rows(rows);
+    let p = ROW_SINK_FINISH.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() = unsafe { core::mem::transmute(p) };
+        f();
+    }
+}
+
 static CANCEL_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_cancel_hook(f: fn() -> bool) {
     CANCEL_HOOK.store(f as usize, Ordering::Relaxed);
@@ -1320,15 +1450,23 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
         return;
     }
     let time = read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
-    omclog::debug(
+    omclog::debug!(
         omclog::ASSERT,
         false,
-        &format!(
-            "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
-            failed - 1,
-            format_g15(time),
-        ),
+        "Solving non-linear system {} failed at time={}.\nFor more information please use -lv LOG_NLS.",
+        failed - 1,
+        format_g15(time),
     );
+}
+
+/// C's `equationNonlinear` throw for a host outside this module: reported and cleared.
+pub fn take_nls_failure(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> bool {
+    if read_i32(e, sim_data + layout.nls_fail_off).unwrap_or(0) == 0 {
+        return false;
+    }
+    report_nls_failure(e, sim_data, layout);
+    let _ = write_i32(e, sim_data + layout.nls_fail_off, 0);
+    true
 }
 
 /// Number of equidistant homotopy steps: C's `init_lambda_steps`, which `-ils`
@@ -1509,16 +1647,18 @@ fn overridden_on_command_line(name: &str) -> bool {
 /// a parameter is overwritten rather than the other way round.
 fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     let Some(imports) = imports_store::get() else { return Ok(()) };
-    omclog::info(
+    omclog::info!(
         omclog::INIT,
         false,
-        &format!("import start values\nfile: {}\ntime: {}", imports.file, format_g(imports.time, 6)),
+        "import start values\nfile: {}\ntime: {}",
+        imports.file,
+        format_g(imports.time, 6),
     );
     // `values` is in roster order, so one cursor walks both.
     let mut next = 0usize;
     let mut flat = 0u32;
     for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
-        omclog::info(omclog::INIT, false, &format!("import {group}"));
+        omclog::info!(omclog::INIT, false, "import {group}");
         // C's headers are plural, its per-quantity lines singular.
         let one = group.trim_end_matches('s');
         for (name, off, wty) in entries {
@@ -1528,20 +1668,20 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
             }
             flat += 1;
             if overridden_on_command_line(name) {
-                omclog::info(
+                omclog::info!(
                     omclog::INIT_V,
                     false,
-                    &format!("| skip import of {one} {name}: overridden on command line"),
+                    "| skip import of {one} {name}: overridden on command line",
                 );
                 continue;
             }
             let Some(v) = found else {
                 // C reports a missing quantity, except for the backend's own variables.
                 if !(group.ends_with("variables") && is_generated(name)) {
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::INIT,
                         false,
-                        &format!("unable to import {one} {name} from given file"),
+                        "unable to import {one} {name} from given file",
                     );
                 }
                 continue;
@@ -1549,16 +1689,16 @@ fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) ->
             match wty {
                 WTy::F64 => {
                     write_f64(e, sim_data + off, v)?;
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", format_g(v, 6)));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={})", format_g(v, 6));
                 }
                 WTy::I32 if group.starts_with("boolean") => {
                     write_i32(e, sim_data + off, (v != 0.0) as i32)?;
                     let b = if v != 0.0 { "true" } else { "false" };
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={b})"));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={b})");
                 }
                 WTy::I32 => {
                     write_i32(e, sim_data + off, v as i32)?;
-                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", v as i32));
+                    omclog::info!(omclog::INIT_V, false, "| {name}(start={})", v as i32);
                 }
             }
         }
@@ -1844,6 +1984,14 @@ pub(crate) fn format_f(v: f64) -> String {
     format!("{v:.6}")
 }
 
+/// C's `perform_simulation` line after `simulationStep`, closing its `LOG_SOLVER` block.
+fn log_solver_finished(t: f64) {
+    if omclog::active(omclog::SOLVER) {
+        omclog::info!(omclog::SOLVER, false, "finished solver step {}", format_g(t, 6));
+        omclog::close(omclog::SOLVER);
+    }
+}
+
 fn format_g15(v: f64) -> String {
     format_g(v, 15)
 }
@@ -1857,14 +2005,17 @@ fn format_g15(v: f64) -> String {
 /// else — initialization, the terminal step — as `warning`.
 fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, level: omclog::LogType) -> Result<()> {
     e.call1_if_present("functionCheckAsserts", sim_data)?;
-    drain_asserts(e, sim_data, level)?;
+    drain_asserts(e, sim_data, level, true)?;
     Ok(())
 }
 
 /// Log the violations recorded since the last call, every one: the generated code
 /// latches a warning-level site itself (C's static `warningTriggered`). A suppressed
 /// error also arms the re-throw, which the `true` return reports.
-fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -> Result<bool> {
+///
+/// `log` is clear where a held violation has already been reported and only its
+/// re-throw still matters (an FMU logs one per continuous-time stretch).
+fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType, log: bool) -> Result<bool> {
     let pending = e.take_pending_warnings();
     if pending.is_empty() {
         return Ok(false);
@@ -1888,7 +2039,9 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
         };
         let line = assert_block(&info, &cond, time, w[9] != 0);
         if suppressed {
-            omclog::info(omclog::ASSERT, false, &line);
+            if log {
+                omclog::info(omclog::ASSERT, false, &line);
+            }
             rethrow_store::arm(info);
             armed = true;
         } else if level == omclog::WARNING {
@@ -1906,7 +2059,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
 /// which [`run_wasm`] settles once the loop is out.
 pub fn row_asserts(e: &mut dyn SimEngine, sim_data: u32, warn: i32) -> i32 {
     let level = if warn != 0 { omclog::WARNING } else { omclog::INFO };
-    drain_asserts(e, sim_data, level).unwrap_or(true) as i32
+    drain_asserts(e, sim_data, level, true).unwrap_or(true) as i32
 }
 
 /// C's `LOG_ASSERT` block (`omc_error.c` messageText + printInfo). C wraps the
@@ -2025,15 +2178,31 @@ pub fn note_no_throw_assert() -> bool {
 
 /// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
 /// Idempotent, so a chunk that yields mid-step just re-enters it.
-fn open_assert_window() {
+pub fn open_assert_window() {
     set_no_throw(true);
+}
+
+/// The window is open: `rt_assert` records a violated `assert()` instead of throwing.
+pub fn asserts_suppressed() -> bool {
+    NO_THROW.load(Ordering::Relaxed)
+}
+
+/// Leave the window, logging what it caught at info level unless `log` is clear;
+/// `true` when it caught an `assert()` the caller settles itself (an FMU turns it
+/// into an event).
+pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32, log: bool) -> Result<bool> {
+    set_no_throw(false);
+    let armed = drain_asserts(e, sim_data, omclog::INFO, log)?;
+    let noted = e.take_noted_assert();
+    let (info, _, self_noted) = rethrow_store::take();
+    Ok(armed || noted || info.is_some() || self_noted)
 }
 
 /// Leave it and settle what was recorded (C's `simulationUpdate` tail): an event
 /// makes the point they were raised at obsolete, otherwise the run fails now.
 fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_no_throw(false);
-    drain_asserts(e, sim_data, omclog::INFO)?;
+    drain_asserts(e, sim_data, omclog::INFO, true)?;
     let noted = e.take_noted_assert();
     let (info, found_event, self_noted) = rethrow_store::take();
     if info.is_none() && !noted && !self_noted {
@@ -2069,7 +2238,7 @@ pub fn run_initialization(
     inputs: &[crate::InputVar],
     start_time: f64,
 ) -> Result<()> {
-    init_model(e, sim_data, layout, inputs, start_time, None)?;
+    init_model(e, sim_data, layout, inputs, start_time, None, None)?;
     signal_init_done();
     terminate_at_init(e, sim_data, layout)
 }
@@ -2077,7 +2246,7 @@ pub fn run_initialization(
 /// [`run_initialization`] where the caller has the metadata the `LOG_SOTI` dump
 /// and the discrete start attributes need.
 pub fn run_initialization_model(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
-    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model), None)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)
 }
@@ -2098,8 +2267,9 @@ pub fn run_initialization_with_clocks(
     e: &mut dyn SimEngine,
     sim_data: u32,
     model: &SimMeta,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<crate::sync::Sync> {
-    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model))?;
+    init_model(e, sim_data, &model.layout, &model.inputs, model.start_time, Some(model), dae)?;
     let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
     // An event clock whose `when` already fired during the initial discrete update
     // is only *scheduled* here (C's `data->simulationInfo->initial` case).
@@ -2117,6 +2287,7 @@ fn init_model(
     inputs: &[crate::InputVar],
     start_time: f64,
     model: Option<&SimMeta>,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
     // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
@@ -2149,7 +2320,10 @@ fn init_model(
     // sitting in a branch no evaluation takes (`if a then .. else if b then ..`,
     // entered on the `a` side) is reached by nothing but the exact sweep.
     refresh_relations(e, sim_data, layout)?;
-    iterate_discrete(e, sim_data, layout)?;
+    match dae {
+        Some(dae) => iterate_discrete_dae(e, sim_data, layout, dae)?,
+        None => iterate_discrete(e, sim_data, layout)?,
+    }
     // C's generated `functionDAE` throws on a system that did not converge, and the
     // throw is still inside `initializeModel`.
     check_nls(e, sim_data, layout)?;
@@ -2224,7 +2398,7 @@ fn log_static_data_update(e: &mut dyn SimEngine) {
 
 /// C's `INIT_METHOD_NAME`/`INIT_METHOD_DESC` line.
 fn log_init_method(name: &str, desc: &str) {
-    omclog::info(omclog::INIT, false, &format!("initialization method: {name:<15} [{desc}]"));
+    omclog::info!(omclog::INIT, false, "initialization method: {name:<15} [{desc}]");
 }
 
 /// C's `symbolic_initialization`: solve, then check the equations the backend
@@ -2356,13 +2530,11 @@ fn check_removed_initial_equations(
         .and_then(|m| m.removed_init_desc.get(idx as usize - 1))
         .map(String::as_str)
         .unwrap_or_default();
-    omclog::error(
+    omclog::error!(
         omclog::INIT,
         false,
-        &format!(
-            "The initialization problem is inconsistent due to the following equation: 0 != {} = {desc}",
-            format_g(res, 6)
-        ),
+        "The initialization problem is inconsistent due to the following equation: 0 != {} = {desc}",
+        format_g(res, 6),
     );
     Err(report_init_failure())
 }
@@ -2377,20 +2549,34 @@ fn report_init_failure() -> &'static str {
     INIT_FAILED_ERR
 }
 
-/// C's `setAllParamsToStart` + `setAllVarsToStart` + `updateBoundParameters` +
-/// `updateBoundVariableAttributes`: every variable back at its start value with
-/// the bound parameters recomputed. Run before each attempt at the initial system.
-/// C's `fmi2Instantiate`/`fmi2Reset` run `setAllParamsToStart` +
-/// `setAllVarsToStart` there too, not only in `initializeModel`: a get before
-/// Initialization Mode is left must report the `start` attributes, and an equation
-/// over a zeroed `SimData` can produce a NaN instead.
+/// C's `fmi3Instantiate`/`fmi3Reset`: `setAllParamsToStart` + `setAllVarsToStart`,
+/// not the bound parameters — their equations construct the external objects,
+/// which `initialization` alone does.
 pub fn seed_start_state(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     // `functionInitDelay` before any equation function, as in `init_model`.
     write_time(e, sim_data, model.start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
-    seed_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))
+    set_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))?;
+    apply_start_overrides(e, sim_data)?;
+    set_all_vars_to_start(e, sim_data, &model.layout, Some(model), true)
 }
 
+/// C's `setAllParamsToStart` and the start values, up to `setAllVarsToStart`.
+fn set_start_values(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    inputs: &[crate::InputVar],
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    e.call1("functionParameters", sim_data)?;
+    apply_param_overrides(e, sim_data)?;
+    e.call1("functionInitStartValues", sim_data)?;
+    apply_external_input(e, sim_data, inputs)?;
+    copy_start_values_to_init_values(e, sim_data, layout, model)
+}
+
+/// C's `initialization` up to the initial system; run before each attempt.
 fn seed_start_values(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -2398,13 +2584,7 @@ fn seed_start_values(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
-    // C's `initialization` order: `setAllParamsToStart`, the start values (here the
-    // start expressions, then `-iif`/`-override`), `setAllVarsToStart`.
-    e.call1("functionParameters", sim_data)?;
-    apply_param_overrides(e, sim_data)?;
-    e.call1("functionInitStartValues", sim_data)?;
-    apply_external_input(e, sim_data, inputs)?;
-    copy_start_values_to_init_values(e, sim_data, layout, model)?;
+    set_start_values(e, sim_data, layout, inputs, model)?;
     // C's `read_init_from_file` branch runs them *before* `importStartValues`, giving
     // the file the last word on a start value.
     let from_file = crate::simflags::with_flags(|f| f.init_file.is_some());
@@ -2471,7 +2651,7 @@ fn log_bound_attr_updates(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, 
             "start" => "primary start-values".to_string(),
             _ => format!("{name}-values"),
         };
-        omclog::info(omclog::INIT, true, &format!("updating {header}"));
+        omclog::info!(omclog::INIT, true, "updating {header}");
         if omclog::active(omclog::INIT_V) {
             for (i, a) in entries.iter().enumerate().filter(|(_, a)| a.kind as usize == kind) {
                 let v = read_f64(e, sim_data + layout.attr_log_off + i as u32 * 8).unwrap_or(0.0);
@@ -2615,17 +2795,18 @@ fn run_homotopy_continuation(
     for step in 0..=steps {
         let lambda = (step as f64 / steps as f64).min(1.0);
         write_f64(e, sim_data + layout.lambda_off, lambda)?;
-        omclog::info(omclog::INIT_HOMOTOPY, false, &format!("homotopy parameter lambda = {}", format_g(lambda, 6)));
+        omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
         if step == 0 {
             call_initial_equations_lambda0(e, sim_data, layout)?;
         } else {
             write_i32(e, sim_data + layout.nls_fail_off, 0)?;
             e.call1("functionInitialEquations", sim_data)?;
         }
-        omclog::info(
+        omclog::info!(
             omclog::INIT_HOMOTOPY,
             false,
-            &format!("homotopy parameter lambda = {} done\n---------------------------", format_g(lambda, 6)),
+            "homotopy parameter lambda = {} done\n---------------------------",
+            format_g(lambda, 6),
         );
         path.row(e, sim_data, layout, lambda);
     }
@@ -2659,10 +2840,10 @@ impl HomotopyPath {
             let file = match model {
                 Some(m) if omclog::active(omclog::INIT_HOMOTOPY) => {
                     let path = format!("{}_{name}", m.prefix);
-                    omclog::info(
+                    omclog::info!(
                         omclog::INIT_HOMOTOPY,
                         false,
-                        &format!("The homotopy path will be exported to {path}."),
+                        "The homotopy path will be exported to {path}.",
                     );
                     Some((path, String::new()))
                 }
@@ -2737,6 +2918,10 @@ fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, lay
     for k in 0..layout.n_sens {
         rows.push(read_f64(e, sim_data + layout.sens_off + k * 8)?);
     }
+    for i in 0..layout.n_str_alg() {
+        let s = e.string_at(sim_data + layout.str_off + i * 4)?;
+        rows.push(crate::strings::intern(&s) as f64);
+    }
     Ok(())
 }
 
@@ -2804,7 +2989,7 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
     }
     let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
     let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
-    omclog::info(omclog::STDOUT, false, &format!("Simulation call terminate() {at}\nMessage : {msg}"));
+    omclog::info!(omclog::STDOUT, false, "Simulation call terminate() {at}\nMessage : {msg}");
     Ok(())
 }
 
@@ -2830,16 +3015,14 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
         return Ok(false);
     }
     steady_report::mark();
-    omclog::info(
+    omclog::info!(
         omclog::STDOUT,
         false,
-        &format!(
-            "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
-             relative tolerance = {}",
-            format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
-            format_g(max_der, 6),
-            format_g(tol, 6),
-        ),
+        "steady state reached at time = {}\n  * max(|d(x_i)/dt|/nominal(x_i)) = {}\n  * \
+         relative tolerance = {}",
+        format_g(read_f64(e, sim_data + TIME_OFF)?, 6),
+        format_g(max_der, 6),
+        format_g(tol, 6),
     );
     Ok(true)
 }
@@ -2875,10 +3058,10 @@ fn store_operators_at(
     store_operators(e, sim_data, layout)
 }
 
-/// C's `findRoot`/`findRoot_gb` tail: the pre-event operator history is recorded at
-/// the bracket's *left* end. Storing only at the root leaves both rows of the jump at
-/// the same time, and `delayImpl` then reads the post-event value a step early.
-fn store_operators_left(
+/// C's `findRoot` tail: evaluate at the bracket's left end, record the operator
+/// history and freeze `relationsPre` there. The caller restores the right end
+/// without re-evaluating, so the pre-event row carries the left end's algebraics.
+fn eval_event_left(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
@@ -2886,21 +3069,23 @@ fn store_operators_left(
     time: f64,
     y: &[f64],
 ) -> Result<()> {
-    // Nothing to record: the `relationsPre` this freezes is overwritten by the
-    // discrete update that follows.
-    if !layout.has_history_ops {
-        return Ok(());
-    }
     write_time(e, sim_data, time)?;
     if !y.is_empty() {
         write_f64s(e, states_base, y)?;
     }
-    eval_continuous(e, sim_data, layout)?;
-    store_operators(e, sim_data, layout)?;
+    // As `capture_pre`: a when-model's `functionAlgebraics` runs the discrete update.
+    if layout.has_history_ops || !layout.has_when {
+        eval_continuous(e, sim_data, layout)?;
+    } else {
+        eval_ode(e, sim_data, layout)?;
+    }
+    if layout.has_history_ops {
+        store_operators(e, sim_data, layout)?;
+    }
     update_relations_pre(e, sim_data, layout)
 }
 
-pub(crate) fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
     }
@@ -2917,21 +3102,16 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
     e.call1("functionODE", sim_data)
 }
 
-/// One pass of C's `functionDAE`, which evaluates `allEquations` once. A
-/// `when`-model takes it through `functionAlgebraics`, which is that list plus
-/// `storePreValues`.
+/// One pass of C's `functionDAE`, which evaluates `allEquations` once.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
-    if e.has_discrete_entry() || !layout.has_when {
-        return e.call1("functionDAE", sim_data);
-    }
-    e.call1("functionAlgebraics", sim_data)
+    e.call1("functionDAE", sim_data)
 }
 
 /// C's `function_ZeroCrossingsEquations`: what the crossing functions read.
-fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
     }
@@ -2998,14 +3178,18 @@ pub fn emit_terminal_row(
     }
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_time(e, sim_data, time)?;
-    omclog::info(omclog::EVENTS_V, false, &format!("terminal event at stop time {}", format_g(time, 6)));
+    omclog::info!(omclog::EVENTS_V, false, "terminal event at stop time {}", format_g(time, 6));
     write_i32(e, sim_data + layout.terminal_off, 1)?;
     // A discrete call, so relations are live (C's `updateDiscreteSystem`
     // prologue): a condition that only becomes true at `stop` flips here.
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     let updated = refresh_relations(e, sim_data, layout).and_then(|_| iterate_discrete(e, sim_data, layout));
     write_i32(e, sim_data + layout.terminal_off, 0)?;
-    updated?;
+    if let Err(err) = updated
+        && !terminal_model_throw(e, err, time)
+    {
+        return Err(err);
+    }
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
     check_asserts(e, sim_data, layout, omclog::WARNING)
@@ -3031,7 +3215,8 @@ fn write_output_vars(
     let mut out = format!("time={}", format_g(rows[last], 20));
     for name in names {
         for v in &model.vars {
-            if v.name != *name {
+            // A String's column holds its interned id; the loops below print the text.
+            if v.name != *name || v.ty == crate::VarTy::String {
                 continue;
             }
             match &v.kind {
@@ -3057,7 +3242,7 @@ fn write_output_vars(
                 ResultKind::Const { value } => out.push_str(&format!(",{name}={}", format_g(*value, 20))),
             }
         }
-        // Strings own no result column; C reads them from `stringVars`/`stringParameter`.
+        // C reads Strings from `stringVars`/`stringParameter`.
         let mut string_at = |off: u32| -> Result<()> {
             let s = e.string_at(sim_data + off)?;
             out.push_str(&format!(",{name}=\"{s}\""));
@@ -3428,12 +3613,12 @@ fn log_state_event(time: f64, roots: &[usize], model: &SimMeta) {
     if !omclog::active(omclog::EVENTS) {
         return;
     }
-    omclog::info(omclog::EVENTS, true, &format!("state event at time={}", format_g(time, 12)));
+    omclog::info!(omclog::EVENTS, true, "state event at time={}", format_g(time, 12));
     // Highest index first: C's `checkForStateEvent` pushes each crossing onto the
     // front of the event list it then walks, so simultaneous ones come out reversed.
     for &i in roots.iter().rev() {
         let desc = model.zc_desc.get(i).map(String::as_str).unwrap_or_default();
-        omclog::info(omclog::EVENTS, false, &format!("[{}] {desc}", i + 1));
+        omclog::info!(omclog::EVENTS, false, "[{}] {desc}", i + 1);
     }
 }
 
@@ -3445,7 +3630,7 @@ fn log_reinits(e: &mut dyn SimEngine) {
         }
         let i = off.saturating_sub(REAL_OFF) as usize / 8;
         let name = event_dump_store::with(|d| d.real_names.get(i).cloned().unwrap_or_default());
-        omclog::info(omclog::EVENTS, false, &format!("reinit {name} = {}", format_g(value, 6)));
+        omclog::info!(omclog::EVENTS, false, "reinit {name} = {}", format_g(value, 6));
     }
 }
 
@@ -3454,16 +3639,18 @@ fn log_time_event(e: &dyn SimEngine, time: f64, samples: &Samples, model: &SimMe
     if !omclog::active(omclog::EVENTS) {
         return;
     }
-    omclog::info(omclog::EVENTS, true, &format!("time event at time={}", format_g(time, 12)));
+    omclog::info!(omclog::EVENTS, true, "time event at time={}", format_g(time, 12));
     for (k, start, interval) in samples.due(time) {
         let index = e
             .sample_index(k)
             .or_else(|| model.sample_index.get(k).copied())
             .unwrap_or(k as i32 + 1);
-        omclog::info(
+        omclog::info!(
             omclog::EVENTS,
             false,
-            &format!("[{index}] sample({}, {})", format_g(start, 6), format_g(interval, 6)),
+            "[{index}] sample({}, {})",
+            format_g(start, 6),
+            format_g(interval, 6),
         );
     }
 }
@@ -3556,20 +3743,20 @@ pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, st
     }
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
     event_dump_store::with(|d| {
-        omclog::info(stream, true, &format!("status of relations at time={time}"));
+        omclog::info!(stream, true, "status of relations at time={time}");
         for i in 0..layout.n_rel {
             let flag = |off: u32| if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 { " true" } else { "false" };
             let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
             let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
-            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
         }
         omclog::close(stream);
-        omclog::info(stream, true, &format!("status of zero crossings at time={time}"));
+        omclog::info!(stream, true, "status of zero crossings at time={time}");
         for i in 0..layout.n_zc {
             let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
             let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
             let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
-            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+            omclog::info!(stream, false, "[{}] (pre: {pre}) {cur} = {desc}", i + 1);
         }
         omclog::close(stream);
     });
@@ -3596,7 +3783,7 @@ fn discrete_pre_values(e: &dyn SimEngine, sim_data: u32) -> Result<(Vec<f64>, Ve
 /// [`discrete_snapshot`], which compares the same regions in bulk.
 fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Vec<i32>)) -> Result<()> {
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
-    omclog::info(omclog::EVENTS_V, true, &format!("check for discrete changes at time={time}"));
+    omclog::info!(omclog::EVENTS_V, true, "check for discrete changes at time={time}");
     event_dump_store::with(|d| {
         for ((name, live, _), v1) in d.reals.iter().zip(&before.0) {
             let v2 = read_f64(e, sim_data + live)?;
@@ -3609,7 +3796,7 @@ fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Ve
         for ((name, live, _), v1) in d.ints.iter().zip(&before.1) {
             let v2 = read_i32(e, sim_data + live)?;
             if *v1 != v2 {
-                omclog::info(omclog::EVENTS_V, false, &format!("discrete var changed: {name} from {v1} to {v2}"));
+                omclog::info!(omclog::EVENTS_V, false, "discrete var changed: {name} from {v1} to {v2}");
             }
         }
         for ((name, live, _), v1) in d.bools.iter().zip(&before.1[n_int..]) {
@@ -3679,7 +3866,7 @@ fn update_zero_crossings(
     keep: bool,
 ) -> Result<()> {
     // Flush older ones, so only this pass's are in hand below.
-    drain_asserts(e, sim_data, omclog::INFO)?;
+    drain_asserts(e, sim_data, omclog::INFO, true)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
     write_time(e, sim_data, time)?;
@@ -3760,7 +3947,7 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// consistent set and chatter on the integrator instead. Assumes the event time is
 /// already written.
 pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
-    iterate_discrete_from(e, sim_data, layout, false)
+    iterate_discrete_from(e, sim_data, layout, false, None)
 }
 
 /// [`iterate_discrete`] entered after the first `functionDAE` has already run, as
@@ -3771,8 +3958,20 @@ pub(crate) fn iterate_discrete_after_eval(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
-    iterate_discrete_from(e, sim_data, layout, true)
+    iterate_discrete_from(e, sim_data, layout, true, dae)
+}
+
+/// [`iterate_discrete`] where DAE mode makes `functionDAE` C's `ida_event_update`:
+/// `dae` ends every pass, so each settles around consistent algebraic unknowns.
+pub(crate) fn iterate_discrete_dae(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    dae: &mut dyn FnMut(&mut dyn SimEngine) -> Result<()>,
+) -> Result<()> {
+    iterate_discrete_from(e, sim_data, layout, false, Some(dae))
 }
 
 fn iterate_discrete_from(
@@ -3780,6 +3979,7 @@ fn iterate_discrete_from(
     sim_data: u32,
     layout: &SimLayout,
     evaluated: bool,
+    mut dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     rtclock::tick(rtclock::DISCRETE); // C's `callStatistics.updateDiscreteSystem`
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
@@ -3802,6 +4002,9 @@ fn iterate_discrete_from(
         let events_v = omclog::active(omclog::EVENTS_V);
         let before = if events_v { Some(discrete_pre_values(e, sim_data)?) } else { None };
         eval_discrete(e, sim_data, layout)?;
+        if let Some(dae) = dae.as_deref_mut() {
+            dae(e)?;
+        }
         log_reinits(e);
         if let Some(before) = &before {
             log_discrete_changes(e, sim_data, before)?;
@@ -3811,12 +4014,10 @@ fn iterate_discrete_from(
         }
         iter += 1;
         if iter > max {
-            omclog::debug(
+            omclog::debug!(
                 omclog::ASSERT,
                 false,
-                &format!(
-                    "Simulation terminated due to too many, i.e. {max}, event iterations.\n                     This could either indicate an inconsistent system or an undersized limit of                      event iterations.\nThe limit of event iterations can be specified using the                      runtime flag '\u{2013}mei=<value>'."
-                ),
+                "Simulation terminated due to too many, i.e. {max}, event iterations.\n                     This could either indicate an inconsistent system or an undersized limit of                      event iterations.\nThe limit of event iterations can be specified using the                      runtime flag '\u{2013}mei=<value>'.",
             );
             return Err(ASSERT_ERR);
         }
@@ -3946,10 +4147,11 @@ fn fire_time_event(
     sim_data: u32,
     layout: &SimLayout,
     te: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
-    let r = fire_time_event_inner(e, samples, sim_data, layout, te);
+    let r = fire_time_event_inner(e, samples, sim_data, layout, te, dae);
     took_error_stage(e, addr, save);
     if r.is_err() {
         note_throw_past_step();
@@ -3963,12 +4165,13 @@ fn fire_time_event_inner(
     sim_data: u32,
     layout: &SimLayout,
     te: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<()> {
     write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
     samples.fire(e, sim_data, layout, te)?;
-    iterate_discrete_after_eval(e, sim_data, layout)?;
+    iterate_discrete_after_eval(e, sim_data, layout, dae)?;
     store_relations(e, sim_data, layout)
 }
 
@@ -4070,9 +4273,24 @@ pub fn event_update(
     samples: Option<&mut Samples>,
     time: f64,
 ) -> Result<EventUpdate> {
+    event_update_dae(e, sim_data, layout, samples, time, None)
+}
+
+/// [`event_update`] where DAE mode makes `functionDAE` C's `ida_event_update`:
+/// `dae` ends every event-iteration pass, so the algebraic unknowns and the
+/// derivatives are consistent with the discrete state each pass leaves behind.
+/// Without it the integrator restarts on the values of the pass before the last.
+pub fn event_update_dae(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    samples: Option<&mut Samples>,
+    time: f64,
+    dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
+) -> Result<EventUpdate> {
     let addr = e.error_stage_addr();
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
-    let r = event_update_inner(e, sim_data, layout, samples, time);
+    let r = event_update_inner(e, sim_data, layout, samples, time, dae);
     took_error_stage(e, addr, save);
     if r.is_err() {
         note_throw_past_step();
@@ -4086,6 +4304,7 @@ fn event_update_inner(
     layout: &SimLayout,
     samples: Option<&mut Samples>,
     time: f64,
+    mut dae: Option<&mut (dyn FnMut(&mut dyn SimEngine) -> Result<()> + '_)>,
 ) -> Result<EventUpdate> {
     rethrow_store::note_event();
     let n_states = layout.n_states as usize;
@@ -4103,13 +4322,13 @@ fn event_update_inner(
     let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + SAMPLE_EPS);
     if time_event {
         if let Some(s) = samples.as_deref_mut() {
-            fire_time_event(e, s, sim_data, layout, time)?;
+            fire_time_event(e, s, sim_data, layout, time, dae.as_deref_mut())?;
         }
     } else {
         // `pre(x)` of a continuous variable must be its value at the crossing.
         save_pre_real(e, sim_data, layout)?;
         refresh_relations(e, sim_data, layout)?;
-        iterate_discrete(e, sim_data, layout)?;
+        iterate_discrete_from(e, sim_data, layout, false, dae.as_deref_mut())?;
         store_relations(e, sim_data, layout)?;
         check_nls(e, sim_data, layout)?;
     }
@@ -4145,10 +4364,11 @@ pub fn set_zc_tolerance(
 ) -> Result<()> {
     let rtol = if tolerance > 0.0 { tolerance } else { 1e-6 };
     let tol_zc = 1e-4 * rtol.max(1e-12);
-    omclog::info(
+    omclog::info!(
         omclog::EVENTS_V,
         false,
-        &format!("Set tolerance for zero-crossing hysteresis to: {}", omclog::e(tol_zc, 0, 6)),
+        "Set tolerance for zero-crossing hysteresis to: {}",
+        omclog::e(tol_zc, 0, 6),
     );
     write_f64(e, sim_data + layout.zctol_off, tol_zc)
 }
@@ -4301,14 +4521,10 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
     // which a host that runs those functions itself has already made.
     if !e.host_logs_system_init() {
         omclog::info(omclog::LS, true, "initialize linear system solvers");
-        omclog::info(omclog::LS, false, &format!("{} linear systems", model.n_lin_systems));
+        omclog::info!(omclog::LS, false, "{} linear systems", model.n_lin_systems);
         omclog::close(omclog::LS);
         omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
-        omclog::info(
-            omclog::NLS,
-            false,
-            &format!("{} non-linear systems", model.nls_vars.len()),
-        );
+        omclog::info!(omclog::NLS, false, "{} non-linear systems", model.nls_vars.len());
         omclog::close(omclog::NLS);
     }
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
@@ -4417,25 +4633,32 @@ pub fn finalize_run(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> R
     if let Some(tol) = crate::simflags::with_flags(crate::simflags::steady_state_tol)
         && !steady_report::hit()
     {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Steady state has not been reached.\nThis may be due to too restrictive relative \
-                 tolerance ({}) or short stopTime ({}).",
-                format_g(tol, 6),
-                format_g(model.stop_time, 6),
-            ),
+            "Steady state has not been reached.\nThis may be due to too restrictive relative \
+             tolerance ({}) or short stopTime ({}).",
+            format_g(tol, 6),
+            format_g(model.stop_time, 6),
         );
     }
     signal_teardown();
     e.call1_if_present("callExternalObjectDestructors", sim_data)?;
+    read_params(e, model, sim_data)
+}
+
+/// The `Param` signals' values, in signal order (C's `writeParameterData`).
+pub fn read_params(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<Vec<f64>> {
     let mut params = Vec::new();
     for v in &model.vars {
         if let ResultKind::Param { off, wty, .. } = &v.kind {
-            let val = match wty {
-                WTy::F64 => read_f64(e, sim_data + off)?,
-                WTy::I32 => read_i32(e, sim_data + off)? as f64,
+            let val = if v.ty == crate::VarTy::String {
+                crate::strings::intern(&e.string_at(sim_data + off)?) as f64
+            } else {
+                match wty {
+                    WTy::F64 => read_f64(e, sim_data + off)?,
+                    WTy::I32 => read_i32(e, sim_data + off)? as f64,
+                }
             };
             params.push(val);
         }
@@ -4468,6 +4691,19 @@ pub fn drive(
     // `+profiling` is C's other `measure_time_flag` source.
     rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
     rtclock::tick(rtclock::TOTAL);
+    let lv_time = crate::simflags::with_flags(|f| f.lv_time);
+    if let Some((t0, t1)) = lv_time {
+        omclog::info!(
+            omclog::STDOUT,
+            false,
+            "Time dependent logging enabled. Activate logging in interval [{t0:.6}, {t1:.6}]",
+        );
+        // C reactivates the streams before `callSolver` when the run starts inside the window.
+        if start >= t0 {
+            omclog::reactivate();
+            e.set_log_mask(omclog::mask());
+        }
+    }
     rtclock::tick(rtclock::PREINIT);
     crate::profiling::start(e, model);
 
@@ -4490,6 +4726,7 @@ pub fn drive(
                 label = "euler-host";
                 let (mut driver, _) = make_driver_resolved(e, model, sim_data, "euler")
                     .map_err(|err| enrich_trap_init(e, err, model.start_time))?;
+                open_result(e, model, sim_data)?;
                 loop {
                     match driver.advance(e, model, f64::INFINITY).map_err(|err| enrich_trap(e, err))? {
                         Advance::Done | Advance::Terminated => break,
@@ -4514,6 +4751,7 @@ pub fn drive(
                 solver_setup(e, model, sim_data)?;
                 run_initialization_model(e, sim_data, model)
                     .map_err(|err| enrich_trap_init(e, err, start))?;
+                open_result(e, model, sim_data)?;
                 return crate::optimization::run_optimizer(e, model, sim_data)
                     .map_err(|err| enrich_trap(e, err));
             }
@@ -4529,6 +4767,7 @@ pub fn drive(
         if !use_events
             && method == "euler"
             && layout.n_states > 0
+            && layout.n_str_alg() == 0
             && e.has_simulate_entry()
             && !host_driven
             && !csv_input_given()
@@ -4539,6 +4778,7 @@ pub fn drive(
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
             let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
+            open_result(e, model, sim_data)?;
             emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, None)?;
             return Ok(rows);
         }
@@ -4546,6 +4786,7 @@ pub fn drive(
         let (mut driver, l) =
             make_driver_resolved(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
         label = l;
+        open_result(e, model, sim_data)?;
         // C's bracket up to `externalInputFree`: from here on the file drives the
         // inputs. Initialization got its one application in `apply_external_input`.
         #[cfg(feature = "std")]
@@ -4573,13 +4814,11 @@ pub fn drive(
                             open_assert_window();
                             let updated = emit_row(e, &mut last, sim_data, layout, t, stop);
                             let _ = close_assert_window(e, sim_data).and(updated);
-                            omclog::info(
+                            omclog::info!(
                                 omclog::STDOUT,
                                 false,
-                                &format!(
-                                    "model terminate | Integrator failed. | Simulation terminated at time {}",
-                                    format_g(t, 6)
-                                ),
+                                "model terminate | Integrator failed. | Simulation terminated at time {}",
+                                format_g(t, 6),
                             );
                         }
                         return Err(enrich_trap(e, err));
@@ -4597,6 +4836,9 @@ pub fn drive(
         emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
         Ok(rows)
     })();
+    if lv_time.is_some() {
+        omclog::deactivate();
+    }
     let _ = bench;
     // Before `outcome?`: a failed run is when the counters matter most.
     #[cfg(feature = "std")]
@@ -4612,7 +4854,7 @@ pub fn drive(
             eprintln!("wasm-jit sim [{label}]: {}", line.join(" "));
         }
     }
-    let rows = match outcome {
+    let mut rows = match outcome {
         Ok(rows) => rows,
         // C's `dataReconciliation(data, threadData, status)` with a non-zero status:
         // the run failed, so the procedure writes its error report and exits.
@@ -4643,6 +4885,7 @@ pub fn drive(
     }
     recon_res?;
     crate::parmod::finish();
+    finish_rows(&mut rows);
     rtclock::accumulate(rtclock::TOTAL);
     crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
@@ -4751,7 +4994,9 @@ impl Driver for EulerDriver {
             // The last row lands exactly on `stop`: the terminal step.
             let time =
                 self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
-            self.retry.open(e, self.rows.len());
+            let t_now = read_f64(e, sim_data + TIME_OFF)?;
+            logging_window(e, t_now, time);
+            self.retry.open(e, &mut self.rows);
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
@@ -4963,6 +5208,22 @@ impl LambdaRamp {
     }
 }
 
+/// A root probe under `noThrowAsserts` (C: "asserts can be ignored when searching
+/// for the event"): not an accepted point, and its out-of-domain value still gives
+/// the root function a sign. What it caught is dropped.
+fn probe_holding_asserts(
+    e: &mut dyn SimEngine,
+    probe: impl FnOnce(&mut dyn SimEngine) -> Result<()>,
+) -> Result<()> {
+    let window = asserts_suppressed();
+    set_no_throw(true);
+    let probed = probe(e);
+    set_no_throw(window);
+    let _ = e.take_pending_warnings();
+    let _ = rethrow_store::take();
+    probed
+}
+
 /// DASKR root (constraint) function: fills `rval[i]` with `g_i(t, y)`, the value
 /// whose sign change is a state event. Writes the candidate `t`/`y` into SimData,
 /// evaluates the continuous equations (`functionODE`) so any algebraics a
@@ -4997,8 +5258,10 @@ unsafe fn dassl_rt(
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
-        e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
+        probe_holding_asserts(e, |e| {
+            e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
+            e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)
+        })?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
         e.read_bytes(ctx.sim_data + ctx.zc_probe_off, rval_bytes)?;
@@ -5073,6 +5336,7 @@ unsafe fn dassl_res(
     let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
+        Err(err) if residual_model_throw(e, err, unsafe { *t }) => unsafe { *ires = -1 },
         Err(err) => {
             ctx.err = Some(err);
             unsafe { *ires = -2 };
@@ -5145,7 +5409,7 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
         JacAvail::Available => requested.unwrap_or(M::ColoredSymJac),
     };
     if log {
-        omclog::info(omclog::JAC, false, &format!("Using Jacobian method: {}", method.desc()));
+        omclog::info!(omclog::JAC, false, "Using Jacobian method: {}", method.desc());
     }
     // Without an adjoint C's `evalJacobian` degenerates to the colored evaluation.
     match method {
@@ -5286,8 +5550,6 @@ unsafe fn dassl_jac(
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::JACOBIAN);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
-    // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
-    // here: a model error at a perturbed point leaves the assembly as it stands.
     let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let colored = jac_method_colored(ctx.jac_method);
     // C's `jacA_num` / `jacA_sym`: one column at a time, every row of it.
@@ -5331,26 +5593,36 @@ unsafe fn dassl_jac(
                     ctx.jac_del[ci] = del;
                     unsafe { *y.add(ci) = yi + del };
                 }
-                // One residual evaluation at the perturbed point.
+                // One residual evaluation at the perturbed point. No `IRES` here: a
+                // model error leaves this colour's columns as they stand, as IDA's does.
                 write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
                 let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
                 e.write_bytes(ctx.states_base, y_bytes)?;
-                e.call1("functionODE", ctx.sim_data)?;
-                e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
-                for row in 0..n {
-                    let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
-                    ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+                let evaluated = match e.call1("functionODE", ctx.sim_data) {
+                    Ok(()) => true,
+                    Err(err) if residual_model_throw(e, err, unsafe { *t }) => false,
+                    Err(err) => return Err(err),
+                };
+                if evaluated {
+                    e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
+                    for row in 0..n {
+                        let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
+                        ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+                    }
+                    // Scatter the finite difference into the affected rows.
+                    for &col in group {
+                        let ci = col as usize;
+                        let del = ctx.jac_del[ci];
+                        let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
+                        for &row in rows {
+                            let ri = row as usize;
+                            let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
+                            unsafe { *pd.add(ci * n + ri) = d / del };
+                        }
+                    }
                 }
-                // Scatter the finite difference into the affected rows, restore y.
                 for &col in group {
                     let ci = col as usize;
-                    let del = ctx.jac_del[ci];
-                    let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
-                    for &row in rows {
-                        let ri = row as usize;
-                        let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
-                        unsafe { *pd.add(ci * n + ri) = d / del };
-                    }
                     unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
                 }
             }
@@ -5423,16 +5695,23 @@ unsafe fn dassl_log_jacobian(
     };
     let name = |i: usize| names.get(i).map(String::as_str).unwrap_or("");
     let value = |col: usize, row: usize| -(unsafe { *pd.add(col * n + row) });
-    omclog::info(omclog::JAC, true, &format!(
+    omclog::info!(
+        omclog::JAC,
+        true,
         "DASSL-Solver: analytical Jacobian pd (column-major) at time={}",
-        format_g(t, 6)
-    ));
+        format_g(t, 6),
+    );
     for col in 0..n {
         for row in 0..n {
-            omclog::info(omclog::JAC, false, &format!(
+            omclog::info!(
+                omclog::JAC,
+                false,
                 "J(row={row}:'{}', col={col}:'{}') = {} [flat={}]",
-                name(row), name(col), format_g(value(col, row), 16), col * n + row
-            ));
+                name(row),
+                name(col),
+                format_g(value(col, row), 16),
+                col * n + row,
+            );
         }
     }
     omclog::close(omclog::JAC);
@@ -5485,14 +5764,26 @@ unsafe fn dassl_log_jacobian(
         }
     }
     omclog::info(omclog::JAC, true, "Jacobian verification: analytical vs. numerical");
-    omclog::info(omclog::JAC, false, &format!(
+    omclog::info!(
+        omclog::JAC,
+        false,
         "Max absolute difference: {} at (row={}:'{}', col={}:'{}')",
-        format_g(max_abs, 6), abs_at.0, name(abs_at.0), abs_at.1, name(abs_at.1)
-    ));
-    omclog::info(omclog::JAC, false, &format!(
+        format_g(max_abs, 6),
+        abs_at.0,
+        name(abs_at.0),
+        abs_at.1,
+        name(abs_at.1),
+    );
+    omclog::info!(
+        omclog::JAC,
+        false,
         "Max relative difference: {} at (row={}:'{}', col={}:'{}')",
-        format_g(max_rel, 6), rel_at.0, name(rel_at.0), rel_at.1, name(rel_at.1)
-    ));
+        format_g(max_rel, 6),
+        rel_at.0,
+        name(rel_at.0),
+        rel_at.1,
+        name(rel_at.1),
+    );
     omclog::close(omclog::JAC);
     Ok(())
 }
@@ -5688,7 +5979,7 @@ fn log_dassl() -> bool {
 }
 
 fn log_dassl_step(t: f64) {
-    omclog::info(omclog::DASSL, false, &format!("new step at time = {}", format_g(t, 15)));
+    omclog::info!(omclog::DASSL, false, "new step at time = {}", format_g(t, 15));
 }
 
 /// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
@@ -5711,7 +6002,7 @@ fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
     if !msg.is_empty() {
         omclog::warning(omclog::STDOUT, false, msg);
     }
-    omclog::warning(omclog::STDOUT, false, &format!("can't continue. time = {t:.6}"));
+    omclog::warning!(omclog::STDOUT, false, "can't continue. time = {t:.6}");
     solver_fail_store::set(t);
     SOLVER_FAILED_ERR
 }
@@ -5741,17 +6032,25 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     omclog::info(omclog::DASSL, false, "Finished DASSL step.");
 }
 
-/// C's `realVarsData[i].attribute.nominal` for the states, floored at 1e-32 by
-/// `functionUpdateBoundVariableAttributes` and so only readable after
-/// initialization. In DAE mode the algebraic unknowns' nominals follow (C's
-/// `getAlgebraicDAEVarNominals`), one per extra component of IDA's `y`. Length ≥ 1
-/// so daskr never sees an empty array.
+/// C's `realVarsData[i].attribute.nominal` for the states, which scales a
+/// solver's absolute tolerance and is what `fmi3GetNominalsOfContinuousStates`
+/// answers. Floored as `ida_solver_setNominals` does: read before
+/// `initializeModel` has floored them, a zero nominal is an infinite error
+/// weight.
+pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
+    (0..layout.n_states)
+        .map(|i| Ok(libm::fmax(libm::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?), 1e-32)))
+        .collect()
+}
+
+/// [`state_nominals`], with the algebraic unknowns' nominals after them in DAE
+/// mode (C's `getAlgebraicDAEVarNominals`), one per extra component of IDA's `y`.
+/// Length ≥ 1 so daskr never sees an empty array.
 fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
-    let mut nominals: Vec<f64> = (0..layout.n_states)
-        .map(|i| read_f64(e, sim_data + layout.state_nom_off + i * 8))
-        .collect::<Result<_>>()?;
+    let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
-        nominals.push(read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?);
+        let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
+        nominals.push(libm::fmax(libm::fabs(n), 1e-32));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -6009,7 +6308,8 @@ impl Driver for DasslDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
-                self.retry.open(e, self.rows.len());
+                logging_window(e, self.t, time);
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -6095,16 +6395,18 @@ impl Driver for DasslDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
             // INFO(1)=1, up to a cap. INFO(3)=1 keeps a call to one step, so this is
             // C's guard rather than a path a stiff interval takes.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
+            let fresh = self.pending_tout.is_none();
             let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
                 stop
             } else {
                 grid(self.row)
             });
+            logging_window(e, self.t, tout);
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
             // so emit the held state directly instead of stepping.
             if tout <= self.t {
@@ -6116,6 +6418,17 @@ impl Driver for DasslDriver {
                 self.retry.store(e, sim_data, layout)?;
                 self.row += 1;
                 continue;
+            }
+            // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
+            if fresh && omclog::active(omclog::SOLVER) {
+                omclog::info!(
+                    omclog::SOLVER,
+                    true,
+                    "call solver from {} to {} (stepSize: {})",
+                    format_g(self.t, 6),
+                    format_g(tout, 6),
+                    format_g15(tout - self.t),
+                );
             }
             let logging = log_dassl();
             if logging {
@@ -6132,8 +6445,12 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
-            if logging && self.idid != -1 {
+            // C's `dassl_step` logs the statistics once its `while (idid == 1)` loop is done.
+            if logging && self.idid != -1 && self.idid != 1 {
                 log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
+            }
+            if self.idid >= 0 && self.idid != 1 {
+                log_solver_finished(self.t);
             }
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
@@ -6154,7 +6471,9 @@ impl Driver for DasslDriver {
                 for i in 0..n_states {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
                 }
-                return Err(report_dassl_failure(self.idid, self.t));
+                let err = report_dassl_failure(self.idid, self.t);
+                log_solver_finished(self.t);
+                return Err(err);
             }
             // IDID=1: one internal step with TOUT still ahead. C's `dassl_step` loops
             // on that until the interval is covered, and breaks out per step only for
@@ -6449,10 +6768,12 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
     // C's compatibility warning, before the banner it belongs to.
     let (lmm, iter) = config;
     if (lmm == CvodeLmm::Adams) != (iter == CvodeIter::FixedPoint) {
-        omclog::warning(
+        omclog::warning!(
             omclog::SOLVER,
             true,
-            &format!("Combination of {} and {} not recommended.", lmm.name(), iter.name()),
+            "Combination of {} and {} not recommended.",
+            lmm.name(),
+            iter.name(),
         );
         for line in [
             "Use simflags -cvodeLinearMultistepMethod and -cvodeNonlinearSolverIteration to set.",
@@ -6470,17 +6791,14 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
     ] {
         omclog::info(omclog::SOLVER, false, &line);
     }
-    omclog::info(
-        omclog::SOLVER,
-        false,
-        &format!("CVODE Using relative error tolerance {}", format_e(rtol)),
-    );
+    omclog::info!(omclog::SOLVER, false, "CVODE Using relative error tolerance {}", format_e(rtol));
     omclog::info(omclog::SOLVER, false, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
     omclog::info(omclog::SOLVER, false, "CVODE Use internal dense numeric jacobian method.");
-    omclog::info(
+    omclog::info!(
         omclog::SOLVER,
         false,
-        &format!("CVODE uses internal root finding method {}", if root_finding { "YES" } else { "NO" }),
+        "CVODE uses internal root finding method {}",
+        if root_finding { "YES" } else { "NO" },
     );
     for line in [
         "CVODE maximum absolut step size 0".to_string(),
@@ -6632,32 +6950,32 @@ impl IdaState {
             {
                 if self.setup.ramp_recovers(flag, *t) {
                     self.setup.arm_ramp(ida, self.stop_time);
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::SOLVER,
                         false,
-                        &format!(
-                            "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
-                             activating homotopy ramp",
-                            format_g(*t, 15)
-                        ),
+                        "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
+                         activating homotopy ramp",
+                        format_g(*t, 15),
                     );
                 }
                 ida.reinit(*t);
                 self.restarted = true;
-                omclog::warning(
+                omclog::warning!(
                     omclog::SOLVER,
                     false,
-                    &format!("##IDA## solver failed, try once again at time = {}", format_g(*t, 15)),
+                    "##IDA## solver failed, try once again at time = {}",
+                    format_g(*t, 15),
                 );
                 Progress::WorkQuota
             }
             crate::sundials::Stop::Failed(crate::sundials::IDA_RTFUNC_FAIL) => Progress::RootThrew,
             crate::sundials::Stop::Failed(flag) => {
                 // C's last word before it gives up (`ida_solver.c`).
-                omclog::info(
+                omclog::info!(
                     omclog::STDOUT,
                     false,
-                    &format!("##IDA## {flag} error occurred at time = {}", format_g(*t, 15)),
+                    "##IDA## {flag} error occurred at time = {}",
+                    format_g(*t, 15),
                 );
                 Progress::Failed("CodegenWasmJit: IDA failed")
             }
@@ -7141,7 +7459,7 @@ impl SolverCore {
     /// the discrete context, re-initialize at what they leave behind, `IDACalcIC` for
     /// the algebraic unknowns and derivatives, answer back into `SimData`. `ctx` must
     /// be the live callback context — `IDACalcIC` evaluates the residual.
-    fn dae_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
+    fn dae_restart(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
         let _ = ctx; // DAE mode needs SUNDIALS, so without it there is nothing to do
         e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
         self.read_states(e)?;
@@ -7158,38 +7476,87 @@ impl SolverCore {
             self.yp.copy_from_slice(ida.yp());
         }
         e.call2(MODEL_FN_DAE, self.sim_data, eval_stage::DISCRETE)?;
-        self.write_states(e)?;
-        Ok(())
+        self.write_states(e)
     }
 
-    /// C's `didEventStep`: drop the step history at the post-event state, which in
-    /// DAE mode means the whole of `dae_restart`.
+    /// C's `didEventStep`: drop the step history at the post-event state. In DAE
+    /// mode that is C's `IDAReInit` alone -- the `IDACalcIC` belongs to the event
+    /// iteration, which ran [`Self::dae_restart`] at the end of every pass.
     fn event_restart(&mut self, e: &mut (dyn SimEngine + 'static), ctx: *mut ResCtx) -> Result<()> {
-        match self.dae {
-            true => self.dae_restart(e, ctx),
-            false => self.restart(),
-        }
+        let _ = (e, ctx);
+        self.restart()
     }
 
-    /// The `IDACalcIC` C's initialization performs before the first output row —
-    /// which already reports the algebraic unknowns and derivatives IDA solves for.
-    fn prime(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> Result<()> {
+    /// C's `handleEvents`: the event iteration with `functionDAE` as DAE mode
+    /// installs it.
+    fn event_update_here(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        sim_data: u32,
+        layout: &SimLayout,
+        ctx: *mut ResCtx,
+        time: f64,
+    ) -> Result<EventUpdate> {
+        if !self.dae {
+            return event_update(e, sim_data, layout, None, time);
+        }
+        let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
+        event_update_dae(e, sim_data, layout, None, time, Some(&mut dae))
+    }
+
+    /// The same for a time event, which C also ends in `updateDiscreteSystem`.
+    fn fire_time_event_here(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        samples: &mut Samples,
+        sim_data: u32,
+        layout: &SimLayout,
+        ctx: *mut ResCtx,
+        te: f64,
+    ) -> Result<()> {
+        if !self.dae {
+            return fire_time_event(e, samples, sim_data, layout, te, None);
+        }
+        let mut dae = |e: &mut dyn SimEngine| self.dae_restart(e, ctx);
+        fire_time_event(e, samples, sim_data, layout, te, Some(&mut dae))
+    }
+
+    /// C's `ida_event_update` as the initial `updateDiscreteSystem` calls it: the IDA
+    /// block on first use, then the ordinary restart. Interleaving it with the event
+    /// iteration is what makes it work — a pass that flips a relation is what hands
+    /// the next `IDACalcIC` a system to solve.
+    fn dae_event_update(&mut self, e: &mut dyn SimEngine, ctx: *mut ResCtx) -> Result<()> {
         if !self.dae {
             return Ok(());
         }
-        self.read_states(e)?;
-        let mut ctx = self.res_ctx(e, layout);
-        let ctx_ptr = &mut ctx as *mut ResCtx;
-        RES_CTX.store(ctx_ptr, Ordering::Relaxed);
-        let _guard = ResCtxGuard;
-        let (t, sim_data) = (self.t, self.sim_data);
         #[cfg(sundials)]
-        if let Solver::Ida(state) = &mut self.solver {
-            let e = unsafe { &mut *ctx.engine };
-            state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx_ptr)?;
+        {
+            let (t, sim_data) = (self.t, self.sim_data);
+            self.read_states(e)?;
+            if let Solver::Ida(state) = &mut self.solver {
+                state.ensure(e, sim_data, t, &mut self.y, &mut self.yp, ctx)?;
+            }
         }
-        if let Some(err) = ctx.err.take() {
-            return Err(err);
+        self.dae_restart(e, ctx)
+    }
+
+    /// C's `updateSolverNominals`, for the DAE-mode core built before
+    /// `initializeModel`: the nominals it took its tolerances from are only final now.
+    fn refresh_nominals(&mut self, e: &dyn SimEngine, layout: &SimLayout) -> Result<()> {
+        self.nominals = read_state_nominals(e, self.sim_data, layout)?;
+        self.maxs = read_state_maxs(e, self.sim_data, layout)?;
+        let (_, atol) = dassl_tolerances(self.tol, &self.nominals);
+        #[cfg(sundials)]
+        {
+            let t = self.t;
+            if let Solver::Ida(s) = &mut self.solver {
+                if let Some(ida) = s.ida.as_mut()
+                    && !ida.set_tolerances(t, s.rtol, &atol)
+                {
+                    return Err("CodegenWasmJit: IDA tolerances failed");
+                }
+                s.atol = atol;
+            }
         }
         Ok(())
     }
@@ -7225,15 +7592,13 @@ impl SolverCore {
             return Ok(());
         };
         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
-        omclog::info(
+        omclog::info!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
-                 with a total time delta less than the step size {step_size}). This can be a \
-                 performance bottleneck. Use -lv LOG_EVENTS for more information. The \
-                 zero-crossing was: {desc}"
-            ),
+            "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
+             with a total time delta less than the step size {step_size}). This can be a \
+             performance bottleneck. Use -lv LOG_EVENTS for more information. The \
+             zero-crossing was: {desc}",
         );
         if chatter_store::abort() {
             omclog::debug(
@@ -7318,7 +7683,7 @@ impl SolverCore {
     /// that moved a state behind DASKR's back. In DAE mode the algebraic unknowns
     /// follow the states in `y` (C's `getAlgebraicDAEVars`); only the states' `y'`
     /// moves, as C's `statesDer` keeps what the last `IDAGetConsistentIC` left there.
-    fn read_states(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn read_states(&mut self, e: &mut dyn SimEngine) -> Result<()> {
         self.read_y(e)?;
         self.yp.resize(self.n_unknowns, 0.0);
         for i in 0..self.n_states {
@@ -7329,7 +7694,7 @@ impl SolverCore {
 
     /// The `y` half of [`read_states`](SolverCore::read_states), for the callers
     /// that must not disturb the integrator's own `y'`.
-    fn read_y(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn read_y(&mut self, e: &mut dyn SimEngine) -> Result<()> {
         self.y = (0..self.n_states)
             .map(|i| read_f64(e, self.states_base + (i as u32) * 8))
             .collect::<Result<_>>()?;
@@ -7342,7 +7707,7 @@ impl SolverCore {
     /// The integrator's accepted point back into `SimData`. For an explicit ODE only
     /// the states move (the model computes `y'`); in DAE mode `y'` and the algebraic
     /// unknowns are solver results too.
-    fn write_states(&self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+    fn write_states(&self, e: &mut dyn SimEngine) -> Result<()> {
         for i in 0..self.n_states {
             write_f64(e, self.states_base + (i as u32) * 8, self.y[i])?;
         }
@@ -7640,7 +8005,7 @@ impl SolverCore {
         {
             capture_pre(e, r, sim_data, layout, t)?;
         }
-        event_update(e, sim_data, layout, None, t)?;
+        self.event_update_here(e, sim_data, layout, ctx as *mut ResCtx, t)?;
         save_zero_crossings_after_event(e, sim_data, layout)?;
         if let Some(r) = rows.as_deref_mut() {
             if emit_post_event_row(model, t) {
@@ -7730,20 +8095,18 @@ impl SolverCore {
             if target - self.t > step_eps {
                 // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
                 if omclog::active(omclog::SOLVER) {
-                    omclog::info(
+                    omclog::info!(
                         omclog::SOLVER,
                         true,
-                        &format!(
-                            "call solver from {} to {} (stepSize: {})",
-                            format_g(self.t, 6),
-                            format_g(target, 6),
-                            format_g15(target - self.t)
-                        ),
+                        "call solver from {} to {} (stepSize: {})",
+                        format_g(self.t, 6),
+                        format_g(target, 6),
+                        format_g15(target - self.t),
                     );
                 }
                 let solved = self.solve_toward(target, ctx, deadline, did_step)?;
                 if omclog::active(omclog::SOLVER) {
-                    omclog::info(omclog::SOLVER, false, &format!("finished solver step {}", format_g(self.t, 6)));
+                    omclog::info!(omclog::SOLVER, false, "finished solver step {}", format_g(self.t, 6));
                     omclog::close(omclog::SOLVER);
                 }
                 let rooted = match solved {
@@ -7816,12 +8179,16 @@ impl SolverCore {
                         self.state_events += 1;
                         self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
                     }
-                    if let Some((t_l, y_l)) = self.event_left() {
-                        store_operators_left(e, sim_data, layout, self.states_base, t_l, &y_l)?;
+                    let left = self.event_left();
+                    if let Some((t_l, y_l)) = &left {
+                        eval_event_left(e, sim_data, layout, self.states_base, *t_l, y_l)?;
                         // C restores `time_right`/`states_right`.
                         write_time(e, sim_data, troot)?;
                         self.write_states(e)?;
                     }
+                    // gbode re-evaluates at the root before the pre-event row (C's
+                    // `simulationUpdate`); a fixed-step method's `findRoot` tail does not.
+                    let bisected = left.is_some() && !self.solver_root_finding();
                     if self.solver_root_finding() {
                         store_operators_at(e, sim_data, layout, troot)?;
                     }
@@ -7830,14 +8197,18 @@ impl SolverCore {
                     if let Some(r) = rows.as_deref_mut()
                         && !no_event_emit()
                     {
-                        capture_pre(e, r, sim_data, layout, troot)?;
+                        if bisected {
+                            capture_row(e, r, sim_data, layout)?;
+                        } else {
+                            capture_pre(e, r, sim_data, layout, troot)?;
+                        }
                     }
                     let _ = save_zero_crossings(e, sim_data, layout)?;
                     if defers(troot) {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
-                    event_update(e, sim_data, layout, None, troot)?;
+                    self.event_update_here(e, sim_data, layout, ctx, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
@@ -7897,7 +8268,7 @@ impl SolverCore {
                     write_time(e, sim_data, te)?;
                     return Ok(Step::Event { time: te });
                 }
-                fire_time_event(e, samp, sim_data, layout, te)?;
+                self.fire_time_event_here(e, samp, sim_data, layout, ctx, te)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut()
@@ -8052,6 +8423,9 @@ impl CsDriver {
     /// Build over an already-initialized model at time `t`, integrating with the
     /// method the FMU was exported with ([`SimMeta::cs_method`]).
     ///
+    /// The driver takes over `sync` so the instance has exactly one clock schedule,
+    /// and builds its own only for a caller with none.
+    ///
     /// The integrator watches event indicators only under [`CsDefer::Any`], the one
     /// mode whose master can be handed the crossing time (Event Mode with early
     /// return). Otherwise the FMU resolves the event itself, and does it as C's
@@ -8063,6 +8437,7 @@ impl CsDriver {
         sim_data: u32,
         t: f64,
         defer: CsDefer,
+        sync: Option<crate::sync::Sync>,
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
@@ -8074,8 +8449,14 @@ impl CsDriver {
         }
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout, t)?;
-        let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
-        sync.take_fired(e, t)?;
+        let sync = match sync {
+            Some(s) => s,
+            None => {
+                let mut s = crate::sync::Sync::new(e, model, sim_data)?;
+                s.take_fired(e, t)?;
+                s
+            }
+        };
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
         core.fmi_cs_solver_setup(defer);
         if core.n_states > 0 {
@@ -8106,10 +8487,33 @@ impl CsDriver {
         defer: CsDefer,
         dss: &mut StateSelection,
     ) -> Result<CsStep> {
+        // C's `simulationUpdate` window over the step, as `drive` holds it over a
+        // row; the integrator suspends it over its trials. An event handed to the
+        // master counts as found.
+        open_assert_window();
+        let out = self.step(e, model, t_target, defer, dss);
+        if matches!(out, Ok(CsStep::Event { .. })) {
+            rethrow_store::note_event();
+        }
+        let settled = close_assert_window(e, self.core.sim_data);
+        let out = out?;
+        settled?;
+        Ok(out)
+    }
+
+    fn step(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+        defer: CsDefer,
+        dss: &mut StateSelection,
+    ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
-        // No continuous states: samples, and zero crossings on `time` bracketed and
-        // bisected between the communication points as `EventsDriver` does.
+        // No continuous states: samples, clock activations, and zero crossings on
+        // `time` bracketed and bisected between the communication points as
+        // `EventsDriver` does.
         if self.core.n_states == 0 {
             self.resume = None;
             let eps = reached_eps(t_target, model.stop_time - model.start_time);
@@ -8122,7 +8526,14 @@ impl CsDriver {
             loop {
                 rotate_old_real(e, sim_data, layout)?;
                 let te = self.samp.next_time();
-                let subtarget = if te >= self.core.t && te <= t_target + SAMPLE_EPS { te } else { t_target };
+                let tc = self.sync.next_time();
+                let mut subtarget = t_target;
+                if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
+                    subtarget = tc;
+                }
+                if te >= self.core.t && te <= subtarget + SAMPLE_EPS {
+                    subtarget = te;
+                }
                 let mut troot = None;
                 if layout.n_zc > 0 && subtarget - self.core.t > eps {
                     update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, false)?;
@@ -8131,7 +8542,7 @@ impl CsDriver {
                     }
                 }
                 if let Some((tleft, tr)) = troot {
-                    store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                    eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
@@ -8156,16 +8567,36 @@ impl CsDriver {
                         return Ok(CsStep::Event { time: te });
                     }
                     store_operators_at(e, sim_data, layout, te)?;
-                    fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
+                    fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                     e.clean_nls_history(te);
                     self.core.time_events += 1;
                     if terminated(e, sim_data, layout)? {
                         return Ok(CsStep::Terminated);
                     }
                     self.after_walk_event(e, layout)?;
-                    continue;
                 }
-                break;
+                // C's `handleTimers`, plus any event clock the update above fired.
+                if !self.sync.is_empty() {
+                    write_time(e, sim_data, subtarget)?;
+                    self.sync.take_fired(e, subtarget)?;
+                }
+                if self.sync.next_time() <= subtarget + SYNC_EPS {
+                    self.core.t = subtarget;
+                    if defers(subtarget) {
+                        write_time(e, sim_data, subtarget)?;
+                        return Ok(CsStep::Event { time: subtarget });
+                    }
+                    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                    eval_continuous(e, sim_data, layout)?;
+                    if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, SYNC_EPS, None)? {
+                        if terminated(e, sim_data, layout)? {
+                            return Ok(CsStep::Terminated);
+                        }
+                        self.after_walk_event(e, layout)?;
+                    }
+                } else if te > subtarget + SAMPLE_EPS {
+                    break;
+                }
             }
             self.core.t = t_target;
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -8223,6 +8654,9 @@ impl CsDriver {
     /// The master's `update-discrete-states` at the event `step_to` stopped on: the
     /// discrete update and bookkeeping [`integrate_to`](SolverCore::integrate_to)
     /// runs for an event it resolves itself, the restart left to the next step.
+    ///
+    /// C's `internalEventUpdate` runs `handleTimersFMI` here too, and on this
+    /// schedule: it is the one `step_to` cut its step onto.
     pub fn do_event_update(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
@@ -8231,21 +8665,62 @@ impl CsDriver {
     ) -> Result<EventUpdate> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
-        let time_event = self.samp.next_time() <= time + SAMPLE_EPS;
-        if time_event {
+        let sample_due = self.samp.next_time() <= time + SAMPLE_EPS;
+        let clock_due = self.sync.next_time() <= time + SYNC_EPS;
+        if sample_due {
             self.core.time_events += 1;
-        } else {
+        } else if !clock_due {
             self.core.state_events += 1;
         }
-        let up = event_update(e, sim_data, layout, Some(&mut self.samp), time)?;
+        // C's `simulationUpdate`: the timers, then the event, then the timers again
+        // for an event clock.
+        let mut ticked = false;
+        if clock_due {
+            write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+            eval_continuous(e, sim_data, layout)?;
+            ticked = fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
+        }
+        let mut up = self.event_update_master(e, layout, time)?;
+        ticked |= fire_clocks(e, &mut self.sync, model, sim_data, time, SYNC_EPS, None)?;
+        up.states_changed |= ticked;
+        let tc = self.sync.next_time();
+        if tc.is_finite() {
+            up.next_event_time = Some(up.next_event_time.map_or(tc, |n: f64| n.min(tc)));
+        }
         save_zero_crossings_after_event(e, sim_data, layout)?;
         store_operators(e, sim_data, layout)?;
         if self.core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
         }
         omclog::close(omclog::EVENTS);
-        self.resume = Some(if time_event { MasterEvent::Time } else { MasterEvent::State });
+        self.resume =
+            Some(if sample_due || clock_due { MasterEvent::Time } else { MasterEvent::State });
         Ok(up)
+    }
+
+    /// [`SolverCore::event_update_here`] for the event the master resolves: the
+    /// residual context `IDACalcIC` reads through is live only for the call.
+    fn event_update_master(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        layout: &SimLayout,
+        time: f64,
+    ) -> Result<EventUpdate> {
+        let sim_data = self.core.sim_data;
+        if !self.core.dae {
+            return event_update(e, sim_data, layout, Some(&mut self.samp), time);
+        }
+        let mut ctx = self.core.res_ctx(e, layout);
+        let ctx_ptr = &mut ctx as *mut ResCtx;
+        RES_CTX.store(ctx_ptr, Ordering::Relaxed);
+        let _guard = ResCtxGuard;
+        let Self { core, samp, .. } = self;
+        let mut dae = |e: &mut dyn SimEngine| core.dae_restart(e, ctx_ptr);
+        let up = event_update_dae(e, sim_data, layout, Some(samp), time, Some(&mut dae));
+        match ctx.err.take() {
+            Some(err) => Err(err),
+            None => up,
+        }
     }
 
     /// C's `fmi2DoStep` reads the derivatives at the start of every step, after the
@@ -8336,26 +8811,56 @@ impl EventsDriver {
         model: &SimModel,
         sim_data: u32,
         method: &str,
-        gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
+        mut gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(1); // see `DasslDriver::new`
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.
         crate::sync::clear_fire_flags(e, sim_data, layout)?;
-        let sync = run_initialization_with_clocks(e, sim_data, model)?;
+        // C's `setupDataStruc`, before `initializeSolverData`: the DAE core below
+        // reads nominals and maxes, not slots nothing has written yet.
+        e.call1_if_present("functionAttrDefaults", sim_data)?;
+        let start = model.start_time;
+        // C's `solver_main` builds the solver before `initializeModel` in DAE mode,
+        // "since the solver is used to obtain consistent values also via
+        // updateDiscreteSystem". Only DAE mode needs it, and only there is the
+        // `refresh_nominals` that repairs the not-yet-final nominals wanted.
+        let mut early = match layout.dae_mode() {
+            false => None,
+            true => Some(SolverCore::new(&*e, model, sim_data, start, method, gbode.take())?),
+        };
+        let sync = match early.as_mut() {
+            None => run_initialization_with_clocks(e, sim_data, model, None)?,
+            Some(core) => {
+                let mut ctx = core.res_ctx(e, layout);
+                let ctx_ptr = &mut ctx as *mut ResCtx;
+                RES_CTX.store(ctx_ptr, Ordering::Relaxed);
+                let _guard = ResCtxGuard;
+                let mut dae = |e: &mut dyn SimEngine| core.dae_event_update(e, ctx_ptr);
+                let sync = run_initialization_with_clocks(e, sim_data, model, Some(&mut dae))?;
+                if let Some(err) = ctx.err.take() {
+                    return Err(err);
+                }
+                sync
+            }
+        };
+        let mut core = match early {
+            Some(mut core) => {
+                core.refresh_nominals(&*e, layout)?;
+                core
+            }
+            None => SolverCore::new(&*e, model, sim_data, start, method, gbode)?,
+        };
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
         let states_base = sim_data + REAL_OFF;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
-        let start = model.start_time;
 
         let samp = Samples::load(e, sim_data, layout, start)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
-        core.prime(e, layout)?;
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
         let dss = StateSelection::initial(e, sim_data, model)?;
@@ -8455,11 +8960,12 @@ impl Driver for EventsDriver {
                 }
                 did_step = true;
                 let tout = self.pending_tout.take().unwrap_or_else(|| tout_of(self.row));
+                logging_window(e, self.core.t, tout);
                 let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
                 let mut event_step = false;
                 // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around the whole step.
-                self.retry.open(e, self.rows.len());
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 // C's `updateContinuousSystem` landed on the grid point and nothing
                 // has moved the state since: the row is emitted from it, as C's is.
@@ -8489,12 +8995,13 @@ impl Driver for EventsDriver {
                     }
                     if let Some((tleft, tr)) = troot {
                         supersede(e, &mut evaluated);
-                        store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                         log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
+                        eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                        write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
-                            capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
+                            capture_row(e, &mut self.rows, sim_data, layout)?; // pre-event row
                         }
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
@@ -8539,7 +9046,7 @@ impl Driver for EventsDriver {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
                         store_operators_at(e, sim_data, layout, te)?;
-                        fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
+                        fire_time_event(e, &mut self.samp, sim_data, layout, te, None)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
                         self.core.walk_steps += 1;
@@ -8643,13 +9150,14 @@ impl Driver for EventsDriver {
                 break Advance::Cancelled;
             }
             let tout = self.pending_tout.unwrap_or_else(|| tout_of(self.row));
+            logging_window(e, self.core.t, tout);
             if !self.mid_row {
                 self.grid_covered = false;
                 self.did_event_step = false;
             }
             // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`: the whole step, the
             // integration included, falls back to the last accepted point.
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             // C's `simulationUpdate` window: until this row's events are handled,
             // the state the model is evaluated at may still be discarded.
             open_assert_window();
@@ -8811,12 +9319,15 @@ unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, go
     write_time(e, ctx.sim_data, t)?;
     unsafe { ida_push_unknowns(ctx, y, yp) }?;
     set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-    if unsafe { ctx.ida.dae.as_ref() }.is_some() {
-        e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
-    } else {
-        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
-    }
-    e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
+    let dae = unsafe { ctx.ida.dae.as_ref() }.is_some();
+    probe_holding_asserts(e, |e| {
+        if dae {
+            e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
+        } else {
+            e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
+        }
+        e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)
+    })?;
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
     e.read_bytes(ctx.sim_data + ctx.zc_probe_off, out)
@@ -8970,7 +9481,8 @@ impl Driver for CvodeDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
-                self.retry.open(e, self.rows.len());
+                logging_window(e, self.t, time);
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -9039,9 +9551,10 @@ impl Driver for CvodeDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             let tout =
                 self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+            logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in cv.y().iter().enumerate() {
@@ -9254,7 +9767,7 @@ struct DaeSolve {
 
 #[cfg(sundials)]
 fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64, tol: f64) -> Result<()> {
-    omclog::info(omclog::SOLVER, false, &format!("##IDA## do event update at {}", format_g(t, 15)));
+    omclog::info!(omclog::SOLVER, false, "##IDA## do event update at {}", format_g(t, 15));
     match ida.calc_ic_at(t, tol) {
         true => Ok(()),
         false => Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)"),
@@ -9596,6 +10109,7 @@ unsafe extern "C" fn ida_res(
     })();
     ctx.nfe += 1;
     match run {
+        Err(err) if residual_model_throw(e, err, t) => 1,
         Err(err) => {
             ctx.err = Some(err);
             -1
@@ -9724,7 +10238,14 @@ unsafe extern "C" fn ida_jac(
             let mut gp = core::mem::take(&mut ctx.jac_gp);
             let r = unsafe { ida_residual(ctx, t, y, ypv, gp.as_mut_ptr()) };
             ctx.jac_gp = gp;
-            r?;
+            // C's `jacoColoredNumericalSparse` ignores what the probe returns:
+            // `residualFunctionIDA` catches a model throw itself, leaving
+            // `newdelta` at the previous colour's values.
+            if let Err(err) = r
+                && !residual_model_throw(e, err, t)
+            {
+                return Err(err);
+            }
             for &col in color {
                 let ci = col as usize;
                 let del = ctx.jac_del[ci];
@@ -9906,7 +10427,8 @@ impl Driver for IdaDriver {
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
-                self.retry.open(e, self.rows.len());
+                logging_window(e, self.t, time);
+                self.retry.open(e, &mut self.rows);
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
@@ -9974,11 +10496,12 @@ impl Driver for IdaDriver {
             }
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
-            self.retry.open(e, self.rows.len());
+            self.retry.open(e, &mut self.rows);
             let tout = self
                 .pending_tout
                 .take()
                 .unwrap_or(if no_grid || self.row == n_steps { stop } else { grid(self.row) });
+            logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {
@@ -10170,13 +10693,11 @@ impl GuessStepper {
                 Ok(Solved::RootThrew(err)) | Err(err) => {
                     iter += 1;
                     if iter > 10 {
-                        omclog::warning(
+                        omclog::warning!(
                             omclog::STDOUT,
                             false,
-                            &format!(
-                                "Initial guess failure at time {}",
-                                format_g(self.core.t, 12)
-                            ),
+                            "Initial guess failure at time {}",
+                            format_g(self.core.t, 12),
                         );
                         return Err(err);
                     }

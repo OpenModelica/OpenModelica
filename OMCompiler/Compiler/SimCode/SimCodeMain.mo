@@ -1008,6 +1008,8 @@ algorithm
     if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
       lsDaeManifestStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
         CodegenFMU3.fmiLsDaeManifest(Tpl.emptyTxt, simCode));
+      Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
+        {SimCodeUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
       ExecStat.execStat("FMU fmi-ls-manifest.xml");
     end if;
     // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the

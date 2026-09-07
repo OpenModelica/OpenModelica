@@ -54,6 +54,7 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 /*!
   \class TVariablesTreeItem
@@ -1341,11 +1342,7 @@ void TransformationsWidget::loadTransformations()
   signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
-#else
-  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
-#endif
+mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
   /* clear equation operations tree */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* clear TSourceEditor */
@@ -1721,13 +1718,8 @@ void TransformationsWidget::findVariables()
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
   mpTVariableTreeProxyModel->setFilterRegularExpression(regExp);
-#else
-  QRegExp regExp = TreeSearchFilters::getFilterRegExp(findText, caseSensitivity, syntax);
-  mpTVariableTreeProxyModel->setFilterRegExp(regExp);
-#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpTVariablesTreeView->expandAll();

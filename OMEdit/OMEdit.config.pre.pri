@@ -33,8 +33,10 @@
 QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
-  greaterThan(QT_MINOR_VERSION, 4) {
+  qtHaveModule(httpserver) {
     QT += httpserver
+  } else {
+    message("QtHttpServer not found; building without the MCP server")
   }
 }
 
@@ -44,6 +46,8 @@ CONFIG += c++17
 CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
+# The qmake build keeps the C result readers; the cmake build links libomc_result.
+DEFINES += OM_LEGACY_RESULT_READERS
 
 # Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
 # Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing

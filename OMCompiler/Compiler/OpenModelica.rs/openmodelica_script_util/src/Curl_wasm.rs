@@ -43,13 +43,13 @@ pub fn take_pending_downloads() -> Vec<(Vec<String>, String)> {
 /// the VFS; otherwise record it as pending and fail. `maxParallel` is unused — the
 /// host fetches the pending list. Returns whether every file was already present.
 pub fn multiDownload(
-    urlFileList: Arc<List<(Arc<List<ArcStr>>, ArcStr)>>,
+    urlFileList: List<(List<ArcStr>, ArcStr)>,
     _maxParallel: i32,
 ) -> Result<bool> {
     let mut all_present = true;
 
     let mut cur = urlFileList;
-    while let List::Cons { head: (urls, filename), tail } = &*cur {
+    while let metamodelica::ListNode::Cons { head: (urls, filename), tail } = &*cur {
         if openmodelica_wasi::read(filename.as_str()).is_none() {
             // Flatten this item's mirror URLs and record it for the host to fetch.
             // A single command can ask for the same file repeatedly before it is
@@ -61,7 +61,7 @@ pub fn multiDownload(
             if !dup {
                 let mut mirrors: Vec<String> = Vec::new();
                 let mut u = urls.clone();
-                while let List::Cons { head, tail } = &*u {
+                while let metamodelica::ListNode::Cons { head, tail } = &*u {
                     mirrors.push(head.to_string());
                     let tail = tail.clone();
                     u = tail;

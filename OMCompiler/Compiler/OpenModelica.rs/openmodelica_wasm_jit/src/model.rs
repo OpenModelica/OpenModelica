@@ -38,8 +38,10 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
-    /// The system libraries among `ext_native_libs`: an export declares these
-    /// rather than shipping them.
+    /// The platform LAPACK/BLAS, searched after the process image.
+    pub ext_native_fallback: Vec<String>,
+    /// The system libraries among `ext_native_libs`/`ext_native_fallback`: an
+    /// export declares these rather than shipping them.
     pub ext_native_system: Vec<String>,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
@@ -64,6 +66,9 @@ pub struct SimModel {
     pub state_sets: Vec<StateSetInfo>,
     /// ODE state Jacobian ∂f/∂x sparsity + coloring; `None` ⇒ daskr's numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
+    /// Some nonlinear system takes the density rule's sparse default, decided at
+    /// codegen: kinsol+KLU, which an FMU export has to link for.
+    pub sparse_nls: bool,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
@@ -186,6 +191,14 @@ pub struct ExtIncludes {
     pub sources: Vec<String>,
     /// `IncludeDirectory` annotations, already `-I"…"` strings.
     pub include_dirs: Vec<String>,
+    /// The platform libraries the wrappers call into: a path or a bare soname.
+    pub libs: Vec<String>,
+    /// The model's static archives, in link order: this source is what references
+    /// their members, so linking them anywhere else pulls in nothing.
+    pub archives: Vec<String>,
+    /// The `external "C"` functions, forced undefined so an archive member only they
+    /// define is pulled in too.
+    pub symbols: Vec<String>,
     pub ccompiler: String,
     pub cflags: String,
     pub dllext: String,
@@ -211,10 +224,11 @@ impl ExtIncludes {
         static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<Built, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!(
-            "{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}",
             self.prefix,
             self.cflags,
             self.include_dirs.join(" "),
+            self.archives.join(" "),
             self.sources.join("\n"),
             missing.iter().map(|s| &*s.name).collect::<Vec<_>>().join(" ")
         );
@@ -232,22 +246,37 @@ impl ExtIncludes {
     #[cfg(not(target_arch = "wasm32"))]
     fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         let wrappers = ext_wrappers(missing);
-        match self.compile_tu(&wrappers) {
+        match self.build(&wrappers) {
             // Keep why they did not compile: it explains a symbol still missing.
             Err(e) if !wrappers.is_empty() => {
-                self.compile_tu("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
+                self.build("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
             }
             r => r.map(|path| Built { path, note: None }),
         }
     }
 
+    /// Retry without the archives: a non-PIC member cannot go into a shared object,
+    /// and the unit is then short only the archive's symbols.
     #[cfg(not(target_arch = "wasm32"))]
-    fn compile_tu(&self, wrappers: &str) -> std::result::Result<String, String> {
+    fn build(&self, wrappers: &str) -> std::result::Result<String, String> {
+        match self.compile_tu(wrappers, true) {
+            Err(e) if !self.archives.is_empty() => self.compile_tu(wrappers, false).map_err(|_| e),
+            r => r,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_tu(&self, wrappers: &str, archives: bool) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
         // The fallback build must not be handed the path it just failed to load.
-        let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
+        let stem = match (wrappers.is_empty(), archives) {
+            (false, true) => "includes",
+            (true, true) => "includes_exports",
+            (false, false) => "includes_nolibs",
+            (true, false) => "includes_exports_nolibs",
+        };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
         // No prologue: external C source includes what it uses. A source that needs
@@ -268,7 +297,22 @@ impl ExtIncludes {
         for inc in &self.include_dirs {
             cmd.arg(inc.trim_matches('"'));
         }
+        if archives {
+            for sym in &self.symbols {
+                cmd.arg(format!("-Wl,-u,{sym}"));
+            }
+        }
         cmd.arg("-o").arg(&out).arg(&tu);
+        if archives {
+            cmd.args(&self.archives);
+        }
+        for lib in &self.libs {
+            if lib.contains(['/', '\\']) {
+                cmd.arg(lib);
+            } else {
+                cmd.arg(format!("-l:{lib}"));
+            }
+        }
         let output = cmd
             .output()
             .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;
@@ -308,6 +352,12 @@ pub fn ext_wrappers(sigs: &[ExtCallSig]) -> String {
     let mut out = String::new();
     for sig in sigs {
         let name = &sig.name;
+        // C's `extFunDef`.
+        if sig.declare {
+            if let Some(decl) = ext_prototype(sig) {
+                out.push_str(&decl);
+            }
+        }
         match ext_call_wrapper(sig) {
             // A macro has no address to hand back.
             Some(call) => out.push_str(&format!("{call}#ifndef {name}\n{}#endif\n", ext_addr_wrapper(name))),
@@ -321,20 +371,38 @@ fn ext_addr_wrapper(name: &str) -> String {
     format!("void (*{EXT_ADDR_PREFIX}{name}(void))(void) {{ return (void (*)(void)) {name}; }}\n")
 }
 
+/// `extern T f(A, …);` in the types [`ext_call_wrapper`] hands the call.
+fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
+    let params = ext_param_types(sig)?.join(", ");
+    let ret = match &sig.ret {
+        Some(ty) => ext_c_type(ty)?.to_owned(),
+        None => "void".to_owned(),
+    };
+    Some(format!("extern {ret} {}({});\n", sig.name, if params.is_empty() { "void".to_owned() } else { params }))
+}
+
+/// Fortran passes everything by reference, and so does an `_Out_` scalar; an array
+/// or record is a pointer either way.
+fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
+    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
+    sig.args
+        .iter()
+        .map(|(ty, is_out)| {
+            let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
+            Some(format!("{}{}", ext_c_arg_type(ty)?, if ptr { "*" } else { "" }))
+        })
+        .collect()
+}
+
 /// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when the result has no
 /// C spelling the declaration alone fixes (a record returned by value).
 fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
-    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
-    let mut params = String::new();
-    for (i, (ty, is_out)) in sig.args.iter().enumerate() {
-        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
-        params.push_str(&format!(
-            "{}{}{} a{i}",
-            if i == 0 { "" } else { ", " },
-            ext_c_arg_type(ty)?,
-            if ptr { "*" } else { "" }
-        ));
-    }
+    let params = ext_param_types(sig)?
+        .into_iter()
+        .enumerate()
+        .map(|(i, ty)| format!("{ty} a{i}"))
+        .collect::<Vec<_>>()
+        .join(", ");
     let args: Vec<String> = (0..sig.args.len()).map(|i| format!("a{i}")).collect();
     let (ret, call) = match &sig.ret {
         Some(ty) => (ext_c_type(ty)?.to_owned(), "return "),
@@ -485,6 +553,11 @@ pub struct EditableParam {
     pub name: String,
     pub comment: String,
     pub unit: String,
+    /// The unit it is preferably shown and typed in, a display unit of `unit`.
+    pub display_unit: String,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
     pub off: u32,
     pub wty: WTy,
     /// A state's start value (vs. a plain parameter): overridden after `functionInitStartValues`.

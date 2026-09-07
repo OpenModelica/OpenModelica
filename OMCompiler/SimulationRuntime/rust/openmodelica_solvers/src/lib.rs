@@ -18,6 +18,50 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// `omclog::info!(stream, indent_next, "…", args)`, the form to write: an
+/// inactive stream costs the check alone, where the function plus a `&format!`
+/// built the message either way. C's `infoStreamPrint` is variadic for the same
+/// reason.
+#[macro_export]
+macro_rules! omclog_info {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::info_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning`](omclog::warning).
+#[macro_export]
+macro_rules! omclog_warning {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning_with_limit`](omclog::warning_with_limit).
+#[macro_export]
+macro_rules! omclog_warning_with_limit {
+    ($stream:expr, $n:expr, $max:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_with_limit_fmt($stream, $n, $max, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::debug`](omclog::debug).
+#[macro_export]
+macro_rules! omclog_debug {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::debug_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::error`](omclog::error), which prints whatever the
+/// mask says and so only drops the `&format!`.
+#[macro_export]
+macro_rules! omclog_error {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::error_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
 pub mod clock;
 pub mod counters;
 pub mod dassl;
@@ -118,6 +162,25 @@ pub trait Ode {
     /// Count one evaluation. Solvers call this; an implementation that does not
     /// track evaluations can ignore it.
     fn note_call(&mut self) {}
+
+    /// Whether the error the last [`Ode::eval`] returned is that trial point's
+    /// rather than the run's (C's `IRES = -1`, FMI's `fmi3Discard`), so a solver
+    /// that can shorten its step retries instead of failing.
+    fn take_discard(&mut self) -> bool {
+        false
+    }
+}
+
+/// A residual Jacobian's sparsity, from a caller that knows it. `rows_by_col[j]`
+/// are the rows of `F` that unknown `j` appears in — the states first, then the
+/// algebraic ones, the order `y` follows — and `colors` groups columns sharing no
+/// row, so one residual evaluation differences a whole group.
+///
+/// The pattern is `∂F/∂y + cj·∂F/∂y'`, which for a state column means the rows
+/// reached through either `x` or `der(x)`: one difference carries both terms.
+pub struct DaeSparsity {
+    pub rows_by_col: alloc::vec::Vec<alloc::vec::Vec<u32>>,
+    pub colors: alloc::vec::Vec<alloc::vec::Vec<u32>>,
 }
 
 /// A model in residual form, `F(t, y, y') = 0` over `y = [states | algebraic
@@ -126,6 +189,13 @@ pub trait Ode {
 pub trait Dae {
     /// `res := F(t, y, y')`.
     fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> Result<()>;
+
+    /// The residual Jacobian's sparsity, when the caller can supply one; IDA then
+    /// factorizes with KLU over a coloured difference-quotient Jacobian instead of
+    /// building its own dense one.
+    fn sparsity(&self) -> Option<&DaeSparsity> {
+        None
+    }
 
     /// The zero-crossing functions at `(t, y, y')`.
     fn eval_zc(&mut self, t: f64, y: &[f64], yp: &[f64], zc: &mut [f64]) -> Result<()>;
@@ -136,6 +206,11 @@ pub trait Dae {
     }
 
     fn note_call(&mut self) {}
+
+    /// As [`Ode::take_discard`], for the last [`Dae::residual`].
+    fn take_discard(&mut self) -> bool {
+        false
+    }
 }
 
 /// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it

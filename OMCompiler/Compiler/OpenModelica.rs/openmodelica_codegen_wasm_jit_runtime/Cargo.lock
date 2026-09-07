@@ -529,6 +529,7 @@ name = "openmodelica_sim_meta"
 version = "0.1.0"
 dependencies = [
  "daskr",
+ "libc",
  "libm",
  "openmodelica_lapack",
  "openmodelica_mat_writer",

@@ -48,6 +48,29 @@ pub fn stringHashDjb2Continue(str: ArcStr, hash: i32) -> i32 {
     (djb2(str.as_bytes(), hash as u32) & HASH_MASK) as i32
 }
 
+/// Same result as `stringHashDjb2Continue(intString(i), hash)`, without
+/// building the string.
+pub fn intHashDjb2Continue(i: i32, hash: i32) -> i32 {
+    let mut buf = [0u8; 11];
+    let mut n = buf.len();
+    let mut v = i.unsigned_abs();
+
+    loop {
+        n -= 1;
+        buf[n] = b'0' + (v % 10) as u8;
+        v /= 10;
+        if v == 0 {
+            break;
+        }
+    }
+    if i < 0 {
+        n -= 1;
+        buf[n] = b'-';
+    }
+
+    (djb2(&buf[n..], hash as u32) & HASH_MASK) as i32
+}
+
 /// Computes a DJB2 hash and applies modulo, giving a result in `[0, mod_val)`.
 pub fn stringHashDjb2Mod(str: ArcStr, mod_val: i32) -> i32 {
     if mod_val == 0 {
@@ -101,6 +124,17 @@ mod tests {
             // A string long enough to overflow the 32-bit accumulator.
             assert_eq!(stringHashDjb2(literal!("$SEED_ODE_JAC_ADJ.$DER.b")), 1541592153);
             assert_eq!(stringHashDjb2Mod(literal!("$RES_SIM_1"), 13), 4);
+        }
+
+        #[test]
+        fn test_int_hash_djb2_continue() {
+            for i in [0, 1, -1, 7, -42, 1234567890, i32::MAX, i32::MIN] {
+                assert_eq!(
+                    intHashDjb2Continue(i, 5381),
+                    stringHashDjb2Continue(ArcStr::from(i.to_string()), 5381),
+                    "i = {i}"
+                );
+            }
         }
 
         #[test]

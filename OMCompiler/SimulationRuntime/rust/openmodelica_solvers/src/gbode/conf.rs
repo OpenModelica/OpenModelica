@@ -239,10 +239,11 @@ impl GbConf {
         let method = match get("gbfm") {
             Some(v) => {
                 let m = lookup("gbfm", &v, METHOD_NAMES)?;
-                crate::omclog::info(
+                crate::omclog::info!(
                     crate::omclog::SOLVER,
                     false,
-                    &format!("Chosen gbode method: {}", name_of(METHOD_NAMES, m)),
+                    "Chosen gbode method: {}",
+                    name_of(METHOD_NAMES, m),
                 );
                 m
             }
@@ -270,13 +271,11 @@ impl GbConf {
         };
         let interpolation = match interpolation {
             Interpolation::HermiteErrCtrl | Interpolation::DenseOutputErrCtrl => {
-                crate::omclog::warning(
+                crate::omclog::warning!(
                     crate::omclog::SOLVER,
                     false,
-                    &format!(
-                        "Chosen gbode interpolation method {} not supported for fast state integration",
-                        name_of(INTERPOL_NAMES, interpolation)
-                    ),
+                    "Chosen gbode interpolation method {} not supported for fast state integration",
+                    name_of(INTERPOL_NAMES, interpolation),
                 );
                 Interpolation::DenseOutput
             }

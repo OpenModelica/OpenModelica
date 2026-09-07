@@ -55,6 +55,8 @@ struct Scratch {
     history: VecHistory,
     /// `solveHomotopy`'s residual scaling, which survives between calls.
     res_scaling: Vec<f64>,
+    /// C's `hybrdData->useXScaling`, which `solveHybrd` carries between calls.
+    use_xscaling: bool,
 }
 
 /// [`nls::History`] over a plain `Vec`: C's list is unbounded and reaches 40+, but
@@ -342,9 +344,16 @@ impl nls::NlsBackend for CBackend<'_> {
         eval: &mut dyn FnMut(&[f64], &mut [f64]),
         jac: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {
+        let pat = nls::kinsol::Pattern {
+            nnz: self.nnz,
+            colptr: self.colptr,
+            rowidx: self.rowidx,
+            colors: req.colors,
+            max: req.max,
+        };
         nls::kinsol::solve_selected(
-            self.handle, req.n, self.nnz, self.colptr, self.rowidx, req.nominal, req.guess,
-            req.old_values, req.x, req.eq_index, req.time, req.has_jacobian, load_guess, eval, jac,
+            self.handle, req.n, &pat, req.nominal, req.guess, req.old_values, req.x, req.eq_index,
+            req.time, req.has_jacobian, load_guess, eval, jac,
         )
     }
 
@@ -374,7 +383,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
-    omclog::info(omclog::NLS, false, &format!("{} non-linear systems", md.nNonLinearSystems));
+    omclog::info!(omclog::NLS, false, "{} non-linear systems", md.nNonLinearSystems);
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
         let size = sys.size.max(0) as usize;
@@ -401,13 +410,12 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             let rows = if adaptive_homotopy(data, sys) { size - 1 } else { size };
             if failed || j.sizeRows != rows || j.sizeCols != size {
                 if !failed {
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::STDOUT,
                         false,
-                        &format!(
-                            "Analytic Jacobian of non-linear system {i} is {}x{}, but the system has {size} iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.",
-                            j.sizeRows, j.sizeCols
-                        ),
+                        "Analytic Jacobian of non-linear system {i} is {}x{}, but the system has {size} iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.",
+                        j.sizeRows,
+                        j.sizeCols,
                     );
                 }
                 sys.jacobianIndex = -1;
@@ -430,12 +438,10 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         // scaling with it.
         if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size)
         {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling."
-                ),
+                "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.",
             );
             crate::support::freeSparsePattern(sys.sparsePattern);
             sys.sparsePattern = core::ptr::null_mut();
@@ -445,15 +451,20 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         register_names(data, sys);
         sys.nlsMethod = si.nlsMethod;
         sys.nlsLinearSolver = si.nlsLinearSolver;
-        let (colptr, rowidx) = csc_pattern(sys, size);
-        let pattern: Vec<u32> =
-            colptr.iter().chain(rowidx.iter()).map(|v| *v as u32).collect();
+        let (colptr, rowidx, colors) = csc_pattern(sys, size);
+        let pattern: Vec<u32> = colptr
+            .iter()
+            .chain(rowidx.iter())
+            .map(|v| *v as u32)
+            .chain(colors.iter().copied())
+            .collect();
         sys.solverData = Box::into_raw(Box::new(Scratch {
             colptr,
             rowidx,
             pattern,
             history: VecHistory::default(),
             res_scaling: vec![0.0; size.max(1)],
+            use_xscaling: true,
         })) as *mut c_void;
     }
     omclog::close(omclog::NLS);
@@ -493,12 +504,13 @@ fn register_names(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) {
     );
 }
 
-/// The system's `SPARSE_PATTERN` as CSC, or empty where the backend chose a dense
-/// factorization or the pattern does not survive C's `sparsitySanityCheck`.
-fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>) {
-    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() || sys.jacobianIndex < 0
-    {
-        return (Vec::new(), Vec::new());
+/// The system's `SPARSE_PATTERN` as CSC plus its colouring, or empty where the
+/// backend chose a dense factorization or the pattern does not survive C's
+/// `sparsitySanityCheck`. A missing `analyticalJacobianColumn` is not a reason to
+/// drop it -- `nlsSparseJac` differences the pattern instead.
+fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>, Vec<u32>) {
+    if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() {
+        return (Vec::new(), Vec::new(), Vec::new());
     }
     let sp = unsafe { &*sys.sparsePattern };
     let cols = (sp.sizeCols as usize).min(size);
@@ -512,7 +524,18 @@ fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i
     }
     let nnz = colptr[size] as usize;
     let rowidx = (0..nnz).map(|k| unsafe { *sp.index.add(k) } as i32).collect();
-    (colptr, rowidx)
+    // C's `colorCols` counts from 1; a column past `sizeCols` gets its own colour.
+    let mut next = sp.maxColors;
+    let colors = (0..size)
+        .map(|c| match c < cols {
+            true => unsafe { *sp.colorCols.add(c) }.saturating_sub(1),
+            false => {
+                next += 1;
+                next - 1
+            }
+        })
+        .collect();
+    (colptr, rowidx, colors)
 }
 
 /// C's `sparsitySanityCheck`: every column has an entry, every row is hit, and
@@ -631,7 +654,7 @@ pub extern "C" fn solve_nonlinear_system(
         sys_num: sys_number as u32,
         nominal: &nominal,
         bounds: &bounds,
-        pattern: if csc { &sd.pattern } else { &[] },
+        pattern: if csc || full_pattern { &sd.pattern } else { &[] },
         has_jacobian,
     };
 
@@ -646,6 +669,7 @@ pub extern "C" fn solve_nonlinear_system(
             res_scaling: &mut sd.res_scaling,
             extrapolation,
             last_solved: &mut sys.lastTimeSolved,
+            use_xscaling: &mut sd.use_xscaling,
         };
         nls::solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
@@ -676,14 +700,12 @@ fn check_nonlinear_solution(data: *mut DATA, print: c_int, sys_number: c_int) ->
     }
     if print != 0 {
         let time = unsafe { (**(*data).localData).timeValue };
-        omclog::warning(
+        omclog::warning!(
             omclog::NLS,
             false,
-            &format!(
-                "nonlinear system {} fails: at t={}",
-                sys.equationIndex,
-                openmodelica_sim_meta::driver::format_g(time, 6)
-            ),
+            "nonlinear system {} fails: at t={}",
+            sys.equationIndex,
+            openmodelica_sim_meta::driver::format_g(time, 6),
         );
         if si.initial != 0 {
             omclog::warning(
@@ -744,7 +766,7 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
     nls::host::set_file_prefix(|| unsafe { &*PREFIX.0.get() });
     nls::host::set_write_file(|name, data| {
         if let Err(e) = std::fs::write(name, data) {
-            omclog::warning(omclog::STDOUT, false, &format!("could not write {name}: {e}"));
+            omclog::warning!(omclog::STDOUT, false, "could not write {name}: {e}");
         }
     });
     nls::host::set_note_runtime_error(|msg| omclog::debug(omclog::ASSERT, false, msg));

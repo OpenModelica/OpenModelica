@@ -7,7 +7,6 @@
 //! Jacobian's sparsity says depend on it. There is no output grid: one result row
 //! is emitted per accepted quantum change, at that change's own time.
 
-use alloc::format;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -173,13 +172,11 @@ impl Driver for Qss {
             if self.tqp[ind].is_infinite() {
                 // If all derivatives are zero, the states stay constant and only
                 // the time propagates till stop->time.
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!(
-                        "All derivatives are zero at time {}!.",
-                        format_f(read_f64(e, sim_data + TIME_OFF)?)
-                    ),
+                    "All derivatives are zero at time {}!.",
+                    format_f(read_f64(e, sim_data + TIME_OFF)?),
                 );
                 self.current_time = self.stop_time;
                 write_f64(e, sim_data + TIME_OFF, self.current_time)?;
@@ -361,8 +358,8 @@ fn print_sparse_structure(jac: &JacAInfo, stream: omclog::Stream, name: &str) {
         return;
     }
     let nnz: usize = jac.rows_by_col.iter().map(|r| r.len()).sum();
-    omclog::info(stream, true, &format!("Sparse structure of {name} [size: {0}x{0}]", jac.n));
-    omclog::info(stream, false, &format!("{nnz} non-zero elements"));
+    omclog::info!(stream, true, "Sparse structure of {name} [size: {0}x{0}]", jac.n);
+    omclog::info!(stream, false, "{nnz} non-zero elements");
 
     omclog::info(stream, true, "Transposed sparse structure (rows: states)");
     for rows in &jac.rows_by_col {

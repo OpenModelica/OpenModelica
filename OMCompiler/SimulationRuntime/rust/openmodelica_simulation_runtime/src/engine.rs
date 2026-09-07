@@ -243,10 +243,6 @@ impl SimEngine for CEngine {
         true
     }
 
-    fn has_discrete_entry(&self) -> bool {
-        self.rt.callbacks().functionDAE.is_some()
-    }
-
     fn call1_raw(&mut self, name: &str, _arg: u32) -> Result<()> {
         let cb = self.rt.callbacks();
         match name {

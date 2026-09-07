@@ -7,6 +7,7 @@ ABCDsystem.plt.mos \
 AlgorithmArrayEqn.mos \
 AppendElement.mos \
 ArrayAddSub1.mos \
+ArrayBox.mos \
 ArrayDivError.mos \
 ArrayEquation.mos \
 ArrayExponentiation.mos \

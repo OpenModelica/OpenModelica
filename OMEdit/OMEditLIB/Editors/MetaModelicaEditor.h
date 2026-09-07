@@ -41,7 +41,7 @@
 
 #include "Editors/BaseEditor.h"
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 
 class MetaModelicaEditorPage;
@@ -76,7 +76,7 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;

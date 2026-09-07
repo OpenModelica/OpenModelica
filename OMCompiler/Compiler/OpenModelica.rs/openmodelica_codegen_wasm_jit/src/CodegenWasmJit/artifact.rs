@@ -495,11 +495,16 @@ fn run_simulation(
     let t = Instant::now();
     let run = match &loaded.form {
         Form::Component(a) => {
-            let r = a.run_simulation(&args).map_err(|e| e.to_string())?;
-            log.push_str(&r.output);
-            for (_, category, message) in &r.log {
+            let r = a.run_simulation(&args);
+            let (output, fmi_log) = match &r {
+                Ok(r) => (&r.output, &r.log),
+                Err(f) => (&f.output, &f.log),
+            };
+            log.push_str(output);
+            for (_, category, message) in fmi_log {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
+            let r = r.map_err(|f| f.error.to_string())?;
             super::dylink_fmi::SimRun {
                 file: r.file,
                 linear_file: r.linear_file,
@@ -673,8 +678,11 @@ fn run_fmi(
     if re.is_some() {
         opts.keep = Some(&keep);
     }
+    if !(flags.noemit || flags.output_format.as_deref() == Some("empty")) {
+        opts.result_file = Some(PathBuf::from(out));
+    }
     let t = Instant::now();
-    let (recorder, summary, elapsed) = match &loaded.form {
+    let (mut recorder, summary, elapsed) = match &loaded.form {
         Form::Component(a) => {
             let mut inst = match kind {
                 InterfaceKind::ModelExchange => a.model_exchange(&instance_name(md), opts.logging_on),
@@ -728,12 +736,7 @@ fn run_fmi(
         recorder.len(),
         took(elapsed)
     ));
-    if flags.noemit || flags.output_format.as_deref() == Some("empty") {
-        return Ok(());
-    }
-    recorder
-        .write_mat(Path::new(out), opts.start_time, opts.stop_time)
-        .map_err(|e| format!("cannot write {out}: {e}"))
+    recorder.finish().map_err(|e| format!("cannot write {out}: {e}"))
 }
 
 /// Run one of the two FMI interfaces to the end, whichever backend serves it.
@@ -749,8 +752,12 @@ where
     match kind {
         InterfaceKind::ModelExchange => {
             let run = me::simulate(inst, md, opts).map_err(|e| e.to_string())?;
+            let retried = match run.retries {
+                0 => String::new(),
+                n => format!(", {n} retried steps"),
+            };
             let s = format!(
-                "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events",
+                "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
             Ok((run.recorder, s))

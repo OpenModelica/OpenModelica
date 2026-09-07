@@ -1,0 +1,25 @@
+# `arrow.modelica` (`.arrow`) result-file writer; SPECIFICATION.md is the
+# format. Like `openmodelica_mat_writer` it writes bytes into a caller-owned
+# sink and does no I/O of its own.
+[package]
+name = "openmodelica_arrow_writer"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[lib]
+
+[dependencies]
+arrow-array = { version = "59", default-features = false }
+arrow-buffer = { version = "59", default-features = false }
+arrow-schema = { version = "59", default-features = false }
+arrow-ipc = { version = "59", default-features = false }
+
+[features]
+default = []
+# ZSTD-compressed record batches on request (`FileMeta::zstd`); off, the
+# codec stays out of the build and out of the wasm runtime.
+zstd = ["arrow-ipc/zstd"]
+# The pre-`arrow.modelica` layout (`json` module), which only the result-format
+# benchmark still writes. Nothing in OpenModelica should enable this.
+json-layout = []

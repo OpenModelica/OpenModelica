@@ -43,8 +43,14 @@
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
+#ifdef OM_LEGACY_RESULT_READERS
 #include "util/read_matlab4.h"
 #include "util/read_csv.h"
+typedef ModelicaMatReader ResultFileReader;
+#else
+#include "omc_result.h"
+typedef omc::ResultFile ResultFileReader;
+#endif
 
 #include <QDomDocument>
 #include <QTreeView>
@@ -199,7 +205,7 @@ private:
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   static ScalarVariable parseScalarVariable(QXmlStreamReader &xmlReader);
-  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
+  void getVariableInformation(ResultFileReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown);
@@ -287,9 +293,13 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   QVector<PlotParametricCurve> mPlotParametricCurves;
   QMdiSubWindow *mpLastActiveSubWindow;
+#ifdef OM_LEGACY_RESULT_READERS
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;
   QFile mPlotFileReader;
+#else
+  omc::ResultFile mResultFile;
+#endif
   QString mOpenedResultFileName;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);

@@ -126,7 +126,7 @@ fn test_addlist_basic() -> Result<()> {
 
 #[test]
 fn test_addlist_empty_list() -> Result<()> {
-    let lst: Arc<List<ArcStr>> = metamodelica::nil();
+    let lst: List<ArcStr> = metamodelica::nil();
     let t = S::addList(S::new(), lst)?;
     assert!(S::isEmpty(t));
     Ok(())

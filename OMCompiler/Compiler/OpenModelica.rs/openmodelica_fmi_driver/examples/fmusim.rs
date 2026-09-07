@@ -193,7 +193,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let output = args
         .output
         .unwrap_or_else(|| PathBuf::from(format!("{}_res.mat", md.model_name)));
-    rec.write_mat(&output, opts.start_time, opts.stop_time)?;
+    rec.write(&output, opts.start_time, opts.stop_time, &md.units)?;
     println!("wrote {}", output.display());
     for (i, c) in rec.columns.iter().enumerate() {
         let last = rec.values(i).last().unwrap_or(f64::NAN);

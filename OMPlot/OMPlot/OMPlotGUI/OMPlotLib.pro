@@ -43,6 +43,8 @@ equals(QT_MAJOR_VERSION, 6) {
 
 # Set the C++ standard.
 CONFIG += c++17
+# The qmake build keeps the C result readers; the cmake build links libomc_result.
+DEFINES += OM_LEGACY_RESULT_READERS
 
 TARGET = OMPlot
 TEMPLATE = lib

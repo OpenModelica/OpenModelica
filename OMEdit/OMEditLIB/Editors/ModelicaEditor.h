@@ -44,7 +44,7 @@
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 
 class ModelWidget;
@@ -102,7 +102,7 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;

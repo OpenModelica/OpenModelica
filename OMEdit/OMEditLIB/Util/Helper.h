@@ -160,6 +160,7 @@ public:
   static QString libraries;
   static QString elements;
   static QString clearRecentFiles;
+  static QString clearRecentModels;
   static QString encoding;
   static QString fileLabel;
   static QString file;

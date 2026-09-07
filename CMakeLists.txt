@@ -96,6 +96,14 @@ omc_add_to_report(OM_ENABLE_OMNOTEBOOK)
 omc_add_to_report(OM_ENABLE_OMEDIT)
 omc_add_to_report(OM_ENABLE_OMSENS_QT)
 omc_add_to_report(OM_OMOPTIM_ENABLE)
+# The GUI clients read result files through libomc_result (needs cargo); OFF
+# compiles the C readers (OM_LEGACY_RESULT_READERS), which cannot open .arrow.
+cmake_dependent_option(OM_RUST_RESULT_READERS "Read result files in the GUI clients through the Rust omc_result library." ON "NOT OM_OMC_WASM;OM_ENABLE_GUI_CLIENTS" OFF)
+omc_add_to_report(OM_RUST_RESULT_READERS)
+# The C simulation runtime writes its result files through the same library;
+# OFF keeps the C writers, which cannot write .arrow.
+cmake_dependent_option(OM_RUST_RESULT_WRITERS "Write result files from the C simulation runtime through the Rust omc_result library." ON "NOT OM_OMC_WASM" OFF)
+omc_add_to_report(OM_RUST_RESULT_WRITERS)
 
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
@@ -276,6 +284,12 @@ endif()
 set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
 include(CTest)
 enable_testing()
+
+# libomc_result, after CMAKE_INSTALL_LIBDIR is final and before its users.
+if(OM_RUST_RESULT_READERS OR OM_RUST_RESULT_WRITERS)
+  include(OMCompiler/Compiler/.cmake/rust_result_reader.cmake)
+  omc_result_reader_library()
+endif()
 
 omc_add_subdirectory(OMCompiler)
 

@@ -100,11 +100,13 @@ lose their href rather than pretend to work.
 
 ## Results
 
-Samples are recorded for every numeric variable that can change. The download
-button in the header writes the usual OpenModelica `.mat` through WASI and hands
-it over — the same file OMPlot and `omc-diff` read for a simulated model. It is
-written when asked for rather than after every run, since serialising the whole
-result is the expensive part and most runs are only ever plotted.
+Samples are recorded for every numeric variable that can change, and the plot
+reads them straight out of the recorder as the run produces them. They become a
+file only when the download button asks for one — serialising the whole result
+is the expensive part, and most runs are only ever plotted. The picker beside
+the button chooses the format: `.arrow` keeps the column types, the
+discrete-time encoding, `relativeQuantity` and the FMU's own unit definitions,
+while `.mat` is the file OMPlot and `omc-diff` have always read.
 
 A cref in a figure or in the 3D scene often names an FMI 3.0 `<Alias>` rather
 than the variable holding the data — an alias shares its base variable's

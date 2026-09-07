@@ -19,7 +19,7 @@ fn cmp_i(a: i32, b: i32) -> Result<i32> { Ok(if a < b { -1 } else if a > b { 1 }
 fn test_accumulate_map_accum() {
     let lst = list![1i32, 2, 3];
     // accumulates: each call gets (element, accumulated_so_far), must return new accumulator
-    let result = L::accumulateMapAccum(Arc::clone(&lst), Arc::new(|x, acc| Ok(cons(x, acc)))).unwrap();
+    let result = L::accumulateMapAccum(lst.clone(), Arc::new(|x, acc| Ok(cons(x, acc)))).unwrap();
     assert_eq!(result.len(), 3);
 }
 
@@ -27,36 +27,36 @@ fn test_accumulate_map_accum() {
 #[test]
 fn test_all_true() {
     let lst = list![1i32, 2, 3];
-    assert!(L::all(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    assert!(L::all(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 #[test]
 fn test_all_false() {
     let lst = list![1i32, -2, 3];
-    assert!(!L::all(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    assert!(!L::all(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 #[test]
 fn test_all_empty() {
-    let lst: Arc<List<i32>> = nil();
-    assert!(L::all(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    let lst: List<i32> = nil();
+    assert!(L::all(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 
 // ── AllEqual ──
 #[test]
 fn test_all_equal_true() -> Result<()> {
     let lst = list![5i32, 5, 5];
-    assert!(L::allEqual(Arc::clone(&lst), Arc::new(eq_i))?);
+    assert!(L::allEqual(lst.clone(), Arc::new(eq_i))?);
     Ok(())
 }
 #[test]
 fn test_all_equal_false() -> Result<()> {
     let lst = list![5i32, 3, 5];
-    assert!(!L::allEqual(Arc::clone(&lst), Arc::new(eq_i))?);
+    assert!(!L::allEqual(lst.clone(), Arc::new(eq_i))?);
     Ok(())
 }
 #[test]
 fn test_all_equal_empty() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
-    assert!(L::allEqual(Arc::clone(&lst), Arc::new(eq_i))?);
+    let lst: List<i32> = nil();
+    assert!(L::allEqual(lst.clone(), Arc::new(eq_i))?);
     Ok(())
 }
 
@@ -65,16 +65,16 @@ fn test_all_equal_empty() -> Result<()> {
 fn test_all_reference_eq_true() -> Result<()> {
     // referenceEq uses ptr::eq, so cloned values are never ptr-eq
     // Empty lists are trivially equal
-    let lst: Arc<List<Arc<List<i32>>>> = nil();
-    let lst2: Arc<List<Arc<List<i32>>>> = nil();
-    assert!(L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2))?);
+    let lst: List<List<i32>> = nil();
+    let lst2: List<List<i32>> = nil();
+    assert!(L::allReferenceEq(lst.clone(), lst2.clone())?);
     Ok(())
 }
 #[test]
 fn test_all_reference_eq_false() -> Result<()> {
     let lst = list![list![1i32], list![1i32]];
     let lst2 = list![list![1i32, 2], list![1i32]];
-    assert!(!L::allReferenceEq(Arc::clone(&lst), Arc::clone(&lst2))?);
+    assert!(!L::allReferenceEq(lst.clone(), lst2.clone())?);
     Ok(())
 }
 
@@ -82,24 +82,24 @@ fn test_all_reference_eq_false() -> Result<()> {
 #[test]
 fn test_any_found() {
     let lst = list![-1i32, 2, -3];
-    assert!(L::any(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    assert!(L::any(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 #[test]
 fn test_any_none() {
     let lst = list![-1i32, -2];
-    assert!(!L::any(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    assert!(!L::any(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 #[test]
 fn test_any_empty() {
-    let lst: Arc<List<i32>> = nil();
-    assert!(!L::any(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    let lst: List<i32> = nil();
+    assert!(!L::any(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 
 // ── AppendElt ──
 #[test]
 fn test_append_elt() {
     let lst = list![1i32, 2];
-    let result = L::appendElt(3, Arc::clone(&lst));
+    let result = L::appendElt(3, lst.clone());
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -108,7 +108,7 @@ fn test_append_elt() {
 fn test_append_last_list() -> Result<()> {
     let lst1 = list![1i32, 2];
     let lst2 = list![3i32, 4];
-    let list_of_lists = list![Arc::clone(&lst1), Arc::clone(&lst2)];
+    let list_of_lists = list![lst1.clone(), lst2.clone()];
     let result = L::appendLastList(list_of_lists, list![5i32, 6])?;
     assert_eq!(result.len(), 2);
     Ok(())
@@ -118,7 +118,7 @@ fn test_append_last_list() -> Result<()> {
 #[test]
 fn test_append_reverse() {
     let lst = list![1i32, 2, 3];
-    let result = L::append_reverse(Arc::clone(&lst), nil());
+    let result = L::append_reverse(lst.clone(), nil());
     assert_eq!(result, list![3i32, 2, 1]);
 }
 
@@ -126,7 +126,7 @@ fn test_append_reverse() {
 #[test]
 fn test_apply_and_fold() {
     let lst = list![1i32, 2, 3];
-    let result = L::applyAndFold(Arc::clone(&lst), Arc::new(|acc, x| Ok(acc + x)), Arc::new(|x| Ok(x)), 0i32).unwrap();
+    let result = L::applyAndFold(lst.clone(), Arc::new(|acc, x| Ok(acc + x)), Arc::new(|x| Ok(x)), 0i32).unwrap();
     assert_eq!(result, 6);
 }
 
@@ -134,7 +134,7 @@ fn test_apply_and_fold() {
 #[test]
 fn test_apply_and_fold1() {
     let lst = list![1i32];
-    let result = L::applyAndFold1(Arc::clone(&lst), Arc::new(|acc, x| Ok(acc + x)), Arc::new(|x, _arg: i32| Ok(x)), 10i32, 0i32).unwrap();
+    let result = L::applyAndFold1(lst.clone(), Arc::new(|acc, x| Ok(acc + x)), Arc::new(|x, _arg: i32| Ok(x)), 10i32, 0i32).unwrap();
     assert_eq!(result, 1);
 }
 
@@ -142,7 +142,7 @@ fn test_apply_and_fold1() {
 #[test]
 fn test_balanced_partition() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::balancedPartition(Arc::clone(&lst), 2)?;
+    let result = L::balancedPartition(lst.clone(), 2)?;
     assert!(result.len() >= 2);
     Ok(())
 }
@@ -151,17 +151,17 @@ fn test_balanced_partition() -> Result<()> {
 #[test]
 fn test_combination() -> Result<()> {
     let lst = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::combination(Arc::clone(&lst));
+    let result = L::combination(lst.clone());
     assert!(result.len() >= 0);
     Ok(())
 }
 
 // ── CombinationMap ──
-fn combination_map_fn(pair: Arc<metamodelica::List<i32>>) -> Result<i32> { Ok(pair.len()) }
+fn combination_map_fn(pair: metamodelica::List<i32>) -> Result<i32> { Ok(pair.len()) }
 #[test]
 fn test_combination_map() -> Result<()> {
     let lst = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::combinationMap(Arc::clone(&lst), Arc::new(combination_map_fn)).unwrap();
+    let result = L::combinationMap(lst.clone(), Arc::new(combination_map_fn)).unwrap();
     assert!(result.len() >= 0);
     Ok(())
 }
@@ -171,21 +171,21 @@ fn test_combination_map() -> Result<()> {
 fn test_compare_equal() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![1i32, 2, 3];
-    assert_eq!(L::compare(Arc::clone(&a), Arc::clone(&b), Arc::new(cmp_i))?, 0);
+    assert_eq!(L::compare(a.clone(), b.clone(), Arc::new(cmp_i))?, 0);
     Ok(())
 }
 #[test]
 fn test_compare_less() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![1i32, 3];
-    assert_eq!(L::compare(Arc::clone(&a), Arc::clone(&b), Arc::new(cmp_i))?, -1);
+    assert_eq!(L::compare(a.clone(), b.clone(), Arc::new(cmp_i))?, -1);
     Ok(())
 }
 #[test]
 fn test_compare_greater() -> Result<()> {
     let a = list![1i32, 4];
     let b = list![1i32, 3];
-    assert_eq!(L::compare(Arc::clone(&a), Arc::clone(&b), Arc::new(cmp_i))?, 1);
+    assert_eq!(L::compare(a.clone(), b.clone(), Arc::new(cmp_i))?, 1);
     Ok(())
 }
 
@@ -194,9 +194,9 @@ fn test_compare_greater() -> Result<()> {
 fn test_compare_length() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![1i32, 2, 3];
-    assert!(L::compareLength(Arc::clone(&a), Arc::clone(&b))? < 0);
-    assert_eq!(L::compareLength(Arc::clone(&b), Arc::clone(&b))?, 0);
-    assert!(L::compareLength(Arc::clone(&b), Arc::clone(&a))? > 0);
+    assert!(L::compareLength(a.clone(), b.clone())? < 0);
+    assert_eq!(L::compareLength(b.clone(), b.clone())?, 0);
+    assert!(L::compareLength(b.clone(), a.clone())? > 0);
     Ok(())
 }
 
@@ -242,7 +242,7 @@ fn test_cons_option_none() -> Result<()> {
 #[test]
 fn test_consr() {
     let lst = list![2i32, 3];
-    let result = L::consr(Arc::clone(&lst), 1i32);
+    let result = L::consr(lst.clone(), 1i32);
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -250,26 +250,26 @@ fn test_consr() {
 #[test]
 fn test_contains_true() {
     let lst = list![1i32, 2, 3];
-    assert!(L::contains(Arc::clone(&lst), 2, Arc::new(eq_i)).unwrap());
+    assert!(L::contains(lst.clone(), 2, Arc::new(eq_i)).unwrap());
 }
 #[test]
 fn test_contains_false() {
     let lst = list![1i32, 2, 3];
-    assert!(!L::contains(Arc::clone(&lst), 4, Arc::new(eq_i)).unwrap());
+    assert!(!L::contains(lst.clone(), 4, Arc::new(eq_i)).unwrap());
 }
 
 // ── Count ──
 #[test]
 fn test_count() {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    assert_eq!(L::count(Arc::clone(&lst), Arc::new(is_even)).unwrap(), 3);
+    assert_eq!(L::count(lst.clone(), Arc::new(is_even)).unwrap(), 3);
 }
 
 // ── CountingSort ──
 #[test]
 fn test_counting_sort() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    let result = L::countingSort(Arc::clone(&lst), 9)?;
+    let result = L::countingSort(lst.clone(), 9)?;
     assert_eq!(result, list![1i32, 1, 2, 3, 4, 5, 6, 9]);
     Ok(())
 }
@@ -285,7 +285,7 @@ fn test_create() {
 #[test]
 fn test_delete_member_on_true() -> Result<()> {
     let lst = list![1i32, 2, 3, 4];
-    let (result, deleted) = L::deleteMemberOnTrue(2i32, Arc::clone(&lst), Arc::new(eq_i))?;
+    let (result, deleted) = L::deleteMemberOnTrue(2i32, lst.clone(), Arc::new(eq_i))?;
     assert_eq!(deleted, Some(2));
     assert_eq!(result, list![1i32, 3, 4]);
     Ok(())
@@ -296,7 +296,7 @@ fn test_delete_member_on_true() -> Result<()> {
 fn test_delete_positions() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
     let positions = list![2i32, 4];
-    let result = L::deletePositions(Arc::clone(&lst), Arc::clone(&positions), false)?;
+    let result = L::deletePositions(lst.clone(), positions.clone(), false)?;
     assert_eq!(result, list![1i32, 3, 5]);
     Ok(())
 }
@@ -306,7 +306,7 @@ fn test_delete_positions() -> Result<()> {
 fn test_delete_positions_sorted() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
     let positions = list![1i32, 3, 5];
-    let result = L::deletePositionsSorted(Arc::clone(&lst), Arc::clone(&positions), false)?;
+    let result = L::deletePositionsSorted(lst.clone(), positions.clone(), false)?;
     assert_eq!(result, list![2i32, 4]);
     Ok(())
 }
@@ -325,7 +325,7 @@ fn test_exist1_false() {
 #[test]
 fn test_extract_on_true() {
     let lst = list![1i32, 2, 3, 4, 5];
-    let (matched, _unmatched) = L::extractOnTrue(Arc::clone(&lst), Arc::new(|x| Ok(x % 2 == 0))).unwrap();
+    let (matched, _unmatched) = L::extractOnTrue(lst.clone(), Arc::new(|x| Ok(x % 2 == 0))).unwrap();
     assert_eq!(matched, list![2i32, 4]);
 }
 
@@ -333,7 +333,7 @@ fn test_extract_on_true() {
 #[test]
 fn test_extract1_on_true() {
     let lst = list![1i32, 2, 3];
-    let (matched, _unmatched) = L::extract1OnTrue(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32).unwrap();
+    let (matched, _unmatched) = L::extract1OnTrue(lst.clone(), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32).unwrap();
     assert_eq!(matched, list![2i32]);
 }
 
@@ -348,7 +348,7 @@ fn test_fill() {
 #[test]
 fn test_filter() {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
+    let result = L::filter(lst.clone(), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -356,7 +356,7 @@ fn test_filter() {
 #[test]
 fn test_filter1() {
     let lst = list![1i32];
-    let result = L::filter1(Arc::clone(&lst), Arc::new(|x, _arg: i32| { if x > 0 { Ok(()) } else { return Err("skip") } }), 0i32);
+    let result = L::filter1(lst.clone(), Arc::new(|x, _arg: i32| { if x > 0 { Ok(()) } else { return Err("skip") } }), 0i32);
     assert_eq!(result, list![1i32]);
 }
 
@@ -364,7 +364,7 @@ fn test_filter1() {
 #[test]
 fn test_filter1_on_true() {
     let lst = list![1i32, 2, 3];
-    let result = L::filter1OnTrue(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32).unwrap();
+    let result = L::filter1OnTrue(lst.clone(), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32).unwrap();
     assert_eq!(result, list![2i32]);
 }
 
@@ -372,7 +372,7 @@ fn test_filter1_on_true() {
 #[test]
 fn test_filter1_on_true_and_update() {
     let lst = list![1i32, 2, 3];
-    let result = L::filter1OnTrueAndUpdate(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x > 1)), Arc::new(|x, _arg: i32| Ok(x * 10)), 0i32).unwrap();
+    let result = L::filter1OnTrueAndUpdate(lst.clone(), Arc::new(|x, _arg: i32| Ok(x > 1)), Arc::new(|x, _arg: i32| Ok(x * 10)), 0i32).unwrap();
     assert_eq!(result, list![20i32, 30i32]);
 }
 
@@ -381,7 +381,7 @@ fn test_filter1_on_true_and_update() {
 fn test_filter1_on_true_sync() -> Result<()> {
     let lst = list![1i32, 2, 3];
     let sync = list![10i32, 20, 30];
-    let (kept, _removed) = L::filter1OnTrueSync(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32, Arc::clone(&sync))?;
+    let (kept, _removed) = L::filter1OnTrueSync(lst.clone(), Arc::new(|x, _arg: i32| Ok(x % 2 == 0)), 0i32, sync.clone())?;
     assert_eq!(kept, list![2i32]);
     Ok(())
 }
@@ -390,7 +390,7 @@ fn test_filter1_on_true_sync() -> Result<()> {
 #[test]
 fn test_filter1r_on_true() {
     let lst = list![2i32, 4, 6];
-    let result = L::filter1rOnTrue(Arc::clone(&lst), Arc::new(|_arg: i32, x| Ok(x % 2 == 0)), 0i32).unwrap();
+    let result = L::filter1rOnTrue(lst.clone(), Arc::new(|_arg: i32, x| Ok(x % 2 == 0)), 0i32).unwrap();
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -398,7 +398,7 @@ fn test_filter1r_on_true() {
 #[test]
 fn test_filter2_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::filter2OnTrue(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32| Ok(x % 2 == 0)), 0i32, 0i32).unwrap();
+    let result = L::filter2OnTrue(lst.clone(), Arc::new(|x, _a: i32, _b: i32| Ok(x % 2 == 0)), 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -406,7 +406,7 @@ fn test_filter2_on_true() {
 #[test]
 fn test_filter_cons() {
     let lst = list![1i32, 2, 3];
-    let result = L::filterCons(Arc::clone(&lst), Arc::new(|x| Ok(x % 2 == 0)), nil()).unwrap();
+    let result = L::filterCons(lst.clone(), Arc::new(|x| Ok(x % 2 == 0)), nil()).unwrap();
     assert_eq!(result, list![2i32]);
 }
 
@@ -414,7 +414,7 @@ fn test_filter_cons() {
 #[test]
 fn test_filter_map() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::filterMap(Arc::clone(&lst), Arc::new(|x| if x % 2 == 0 { Ok(x * 10) } else { return Err("skip") }));
+    let result = L::filterMap(lst.clone(), Arc::new(|x| if x % 2 == 0 { Ok(x * 10) } else { return Err("skip") }));
     assert_eq!(result, list![20i32, 40]);
 }
 
@@ -422,7 +422,7 @@ fn test_filter_map() {
 #[test]
 fn test_filter_map1() {
     let lst = list![2i32];
-    let result = L::filterMap1(Arc::clone(&lst), Arc::new(|x, _arg: i32| if x > 0 { Ok(x * 2) } else { return Err("skip") }), 0i32);
+    let result = L::filterMap1(lst.clone(), Arc::new(|x, _arg: i32| if x > 0 { Ok(x * 2) } else { return Err("skip") }), 0i32);
     assert_eq!(result, list![4i32]);
 }
 
@@ -430,7 +430,7 @@ fn test_filter_map1() {
 #[test]
 fn test_filter_on_false() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::filterOnFalse(Arc::clone(&lst), Arc::new(|x| Ok(x % 2 == 0))).unwrap();
+    let result = L::filterOnFalse(lst.clone(), Arc::new(|x| Ok(x % 2 == 0))).unwrap();
     assert_eq!(result, list![1i32, 3]);
 }
 
@@ -438,7 +438,7 @@ fn test_filter_on_false() {
 #[test]
 fn test_filter_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::filterOnTrue(Arc::clone(&lst), Arc::new(is_even)).unwrap();
+    let result = L::filterOnTrue(lst.clone(), Arc::new(is_even)).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -447,7 +447,7 @@ fn test_filter_on_true() {
 fn test_filter_on_true_sync() -> Result<()> {
     let lst = list![1i32, 2, 3, 4];
     let sync = list![10i32, 20, 30, 40];
-    let (matched, _unmatched) = L::filterOnTrueSync(Arc::clone(&lst), Arc::new(is_even), Arc::clone(&sync))?;
+    let (matched, _unmatched) = L::filterOnTrueSync(lst.clone(), Arc::new(is_even), sync.clone())?;
     assert_eq!(matched, list![2i32, 4]);
     Ok(())
 }
@@ -456,21 +456,21 @@ fn test_filter_on_true_sync() -> Result<()> {
 #[test]
 fn test_find_found() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::find(Arc::clone(&lst), Arc::new(|x| Ok(x == 2)))?;
+    let result = L::find(lst.clone(), Arc::new(|x| Ok(x == 2)))?;
     assert_eq!(result, 2);
     Ok(())
 }
 #[test]
 fn test_find_not_found() {
     let lst = list![1i32, 2, 3];
-    assert!(L::find(Arc::clone(&lst), Arc::new(|x| Ok(x == 4))).is_err());
+    assert!(L::find(lst.clone(), Arc::new(|x| Ok(x == 4))).is_err());
 }
 
 // ── Find1 ──
 #[test]
 fn test_find1_found() -> Result<()> {
     let lst = list![1i32];
-    let result = L::find1(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x > 0)), 0i32)?;
+    let result = L::find1(lst.clone(), Arc::new(|x, _arg: i32| Ok(x > 0)), 0i32)?;
     assert_eq!(result, 1);
     Ok(())
 }
@@ -479,7 +479,7 @@ fn test_find1_found() -> Result<()> {
 #[test]
 fn test_find_and_map() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let (result, found) = L::findAndMap(Arc::clone(&lst), Arc::new(|x| Ok(x > 1)), Arc::new(|x| Ok(x * 10)))?;
+    let (result, found) = L::findAndMap(lst.clone(), Arc::new(|x| Ok(x > 1)), Arc::new(|x| Ok(x * 10)))?;
     assert!(found);
     Ok(())
 }
@@ -488,7 +488,7 @@ fn test_find_and_map() -> Result<()> {
 #[test]
 fn test_find_and_remove() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let (found, rest) = L::findAndRemove(Arc::clone(&lst), Arc::new(|x| Ok(x == 2)))?;
+    let (found, rest) = L::findAndRemove(lst.clone(), Arc::new(|x| Ok(x == 2)))?;
     assert_eq!(found, 2);
     assert_eq!(rest, list![1i32, 3]);
     Ok(())
@@ -498,7 +498,7 @@ fn test_find_and_remove() -> Result<()> {
 #[test]
 fn test_find_and_remove1() -> Result<()> {
     let lst = list![1i32, 2];
-    let (found, rest) = L::findAndRemove1(Arc::clone(&lst), Arc::new(|x, _arg: i32| Ok(x == 2)), 0i32)?;
+    let (found, rest) = L::findAndRemove1(lst.clone(), Arc::new(|x, _arg: i32| Ok(x == 2)), 0i32)?;
     assert_eq!(found, 2);
     assert_eq!(rest, list![1i32]);
     Ok(())
@@ -509,7 +509,7 @@ fn test_find_and_remove1() -> Result<()> {
 fn test_find_bool_list() -> Result<()> {
     let bools = list![true, false, false];
     let lst = list![10i32, 20, 30];
-    let result = L::findBoolList(Arc::clone(&bools), Arc::clone(&lst), 99i32)?;
+    let result = L::findBoolList(bools.clone(), lst.clone(), 99i32)?;
     assert_eq!(result, 10);
     Ok(())
 }
@@ -521,7 +521,7 @@ fn test_find_map() -> Result<()> {
     // findMap applies fn to elements until predicate returns true; fn also transforms each element
     // x=1: fn returns (10, false) -> keep going; x=2: fn returns (20, true) -> stop
     // result via cons-accumulation: [10, 20, 3] (pre-found elements also transformed)
-    let (result, found) = L::findMap(Arc::clone(&lst), Arc::new(|x| Ok((x * 10, x == 2))))?;
+    let (result, found) = L::findMap(lst.clone(), Arc::new(|x| Ok((x * 10, x == 2))))?;
     assert!(found);
     assert_eq!(result, list![10i32, 20, 3]);
     Ok(())
@@ -531,13 +531,13 @@ fn test_find_map() -> Result<()> {
 #[test]
 fn test_find_option_some() {
     let lst = list![Some(1i32), None, Some(3)];
-    let result = L::findOption(Arc::clone(&lst), Arc::new(|x| Ok(x.unwrap_or(0) > 0))).unwrap();
+    let result = L::findOption(lst.clone(), Arc::new(|x| Ok(x.unwrap_or(0) > 0))).unwrap();
     assert!(result.is_some());
 }
 #[test]
 fn test_find_option_none() {
-    let lst: Arc<List<Option<i32>>> = nil();
-    let result = L::findOption(Arc::clone(&lst), Arc::new(|x| Ok(x.is_some()))).unwrap();
+    let lst: List<Option<i32>> = nil();
+    let result = L::findOption(lst.clone(), Arc::new(|x| Ok(x.is_some()))).unwrap();
     assert_eq!(result, None);
 }
 
@@ -545,7 +545,7 @@ fn test_find_option_none() {
 #[test]
 fn test_find_some() {
     let lst = list![None::<i32>, Some(3)];
-    let result = L::findSome(Arc::clone(&lst), Arc::new(|x| Ok(x))).unwrap();
+    let result = L::findSome(lst.clone(), Arc::new(|x| Ok(x))).unwrap();
     assert_eq!(result, Some(3));
 }
 
@@ -553,7 +553,7 @@ fn test_find_some() {
 #[test]
 fn test_first_n() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::firstN(Arc::clone(&lst), 3)?;
+    let result = L::firstN(lst.clone(), 3)?;
     assert_eq!(result, list![1i32, 2, 3]);
     Ok(())
 }
@@ -562,14 +562,14 @@ fn test_first_n() -> Result<()> {
 #[test]
 fn test_first_or_empty_some() -> Result<()> {
     let lst = list![1i32, 2];
-    let result = L::firstOrEmpty(Arc::clone(&lst));
+    let result = L::firstOrEmpty(lst.clone());
     assert_eq!(result.len(), 1);
     Ok(())
 }
 #[test]
 fn test_first_or_empty_none() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::firstOrEmpty(Arc::clone(&lst));
+    let lst: List<i32> = nil();
+    let result = L::firstOrEmpty(lst.clone());
     assert_eq!(result.len(), 0);
     Ok(())
 }
@@ -578,7 +578,7 @@ fn test_first_or_empty_none() -> Result<()> {
 #[test]
 fn test_flatten() {
     let lst = list![list![1i32, 2], list![3i32, 4], list![5i32]];
-    let result = L::flatten(Arc::clone(&lst)).unwrap();
+    let result = L::flatten(lst.clone()).unwrap();
     assert_eq!(result, list![1i32, 2, 3, 4, 5]);
 }
 
@@ -586,7 +586,7 @@ fn test_flatten() {
 #[test]
 fn test_flatten_reverse() {
     let lst = list![list![1i32, 2], list![3i32]];
-    let result = L::flattenReverse(Arc::clone(&lst)).unwrap();
+    let result = L::flattenReverse(lst.clone()).unwrap();
     assert_eq!(result.len(), 3);
 }
 
@@ -594,7 +594,7 @@ fn test_flatten_reverse() {
 #[test]
 fn test_fold() {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::fold(Arc::clone(&lst), Arc::new(|x, acc| Ok(acc + x)), 0i32).unwrap();
+    let result = L::fold(lst.clone(), Arc::new(|x, acc| Ok(acc + x)), 0i32).unwrap();
     assert_eq!(result, 15);
 }
 
@@ -602,7 +602,7 @@ fn test_fold() {
 #[test]
 fn test_fold1() {
     let lst = list![1i32, 2, 3];
-    let result = L::fold1(Arc::clone(&lst), Arc::new(|x, _arg: i32, acc| Ok(acc + x)), 0i32, 0i32).unwrap();
+    let result = L::fold1(lst.clone(), Arc::new(|x, _arg: i32, acc| Ok(acc + x)), 0i32, 0i32).unwrap();
     assert_eq!(result, 6);
 }
 
@@ -610,7 +610,7 @@ fn test_fold1() {
 #[test]
 fn test_fold1r() {
     let lst = list![1i32, 2, 3];
-    let result = L::fold1r(Arc::clone(&lst), Arc::new(|acc, x, _arg: i32| Ok(acc + x)), 0i32, 0i32).unwrap();
+    let result = L::fold1r(lst.clone(), Arc::new(|acc, x, _arg: i32| Ok(acc + x)), 0i32, 0i32).unwrap();
     assert_eq!(result, 6);
 }
 
@@ -618,7 +618,7 @@ fn test_fold1r() {
 #[test]
 fn test_fold2() {
     let lst = list![1i32, 2];
-    let result = L::fold2(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold2(lst.clone(), Arc::new(|x, _a: i32, _b: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, 3);
 }
 
@@ -626,7 +626,7 @@ fn test_fold2() {
 #[test]
 fn test_fold2r() {
     let lst = list![1i32, 2];
-    let result = L::fold2r(Arc::clone(&lst), Arc::new(|acc, x, _a: i32, _b: i32| Ok(acc + x)), 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold2r(lst.clone(), Arc::new(|acc, x, _a: i32, _b: i32| Ok(acc + x)), 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, 3);
 }
 
@@ -634,7 +634,7 @@ fn test_fold2r() {
 #[test]
 fn test_fold3() {
     let lst = list![1i32];
-    let result = L::fold3(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold3(lst.clone(), Arc::new(|x, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, 1);
 }
 
@@ -642,14 +642,14 @@ fn test_fold3() {
 #[test]
 fn test_fold31() {
     let lst = list![1i32, 2];
-    let (_r1, _r2, _r3) = L::fold31(Arc::clone(&lst), Arc::new(|x, _a: i32, s1: i32, s2: i32, s3: i32| Ok((s1 + x, s2 + x, s3 + x))), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (_r1, _r2, _r3) = L::fold31(lst.clone(), Arc::new(|x, _a: i32, s1: i32, s2: i32, s3: i32| Ok((s1 + x, s2 + x, s3 + x))), 0i32, 0i32, 0i32, 0i32).unwrap();
 }
 
 // ── Fold4 ──
 #[test]
 fn test_fold4() {
     let lst = list![1i32];
-    let result = L::fold4(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, _c: i32, _d: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold4(lst.clone(), Arc::new(|x, _a: i32, _b: i32, _c: i32, _d: i32, acc| Ok(acc + x)), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, 1);
 }
 
@@ -658,7 +658,7 @@ fn test_fold4() {
 fn test_fold_all_value() -> Result<()> {
     let lst = list![1i32, 2, 3];
     // foldAllValue requires fn output == inValue for each element
-    L::foldAllValue(Arc::clone(&lst), Arc::new(|_x, acc: i32| Ok((true, acc))), true, 0i32)?;
+    L::foldAllValue(lst.clone(), Arc::new(|_x, acc: i32| Ok((true, acc))), true, 0i32)?;
     Ok(())
 }
 
@@ -666,7 +666,7 @@ fn test_fold_all_value() -> Result<()> {
 #[test]
 fn test_fold_list() {
     let outer = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::foldList(Arc::clone(&outer), Arc::new(|x, acc| Ok(acc + x)), 0i32).unwrap();
+    let result = L::foldList(outer.clone(), Arc::new(|x, acc| Ok(acc + x)), 0i32).unwrap();
     assert_eq!(result, 10);
 }
 
@@ -674,7 +674,7 @@ fn test_fold_list() {
 #[test]
 fn test_foldr() {
     let lst = list![1i32, 2, 3];
-    let result = L::foldr(Arc::clone(&lst), Arc::new(|acc, x| Ok(acc + x)), 0i32).unwrap();
+    let result = L::foldr(lst.clone(), Arc::new(|acc, x| Ok(acc + x)), 0i32).unwrap();
     assert_eq!(result, 6);
 }
 
@@ -682,7 +682,7 @@ fn test_foldr() {
 #[test]
 fn test_fold20() {
     let lst = list![1i32, 2];
-    let (s1, s2) = L::fold20(Arc::clone(&lst), Arc::new(|x, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32).unwrap();
+    let (s1, s2) = L::fold20(lst.clone(), Arc::new(|x, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32).unwrap();
     assert_eq!(s1, 3);
     assert_eq!(s2, 3);
 }
@@ -691,7 +691,7 @@ fn test_fold20() {
 #[test]
 fn test_fold21() {
     let lst = list![1i32, 2];
-    let (s1, s2) = L::fold21(Arc::clone(&lst), Arc::new(|x, _arg: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32, 0i32).unwrap();
+    let (s1, s2) = L::fold21(lst.clone(), Arc::new(|x, _arg: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32, 0i32).unwrap();
     assert_eq!(s1, 3);
     assert_eq!(s2, 3);
 }
@@ -700,7 +700,7 @@ fn test_fold21() {
 #[test]
 fn test_fold22() {
     let lst = list![1i32, 2];
-    let (s1, s2) = L::fold22(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (s1, s2) = L::fold22(lst.clone(), Arc::new(|x, _a: i32, _b: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x))), 0i32, 0i32, 0i32, 0i32).unwrap();
     assert_eq!(s1, 3);
     assert_eq!(s2, 3);
 }
@@ -724,7 +724,7 @@ fn test_from_option_none() -> Result<()> {
 fn test_get_at_index_lst() -> Result<()> {
     let lst = list![10i32, 20, 30];
     let positions = list![1i32, 2, 3];
-    let result = L::getAtIndexLst(Arc::clone(&lst), Arc::clone(&positions), false)?;
+    let result = L::getAtIndexLst(lst.clone(), positions.clone(), false)?;
     assert_eq!(result, list![10i32, 20, 30]);
     Ok(())
 }
@@ -734,8 +734,8 @@ fn test_get_at_index_lst() -> Result<()> {
 fn test_get_index_first() -> Result<()> {
     // getIndexFirst forwards to listGet, which bounds-checks (fallible).
     let lst = list![10i32, 20, 30];
-    assert_eq!(L::getIndexFirst(1, Arc::clone(&lst))?, 10);
-    assert!(L::getIndexFirst(4, Arc::clone(&lst)).is_err());
+    assert_eq!(L::getIndexFirst(1, lst.clone())?, 10);
+    assert!(L::getIndexFirst(4, lst.clone()).is_err());
     Ok(())
 }
 
@@ -743,7 +743,7 @@ fn test_get_index_first() -> Result<()> {
 #[test]
 fn test_get_member() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::getMember(2, Arc::clone(&lst))?, 2);
+    assert_eq!(L::getMember(2, lst.clone())?, 2);
     Ok(())
 }
 
@@ -751,7 +751,7 @@ fn test_get_member() -> Result<()> {
 #[test]
 fn test_get_member_on_true() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::getMemberOnTrue(2i32, Arc::clone(&lst), Arc::new(eq_i))?, 2);
+    assert_eq!(L::getMemberOnTrue(2i32, lst.clone(), Arc::new(eq_i))?, 2);
     Ok(())
 }
 
@@ -785,7 +785,7 @@ fn test_has_several_elements_false() -> Result<()> {
 #[test]
 fn test_heap_sort_int_list() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    let result = L::heapSortIntList(Arc::clone(&lst))?;
+    let result = L::heapSortIntList(lst.clone())?;
     assert_eq!(result, list![1i32, 1, 2, 3, 4, 5, 6, 9]);
     Ok(())
 }
@@ -794,7 +794,7 @@ fn test_heap_sort_int_list() -> Result<()> {
 #[test]
 fn test_insert() -> Result<()> {
     let lst = list![1i32, 4, 5];
-    let result = L::insert(Arc::clone(&lst), 2, 2i32)?;
+    let result = L::insert(lst.clone(), 2, 2i32)?;
     assert_eq!(result, list![1i32, 2, 4, 5]);
     Ok(())
 }
@@ -804,7 +804,7 @@ fn test_insert() -> Result<()> {
 fn test_insert_list_sorted() -> Result<()> {
     let lst = list![1i32, 3, 5];
     let to_insert = list![2i32, 4];
-    let result = L::insertListSorted(Arc::clone(&lst), Arc::clone(&to_insert), Arc::new(less_i))?;
+    let result = L::insertListSorted(lst.clone(), to_insert.clone(), Arc::new(less_i))?;
     assert_eq!(result, list![1i32, 2, 3, 4, 5]);
     Ok(())
 }
@@ -847,7 +847,7 @@ fn test_int_range3_step() -> Result<()> {
 fn test_intersection1_on_true() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![2i32, 3, 4];
-    let result = L::intersection1OnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i))?;
+    let result = L::intersection1OnTrue(a.clone(), b.clone(), Arc::new(eq_i))?;
     assert!(result.0.len() > 0);
     Ok(())
 }
@@ -857,7 +857,7 @@ fn test_intersection1_on_true() -> Result<()> {
 fn test_intersection_on_true() {
     let a = list![1i32, 2, 3];
     let b = list![2i32, 3, 4];
-    let result = L::intersectionOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i)).unwrap();
+    let result = L::intersectionOnTrue(a.clone(), b.clone(), Arc::new(eq_i)).unwrap();
     assert_eq!(result, list![2i32, 3]);
 }
 
@@ -885,8 +885,8 @@ fn test_is_equal_on_true() -> Result<()> {
 #[test]
 fn test_is_member_on_true() {
     let lst = list![1i32, 2, 3];
-    assert!(L::isMemberOnTrue(2i32, Arc::clone(&lst), Arc::new(eq_i)).unwrap());
-    assert!(!L::isMemberOnTrue(4i32, Arc::clone(&lst), Arc::new(eq_i)).unwrap());
+    assert!(L::isMemberOnTrue(2i32, lst.clone(), Arc::new(eq_i)).unwrap());
+    assert!(!L::isMemberOnTrue(4i32, lst.clone(), Arc::new(eq_i)).unwrap());
 }
 
 // ── IsPrefixOnTrue ──
@@ -894,7 +894,7 @@ fn test_is_member_on_true() {
 fn test_is_prefix_on_true() -> Result<()> {
     let prefix = list![1i32, 2];
     let full = list![1i32, 2, 3, 4];
-    assert!(L::isPrefixOnTrue(Arc::clone(&prefix), Arc::clone(&full), Arc::new(eq_i)).unwrap());
+    assert!(L::isPrefixOnTrue(prefix.clone(), full.clone(), Arc::new(eq_i)).unwrap());
     assert!(!L::isPrefixOnTrue(list![1i32, 3], full, Arc::new(eq_i)).unwrap());
     Ok(())
 }
@@ -904,7 +904,7 @@ fn test_is_prefix_on_true() -> Result<()> {
 fn test_keep_positions() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
     let positions = list![1i32, 3, 5];
-    let result = L::keepPositions(Arc::clone(&lst), Arc::clone(&positions), false)?;
+    let result = L::keepPositions(lst.clone(), positions.clone(), false)?;
     assert_eq!(result, list![1i32, 3, 5]);
     Ok(())
 }
@@ -914,7 +914,7 @@ fn test_keep_positions() -> Result<()> {
 fn test_keep_positions_sorted() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
     let positions = list![1i32, 3, 5];
-    let result = L::keepPositionsSorted(Arc::clone(&lst), Arc::clone(&positions), false)?;
+    let result = L::keepPositionsSorted(lst.clone(), positions.clone(), false)?;
     assert_eq!(result, list![1i32, 3, 5]);
     Ok(())
 }
@@ -923,7 +923,7 @@ fn test_keep_positions_sorted() -> Result<()> {
 #[test]
 fn test_last() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::last(Arc::clone(&lst))?, 3);
+    assert_eq!(L::last(lst.clone())?, 3);
     Ok(())
 }
 
@@ -931,7 +931,7 @@ fn test_last() -> Result<()> {
 #[test]
 fn test_last_list_or_empty() {
     let lst = list![list![1i32], list![2i32, 3]];
-    let result = L::lastListOrEmpty(Arc::clone(&lst));
+    let result = L::lastListOrEmpty(lst.clone());
     assert_eq!(result, list![2i32, 3]);
 }
 
@@ -939,7 +939,7 @@ fn test_last_list_or_empty() {
 #[test]
 fn test_last_n() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::lastN(Arc::clone(&lst), 3)?;
+    let result = L::lastN(lst.clone(), 3)?;
     assert_eq!(result, list![3i32, 4, 5]);
     Ok(())
 }
@@ -948,14 +948,14 @@ fn test_last_n() -> Result<()> {
 #[test]
 fn test_length_list_elements() {
     let lst = list![list![1i32, 2], list![3i32, 4, 5], list![6i32]];
-    assert_eq!(L::lengthListElements(Arc::clone(&lst)), 6);
+    assert_eq!(L::lengthListElements(lst.clone()), 6);
 }
 
 // ── ListArrayReverse ──
 #[test]
 fn test_list_array_reverse() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::listArrayReverse(Arc::clone(&lst))?;
+    let result = L::listArrayReverse(lst.clone())?;
     // Result is metamodelica::Array<i32> (Rc<RefCell<Vec<i32>>>)
     assert_eq!(result.borrow().len(), 3);
     Ok(())
@@ -966,15 +966,15 @@ fn test_list_array_reverse() -> Result<()> {
 fn test_list_is_longer() {
     let a = list![1i32, 2, 3];
     let b = list![1i32, 2];
-    assert!(L::listIsLonger(Arc::clone(&a), Arc::clone(&b)).unwrap());
-    assert!(!L::listIsLonger(Arc::clone(&b), Arc::clone(&a)).unwrap());
+    assert!(L::listIsLonger(a.clone(), b.clone()).unwrap());
+    assert!(!L::listIsLonger(b.clone(), a.clone()).unwrap());
 }
 
 // ── Map ──
 #[test]
 fn test_map() {
     let lst = list![1i32, 2, 3];
-    let result = L::map(Arc::clone(&lst), Arc::new(double)).unwrap();
+    let result = L::map(lst.clone(), Arc::new(double)).unwrap();
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -983,7 +983,7 @@ fn test_map() {
 #[test]
 fn test_map1() {
     let lst = list![1i32, 2, 3];
-    let result = L::map1(Arc::clone(&lst), Arc::new(|x, factor: i32| Ok(x * factor)), 2i32).unwrap();
+    let result = L::map1(lst.clone(), Arc::new(|x, factor: i32| Ok(x * factor)), 2i32).unwrap();
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -992,7 +992,7 @@ fn test_map1() {
 #[test]
 fn test_map1_fold() {
     let lst = list![1i32, 2, 3];
-    let (result, acc) = L::map1Fold(Arc::clone(&lst), Arc::new(|x, _const: i32, fold: i32| Ok((x + fold, fold + 1))), 0i32, 0i32).unwrap();
+    let (result, acc) = L::map1Fold(lst.clone(), Arc::new(|x, _const: i32, fold: i32| Ok((x + fold, fold + 1))), 0i32, 0i32).unwrap();
     assert_eq!(result, list![1i32, 3, 5]);
     assert_eq!(acc, 3);
 }
@@ -1001,7 +1001,7 @@ fn test_map1_fold() {
 #[test]
 fn test_map1_list() {
     let lst = list![list![1i32, 2]];
-    let result = L::map1List(Arc::clone(&lst), Arc::new(|x: i32, _arg: i32| Ok(x * 2)), 0i32).unwrap();
+    let result = L::map1List(lst.clone(), Arc::new(|x: i32, _arg: i32| Ok(x * 2)), 0i32).unwrap();
     // map1List reverses inner list due to cons-accumulation
     assert_eq!(result.len(), 1);
 }
@@ -1011,7 +1011,7 @@ fn test_map1_list() {
 #[test]
 fn test_map1_option() -> Result<()> {
     let lst = list![Some(1i32), Some(2)];
-    let result = L::map1Option(Arc::clone(&lst), Arc::new(|x, factor: i32| Ok(x * factor)), 2i32)?;
+    let result = L::map1Option(lst.clone(), Arc::new(|x, factor: i32| Ok(x * factor)), 2i32)?;
     assert_eq!(result, list![2i32, 4]);
     Ok(())
 }
@@ -1021,7 +1021,7 @@ fn test_map1_option() -> Result<()> {
 #[test]
 fn test_map1_0() {
     let lst = list![1i32, 2, 3];
-    L::map1_0(Arc::clone(&lst), Arc::new(|_x, _arg: i32| Ok(())), 0i32).unwrap();
+    L::map1_0(lst.clone(), Arc::new(|_x, _arg: i32| Ok(())), 0i32).unwrap();
 }
 
 // ── Map1_2 ──
@@ -1029,7 +1029,7 @@ fn test_map1_0() {
 #[test]
 fn test_map1_2() {
     let lst = list![1i32, 2];
-    let (r1, r2) = L::map1_2(Arc::clone(&lst), Arc::new(|x, _: i32| Ok((x * 2, x * 3))), 0i32).unwrap();
+    let (r1, r2) = L::map1_2(lst.clone(), Arc::new(|x, _: i32| Ok((x * 2, x * 3))), 0i32).unwrap();
     assert_eq!(r1, list![2i32, 4]);
     assert_eq!(r2, list![3i32, 6]);
 }
@@ -1039,7 +1039,7 @@ fn test_map1_2() {
 #[test]
 fn test_map1r() {
     let lst = list![1i32, 2, 3];
-    let result = L::map1r(Arc::clone(&lst), Arc::new(|factor: i32, x| Ok(x * factor)), 2i32).unwrap();
+    let result = L::map1r(lst.clone(), Arc::new(|factor: i32, x| Ok(x * factor)), 2i32).unwrap();
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -1048,7 +1048,7 @@ fn test_map1r() {
 #[test]
 fn test_map2() {
     let lst = list![1i32, 2, 3];
-    let result = L::map2(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
+    let result = L::map2(lst.clone(), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
     assert_eq!(result, list![111i32, 112, 113]);
 }
 
@@ -1057,7 +1057,7 @@ fn test_map2() {
 #[test]
 fn test_map2_fold() {
     let lst = list![1i32, 2];
-    let (result, acc) = L::map2Fold(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32, nil()).unwrap();
+    let (result, acc) = L::map2Fold(lst.clone(), Arc::new(|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32, nil()).unwrap();
     assert_eq!(result, list![2i32, 4]);
     assert_eq!(acc, 2);
 }
@@ -1066,7 +1066,7 @@ fn test_map2_fold() {
 #[test]
 fn test_map2_fold_check_reference_eq() {
     let lst = list![1i32, 2];
-    let (result, _acc) = L::map2FoldCheckReferenceEq(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32).unwrap();
+    let (result, _acc) = L::map2FoldCheckReferenceEq(lst.clone(), Arc::new(|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -1075,7 +1075,7 @@ fn test_map2_fold_check_reference_eq() {
 #[test]
 fn test_map2_list() {
     let lst = list![list![1i32, 2]];
-    let result = L::map2List(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
+    let result = L::map2List(lst.clone(), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
     assert_eq!(result, list![list![111i32, 112]]);
 }
 
@@ -1084,7 +1084,7 @@ fn test_map2_list() {
 #[test]
 fn test_map2_option() -> Result<()> {
     let lst = list![Some(1i32), Some(2)];
-    let result = L::map2Option(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32)?;
+    let result = L::map2Option(lst.clone(), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32)?;
     assert_eq!(result, list![111i32, 112]);
     Ok(())
 }
@@ -1093,7 +1093,7 @@ fn test_map2_option() -> Result<()> {
 #[test]
 fn test_map2_reverse() {
     let lst = list![1i32, 2, 3];
-    let result = L::map2Reverse(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
+    let result = L::map2Reverse(lst.clone(), Arc::new(|x, a: i32, b: i32| Ok(x + a + b)), 10i32, 100i32).unwrap();
     assert_eq!(result, list![113i32, 112, 111]);
 }
 
@@ -1101,14 +1101,14 @@ fn test_map2_reverse() {
 #[test]
 fn test_map2_0() {
     let lst = list![1i32, 2, 3];
-    L::map2_0(Arc::clone(&lst), Arc::new(|_x, _a: i32, _b: i32| Ok(())), 0i32, 0i32).unwrap();
+    L::map2_0(lst.clone(), Arc::new(|_x, _a: i32, _b: i32| Ok(())), 0i32, 0i32).unwrap();
 }
 
 // ── Map2_2 ──
 #[test]
 fn test_map2_2() {
     let lst = list![1i32, 2];
-    let (r1, r2) = L::map2_2(Arc::clone(&lst), Arc::new(|x, a: i32, _b: i32| Ok((x + a, x * 2))), 10i32, 0i32).unwrap();
+    let (r1, r2) = L::map2_2(lst.clone(), Arc::new(|x, a: i32, _b: i32| Ok((x + a, x * 2))), 10i32, 0i32).unwrap();
     assert_eq!(r1, list![11i32, 12]);
     assert_eq!(r2, list![2i32, 4]);
 }
@@ -1117,7 +1117,7 @@ fn test_map2_2() {
 #[test]
 fn test_map3() {
     let lst = list![1i32];
-    let result = L::map3(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32, c: i32| Ok(x + a + b + c)), 10i32, 100i32, 1000i32).unwrap();
+    let result = L::map3(lst.clone(), Arc::new(|x, a: i32, b: i32, c: i32| Ok(x + a + b + c)), 10i32, 100i32, 1000i32).unwrap();
     assert_eq!(result, list![1111i32]);
 }
 
@@ -1125,7 +1125,7 @@ fn test_map3() {
 #[test]
 fn test_map3_fold() {
     let lst = list![1i32];
-    let (result, acc) = L::map3Fold(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32, _c: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (result, acc) = L::map3Fold(lst.clone(), Arc::new(|x, _a: i32, _b: i32, _c: i32, fold: i32| Ok((x * 2, fold + 1))), 0i32, 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32]);
     assert_eq!(acc, 1);
 }
@@ -1134,7 +1134,7 @@ fn test_map3_fold() {
 #[test]
 fn test_map4() {
     let lst = list![1i32];
-    let result = L::map4(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32, c: i32, d: i32| Ok(x + a + b + c + d)), 1i32, 2i32, 3i32, 4i32).unwrap();
+    let result = L::map4(lst.clone(), Arc::new(|x, a: i32, b: i32, c: i32, d: i32| Ok(x + a + b + c + d)), 1i32, 2i32, 3i32, 4i32).unwrap();
     assert_eq!(result, list![11i32]);
 }
 
@@ -1142,14 +1142,14 @@ fn test_map4() {
 #[test]
 fn test_map4_0() {
     let lst = list![1i32];
-    L::map4_0(Arc::clone(&lst), Arc::new(|_x, _a: i32, _b: i32, _c: i32, _d: i32| Ok(())), 0i32, 0i32, 0i32, 0i32).unwrap();
+    L::map4_0(lst.clone(), Arc::new(|_x, _a: i32, _b: i32, _c: i32, _d: i32| Ok(())), 0i32, 0i32, 0i32, 0i32).unwrap();
 }
 
 // ── Map5 ──
 #[test]
 fn test_map5() {
     let lst = list![1i32];
-    let result = L::map5(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32, c: i32, d: i32, e: i32| Ok(x + a + b + c + d + e)), 1i32, 2i32, 3i32, 4i32, 5i32).unwrap();
+    let result = L::map5(lst.clone(), Arc::new(|x, a: i32, b: i32, c: i32, d: i32, e: i32| Ok(x + a + b + c + d + e)), 1i32, 2i32, 3i32, 4i32, 5i32).unwrap();
     assert_eq!(result, list![16i32]);
 }
 
@@ -1157,7 +1157,7 @@ fn test_map5() {
 #[test]
 fn test_map6() {
     let lst = list![1i32];
-    let result = L::map6(Arc::clone(&lst), Arc::new(|x, a: i32, b: i32, c: i32, d: i32, e: i32, f: i32| Ok(x + a + b + c + d + e + f)), 1i32, 2i32, 3i32, 4i32, 5i32, 6i32).unwrap();
+    let result = L::map6(lst.clone(), Arc::new(|x, a: i32, b: i32, c: i32, d: i32, e: i32, f: i32| Ok(x + a + b + c + d + e + f)), 1i32, 2i32, 3i32, 4i32, 5i32, 6i32).unwrap();
     assert_eq!(result, list![22i32]);
 }
 
@@ -1174,7 +1174,7 @@ fn test_map_array() {
 #[test]
 fn test_map_check_reference_eq() {
     let lst = list![1i32, 2, 3];
-    let result = L::mapCheckReferenceEq(Arc::clone(&lst), Arc::new(|x| Ok(x))).unwrap();
+    let result = L::mapCheckReferenceEq(lst.clone(), Arc::new(|x| Ok(x))).unwrap();
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -1182,7 +1182,7 @@ fn test_map_check_reference_eq() {
 #[test]
 fn test_map_flat() {
     let lst = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::mapFlat(Arc::clone(&lst), Arc::new(|inner| Ok(inner))).unwrap();
+    let result = L::mapFlat(lst.clone(), Arc::new(|inner| Ok(inner))).unwrap();
     // mapFlat reverses inner lists due to cons-accumulation
     assert_eq!(result.len(), 4);
 }
@@ -1191,7 +1191,7 @@ fn test_map_flat() {
 #[test]
 fn test_map_flat_reverse() {
     let lst = list![list![1i32, 2], list![3i32]];
-    let result = L::mapFlatReverse(Arc::clone(&lst), Arc::new(|inner| Ok(inner))).unwrap();
+    let result = L::mapFlatReverse(lst.clone(), Arc::new(|inner| Ok(inner))).unwrap();
     assert_eq!(result.len(), 3);
 }
 
@@ -1199,7 +1199,7 @@ fn test_map_flat_reverse() {
 #[test]
 fn test_map_fold() {
     let lst = list![1i32, 2, 3];
-    let (result, acc) = L::mapFold(Arc::clone(&lst), Arc::new(|x, a| Ok((x * 2, a + x))), 0i32).unwrap();
+    let (result, acc) = L::mapFold(lst.clone(), Arc::new(|x, a| Ok((x * 2, a + x))), 0i32).unwrap();
     assert_eq!(result, list![2i32, 4, 6]);
     assert_eq!(acc, 6);
 }
@@ -1208,7 +1208,7 @@ fn test_map_fold() {
 #[test]
 fn test_map_fold2() {
     let lst = list![1i32, 2];
-    let (result, a, b) = L::mapFold2(Arc::clone(&lst), Arc::new(|x, acc1: i32, acc2: i32| Ok((x * 2, acc1 + x, acc2 + x))), 0i32, 0i32).unwrap();
+    let (result, a, b) = L::mapFold2(lst.clone(), Arc::new(|x, acc1: i32, acc2: i32| Ok((x * 2, acc1 + x, acc2 + x))), 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32, 4]);
     assert_eq!(a, 3);
     assert_eq!(b, 3);
@@ -1218,7 +1218,7 @@ fn test_map_fold2() {
 #[test]
 fn test_map_fold3() {
     let lst = list![1i32];
-    let (result, a, b, c) = L::mapFold3(Arc::clone(&lst), Arc::new(|x, f1: i32, f2: i32, f3: i32| Ok((x * 2, f1 + x, f2 + x, f3 + x))), 0i32, 0i32, 0i32).unwrap();
+    let (result, a, b, c) = L::mapFold3(lst.clone(), Arc::new(|x, f1: i32, f2: i32, f3: i32| Ok((x * 2, f1 + x, f2 + x, f3 + x))), 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32]);
     assert_eq!(a, 1);
     assert_eq!(b, 1);
@@ -1229,7 +1229,7 @@ fn test_map_fold3() {
 #[test]
 fn test_map_fold5() {
     let lst = list![1i32];
-    let (result, a, b, c, d, e) = L::mapFold5(Arc::clone(&lst), Arc::new(|x, f1: i32, f2: i32, f3: i32, f4: i32, f5: i32| Ok((x, f1+1, f2+1, f3+1, f4+1, f5+1))), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (result, a, b, c, d, e) = L::mapFold5(lst.clone(), Arc::new(|x, f1: i32, f2: i32, f3: i32, f4: i32, f5: i32| Ok((x, f1+1, f2+1, f3+1, f4+1, f5+1))), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
     assert_eq!(result, list![1i32]);
     assert_eq!(a, 1);
     assert_eq!(e, 1);
@@ -1239,7 +1239,7 @@ fn test_map_fold5() {
 #[test]
 fn test_map_fold_list() {
     let lst = list![list![1i32, 2], list![3i32]];
-    let (_result, acc) = L::mapFoldList(Arc::clone(&lst), Arc::new(|x, fold: i32| Ok((x * 2, fold + x))), 0i32).unwrap();
+    let (_result, acc) = L::mapFoldList(lst.clone(), Arc::new(|x, fold: i32| Ok((x * 2, fold + x))), 0i32).unwrap();
     assert_eq!(acc, 6);
 }
 
@@ -1248,7 +1248,7 @@ fn test_map_fold_list() {
 fn test_map_indices() -> Result<()> {
     let lst = list![1i32, 2, 3];
     let indices = list![1i32, 3];
-    let result = L::mapIndices(Arc::clone(&lst), Arc::clone(&indices), Arc::new(double))?;
+    let result = L::mapIndices(lst.clone(), indices.clone(), Arc::new(double))?;
     assert_eq!(result.len(), 3);
     Ok(())
 }
@@ -1257,7 +1257,7 @@ fn test_map_indices() -> Result<()> {
 #[test]
 fn test_map_list() {
     let lst = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::mapList(Arc::clone(&lst), Arc::new(double)).unwrap();
+    let result = L::mapList(lst.clone(), Arc::new(double)).unwrap();
     assert_eq!(result, list![list![2i32, 4], list![6i32, 8]]);
 }
 
@@ -1265,7 +1265,7 @@ fn test_map_list() {
 #[test]
 fn test_map_list_reverse() {
     let lst = list![list![1i32, 2], list![3i32]];
-    let result = L::mapListReverse(Arc::clone(&lst), Arc::new(double)).unwrap();
+    let result = L::mapListReverse(lst.clone(), Arc::new(double)).unwrap();
     assert_eq!(result.len(), 2);
 }
 
@@ -1273,7 +1273,7 @@ fn test_map_list_reverse() {
 #[test]
 fn test_map_map() {
     let lst = list![1i32, 2, 3];
-    let result = L::mapMap(Arc::clone(&lst), Arc::new(double), Arc::new(|x| Ok(x + 1))).unwrap();
+    let result = L::mapMap(lst.clone(), Arc::new(double), Arc::new(|x| Ok(x + 1))).unwrap();
     assert_eq!(result, list![3i32, 5, 7]);
 }
 
@@ -1281,13 +1281,13 @@ fn test_map_map() {
 #[test]
 fn test_map_map_bool_and() {
     let lst = list![2i32, 4, 6];
-    let result = L::mapMapBoolAnd(Arc::clone(&lst), Arc::new(|x| Ok(x)), Arc::new(is_even)).unwrap();
+    let result = L::mapMapBoolAnd(lst.clone(), Arc::new(|x| Ok(x)), Arc::new(is_even)).unwrap();
     assert!(result);
 }
 #[test]
 fn test_map_map_bool_and_false() {
     let lst = list![1i32, 2, 3];
-    let result = L::mapMapBoolAnd(Arc::clone(&lst), Arc::new(|x| Ok(x)), Arc::new(is_even)).unwrap();
+    let result = L::mapMapBoolAnd(lst.clone(), Arc::new(|x| Ok(x)), Arc::new(is_even)).unwrap();
     assert!(!result);
 }
 
@@ -1295,7 +1295,7 @@ fn test_map_map_bool_and_false() {
 #[test]
 fn test_map_option() -> Result<()> {
     let lst = list![Some(1i32), Some(2)];
-    let result = L::mapOption(Arc::clone(&lst), Arc::new(|x| Ok(x * 2)))?;
+    let result = L::mapOption(lst.clone(), Arc::new(|x| Ok(x * 2)))?;
     assert_eq!(result, list![2i32, 4]);
     Ok(())
 }
@@ -1304,7 +1304,7 @@ fn test_map_option() -> Result<()> {
 #[test]
 fn test_map_reverse() {
     let lst = list![1i32, 2, 3];
-    let result = L::mapReverse(Arc::clone(&lst), Arc::new(double)).unwrap();
+    let result = L::mapReverse(lst.clone(), Arc::new(double)).unwrap();
     assert_eq!(result, list![6i32, 4, 2]);
 }
 
@@ -1312,14 +1312,14 @@ fn test_map_reverse() {
 #[test]
 fn test_map_0() {
     let lst = list![1i32, 2, 3];
-    L::map_0(Arc::clone(&lst), Arc::new(|_x| Ok(()))).unwrap();
+    L::map_0(lst.clone(), Arc::new(|_x| Ok(()))).unwrap();
 }
 
 // ── Map_2 ──
 #[test]
 fn test_map_2() {
     let lst = list![1i32, 2];
-    let (r1, r2) = L::map_2(Arc::clone(&lst), Arc::new(|x| Ok((x * 2, x * 3)))).unwrap();
+    let (r1, r2) = L::map_2(lst.clone(), Arc::new(|x| Ok((x * 2, x * 3)))).unwrap();
     assert_eq!(r1, list![2i32, 4]);
     assert_eq!(r2, list![3i32, 6]);
 }
@@ -1328,7 +1328,7 @@ fn test_map_2() {
 #[test]
 fn test_map_3() {
     let lst = list![1i32, 2];
-    let (r1, r2, r3) = L::map_3(Arc::clone(&lst), Arc::new(|x| Ok((x, x * 2, x * 3)))).unwrap();
+    let (r1, r2, r3) = L::map_3(lst.clone(), Arc::new(|x| Ok((x, x * 2, x * 3)))).unwrap();
     assert_eq!(r1, list![1i32, 2]);
     assert_eq!(r2, list![2i32, 4]);
     assert_eq!(r3, list![3i32, 6]);
@@ -1338,7 +1338,7 @@ fn test_map_3() {
 #[test]
 fn test_max_element() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    assert_eq!(L::maxElement(Arc::clone(&lst), Arc::new(less_i))?, 9);
+    assert_eq!(L::maxElement(lst.clone(), Arc::new(less_i))?, 9);
     Ok(())
 }
 
@@ -1347,7 +1347,7 @@ fn test_max_element() -> Result<()> {
 fn test_merge_sorted() -> Result<()> {
     let a = list![1i32, 3, 5];
     let b = list![2i32, 4, 6];
-    let result = L::mergeSorted(Arc::clone(&a), Arc::clone(&b), Arc::new(less_i))?;
+    let result = L::mergeSorted(a.clone(), b.clone(), Arc::new(less_i))?;
     assert_eq!(result, list![1i32, 2, 3, 4, 5, 6]);
     Ok(())
 }
@@ -1356,7 +1356,7 @@ fn test_merge_sorted() -> Result<()> {
 #[test]
 fn test_min_element() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5];
-    assert_eq!(L::minElement(Arc::clone(&lst), Arc::new(less_i))?, 1);
+    assert_eq!(L::minElement(lst.clone(), Arc::new(less_i))?, 1);
     Ok(())
 }
 
@@ -1364,41 +1364,41 @@ fn test_min_element() -> Result<()> {
 #[test]
 fn test_mk_option_some() {
     let lst = list![1i32, 2];
-    let result = L::mkOption(Arc::clone(&lst));
+    let result = L::mkOption(lst.clone());
     assert!(result.is_some());
 }
 #[test]
 fn test_mk_option_none() {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::mkOption(Arc::clone(&lst));
+    let lst: List<i32> = nil();
+    let result = L::mkOption(lst.clone());
     assert!(result.is_none());
 }
 
 // ── None ──
 #[test]
 fn test_none() {
-    let lst: Arc<List<i32>> = nil();
-    assert!(L::none(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    let lst: List<i32> = nil();
+    assert!(L::none(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 #[test]
 fn test_none_false() {
     let lst = list![1i32, -2];
-    assert!(!L::none(Arc::clone(&lst), Arc::new(is_positive)).unwrap());
+    assert!(!L::none(lst.clone(), Arc::new(is_positive)).unwrap());
 }
 
 // ── NotMember ──
 #[test]
 fn test_not_member() {
     let lst = list![1i32, 2, 3];
-    assert!(L::notMember(4, Arc::clone(&lst)));
-    assert!(!L::notMember(2, Arc::clone(&lst)));
+    assert!(L::notMember(4, lst.clone()));
+    assert!(!L::notMember(2, lst.clone()));
 }
 
 // ── Partition ──
 #[test]
 fn test_partition() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    let result = L::partition(Arc::clone(&lst), 2)?;
+    let result = L::partition(lst.clone(), 2)?;
     assert!(result.len() > 0);
     Ok(())
 }
@@ -1407,35 +1407,35 @@ fn test_partition() -> Result<()> {
 #[test]
 fn test_position() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    assert_eq!(L::position(3, Arc::clone(&lst))?, 3);
+    assert_eq!(L::position(3, lst.clone())?, 3);
     Ok(())
 }
 #[test]
 fn test_position_not_found() {
     let lst = list![1i32, 2, 3];
     // position returns Err when element not found
-    assert!(L::position(9, Arc::clone(&lst)).is_err());
+    assert!(L::position(9, lst.clone()).is_err());
 }
 
 // ── Position1OnTrue ──
 #[test]
 fn test_position1_on_true() {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::position1OnTrue(Arc::clone(&lst), Arc::new(|x, _: i32| Ok(x == 2)), 0i32).unwrap(), 2);
+    assert_eq!(L::position1OnTrue(lst.clone(), Arc::new(|x, _: i32| Ok(x == 2)), 0i32).unwrap(), 2);
 }
 
 // ── PositionOnTrue ──
 #[test]
 fn test_position_on_true() {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::positionOnTrue(Arc::clone(&lst), Arc::new(is_even)).unwrap(), 2);
+    assert_eq!(L::positionOnTrue(lst.clone(), Arc::new(is_even)).unwrap(), 2);
 }
 
 // ── Reduce ──
 #[test]
 fn test_reduce() -> Result<()> {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::reduce(Arc::clone(&lst), Arc::new(add_i))?;
+    let result = L::reduce(lst.clone(), Arc::new(add_i))?;
     assert_eq!(result, 10);
     Ok(())
 }
@@ -1444,7 +1444,7 @@ fn test_reduce() -> Result<()> {
 #[test]
 fn test_remove_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::removeOnTrue(2i32, Arc::new(eq_i), Arc::clone(&lst)).unwrap();
+    let result = L::removeOnTrue(2i32, Arc::new(eq_i), lst.clone()).unwrap();
     assert_eq!(result, list![1i32, 3, 4]);
 }
 
@@ -1452,7 +1452,7 @@ fn test_remove_on_true() {
 #[test]
 fn test_repeat() {
     let elt = list![42i32];
-    let result = L::repeat(Arc::clone(&elt), 3);
+    let result = L::repeat(elt.clone(), 3);
     assert_eq!(result.len(), 3);
 }
 
@@ -1460,7 +1460,7 @@ fn test_repeat() {
 #[test]
 fn test_replace_at() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::replaceAt(99i32, 2, Arc::clone(&lst))?;
+    let result = L::replaceAt(99i32, 2, lst.clone())?;
     assert_eq!(result, list![1i32, 99, 3]);
     Ok(())
 }
@@ -1469,7 +1469,7 @@ fn test_replace_at() -> Result<()> {
 #[test]
 fn test_replace_at_index_first() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::replaceAtIndexFirst(1, 99i32, Arc::clone(&lst))?;
+    let result = L::replaceAtIndexFirst(1, 99i32, lst.clone())?;
     assert_eq!(result, list![99i32, 2, 3]);
     Ok(())
 }
@@ -1479,7 +1479,7 @@ fn test_replace_at_index_first() -> Result<()> {
 fn test_replace_at_with_list() -> Result<()> {
     let lst = list![1i32, 2, 3];
     let replacement = list![10i32, 11];
-    let result = L::replaceAtWithList(Arc::clone(&replacement), 2, Arc::clone(&lst))?;
+    let result = L::replaceAtWithList(replacement.clone(), 2, lst.clone())?;
     assert!(result.len() > 0);
     Ok(())
 }
@@ -1488,7 +1488,7 @@ fn test_replace_at_with_list() -> Result<()> {
 #[test]
 fn test_replace_on_true() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let (result, replaced) = L::replaceOnTrue(99i32, Arc::clone(&lst), Arc::new(|x| Ok(x == 2)))?;
+    let (result, replaced) = L::replaceOnTrue(99i32, lst.clone(), Arc::new(|x| Ok(x == 2)))?;
     assert!(replaced);
     assert_eq!(result, list![1i32, 99, 3]);
     Ok(())
@@ -1498,14 +1498,14 @@ fn test_replace_on_true() -> Result<()> {
 #[test]
 fn test_rest_or_empty() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::restOrEmpty(Arc::clone(&lst))?;
+    let result = L::restOrEmpty(lst.clone())?;
     assert_eq!(result, list![2i32, 3]);
     Ok(())
 }
 #[test]
 fn test_rest_or_empty_empty() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::restOrEmpty(Arc::clone(&lst))?;
+    let lst: List<i32> = nil();
+    let result = L::restOrEmpty(lst.clone())?;
     assert!(result.is_empty());
     Ok(())
 }
@@ -1514,7 +1514,7 @@ fn test_rest_or_empty_empty() -> Result<()> {
 #[test]
 fn test_second() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    assert_eq!(L::second(Arc::clone(&lst))?, 2);
+    assert_eq!(L::second(lst.clone())?, 2);
     Ok(())
 }
 
@@ -1522,7 +1522,7 @@ fn test_second() -> Result<()> {
 #[test]
 fn test_separate1_on_true() {
     let lst = list![1i32, 2, 3];
-    let (a, b) = L::separate1OnTrue(Arc::clone(&lst), Arc::new(|x, _: i32| Ok(x % 2 == 0)), 0i32).unwrap();
+    let (a, b) = L::separate1OnTrue(lst.clone(), Arc::new(|x, _: i32| Ok(x % 2 == 0)), 0i32).unwrap();
     // separate functions use cons-accumulation (reversed output)
     assert_eq!(a.len(), 1);
     assert_eq!(b.len(), 2);
@@ -1532,7 +1532,7 @@ fn test_separate1_on_true() {
 #[test]
 fn test_separate_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let (a, b) = L::separateOnTrue(Arc::clone(&lst), Arc::new(is_even)).unwrap();
+    let (a, b) = L::separateOnTrue(lst.clone(), Arc::new(is_even)).unwrap();
     // separate functions use cons-accumulation (reversed output)
     assert_eq!(a.len(), 2);
     assert_eq!(b.len(), 2);
@@ -1542,7 +1542,7 @@ fn test_separate_on_true() {
 #[test]
 fn test_set() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::set(Arc::clone(&lst), 2, 99)?;
+    let result = L::set(lst.clone(), 2, 99)?;
     assert_eq!(result, list![1i32, 99, 3]);
     Ok(())
 }
@@ -1552,7 +1552,7 @@ fn test_set() -> Result<()> {
 fn test_set_difference() -> Result<()> {
     let a = list![1i32, 2, 3, 4];
     let b = list![3i32, 4, 5];
-    let result = L::setDifference(Arc::clone(&a), Arc::clone(&b))?;
+    let result = L::setDifference(a.clone(), b.clone())?;
     assert_eq!(result, list![1i32, 2]);
     Ok(())
 }
@@ -1562,7 +1562,7 @@ fn test_set_difference() -> Result<()> {
 fn test_set_difference_int_n() -> Result<()> {
     let a = list![1i32, 2, 3, 4];
     let b = list![3i32, 4, 5];
-    let result = L::setDifferenceIntN(Arc::clone(&a), Arc::clone(&b), 5)?;
+    let result = L::setDifferenceIntN(a.clone(), b.clone(), 5)?;
     assert!(result.len() <= 4);
     Ok(())
 }
@@ -1572,7 +1572,7 @@ fn test_set_difference_int_n() -> Result<()> {
 fn test_set_difference_on_true() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![2i32, 3];
-    let result = L::setDifferenceOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i))?;
+    let result = L::setDifferenceOnTrue(a.clone(), b.clone(), Arc::new(eq_i))?;
     assert_eq!(result, list![1i32]);
     Ok(())
 }
@@ -1582,14 +1582,14 @@ fn test_set_difference_on_true() -> Result<()> {
 fn test_set_equal_on_true() {
     let a = list![1i32, 2, 3];
     let b = list![3i32, 1, 2];
-    assert!(L::setEqualOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i)).unwrap());
+    assert!(L::setEqualOnTrue(a.clone(), b.clone(), Arc::new(eq_i)).unwrap());
 }
 
 // ── Sort ──
 #[test]
 fn test_sort() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    let result = L::sort(Arc::clone(&lst), Arc::new(less_i))?;
+    let result = L::sort(lst.clone(), Arc::new(less_i))?;
     assert_eq!(result, list![9i32, 6, 5, 4, 3, 2, 1, 1]);
     Ok(())
 }
@@ -1598,7 +1598,7 @@ fn test_sort() -> Result<()> {
 #[test]
 fn test_sorted_duplicates() -> Result<()> {
     let lst = list![1i32, 1, 2, 3, 3, 4];
-    let result = L::sortedDuplicates(Arc::clone(&lst), Arc::new(eq_i))?;
+    let result = L::sortedDuplicates(lst.clone(), Arc::new(eq_i))?;
     assert!(result.len() >= 0);
     Ok(())
 }
@@ -1607,7 +1607,7 @@ fn test_sorted_duplicates() -> Result<()> {
 #[test]
 fn test_sorted_list_all_unique() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    assert!(L::sortedListAllUnique(Arc::clone(&lst), Arc::new(eq_i))?);
+    assert!(L::sortedListAllUnique(lst.clone(), Arc::new(eq_i))?);
     Ok(())
 }
 
@@ -1615,7 +1615,7 @@ fn test_sorted_list_all_unique() -> Result<()> {
 #[test]
 fn test_sorted_unique() -> Result<()> {
     let lst = list![1i32, 1, 2, 3, 3, 4];
-    let result = L::sortedUnique(Arc::clone(&lst), Arc::new(eq_i))?;
+    let result = L::sortedUnique(lst.clone(), Arc::new(eq_i))?;
     assert_eq!(result, list![1i32, 2, 3, 4]);
     Ok(())
 }
@@ -1624,7 +1624,7 @@ fn test_sorted_unique() -> Result<()> {
 #[test]
 fn test_sorted_unique_and_duplicates() -> Result<()> {
     let lst = list![1i32, 1, 2, 3, 3, 4];
-    let (unique, _dups) = L::sortedUniqueAndDuplicates(Arc::clone(&lst), Arc::new(eq_i))?;
+    let (unique, _dups) = L::sortedUniqueAndDuplicates(lst.clone(), Arc::new(eq_i))?;
     assert_eq!(unique, list![1i32, 2, 3, 4]);
     Ok(())
 }
@@ -1633,7 +1633,7 @@ fn test_sorted_unique_and_duplicates() -> Result<()> {
 #[test]
 fn test_sorted_unique_only_duplicates() -> Result<()> {
     let lst = list![1i32, 1, 2, 3, 3, 4];
-    let result = L::sortedUniqueOnlyDuplicates(Arc::clone(&lst), Arc::new(eq_i))?;
+    let result = L::sortedUniqueOnlyDuplicates(lst.clone(), Arc::new(eq_i))?;
     assert!(result.len() >= 0);
     Ok(())
 }
@@ -1642,7 +1642,7 @@ fn test_sorted_unique_only_duplicates() -> Result<()> {
 #[test]
 fn test_split() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let (a, b) = L::split(Arc::clone(&lst), 3)?;
+    let (a, b) = L::split(lst.clone(), 3)?;
     assert_eq!(a, list![1i32, 2, 3]);
     assert_eq!(b, list![4i32, 5]);
     Ok(())
@@ -1652,7 +1652,7 @@ fn test_split() -> Result<()> {
 #[test]
 fn test_split1_on_true() {
     let lst = list![1i32, 2, 3];
-    let (before, after) = L::split1OnTrue(Arc::clone(&lst), Arc::new(|x, _: i32| Ok(x == 2)), 0i32).unwrap();
+    let (before, after) = L::split1OnTrue(lst.clone(), Arc::new(|x, _: i32| Ok(x == 2)), 0i32).unwrap();
     assert_eq!(before.len() + after.len(), 3);
 }
 
@@ -1660,7 +1660,7 @@ fn test_split1_on_true() {
 #[test]
 fn test_split2_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let (before, after) = L::split2OnTrue(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32| Ok(x == 3)), 0i32, 0i32).unwrap();
+    let (before, after) = L::split2OnTrue(lst.clone(), Arc::new(|x, _a: i32, _b: i32| Ok(x == 3)), 0i32, 0i32).unwrap();
     assert_eq!(before.len() + after.len(), 4);
 }
 
@@ -1668,7 +1668,7 @@ fn test_split2_on_true() {
 #[test]
 fn test_split_equal_parts() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    let result = L::splitEqualParts(Arc::clone(&lst), 2)?;
+    let result = L::splitEqualParts(lst.clone(), 2)?;
     assert_eq!(result.len(), 2);
     Ok(())
 }
@@ -1678,7 +1678,7 @@ fn test_split_equal_parts() -> Result<()> {
 fn test_split_equal_prefix() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![1i32, 2, 4];
-    let (prefix, _rest) = L::splitEqualPrefix(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i), nil())?;
+    let (prefix, _rest) = L::splitEqualPrefix(a.clone(), b.clone(), Arc::new(eq_i), nil())?;
     assert_eq!(prefix.len(), 2);
     Ok(())
 }
@@ -1687,7 +1687,7 @@ fn test_split_equal_prefix() -> Result<()> {
 #[test]
 fn test_split_last() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let (last, init) = L::splitLast(Arc::clone(&lst))?;
+    let (last, init) = L::splitLast(lst.clone())?;
     assert_eq!(last, 3);
     assert_eq!(init, list![1i32, 2]);
     Ok(())
@@ -1698,7 +1698,7 @@ fn test_split_last() -> Result<()> {
 fn test_split_on_bool_list() -> Result<()> {
     let lst = list![1i32, 2, 3, 4];
     let blist = list![false, true, false, true];
-    let (trues, falses) = L::splitOnBoolList(Arc::clone(&lst), Arc::clone(&blist))?;
+    let (trues, falses) = L::splitOnBoolList(lst.clone(), blist.clone())?;
     assert_eq!(trues, list![2i32, 4]);
     assert_eq!(falses, list![1i32, 3]);
     Ok(())
@@ -1708,7 +1708,7 @@ fn test_split_on_bool_list() -> Result<()> {
 #[test]
 fn test_split_on_first_match() -> Result<()> {
     let lst = list![1i32, 2, 3, 4];
-    let (before, after) = L::splitOnFirstMatch(Arc::clone(&lst), Arc::new(is_even))?;
+    let (before, after) = L::splitOnFirstMatch(lst.clone(), Arc::new(is_even))?;
     assert_eq!(before, list![1i32]);
     assert_eq!(after, list![2i32, 3, 4]);
     Ok(())
@@ -1718,7 +1718,7 @@ fn test_split_on_first_match() -> Result<()> {
 #[test]
 fn test_split_on_true() {
     let lst = list![1i32, 2, 3, 4];
-    let (trues, falses) = L::splitOnTrue(Arc::clone(&lst), Arc::new(is_even)).unwrap();
+    let (trues, falses) = L::splitOnTrue(lst.clone(), Arc::new(is_even)).unwrap();
     assert_eq!(trues, list![2i32, 4]);
     assert_eq!(falses, list![1i32, 3]);
 }
@@ -1727,7 +1727,7 @@ fn test_split_on_true() {
 #[test]
 fn test_splitr() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let (a, b) = L::splitr(Arc::clone(&lst), 3)?;
+    let (a, b) = L::splitr(lst.clone(), 3)?;
     assert_eq!(a.len() + b.len(), 5);
     Ok(())
 }
@@ -1736,7 +1736,7 @@ fn test_splitr() -> Result<()> {
 #[test]
 fn test_strip_last() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::stripLast(Arc::clone(&lst))?;
+    let result = L::stripLast(lst.clone())?;
     assert_eq!(result, list![1i32, 2]);
     Ok(())
 }
@@ -1745,7 +1745,7 @@ fn test_strip_last() -> Result<()> {
 #[test]
 fn test_strip_n() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::stripN(Arc::clone(&lst), 2)?;
+    let result = L::stripN(lst.clone(), 2)?;
     assert_eq!(result, list![3i32, 4, 5]);
     Ok(())
 }
@@ -1754,7 +1754,7 @@ fn test_strip_n() -> Result<()> {
 #[test]
 fn test_sublist() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::sublist(Arc::clone(&lst), 2, 3)?;
+    let result = L::sublist(lst.clone(), 2, 3)?;
     assert_eq!(result, list![2i32, 3, 4]);
     Ok(())
 }
@@ -1764,7 +1764,7 @@ fn test_sublist() -> Result<()> {
 fn test_thread() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![4i32, 5, 6];
-    let result = L::thread(Arc::clone(&a), Arc::clone(&b), nil())?;
+    let result = L::thread(a.clone(), b.clone(), nil())?;
     assert_eq!(result.len(), 6);
     Ok(())
 }
@@ -1775,7 +1775,7 @@ fn test_thread3_map() {
     let a = list![1i32, 2];
     let b = list![10i32, 20];
     let c = list![100i32, 200];
-    let result = L::thread3Map(Arc::clone(&a), Arc::clone(&b), Arc::clone(&c), Arc::new(|x, y, z| Ok(x + y + z))).unwrap();
+    let result = L::thread3Map(a.clone(), b.clone(), c.clone(), Arc::new(|x, y, z| Ok(x + y + z))).unwrap();
     assert_eq!(result, list![111i32, 222]);
 }
 
@@ -1785,7 +1785,7 @@ fn test_thread3_map_fold() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![10i32, 20];
     let c = list![100i32, 200];
-    let (result, acc) = L::thread3MapFold(Arc::clone(&a), Arc::clone(&b), Arc::clone(&c), Arc::new(|x, y, z, fold: i32| Ok((x + y + z, fold + 1))), 0i32)?;
+    let (result, acc) = L::thread3MapFold(a.clone(), b.clone(), c.clone(), Arc::new(|x, y, z, fold: i32| Ok((x + y + z, fold + 1))), 0i32)?;
     assert_eq!(result, list![111i32, 222]);
     assert_eq!(acc, 2);
     Ok(())
@@ -1796,7 +1796,7 @@ fn test_thread3_map_fold() -> Result<()> {
 fn test_thread_fold() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![4i32, 5, 6];
-    let result = L::threadFold(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, acc| Ok(acc + x + y)), 0i32)?;
+    let result = L::threadFold(a.clone(), b.clone(), Arc::new(|x, y, acc| Ok(acc + x + y)), 0i32)?;
     assert_eq!(result, 21);
     Ok(())
 }
@@ -1806,7 +1806,7 @@ fn test_thread_fold() -> Result<()> {
 fn test_thread_fold1() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let result = L::threadFold1(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, _arg: i32, acc| Ok(acc + x + y)), 0i32, 0i32)?;
+    let result = L::threadFold1(a.clone(), b.clone(), Arc::new(|x, y, _arg: i32, acc| Ok(acc + x + y)), 0i32, 0i32)?;
     assert_eq!(result, 10);
     Ok(())
 }
@@ -1816,7 +1816,7 @@ fn test_thread_fold1() -> Result<()> {
 fn test_thread_fold2() -> Result<()> {
     let a = list![1i32];
     let b = list![2i32];
-    let result = L::threadFold2(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, _a: i32, _b: i32, acc| Ok(acc + x + y)), 0i32, 0i32, 0i32)?;
+    let result = L::threadFold2(a.clone(), b.clone(), Arc::new(|x, y, _a: i32, _b: i32, acc| Ok(acc + x + y)), 0i32, 0i32, 0i32)?;
     assert_eq!(result, 3);
     Ok(())
 }
@@ -1826,7 +1826,7 @@ fn test_thread_fold2() -> Result<()> {
 fn test_thread_fold3() -> Result<()> {
     let a = list![1i32];
     let b = list![2i32];
-    let result = L::threadFold3(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x + y)), 0i32, 0i32, 0i32, 0i32)?;
+    let result = L::threadFold3(a.clone(), b.clone(), Arc::new(|x, y, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x + y)), 0i32, 0i32, 0i32, 0i32)?;
     assert_eq!(result, 3);
     Ok(())
 }
@@ -1836,7 +1836,7 @@ fn test_thread_fold3() -> Result<()> {
 fn test_thread_map() {
     let a = list![1i32, 2, 3];
     let b = list![4i32, 5, 6];
-    let result = L::threadMap(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y| Ok(x + y))).unwrap();
+    let result = L::threadMap(a.clone(), b.clone(), Arc::new(|x, y| Ok(x + y))).unwrap();
     assert_eq!(result, list![5i32, 7, 9]);
 }
 
@@ -1845,7 +1845,7 @@ fn test_thread_map() {
 fn test_thread_map1() {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let result = L::threadMap1(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, _arg: i32| Ok(x + y)), 0i32).unwrap();
+    let result = L::threadMap1(a.clone(), b.clone(), Arc::new(|x, y, _arg: i32| Ok(x + y)), 0i32).unwrap();
     assert_eq!(result, list![4i32, 6]);
 }
 
@@ -1854,7 +1854,7 @@ fn test_thread_map1() {
 fn test_thread_map1_0() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    L::threadMap1_0(Arc::clone(&a), Arc::clone(&b), Arc::new(|_x, _y, _arg: i32| Ok(())), 0i32)?;
+    L::threadMap1_0(a.clone(), b.clone(), Arc::new(|_x, _y, _arg: i32| Ok(())), 0i32)?;
     Ok(())
 }
 
@@ -1863,7 +1863,7 @@ fn test_thread_map1_0() -> Result<()> {
 fn test_thread_map2() {
     let a = list![1i32];
     let b = list![2i32];
-    let result = L::threadMap2(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, _a: i32, _b: i32| Ok(x + y)), 0i32, 0i32).unwrap();
+    let result = L::threadMap2(a.clone(), b.clone(), Arc::new(|x, y, _a: i32, _b: i32| Ok(x + y)), 0i32, 0i32).unwrap();
     assert_eq!(result, list![3i32]);
 }
 
@@ -1872,7 +1872,7 @@ fn test_thread_map2() {
 fn test_thread_map_fold() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let (result, acc) = L::threadMapFold(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y, fold: i32| Ok((x + y, fold + 1))), 0i32)?;
+    let (result, acc) = L::threadMapFold(a.clone(), b.clone(), Arc::new(|x, y, fold: i32| Ok((x + y, fold + 1))), 0i32)?;
     assert_eq!(result, list![4i32, 6]);
     assert_eq!(acc, 2);
     Ok(())
@@ -1883,7 +1883,7 @@ fn test_thread_map_fold() -> Result<()> {
 fn test_thread_map_list() {
     let a = list![list![1i32, 2]];
     let b = list![list![3i32, 4]];
-    let result = L::threadMapList(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y| Ok(x + y))).unwrap();
+    let result = L::threadMapList(a.clone(), b.clone(), Arc::new(|x, y| Ok(x + y))).unwrap();
     assert_eq!(result, list![list![4i32, 6]]);
 }
 
@@ -1892,7 +1892,7 @@ fn test_thread_map_list() {
 fn test_thread_map_list_2() -> Result<()> {
     let a = list![list![1i32, 2]];
     let b = list![list![3i32, 4]];
-    let (r1, _r2) = L::threadMapList_2(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y| Ok((x + y, x * y))))?;
+    let (r1, _r2) = L::threadMapList_2(a.clone(), b.clone(), Arc::new(|x, y| Ok((x + y, x * y))))?;
     assert_eq!(r1, list![list![4i32, 6]]);
     Ok(())
 }
@@ -1902,7 +1902,7 @@ fn test_thread_map_list_2() -> Result<()> {
 fn test_thread_map_2() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let (r1, r2) = L::threadMap_2(Arc::clone(&a), Arc::clone(&b), Arc::new(|x, y| Ok((x + y, x * y))))?;
+    let (r1, r2) = L::threadMap_2(a.clone(), b.clone(), Arc::new(|x, y| Ok((x + y, x * y))))?;
     assert_eq!(r1, list![4i32, 6]);
     assert_eq!(r2, list![3i32, 8]);
     Ok(())
@@ -1912,7 +1912,7 @@ fn test_thread_map_2() -> Result<()> {
 #[test]
 fn test_to_list_with_positions() {
     let lst = list![10i32, 20, 30];
-    let result = L::toListWithPositions(Arc::clone(&lst));
+    let result = L::toListWithPositions(lst.clone());
     assert_eq!(result.len(), 3);
 }
 
@@ -1920,14 +1920,14 @@ fn test_to_list_with_positions() {
 #[test]
 fn test_to_string() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::toStringCustom(Arc::clone(&lst), Arc::new(to_string_i32), arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
+    let result = L::toStringCustom(lst.clone(), Arc::new(to_string_i32), arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
     assert_eq!(&*result, "{1, 2, 3}");
     Ok(())
 }
 #[test]
 fn test_to_string_empty() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::toStringCustom(Arc::clone(&lst), Arc::new(to_string_i32), arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
+    let lst: List<i32> = nil();
+    let result = L::toStringCustom(lst.clone(), Arc::new(to_string_i32), arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
     assert_eq!(&*result, "{}");
     Ok(())
 }
@@ -1937,8 +1937,8 @@ fn test_to_string_empty() -> Result<()> {
 fn test_transpose_list() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let lst = list![Arc::clone(&a), Arc::clone(&b)];
-    let result = L::transposeList(Arc::clone(&lst))?;
+    let lst = list![a.clone(), b.clone()];
+    let result = L::transposeList(lst.clone())?;
     assert_eq!(result.len(), 2);
     Ok(())
 }
@@ -1947,7 +1947,7 @@ fn test_transpose_list() -> Result<()> {
 #[test]
 fn test_trim() -> Result<()> {
     let lst = list![2i32, 1, 3, 4, 2];
-    let result = L::trim(Arc::clone(&lst), Arc::new(is_even))?;
+    let result = L::trim(lst.clone(), Arc::new(is_even))?;
     assert!(result.len() > 0);
     Ok(())
 }
@@ -1956,7 +1956,7 @@ fn test_trim() -> Result<()> {
 #[test]
 fn test_trim_to_length() -> Result<()> {
     let lst = list![1i32, 2, 3, 4, 5];
-    let result = L::trimToLength(Arc::clone(&lst), 3)?;
+    let result = L::trimToLength(lst.clone(), 3)?;
     // trimToLength keeps last N elements
     assert_eq!(result.len(), 3);
     Ok(())
@@ -1967,7 +1967,7 @@ fn test_trim_to_length() -> Result<()> {
 fn test_union() {
     let a = list![1i32, 2, 3];
     let b = list![3i32, 4, 5];
-    let result = L::union(Arc::clone(&a), Arc::clone(&b));
+    let result = L::union(a.clone(), b.clone());
     assert_eq!(result, list![1i32, 2, 3, 4, 5]);
 }
 
@@ -1976,7 +1976,7 @@ fn test_union() {
 fn test_union_append_list_on_true() {
     let a = list![1i32, 2];
     let b = list![2i32, 3];
-    let result = L::unionAppendListOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i)).unwrap();
+    let result = L::unionAppendListOnTrue(a.clone(), b.clone(), Arc::new(eq_i)).unwrap();
     assert!(result.len() >= 2);
 }
 
@@ -1984,14 +1984,14 @@ fn test_union_append_list_on_true() {
 #[test]
 fn test_union_elt() {
     let lst = list![1i32, 2, 3];
-    let result = L::unionElt(4, Arc::clone(&lst));
+    let result = L::unionElt(4, lst.clone());
     // unionElt prepends new element if not present
     assert_eq!(result, list![4i32, 1, 2, 3]);
 }
 #[test]
 fn test_union_elt_exists() {
     let lst = list![1i32, 2, 3];
-    let result = L::unionElt(2, Arc::clone(&lst));
+    let result = L::unionElt(2, lst.clone());
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -1999,7 +1999,7 @@ fn test_union_elt_exists() {
 #[test]
 fn test_union_elt_on_true() {
     let lst = list![1i32, 2, 3];
-    let result = L::unionEltOnTrue(4, Arc::clone(&lst), Arc::new(eq_i)).unwrap();
+    let result = L::unionEltOnTrue(4, lst.clone(), Arc::new(eq_i)).unwrap();
     // unionEltOnTrue prepends new element if not present
     assert_eq!(result, list![4i32, 1, 2, 3]);
 }
@@ -2009,7 +2009,7 @@ fn test_union_elt_on_true() {
 fn test_union_int_n() -> Result<()> {
     let a = list![1i32, 2, 3];
     let b = list![3i32, 4];
-    let result = L::unionIntN(Arc::clone(&a), Arc::clone(&b), 4)?;
+    let result = L::unionIntN(a.clone(), b.clone(), 4)?;
     assert_eq!(result, list![1i32, 2, 3, 4]);
     Ok(())
 }
@@ -2018,7 +2018,7 @@ fn test_union_int_n() -> Result<()> {
 #[test]
 fn test_union_list() -> Result<()> {
     let a = list![list![1i32, 2], list![2i32, 3]];
-    let result = L::unionList(Arc::clone(&a))?;
+    let result = L::unionList(a.clone())?;
     assert_eq!(result, list![1i32, 2, 3]);
     Ok(())
 }
@@ -2028,7 +2028,7 @@ fn test_union_list() -> Result<()> {
 fn test_union_on_true() {
     let a = list![1i32, 2];
     let b = list![2i32, 3];
-    let result = L::unionOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i)).unwrap();
+    let result = L::unionOnTrue(a.clone(), b.clone(), Arc::new(eq_i)).unwrap();
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -2036,7 +2036,7 @@ fn test_union_on_true() {
 #[test]
 fn test_union_on_true_list() -> Result<()> {
     let a = list![list![1i32, 2]];
-    let result = L::unionOnTrueList(Arc::clone(&a), Arc::new(|x: i32, y: i32| Ok(x == y)))?;
+    let result = L::unionOnTrueList(a.clone(), Arc::new(|x: i32, y: i32| Ok(x == y)))?;
     assert!(result.len() >= 0);
     Ok(())
 }
@@ -2045,7 +2045,7 @@ fn test_union_on_true_list() -> Result<()> {
 #[test]
 fn test_unique() {
     let lst = list![1i32, 2, 1, 3, 2];
-    let result = L::unique(Arc::clone(&lst));
+    let result = L::unique(lst.clone());
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -2053,7 +2053,7 @@ fn test_unique() {
 #[test]
 fn test_unique_int_n() -> Result<()> {
     let lst = list![1i32, 2, 1, 3, 2];
-    let result = L::uniqueIntN(Arc::clone(&lst), 3)?;
+    let result = L::uniqueIntN(lst.clone(), 3)?;
     assert!(result.len() <= 3);
     Ok(())
 }
@@ -2062,7 +2062,7 @@ fn test_unique_int_n() -> Result<()> {
 #[test]
 fn test_unique_on_true() {
     let lst = list![1i32, 2, 1, 3];
-    let result = L::uniqueOnTrue(Arc::clone(&lst), Arc::new(eq_i)).unwrap();
+    let result = L::uniqueOnTrue(lst.clone(), Arc::new(eq_i)).unwrap();
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -2070,7 +2070,7 @@ fn test_unique_on_true() {
 #[test]
 fn test_unzip() {
     let lst = list![(1i32, 10i32), (2i32, 20), (3i32, 30)];
-    let (a, b) = L::unzip(Arc::clone(&lst));
+    let (a, b) = L::unzip(lst.clone());
     assert_eq!(a, list![1i32, 2, 3]);
     assert_eq!(b, list![10i32, 20, 30]);
 }
@@ -2079,7 +2079,7 @@ fn test_unzip() {
 #[test]
 fn test_unzip3() {
     let lst = list![(1i32, 10i32, 100i32)];
-    let (a, b, c) = L::unzip3(Arc::clone(&lst));
+    let (a, b, c) = L::unzip3(lst.clone());
     assert_eq!(a, list![1i32]);
     assert_eq!(b, list![10i32]);
     assert_eq!(c, list![100i32]);
@@ -2089,7 +2089,7 @@ fn test_unzip3() {
 #[test]
 fn test_unzip_second() {
     let lst = list![(1i32, 10i32), (2i32, 20)];
-    let result = L::unzipSecond(Arc::clone(&lst));
+    let result = L::unzipSecond(lst.clone());
     assert_eq!(result, list![10i32, 20]);
 }
 
@@ -2098,7 +2098,7 @@ fn test_unzip_second() {
 fn test_zip() {
     let a = list![1i32, 2, 3];
     let b = list![10i32, 20, 30];
-    let result = L::zip(Arc::clone(&a), Arc::clone(&b));
+    let result = L::zip(a.clone(), b.clone());
     assert_eq!(result, list![(1i32, 10i32), (2i32, 20), (3i32, 30)]);
 }
 
@@ -2108,7 +2108,7 @@ fn test_zip3() {
     let a = list![1i32, 2];
     let b = list![10i32, 20];
     let c = list![100i32, 200];
-    let result = L::zip3(Arc::clone(&a), Arc::clone(&b), Arc::clone(&c));
+    let result = L::zip3(a.clone(), b.clone(), c.clone());
     assert_eq!(result, list![(1i32, 10i32, 100i32), (2i32, 20i32, 200)]);
 }
 
@@ -2116,7 +2116,7 @@ fn test_zip3() {
 #[test]
 fn test_select() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::select(Arc::clone(&lst), Arc::new(is_even)).unwrap();
+    let result = L::select(lst.clone(), Arc::new(is_even)).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -2124,7 +2124,7 @@ fn test_select() {
 #[test]
 fn test_select1() {
     let lst = list![2i32];
-    let result = L::select1(Arc::clone(&lst), Arc::new(|x, _: i32| Ok(x % 2 == 0)), 0i32).unwrap();
+    let result = L::select1(lst.clone(), Arc::new(|x, _: i32| Ok(x % 2 == 0)), 0i32).unwrap();
     assert_eq!(result, list![2i32]);
 }
 
@@ -2132,7 +2132,7 @@ fn test_select1() {
 #[test]
 fn test_select1r() {
     let lst = list![2i32, 4];
-    let result = L::select1r(Arc::clone(&lst), Arc::new(|_: i32, x| Ok(x % 2 == 0)), 0i32).unwrap();
+    let result = L::select1r(lst.clone(), Arc::new(|_: i32, x| Ok(x % 2 == 0)), 0i32).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -2140,7 +2140,7 @@ fn test_select1r() {
 #[test]
 fn test_select2() {
     let lst = list![2i32, 4];
-    let result = L::select2(Arc::clone(&lst), Arc::new(|x, _a: i32, _b: i32| Ok(x % 2 == 0)), 0i32, 0i32).unwrap();
+    let result = L::select2(lst.clone(), Arc::new(|x, _a: i32, _b: i32| Ok(x % 2 == 0)), 0i32, 0i32).unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -2148,7 +2148,7 @@ fn test_select2() {
 #[test]
 fn test_all_combinations() -> Result<()> {
     let lst = list![list![1i32, 2], list![3i32, 4]];
-    let result = L::allCombinations(Arc::clone(&lst), None, sourceInfo!())?;
+    let result = L::allCombinations(lst.clone(), None, sourceInfo!())?;
     assert!(result.len() >= 0);
     Ok(())
 }
@@ -2156,29 +2156,29 @@ fn test_all_combinations() -> Result<()> {
 // ── Additional edge cases ──
 #[test]
 fn test_map_empty_list() {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::map(Arc::clone(&lst), Arc::new(double)).unwrap();
+    let lst: List<i32> = nil();
+    let result = L::map(lst.clone(), Arc::new(double)).unwrap();
     assert!(result.is_empty());
 }
 
 #[test]
 fn test_fold_empty() {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::fold(Arc::clone(&lst), Arc::new(|_, acc| Ok(acc)), 99i32).unwrap();
+    let lst: List<i32> = nil();
+    let result = L::fold(lst.clone(), Arc::new(|_, acc| Ok(acc)), 99i32).unwrap();
     assert_eq!(result, 99);
 }
 
 #[test]
 fn test_filter_empty_result() {
     let lst = list![1i32, 3, 5];
-    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
+    let result = L::filter(lst.clone(), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
     assert!(result.is_empty());
 }
 
 #[test]
 fn test_union_elt_duplicate() {
     let lst = list![1i32, 2, 3];
-    let result = L::unionElt(2, Arc::clone(&lst));
+    let result = L::unionElt(2, lst.clone());
     assert_eq!(result, list![1i32, 2, 3]);
 }
 
@@ -2186,7 +2186,7 @@ fn test_union_elt_duplicate() {
 fn test_intersection_on_true_no_overlap() {
     let a = list![1i32, 2];
     let b = list![3i32, 4];
-    let result = L::intersectionOnTrue(Arc::clone(&a), Arc::clone(&b), Arc::new(eq_i)).unwrap();
+    let result = L::intersectionOnTrue(a.clone(), b.clone(), Arc::new(eq_i)).unwrap();
     assert!(result.is_empty());
 }
 
@@ -2194,15 +2194,15 @@ fn test_intersection_on_true_no_overlap() {
 fn test_set_difference_all_in_b() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![1i32, 2, 3];
-    let result = L::setDifference(Arc::clone(&a), Arc::clone(&b))?;
+    let result = L::setDifference(a.clone(), b.clone())?;
     assert!(result.is_empty());
     Ok(())
 }
 
 #[test]
 fn test_sort_empty() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
-    let result = L::sort(Arc::clone(&lst), Arc::new(less_i))?;
+    let lst: List<i32> = nil();
+    let result = L::sort(lst.clone(), Arc::new(less_i))?;
     assert!(result.is_empty());
     Ok(())
 }
@@ -2210,7 +2210,7 @@ fn test_sort_empty() -> Result<()> {
 #[test]
 fn test_sort_single() -> Result<()> {
     let lst = list![42i32];
-    let result = L::sort(Arc::clone(&lst), Arc::new(less_i))?;
+    let result = L::sort(lst.clone(), Arc::new(less_i))?;
     assert_eq!(result, list![42i32]);
     Ok(())
 }
@@ -2218,20 +2218,20 @@ fn test_sort_single() -> Result<()> {
 #[test]
 fn test_count_zero() {
     let lst = list![1i32, 3, 5];
-    assert_eq!(L::count(Arc::clone(&lst), Arc::new(is_even)).unwrap(), 0);
+    assert_eq!(L::count(lst.clone(), Arc::new(is_even)).unwrap(), 0);
 }
 
 #[test]
 fn test_position_empty() {
-    let lst: Arc<List<i32>> = nil();
+    let lst: List<i32> = nil();
     // position returns Err when element not found (empty list)
-    assert!(L::position(1, Arc::clone(&lst)).is_err());
+    assert!(L::position(1, lst.clone()).is_err());
 }
 
 #[test]
 fn test_max_min_single() -> Result<()> {
     let lst = list![42i32];
-    assert_eq!(L::maxElement(Arc::clone(&lst), Arc::new(less_i))?, 42);
-    assert_eq!(L::minElement(Arc::clone(&lst), Arc::new(less_i))?, 42);
+    assert_eq!(L::maxElement(lst.clone(), Arc::new(less_i))?, 42);
+    assert_eq!(L::minElement(lst.clone(), Arc::new(less_i))?, 42);
     Ok(())
 }

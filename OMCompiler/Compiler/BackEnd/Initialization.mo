@@ -62,6 +62,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
+import ClassInf;
 import ComponentReference;
 protected import ComponentReferenceBasics;
 import Config;
@@ -793,7 +794,7 @@ protected
   array<Integer> secondary;
   BackendDAE.Var v;
   DAE.Exp bindExp;
-  HashSet.HashSet hs;
+  BackendDAE.Variables primary;
   list<DAE.ComponentRef> crefs;
   list<BackendDAE.Var> globalKnownVarList = {};
 algorithm
@@ -852,28 +853,28 @@ algorithm
     secondary := selectSecondaryParameters(flatComps, globalKnownVars, mT, secondary);
 
     // get primary and secondary parameters and variables
-    hs := HashSet.emptyHashSetSized(2*nGlobalKnownVars+1);
+    primary := BackendVariable.emptyVarsSized(nGlobalKnownVars);
     for i in flatComps loop
       v := BackendVariable.getVarAt(globalKnownVars, i);
       bindExp := BackendVariable.varBindExpStartValueNoFail(v);
-      crefs := Expression.getAllCrefsExpanded(bindExp);
+      crefs := Expression.extractCrefsFromExp(bindExp);
       //BackendDump.dumpVarList({v}, intString(i));
 
       () := match v
         // primary parameter
-        case BackendDAE.VAR(varKind=BackendDAE.PARAM()) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case BackendDAE.VAR(varKind=BackendDAE.PARAM()) guard 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             outAllPrimaryParameters := v::outAllPrimaryParameters;
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
         then ();
 
         // primary external object
-        case BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)) guard 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case BackendDAE.VAR(varKind=BackendDAE.EXTOBJ(), bindExp=SOME(bindExp)) guard 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             outAllPrimaryParameters := v::outAllPrimaryParameters;
             v := BackendVariable.setVarFixed(v, true);
             outGlobalKnownVars := BackendVariable.addVar(v, outGlobalKnownVars);
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
         then ();
 
         // secondary parameter
@@ -886,13 +887,13 @@ algorithm
           then ();
 
         // primary variable
-        case _ guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
+        case _ guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and allPrimary(crefs, primary)
           algorithm
             otherVariables := BackendVariable.addVar(v, otherVariables);
             v := BackendVariable.setVarFixed(v, true);
             v := BackendVariable.setVarFinal(v, true);
             outGlobalKnownVars := BackendVariable.addVar(v, outGlobalKnownVars);
-            hs := BaseHashSet.add(BackendVariable.varCref(v), hs);
+            primary := BackendVariable.addVar(v, primary);
           then ();
 
         // secondary variable
@@ -918,6 +919,43 @@ algorithm
     //BackendDump.dumpVariables(otherVariables, "otherVariables");
   end if;
 end selectInitializationVariablesDAE;
+
+protected function allPrimary
+  "Whether every element of every variable the crefs name is in primary;
+   a whole array or record counts only when all its elements are."
+  input list<DAE.ComponentRef> crefs;
+  input BackendDAE.Variables primary;
+  output Boolean b = true;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  for cr in crefs loop
+    if not ComponentReferenceBasics.crefEqual(cr, DAE.crefTime) then
+      try
+        vars := BackendVariable.getVar(cr, primary);
+        b := listLength(vars) == elementCount(ComponentReference.crefTypeFull(cr));
+      else
+        b := false;
+      end try;
+      if not b then
+        return;
+      end if;
+    end if;
+  end for;
+end allPrimary;
+
+protected function elementCount
+  "The scalar variables a component of this type is made of: arrays and
+   records are expanded, anything else (an external object too) is one."
+  input DAE.Type ty;
+  output Integer n;
+algorithm
+  n := match ty
+    case DAE.T_ARRAY() then elementCount(ty.ty) * product(Expression.dimensionSize(d) for d in ty.dims);
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then sum(elementCount(v.ty) for v in ty.varLst);
+    else 1;
+  end match;
+end elementCount;
 
 function addExtObjToGlobalKnownVars "
   Sets fixed=true for external objects with binding and adds them to globalKnownVars
@@ -1298,7 +1336,6 @@ protected
   list<BackendDAE.Equation> init_eqns, sim_eqns;
   AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m, mT;
-  BackendDAE.AdjacencyMatrixEnhanced me;
   Integer nVars, nEqns;
   array<Integer> scal_to_arr, var_to_eqn, eqn_to_var;
   Boolean changed = false;
@@ -1335,11 +1372,7 @@ algorithm
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
       // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
       if not listEmpty(redundantEqns) then
-        // The enhanced adjacency matrix is consulted for the redundant equations
-        // only, and building it differentiates and simplifies every equation
-        // with respect to every variable it contains.
-        (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
-        consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+        consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, enhancedRows(outEqSystem, inShared), var_to_eqn, eqn_to_var, scal_to_arr);
         redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
       end if;
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
@@ -1379,8 +1412,7 @@ algorithm
         if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
           // 7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
           if not listEmpty(redundantEqns) then
-            (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
-            consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+            consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, enhancedRows(outEqSystem, inShared), var_to_eqn, eqn_to_var, scal_to_arr);
           end if;
           outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
           (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
@@ -1448,7 +1480,6 @@ protected
   BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst = BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
   AvlTreePathFunction.Tree funcs;
-  BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn = listArray({});
   Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
@@ -1514,8 +1545,7 @@ algorithm
         //print("{" + stringDelimitList(List.map(redundantEqns, intString), ",") + "}\n");
 
         // symbolic consistency check
-        (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared, false);
-        consistencyCheck(redundantEqns, inEqSystem.orderedEqs, inEqSystem.orderedVars, inShared, nAddVars, m_, me, ass1, ass2, mapIncRowEqn);
+        consistencyCheck(redundantEqns, inEqSystem.orderedEqs, inEqSystem.orderedVars, inShared, nAddVars, m_, enhancedRows(syst, inShared), ass1, ass2, mapIncRowEqn);
 
         // remove redundant equations
         removedEqns2 := BackendEquation.getList(redundantEqns, inEqSystem.orderedEqs);
@@ -1713,6 +1743,43 @@ end addStartValueEquations;
 //
 // =============================================================================
 
+protected uniontype EnhancedRows
+  "The enhanced adjacency rows of a system, computed for the equations the
+  consistency check marks; the whole matrix differentiates every equation."
+  record ENHANCED_ROWS
+    BackendDAE.Variables vars;
+    BackendDAE.EquationArray eqns;
+    BackendDAE.Shared shared;
+    array<Option<BackendDAE.AdjacencyMatrixElementEnhanced>> rows;
+    array<Integer> rowmark;
+  end ENHANCED_ROWS;
+end EnhancedRows;
+
+protected function enhancedRows
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output EnhancedRows me;
+algorithm
+  me := ENHANCED_ROWS(syst.orderedVars, syst.orderedEqs, shared,
+    arrayCreate(BackendEquation.getNumberOfEquations(syst.orderedEqs), NONE()),
+    arrayCreate(BackendVariable.varsSize(syst.orderedVars), 0));
+end enhancedRows;
+
+protected function enhancedRow
+  input EnhancedRows me;
+  input Integer eqn "array equation index";
+  output BackendDAE.AdjacencyMatrixElementEnhanced row;
+algorithm
+  row := match arrayGet(me.rows, eqn)
+    case SOME(row) then row;
+    else
+      algorithm
+        (row, _, _) := BackendDAEUtil.adjacencyRowEnhanced(me.vars, BackendEquation.get(me.eqns, eqn), eqn, me.rowmark, me.shared.globalKnownVars, false, me.shared);
+        arrayUpdate(me.rows, eqn, SOME(row));
+      then row;
+  end match;
+end enhancedRow;
+
 protected function consistencyCheck "
   This function performs a symbolic consistency check of all detected redundant
   initial equations and returns three lists:
@@ -1725,7 +1792,7 @@ protected function consistencyCheck "
   input BackendDAE.Shared inShared;
   input Integer nAddVars;
   input BackendDAE.AdjacencyMatrix inM;
-  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input EnhancedRows me;
   input array<Integer> vecVarToEqs;
   input array<Integer> vecEqsToVar;
   input array<Integer> mapIncRowEqn;
@@ -1962,7 +2029,7 @@ protected function setupVarReplacements
   input array<Integer> inVecEqToVar "matching";
   input BackendVarTransform.VariableReplacements inRepls "initially call this with empty replacements";
   input array<Integer> inMapIncRowEqn;
-  input BackendDAE.AdjacencyMatrixEnhanced inME;
+  input EnhancedRows inME;
   input BackendDAE.Shared inShared;
   output BackendVarTransform.VariableReplacements outRepls;
 algorithm
@@ -1984,10 +2051,9 @@ algorithm
 
     case markedEqn::markedEqns algorithm
       indexVar := inVecEqToVar[markedEqn];
-      true := isVarExplicitSolvable(inME[markedEqn], indexVar);
-      var := BackendVariable.getVarAt(inVars, indexVar);
-
       indexEq := inMapIncRowEqn[markedEqn];
+      true := isVarExplicitSolvable(enhancedRow(inME, indexEq), indexVar);
+      var := BackendVariable.getVarAt(inVars, indexVar);
       eqn := BackendEquation.get(inEqns, indexEq);
 
       cref := BackendVariable.varCref(var);

@@ -54,6 +54,9 @@ pub fn simulate(
 
     let mut inputs = Inputs::new(opts);
     let mut rec = Recorder::new(md, opts.keep);
+    if let Some(path) = &opts.result_file {
+        rec.stream_to(path, opts.start_time, opts.stop_time, &md.units)?;
+    }
     initialize(as_common(inst), md, &mut inputs, opts)?;
 
     let mut terminated_at = None;

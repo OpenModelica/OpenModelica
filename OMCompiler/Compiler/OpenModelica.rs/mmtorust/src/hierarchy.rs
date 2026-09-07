@@ -1917,7 +1917,7 @@ pub(crate) fn strip_exp_wrappers(mut e: &Absyn::Exp) -> &Absyn::Exp {
         match e {
             Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => e = exp,
             Absyn::Exp::TUPLE { expressions } => match &**expressions {
-                metamodelica::List::Cons { head, tail } if tail.is_empty() => e = head,
+                metamodelica::ListNode::Cons { head, tail } if tail.is_empty() => e = head,
                 _ => return e,
             },
             _ => return e,

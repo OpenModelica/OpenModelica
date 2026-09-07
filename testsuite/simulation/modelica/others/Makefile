@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 world.mos \
+noemit.mos \
 EngineV6_evalParams.mos \
 Bug1687.mos \
 Bug1728.mos \
@@ -77,6 +78,8 @@ TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
 Ticket5129.mos \
+ResultFileArrow.mos \
+ResultFileArrowTimeAlias.mos \
 VariableFilter.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \

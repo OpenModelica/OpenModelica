@@ -198,6 +198,9 @@ pub struct DATA_ALIAS {
     pub aliasType: c_int,
     pub info: VAR_INFO,
     pub filterOutput: modelica_boolean,
+    pub unit: modelica_string,
+    pub displayUnit: modelica_string,
+    pub relativeQuantity: modelica_boolean,
 }
 
 #[repr(C)]
@@ -210,6 +213,7 @@ pub struct array_index_t {
 pub struct REAL_ATTRIBUTE {
     pub unit: modelica_string,
     pub displayUnit: modelica_string,
+    pub relativeQuantity: modelica_boolean,
     pub min: real_array,
     pub max: real_array,
     pub fixed: modelica_boolean,

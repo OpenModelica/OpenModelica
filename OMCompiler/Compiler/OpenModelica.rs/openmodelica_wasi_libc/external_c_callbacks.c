@@ -114,3 +114,13 @@ void ModelicaFormatWarning(const char* fmt, ...) {
     ModelicaVFormatWarning(fmt, ap);
     va_end(ap);
 }
+
+#if HAVE_HDF5
+/* HDF5's plugin loader calls these on any POSIX target; there is nothing to
+ * load here. Not wasi-libc's libdl: its libdl.a is non-PIC, so a `--shared`
+ * side module cannot link it, and libdl.so leaves imports behind. */
+void *dlopen(const char *file, int flags) { (void)file; (void)flags; return NULL; }
+void *dlsym(void *__restrict handle, const char *__restrict name) { (void)handle; (void)name; return NULL; }
+int dlclose(void *handle) { (void)handle; return 0; }
+char *dlerror(void) { return (char *)"dynamic loading is not available"; }
+#endif

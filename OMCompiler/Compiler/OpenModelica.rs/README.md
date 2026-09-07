@@ -222,6 +222,10 @@ isolation headers (`scripts/coi_server.py`) or the platform list stays empty.
 The FMI simulator page uses the same compiler to add native binaries to an FMU
 someone else produced.
 
+The OMPlot page (`wasm/omplot`) plots and compares result files without omc:
+`openmodelica_result_web` wraps `openmodelica_result_files` — the readers and
+the `diffSimulationResults` tube comparison shared with `openmodelica_script_util`.
+
 ## Native platforms for an FMU (`RUST_OMC_FMU_NATIVE_TARGETS`)
 
 An exported wasm FMU can also carry, per platform, the component as machine code

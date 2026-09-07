@@ -22,6 +22,7 @@ type Src = openmodelica_wasi::fs::Reader;
 /// read once and every lookup is an index; over it only what the caller asks for
 /// is read, as the C reader always has.
 const MAX_CACHED_DATA2: u64 = 64 * 1024 * 1024;
+const READ_ALL_MAX: u64 = 2 * 1024 * 1024 * 1024;
 
 /// One entry from the `name`/`description`/`dataInfo` metadata tables.
 #[derive(Clone)]
@@ -32,6 +33,113 @@ pub struct MatVariable {
     /// 1-based index into data_1 (params) or data_2 (vars); negative selects the
     /// sign-inverted alias of that column.
     pub index: i32,
+}
+
+/// The C `omc_matlab4_find_var` lookup over a table sorted by [`iws_cmp`]:
+/// exact match, then `time`/`Time`, then the Dymola / OpenModelica spelling of
+/// array indices and `der()`.
+pub fn find_var_in(allInfo: &[MatVariable], varName: &str) -> Option<usize> {
+    if let Ok(idx) = allInfo.binary_search_by(|v| iws_cmp(&v.name, varName)) {
+        return Some(idx);
+    }
+    if varName == "time" {
+        return allInfo.binary_search_by(|v| iws_cmp(&v.name, "Time")).ok();
+    } else if varName == "Time" {
+        return allInfo.binary_search_by(|v| iws_cmp(&v.name, "time")).ok();
+    }
+    let converted = dymola_style_name(varName).or_else(|| openmodelica_style_name(varName))?;
+    allInfo.binary_search_by(|v| iws_cmp(&v.name, &converted)).ok()
+}
+
+/// What every column-store result file offers: the `.mat`'s data model (a
+/// variable table over stored columns and scalar parameters, aliases as signed
+/// indices), so the scripting API serves `.mat` and `.arrow` through one path.
+pub trait ResultTable {
+    fn all_info(&self) -> &[MatVariable];
+    fn params(&self) -> &[f64];
+    fn nrows(&self) -> usize;
+    /// Stored time-variant columns, `time` included (the `.mat`'s data_2 width).
+    fn nvar(&self) -> usize;
+    fn nparam(&self) -> usize;
+    fn find_var(&self, name: &str) -> Option<usize>;
+    /// The trajectory of 1-based column `index`, negated when it is negative.
+    fn read_vals(&mut self, index: i32) -> Option<Vec<f64>>;
+    fn val(&mut self, var_idx: usize, time: f64) -> Option<f64>;
+    fn interp_val(&mut self, index: i32, time: f64) -> Option<f64>;
+    fn start_time(&mut self) -> f64;
+    fn stop_time(&mut self) -> f64;
+    fn read_all(&mut self) -> bool;
+    /// `(unit, displayUnit)` of `all_info()[idx]`; empty for a format without units.
+    fn unit(&self, _idx: usize) -> (&str, &str) {
+        ("", "")
+    }
+    /// The Modelica type name of `all_info()[idx]` (`Real` for a format without types).
+    fn var_type(&self, _idx: usize) -> &str {
+        "Real"
+    }
+    /// FMI's `relativeQuantity` for `all_info()[idx]`: the value is a difference in
+    /// its unit, so a conversion scales it but adds no offset. False for a format
+    /// that does not record it.
+    fn relative_quantity(&self, _idx: usize) -> bool {
+        false
+    }
+    /// The trajectory of a String column (1-based `index`); `None` unless the
+    /// format stores Strings and the column is one.
+    fn read_strings(&mut self, _index: i32) -> Option<Vec<String>> {
+        None
+    }
+    /// Whether `all_info()[idx]` is a discrete-time variable. False for a format
+    /// that does not record it.
+    fn discrete(&self, _idx: usize) -> bool {
+        false
+    }
+    /// The literals of the enumeration variable `all_info()[idx]`.
+    fn enumeration(&self, _idx: usize) -> Option<Vec<String>> {
+        None
+    }
+    /// The text of the String parameter `all_info()[idx]`.
+    fn param_string(&self, _idx: usize) -> Option<String> {
+        None
+    }
+}
+
+impl ResultTable for MatReader {
+    fn all_info(&self) -> &[MatVariable] {
+        &self.allInfo
+    }
+    fn params(&self) -> &[f64] {
+        &self.params
+    }
+    fn nrows(&self) -> usize {
+        self.nrows
+    }
+    fn nvar(&self) -> usize {
+        self.nvar
+    }
+    fn nparam(&self) -> usize {
+        self.nparam
+    }
+    fn find_var(&self, name: &str) -> Option<usize> {
+        MatReader::find_var(self, name)
+    }
+    fn read_vals(&mut self, index: i32) -> Option<Vec<f64>> {
+        MatReader::read_vals(self, index)
+    }
+    fn val(&mut self, var_idx: usize, time: f64) -> Option<f64> {
+        MatReader::val(self, var_idx, time)
+    }
+    fn interp_val(&mut self, index: i32, time: f64) -> Option<f64> {
+        MatReader::interp_val(self, index, time)
+    }
+    fn start_time(&mut self) -> f64 {
+        MatReader::start_time(self)
+    }
+    fn stop_time(&mut self) -> f64 {
+        MatReader::stop_time(self)
+    }
+    fn read_all(&mut self) -> bool {
+        MatReader::read_all(self)
+    }
 }
 
 /// An opened MATLAB v4 result file.
@@ -76,7 +184,7 @@ fn fixed_str(bytes: &[u8]) -> String {
 /// Compare two names ignoring ASCII whitespace, matching the C `strcmp_iws`.
 /// The metadata is sorted/searched with this so that e.g. "a [1, 2]" and
 /// "a[1,2]" compare equal.
-fn iws_cmp(a: &str, b: &str) -> Ordering {
+pub fn iws_cmp(a: &str, b: &str) -> Ordering {
     let mut ai = a.bytes().peekable();
     let mut bi = b.bytes().peekable();
     loop {
@@ -224,7 +332,7 @@ fn read_doubles(ty: i32, n: usize, file: &mut Src) -> Result<Vec<f64>, String> {
 }
 
 /// "der(a.b.c)" -> "a.b.der(c)" (Dymola style), or None if no conversion needed.
-fn dymola_style_name(var: &str) -> Option<String> {
+pub fn dymola_style_name(var: &str) -> Option<String> {
     if !var.starts_with("der(") {
         return None;
     }
@@ -447,10 +555,20 @@ impl MatReader {
     /// Load and transpose data_2 into time-major order on first access. Only for
     /// a matrix that fits in memory; past that the callers read off the disk.
     fn ensure_data2(&mut self) -> bool {
+        self.load_data2(MAX_CACHED_DATA2)
+    }
+
+    /// C's `omc_matlab4_read_all_vals`, for a caller that will read most
+    /// columns: the per-element disk path costs a seek per row.
+    pub fn read_all(&mut self) -> bool {
+        self.load_data2(READ_ALL_MAX)
+    }
+
+    fn load_data2(&mut self, max_bytes: u64) -> bool {
         if self.data2.is_some() {
             return true;
         }
-        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > MAX_CACHED_DATA2 {
+        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > max_bytes {
             return false;
         }
         let n = self.nrows * self.nvar;
@@ -555,28 +673,9 @@ impl MatReader {
     /// `omc_matlab4_find_var` (time/Time, Dymola/OMC der-style). Returns the
     /// index into `allInfo`.
     pub fn find_var(&self, varName: &str) -> Option<usize> {
-        if let Ok(idx) = self.allInfo.binary_search_by(|v| iws_cmp(&v.name, varName)) {
-            return Some(idx);
-        }
-        if varName == "time" {
-            return self
-                .allInfo
-                .binary_search_by(|v| iws_cmp(&v.name, "Time"))
-                .ok();
-        } else if varName == "Time" {
-            return self
-                .allInfo
-                .binary_search_by(|v| iws_cmp(&v.name, "time"))
-                .ok();
-        }
-        let converted = dymola_style_name(varName).or_else(|| openmodelica_style_name(varName))?;
-        self.allInfo
-            .binary_search_by(|v| iws_cmp(&v.name, &converted))
-            .ok()
+        find_var_in(&self.allInfo, varName)
     }
 
-    /// Evaluate variable/parameter `var` at `time` with linear interpolation,
-    /// mirroring `omc_matlab4_val`. Returns None when `time` is out of range.
     pub fn val(&mut self, varIdx: usize, time: f64) -> Option<f64> {
         let isParam = self.allInfo[varIdx].isParam;
         let index = self.allInfo[varIdx].index;
@@ -615,7 +714,7 @@ impl MatReader {
 /// Port of `find_closest_points`: returns `(index1, weight1, index2, weight2)`
 /// such that `value(key) = weight1*vec[index1] + weight2*vec[index2]`. On an
 /// exact match `index2` is -1 and `weight1` is 1.
-fn find_closest_points(key: f64, vec: &[f64]) -> (i32, f64, i32, f64) {
+pub fn find_closest_points(key: f64, vec: &[f64]) -> (i32, f64, i32, f64) {
     let mut min: i32 = 0;
     let mut max: i32 = vec.len() as i32 - 1;
     loop {

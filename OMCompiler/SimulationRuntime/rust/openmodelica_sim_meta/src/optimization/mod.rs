@@ -408,11 +408,7 @@ mod run {
                 nlp.str_option("hessian_constant", "yes");
             }
             Some("num") | Some("NUM") | None => {}
-            Some(other) => omclog::warning(
-                omclog::STDOUT,
-                false,
-                &format!("not support ipopt_hesse={other}"),
-            ),
+            Some(other) => omclog::warning!(omclog::STDOUT, false, "not support ipopt_hesse={other}"),
         }
 
         if let Some(ls) = flags.ls_ipopt.as_deref() {

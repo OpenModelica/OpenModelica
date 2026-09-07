@@ -10,7 +10,7 @@
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadModel(ThermoSysPro); getErrorString();
 
-simulate(ThermoSysPro.Examples.SimpleExamples.TestVolumes2, stopTime=10); getErrorString();
+simulate(ThermoSysPro.Examples.SimpleExamples.TestVolumes2, stopTime=10, simflags="-lv=-LOG_STDOUT"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestVolumes2_res.mat",
@@ -26,12 +26,8 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestVolumes2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestVolumes2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestVolumes2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_STDOUT'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

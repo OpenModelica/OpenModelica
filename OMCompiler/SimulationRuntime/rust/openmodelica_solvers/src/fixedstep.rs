@@ -131,13 +131,11 @@ pub fn deprecation_warning(method: &str) {
     // C also warns (one line, no replacement text) for `symSolver`, `symSolverSsc`
     // and `qss`.
     if matches!(method, "symSolver" | "symSolverSsc" | "qss") {
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &alloc::format!(
-                "Integration method '{method}' is deprecated and will be removed in a future \
-                 version of OpenModelica."
-            ),
+            "Integration method '{method}' is deprecated and will be removed in a future \
+             version of OpenModelica.",
         );
         return;
     }

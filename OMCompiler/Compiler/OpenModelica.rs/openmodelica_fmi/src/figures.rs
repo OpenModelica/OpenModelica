@@ -1,13 +1,15 @@
 //! The OpenModelica `<Figures>` and `<Visualization>` tool annotations.
 //!
 //! FMI has nowhere for "which plots describe this model", so the export writes
-//! them under `<Annotations><Tool name="OpenModelica">` and
+//! them under `<Annotations><Annotation type="org.openmodelica">` and
 //! [`crate::ToolAnnotation`] keeps the XML. An unknown `version` yields nothing
 //! rather than a guess.
 
 use crate::ToolAnnotation;
 use roxmltree::{Document, Node};
 
+/// FMI 3.0's `<Annotation type=…>`, and the `<Tool name=…>` older exports wrote.
+const TYPE: &str = "org.openmodelica";
 const TOOL: &str = "OpenModelica";
 const VERSION: &str = "1";
 
@@ -58,7 +60,7 @@ pub struct Visualization {
 }
 
 fn openmodelica_xml(annotations: &[ToolAnnotation]) -> Option<&str> {
-    annotations.iter().find(|t| t.name == TOOL).map(|t| t.xml.as_str())
+    annotations.iter().find(|t| t.name == TYPE || t.name == TOOL).map(|t| t.xml.as_str())
 }
 
 /// True when the element's `version` is absent or the one we read.
@@ -162,7 +164,21 @@ mod tests {
     use super::*;
 
     fn annotations(inner: &str) -> Vec<ToolAnnotation> {
+        vec![ToolAnnotation {
+            name: TYPE.to_string(),
+            xml: format!("<Annotation type=\"org.openmodelica\">{inner}</Annotation>"),
+        }]
+    }
+
+    /// What FMUs exported before FMI 3.0's spelling carry.
+    fn tool_annotations(inner: &str) -> Vec<ToolAnnotation> {
         vec![ToolAnnotation { name: TOOL.to_string(), xml: format!("<Tool name=\"OpenModelica\">{inner}</Tool>") }]
+    }
+
+    #[test]
+    fn reads_a_figure_from_the_old_tool_element() {
+        let a = tool_annotations(r#"<Figures version="1"><Figure title="F"><Plot><Curve y="a"/></Plot></Figure></Figures>"#);
+        assert_eq!(figures(&a).len(), 1);
     }
 
     #[test]

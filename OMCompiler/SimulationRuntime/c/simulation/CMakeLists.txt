@@ -15,6 +15,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "results/simulation_result_ia.cpp"
   "results/simulation_result_mat4.cpp"
   "results/simulation_result_plt.cpp"
+  "results/simulation_result_rust.cpp"
   "results/simulation_result.cpp"
   "simulation_info_json.c"
   "simulation_input_xml.c"
@@ -90,6 +91,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "results/simulation_result_ia.h"
   "results/simulation_result_mat4.h"
   "results/simulation_result_plt.h"
+  "results/simulation_result_rust.h"
   "results/simulation_result.h"
   "simulation_info_json.h"
   "simulation_input_xml.h"
@@ -149,6 +151,13 @@ set(OMC_SIMRT_SIMULATION_HEADERS
 
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
+
+# The result files (.mat/.arrow/.csv/.plt) written by the Rust writers in
+# libomc_result instead of the C ones (results/simulation_result_rust.cpp).
+if(OM_RUST_RESULT_WRITERS)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PUBLIC OM_RUST_RESULT_WRITERS)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::result)
+endif()
 
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC

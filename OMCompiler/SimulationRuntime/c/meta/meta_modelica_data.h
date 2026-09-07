@@ -193,7 +193,7 @@ typedef int mmc_switch_type;
 #define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
 #define mmc_unbox_real(X) mmc_prim_get_real(X)
 #define mmc_unbox_string(X) MMC_STRINGDATA(X)
-#define mmc_unbox_array(X) (*((base_array_t*)X))
+#define mmc_unbox_array(X) (*((base_array_t*)(X)))
 
 #define mmc_mk_integer mmc_mk_icon
 #define mmc_mk_boolean mmc_mk_bcon

@@ -42,16 +42,16 @@ simulate(conflictingStartValues, stopTime=0.0, simflags="-output=x,a"); getError
 // "
 // end SimulationResult;
 // "Warning: Alias set with conflicting start values
-//  * Candidate: c(start = 10.0, confidence number = 6)
-//  * Candidate: b(start = p = 100.0, confidence number = 1)
-// => Select value from b(start = p = 100.0) for variable: a
+//  * Candidate: c(start = 10.0)
+//  * Candidate: b(start = p = 100.0)
+// => Select value from b(start = p) for variable: a
 // Warning: Alias set with conflicting nominal values
-//  * Candidate: b(nominal = 1000.0, confidence number = 6)
-//  * Candidate: a(nominal = 100.0, confidence number = 6)
+//  * Candidate: b(nominal = 1000.0)
+//  * Candidate: a(nominal = 100.0)
 // => Select value from a(nominal = 100.0) for variable: a
 // Warning: Alias set with conflicting start values
-//  * Candidate: z(start = 4.0, confidence number = 6)
-//  * Candidate: y(start = 3.0, confidence number = 6)
+//  * Candidate: z(start = 4.0)
+//  * Candidate: y(start = 3.0)
 // => Select value from y(start = 3.0) for variable: x
 // "
 // endResult

@@ -25,6 +25,7 @@ IntSub.mo \
 LessThan.mo \
 LessThanEqual.mo \
 NoEvent1.mo \
+NoEvent2.mo \
 NonConstantReduction.mo \
 Not.mo \
 NotEquals.mo \

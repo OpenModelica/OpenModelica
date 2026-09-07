@@ -29,7 +29,7 @@ impl ExternalInput {
         // `-inputPath` is already folded in by `simflags::parse`.
         let path = String::from(file);
         let Some(text) = read_file(&path) else {
-            omclog::error(omclog::STDOUT, false, &format!("Failed to read CSV-file {path}"));
+            omclog::error!(omclog::STDOUT, false, "Failed to read CSV-file {path}");
             return None;
         };
         // C's `read_csv`: a leading `"sep=<c>"` names the delimiter and the data

@@ -51,9 +51,9 @@ async function handle(kind, args) {
       delete result.values;
       return { ...result, values };
     }
-    case 'mat': {
+    case 'result': {
       if (!driver) throw new Error('no FMU is loaded');
-      return driver.writeMat(args.path);
+      return driver.writeResult(args.path);
     }
     default:
       throw new Error(`the worker does not know how to ${kind}`);

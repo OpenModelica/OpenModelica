@@ -36,7 +36,18 @@ pub const STAT_NEWTON_SINGULAR: u32 = 23;
 /// Not a diagnostic: C's `homotopySteps`, which the driver folds into the
 /// initialization success line.
 pub const STAT_HOMOTOPY_STEPS: u32 = 24;
-pub const N_STATS: usize = 25;
+/// `rt_free` calls and the bytes either side passed, so a run's live heap is
+/// `alloc_bytes - free_bytes`: churn keeps the two close, a leak separates them.
+pub const STAT_FREE: u32 = 25;
+pub const STAT_ALLOC_BYTES: u32 = 26;
+pub const STAT_FREE_BYTES: u32 = 27;
+/// Live objects at the end of the run, by reference count: all at 1 means they
+/// were simply never released, 2 or more means a retain has no matching release.
+pub const STAT_LIVE_RC1: u32 = 28;
+pub const STAT_LIVE_RC2: u32 = 29;
+pub const STAT_LIVE_RCN: u32 = 30;
+pub const STAT_LIVE_MAXRC: u32 = 31;
+pub const N_STATS: usize = 32;
 
 static STATS: [AtomicU64; N_STATS] = [const { AtomicU64::new(0) }; N_STATS];
 
@@ -48,6 +59,11 @@ pub fn stat_inc(kind: u32) {
 #[inline]
 pub fn stat_add(kind: u32, n: u64) {
     STATS[kind as usize].fetch_add(n, Ordering::Relaxed);
+}
+
+#[inline]
+pub fn stat_set(kind: u32, n: u64) {
+    STATS[kind as usize].store(n, Ordering::Relaxed);
 }
 
 #[inline]

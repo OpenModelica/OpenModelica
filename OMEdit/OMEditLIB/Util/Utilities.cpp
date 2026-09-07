@@ -53,7 +53,6 @@
 #include <QColorDialog>
 #include <QDir>
 #include <QRegularExpression>
-#include <QRegExp>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -295,26 +294,6 @@ void TreeSearchFilters::showHideFilters(bool On)
   }
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-/*!
- * \brief TreeSearchFilters::getFilterRegExp
- * Returns the QRegExp for the given filter text, case sensitivity and syntax.
- * \param filterText
- * \param caseSensitivity
- * \param syntax
- * \return
- */
-QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
-{
-  QRegExp regExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
-  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
-  // it matches something instead of silently matching nothing.
-  if (!regExp.isValid()) {
-    regExp.setPattern(QRegExp::escape(filterText));
-  }
-  return regExp;
-}
-#else
 /*!
  * \brief TreeSearchFilters::getFilterRegularExpression
  * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
@@ -328,9 +307,26 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
   QRegularExpression regExp;
   switch (syntax) {
-    case TreeSearchFilters::Wildcard:
+    case TreeSearchFilters::Wildcard: {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+#else
+      QString pattern = QRegularExpression::wildcardToRegularExpression(filterText);
+      /* Qt 5 has no UnanchoredWildcardConversion option, and wildcardToRegularExpression()
+       * always returns a fully anchored pattern wrapped as "\A(?:...)\z" (i.e. exact-match
+       * behavior). Strip the \A and \z anchors so the pattern can match anywhere in the
+       * string, matching the behavior of UnanchoredWildcardConversion on Qt 6.
+       */
+      if (pattern.startsWith("\\A")) {
+        pattern.remove(0, 2);
+      }
+      if (pattern.endsWith("\\z")) {
+        pattern.chop(2);
+      }
+      regExp = QRegularExpression(pattern, caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption);
+#endif
       break;
+    }
     case TreeSearchFilters::FixedString:
       regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
       break;
@@ -345,7 +341,6 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   }
   return regExp;
 }
-#endif
 
 /*!
  * \class FileDataNotifier
@@ -957,8 +952,8 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -971,8 +966,8 @@ bool Utilities::isValueScalarLiteralConstant(QString value)
   /* Issue #13636
    * Check if value is scalar and literal constant.
    */
-  QRegExp rx("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -1352,10 +1347,10 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return false;
   }
   QString textToMatch = text.mid(index, keyword.length());
-  QRegExp keywordRegExp("\\b" + keyword + "\\b");
-  if (keywordRegExp.indexIn(textToMatch) != -1 && (index + keyword.length() == text.length() ||
-                                                   text[index + keyword.length()].isSpace() ||
-                                                   (checkParenthesis && text[index + keyword.length()] == '('))) {
+  QRegularExpression keywordRegExp("\\b" + keyword + "\\b");
+  if (keywordRegExp.match(textToMatch).hasMatch() && (index + keyword.length() == text.length() ||
+                                                      text[index + keyword.length()].isSpace() ||
+                                                      (checkParenthesis && text[index + keyword.length()] == '('))) {
     return true;
   }
   return false;

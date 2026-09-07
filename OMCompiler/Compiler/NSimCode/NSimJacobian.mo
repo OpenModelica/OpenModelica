@@ -56,6 +56,7 @@ public
   import BEquation = NBEquation;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import Variable = NFVariable;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
 
@@ -65,7 +66,7 @@ public
   import SimGenericCall = NSimGenericCall;
   import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.{SimVar, SimVars, VarType};
+  import NSimVar.{SimVar, SimVars, VarType, ConvertMemo};
 
   // Old SimCode imports
   import OldSimCode = SimCode;
@@ -362,10 +363,7 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_vec, res_vec, tmp_vec;
-          Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
-          Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
-          Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
+          list<Pointer<Variable>> seed_lst, res_lst, tmp_lst;
           list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           SimJacobian jac;
@@ -388,24 +386,20 @@ public
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
 
-          // scalarize variables for sim code
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
-            seed_vec := VariablePointers.scalarize(varData.seedVars);
-            res_vec  := VariablePointers.scalarize(varData.resultVars);
-            tmp_vec  := VariablePointers.scalarize(varData.tmpVars);
+            seed_lst := VariablePointers.toList(VariablePointers.scalarize(varData.seedVars));
+            res_lst  := VariablePointers.toList(VariablePointers.scalarize(varData.resultVars));
+            tmp_lst  := VariablePointers.toList(VariablePointers.scalarize(varData.tmpVars));
           else
-            seed_vec := varData.seedVars;
-            res_vec  := varData.resultVars;
-            tmp_vec  := varData.tmpVars;
+            seed_lst := VariablePointers.toList(varData.seedVars);
+            res_lst  := VariablePointers.toList(varData.resultVars);
+            tmp_lst  := VariablePointers.toList(varData.tmpVars);
           end if;
 
-          // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(seed_vec,  function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(res_vec,   function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(tmp_vec,   function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          seedVars  := listReverse(Pointer.access(seedVars_ptr));
-          resVars   := listReverse(Pointer.access(resVars_ptr));
-          tmpVars   := listReverse(Pointer.access(tmpVars_ptr));
+          // column and seed var indices always start at 0
+          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
+          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
+          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
@@ -688,17 +682,20 @@ public
       OldSimCode.JacobianColumn oldJacCol;
     algorithm
       oldJac := match simJac
+        local
+          ConvertMemo memo;
         case SIM_JAC() algorithm
+          memo := SimVar.newConvertMemo(listLength(simJac.seedVars) + listLength(simJac.columnVars));
           oldJacCol := OldSimCode.JAC_COLUMN(
             columnEqns          = list(SimStrongComponent.Block.convert(blck) for blck in simJac.columnEqns),
-            columnVars          = list(SimVar.convert(var) for var in simJac.columnVars),
+            columnVars          = SimVar.convertListMemo(simJac.columnVars, memo),
             numberOfResultVars  = simJac.numberOfResultVars,
             constantEqns        = list(SimStrongComponent.Block.convert(blck) for blck in simJac.constantEqns)
           );
 
           oldJac := OldSimCode.JAC_MATRIX(
             columns             = {oldJacCol},
-            seedVars            = SimVar.convertList(simJac.seedVars),
+            seedVars            = SimVar.convertListMemo(simJac.seedVars, memo),
             matrixName          = simJac.name,
             sparsityMatrix      = Sparsity.convert(simJac.sparsityMatrix),
             sparsity            = {},
@@ -711,7 +708,7 @@ public
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
-            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap),
+            crefsHT             = Util.applyOption(simJac.jac_map, function SimCodeUtil.convertSimCodeMap(memo = memo)),
             isAdjoint           = simJac.isAdjoint,
             isBidirectional     = simJac.isBidirectional,
             adjointJacobianIndex = simJac.adjointJacobianIndex,

@@ -94,6 +94,24 @@ public:
   static QString convertUnitToSymbol(const QString &displayUnit);
   static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
+private:
+  void updateMaxMajorSteps();
+protected:
+  void resizeEvent(QResizeEvent *event) override;
+  /* Override the minimum size hint so that the window can be shrunk vertically.
+   * QwtPlot::sizeHint() (used by the default minimumSizeHint()) adds extra
+   * required height/width proportional to the current number of y/x axis major
+   * ticks, which prevents shrinking the plot to a small size. The tick labels
+   * are reduced instead by updateMaxMajorSteps(). See #15788.
+   */
+  QSize minimumSizeHint() const override;
+  /* Override the size hint for the same reason as minimumSizeHint(): do not
+   * ask for space that is proportional to the current number of tick labels,
+   * otherwise the plot (and the window/MDI-subwindow containing it) can not be
+   * shrunk to a small size. Ticks are reduced by updateMaxMajorSteps().
+   * See #15788.
+   */
+  QSize sizeHint() const override;
 public slots:
   virtual void replot() override;
 };

@@ -71,9 +71,10 @@ export class Session {
     return this.send('warm', { kind });
   }
 
-  // Write the result file inside the driver's WASI filesystem and read it back.
-  mat(path) {
-    return this.send('mat', { path });
+  // Write the result file inside the driver's WASI filesystem and read it back;
+  // the name's suffix picks the format.
+  result(path) {
+    return this.send('result', { path });
   }
 
   // Ask a running simulation to stop at its next output point, which keeps the

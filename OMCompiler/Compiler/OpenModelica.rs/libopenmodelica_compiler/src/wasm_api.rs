@@ -329,7 +329,8 @@ pub fn omc_abi(request: &str) -> String {
 // [`omc_sim_series`] and [`omc_sim_column`].
 
 /// Metadata for the last run's signals (excluding `time`): an array of
-/// `{ name, comment, constant, alias }`. `constant` marks parameters/constants and
+/// `{ name, comment, unit, displayUnit, relativeQuantity, constant, alias }`.
+/// `unit` and `displayUnit` name entries of [`omc_sim_units`]. `constant` marks parameters/constants and
 /// signals that never change; `alias` marks a signal that reads the *same stored
 /// column* as an earlier one (the `.mat`'s `dataInfo` aliasing — distinct columns
 /// are distinct signals). The plot shows only `!constant && !alias`. Empty if no run.
@@ -342,6 +343,8 @@ pub fn omc_sim_series() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&s.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&s.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&s.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&s.display_unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(s.relative_quantity));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("constant"), &JsValue::from_bool(s.constant));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("alias"), &JsValue::from_bool(s.alias));
             arr.push(&item);
@@ -351,8 +354,9 @@ pub fn omc_sim_series() -> JsValue {
 }
 
 /// The last run's editable initial conditions: an array of `{ name, comment,
-/// unit, value }`, plus `enumNames` for an enumeration (its value is the 1-based
-/// index). Feed edits back via `-override=name=value` on the next simulate.
+/// unit, displayUnit, relativeQuantity, value }`, plus `enumNames` for an
+/// enumeration (its value is the 1-based index). Feed edits back via
+/// `-override=name=value` on the next simulate, in the variable's own `unit`.
 #[wasm_bindgen]
 pub fn omc_sim_parameters() -> JsValue {
     let arr = js_sys::Array::new();
@@ -362,6 +366,8 @@ pub fn omc_sim_parameters() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&p.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&p.display_unit));
+            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(p.relative_quantity));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
             if !p.enum_names.is_empty() {
                 let names = js_sys::Array::new();
@@ -376,15 +382,45 @@ pub fn omc_sim_parameters() -> JsValue {
     arr.into()
 }
 
-/// `{ model, start, stop, rows }` for the last run, or `null` if none.
+/// The display units of the last run's units: `{ "K": [{ name, factor, offset,
+/// inverse }], ... }`, the same shape the FMI simulator gets from an FMU's
+/// `<UnitDefinitions>`. A value in the unit shows as `factor * v + offset`
+/// (`factor / v` when `inverse`); a `relativeQuantity` signal drops the offset.
+#[wasm_bindgen]
+pub fn omc_sim_units() -> JsValue {
+    let map = js_sys::Object::new();
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
+        for u in &sim.units {
+            if u.display_units.is_empty() {
+                continue;
+            }
+            let list = js_sys::Array::new();
+            for d in &u.display_units {
+                let item = js_sys::Object::new();
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&d.name));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("factor"), &JsValue::from_f64(d.factor));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("offset"), &JsValue::from_f64(d.offset));
+                let _ = js_sys::Reflect::set(&item, &JsValue::from_str("inverse"), &JsValue::from_bool(d.inverse));
+                list.push(&item);
+            }
+            let _ = js_sys::Reflect::set(&map, &JsValue::from_str(&u.name), &list);
+        }
+    });
+    map.into()
+}
+
+/// `{ model, file, start, stop, rows }` for the last run, or `null` if none.
+/// `file` is the result file the run actually wrote, whose suffix is the format
+/// it was written in (`-outputFormat` can have moved it off the requested one).
 #[wasm_bindgen]
 pub fn omc_sim_info() -> JsValue {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
         let o = js_sys::Object::new();
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("model"), &JsValue::from_str(&sim.model_name));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("file"), &JsValue::from_str(&sim.result_file));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("start"), &JsValue::from_f64(sim.start_time));
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("stop"), &JsValue::from_f64(sim.stop_time));
-        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.time.len() as f64));
+        let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.n_rows() as f64));
         let st = &sim.stats;
         for (k, v) in [
             ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
@@ -398,10 +434,19 @@ pub fn omc_sim_info() -> JsValue {
     .unwrap_or(JsValue::NULL)
 }
 
+/// The last run's result file as `format` (`arrow`, `mat` or `csv`), for a
+/// download in a format other than the one the run wrote. The file's own format
+/// is returned unconverted; converting to `mat`/`csv` drops the String variables
+/// they cannot hold. `None` on failure — read `getErrorString()`.
+#[wasm_bindgen]
+pub fn omc_sim_result_as(format: &str) -> Option<Vec<u8>> {
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::last_sim_result_as(format)
+}
+
 /// The independent `time` column of the last run as a `Float64Array`, or `None`.
 #[wasm_bindgen]
 pub fn omc_sim_time() -> Option<Vec<f64>> {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.time.clone())
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.time())
 }
 
 /// The values of series `index` (as in [`omc_sim_series`]) as a `Float64Array`.
@@ -410,7 +455,7 @@ pub fn omc_sim_time() -> Option<Vec<f64>> {
 #[wasm_bindgen]
 pub fn omc_sim_column(index: usize) -> Option<Vec<f64>> {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
-        sim.series.get(index).map(|s| s.values.clone())
+        sim.values(index)
     })
     .flatten()
 }

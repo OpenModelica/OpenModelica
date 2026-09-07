@@ -14,6 +14,7 @@ LapackInverse.mos \
 Matrix.mos \
 MDD_test.mos \
 ModelicaIOMatrix.mos \
+ModelicaIOMatrix73.mos \
 ModelicaUtilities.mos \
 QualifiedCrefArg.mos \
 RecordMemberArguments.mos \

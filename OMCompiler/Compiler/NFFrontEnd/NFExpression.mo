@@ -443,7 +443,7 @@ public
       local
         Absyn.Path path;
 
-      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case INTEGER() then intHashDjb2Continue(exp.value, hash);
       case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
       case STRING() then stringHashDjb2Continue(exp.value, hash);
       case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
@@ -2072,11 +2072,8 @@ public
       output Boolean res;
     algorithm
       res := match exp
-        local
-          InstNode node;
-
-        case CREF(cref = ComponentRef.CREF(node = node))
-          then InstNode.refEqual(node, iterator);
+        // Only the first (last in stored order) part of a cref can be an iterator: `i.x`.
+        case CREF() then InstNode.refEqual(ComponentRef.node(ComponentRef.last(exp.cref)), iterator);
         else false;
       end match;
     end containsIterator2;

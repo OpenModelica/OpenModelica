@@ -189,7 +189,7 @@ fn content_shared_with_stack_survives_collect() {
     assert!(weak.upgrade().is_none());
 }
 
-// Cycle through a shared list spine: `cell → Arc<List<cell>> → cell`, with
+// Cycle through a shared list spine: `cell → List<cell> → cell`, with
 // the spine also referenced from the stack. Exercises the per-spine-cell
 // reporting in `List`'s MMTrace impl.
 #[test]
@@ -202,7 +202,7 @@ fn cycle_through_shared_list_spine() {
         #[allow(dead_code)]
         Many {
             probe: Arc<DropProbe>,
-            nodes: Arc<List<Mutable::Mutable<Arc<ListNode>>>>,
+            nodes: List<Mutable::Mutable<Arc<ListNode>>>,
         },
     }
     impl MMTrace for ListNode {

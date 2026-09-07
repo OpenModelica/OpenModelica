@@ -610,6 +610,92 @@ target_include_directories(primme PRIVATE
   add_dependencies(rust_sundials_collect rust_sundials_wasm rust_lis_wasm rust_primme_wasm)
 endif()
 
+# ---------------------------------------------------------------------------
+# HDF5 wasm: MAT v7.3 for the ModelicaExternalC side modules, from the
+# openmodelica_hdf5 crate built for wasm32-wasip1. The host build takes the
+# system HDF5 instead (ModelicaExternalC's hdf5_native.cmake).
+# ---------------------------------------------------------------------------
+option(RUST_OMC_ENABLE_HDF5 "Build HDF5 (openmodelica_hdf5 crate) for wasm32-wasip1, so the wasm ModelicaExternalC reads and writes MAT v7.3." ON)
+if(RUST_OMC_ENABLE_HDF5)
+  # clang wants lib/wasm32-unknown-wasip1/libclang_rt.builtins.a; Debian ships
+  # lib/wasi/libclang_rt.builtins-wasm32.a. Symlinks bridge the two so HDF5's
+  # configure probes can link -- they must: as compile-only tests (what
+  # _wasi_toolchain's CMAKE_TRY_COMPILE_TARGET_TYPE gives SUNDIALS)
+  # CHECK_FUNCTION_EXISTS says yes to everything, and H5_HAVE_WAITPID then
+  # includes <sys/wait.h>, which no wasi sysroot has.
+  set(_hdf5_resdir ${CMAKE_BINARY_DIR}/rust-wasi-clang-resource)
+  file(MAKE_DIRECTORY ${_hdf5_resdir}/lib/wasm32-unknown-wasip1)
+  file(CREATE_LINK ${_clang_res_dir}/include ${_hdf5_resdir}/include SYMBOLIC)
+  file(CREATE_LINK ${_wasi_builtins}
+       ${_hdf5_resdir}/lib/wasm32-unknown-wasip1/libclang_rt.builtins.a SYMBOLIC)
+
+  # Declarations wasi-libc withholds while H5private.h uses them anyway. qsort_r
+  # it does ship, as a weak symbol with the prototype hidden behind
+  # __wasilibc_unmodified_upstream, so HDF5's link probe finds it and the
+  # compile then fails on the missing declaration.
+  set(_hdf5_shim ${CMAKE_CURRENT_BINARY_DIR}/hdf5-wasi-shim.h)
+  file(WRITE ${_hdf5_shim}
+    "#include <stddef.h>\n"
+    "static inline void tzset(void) {}\n"
+    "void qsort_r(void *, size_t, size_t, int (*)(const void *, const void *, void *), void *);\n")
+
+  # hdf5-metno-src forwards only HDF5's try_run() probes, so everything else
+  # goes through the cmake crate's CMAKE_TOOLCHAIN_FILE_<target> hook.
+  #
+  # wasi has neither flock(2) nor fcntl(2) record locks; saying so resolves
+  # HDflock() to HDF5's own Nflock(), which just succeeds. Left to the probes,
+  # wasi-libc's fcntl() stub is found, the F_SETLK path is compiled, and every
+  # H5Fcreate fails with EINVAL -- which H5_IGNORE_DISABLED_FILE_LOCKS does not
+  # forgive, it only forgives ENOSYS.
+  #
+  # ZLIB_SUPPORT is off by default in HDF5 2.x and mandatory here (MATLAB
+  # deflates v7.3 datasets). H5_ZLIB_HEADER takes HDF5UseZLIB's "configured by
+  # the enclosing project" branch, which needs no zlib library of its own:
+  # `inflate` resolves at the side-module link against the ModelicaExternalC
+  # zlib both modules already carry.
+  set(_hdf5_zlib_src ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources/zlib)
+  set(_hdf5_toolchain ${CMAKE_CURRENT_BINARY_DIR}/hdf5-wasi-toolchain.cmake)
+  file(WRITE ${_hdf5_toolchain}
+    "set(CMAKE_SYSTEM_NAME WASI)\n"
+    "set(CMAKE_SYSTEM_PROCESSOR wasm32)\n"
+    "set(CMAKE_C_COMPILER clang)\n"
+    "set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n"
+    "set(CMAKE_SYSROOT ${RUST_WASI_PIC_SYSROOT})\n"
+    "set(CMAKE_AR ${LLVM_AR_EXECUTABLE})\n"
+    "set(CMAKE_RANLIB ${LLVM_RANLIB_EXECUTABLE})\n"
+    "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
+    "set(H5_HAVE_FLOCK \"\" CACHE INTERNAL \"\")\n"
+    "set(H5_HAVE_FCNTL \"\" CACHE INTERNAL \"\")\n"
+    # PLUGIN_SUPPORT off does not remove dlopen/dlsym: H5PLpkg.h takes them on
+    # any non-Windows target. They are stubbed in external_c_callbacks.c.
+    "set(HDF5_ENABLE_PLUGIN_SUPPORT OFF CACHE BOOL \"\" FORCE)\n"
+    "set(HDF5_ENABLE_ZLIB_SUPPORT ON CACHE BOOL \"\" FORCE)\n"
+    "set(H5_ZLIB_HEADER \"zlib.h\" CACHE STRING \"\" FORCE)\n")
+
+  # -wasm-enable-sjlj only silences wasi-libc's setjmp.h, which #errors on
+  # inclusion; HDF5 calls no setjmp, so the archive needs no exception handling.
+  set(_hdf5_cflags "-O2 -fPIC -resource-dir=${_hdf5_resdir} -mllvm -wasm-enable-sjlj -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_GETPID -I${_hdf5_zlib_src} -include ${_hdf5_shim}")
+
+  # As for RUST_SUNDIALS_WASM_DIR, a CI stage holding only this directory can
+  # build every wasm artifact that needs HDF5.
+  set(RUST_HDF5_WASM_DIR ${CMAKE_BINARY_DIR}/rust-hdf5-wasm
+      CACHE PATH "Install tree for the HDF5 wasm32-wasip1 archive + headers.")
+  add_custom_target(rust_hdf5_wasm
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CMAKE_COMMAND} -E env
+            "CMAKE_TOOLCHAIN_FILE_wasm32-wasip1=${_hdf5_toolchain}"
+            "CFLAGS_wasm32-wasip1=${_hdf5_cflags}"
+            "OMC_HDF5_OUT=${RUST_HDF5_WASM_DIR}"
+            ${CARGO_EXECUTABLE} build --release --target wasm32-wasip1 --features library
+            --manifest-path ${RUST_OMC_DIR}/openmodelica_hdf5/Cargo.toml
+            --target-dir ${CMAKE_BINARY_DIR}/rust-hdf5-cargo
+    BYPRODUCTS ${RUST_HDF5_WASM_DIR}/lib/libhdf5.a
+    COMMENT "Rust: building HDF5 for wasm32-wasip1 -> ${RUST_HDF5_WASM_DIR}/"
+    VERBATIM)
+  add_dependencies(rust_hdf5_wasm rust_wasi_pic_sysroot rust_src_sync)
+endif()
+
 # The host SUNDIALS and Ipopt archives are collected by
 # SimulationRuntime/rust/native_solver_archives.cmake, which runs before this
 # file so that libSimulationRuntimeRust gets them without a Rust omc.
@@ -651,6 +737,7 @@ list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST=${RT_LDFLAGS_GENERATED_CODE_SIM_RUST}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
+     "OMC_HDF5_LDFLAGS=${OMC_HDF5_LDFLAGS}"
      # The runtime headers openmodelica_simulation_runtime's ABI test compiles;
      # `|`-separated, since a `;` would split the assignment into arguments.
      "OMC_SIMRT_INCLUDE_DIRS=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c|${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/gc/include"
@@ -707,6 +794,11 @@ if(RUST_OMC_ENABLE_SUNDIALS)
          "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
          "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${RUST_SUNDIALS_NATIVE_INDEX_SIZE}")
   endif()
+endif()
+if(RUST_OMC_ENABLE_HDF5)
+  # The HDF5 install tree the ModelicaExternalC side modules compile and link
+  # against; unset, they are built without HAVE_HDF5 and reject v7.3 files.
+  list(APPEND CARGO_ENV "OMC_WASM_HDF5_DIR=${RUST_HDF5_WASM_DIR}")
 endif()
 
 if(TARGET rust_ipopt_native_collect)
@@ -1119,6 +1211,9 @@ function(omc_rust_setup_codegen)
       add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
     endif()
   endif()
+  if(RUST_OMC_ENABLE_HDF5)
+    add_dependencies(rust_libopenmodelica rust_hdf5_wasm)
+  endif()
   if(TARGET rust_ipopt_native_collect)
     add_dependencies(rust_libopenmodelica rust_ipopt_native_collect)
   endif()
@@ -1191,6 +1286,18 @@ function(omc_rust_setup_codegen)
     install(FILES ${_wasi_builtins}
             DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
+
+  # The toolchain omc hands a library's CMake build project when it has to build
+  # that library's external "C" for wasm. Names only, so the install relocates.
+  get_filename_component(RUST_OMC_WASI_CLANG "${_omc_wasi_clang}" NAME)
+  get_filename_component(RUST_OMC_LLVM_AR "${LLVM_AR_EXECUTABLE}" NAME)
+  get_filename_component(RUST_OMC_LLVM_RANLIB "${LLVM_RANLIB_EXECUTABLE}" NAME)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/wasm32-wasip1-toolchain.cmake.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/wasm32-wasip1.cmake @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wasm32-wasip1.cmake
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/cmake COMPONENT omc)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/wasm32-wasip1-rules.cmake
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omc/cmake COMPONENT omc)
 
   # The desktop egui OMShell client (omshell_egui). It links the compiler
   # in-process as an ordinary cargo dependency (omshell_omc ->
@@ -1399,6 +1506,24 @@ function(omc_rust_fmu_aot_module)
   add_dependencies(rust_fmu_aot rust_wasm)
 endfunction()
 
+# `omplot` (openmodelica_result_cli) for wasm32-wasip1, staged as
+# web/omplot/omplot.wasm next to its Node runner omplot-cli.js: the OMPlot
+# module's readers, comparison and writers, runnable from a shell.
+function(omc_rust_omplot_cli_module)
+  set(_omplot_artifact ${RUST_TARGET_DIR}/wasm32-wasip1/release/omplot.wasm)
+  add_custom_target(rust_omplot_cli ALL
+    WORKING_DIRECTORY ${RUST_OMC_DIR}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --target-dir ${RUST_TARGET_DIR}
+            --target wasm32-wasip1 -p openmodelica_result_cli
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
+    COMMAND ${CMAKE_COMMAND} -E copy ${_omplot_artifact} ${_web_dir}/omplot/omplot.wasm
+    COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/omplot-cli.js ${_web_dir}/omplot/
+    COMMENT "Rust: omplot (wasm32-wasip1) -> ${_web_dir}/omplot/omplot.wasm"
+    VERBATIM)
+  add_dependencies(rust_omplot_cli rust_wasm)
+endfunction()
+
 # The FMI masters for the browser: `openmodelica_fmi_web` built for
 # wasm32-wasip1 and staged as web/fmi-simulator/openmodelica_fmi_web.wasm, where
 # the page's worker loads it. wasip1 so the result file is written through WASI
@@ -1423,6 +1548,9 @@ function(omc_rust_fmi_driver_module)
   # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
   add_dependencies(rust_fmi_driver rust_wasm)
   # `openmodelica_fmi_web/build.rs` links the wasm SUNDIALS itself, for cvode/ida.
+  if(TARGET rust_hdf5_wasm)
+    add_dependencies(rust_fmi_driver rust_hdf5_wasm)
+  endif()
   if(TARGET rust_sundials_collect)
     add_dependencies(rust_fmi_driver rust_sundials_collect)
   endif()
@@ -1662,11 +1790,11 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_ENABLE_SUNDIALS)
     set(_wasm_sundials_feature ",openmodelica_codegen_wasm_jit/sundials")
   endif()
-  # Standalone animation wasm for the browser pages, built in the same cargo pass
+  # Standalone wasm modules for the browser pages, built in the same cargo pass
   # (features package-qualified so the extra -p stays unambiguous).
   set(_anim_pkg "")
   if(_host STREQUAL "web")
-    set(_anim_pkg -p openmodelica_animation_wasm)
+    set(_anim_pkg -p openmodelica_animation_wasm -p openmodelica_result_web)
   endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
@@ -1769,7 +1897,9 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
         ${RUST_OMC_DIR}/wasm/simulator/config.json
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
+        ${RUST_OMC_DIR}/wasm/simulator/examples/DistrictHeating.mo
         ${RUST_OMC_DIR}/wasm/plot.js
+        ${RUST_OMC_DIR}/wasm/units.js
         ${RUST_OMC_DIR}/wasm/theme.css
         ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
@@ -1781,6 +1911,9 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/anim/anim-core.js
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
+        ${RUST_OMC_DIR}/wasm/omplot/index.html
+        ${RUST_OMC_DIR}/openmodelica_result_web/src/lib.rs
+        ${RUST_OMC_DIR}/openmodelica_result_web/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
@@ -1795,6 +1928,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/plot.js
+                ${RUST_OMC_DIR}/wasm/units.js
                 ${RUST_OMC_DIR}/wasm/theme.css
                 ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
@@ -1826,6 +1960,12 @@ function(omc_rust_setup_wasm)
                 ${RUST_OMC_DIR}/wasm/anim/anim-view.js
                 ${RUST_OMC_DIR}/wasm/anim/anim-core.js
                 ${_three_js} ${_web_dir}/anim/
+        # OMPlot: the page plus its wasm-bindgen'd result-file module.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omplot
+        COMMAND ${WASM_BINDGEN_EXECUTABLE}
+                ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_result_web.wasm
+                --out-dir ${_web_dir}/omplot --target web
+        COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/index.html ${_web_dir}/omplot/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
@@ -1884,6 +2024,9 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_ENABLE_SUNDIALS)
     add_dependencies(rust_wasm_cargo rust_sundials_collect)
   endif()
+  if(RUST_OMC_ENABLE_HDF5)
+    add_dependencies(rust_wasm_cargo rust_hdf5_wasm)
+  endif()
   add_custom_command(
     OUTPUT ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${_web_dir}
@@ -1915,6 +2058,7 @@ function(omc_rust_setup_wasm)
   if(_host STREQUAL "web")
     omc_rust_fmu_aot_module()
     omc_rust_fmi_driver_module()
+    omc_rust_omplot_cli_module()
   endif()
 
   if(OM_ENABLE_GUI_CLIENTS)

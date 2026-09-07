@@ -344,7 +344,7 @@ protected
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
   Option<DAE.StateSelect> state_select = NONE();
   Option<DAE.Uncertainty> uncertain = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -387,7 +387,8 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -423,7 +424,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -456,7 +457,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
-  Option<DAE.Exp> start_origin = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -489,7 +490,8 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.StartOrigin> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -609,8 +611,13 @@ end lookupUncertaintyMember;
 
 function convertStartOrigin
   input Binding binding;
-  output Option<DAE.Exp> startOrigin =
-    SOME(DAE.Exp.SCONST(if Binding.source(binding) == NFBinding.Source.TYPE then "binding" else "type"));
+  output Option<DAE.StartOrigin> startOrigin;
+algorithm
+  startOrigin := SOME(
+    if Binding.isFromType(binding) then
+      DAE.StartOrigin.TYPE_CONFIDENCE(Binding.confidence(binding))
+    else
+      DAE.StartOrigin.CONFIDENCE(Binding.actualConfidence(binding), Binding.confidence(binding)));
 end convertStartOrigin;
 
 function convertEquations

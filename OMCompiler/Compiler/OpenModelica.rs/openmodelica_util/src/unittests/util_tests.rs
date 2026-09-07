@@ -678,7 +678,7 @@ fn test_mul_list_integer_opt_with_none() -> Result<()> {
 
 #[test]
 fn test_mul_list_integer_opt_empty() -> Result<()> {
-    let lst: Arc<metamodelica::List<Option<i32>>> = nil();
+    let lst: metamodelica::List<Option<i32>> = nil();
     assert_eq!(U::mulListIntegerOpt(lst, 1)?, 1);
     Ok(())
 }
@@ -762,7 +762,7 @@ fn test_int_lst_string_single() {
 
 #[test]
 fn test_int_lst_string_empty() {
-    let lst: Arc<metamodelica::List<i32>> = nil();
+    let lst: metamodelica::List<i32> = nil();
     assert_eq!(U::intLstString(lst).unwrap(), literal!(""));
 }
 
@@ -803,7 +803,7 @@ fn test_string_contains_char_dot() -> Result<()> {
 
 // ── stringSplitAtChar ─────────────────────────────────────────────────────────
 
-fn list_to_vec(lst: Arc<metamodelica::List<ArcStr>>) -> Vec<String> {
+fn list_to_vec(lst: metamodelica::List<ArcStr>) -> Vec<String> {
     let mut v = vec![];
     for s in &*lst { v.push(s.to_string()); }
     v

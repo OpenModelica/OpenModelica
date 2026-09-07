@@ -12,3 +12,6 @@
 # native profile.
 [target.wasm32-unknown-unknown]
 rustflags = ['--cfg', 'getrandom_backend="wasm_js"', '-Zcodegen-backend=llvm']
+
+[target.wasm32-wasip1]
+rustflags = ['-Zcodegen-backend=llvm']

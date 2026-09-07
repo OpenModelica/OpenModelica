@@ -264,7 +264,8 @@ Set the optional equationBound value"
 algorithm
   oattr := match attr
     local
-      Option<DAE.Exp> e1,e2,e3,e4,e5,e6,so,min,max;
+      Option<DAE.Exp> e1,e2,e3,e4,e5,e6,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> sSelectOption;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOption;
@@ -848,7 +849,7 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-      Option<DAE.Exp> so;
+      Option<DAE.StartOrigin> so;
       Option<DAE.Exp> min,max;
 
     case SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,fn,so))
@@ -893,10 +894,10 @@ end getStartAttr;
 public function getStartOrigin  "
   Return the startOrigin attribute"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  output Option<DAE.Exp> startOrigin;
+  output Option<DAE.StartOrigin> startOrigin;
 algorithm startOrigin:= match inVariableAttributesOption
     local
-      Option<DAE.Exp> so;
+      Option<DAE.StartOrigin> so;
     case SOME(DAE.VAR_ATTR_REAL(startOrigin = so)) then so;
     case SOME(DAE.VAR_ATTR_INT(startOrigin = so)) then so;
     case SOME(DAE.VAR_ATTR_BOOL(startOrigin = so)) then so;
@@ -1051,7 +1052,7 @@ end setStartAttrOption;
 public function setStartOrigin "
   sets the startOrigin attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
-  input Option<DAE.Exp> startOrigin;
+  input Option<DAE.StartOrigin> startOrigin;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr := match attr
@@ -1122,7 +1123,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,du,f,n,s,so,min,max;
+      Option<DAE.Exp> q,du,f,n,s,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1190,7 +1192,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1240,7 +1243,8 @@ algorithm
   outAttr:=
   match attr
     local
-      Option<DAE.Exp> q,u,du,n,ini,so,min,max;
+      Option<DAE.Exp> q,u,du,n,ini,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -1283,7 +1287,8 @@ public function setFinalAttr "
 algorithm
   outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -4553,7 +4558,8 @@ Help function to traverseDAE
 algorithm
   (traversedDaeList,oextraArg) := match(attr, iextraArg)
     local
-      Option<DAE.Exp> quantity,unit,displayUnit,min,max,start,fixed,nominal,eb,so;
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,start,fixed,nominal,eb;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> distribution;

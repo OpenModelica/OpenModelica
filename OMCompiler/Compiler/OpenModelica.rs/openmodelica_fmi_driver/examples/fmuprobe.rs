@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_number_of_event_indicators()
         .unwrap_or(md.number_of_event_indicators as usize);
     println!("{nx} continuous states, {nz} event indicators");
-    let (colors, rows) = openmodelica_fmi_driver::me::jacobian_sparsity(md, &md.continuous_states());
+    let (colors, rows) = openmodelica_fmi_driver::me::jacobian_sparsity(md, nx);
     let nonzeros: usize = rows.iter().map(Vec::len).sum();
     println!(
         "Jacobian sparsity: {} colours over {} columns, {nonzeros} nonzeros of {}",
@@ -60,7 +60,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     inst.get_continuous_state_derivatives(&mut dx)?;
     let mut z = vec![0.0; nz];
     inst.get_event_indicators(&mut z)?;
-    println!("t = {start}\nx  = {x:?}\ndx = {dx:?}\nz  = {z:?}");
+    let mut nom = vec![1.0; nx];
+    inst.get_nominals_of_continuous_states(&mut nom)?;
+    println!("t = {start}\nx  = {x:?}\ndx = {dx:?}\nz  = {z:?}\nnominal = {nom:?}");
 
     // Does the FMU answer `fmi3GetDirectionalDerivative`, and with what?
     let states = md.continuous_states();

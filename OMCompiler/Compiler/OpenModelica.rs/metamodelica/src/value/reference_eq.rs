@@ -98,7 +98,7 @@ impl ReferenceEq for ArcStr {
         std::ptr::eq(self.as_str() as *const str, other.as_str() as *const str)
     }
 }
-/// Shared handles: allocation identity. Covers lists (`Arc<List<T>>`),
+/// Shared handles: allocation identity. Covers
 /// Arc-boxed uniontype values, and `Arc<dyn Fn(...)>` callbacks (`?Sized`).
 impl<T: ?Sized> ReferenceEq for Arc<T> {
     fn reference_eq(&self, other: &Self) -> bool { Arc::ptr_eq(self, other) }
@@ -140,16 +140,12 @@ impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6);
 impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7);
 impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8);
 impl_reference_eq_tuple!(A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8, J: 9);
-/// Bare `List<T>` (the usual MM representation is `Arc<List<T>>`, caught by
-/// the `Arc` impl): shallow like the derive would emit — heads compare via
-/// `ReferenceEq`, tails via `Arc` identity, so the comparison is O(1).
-impl<T: Clone + ReferenceEq> ReferenceEq for List<T> {
+/// Lists: cell identity. Two empty lists are identical, like `mmc_nil` in MMC.
+impl<T: Clone> ReferenceEq for List<T> {
     fn reference_eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (List::Nil, List::Nil) => true,
-            (List::Cons { head: lh, tail: lt }, List::Cons { head: rh, tail: rt }) => {
-                lh.reference_eq(rh) && Arc::ptr_eq(lt, rt)
-            }
+        match (&self.0, &other.0) {
+            (None, None) => true,
+            (Some(l), Some(r)) => Arc::ptr_eq(l, r),
             _ => false,
         }
     }
