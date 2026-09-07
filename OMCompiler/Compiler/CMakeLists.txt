@@ -183,8 +183,6 @@ macro(add_compile_step mo_source_file)
                                                    ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c)
 endmacro(add_compile_step)
 
-
-
 # OpenModelicaScriptingAPI.mo (a compiler source) stays in Script/; the C++ Qt
 # files go under the build tree (OMEditLIB reads OMC_SCRIPTING_API_QT_DIR), so C
 # and Rust builds don't fight over Script/.
@@ -200,18 +198,14 @@ add_custom_command(
 
     COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
     COMMAND ${CMAKE_COMMAND} -E make_directory ${OMC_SCRIPTING_API_QT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
 
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
-    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+           ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+           ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
     COMMENT "Generating OpenModelicaScriptingAPI.mo + Qt API"
 )
-
-
-
-
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
