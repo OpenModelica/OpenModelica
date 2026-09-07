@@ -2,6 +2,8 @@
 //! comparison `diffSimulationResults` runs on two of them.
 
 pub mod arrow;
+#[cfg(feature = "json-layout")]
+pub mod arrow_json;
 pub mod cmp;
 pub mod file;
 #[cfg(feature = "hdf5")]
@@ -10,6 +12,8 @@ pub mod readers;
 pub mod threads;
 
 pub use arrow::ArrowReader;
+#[cfg(feature = "json-layout")]
+pub use arrow_json::ArrowJsonReader;
 #[cfg(feature = "hdf5")]
 pub use hdf5::{MtsfReader, SdfReader};
 pub use file::{ResultFile, Tolerances, TubeDiff};

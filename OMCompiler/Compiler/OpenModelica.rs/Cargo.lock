@@ -6690,6 +6690,7 @@ name = "openmodelica_arrow_writer"
 version = "0.1.0"
 dependencies = [
  "arrow-array",
+ "arrow-buffer",
  "arrow-ipc",
  "arrow-schema",
 ]
@@ -7145,6 +7146,7 @@ dependencies = [
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
  "openmodelica_plt_writer",
+ "openmodelica_result_files",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
@@ -7233,6 +7235,7 @@ name = "openmodelica_fmi_driver"
 version = "0.1.0"
 dependencies = [
  "libloading 0.8.9",
+ "openmodelica_arrow_writer",
  "openmodelica_ext_native",
  "openmodelica_fmi",
  "openmodelica_mat_writer",

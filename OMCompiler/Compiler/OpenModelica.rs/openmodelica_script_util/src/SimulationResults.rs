@@ -1872,7 +1872,7 @@ fn filter_to_arrow(
         });
     }
     let units = openmodelica_arrow_writer::units::declared(unit_defs.to_vec());
-    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((start, stop)), units: &units });
+    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((start, stop)), units: &units, zstd: None });
     if write_output_file(out_file.as_str(), &bytes).is_err() {
         err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
         return Ok(false);

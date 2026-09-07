@@ -5,15 +5,16 @@ Five ways to store the same simulation result, measured against each other:
 | format | shape | writer / reader |
 |--------|-------|-----------------|
 | MATLAB v4 (`.mat`) | a transposed `data_2` matrix plus `name`/`description`/`dataInfo` tables | `openmodelica_mat_writer`, `openmodelica_mat_reader` |
-| `arrow-json` (`.arrow-json`) | the unreleased layout this branch deletes: one Arrow IPC file, the variable table JSON in its schema metadata | `openmodelica_arrow_writer`, `openmodelica_result_files::ArrowReader` |
-| `arrow` (`.arrow`) | `arrow.modelica` as specified: several Arrow IPC *streams* in one file, the variable table among them | `src/arrow_modelica.rs` |
+| `arrow` (`.arrow`) | `arrow.modelica`: several Arrow IPC *streams* in one file, the variable table among them | `openmodelica_arrow_writer`, `openmodelica_result_files::ArrowReader`; `src/arrow_modelica.rs` reads it the projected way |
+| `arrow-json` (`.arrow-json`) | the unreleased layout `.arrow` had for a few days: one Arrow IPC file, the variable table JSON in its schema metadata | `openmodelica_arrow_writer::json`, `openmodelica_result_files::ArrowJsonReader`, both behind the `json-layout` feature |
 | SDF (`.sdf`) | HDF5, one 1-D dataset per variable in a group tree from the dotted name | `openmodelica_hdf5_result::sdf` |
 | MTSF (`.mtsf`) | HDF5, a `/ModelDescription` variable table over 2-D `/Results` matrices | `openmodelica_hdf5_result::mtsf` |
 | minarrow (`.minarrow`, `--features minarrow`) | Arrow IPC again, written and read through minarrow + lightstream instead of arrow-rs | `src/minarrow.rs` |
 
-`.mat` and `arrow-json` are the writers OpenModelica ships; SDF and MTSF are
-this repository's, behind the `library` feature of `openmodelica_hdf5_result`;
-`arrow` and `minarrow` are here. All are driven from one in-memory description,
+`.mat` and `arrow` are the writers OpenModelica ships; SDF and MTSF are this
+repository's, behind the `library` feature of `openmodelica_hdf5_result`;
+`arrow-json` is the product's too, but only this benchmark enables the feature
+that compiles it; `minarrow` is here. All are driven from one in-memory description,
 so nothing but the serialization differs between the columns of the report.
 
 ## Running it
@@ -46,13 +47,22 @@ simulation runtime neither needs nor builds HDF5.
 
 `arrow` is the format, specified in
 `openmodelica_arrow_writer/SPECIFICATION.md`: several Arrow IPC **streams** in
-one file, the variable table among them as a real table.
+one file, the variable table among them as a real table, the parameters as one
+dense-union column, `modelica.format` `0.1` while the layout is still moving. It is written by the product's `openmodelica_arrow_writer`,
+the same crate the C runtime and the wasm simulator write through, so the
+column measures what OpenModelica actually produces. `src/arrow_modelica.rs`
+is the *reader* here: it reads the variable table and stops, then projects the
+data stream per name or divides its batches over threads through
+`modelica.index` - what a plotting tool would do, and what the product's
+`ArrowReader`, which decodes the whole file at open behind `ResultTable`, is
+not built to time.
 
 `arrow-json` is what master carried for the few days between the `.arrow` writer
-landing and this branch - one IPC file with that table as JSON in its schema
-metadata. **It was never released**, so nothing has to keep reading it and
-nothing outside this benchmark should ever write it again. It is here as the
-*before* of the comparison, and for no other reason.
+landing and `arrow.modelica`: one IPC file with that table as JSON in its schema
+metadata. **It was never released**, so nothing has to keep reading it. The
+product keeps the writer and the reader only behind a `json-layout` cargo
+feature that this benchmark enables and nothing else does, so it cannot be
+written by accident. It is here as the *before* of the comparison.
 
 Two properties of the *file* format separate them, and neither is the writer's
 fault: an IPC file stores its schema **twice**, once as the leading message and
@@ -66,27 +76,13 @@ Neither layout has *column* random access, because Arrow IPC has none:
 column, and a projection only skips the decode. That is why reading one
 trajectory costs nearly what reading all of them does.
 
-Enumerations are the unfinished corner: `arrow` stores an enumeration as `Int32`
-and records the type in the variable table, but drops the literals - exactly as
-the `arrow-json` column beside it does. Neither is exercised, because the
-benchmark's input cannot carry them: OpenModelica writes an enumeration variable
+Enumerations are the one thing the benchmark cannot exercise: `arrow` stores an
+enumeration as a `Dictionary<Int32, Utf8>` column, or as a dictionary child of
+the parameter union, whose dictionary is the literal list - but the input here
+is a `.mat` and an `_init.xml`, and OpenModelica writes an enumeration variable
 into `_init.xml` as a plain `<Integer>`, with neither its literals nor its type
-name. The place for them in this layout is a further stream, `modelica.enumerations`;
-see the comment at the top of `src/arrow_modelica.rs`.
-
-The data stream is written by `src/ipc.rs` rather than by arrow-rs, because a
-shared dictionary is the one thing arrow-rs will not emit. The Arrow spec is
-explicit that it is legal - "The dictionary id in the message metadata can be
-referenced one or more times in the schema, so that dictionaries can even be
-used for multiple fields" - and both readers resolve by id; it is the writers
-that hand out one id per dictionary-typed field. That module writes the schema,
-record-batch and dictionary-batch headers and the body behind them, over
-arrow-rs's own public flatbuffer types (`arrow_ipc::gen`) and its
-`write_message`. Its tests check that two fields naming one dictionary produce
-exactly one dictionary message, that arrow-rs decodes both columns from it, and
-that every column type and the ZSTD framing round-trip; the same bytes read
-correctly in pyarrow. The three metadata tables have nulls in them, which that
-writer does not carry, so they stay with arrow-rs.
+name. So every enumeration in these files is an `Int32`, which the format allows
+a writer without literals to do.
 
 **Compression is a writer's choice, not the format's**, so the specification says
 nothing about it - Arrow defines `BodyCompression` and every implementation
@@ -122,9 +118,9 @@ two libraries can be compared on the same rows.
 
 It is **not** `arrow.modelica` and cannot be. lightstream's IPC encoder writes
 `custom_metadata: None` for the schema and for every field, so the variable
-table, the units and the enumerations have nowhere to live; it has no run-end
-encoding either, and the dictionary id it does keep is hardcoded to the column
-index, so two enumeration columns cannot share one. What the column measures is
+table and the units have nowhere to live; it has no run-end encoding, no
+dense union for the parameters, and the dictionary id it does keep is hardcoded
+to the column index. What the column measures is
 the two libraries' cost of moving the stored columns, which is the interesting
 part; the file it leaves is smaller than the `.arrow` one by the whole variable
 table, and the round-trip check verifies only the stored columns and says so.

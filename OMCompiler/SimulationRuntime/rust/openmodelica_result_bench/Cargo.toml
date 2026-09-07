@@ -1,5 +1,6 @@
-# Reading and writing the four result formats, measured against each other:
-# OpenModelica MATLAB v4, `arrow.modelica`, SDF and MTSF.
+# Reading and writing the result formats, measured against each other:
+# OpenModelica MATLAB v4, `arrow.modelica`, its pre-release JSON layout, SDF
+# and MTSF.
 #
 # Its own `[workspace]`, so neither `cargo build --workspace` in the compiler
 # tree nor the runtime workspace pulls HDF5 into a normal build. Build it as
@@ -13,9 +14,9 @@ edition = "2024"
 [dependencies]
 openmodelica_mat_reader = { path = "../openmodelica_mat_reader" }
 openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
-openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer" }
+openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer", features = ["zstd", "json-layout"] }
 openmodelica_hdf5_result = { path = "../openmodelica_hdf5_result", features = ["library"] }
-openmodelica_result_files = { path = "../openmodelica_result_files", features = ["hdf5"] }
+openmodelica_result_files = { path = "../openmodelica_result_files", features = ["hdf5", "json-layout"] }
 arrow-array = { version = "59", default-features = false }
 # The fifth format: an Arrow IPC file written through minarrow rather than
 # arrow-rs. Optional because it drags in tokio and needs a nightly rustc.
@@ -24,7 +25,6 @@ lightstream = { version = "0.6", optional = true }
 arrow-ipc = { version = "59", default-features = false, features = ["lz4", "zstd"] }
 arrow-schema = { version = "59", default-features = false }
 arrow-buffer = { version = "59", default-features = false }
-flatbuffers = "25.2"
 zstd = "0.13"
 libc = "0.2"
 

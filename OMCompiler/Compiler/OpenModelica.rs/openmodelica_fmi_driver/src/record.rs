@@ -476,7 +476,7 @@ impl Recorder {
             &params,
             &col_types,
             arrow::no_strings(),
-            &arrow::FileMeta { span: Some((start_time, stop_time)), units: &defs },
+            &arrow::FileMeta { span: Some((start_time, stop_time)), units: &defs, zstd: None },
         )
     }
 

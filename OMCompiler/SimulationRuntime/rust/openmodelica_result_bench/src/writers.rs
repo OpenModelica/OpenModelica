@@ -16,14 +16,13 @@ use crate::dataset::{Dataset, VarDesc};
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Format {
     Mat,
-    /// The layout master carried for a few days before this branch: one IPC
-    /// file with the variable table as JSON in its schema metadata. It was
-    /// never released, and nothing outside this benchmark should ever read or
-    /// write it again - it is here only as the *before* of the comparison.
+    /// The layout `.arrow` had for a few days before `arrow.modelica`: one IPC
+    /// file with the variable table as JSON in its schema metadata. Never
+    /// released; the product keeps it only behind the `json-layout` feature,
+    /// and it is here only as the *before* of the comparison.
     ArrowJson,
-    /// The format as specified: several Arrow IPC streams in one file, the
-    /// variable table among them. See `crate::arrow_modelica` and
-    /// `openmodelica_arrow_writer/SPECIFICATION.md`.
+    /// `arrow.modelica`, written by the product's `openmodelica_arrow_writer`;
+    /// see `openmodelica_arrow_writer/SPECIFICATION.md`.
     Arrow,
     /// The same Arrow IPC bytes through minarrow + lightstream; see
     /// `crate::minarrow` for what it can and cannot carry.
@@ -166,8 +165,8 @@ pub struct Writer {
 
 enum Kind {
     Mat(mw::Mat4Stream, FileOut),
-    ArrowJson(Box<aw::ArrowStream>, FileOut),
-    Arrow(Box<crate::arrow_modelica::Stream>),
+    ArrowJson(Box<aw::json::ArrowStream>, FileOut),
+    Arrow(Box<aw::ArrowStream>, FileOut),
     #[cfg(feature = "minarrow")]
     Minarrow(Box<crate::minarrow::Stream>),
     Sdf(h5w::SdfStream),
@@ -179,7 +178,7 @@ impl Writer {
         match &mut self.kind {
             Kind::Mat(s, out) => s.push_rows(out, rows),
             Kind::ArrowJson(s, out) => s.push_rows(out, rows),
-            Kind::Arrow(s) => s.push_rows(rows),
+            Kind::Arrow(s, out) => s.push_rows(out, rows),
             #[cfg(feature = "minarrow")]
             Kind::Minarrow(s) => s.push_rows(rows),
             Kind::Sdf(s) => s.push_rows(rows).expect("sdf push"),
@@ -199,7 +198,10 @@ impl Writer {
                 s.finish(&mut out);
                 drop(out.done());
             }
-            Kind::Arrow(mut s) => s.finish(),
+            Kind::Arrow(mut s, mut out) => {
+                s.finish(&mut out);
+                drop(out.done());
+            }
             #[cfg(feature = "minarrow")]
             Kind::Minarrow(mut s) => s.finish(),
             Kind::Sdf(mut s) => s.finish().expect("sdf finish"),
@@ -236,33 +238,21 @@ pub fn begin(format: Format, path: &str, data: &Dataset, opts: &WriteOpts) -> Wr
             );
             Writer { kind: Kind::Mat(s, out), path: path.to_owned() }
         }
-        Format::ArrowJson => {
+        Format::ArrowJson | Format::Arrow => {
             let vars: Vec<aw::ArrowVar> = data.vars.iter().map(arrow_var).collect();
             let col_types = column_types(data);
             let units = aw::units::declared(unit_defs(data));
+            let meta = aw::FileMeta { span: Some((data.start_time, data.stop_time)), units: &units, zstd: opts.deflate.map(i32::from) };
             let mut out = FileOut::create(path).expect("create");
-            let s = aw::ArrowStream::begin(
-                &mut out,
-                &vars,
-                &data.params,
-                data.first_row(),
-                n_cols,
-                &col_types,
-                opts.block_rows,
-                aw::no_strings(),
-                &aw::FileMeta { span: Some((data.start_time, data.stop_time)), units: &units },
-            );
-            Writer { kind: Kind::ArrowJson(Box::new(s), out), path: path.to_owned() }
+            let kind = if format == Format::Arrow {
+                let s = aw::ArrowStream::begin(&mut out, &vars, &data.params, data.first_row(), n_cols, &col_types, opts.block_rows, aw::no_strings(), &meta);
+                Kind::Arrow(Box::new(s), out)
+            } else {
+                let s = aw::json::ArrowStream::begin(&mut out, &vars, &data.params, data.first_row(), n_cols, &col_types, opts.block_rows, aw::no_strings(), &meta);
+                Kind::ArrowJson(Box::new(s), out)
+            };
+            Writer { kind, path: path.to_owned() }
         }
-        Format::Arrow => Writer {
-            kind: Kind::Arrow(Box::new(crate::arrow_modelica::Stream::begin(
-                path,
-                data,
-                opts.block_rows,
-                opts.deflate,
-            ))),
-            path: path.to_owned(),
-        },
         #[cfg(feature = "minarrow")]
         Format::Minarrow => Writer {
             kind: Kind::Minarrow(Box::new(crate::minarrow::Stream::begin(path, data, opts.block_rows))),
@@ -377,8 +367,8 @@ fn arrow_var(v: &VarDesc) -> aw::ArrowVar<'_> {
 
 fn arrow_ty(ty: h5w::VarTy) -> aw::VarTy {
     match ty {
-        // Arrow types an enumeration as an Integer, with the literals in the
-        // file's enumeration table; the benchmark has no literals to give it.
+        // An enumeration is a dictionary column when its literals are known;
+        // the benchmark's input has none, so it is written as an Integer.
         h5w::VarTy::Integer | h5w::VarTy::Enumeration => aw::VarTy::Integer,
         h5w::VarTy::Boolean => aw::VarTy::Boolean,
         h5w::VarTy::String => aw::VarTy::String,
