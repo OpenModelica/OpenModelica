@@ -46,8 +46,6 @@ pub enum Error {
     Solver(&'static str),
     /// The FMU's own simulation runtime reported a failure.
     Simulation(String),
-    /// The FMU asked for termination during initialization.
-    TerminatedAtInit,
     /// `-alarm=N` expired.
     Alarm,
     Cancelled,
@@ -69,9 +67,6 @@ impl std::fmt::Display for Error {
             Error::Io(m) => write!(f, "{m}"),
             Error::Solver(m) => write!(f, "{m}"),
             Error::Simulation(m) => write!(f, "{m}"),
-            Error::TerminatedAtInit => {
-                write!(f, "the FMU requested termination during initialization")
-            }
             Error::Alarm => write!(f, "simulation aborted (-alarm)"),
             Error::Cancelled => write!(f, "cancelled"),
         }

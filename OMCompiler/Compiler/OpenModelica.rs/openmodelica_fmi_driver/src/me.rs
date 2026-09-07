@@ -49,6 +49,22 @@ pub struct Run {
     pub retries: u64,
 }
 
+/// A run that ended before its first step.
+fn terminated_at_init(recorder: Recorder, at: f64) -> Run {
+    Run {
+        recorder,
+        terminated_at: Some(at),
+        cancelled: false,
+        steps: 0,
+        calls: 0,
+        jacobians: 0,
+        state_events: 0,
+        time_events: 0,
+        event_times: Vec::new(),
+        retries: 0,
+    }
+}
+
 /// The two shapes fmi-ls-dae's `<ModelStructure>` can state a DAE in.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum DaeForm {
@@ -770,8 +786,14 @@ pub fn simulate(
         let common: &mut dyn Fmi3 = inst;
         event_iteration(common)?
     };
+    // `terminate()` from an initial equation ends the run at `startTime`, as it
+    // does outside an FMU; the initial row is the result.
     if info.terminate {
-        return Err(Error::TerminatedAtInit);
+        let common: &mut dyn Fmi3 = inst;
+        rec.snapshot_parameters(common)?;
+        rec.sample(common, opts.start_time)?;
+        common.terminate()?;
+        return Ok(terminated_at_init(rec, opts.start_time));
     }
     inst.enter_continuous_time_mode()?;
 
