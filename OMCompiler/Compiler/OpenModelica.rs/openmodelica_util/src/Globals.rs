@@ -67,7 +67,7 @@ thread_local! {
     ///
     /// Stores the list of active try/throw levels during code generation.
     /// Source: `SimCodeFunctionUtil.mo`.
-    pub static codegenTryThrowIndex: RefCell<Arc<metamodelica::List<i32>>> =
+    pub static codegenTryThrowIndex: RefCell<metamodelica::List<i32>> =
         RefCell::new(metamodelica::nil());
 
     /// Index 2 — Codegen function list.
@@ -99,20 +99,20 @@ thread_local! {
 
     // Index 10 — instNFInstCacheIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: Arc<List<((Absyn::Program, Arc<Absyn::Path>),
-    //               (Arc<List<Arc<SCode::Element>>>, ArcStr, Arc<InstNode::InstNode>))>>
+    // Type: List<((Absyn::Program, Arc<Absyn::Path>),
+    //               (List<Arc<SCode::Element>>, ArcStr, Arc<InstNode::InstNode>))>
 
     // Index 11 — instNFNodeCacheIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: Arc<List<(Absyn::Program,
-    //               (Arc<List<Arc<SCode::Element>>>, Arc<InstNode::InstNode>))>>
+    // Type: List<(Absyn::Program,
+    //               (List<Arc<SCode::Element>>, Arc<InstNode::InstNode>))>
 
     // Index 12 — instNFLookupCacheIndex
     // Declared in openmodelica_frontend::Globals. Same type as index 10.
 
     // Index 13 — builtinIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: Arc<List<((i32, bool), (Absyn::Program, Arc<List<Arc<SCode::Element>>>))>>
+    // Type: List<((i32, bool), (Absyn::Program, List<Arc<SCode::Element>>))>
 
     // Index 14 — builtinEnvIndex
     // Type: unknown; not used in generated code seen so far.
@@ -150,11 +150,11 @@ thread_local! {
 
     // Index 18 — builtinGraphIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: Arc<List<(i32, FCore::Graph)>> — from openmodelica_frontend::Builtin.
+    // Type: List<(i32, FCore::Graph)> — from openmodelica_frontend::Builtin.
 
     // Index 19 — rewriteRulesIndex
     // Declared in openmodelica_backend::Globals.
-    // Type: Option<Arc<List<RewriteRules::Rule>>> — from openmodelica_backend::RewriteRules.
+    // Type: Option<List<RewriteRules::Rule>> — from openmodelica_backend::RewriteRules.
 
     /// Index 20 — Stack-overflow sentinel.
     ///
@@ -216,7 +216,7 @@ thread_local! {
 
     // Index 26 — interactiveCache
     // Declared in openmodelica_backend::Globals.
-    // Type: Option<Arc<List<(Absyn::Program, Arc<Absyn::Path>, Interactive::GraphicEnvCache)>>>
+    // Type: Option<List<(Absyn::Program, Arc<Absyn::Path>, Interactive::GraphicEnvCache)>>
 
     /// Index 27 — Whether currently processing stream connectors.
     ///
@@ -245,7 +245,7 @@ thread_local! {
     /// Stores a list of `(library_path, handle)` pairs for already-opened
     /// shared libraries.  Initialised to `nil()` by `Global.initialize`.
     /// Source: `NFEvalFunction.mo`.
-    pub static sharedLibraryCacheIndex: RefCell<Arc<metamodelica::List<(ArcStr, i32)>>> =
+    pub static sharedLibraryCacheIndex: RefCell<metamodelica::List<(ArcStr, i32)>> =
         RefCell::new(metamodelica::nil());
 
     // Index 31 — backendInterface
@@ -261,6 +261,6 @@ thread_local! {
     /// Index 36 — Build projects already run this session, keyed
     /// `<resources>\n<library>\n<forWasm>`; a failed build installs nothing.
     /// Source: `SimCodeFunctionUtil.extLibraryBuildAttempted`.
-    pub static extLibraryBuildIndex: RefCell<Arc<metamodelica::List<ArcStr>>> =
+    pub static extLibraryBuildIndex: RefCell<metamodelica::List<ArcStr>> =
         RefCell::new(metamodelica::nil());
 }

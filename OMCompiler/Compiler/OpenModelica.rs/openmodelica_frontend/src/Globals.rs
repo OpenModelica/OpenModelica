@@ -57,16 +57,16 @@ thread_local! {
     //
     // Builtin function index: list of (flag × parse functions).
     // Initialised by FBuiltin.mo; reset to nil() between runs.
-    pub static builtinIndex: RefCell<Arc<metamodelica::List<(
+    pub static builtinIndex: RefCell<metamodelica::List<(
         (i32, bool),
-        (openmodelica_ast::Absyn::Program, Arc<metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>>),
-    )>>> = RefCell::new(metamodelica::nil());
+        (openmodelica_ast::Absyn::Program, metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>),
+    )>> = RefCell::new(metamodelica::nil());
 
     // Index 18 — builtinGraphIndex
     //
     // Builtin environment graph index: list of (flag × FCore.Graph).
     // Initialised by Builtin.mo; reset to nil() between runs.
-    pub static builtinGraphIndex: RefCell<Arc<metamodelica::List<(i32, openmodelica_frontend_dump::FCore::Graph)>>> =
+    pub static builtinGraphIndex: RefCell<metamodelica::List<(i32, openmodelica_frontend_dump::FCore::Graph)>> =
         RefCell::new(metamodelica::nil());
 
     // Index 22 — inlineHashTable: moved to openmodelica_frontend_base::Globals

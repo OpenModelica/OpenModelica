@@ -161,5 +161,5 @@ pub type TOTALMESSAGE = TotalMessage;
 ///            positions identified by
 ///            - %s for string
 ///            - %n for string number n
-pub type MessageTokens = Arc<metamodelica::List<ArcStr>>;
+pub type MessageTokens = metamodelica::List<ArcStr>;
 

@@ -104,66 +104,29 @@ pub fn stringGetNoBoundsChecking(str: ArcStr, index: i32) -> i32 {
     // SAFETY: Caller must ensure index is in bounds.
     unsafe { (*str.as_bytes().get_unchecked(idx)) as i32 }
 }
-/// Reverses a list in place, destructively.
-///
-/// Walks the spine and repoints each `Cons` cell's `tail` at the cell that
-/// preceded it, mutating the cells through a raw pointer (the same
-/// dangerous mechanism as `listSetRest`). No new cells are allocated.
-///
-/// SAFETY / semantics: this mirrors the MetaModelica runtime's destructive
-/// `listReverseInPlace`. Every other holder of a clone of these cons cells
-/// observes the reversal, and the input list head no longer denotes the
-/// same sequence. Only call on a freshly built list that is not shared and
-/// not read concurrently.
-pub fn listReverseInPlace<T: Clone>(list: Arc<List<T>>) -> Arc<List<T>> {
-    let mut prev: Arc<List<T>> = nil();
-    let mut curr: Arc<List<T>> = list;
-    while let List::Cons { tail, .. } = &*curr {
-        let next = tail.clone();
-        // SAFETY: see the method doc — the caller guarantees the cells are
-        // uniquely owned (freshly built) and not read concurrently.
-        unsafe {
-            let p = Arc::as_ptr(&curr) as *mut List<T>;
-            if let List::Cons { tail, .. } = &mut *p {
-                *tail = prev;
-            }
-        }
-        prev = curr;
-        curr = next;
-    }
-    prev
+/// `listReverse`: the uniquely owned prefix is already relinked in place.
+pub fn listReverseInPlace<T: Clone>(list: List<T>) -> List<T> {
+    list.reverse()
 }
-/// Destructively appends `second` onto the end of `first`: walks to the last
-/// cons cell of `first` and repoints its `tail` at `second`. Allocates
-/// nothing. Mirrors the MetaModelica runtime's `listAppendDestroy`
-/// (`SimulationRuntime/c/meta/meta_modelica_builtin.c`).
-///
-/// SAFETY: mutates `first`'s last cell through a raw pointer (the same
-/// mechanism as [`listSetRest`]), so every holder of a clone of that cell
-/// observes the splice. The MetaModelica contract is that `first` is
-/// "destroyed" — the caller must not keep using it as its original sequence,
-/// and the cells must not be read concurrently.
-pub fn listAppendDestroy<T: Clone>(first: Arc<List<T>>, second: Arc<List<T>>) -> Arc<List<T>> {
-    // An empty first list has no cell to repoint; the result is `second`.
-    if matches!(&*first, List::Nil) {
-        return second;
-    }
-    // Walk to the last cons cell (the one whose tail is Nil).
-    let mut lst = first.clone();
-    loop {
-        let next = match &*lst {
-            List::Cons { tail, .. } if !matches!(&**tail, List::Nil) => tail.clone(),
-            _ => break,
-        };
-        lst = next;
-    }
-    // SAFETY: see the doc comment — `first`'s cells are destroyed/uniquely
-    // held by the caller and not read concurrently.
-    unsafe {
-        let p = Arc::as_ptr(&lst) as *mut List<T>;
-        if let List::Cons { tail, .. } = &mut *p {
-            *tail = second;
+/// Appends `second` onto the end of `first` by repointing the last cell when
+/// every cell of `first` is uniquely owned; copies `first` otherwise.
+pub fn listAppendDestroy<T: Clone>(mut first: List<T>, second: List<T>) -> List<T> {
+    let mut p = &first;
+    while let Some(cell) = &p.0 {
+        if Arc::strong_count(cell) != 1 || Arc::weak_count(cell) != 0 {
+            return first.append(&second);
         }
+        let ListNode::Cons { tail, .. } = &**cell else { break };
+        p = tail;
+    }
+    let mut cur = &mut first;
+    while cur.0.as_ref().is_some_and(|c| matches!(&**c, ListNode::Cons { tail, .. } if tail.0.is_some())) {
+        let Some(ListNode::Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else { unreachable!() };
+        cur = tail;
+    }
+    match cur.0.as_mut().and_then(Arc::get_mut) {
+        Some(ListNode::Cons { tail, .. }) => *tail = second,
+        _ => return second,
     }
     first
 }
@@ -173,23 +136,25 @@ pub fn listAppendDestroy<T: Clone>(first: Arc<List<T>>, second: Arc<List<T>>) ->
 /// other holders of clones of this `Arc` observe the change. Caller must
 /// ensure no other thread is reading the cell concurrently. Mirrors the
 /// MetaModelica runtime's RML cons-cell mutation.
-pub fn listSetRest<T: Clone>(list: Arc<List<T>>, new_tail: Arc<List<T>>) -> Result<()> {
-    let ptr = Arc::as_ptr(&list) as *mut List<T>;
+pub fn listSetRest<T: Clone>(list: List<T>, new_tail: List<T>) -> Result<()> {
+    let Some(cell) = &list.0 else { return Err("listSetRest: called on Nil") };
+    let ptr = Arc::as_ptr(cell) as *mut ListNode<T>;
     unsafe {
         match &mut *ptr {
-            List::Cons { tail, .. } => { *tail = new_tail; Ok(()) }
-            List::Nil => return Err("listSetRest: called on Nil"),
+            ListNode::Cons { tail, .. } => { *tail = new_tail; Ok(()) }
+            ListNode::Nil => Err("listSetRest: called on Nil"),
         }
     }
 }
 /// Overwrites the `head` field of the given Cons cell. See `listSetRest`
 /// for the safety contract.
-pub fn listSetFirst<T: Clone>(list: Arc<List<T>>, new_head: T) -> Result<()> {
-    let ptr = Arc::as_ptr(&list) as *mut List<T>;
+pub fn listSetFirst<T: Clone>(list: List<T>, new_head: T) -> Result<()> {
+    let Some(cell) = &list.0 else { return Err("listSetFirst: called on Nil") };
+    let ptr = Arc::as_ptr(cell) as *mut ListNode<T>;
     unsafe {
         match &mut *ptr {
-            List::Cons { head, .. } => { *head = new_head; Ok(()) }
-            List::Nil => return Err("listSetFirst: called on Nil"),
+            ListNode::Cons { head, .. } => { *head = new_head; Ok(()) }
+            ListNode::Nil => Err("listSetFirst: called on Nil"),
         }
     }
 }
@@ -268,15 +233,12 @@ mod tests {
             let r = listAppendDestroy(cons(1, nil()), cons(2, cons(3, nil())));
             assert_eq!(collect(&r), vec![1, 2, 3]);
 
-            // Destructive / zero-alloc: the splice mutates the last cell of
-            // `first` in place, so a clone of `first`'s head taken *before* the
-            // call observes the appended tail afterwards (the cells are shared,
-            // not copied).
+            // A shared `first` is copied, not spliced.
             let first = cons(1, cons(2, nil()));
             let alias = first.clone();
             let r = listAppendDestroy(first, cons(3, cons(4, nil())));
             assert_eq!(collect(&r), vec![1, 2, 3, 4]);
-            assert_eq!(collect(&alias), vec![1, 2, 3, 4]);
+            assert_eq!(collect(&alias), vec![1, 2]);
         }
     }
 }

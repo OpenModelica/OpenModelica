@@ -492,7 +492,7 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
                 let e = unsafe { &*elems.add(i) };
                 vals.push(desc_to_value(e)?);
             }
-            Ok(Arc::new(Values::Value::TUPLE { valueLst: Arc::new(List::from_iter(vals)) }))
+            Ok(Arc::new(Values::Value::TUPLE { valueLst: List::from_iter(vals) }))
         }
         TD_RECORD => {
             // union: d0 = record name, d1 = count, d2 = names, d3 = elements.
@@ -512,8 +512,8 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
             }
             Ok(Arc::new(Values::Value::RECORD {
                 record_: underscore_name_to_path(&read_c_str(d.d0 as *const c_char)?),
-                orderd: Arc::new(List::from_iter(vals)),
-                comp: Arc::new(List::from_iter(comps)),
+                orderd: List::from_iter(vals),
+                comp: List::from_iter(comps),
                 index: -1,
             }))
         }
@@ -568,8 +568,8 @@ fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<
         }
     }
     Ok(Arc::new(Values::Value::ARRAY {
-        valueLst: Arc::new(List::from_iter(items)),
-        dimLst: Arc::new(List::from_iter(dims.iter().map(|d| *d as i32))),
+        valueLst: List::from_iter(items),
+        dimLst: List::from_iter(dims.iter().map(|d| *d as i32)),
     }))
 }
 
@@ -623,7 +623,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
                 items.push(decode_metatype(unsafe { slot(b, 1) })?);
                 cur = unsafe { slot(b, 2) };
             }
-            Ok(Arc::new(Values::Value::LIST { valueLst: Arc::new(List::from_iter(items)) }))
+            Ok(Arc::new(Values::Value::LIST { valueLst: List::from_iter(items) }))
         }
         _ if hdr == MMC_NONEHDR => Ok(Arc::new(Values::Value::OPTION { some: None })),
         _ if hdr == MMC_SOMEHDR => {
@@ -635,7 +635,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
             for i in 1..=n {
                 items.push(decode_metatype(unsafe { slot(base, i) })?);
             }
-            Ok(Arc::new(Values::Value::META_ARRAY { valueLst: Arc::new(List::from_iter(items)) }))
+            Ok(Arc::new(Values::Value::META_ARRAY { valueLst: List::from_iter(items) }))
         }
         // Constructor 0 with at least one field is a MetaModelica tuple.
         (0, n) if n >= 1 => {
@@ -643,7 +643,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
             for i in 1..=n {
                 items.push(decode_metatype(unsafe { slot(base, i) })?);
             }
-            Ok(Arc::new(Values::Value::META_TUPLE { valueLst: Arc::new(List::from_iter(items)) }))
+            Ok(Arc::new(Values::Value::META_TUPLE { valueLst: List::from_iter(items) }))
         }
         // Constructor >= 2 is a record/uniontype instance: slot 1 points
         // (untagged) at the generated `record_description`, the fields follow.
@@ -660,8 +660,8 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
             }
             Ok(Arc::new(Values::Value::RECORD {
                 record_: underscore_name_to_path(&read_c_str(desc.path)?),
-                orderd: Arc::new(List::from_iter(vals)),
-                comp: Arc::new(List::from_iter(comps)),
+                orderd: List::from_iter(vals),
+                comp: List::from_iter(comps),
                 index: c as i32 - 3,
             }))
         }
@@ -817,7 +817,7 @@ pub extern "C" fn omc_Error_getCurrentComponent(
     str_box as *mut c_void
 }
 
-pub fn executeFunction(handle: i32, values: Arc<List<Arc<Values::Value>>>, _debug: bool) -> Result<Arc<Values::Value>> {
+pub fn executeFunction(handle: i32, values: List<Arc<Values::Value>>, _debug: bool) -> Result<Arc<Values::Value>> {
     let addr = dynload::function_addr(handle)?;
     let thread_data = dynload::thread_data()? as *mut c_void;
 
@@ -841,7 +841,7 @@ pub fn executeFunction(handle: i32, values: Arc<List<Arc<Values::Value>>>, _debu
     result
 }
 
-fn executeFunctionGuarded(addr: usize, thread_data: *mut c_void, values: &Arc<List<Arc<Values::Value>>>) -> Result<Arc<Values::Value>> {
+fn executeFunctionGuarded(addr: usize, thread_data: *mut c_void, values: &List<Arc<Values::Value>>) -> Result<Arc<Values::Value>> {
     let rt = MmcAlloc::resolve()?;
     // Generated functions read the compiler flags through the dlopened
     // runtime's global roots; keep them in sync with the host's (see

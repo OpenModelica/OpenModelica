@@ -90,7 +90,7 @@ fn test_any_empty() {
 fn test_append_list() -> Result<()> {
     let a = arr(vec![1, 2]);
     let lst = list![3i32, 4];
-    let result = Array::appendList(a, Arc::clone(&lst))?;
+    let result = Array::appendList(a, lst.clone())?;
     assert_eq!(*result.borrow(), vec![1, 2, 3, 4]);
     Ok(())
 }
@@ -99,7 +99,7 @@ fn test_append_list() -> Result<()> {
 fn test_append_list_empty_arr() -> Result<()> {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
     let lst = list![1i32, 2];
-    let result = Array::appendList(a, Arc::clone(&lst))?;
+    let result = Array::appendList(a, lst.clone())?;
     assert_eq!(*result.borrow(), vec![1, 2]);
     Ok(())
 }
@@ -107,7 +107,7 @@ fn test_append_list_empty_arr() -> Result<()> {
 #[test]
 fn test_append_list_empty_lst() -> Result<()> {
     let a = arr(vec![1, 2]);
-    let lst: Arc<List<i32>> = nil();
+    let lst: List<i32> = nil();
     let result = Array::appendList(a, lst)?;
     assert_eq!(*result.borrow(), vec![1, 2]);
     Ok(())
@@ -357,7 +357,7 @@ fn test_heap_sort_empty() -> Result<()> {
 fn test_insert_list() -> Result<()> {
     let a = arr(vec![0, 0, 0, 0, 0]);
     let lst = list![1i32, 2, 3];
-    let result = Array::insertList(a, Arc::clone(&lst), 2)?;
+    let result = Array::insertList(a, lst.clone(), 2)?;
     assert_eq!(*result.borrow(), vec![0, 1, 2, 3, 0]);
     Ok(())
 }
@@ -476,7 +476,7 @@ fn test_map_fold() {
 #[test]
 fn test_map_list() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = Array::mapList(Arc::clone(&lst), Arc::new(double))?;
+    let result = Array::mapList(lst.clone(), Arc::new(double))?;
     assert_eq!(*result.borrow(), vec![2, 4, 6]);
     Ok(())
 }
@@ -564,7 +564,7 @@ fn test_reverse() -> Result<()> {
 fn test_select() -> Result<()> {
     let a = arr(vec![10, 20, 30, 40]);
     let indices = list![3i32, 1];
-    let result = Array::select(a, Arc::clone(&indices))?;
+    let result = Array::select(a, indices.clone())?;
     assert_eq!(*result.borrow(), vec![30, 10]);
     Ok(())
 }
@@ -696,20 +696,20 @@ fn test_update_index_first() -> Result<()> {
 fn test_append_to_element() -> Result<()> {
     let lst1 = list![1i32, 2];
     let lst2 = list![3i32];
-    let a = arrayFromVec(vec![Arc::clone(&lst1), Arc::clone(&lst2)]);
+    let a = arrayFromVec(vec![lst1.clone(), lst2.clone()]);
     let elements = list![4i32, 5];
-    let result = Array::appendToElement(1, Arc::clone(&elements), a)?;
-    assert_eq!(Arc::clone(&result.borrow()[0]), list![1i32, 2, 4, 5]);
-    assert_eq!(Arc::clone(&result.borrow()[1]), list![3i32]);
+    let result = Array::appendToElement(1, elements.clone(), a)?;
+    assert_eq!(result.borrow()[0].clone(), list![1i32, 2, 4, 5]);
+    assert_eq!(result.borrow()[1].clone(), list![3i32]);
     Ok(())
 }
 
 #[test]
 fn test_cons_to_element() -> Result<()> {
     let lst = list![2i32, 3];
-    let a = arrayFromVec(vec![Arc::clone(&lst)]);
+    let a = arrayFromVec(vec![lst.clone()]);
     let result = Array::consToElement(1, 1i32, a)?;
-    assert_eq!(Arc::clone(&result.borrow()[0]), list![1i32, 2, 3]);
+    assert_eq!(result.borrow()[0].clone(), list![1i32, 2, 3]);
     Ok(())
 }
 

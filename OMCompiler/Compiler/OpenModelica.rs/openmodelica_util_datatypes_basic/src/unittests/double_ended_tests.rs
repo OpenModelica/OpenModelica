@@ -85,7 +85,7 @@ fn test_pop_front_empty_fails() {
 #[test]
 fn test_from_list() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let de = DoubleEnded::fromList(Arc::clone(&lst))?;
+    let de = DoubleEnded::fromList(lst.clone())?;
     assert_eq!(DoubleEnded::length(de.clone()), 3);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
@@ -95,7 +95,7 @@ fn test_from_list() -> Result<()> {
 
 #[test]
 fn test_from_list_empty() -> Result<()> {
-    let lst: Arc<List<i32>> = nil();
+    let lst: List<i32> = nil();
     let de = DoubleEnded::fromList(lst)?;
     assert_eq!(DoubleEnded::length(de), 0);
     Ok(())
@@ -128,8 +128,8 @@ fn test_to_list_and_clear() -> Result<()> {
     let de = DoubleEnded::new(1);
     DoubleEnded::push_back(de.clone(), 2)?;
     DoubleEnded::push_back(de.clone(), 3)?;
-    let prepend: Arc<List<i32>> = list![0i32];
-    let result = DoubleEnded::toListAndClear(de.clone(), Arc::clone(&prepend))?;
+    let prepend: List<i32> = list![0i32];
+    let result = DoubleEnded::toListAndClear(de.clone(), prepend.clone())?;
     assert_eq!(result.get(1)?, 1);
     assert_eq!(result.get(2)?, 2);
     assert_eq!(result.get(3)?, 3);
@@ -142,7 +142,7 @@ fn test_to_list_and_clear() -> Result<()> {
 fn test_to_list_and_clear_empty() {
     let de = DoubleEnded::empty(0i32);
     let prepend = list![1i32, 2];
-    let result = DoubleEnded::toListAndClear(de, Arc::clone(&prepend)).unwrap();
+    let result = DoubleEnded::toListAndClear(de, prepend.clone()).unwrap();
     assert_eq!(result, prepend);
 }
 
@@ -170,7 +170,7 @@ fn test_current_back_cell() -> Result<()> {
 fn test_push_list_back() -> Result<()> {
     let de = DoubleEnded::new(1);
     let lst = list![2i32, 3, 4];
-    DoubleEnded::push_list_back(de.clone(), Arc::clone(&lst))?;
+    DoubleEnded::push_list_back(de.clone(), lst.clone())?;
     assert_eq!(DoubleEnded::length(de.clone()), 4);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
@@ -183,14 +183,14 @@ fn test_push_list_back() -> Result<()> {
 fn test_push_list_back_empty_de() {
     let de = DoubleEnded::empty(0i32);
     let lst = list![1i32, 2];
-    DoubleEnded::push_list_back(de.clone(), Arc::clone(&lst)).unwrap();
+    DoubleEnded::push_list_back(de.clone(), lst.clone()).unwrap();
     assert_eq!(DoubleEnded::length(de), 2);
 }
 
 #[test]
 fn test_push_list_back_empty_list() {
     let de = DoubleEnded::new(1);
-    let lst: Arc<List<i32>> = nil();
+    let lst: List<i32> = nil();
     DoubleEnded::push_list_back(de.clone(), lst).unwrap();
     assert_eq!(DoubleEnded::length(de), 1);
 }
@@ -199,7 +199,7 @@ fn test_push_list_back_empty_list() {
 fn test_push_list_front() -> Result<()> {
     let de = DoubleEnded::new(4);
     let lst = list![1i32, 2, 3];
-    DoubleEnded::push_list_front(de.clone(), Arc::clone(&lst))?;
+    DoubleEnded::push_list_front(de.clone(), lst.clone())?;
     assert_eq!(DoubleEnded::length(de.clone()), 4);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
@@ -212,7 +212,7 @@ fn test_push_list_front() -> Result<()> {
 fn test_push_list_front_empty_de() -> Result<()> {
     let de = DoubleEnded::empty(0i32);
     let lst = list![1i32, 2];
-    DoubleEnded::push_list_front(de.clone(), Arc::clone(&lst))?;
+    DoubleEnded::push_list_front(de.clone(), lst.clone())?;
     assert_eq!(DoubleEnded::length(de), 2);
     Ok(())
 }
@@ -220,7 +220,7 @@ fn test_push_list_front_empty_de() -> Result<()> {
 #[test]
 fn test_push_list_front_empty_list() -> Result<()> {
     let de = DoubleEnded::new(1);
-    let lst: Arc<List<i32>> = nil();
+    let lst: List<i32> = nil();
     DoubleEnded::push_list_front(de.clone(), lst)?;
     assert_eq!(DoubleEnded::length(de), 1);
     Ok(())
@@ -312,7 +312,7 @@ fn test_pop_to_one_then_push_back() -> Result<()> {
 fn test_to_list_and_clear_nil_prepend() -> Result<()> {
     let de = DoubleEnded::new(1);
     DoubleEnded::push_back(de.clone(), 2)?;
-    let result = DoubleEnded::toListAndClear(de.clone(), Arc::clone(&nil()))?;
+    let result = DoubleEnded::toListAndClear(de.clone(), nil())?;
     assert_eq!(result.get(1)?, 1);
     assert_eq!(result.get(2)?, 2);
     assert_eq!(result.len(), 2);
@@ -327,8 +327,8 @@ fn test_to_list_and_clear_after_push_front_push_back() -> Result<()> {
     let de = DoubleEnded::new(2);
     DoubleEnded::push_front(de.clone(), 1); // front=[1,2], back=cons(2,nil)
     DoubleEnded::push_back(de.clone(), 3);  // back becomes cons(3,nil)
-    let tail: Arc<List<i32>> = list![99i32];
-    let result = DoubleEnded::toListAndClear(de.clone(), Arc::clone(&tail))?;
+    let tail: List<i32> = list![99i32];
+    let result = DoubleEnded::toListAndClear(de.clone(), tail.clone())?;
     assert_eq!(result.len(), 4);
     assert_eq!(result.get(1)?, 1);
     assert_eq!(result.get(2)?, 2);
@@ -358,7 +358,7 @@ fn test_clear_then_push_back() -> Result<()> {
 fn test_push_list_back_to_empty_then_pop_all() -> Result<()> {
     let de = DoubleEnded::empty(0i32);
     let lst = list![10i32, 20, 30];
-    DoubleEnded::push_list_back(de.clone(), Arc::clone(&lst))?;
+    DoubleEnded::push_list_back(de.clone(), lst.clone())?;
     assert_eq!(DoubleEnded::length(de.clone()), 3);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 10);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 20);
@@ -373,7 +373,7 @@ fn test_push_list_back_to_empty_then_pop_all() -> Result<()> {
 fn test_push_list_front_order() -> Result<()> {
     let de = DoubleEnded::new(4);
     let lst = list![1i32, 2, 3];
-    DoubleEnded::push_list_front(de.clone(), Arc::clone(&lst))?;
+    DoubleEnded::push_list_front(de.clone(), lst.clone())?;
     assert_eq!(DoubleEnded::length(de.clone()), 4);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
@@ -388,7 +388,7 @@ fn test_push_list_front_order() -> Result<()> {
 fn test_push_list_front_does_not_change_back() -> Result<()> {
     let de = DoubleEnded::new(3);     // back = cons(3,nil)
     let lst = list![1i32, 2];
-    DoubleEnded::push_list_front(de.clone(), Arc::clone(&lst))?; // back unchanged
+    DoubleEnded::push_list_front(de.clone(), lst.clone())?; // back unchanged
     DoubleEnded::push_back(de.clone(), 4); // must link through back=cons(3,nil)
     assert_eq!(DoubleEnded::length(de.clone()), 4);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
@@ -417,7 +417,7 @@ fn test_map_fold_no_copy_empty() -> Result<()> {
 #[test]
 fn test_from_list_pop_all() -> Result<()> {
     let lst = list![5i32, 6, 7];
-    let de = DoubleEnded::fromList(Arc::clone(&lst))?;
+    let de = DoubleEnded::fromList(lst.clone())?;
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 5);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 6);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 7);

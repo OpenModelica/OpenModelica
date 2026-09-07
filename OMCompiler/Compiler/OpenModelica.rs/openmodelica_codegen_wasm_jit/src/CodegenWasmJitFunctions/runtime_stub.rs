@@ -14,7 +14,7 @@ use openmodelica_frontend_types::Values;
 pub(super) fn load_and_execute(
     _file_name: &str,
     _name: &str,
-    _args: &Arc<List<Arc<Values::Value>>>,
+    _args: &List<Arc<Values::Value>>,
 ) -> Result<Arc<Values::Value>> {
     return Err("CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)")
 }

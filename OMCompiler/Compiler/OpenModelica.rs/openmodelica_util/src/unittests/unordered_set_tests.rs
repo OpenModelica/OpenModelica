@@ -264,7 +264,7 @@ fn test_from_list_deduplicates() -> Result<()> {
 
 #[test]
 fn test_from_list_empty() -> Result<()> {
-    let lst: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+    let lst: metamodelica::List<ArcStr> = metamodelica::nil();
     let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(US::isEmpty(s));
     Ok(())

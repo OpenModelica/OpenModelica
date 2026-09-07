@@ -151,7 +151,7 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // are total over `List<T>`.
         "listAppend" | "listMember" | "listLength" | "listEmpty" => Infallible,
         // `cons(head, tail)` is the function-call form of `head :: tail`. It
-        // wraps in Arc<List<_>> via a single allocation and never fails.
+        // wraps in List<_> via a single allocation and never fails.
         "cons" | "nil" => Infallible,
         "listHead" | "listRest" => Fallible,
         // `listGet` / `listDelete` bounds-check the 1-based index and bail

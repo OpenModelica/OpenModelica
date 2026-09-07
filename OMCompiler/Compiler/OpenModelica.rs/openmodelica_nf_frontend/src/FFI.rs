@@ -136,14 +136,8 @@ fn round_up(n: usize, align: usize) -> usize {
     n.div_ceil(align) * align
 }
 
-fn list_len<T: Clone>(list: &Arc<metamodelica::List<T>>) -> usize {
-    let mut n = 0;
-    let mut cur = list;
-    while let metamodelica::List::Cons { tail, .. } = &**cur {
-        n += 1;
-        cur = tail;
-    }
-    n
+fn list_len<T: Clone>(list: &metamodelica::List<T>) -> usize {
+    list.iter().count()
 }
 
 /// `array_dim_size`: the number of values a dimension spans.
@@ -164,8 +158,8 @@ fn dim_size(dim: &Dimension::NFDimension) -> usize {
 fn array_length(ty: &Type::NFType) -> usize {
     match ty {
         Type::NFType::ARRAY { dimensions, .. } => match &**dimensions {
-            metamodelica::List::Cons { head, .. } => dim_size(head),
-            metamodelica::List::Nil => 0,
+            metamodelica::ListNode::Cons { head, .. } => dim_size(head),
+            metamodelica::ListNode::Nil => 0,
         },
         _ => 0,
     }
@@ -178,7 +172,7 @@ fn array_scalar_count(ty: &Type::NFType) -> usize {
         Type::NFType::ARRAY { dimensions, .. } => {
             let mut count = 1usize;
             let mut cur = dimensions;
-            while let metamodelica::List::Cons { head, tail } = &**cur {
+            while let metamodelica::ListNode::Cons { head, tail } = &**cur {
                 count *= dim_size(head);
                 cur = tail;
             }
@@ -193,8 +187,8 @@ fn unlift_array_type(ty: &Arc<Type::NFType>) -> Arc<Type::NFType> {
     match &**ty {
         Type::NFType::ARRAY { elementType, dimensions } => {
             let rest = match &**dimensions {
-                metamodelica::List::Cons { tail, .. } => tail.clone(),
-                metamodelica::List::Nil => metamodelica::nil(),
+                metamodelica::ListNode::Cons { tail, .. } => tail.clone(),
+                metamodelica::ListNode::Nil => metamodelica::nil(),
             };
             Arc::new(Type::NFType::ARRAY { elementType: elementType.clone(), dimensions: rest })
         }
@@ -272,7 +266,7 @@ fn exp_alignment(exp: &Expression::NFExpression) -> Result<(CType, Alignment)> {
             let mut off = 0usize;
             let mut max_align = 1usize;
             let mut cur = elements;
-            while let metamodelica::List::Cons { head, tail } = &**cur {
+            while let metamodelica::ListNode::Cons { head, tail } = &**cur {
                 let (_, field) = exp_alignment(head)?;
                 off = round_up(off, field.align);
                 offsets.push(off);
@@ -352,7 +346,7 @@ unsafe fn write_exp_value(
             Expression::NFExpression::RECORD { elements, .. } => {
                 let mut cur = elements;
                 let mut i = 0usize;
-                while let metamodelica::List::Cons { head, tail } = &**cur {
+                while let metamodelica::ListNode::Cons { head, tail } = &**cur {
                     if i >= align.offsets.len() {
                         break;
                     }
@@ -412,7 +406,7 @@ unsafe fn mk_enum_exp(
     }
     let mut cur = literals;
     let mut i = 1;
-    while let metamodelica::List::Cons { head, tail } = &**cur {
+    while let metamodelica::ListNode::Cons { head, tail } = &**cur {
         if i == index {
             return Ok(Arc::new(Expression::NFExpression::ENUM_LITERAL {
                 ty: enum_ty.clone(),
@@ -484,7 +478,7 @@ unsafe fn mk_record_exp(
     let mut out: Vec<Arc<Expression::NFExpression>> = Vec::with_capacity(align.fields.len());
     let mut cur = elements;
     let mut i = 0usize;
-    while let metamodelica::List::Cons { head, tail } = &**cur {
+    while let metamodelica::ListNode::Cons { head, tail } = &**cur {
         if i >= align.fields.len() {
             break;
         }
@@ -568,7 +562,7 @@ pub fn callFunction(
     args: metamodelica::Array<Arc<Expression::NFExpression>>,
     specs: metamodelica::Array<ArgSpec>,
     returnType: Arc<Type::NFType>,
-) -> Result<(Arc<Expression::NFExpression>, Arc<metamodelica::List<Arc<Expression::NFExpression>>>)> {
+) -> Result<(Arc<Expression::NFExpression>, metamodelica::List<Arc<Expression::NFExpression>>)> {
     let fn_addr = openmodelica_util::dynload::function_addr(fnHandle)?;
 
     let args_vec: Vec<Arc<Expression::NFExpression>> = args.borrow().clone();

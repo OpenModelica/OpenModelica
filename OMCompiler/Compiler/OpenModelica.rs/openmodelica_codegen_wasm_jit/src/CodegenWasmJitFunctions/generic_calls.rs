@@ -18,7 +18,7 @@ use super::*;
 pub(crate) fn emit_resizable_assign(
     ctx: &mut FnCtx,
     call_index: i32,
-    iters: &Arc<List<BackendDAE::SimIterator>>,
+    iters: &List<BackendDAE::SimIterator>,
 ) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let iters: Vec<&BackendDAE::SimIterator> = (&**iters).into_iter().collect();
@@ -29,7 +29,7 @@ pub(crate) fn emit_resizable_assign(
 pub(crate) fn emit_generic_assign(
     ctx: &mut FnCtx,
     call_index: i32,
-    scal_indices: &Arc<List<i32>>,
+    scal_indices: &List<i32>,
 ) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let indices: Vec<i32> = (&**scal_indices).into_iter().copied().collect();
@@ -41,8 +41,8 @@ pub(crate) fn emit_generic_assign(
 /// own index list in turn. The order is constant, so C's switch unrolls.
 pub(crate) fn emit_entwined_assign(
     ctx: &mut FnCtx,
-    call_order: &Arc<List<i32>>,
-    single_calls: &Arc<List<Arc<SimCode::SimEqSystem>>>,
+    call_order: &List<i32>,
+    single_calls: &List<Arc<SimCode::SimEqSystem>>,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
@@ -198,7 +198,7 @@ fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
             integer: values.len() as i32
         })],
     });
-    let exp = DAE::Exp::ARRAY { ty, scalar: true, array: Arc::new(array) };
+    let exp = DAE::Exp::ARRAY { ty, scalar: true, array };
     let g = shared_lits::intern_const(&exp);
     let ptr = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::GlobalGet(g));
@@ -207,11 +207,11 @@ fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
     Ok(ptr)
 }
 
-fn int_list(values: &Arc<List<i32>>) -> Vec<i32> {
+fn int_list(values: &List<i32>) -> Vec<i32> {
     (&**values).into_iter().copied().collect()
 }
 
-fn call_iters(call: &SimCode::SimGenericCall) -> &Arc<List<BackendDAE::SimIterator>> {
+fn call_iters(call: &SimCode::SimGenericCall) -> &List<BackendDAE::SimIterator> {
     use SimCode::SimGenericCall as G;
     match call {
         G::SINGLE_GENERIC_CALL { iters, .. }
@@ -220,7 +220,7 @@ fn call_iters(call: &SimCode::SimGenericCall) -> &Arc<List<BackendDAE::SimIterat
     }
 }
 
-type SubIters = Arc<List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>>;
+type SubIters = List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>;
 
 fn iter_sub_iter(iter: &BackendDAE::SimIterator) -> &SubIters {
     use BackendDAE::SimIterator as S;
@@ -351,7 +351,7 @@ fn emit_in_range(ctx: &mut FnCtx, it: u32, start_l: u32, stop_l: u32) {
 /// C's `subIterator`: `name = name_arr[parent - 1]`.
 fn emit_sub_iters(
     ctx: &mut FnCtx,
-    sub_iter: &Arc<List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>>,
+    sub_iter: &List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>,
     parent: u32,
 ) -> Result<Vec<IterBinding>> {
     use we::Instruction as I;
@@ -422,7 +422,7 @@ fn emit_call_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall) -> Result<()>
 }
 
 /// C's `genericBranch` chain; a branch with no condition is the trailing `else`.
-fn emit_branches(ctx: &mut FnCtx, branches: &Arc<List<SimCode::SimBranch>>) -> Result<()> {
+fn emit_branches(ctx: &mut FnCtx, branches: &List<SimCode::SimBranch>) -> Result<()> {
     use SimCode::SimBranch as B;
     let mut depth = 0;
     for branch in &**branches {

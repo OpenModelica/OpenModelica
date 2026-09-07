@@ -1,7 +1,6 @@
 //! String builtins: char conversions, length/get/compare, append, and
 //! `substring`. Hashing lives in [`hash`], URI resolution in [`uri`].
 
-use std::sync::Arc;
 use crate::Result;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
@@ -63,19 +62,19 @@ pub fn stringReal(str: ArcStr) -> Result<Real> {
 }
 
 /// Converts a string to a list of single-character strings.
-pub fn stringListStringChar(str: ArcStr) -> Arc<List<ArcStr>> {
+pub fn stringListStringChar(str: ArcStr) -> List<ArcStr> {
     // TODO: We could have constants for all these short strings to avoid allocations.
-    Arc::new(str.chars().map(|c| format!("{}", c)).collect())
+    str.chars().map(|c| format!("{}", c)).collect()
 }
 
 /// Appends a list of strings into a single string.
-pub fn stringAppendList(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn stringAppendList(strs: List<ArcStr>) -> ArcStr {
     let mut len = 0;
-    for s in &*strs {
+    for s in &strs {
         len += s.len();
     }
     let mut result = String::with_capacity(len);
-    for s in &*strs {
+    for s in &strs {
         result.push_str(s);
     }
     result.into()
@@ -83,17 +82,17 @@ pub fn stringAppendList(strs: Arc<List<ArcStr>>) -> ArcStr {
 
 /// Takes a list of strings and a delimiter and joins them with the delimiter inserted between elements.
 /// Example: stringDelimitList({"x","y","z"}, ", ") => "x, y, z"
-pub fn stringDelimitList(strs: Arc<List<ArcStr>>, delimiter: ArcStr) -> ArcStr {
+pub fn stringDelimitList(strs: List<ArcStr>, delimiter: ArcStr) -> ArcStr {
     let mut len = 0;
     let delimiter_len = delimiter.len();
-    for s in &*strs {
+    for s in &strs {
         len += s.len() + delimiter_len;
     }
 
     let mut result = String::with_capacity(len);
     let mut first = true;
 
-    for s in &*strs {
+    for s in &strs {
         if !first {
             result.push_str(&delimiter);
         }
@@ -214,12 +213,12 @@ pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
 }
 
 /// Alias for string_append_list (maps a list of single-char strings to one string).
-pub fn listStringCharString(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn listStringCharString(strs: List<ArcStr>) -> ArcStr {
     stringAppendList(strs)
 }
 
 /// Alias for string_append_list (maps a list of single-char strings to one string).
-pub fn stringCharListString(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn stringCharListString(strs: List<ArcStr>) -> ArcStr {
     stringAppendList(strs)
 }
 
@@ -274,7 +273,7 @@ mod tests {
         #[test]
         fn test_string_list_string_char() {
             let result = stringListStringChar(literal!("abc "));
-            assert_eq!(&*result, &List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")]));
+            assert_eq!(result, List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")]));
         }
 
         #[test]
@@ -285,7 +284,7 @@ mod tests {
 
         #[test]
         fn test_string_delimit_list() {
-            let strs: Arc<List<ArcStr>> = list![literal!("x"), literal!("y"), literal!("z")];
+            let strs: List<ArcStr> = list![literal!("x"), literal!("y"), literal!("z")];
             assert_eq!(stringDelimitList(strs, literal!(", ")), "x, y, z");
         }
     }
@@ -399,13 +398,13 @@ mod tests {
 
         #[test]
         fn test_list_string_char_string() {
-            let strs: Arc<List<ArcStr>> = list![literal!("a"), literal!("b"), literal!("c")];
+            let strs: List<ArcStr> = list![literal!("a"), literal!("b"), literal!("c")];
             assert_eq!(&*listStringCharString(strs), "abc");
         }
 
         #[test]
         fn test_string_char_list_string() {
-            let strs: Arc<List<ArcStr>> = list![literal!("a"), literal!("b"), literal!("c")];
+            let strs: List<ArcStr> = list![literal!("a"), literal!("b"), literal!("c")];
             assert_eq!(&*stringCharListString(strs), "abc");
         }
     }

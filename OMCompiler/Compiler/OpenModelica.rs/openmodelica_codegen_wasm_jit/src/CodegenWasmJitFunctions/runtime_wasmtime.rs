@@ -275,7 +275,7 @@ fn value_as_i32(v: &Values::Value) -> Result<i32> {
 pub(super) fn load_and_execute(
     file_name: &str,
     _name: &str,
-    args: &Arc<List<Arc<Values::Value>>>,
+    args: &List<Arc<Values::Value>>,
 ) -> Result<Arc<Values::Value>> {
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
@@ -378,7 +378,7 @@ pub(super) fn load_and_execute(
     Ok(match out.len() {
         0 => Arc::new(Values::Value::NORETCALL),
         1 => out.pop().unwrap(),
-        _ => Arc::new(Values::Value::TUPLE { valueLst: Arc::new(List::from_iter(out)) }),
+        _ => Arc::new(Values::Value::TUPLE { valueLst: List::from_iter(out) }),
     })
 }
 
@@ -608,8 +608,8 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
     }
     Ok(Values::Value::RECORD {
         record_: path_from_dotted(path),
-        orderd: Arc::new(List::from_iter(orderd)),
-        comp: Arc::new(List::from_iter(comp)),
+        orderd: List::from_iter(orderd),
+        comp: List::from_iter(comp),
         index: -1,
     })
 }
@@ -702,8 +702,8 @@ fn nest_values(dims: &[i32], flat: &[Values::Value]) -> Values::Value {
             .collect()
     };
     Values::Value::ARRAY {
-        valueLst: Arc::new(List::from_iter(values)),
-        dimLst: Arc::new(List::from_iter(dims.iter().copied())),
+        valueLst: List::from_iter(values),
+        dimLst: List::from_iter(dims.iter().copied()),
     }
 }
 
@@ -1004,10 +1004,10 @@ mod tests {
             "II\nI\n",
             &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
         );
-        let args = Arc::new(List::from_iter([
+        let args = List::from_iter([
             Arc::new(Values::Value::INTEGER { integer: 3 }),
             Arc::new(Values::Value::INTEGER { integer: 4 }),
-        ]));
+        ]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         assert_eq!(ival(&r), 7);
     }
@@ -1027,7 +1027,7 @@ mod tests {
                 we::Instruction::End,
             ],
         );
-        let args = Arc::new(List::from_iter([Arc::new(Values::Value::REAL { real: metamodelica::Real::from(21.0) })]));
+        let args = List::from_iter([Arc::new(Values::Value::REAL { real: metamodelica::Real::from(21.0) })]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         assert_eq!(rval(&r), 42.0);
     }
@@ -1048,7 +1048,7 @@ mod tests {
                 we::Instruction::End,
             ],
         );
-        let args = Arc::new(List::from_iter([Arc::new(Values::Value::INTEGER { integer: 41 })]));
+        let args = List::from_iter([Arc::new(Values::Value::INTEGER { integer: 41 })]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         match &*r {
             Values::Value::TUPLE { valueLst } => {
@@ -1072,10 +1072,10 @@ mod tests {
             "II\nI\n",
             &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
         );
-        let args = Arc::new(List::from_iter([
+        let args = List::from_iter([
             Arc::new(Values::Value::INTEGER { integer: 5 }),
             Arc::new(Values::Value::INTEGER { integer: 7 }),
-        ]));
+        ]);
         assert_eq!(ival(&load_and_execute(&base, "main", &args).unwrap()), 12);
         assert_eq!(ival(&load_and_execute(&base, "main", &args).unwrap()), 12);
 
@@ -1123,9 +1123,9 @@ mod tests {
         std::fs::write(format!("{path}.wasm"), m.finish()).unwrap();
         std::fs::write(format!("{path}.wasm.sig"), "R\nR\n").unwrap();
 
-        let args = Arc::new(List::from_iter([Arc::new(Values::Value::REAL {
+        let args = List::from_iter([Arc::new(Values::Value::REAL {
             real: metamodelica::Real::from(std::f64::consts::FRAC_PI_2),
-        })]));
+        })]);
         let r = load_and_execute(&path, "main", &args).unwrap();
         assert!((rval(&r) - 1.0).abs() < 1e-12);
     }

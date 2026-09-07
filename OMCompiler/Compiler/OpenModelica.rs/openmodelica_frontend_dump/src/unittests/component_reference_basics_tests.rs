@@ -36,7 +36,7 @@ fn make_ident(name: &str) -> Arc<DAE::ComponentRef> {
 
 fn make_ident_with_subs(
     name: &str,
-    subs: Arc<metamodelica::List<Arc<DAE::Subscript>>>,
+    subs: metamodelica::List<Arc<DAE::Subscript>>,
 ) -> Arc<DAE::ComponentRef> {
     CRB::makeCrefIdent(arcstr::format!("{}", name), DAE::T_REAL_DEFAULT().clone(), subs)
 }

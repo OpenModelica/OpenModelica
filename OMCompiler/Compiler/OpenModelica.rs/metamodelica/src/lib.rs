@@ -10,7 +10,7 @@
 //!   Real -> OrderedFloat<f64> (aliased as `metamodelica::Real`)
 //!   Boolean -> bool
 //!   String -> String
-//!   List<T> -> Arc<List<T>>           (persistent singly-linked list)
+//!   list<T> -> List<T>                (persistent singly-linked list; Option<Arc<ListNode<T>>>)
 //!   array<T> -> Array<T> = Rc<RefCell<Vec<T>>>
 //!
 //! Note: MetaModelica uses 1-based indexing; Rust uses 0-based.
