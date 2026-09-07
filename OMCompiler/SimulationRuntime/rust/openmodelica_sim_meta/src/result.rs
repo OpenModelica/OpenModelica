@@ -479,3 +479,99 @@ pub fn csv(meta: &SimMeta, rows: &[f64], n_reals: u32, keep: &[bool]) -> String 
     }
     out
 }
+
+/// A result file on the host's filesystem, and the driver hooks that stream one
+/// run's rows into it. Shared by the runtimes that have plain files and one run
+/// per process: the standalone wasip1 command and the one the C code generator
+/// links.
+#[cfg(feature = "std")]
+pub mod file {
+    use alloc::boxed::Box;
+    use alloc::string::String;
+    use alloc::vec::Vec;
+    use core::cell::UnsafeCell;
+    use core::sync::atomic::{AtomicBool, Ordering};
+    use std::io::{BufWriter, Seek, SeekFrom, Write};
+
+    use super::{Precision, ResultOut, ResultStream};
+    use crate::driver::{self, SimEngine};
+    use crate::SimMeta;
+
+    struct FileOut(BufWriter<std::fs::File>);
+
+    impl ResultOut for FileOut {
+        fn write(&mut self, bytes: &[u8]) -> bool {
+            self.0.write_all(bytes).is_ok()
+        }
+        fn write_at(&mut self, pos: u64, bytes: &[u8]) -> bool {
+            let w = &mut self.0;
+            (|| {
+                let end = w.seek(SeekFrom::End(0))?;
+                w.seek(SeekFrom::Start(pos))?;
+                w.write_all(bytes)?;
+                w.seek(SeekFrom::Start(end.max(pos + bytes.len() as u64)))?;
+                w.flush()
+            })()
+            .is_ok()
+        }
+        fn flush(&mut self) -> bool {
+            self.0.flush().is_ok()
+        }
+        fn close(&mut self) -> bool {
+            self.0.flush().is_ok()
+        }
+    }
+
+    pub fn open(path: &str) -> Option<Box<dyn ResultOut>> {
+        let f = std::fs::File::create(path).ok()?;
+        Some(Box::new(FileOut(BufWriter::with_capacity(1 << 18, f))))
+    }
+
+    struct Cell(UnsafeCell<(Option<(Vec<bool>, Precision, String)>, Option<ResultStream>)>);
+    unsafe impl Sync for Cell {}
+    static ARMED: Cell = Cell(UnsafeCell::new((None, None)));
+    static OK: AtomicBool = AtomicBool::new(true);
+
+    fn stream() -> &'static mut Option<ResultStream> {
+        unsafe { &mut (*ARMED.0.get()).1 }
+    }
+
+    /// Route the run's rows to `path`, written as they arrive: opened at C's
+    /// `writeParameterData` point, closed by the driver inside the run's total time.
+    pub fn arm(keep: Vec<bool>, precision: Precision, path: String) {
+        unsafe { (*ARMED.0.get()).0 = Some((keep, precision, path)) };
+        OK.store(true, Ordering::Relaxed);
+        driver::set_result_opener(Some(open_result));
+        driver::set_row_sink(Some(sink_rows), Some(sink_finish));
+    }
+
+    fn open_result(e: &mut dyn SimEngine, m: &SimMeta, sim_data: u32) -> driver::Result<()> {
+        let Some((keep, precision, path)) = (unsafe { (*ARMED.0.get()).0.take() }) else { return Ok(()) };
+        let format = super::format_of(&path, &m.output_format);
+        let st = super::open_stream(e, m, sim_data, format, &keep, precision, || open(&path))?;
+        *stream() = Some(st);
+        Ok(())
+    }
+
+    fn sink_rows(rows: &[f64]) -> bool {
+        match stream() {
+            Some(s) => {
+                s.push_rows(rows);
+                true
+            }
+            None => false,
+        }
+    }
+
+    fn sink_finish() {
+        finish();
+    }
+
+    /// Close the file if it is still open. `false` once any write failed.
+    pub fn finish() -> bool {
+        if let Some(mut s) = stream().take() {
+            OK.fetch_and(s.finish(), Ordering::Relaxed);
+        }
+        OK.load(Ordering::Relaxed)
+    }
+}
