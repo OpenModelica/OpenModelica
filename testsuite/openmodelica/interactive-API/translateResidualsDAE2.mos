@@ -2,6 +2,7 @@
 // keywords: separate compilation stream connector flow reversal
 // status: correct
 // cflags: -d=newInst
+// suite: cSources
 //
 // A component that models both stream directions (i.e. allows flow reversal)
 // must be separately compilable. translateResidualsDAE keeps inStream() of an
