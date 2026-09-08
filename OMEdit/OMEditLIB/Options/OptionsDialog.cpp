@@ -62,7 +62,6 @@
 #include <QFile>
 #include <QNetworkReply>
 #include <QProgressDialog>
-#include <QStandardPaths>
 #include <QSysInfo>
 #include <QCryptographicHash>
 #include <QJsonArray>
@@ -7417,8 +7416,11 @@ void LanguageServerPage::downloadServerExecutable()
     return;
   }
 
-  // A user-writable location, so no administrator rights are needed.
-  const QString directory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/languageserver");
+  // Alongside omedit.ini, so the server lands with the rest of OMEdit's user
+  // files (%APPDATA%/openmodelica on Windows) instead of a directory of its
+  // own. User-writable, so no administrator rights are needed.
+  const QString directory = QFileInfo(Utilities::getApplicationSettings()->fileName()).absolutePath()
+                            + QStringLiteral("/languageserver");
   if (!QDir().mkpath(directory)) {
     QMessageBox::critical(this, Helper::applicationName, tr("Failed to create directory %1.").arg(directory));
     return;
