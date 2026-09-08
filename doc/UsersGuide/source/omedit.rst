@@ -2003,11 +2003,10 @@ The feature is opt-in and disabled by default.
   -  *Language Server Protocol (LSP)* - when this group is checked, OMEdit
      starts the language server process and connects to it.
 
-  -  *Server Executable* - path to the language server executable.  Use
-     *Download...* below to install one, *Browse* to select a server you
-     already have, or *Auto Detect* to search for one.  Left blank, OMEdit
-     looks for a server in the OpenModelica installation; a default
-     installation does not contain one.
+  -  *Server Executable* - path to the language server executable.  Leave it
+     blank (recommended) to run the server installed with OpenModelica.  Use
+     *Download...* below to fetch a different release, *Browse* to select a
+     server you already have, or *Auto Detect* to search for one.
 
   -  *Restart Server* - stops the language server and starts it again.  The
      library list is kept in step with OMC automatically, so this is only
@@ -2015,12 +2014,11 @@ The feature is opt-in and disabled by default.
      changed on disk.  It acts immediately; changes to the fields above are
      applied when you click *OK*.
 
-  -  *Download...* - fetches a standalone language server, which needs no
-     Node.js, and points *Server Executable* at it.  The drop-down next to the
-     button chooses the release: the version marked *(recommended)* is the one
-     this OMEdit has been tested with, while *Latest release* takes the newest
-     release published on GitHub, which may be newer than any version OMEdit
-     has been tried with.
+  -  *Download...* - fetches a standalone language server and points *Server
+     Executable* at it.  The drop-down next to the button chooses the release:
+     the version marked *(recommended)* is the one installed with OMEdit, while
+     *Latest release* takes the newest release published on GitHub, which may be
+     newer than any version OMEdit has been tried with.
 
   The libraries the server searches are the ones loaded in OMEdit; there is no
   separate list to maintain.  Loading a library makes it resolvable for *Go to
@@ -2035,13 +2033,23 @@ and from the editor right-click menu (*Go to Definition*, marked with the
 language server icon while the server is running).  Enabling or disabling the
 language server takes effect immediately; a restart is not required.
 
-**Getting a language server**
+**The language server installed with OpenModelica**
 
-The simplest way is *Download...* on the options page, which fetches a
-standalone server for your platform.  It has no external dependency at all: the
-runtime is built into the executable.
+OpenModelica installs a
+`Modelica language server <https://github.com/OpenModelica/modelica-language-server>`_
+alongside OMEdit, so nothing has to be set up to use the feature: check the
+*Language Server Protocol (LSP)* group, leave *Server Executable* blank, and
+click *OK*.  It is a single self-contained executable, so Node.js is **not**
+required.
 
-You can also point *Server Executable* at a server you already have:
+**Using a different server**
+
+*Download...* on the options page fetches another release of the same
+standalone server and points *Server Executable* at it.  It is installed under
+your user configuration directory, beside ``omedit.ini``, so no administrator
+rights are needed.
+
+You can also point *Server Executable* at a server of your own:
 
 -  a standalone binary - set the path directly, no Node.js needed;
 
