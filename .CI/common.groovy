@@ -206,32 +206,38 @@ void makeLibsAndCache() {
   }
 }
 
+// Link the shared package cache into the workspace and install the testsuite
+// libraries with the omc in build/. These are the steps of cmake's
+// libs-for-testing target (wipe, copy index.json so omc uses the repo's pinned
+// versions instead of downloading an index, run index.mos), spelled out because
+// the stages calling this unstash an install tree, not a configured build tree,
+// so no CMake target is available to them.
+void installTestLibraries() {
+  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  sh label: 'Install the testsuite libraries', script: """#!/bin/bash -xe
+  test ! -z '${env.LIBRARIES}'
+  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+  # Removes the symbolic link, or if it's a directory there... the entire thing
+  rm -rf libraries/.openmodelica/cache libraries/.openmodelica/libraries
+  mkdir -p libraries/.openmodelica/libraries
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
+  cp libraries/index.json libraries/.openmodelica/libraries/
+  ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
+  """
+}
+
 // makeLibsAndCache()'s counterpart for a CMake-built omc (see
 // partestCMakeStashed). Produces the same testsuite dependencies, but without
 // the Autoconf machinery: a CMake build has no config.status, so the top-level
-// Makefile the other variant drives does not exist. Each dependency has a
-// standalone Makefile that only needs the installed omc in build/, which is
-// exactly what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
-// their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
-// not built here: partest() rebuilds it from testsuite/difftool anyway.
+// Makefile the other variant drives does not exist. ReferenceFiles and the FFI
+// test library have standalone Makefiles of their own. omc-diff is not built
+// here: partest() rebuilds it from testsuite/difftool anyway.
 void makeLibsAndCacheCMake() {
-  sh "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
-  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
-  sh label: 'Create directory for omlibrary cache', script: """
-  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
-  # Remove the symbolic link, or if it's a directory there... the entire thing
-  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
-  mkdir -p libraries/.openmodelica/
-  test ! -e libraries/.openmodelica/cache
-  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
-  ls -lh libraries/.openmodelica/cache/
-  """
   def cmd = """#!/bin/bash -xe
-  # libs-for-testing: installs the test libraries with the CMake-built omc
-  ${makeCommand()} -C libraries lib-for-testing
   # reference-files: xz decompression only
   ${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse -C testsuite/ReferenceFiles
   # ffi-test-lib
@@ -239,9 +245,11 @@ void makeLibsAndCacheCMake() {
   """
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
+      installTestLibraries()
       sh cmd
     }
   } else {
+    installTestLibraries()
     sh cmd
   }
 }
@@ -703,10 +711,9 @@ void buildRustGUI() {
 }
 
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
-// Builds the test libraries with that omc (cmake's libs-for-testing == omc
-// index.mos); the repo's index.json is copied into place first so omc uses it
-// instead of downloading. An empty simCodeTarget leaves the compiler default.
-// Without registerJUnit the results are archived artifacts instead.
+// The test libraries are installed with that omc. An empty simCodeTarget leaves
+// the compiler default. Without registerJUnit the results are archived artifacts
+// instead.
 void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
   standardSetup()
   unstash 'omc-cmake-rust'
@@ -716,16 +723,8 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
   // OMSimulator tests and the -lomcruntime bootstrapping tests respectively.
   unstash 'omsimulator'
   unstash 'omcruntime'
-  sh """#!/bin/bash -xe
-    test ! -z '${env.LIBRARIES}'
-    mkdir -p '${env.LIBRARIES}/om-pkg-cache'
-    rm -rf libraries/.openmodelica/cache
-    mkdir -p libraries/.openmodelica/libraries
-    ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
-    cp libraries/index.json libraries/.openmodelica/libraries/
-    ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
-    build/bin/omc-diff -v1.4
-  """
+  installTestLibraries()
+  sh 'build/bin/omc-diff -v1.4'
   boolean isWasmTarget = ['wasm-jit', 'wasm'].contains(simCodeTarget)
   String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   // Properties of the Rust omc itself, so excluded for every target.
