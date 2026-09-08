@@ -5996,15 +5996,24 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
                 // bodies (stmts/result/locals). Without this, the same variable
                 // used in several arms' guards would be marked last-use in each
                 // arm independently and moved out of the first guard (E0382).
+                //
+                // A name a pattern *binds* is arm-local, so a read of it in one
+                // arm's body may be its last use — `pat_binds` goes into `acc`,
+                // where it keeps the name live *above* the match (an escaping
+                // binding writes the outer variable back), but not into any
+                // arm's `clive`. Names a pattern *reads* — a subscript or
+                // field-access base — belong in `decision` like a guard read.
                 let live_out = live.clone();
                 let mut decision = HashSet::new();
+                let mut pat_binds = HashSet::new();
                 for case in cases.iter() {
                     if let Some(g) = &case.guard {
                         collect_exp_names(g, &mut decision);
                     }
-                    collect_pat_names(&case.pattern, &mut decision);
+                    collect_pat_names_split(&case.pattern, &mut pat_binds, &mut decision);
                 }
                 let mut acc = decision.clone();
+                acc.extend(pat_binds.iter().cloned());
                 for case in cases.iter_mut() {
                     let mut clive = live_out.clone();
                     clive.extend(decision.iter().cloned());
@@ -6487,6 +6496,193 @@ fn collect_pat_names(pat: &TypedPat, out: &mut HashSet<String>) {
             collect_exp_names(index, out);
         }
         TypedPat::FieldAccess { base, .. } => collect_pat_names(base, out),
+    }
+}
+
+/// A tuple scrutinee that needs `match_deref!` is matched through `&(…)`, so
+/// every arm binding is a `&T` and an arm that just *names* a column clones it
+/// back out at each use. A column bound irrefutably (a plain variable, or `_`)
+/// in every arm carries no matching information, so drop it from the tuple and
+/// let the arm bind it from the original place, where it is owned and the
+/// ordinary last-use move applies. Returns the narrowed scrutinee and patterns
+/// plus, per case, the `(bound name, element)` pairs the arm body must bind.
+///
+/// The element has to be a plain local read: it is re-emitted once per arm (the
+/// arms are mutually exclusive, so it is still evaluated at most once), which is
+/// only sound for a read with no side effects.
+fn match_drop_columns(
+    kind: &MatchKind,
+    input: &TypedExp,
+    cases: &[TypedCase],
+    as_binding: Option<&str>,
+    ctx: &GenCtx,
+    top_level: &BTreeMap<String, NameNode<'_>>,
+) -> Option<(TypedExp, Vec<TypedCase>, Vec<Vec<(String, TypedExp)>>)> {
+    if !matches!(kind, MatchKind::Match) || as_binding.is_some() || ctx.tail_lowering.is_some() {
+        return None;
+    }
+    let TypedExp::Tuple(elems) = input else { return None };
+    if elems.len() < 2 {
+        return None;
+    }
+    // Only worth it where the bindings would be references: a by-value match
+    // already moves them on last use.
+    if !match_uses_match_deref(&input.ty(), cases, ctx, top_level) {
+        return None;
+    }
+    // Only plain local reads, and only names that appear in exactly one column:
+    // an arm binds its dropped columns one after another, so two columns reading
+    // the same place would move it twice.
+    let mut elem_names: Vec<Option<String>> = Vec::with_capacity(elems.len());
+    for e in elems {
+        elem_names.push(match e {
+            TypedExp::Var { name, segments, .. }
+                if !name.contains('.')
+                    && segments.len() <= 1
+                    && segments.iter().all(|s| s.subscripts.is_empty()) =>
+                Some(var_base_name(name, segments)),
+            _ => None,
+        });
+    }
+    for i in 0..elem_names.len() {
+        if let Some(n) = &elem_names[i]
+            && elem_names.iter().enumerate().any(|(j, m)| j != i && m.as_ref() == Some(n))
+        {
+            elem_names[i] = None;
+        }
+    }
+    // Every arm must destructure the tuple positionally (or ignore it whole).
+    let arm_pats: Vec<Option<&Vec<TypedPat>>> = cases.iter().map(|c| match &c.pattern {
+        TypedPat::Tuple(ps) if ps.len() == elems.len() => Some(ps),
+        _ => None,
+    }).collect();
+    for (case, ps) in cases.iter().zip(arm_pats.iter()) {
+        if ps.is_none() && !matches!(case.pattern, TypedPat::Wildcard) {
+            return None;
+        }
+    }
+    let droppable = |i: usize| -> bool {
+        if elem_names[i].is_none() {
+            return false;
+        }
+        cases.iter().zip(arm_pats.iter()).all(|(case, ps)| {
+            let Some(ps) = ps else { return true };
+            match &ps[i] {
+                TypedPat::Wildcard => true,
+                TypedPat::Var(n) =>
+                    // The binding must be arm-local: one that also names a
+                    // function output or an enclosing-scope variable is written
+                    // back by machinery that expects the pattern binding to
+                    // exist. A case-local *is* fine — Susan declares its
+                    // template variables that way, and the arm's `let` stands in
+                    // for the declaration — unless it carries an initializer,
+                    // which is hoisted to a block around the whole match. And a
+                    // guard runs before the arm body, so it cannot see the
+                    // body's binding.
+                    !ctx.fn_outputs.contains(n)
+                        && !ctx.fn_scope_vars.contains(n)
+                        && !case.locals.iter().any(|(ln, _, d, _)| ln == n && d.is_some())
+                        && !case.guard.as_ref().is_some_and(|g| exp_reads_name(g, n)),
+                _ => false,
+            }
+        })
+    };
+    let drop: Vec<bool> = (0..elems.len()).map(droppable).collect();
+    let n_drop = drop.iter().filter(|d| **d).count();
+    // Something has to be left to match on.
+    if n_drop == 0 || n_drop == elems.len() {
+        return None;
+    }
+    // A single surviving column is matched on its own rather than as a
+    // one-element tuple, which is not a tuple in Rust anyway.
+    let only = (n_drop + 1 == elems.len()).then(|| drop.iter().position(|d| !d).unwrap());
+    let keep = |v: &[TypedPat]| -> TypedPat {
+        match only {
+            Some(k) => v[k].clone(),
+            None => TypedPat::Tuple(
+                v.iter().enumerate().filter(|(i, _)| !drop[*i]).map(|(_, p)| p.clone()).collect(),
+            ),
+        }
+    };
+    let new_input = match only {
+        Some(k) => elems[k].clone(),
+        None => TypedExp::Tuple(
+            elems.iter().enumerate().filter(|(i, _)| !drop[*i]).map(|(_, e)| e.clone()).collect(),
+        ),
+    };
+    let mut new_cases = Vec::with_capacity(cases.len());
+    let mut prologue = Vec::with_capacity(cases.len());
+    for (case, ps) in cases.iter().zip(arm_pats.iter()) {
+        let mut binds = Vec::new();
+        let mut c = case.clone();
+        if let Some(ps) = ps {
+            for (i, p) in ps.iter().enumerate() {
+                if drop[i] && let TypedPat::Var(n) = p {
+                    binds.push((n.clone(), elems[i].clone()));
+                }
+            }
+            c.pattern = keep(ps);
+        }
+        new_cases.push(c);
+        prologue.push(binds);
+    }
+    Some((new_input, new_cases, prologue))
+}
+
+/// True when the pattern contains an `as` binding anywhere.
+fn pat_has_as_binding(pat: &TypedPat) -> bool {
+    match pat {
+        TypedPat::As { .. } => true,
+        TypedPat::Wildcard | TypedPat::Lit(_) | TypedPat::EmptyList | TypedPat::None_
+        | TypedPat::Todo(_) | TypedPat::Var(_) | TypedPat::Index { .. } => false,
+        TypedPat::Some_(p) | TypedPat::FieldAccess { base: p, .. } => pat_has_as_binding(p),
+        TypedPat::Cons { head, tail } => pat_has_as_binding(head) || pat_has_as_binding(tail),
+        TypedPat::Tuple(ps) => ps.iter().any(pat_has_as_binding),
+        TypedPat::Constructor { fields, named_fields, .. } =>
+            fields.iter().any(pat_has_as_binding)
+                || named_fields.iter().any(|(_, p)| pat_has_as_binding(p)),
+    }
+}
+
+/// [`collect_pat_names`], but keeping the names the pattern *binds* apart from
+/// the ones it *reads* (a subscript or field-access base).
+fn collect_pat_names_split(pat: &TypedPat, binds: &mut HashSet<String>, reads: &mut HashSet<String>) {
+    match pat {
+        TypedPat::Wildcard
+        | TypedPat::Lit(_)
+        | TypedPat::EmptyList
+        | TypedPat::None_
+        | TypedPat::Todo(_) => {}
+        TypedPat::Var(n) => {
+            binds.insert(n.clone());
+        }
+        TypedPat::Some_(p) => collect_pat_names_split(p, binds, reads),
+        TypedPat::Cons { head, tail } => {
+            collect_pat_names_split(head, binds, reads);
+            collect_pat_names_split(tail, binds, reads);
+        }
+        TypedPat::Tuple(ps) => {
+            for p in ps {
+                collect_pat_names_split(p, binds, reads);
+            }
+        }
+        TypedPat::Constructor { fields, named_fields, .. } => {
+            for p in fields {
+                collect_pat_names_split(p, binds, reads);
+            }
+            for (_, p) in named_fields {
+                collect_pat_names_split(p, binds, reads);
+            }
+        }
+        TypedPat::As { var, pat } => {
+            binds.insert(var.clone());
+            collect_pat_names_split(pat, binds, reads);
+        }
+        TypedPat::Index { base, index } => {
+            collect_exp_names(base, reads);
+            collect_exp_names(index, reads);
+        }
+        TypedPat::FieldAccess { base, .. } => collect_pat_names_split(base, binds, reads),
     }
 }
 
@@ -14499,6 +14695,16 @@ fn emit_range<'a>(start: &TypedExp, step: Option<&TypedExp>, stop: &TypedExp, is
 }
 
 fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_binding: Option<&str>, is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> String {
+    // Columns of a tuple scrutinee that carry no matching information are moved
+    // out of the tuple and bound in the arm bodies instead (see
+    // [`match_drop_columns`]); everything below then works on the narrowed
+    // scrutinee and patterns.
+    let dropped = match_drop_columns(kind, input, cases, as_binding, ctx, top_level);
+    let (input, cases, drop_prologue): (&TypedExp, &[TypedCase], Vec<Vec<(String, TypedExp)>>) =
+        match &dropped {
+            Some((i, c, p)) => (i, c.as_slice(), p.clone()),
+            None => (input, cases, Vec::new()),
+        };
     let mut input_ty = input.ty();
     // MetaModelica scalar-context rule: a multi-output (tuple-typed) call whose
     // result is matched against patterns that *structurally require a non-tuple
@@ -14796,7 +15002,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             // infallible (the fallibility analysis uses the same predicate
             // on the Absyn side; the two must agree).
             let exhaustive = cases_exhaustive(kind, cases, &input_ty, top_level);
-            let arms: Vec<String> = cases.iter().map(|case| {
+            let arms: Vec<String> = cases.iter().enumerate().map(|(case_idx, case)| {
                 // Pattern bindings that name a *function output*. In
                 // MetaModelica a match-case pattern variable lives in the
                 // enclosing (function) scope, so binding an output in a pattern
@@ -14990,6 +15196,42 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
                     }
                 }
+                // Pin each pattern binding's mode rather than letting it inherit
+                // the enclosing scope's: the pattern shadows the name, and the
+                // shadow is what the arm's reads see. Only a whole-value or
+                // tuple-column binding under a by-value scrutinee is `Owned` —
+                // below the top level `emit_pat` decides per sub-pattern, and a
+                // field whose type crosses an Arc edge is bound `ref` even in a
+                // by-value match (`connections: ref cl`).
+                {
+                    let mut owned_binds: HashSet<&str> = HashSet::new();
+                    if !input_is_arc && !pat_has_as_binding(&case.pattern) {
+                        match (&case.pattern, &input_ty) {
+                            (TypedPat::Var(n), t) if !ty_needs_arc_match_deref(t, ctx) => {
+                                owned_binds.insert(n);
+                            }
+                            (TypedPat::Tuple(ps), Ty::Tuple(ts)) if ps.len() == ts.len() => {
+                                for (p, t) in ps.iter().zip(ts.iter()) {
+                                    if let TypedPat::Var(n) = p
+                                        && !ty_needs_arc_match_deref(t, ctx)
+                                    {
+                                        owned_binds.insert(n);
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    for (n, _) in &typed_pat_bindings {
+                        // An escaping binding is renamed away, so reads of the
+                        // name inside the arm are the enclosing variable's.
+                        if escaping_outputs.contains(n) {
+                            continue;
+                        }
+                        let mode = if owned_binds.contains(n.as_str()) { PlaceMode::Owned } else { PlaceMode::Ref };
+                        ctx.place_mode.insert(n.clone(), mode);
+                    }
+                }
                 let user_guard = case.guard.as_ref()
                     .map(|g| emit_exp(g, is_const, ctx, top_level));
                 // Combine pattern-induced guards (e.g. from real-literal
@@ -15033,6 +15275,23 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         }
                     }
                 }
+                // Bind the columns [`match_drop_columns`] took out of the
+                // scrutinee. They are owned locals here, so reads of them follow
+                // the normal move/clone rules. Emitted after the guard, which by
+                // construction does not name them.
+                let col_prologue: String = match drop_prologue.get(case_idx) {
+                    None => String::new(),
+                    Some(binds) => binds.iter().map(|(n, e)| {
+                        let init = emit_exp(e, is_const, ctx, top_level);
+                        let t = e.ty();
+                        if !matches!(t, Ty::Unknown) {
+                            ctx.fn_env_vars.insert(n.clone(), t);
+                        }
+                        ctx.fn_scope_vars.insert(n.clone());
+                        ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
+                        format!("            let mut {} = {init};\n", escape_ident(n))
+                    }).collect(),
+                };
                 // Tail-call lowering: detect the algorithm-side terminal
                 // self-assign pattern. When the case ends with
                 // `(a,…) := <rhs>;` and the case `result` is exactly that same
@@ -15054,8 +15313,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 } else {
                     &case.stmts[..]
                 };
-                let arm_str = if stmts_for_arm.is_empty() && case.locals.is_empty() && escaping_outputs.is_empty() {
+                let bare_arm = stmts_for_arm.is_empty() && case.locals.is_empty() && escaping_outputs.is_empty();
+                let arm_str = if bare_arm && col_prologue.is_empty() {
                     format!("        {pat}{guard} => {result}")
+                } else if bare_arm {
+                    format!("        {pat}{guard} => {{\n{col_prologue}            {result}\n        }}")
                 } else {
                     // Seed the arm's local env from the enclosing function scope:
                     // inputs/outputs/protected are visible inside the arm body and
@@ -15082,6 +15344,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     record_pattern_variants(&case.pattern, input, &mut local_env, top_level);
                     let mut fresh_local: u32 = 0;
                     let mut body = String::new();
+                    body.push_str(&col_prologue);
                     // Write each pattern-bound function output back to the real
                     // output from its renamed temp (see `escaping_outputs`). The
                     // temp is by-reference under match_deref, so deref-then-clone
@@ -15097,8 +15360,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // subsequent re-assignment to <name> would update the local copy
                     // and the original pattern binding (read by user code) would stay
                     // stale. See appendLastList's inner `l :: ll := ll;` loop.
+                    // A column [`match_drop_columns`] took out of the scrutinee is
+                    // bound by `col_prologue` above and stands in the same way.
                     let pat_binding_names: std::collections::HashSet<String> =
-                        typedexp::pat_bindings(&case.pattern).iter().map(|(n, _)| n.clone()).collect();
+                        typedexp::pat_bindings(&case.pattern).iter().map(|(n, _)| n.clone())
+                            .chain(drop_prologue.get(case_idx).into_iter().flatten().map(|(n, _)| n.clone()))
+                            .collect();
                     let arm_alias_scope = current_scope_children(ctx, top_level);
                     // Which no-initialiser case-locals are read before assignment
                     // inside this arm, and so must keep the implicit type-default.
@@ -16314,12 +16581,14 @@ fn pat_deref_bindings(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: &B
             }
         }
         TypedPat::Constructor { fields, named_fields, name, .. } => {
-            // Look up field types so we can detect Arc-wrapped fields. The
-            // field types come from the record definition for this variant.
-            let field_tys = record_field_tys(name, top_level)
-                .or_else(|| lookup_record_through_unions(name, top_level)
-                    .and_then(|(canonical, _)| record_field_tys(&canonical, top_level)))
-                .or_else(|| record_field_tys_from_scrutinee_ctor(name, scrut_ty, top_level))
+            // Look up field types so we can detect Arc-wrapped fields, through
+            // the same resolution `emit_pat_with_implicit_bind_md` uses.
+            let pkg_prefix = if ctx.current_path.is_empty() {
+                ctx.top_name.clone()
+            } else {
+                format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
+            };
+            let field_tys = ctor_field_tys(name, Some(scrut_ty), &pkg_prefix, top_level)
                 .unwrap_or_default();
             for (i, p) in fields.iter().enumerate() {
                 let fty = field_tys.get(i).map(|(_, t)| t.clone()).unwrap_or(Ty::Unknown);
@@ -16840,47 +17109,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             } else {
                 format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
             };
-            let field_tys_for_ctor = || {
-                if name.contains('.') {
-                    if let Some((qname, _)) = crate::typedexp::resolve_call_node(name, top_level, &pkg_prefix_for_lookup)
-                        && let Some(tys) = record_field_tys(&qname, top_level)
-                    {
-                        return Some(tys);
-                    }
-                    // Direct lookup first; fall back to lookup-through-unions for names
-                    // like "Flags.FLAGS" where the record is at "Flags.Flag.FLAGS".
-                    if let Some(tys) = record_field_tys(name, top_level) {
-                        return Some(tys);
-                    }
-                    if let Some((canonical, _)) = lookup_record_through_unions(name, top_level) {
-                        return record_field_tys(&canonical, top_level);
-                    }
-                    // The scrutinee's type tells us the enclosing uniontype, which lets
-                    // us recover the record's field layout when neither direct lookup
-                    // nor the bottom-up uniontype walk succeeds — e.g. when `name`
-                    // resolves only through an import alias and the simple-name pass
-                    // would otherwise miss it.
-                    if let Some(ty) = scrut_ty {
-                        let simple = name.rsplit_once('.').map_or(name.as_str(), |(_, s)| s);
-                        if let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(simple, ty, top_level) {
-                            return Some(from_scrut);
-                        }
-                    }
-                    // Last resort: search by simple name. Better than emitting a TODO
-                    // for a record we just couldn't find by qualified path.
-                    let simple = name.rsplit_once('.').map_or(name.as_str(), |(_, s)| s);
-                    let by_simple = record_field_tys_by_simple_name(simple, top_level);
-                    if !by_simple.is_empty() {
-                        return Some(by_simple);
-                    }
-                    return None;
-                }
-                if let Some(ty) = scrut_ty
-                    && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(name, ty, top_level) {
-                        return Some(from_scrut);
-                    }
-                Some(record_field_tys_by_simple_name(name, top_level))
-            };
+            let field_tys_for_ctor = || ctor_field_tys(name, scrut_ty, &pkg_prefix_for_lookup, top_level);
             let body = if named_fields.is_empty() && fields.is_empty() {
                 // Empty MetaModelica pattern `case NODE()` or `case NODE` —
                 // decide based on the type: struct/variant types need `{ .. }` to avoid
@@ -17084,6 +17313,58 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
 
         TypedPat::Todo(s) => format!("_ /* todo: {} */", s.chars().take(40).collect::<String>()),
     }
+}
+
+/// The `(field name, type)` list for a constructor pattern's record.
+///
+/// [`pat_deref_bindings`] has to resolve it exactly as
+/// [`emit_pat_with_implicit_bind_md`] does: a field type one of them misses is
+/// a field the other binds `ref` (an Arc edge crossed) while believing it
+/// owned, and the arm then assigns an owned value to a `&T` (it was
+/// `InnerOuter.addOuterConnectIfEmpty`'s `connections: ref cl`). Hence one
+/// function for both.
+fn ctor_field_tys<'a>(
+    name: &str,
+    scrut_ty: Option<&Ty>,
+    pkg_prefix: &str,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> Option<Vec<(String, Ty)>> {
+    let simple = name.rsplit_once('.').map_or(name, |(_, s)| s);
+    if name.contains('.') {
+        if let Some((qname, _)) = crate::typedexp::resolve_call_node(name, top_level, pkg_prefix)
+            && let Some(tys) = record_field_tys(&qname, top_level)
+        {
+            return Some(tys);
+        }
+        // Direct lookup first; fall back to lookup-through-unions for names
+        // like "Flags.FLAGS" where the record is at "Flags.Flag.FLAGS".
+        if let Some(tys) = record_field_tys(name, top_level) {
+            return Some(tys);
+        }
+        if let Some((canonical, _)) = lookup_record_through_unions(name, top_level) {
+            return record_field_tys(&canonical, top_level);
+        }
+        // The scrutinee's type tells us the enclosing uniontype, which lets us
+        // recover the record's field layout when neither direct lookup nor the
+        // bottom-up uniontype walk succeeds — e.g. when `name` resolves only
+        // through an import alias and the simple-name pass would otherwise miss
+        // it.
+        if let Some(ty) = scrut_ty
+            && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(simple, ty, top_level)
+        {
+            return Some(from_scrut);
+        }
+        // Last resort: search by simple name. Better than emitting a TODO for a
+        // record we just couldn't find by qualified path.
+        let by_simple = record_field_tys_by_simple_name(simple, top_level);
+        return (!by_simple.is_empty()).then_some(by_simple);
+    }
+    if let Some(ty) = scrut_ty
+        && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(name, ty, top_level)
+    {
+        return Some(from_scrut);
+    }
+    Some(record_field_tys_by_simple_name(name, top_level))
 }
 
 fn record_field_tys_from_scrutinee_ctor<'a>(
