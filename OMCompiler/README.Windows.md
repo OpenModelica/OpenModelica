@@ -5,8 +5,8 @@
 - [1 MSYS Environments](#1-msys-environments)
   - [1.1 General Notes](#11-general-notes)
   - [1.2 Install OMDev packages](#12-install-omdev)
-  - [1.3 Install MSYS2](#13-install-msys2)
-  - [1.4 Install Additional Programs](#14-install-additional-programs)
+  - [1.3 Install Additional Programs](#13-install-additional-programs)
+  - [1.4 Rust toolchain](#14-rust-toolchain)
   - [1.5 Environment Variables](#15-environment-variables)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
@@ -14,7 +14,7 @@
 - [4 Test Suite](#4-test-suite)
 - [5 Troubleshooting](#5-troubleshooting)
 
-# 1 MSYS Environments
+## 1 MSYS Environments
 
 We use Linux tools provided by [MSYS2](https://www.msys2.org/) to compile OpenModelica on
 Windows.
@@ -27,50 +27,101 @@ the first time use OMDev.
 > If you have an older version of OMDev installed it's best to delete `OMDev` and start
 > with a fresh clone following the below instructions.
 
-  1. OMDev package: MSYS2 with
-    [UCRT64 environment](https://www.msys2.org/docs/environments/).
-    Follow the instructions in [1.2 Install OMDev](#12-install-omdev).
-  2. Installed [MSYS2](https://www.msys2.org/) with
-    [UCRT64 environment](https://www.msys2.org/docs/environments/).
-    Follow the instructions in [1.3 Install MSYS2](#13-install-msys2).
+1. OMDev package: MSYS2 with
+  [UCRT64 environment](https://www.msys2.org/docs/environments/).
+  Follow the instructions in [1.2 Install OMDev](#12-install-omdev).
+2. Installed [MSYS2](https://www.msys2.org/) with
+  [UCRT64 environment](https://www.msys2.org/docs/environments/).
+  You need to install all necessary packages yourself.
 
+### 1.1 General Notes
 
-## 1.1 General Notes
+- Install Git for Windows [git-scm.com](https://git-scm.com/downloads)
 
-  - Install Git for Windows https://git-scm.com/downloads
-    Do not install git using pacman in MSYS, it does not work correctly!
-  - Make sure you git clone with the correct line endings, run in a (Git Bash) terminal:
-    ```bash
-      git config --global core.eol lf
-      git config --global core.autocrlf input
-    ```
+  > [!CAUTION]
+  > Do not install git using pacman in MSYS, it does not work correctly!
 
-## 1.2 Install OMDev
+- Make sure you git clone with the correct line endings, run in a (Git Bash) terminal:
 
-  - Clone OMDev into a directory without any spaces in the path. We recommend to use
-    `C:\OMDev\`.
+  ```bash
+    git config --global core.eol lf
+    git config --global core.autocrlf input
+  ```
 
-    Run the following in a Git Bash:
-    ```bash
-      cd /c/
-      git clone --depth 1 -b master --single-branch https://gitlab.liu.se/OpenModelica/OMDevUCRT.git OMDev
-    ```
+### 1.2 Install OMDev
 
-  - Define a Windows environment variable `OMDEV` pointing to the OMDev directory.
-    Restart or logout/login to make it available.
+- Clone OMDev into a directory without any spaces in the path.
+  We recommend to use `C:\OMDev\`.
 
-  - Follow the instructions in the `%OMDEV%\INSTALL.md` file.
+  Run the following in a Git Bash:
 
-## 1.4 Install Additional Programs
+  ```bash
+    cd /c/
+    git clone --depth 1 -b master --single-branch https://gitlab.liu.se/OpenModelica/OMDevUCRT.git OMDev
+  ```
+
+- Define a Windows environment variable `OMDEV` pointing to the OMDev directory.
+  Restart or logout/login to make it available.
+
+- Follow the instructions in the `%OMDEV%\INSTALL.md` file.
+
+### 1.3 Install Additional Programs
 
 Install the following programs:
 
-  - [Git](https://git-scm.com/downloads) (should already be installed)
-  - [Java SE Development Kit](https://www.oracle.com/java/technologies/downloads/) (for javac)
-  - [TortoiseSVN](https://tortoisesvn.net/), SVN tool for Windows
-  - [CMake](https://cmake.org/download/) (>= v3.21)
+- [Git](https://git-scm.com/downloads) (should already be installed)
+- [Java SE Development Kit](https://www.oracle.com/java/technologies/downloads/) (for javac)
+- [TortoiseSVN](https://tortoisesvn.net/), SVN tool for Windows
+- [CMake](https://cmake.org/download/) (>= v3.21)
+- [rustup](https://rustup.rs) (optional if you disable it; see
+  [1.4 Rust toolchain](#14-rust-toolchain) for which toolchain to pick and how to
+  disable)
 
-## 1.5 Environment Variables
+### 1.4 Rust toolchain
+
+The C simulation runtime writes result files through the Rust `libomc_result`
+(`OM_RUST_RESULT_WRITERS`) and the GUI clients read them back through it
+(`OM_RUST_RESULT_READERS`). If disabled the C runtime falls back to the C
+readers and writers, which cannot handle `.arrow`.
+
+The crates use the 2024 edition, so `cargo`/`rustc` 1.85 or newer. Install
+[rustup](https://rustup.rs) from Windows (not through pacman), with
+`winget install Rustlang.Rustup` or `rustup-init.exe`.
+
+> [!NOTE]
+> MSYS only sees it if you set `MSYS2_PATH_TYPE=inherit` (see
+> [1.5 Environment Variables](#15-environment-variables)) or add
+> `%USERPROFILE%\.cargo\bin` to the `PATH` inside the shell.
+
+The Rust library is linked into the C/C++ binaries, so the ABIs have to match.
+`rustup` installs the **MSVC** toolchain by default, so an OMDev build has to
+install and select the GNU one:
+
+| Building with          | Toolchain to select             |
+|------------------------|---------------------------------|
+| OMDev / MSYS2 (UCRT64) | `stable-x86_64-pc-windows-gnu`  |
+| MSVC                   | `stable-x86_64-pc-windows-msvc` |
+
+```bash
+cd /path/to/OpenModelica   # override set applies to this directory only
+rustup toolchain install stable-x86_64-pc-windows-gnu
+rustup override set stable-x86_64-pc-windows-gnu
+cargo -vV   # the host: line must end in -gnu here, -msvc for MSVC
+```
+
+To build without Rust readers and writer at all:
+
+```bash
+cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles" \
+  -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
+```
+
+Two larger components are off by default: `-DOM_ENABLE_RUST_SIM_RUNTIME=ON` (the
+runtime `--simCodeTarget=C+Rust` links, stable is enough) and
+`-DOM_OMC_ENABLE_RUST=ON` (the compiler as the Rust port, needs the pinned
+nightly in [Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md)).
+
+### 1.5 Environment Variables
 
 Export the path to your tools: git, svn, java/javac and cmake.
 Define environment variables pointing to your OMDev directory as well as the MSYS2
@@ -92,17 +143,17 @@ You can add this to your `.bashrc` file
 
 Additional remarks:
 
-  - MSYS doesn't use the Windows PATH variable.
-    If you want to use it define a Windows environment variable called
-    `MSYS2_PATH_TYPE=inherit`.
-    But be very careful you don't have any MINGW directories in you Windows PATH, e.g.
-    coming from Git.
-  - MSYS doesn't use the Windows TEMP directory but `C:\OMDev\tools\msys\tmp`
-    You change this in `C:\OMDev\tools\msys\etc\profile`, but it can have unexpected side effects.
-  - If you want to use the msys shell from Windows command line  make sure you set
-    environment variable `MSYSTEM=UCRT64` or call `C:\OMDev\tools\msys\ucrt64.exe`.
+- MSYS doesn't use the Windows PATH variable.
+  If you want to use it define a Windows environment variable called
+  `MSYS2_PATH_TYPE=inherit`.
+  But be very careful you don't have any MINGW directories in you Windows PATH, e.g.
+  coming from Git.
+- MSYS doesn't use the Windows TEMP directory but `C:\OMDev\tools\msys\tmp`
+  You change this in `C:\OMDev\tools\msys\etc\profile`, but it can have unexpected side effects.
+- If you want to use the msys shell from Windows command line  make sure you set
+  environment variable `MSYSTEM=UCRT64` or call `C:\OMDev\tools\msys\ucrt64.exe`.
 
-# 2 Compile OpenModelica
+## 2 Compile OpenModelica
 
 On Windows, CMake is the only supported way to build OpenModelica. Follow the
 instructions in [MSYS and CMake](#21-msys-and-cmake).
@@ -121,14 +172,13 @@ cd build_cmake
 make -j<Nr. of cores> install -Oline
 ```
 
-# 3 Installer
+## 3 Installer
 
 To build the OpenModelica releases and installer NSIS is used.
 If you need to know more checkout
 [OpenModelicaSetup/BuildWindowsRelease.sh](https://github.com/OpenModelica/OpenModelicaSetup#readme)
 
-
-# 4 Test Suite
+## 4 Test Suite
 
 Many of the tests inside the test suite are OS dependent and will only work on a Linux OS.
 Nonetheless you can run the test suite, but a lot of failing tests should be expected.
@@ -142,7 +192,7 @@ cd testsuite/partest
 ./runtests.pl
 ```
 
-# 5 Troubleshooting
+## 5 Troubleshooting
 
 If something does not work check the following:
 
@@ -155,4 +205,4 @@ If something does not work check the following:
 
 --------------
 
-Last updated 2026-08-18.
+Last updated 2026-09-08.
