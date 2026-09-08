@@ -14,9 +14,14 @@ if(NOT MSVC)
   # Clang puts designated-initializer warnings under -Werror=c23-extensions and
   # -Wc++20-extensions / -Wc++23-extensions (warning-level, not
   # extension-level), so -pedantic-errors alone does not promote them to errors.
+  if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:-Werror=c23-extensions>")
+  endif ()
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Werror=c++20-extensions)
-    add_compile_options(-Werror=c23-extensions -Werror=c++23-extensions)
+    add_compile_options(
+      "$<$<COMPILE_LANGUAGE:CXX>:-Werror=c++20-extensions>"
+      "$<$<COMPILE_LANGUAGE:CXX>:-Werror=c++23-extensions>"
+    )
   endif()
 endif()
 
