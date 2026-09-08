@@ -37,6 +37,7 @@ pub use run::run_optimizer;
 
 #[cfg(all(ipopt, feature = "std"))]
 mod run {
+    use openmodelica_solvers::fmath;
     use alloc::format;
     use alloc::string::String;
     use alloc::vec;
@@ -433,7 +434,7 @@ mod run {
                     }
                     Some((m, x)) => {
                         let (m, x): (i32, i32) = (m.parse().unwrap_or(0), x.parse().unwrap_or(0));
-                        let scaled = (m as f64) * libm::pow(10.0, x as f64);
+                        let scaled = (m as f64) * fmath::pow(10.0, x as f64);
                         max_iter = scaled as i32;
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
@@ -455,7 +456,7 @@ mod run {
         // multipliers toward the given decade.
         let ws: i32 = flags.ipopt_warm_start.as_deref().and_then(|v| v.parse().ok()).unwrap_or(0);
         if ws > 0 {
-            let shift = libm::pow(10.0, -(ws as f64));
+            let shift = fmath::pow(10.0, -(ws as f64));
             nlp.num_option("mu_init", shift);
             nlp.num_option("bound_mult_init_val", shift);
             nlp.str_option("mu_strategy", "monotone");

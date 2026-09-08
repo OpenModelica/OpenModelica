@@ -612,7 +612,7 @@ fn svd_input(m: usize, n: usize, seed: u64, kind: u32) -> Vec<f64> {
         5 => a.fill(0.0),
         6 => for j in 0..n {
             for k in 0..m {
-                a[k + j * m] *= libm::pow(10.0, (j as f64 / n as f64) * 200.0 - 100.0);
+                a[k + j * m] *= 10f64.powf((j as f64 / n as f64) * 200.0 - 100.0);
             }
         },
         7 => {

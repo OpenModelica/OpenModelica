@@ -114,13 +114,13 @@ pub(crate) fn dlacpy(uplo: u8, m: usize, n: usize, a: &[f64], lda: usize, b: &mu
 }
 
 pub(crate) fn abs(x: f64) -> f64 {
-    libm::fabs(x)
+    x.abs()
 }
 
 pub(crate) fn hypot(x: f64, y: f64) -> f64 {
-    libm::hypot(x, y)
+    x.hypot(y)
 }
 
 pub(crate) fn sqrt(x: f64) -> f64 {
-    libm::sqrt(x)
+    x.sqrt()
 }

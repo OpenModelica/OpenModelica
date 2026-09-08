@@ -14,6 +14,7 @@
 
 /// C's `SPARSE_PATTERN` in CSC addressing, plus the bounds a difference step must
 /// not cross.
+
 pub struct Pattern<'a> {
     pub nnz: usize,
     pub colptr: &'a [i32],
@@ -30,6 +31,7 @@ pub struct Pattern<'a> {
 #[cfg(sundials)]
 pub mod sun {
     use alloc::vec;
+    use openmodelica_solvers::fmath;
     use core::ffi::{c_int, c_long, c_void};
 
     pub use openmodelica_solvers::sundials::SunIndex;
@@ -189,7 +191,7 @@ pub mod sun {
                     continue;
                 }
                 xsave[c] = x[c];
-                let mut dh = DELTA_H * (libm::fabs(xsave[c]) + 1.0);
+                let mut dh = DELTA_H * (fmath::fabs(xsave[c]) + 1.0);
                 if xsave[c] + dh >= ud.max_of(c) {
                     dh = -dh;
                 }
@@ -350,7 +352,7 @@ pub mod sun {
         fn x_scaling(&mut self, nominal: &[f64]) {
             let start = data(self.u, self.n);
             for (s, (nom, x)) in data(self.xscale, self.n).iter_mut().zip(nominal.iter().zip(start.iter())) {
-                *s = 1.0 / libm::fmax(*nom, libm::fabs(*x));
+                *s = 1.0 / fmath::fmax(*nom, fmath::fabs(*x));
             }
         }
 
@@ -376,7 +378,7 @@ pub mod sun {
             fscale.fill(1e-12);
             for c in 0..self.n {
                 for k in ud.colptr[c] as usize..ud.colptr[c + 1] as usize {
-                    let v = libm::fabs(vals[k] / xscale[c]);
+                    let v = fmath::fabs(vals[k] / xscale[c]);
                     let row = &mut fscale[ud.rowidx[k] as usize];
                     if *row < v {
                         *row = v;
@@ -704,7 +706,7 @@ pub mod sun {
         let mut fres = vec![0.0f64; ud.n];
         for c in 0..ud.n {
             let saved = x[c];
-            let dh = DELTA_H * (libm::fabs(saved) + 1.0);
+            let dh = DELTA_H * (fmath::fabs(saved) + 1.0);
             x[c] = saved + dh;
             (ud.eval)(x, &mut fres);
             x[c] = saved;
@@ -867,7 +869,7 @@ pub mod sun {
             match mode {
                 BScaling::NominalStart => {
                     for (i, s) in ud.xscale.iter_mut().enumerate() {
-                        *s = 1.0 / libm::fmax(nominal[i], libm::fabs(start[i]));
+                        *s = 1.0 / fmath::fmax(nominal[i], fmath::fabs(start[i]));
                     }
                 }
                 _ => ud.xscale.fill(1.0),
@@ -899,7 +901,7 @@ pub mod sun {
             let (n, pattern) = (ud.n, ud.pattern);
             let BUd { xscale, fscale, .. } = &mut *ud;
             let mut row_max = |c: usize, r: usize, k: usize| {
-                let v = libm::fabs(vals[k] / xscale[c]);
+                let v = fmath::fabs(vals[k] / xscale[c]);
                 if fscale[r] < v {
                     fscale[r] = v;
                 }
@@ -928,7 +930,7 @@ pub mod sun {
         /// C's `B_nlsKinsolSetMaxNewtonStep`: `N_VWL2Norm(xScale, maxstepfactor·1)`.
         fn max_newton_step(&self, ud: &BUd) {
             let sq: f64 = ud.xscale.iter().map(|s| s * self.maxstepfactor).map(|v| v * v).sum();
-            unsafe { KINSetMaxNewtonStep(self.kin, libm::sqrt(sq)) };
+            unsafe { KINSetMaxNewtonStep(self.kin, fmath::sqrt(sq)) };
         }
 
         /// C's `nlsKinsolErrorHandler` (`kinsol_b.c`): `true` to try again.

@@ -9,6 +9,7 @@
 //! `SimEngine` impl (memory access + function calls) plus its own module
 //! compilation and external-"C" import wiring, then hands an engine to [`drive`].
 
+use openmodelica_solvers::fmath;
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -3030,7 +3031,7 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     let mut max_der = 0.0f64;
     for i in 0..layout.n_states {
         let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
-        let d = libm::fabs(read_f64(e, ders + i * 8)? / nominal);
+        let d = fmath::fabs(read_f64(e, ders + i * 8)? / nominal);
         if max_der < d {
             max_der = d;
         }
@@ -3930,12 +3931,12 @@ fn locate_zc_root(
     zc_right: &[f64],
 ) -> Result<(f64, f64)> {
     let hunted = zc_crossed_idx(zc_left, zc_right);
-    let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * libm::fabs(b - a);
+    let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * fmath::fabs(b - a);
     let mut iters = bisection_iterations(b - a, ttol);
     let mut pre = zc_left.to_vec();
     let mut cur = zc_right.to_vec();
     let mut backup = cur.clone();
-    while libm::fabs(b - a) > MINIMAL_STEP_SIZE && iters > 0 {
+    while fmath::fabs(b - a) > MINIMAL_STEP_SIZE && iters > 0 {
         iters -= 1;
         let c = 0.5 * (a + b);
         probe_zero_crossings(e, sim_data, layout, c, &mut cur)?;
@@ -4106,7 +4107,7 @@ impl Samples {
             next.push(if start_time < s || iv <= 0.0 {
                 s
             } else {
-                s + libm::ceil((start_time - s) / iv) * iv
+                s + fmath::ceil((start_time - s) / iv) * iv
             });
             interval.push(iv);
         }
@@ -5942,9 +5943,9 @@ fn emit_post_event_row(model: &SimModel, time: f64) -> bool {
         return false;
     }
     let (start, stop, n) = (model.start_time, model.stop_time, model.n_intervals as f64);
-    let step_no = libm::round(n * (time - start) / (stop - start));
+    let step_no = fmath::round(n * (time - start) / (stop - start));
     let grid = step_no * (stop - start) / n + start;
-    grid == time || libm::fabs(grid - time) / (libm::fabs(grid) + libm::fabs(time)) < 1e-15
+    grid == time || fmath::fabs(grid - time) / (fmath::fabs(grid) + fmath::fabs(time)) < 1e-15
 }
 
 /// `-maxIntegrationOrder` (INFO(9)/IWORK(3)) and the step-size cap
@@ -6068,7 +6069,7 @@ fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
 /// weight.
 pub fn state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
     (0..layout.n_states)
-        .map(|i| Ok(libm::fmax(libm::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?), 1e-32)))
+        .map(|i| Ok(fmath::fmax(fmath::fabs(read_f64(e, sim_data + layout.state_nom_off + i * 8)?), 1e-32)))
         .collect()
 }
 
@@ -6079,7 +6080,7 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     let mut nominals = state_nominals(e, sim_data, layout)?;
     for k in 0..layout.n_dae_alg {
         let n = read_f64(e, sim_data + layout.dae_alg_nom_off + k * 8)?;
-        nominals.push(libm::fmax(libm::fabs(n), 1e-32));
+        nominals.push(fmath::fmax(fmath::fabs(n), 1e-32));
     }
     if nominals.is_empty() {
         nominals.push(1.0);
@@ -8825,7 +8826,7 @@ impl CsDriver {
                 // reached, or it refuses the step and this asks forever. Communication
                 // points drift off the grid further than a nudge on the quotient.
                 Some(h) => {
-                    let mut g = model.start_time + (libm::floor((self.core.t - model.start_time) / h) + 1.0) * h;
+                    let mut g = model.start_time + (fmath::floor((self.core.t - model.start_time) / h) + 1.0) * h;
                     if g - self.core.t <= reached_eps(self.core.t, model.stop_time - model.start_time) {
                         g += h;
                     }
@@ -10830,7 +10831,7 @@ pub fn dae_solve_explicit(
             break;
         }
         jac.iter_mut().for_each(|v| *v = 0.0);
-        let step = |j: usize, u: &[f64]| libm::sqrt(f64::EPSILON) * u[j].abs().max(scale[j]);
+        let step = |j: usize, u: &[f64]| fmath::sqrt(f64::EPSILON) * u[j].abs().max(scale[j]);
         let mut column = |e: &mut dyn SimEngine, cols: &[usize], jac: &mut [f64], u: &mut [f64]| -> Result<()> {
             let saved: Vec<f64> = cols.iter().map(|&j| u[j]).collect();
             for &j in cols {

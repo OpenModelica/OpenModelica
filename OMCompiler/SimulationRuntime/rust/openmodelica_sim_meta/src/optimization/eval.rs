@@ -4,6 +4,7 @@
 //! DASSL residual recovers its context. They report `true` even after a model
 //! error, as the C ones do; the error is surfaced once `IpoptSolve` returns.
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -230,7 +231,7 @@ fn print_max_error(data: &OptData, g: &[f64]) {
     for i in 0..nsi {
         for j in 0..np {
             for k in 0..nx {
-                let tmp = libm::fabs(g[l]);
+                let tmp = fmath::fabs(g[l]);
                 l += 1;
                 if tmp > gmax {
                     (ii, jj, kk, gmax) = (i, j, k as i64, tmp);
@@ -566,7 +567,7 @@ fn generated_jac_struct(data: &OptData, rows: &mut [Index], cols: &mut [Index]) 
 
 /// C's `guess_step_size_for_numerical_differentiation`.
 fn guess_step(v: f64) -> f64 {
-    1e-5 * libm::fabs(v) + 1e-8
+    1e-5 * fmath::fabs(v) + 1e-8
 }
 
 /// C's `ipopt_h`: the Lagrangian's Hessian, differenced from the symbolic

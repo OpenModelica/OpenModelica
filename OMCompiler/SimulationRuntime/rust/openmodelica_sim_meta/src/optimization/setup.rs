@@ -2,6 +2,7 @@
 //! model (`MoveData.c`), the derivative/Hessian structure (`DerStructure.c`), the
 //! initial guess (`InitialGuess.c`) and writing the solution back (`res2file`).
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
@@ -389,7 +390,7 @@ fn pick_up_bounds(data: &mut OptData) {
             umax,
             data.bounds.vnom[i],
             use_nominal_input[k],
-            libm::fabs(data.bounds.u0[k]),
+            fmath::fabs(data.bounds.u0[k]),
         );
         data.bounds.vnom[i] = nom;
         data.bounds.scal_f[i] = 1.0 / nom;
@@ -409,13 +410,13 @@ fn pick_up_bounds(data: &mut OptData) {
 /// C's `check_nominal`: the heuristic when a variable has no `nominal` of its own.
 fn check_nominal(min: f64, max: f64, nominal: f64, set: bool, x0: f64) -> f64 {
     if set {
-        return libm::fabs(nominal).max(1e-16);
+        return fmath::fabs(nominal).max(1e-16);
     }
-    let (amax, amin) = (libm::fabs(max), libm::fabs(min));
+    let (amax, amin) = (fmath::fabs(max), fmath::fabs(min));
     let mut nom = amax.max(amin);
     if nom > 1e12 {
         let tmp = amax.min(amin);
-        let ax0 = libm::fabs(x0);
+        let ax0 = fmath::fabs(x0);
         nom = if tmp < 1e12 { tmp.max(ax0) } else { 1.0 + ax0 };
     }
     nom.max(1e-16)
