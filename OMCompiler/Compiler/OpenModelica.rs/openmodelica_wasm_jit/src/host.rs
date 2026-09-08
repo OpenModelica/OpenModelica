@@ -2,6 +2,7 @@
 //! hooks) and the thread-local assert state they record, shared by both engines.
 
 use metamodelica::Result;
+use openmodelica_sim_meta::driver::AssertHold;
 
 /// A failing assertion recorded by `rt_assert`. `msg`/`file` are handles into the
 /// shared linear memory, decoded by the caller after the trap.
@@ -24,8 +25,8 @@ thread_local! {
     /// ecol, read_only, initial]`, `kind` per `driver::ASSERT_*`.
     static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 10]>> = const { std::cell::RefCell::new(Vec::new()) };
     /// C's `noThrowAsserts`: the driver has the model on a provisional state, so
-    /// `rt_assert` records instead of telling the caller to trap.
-    static NO_THROW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// `rt_assert` holds a violation instead of telling the caller to trap.
+    static ASSERT_HOLD: std::cell::Cell<AssertHold> = const { std::cell::Cell::new(AssertHold::Throw) };
     /// Executed `reinit`s, `(state SimData offset, value)`, for the driver's
     /// `LOG_EVENTS` block. Only filled while that stream is on.
     static PENDING_REINITS: std::cell::RefCell<Vec<(u32, f64)>> = const { std::cell::RefCell::new(Vec::new()) };
@@ -60,13 +61,13 @@ fn take_reinits_into(dst: &mut [u8], max: usize) -> u32 {
     recs.len() as u32
 }
 
-/// Driver hook (`driver::set_no_throw_hook`). Opening drops the assertion a
+/// Driver hook (`driver::set_assert_hold_hook`). Opening drops the assertion a
 /// previous phase suppressed, so `enrich_trap` reports the one that failed.
-pub fn set_no_throw_asserts(v: bool) {
-    if v {
+pub fn set_assert_hold(m: AssertHold) {
+    if m != AssertHold::Throw {
         clear_pending_assert();
     }
-    NO_THROW.with(|n| n.set(v));
+    ASSERT_HOLD.with(|n| n.set(m));
 }
 
 /// Clear any stale pending assertion before a call.
@@ -280,21 +281,20 @@ fn record_warning(rec: [i32; 10]) {
 }
 
 /// `rt_assert`: a failed `assert()`. Returns 1 when the caller must trap — a model
-/// or runtime error (`cond == 0`) always does, a user assertion is recorded
-/// instead while the driver has asserts suppressed.
+/// or runtime error (`cond == 0`) always does, a user assertion is held instead
+/// while the driver has asserts suppressed (and recorded, unless it is probing).
 fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
-    if cond != 0 && NO_THROW.with(|n| n.get()) {
+    let hold = if cond != 0 { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
+    if hold == AssertHold::Record {
         record_warning([
             openmodelica_sim_meta::driver::ASSERT_SUPPRESSED,
             cond, msg, file, sline, scol, eline, ecol, read_only, initial,
         ]);
-        // Also as a pending assertion: if the phase throws, this reports it — the
-        // in-wasm driver's own reporter cannot reach the host's error buffer.
-        record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial);
-        return 0;
     }
+    // Also as a pending assertion: if the phase throws, this reports it — the
+    // in-wasm driver's own reporter cannot reach the host's error buffer.
     record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial);
-    1
+    (hold == AssertHold::Throw) as i32
 }
 
 /// The runtime array object as both engines' external-"C" trampolines read it:
@@ -543,7 +543,7 @@ pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()>
     wt(linker.func_wrap("env", "rt_host_result_close", || result_file::close()))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
-    wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
+    wt(linker.func_wrap("env", "rt_host_set_assert_hold", |v: i32| set_assert_hold(AssertHold::from_i32(v))))?;
     wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
     wt(linker.func_wrap("env", "rt_host_note_no_throw_assert", || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }))?;
     // The external "C" libraries are the host's, so C's `RHSFinalFlag` is too.
@@ -819,7 +819,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     imports.define("env", "rt_host_result_close", Function::new_typed(store, || result_file::close()));
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
-    imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
+    imports.define("env", "rt_host_set_assert_hold", Function::new_typed(store, |v: i32| set_assert_hold(AssertHold::from_i32(v))));
     imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
     imports.define("env", "rt_host_note_no_throw_assert", Function::new_typed(store, || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }));
     // The wasmer host has no external-library loader, so the flag has nowhere to go.

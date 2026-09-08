@@ -37,9 +37,9 @@ unsafe extern "C" {
     fn rt_host_take_warnings(ptr: u32, max: u32) -> u32;
     /// Same for the `reinit`s the model recorded with `rt_reinit_note`.
     fn rt_host_take_reinits(ptr: u32, max: u32) -> u32;
-    /// Open/close C's `noThrowAsserts` phase, on the host: that is where
-    /// `rt_assert` lives, whichever driver runs.
-    fn rt_host_set_no_throw(v: i32);
+    /// The driver's `AssertHold` mode, on the host: that is where `rt_assert`
+    /// lives, whichever driver runs.
+    fn rt_host_set_assert_hold(v: i32);
     /// Initialization is over; the host splits its output capture there.
     fn rt_host_init_done();
     /// C's `RHSFinalFlag`: the external "C" libraries are the host's, so is the flag.
@@ -529,7 +529,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         crate::files::write_file(path, &alloc::string::String::from_utf8_lossy(bytes));
         true
     });
-    driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
+    driver::set_assert_hold_hook(|m| unsafe { rt_host_set_assert_hold(m as i32) });
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_sim_data_new(model.layout.total);

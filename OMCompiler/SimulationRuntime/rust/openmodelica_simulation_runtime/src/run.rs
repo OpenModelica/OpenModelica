@@ -144,7 +144,6 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     let args = argv_strings(argc, argv);
     crate::support::install_message_hooks();
     driver::set_log_sink(log_sink);
-    driver::set_no_throw_hook(crate::engine::set_no_throw);
     driver::set_result_file_reader(crate::iif::read_result_values);
     driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);

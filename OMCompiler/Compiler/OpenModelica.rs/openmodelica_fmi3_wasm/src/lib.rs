@@ -338,11 +338,15 @@ pub extern "C" fn rt_assert(
     sim_data: i32,
 ) -> i32 {
     if cond != 0 {
-        if driver::asserts_suppressed() {
-            unsafe {
-                SUPPRESSED.push([driver::ASSERT_SUPPRESSED, cond, msg, file, sline, scol, eline, ecol, read_only, initial]);
+        match driver::assert_hold() {
+            driver::AssertHold::Throw => {}
+            driver::AssertHold::Record => {
+                unsafe {
+                    SUPPRESSED.push([driver::ASSERT_SUPPRESSED, cond, msg, file, sline, scol, eline, ecol, read_only, initial]);
+                }
+                return 0;
             }
-            return 0;
+            driver::AssertHold::Discard => return 0,
         }
         unsafe { PENDING = Some([msg, file, sline, scol, eline, ecol, read_only, cond, initial]) };
         return 1;

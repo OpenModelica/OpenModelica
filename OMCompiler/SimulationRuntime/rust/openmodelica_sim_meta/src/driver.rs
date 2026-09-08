@@ -519,13 +519,6 @@ pub trait SimEngine {
     /// model keeps `pre()` of its String variables copies them here. Default:
     /// nothing.
     fn store_pre_strings(&mut self) {}
-    /// Whether the model itself reported a violated `assert()` inside the current
-    /// `noThrowAsserts` window and carried on (C's `needToReThrow`). A model that
-    /// hands its violations back through [`take_pending_warnings`] leaves this
-    /// false. Default: false.
-    fn take_noted_assert(&mut self) -> bool {
-        false
-    }
     /// Take the `reinit`s the model executed since the last call, as `(state
     /// SimData offset, value)`, for the event's `LOG_EVENTS` block. Default: none.
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1272,19 +1265,44 @@ pub fn signal_init_done() {
     }
 }
 
-// C's `noThrowAsserts`. The flag lives with the `rt_assert` import — on the host —
-// so the in-wasm driver relays it over `env.rt_host_set_no_throw`.
-static NO_THROW_HOOK: AtomicUsize = AtomicUsize::new(0);
-static NO_THROW: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-pub fn set_no_throw_hook(f: fn(bool)) {
-    NO_THROW_HOOK.store(f as usize, Ordering::Relaxed);
+/// What a violated `assert()` does while the model is evaluated. `Record` is C's
+/// `noThrowAsserts`: log it, arm `needToReThrow`, carry on. `Discard` is the same
+/// hold at a root probe, a point that is never accepted, so what it violates is
+/// nobody's to settle.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(u8)]
+pub enum AssertHold {
+    Throw = 0,
+    Record = 1,
+    Discard = 2,
 }
-fn set_no_throw(v: bool) {
-    NO_THROW.store(v, Ordering::Relaxed);
-    let p = NO_THROW_HOOK.load(Ordering::Relaxed);
+
+impl AssertHold {
+    pub fn from_i32(v: i32) -> Self {
+        match v {
+            1 => AssertHold::Record,
+            2 => AssertHold::Discard,
+            _ => AssertHold::Throw,
+        }
+    }
+}
+
+// The mode lives with the `rt_assert` import — on the host — so the in-wasm
+// driver relays it over `env.rt_host_set_assert_hold`.
+static ASSERT_HOLD_HOOK: AtomicUsize = AtomicUsize::new(0);
+static ASSERT_HOLD: core::sync::atomic::AtomicU8 = core::sync::atomic::AtomicU8::new(0);
+pub fn set_assert_hold_hook(f: fn(AssertHold)) {
+    ASSERT_HOLD_HOOK.store(f as usize, Ordering::Relaxed);
+}
+pub fn assert_hold() -> AssertHold {
+    AssertHold::from_i32(ASSERT_HOLD.load(Ordering::Relaxed) as i32)
+}
+fn set_assert_hold(m: AssertHold) {
+    ASSERT_HOLD.store(m as u8, Ordering::Relaxed);
+    let p = ASSERT_HOLD_HOOK.load(Ordering::Relaxed);
     if p != 0 {
-        let f: fn(bool) = unsafe { core::mem::transmute(p) };
-        f(v);
+        let f: fn(AssertHold) = unsafe { core::mem::transmute(p) };
+        f(m);
     }
 }
 
@@ -1292,18 +1310,18 @@ fn set_no_throw(v: bool) {
 /// evaluations run outside it and a violated `assert()` there throws, so the step
 /// is retried. The drivers open the window over a whole row, so the integrator
 /// step suspends it.
-struct AssertWindowSuspended(bool);
+struct AssertWindowSuspended(AssertHold);
 fn suspend_assert_window() -> AssertWindowSuspended {
-    let was_open = NO_THROW.load(Ordering::Relaxed);
-    if was_open {
-        set_no_throw(false);
+    let held = assert_hold();
+    if held != AssertHold::Throw {
+        set_assert_hold(AssertHold::Throw);
     }
-    AssertWindowSuspended(was_open)
+    AssertWindowSuspended(held)
 }
 impl Drop for AssertWindowSuspended {
     fn drop(&mut self) {
-        if self.0 {
-            set_no_throw(true);
+        if self.0 != AssertHold::Throw {
+            set_assert_hold(self.0);
         }
     }
 }
@@ -2170,46 +2188,48 @@ mod rethrow_store {
     pub use imp::{arm, note, note_event, take};
 }
 
-/// C's `assertCommonVar` under `noThrowAsserts`: arm `needToReThrow` and report
-/// that the caller may carry on with the out-of-domain value instead of throwing.
+/// C's `assertCommonVar` under `noThrowAsserts`, and the C host's `needToReThrow`
+/// after a model call: arm the window's re-throw and report that the caller may
+/// carry on with the out-of-domain value instead of throwing.
 pub fn note_no_throw_assert() -> bool {
-    if !NO_THROW.load(Ordering::Relaxed) {
-        return false;
+    match assert_hold() {
+        AssertHold::Throw => false,
+        AssertHold::Record => {
+            rethrow_store::note();
+            true
+        }
+        AssertHold::Discard => true,
     }
-    rethrow_store::note();
-    true
 }
 
 /// Enter C's `noThrowAsserts` phase: a failed `assert()` is recorded, not thrown.
 /// Idempotent, so a chunk that yields mid-step just re-enters it.
 pub fn open_assert_window() {
-    set_no_throw(true);
+    set_assert_hold(AssertHold::Record);
 }
 
 /// The window is open: `rt_assert` records a violated `assert()` instead of throwing.
 pub fn asserts_suppressed() -> bool {
-    NO_THROW.load(Ordering::Relaxed)
+    assert_hold() != AssertHold::Throw
 }
 
 /// Leave the window, logging what it caught at info level unless `log` is clear;
 /// `true` when it caught an `assert()` the caller settles itself (an FMU turns it
 /// into an event).
 pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32, log: bool) -> Result<bool> {
-    set_no_throw(false);
+    set_assert_hold(AssertHold::Throw);
     let armed = drain_asserts(e, sim_data, omclog::INFO, log)?;
-    let noted = e.take_noted_assert();
-    let (info, _, self_noted) = rethrow_store::take();
-    Ok(armed || noted || info.is_some() || self_noted)
+    let (info, _, noted) = rethrow_store::take();
+    Ok(armed || info.is_some() || noted)
 }
 
 /// Leave it and settle what was recorded (C's `simulationUpdate` tail): an event
 /// makes the point they were raised at obsolete, otherwise the run fails now.
 fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
-    set_no_throw(false);
+    set_assert_hold(AssertHold::Throw);
     drain_asserts(e, sim_data, omclog::INFO, true)?;
-    let noted = e.take_noted_assert();
-    let (info, found_event, self_noted) = rethrow_store::take();
-    if info.is_none() && !noted && !self_noted {
+    let (info, found_event, noted) = rethrow_store::take();
+    if info.is_none() && !noted {
         return Ok(());
     }
     if found_event {
@@ -2368,7 +2388,7 @@ fn run_initialization_impl(
     init_report::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
     let _ = rethrow_store::take();
-    set_no_throw(false);
+    set_assert_hold(AssertHold::Throw);
     term_report::reset();
     steady_report::reset();
     seed_start_values(e, sim_data, layout, inputs, model)?;
@@ -5215,17 +5235,16 @@ impl LambdaRamp {
 
 /// A root probe under `noThrowAsserts` (C: "asserts can be ignored when searching
 /// for the event"): not an accepted point, and its out-of-domain value still gives
-/// the root function a sign. What it caught is dropped.
+/// the root function a sign. Nothing it violates is recorded, and nothing the
+/// window has recorded is touched.
 fn probe_holding_asserts(
     e: &mut dyn SimEngine,
     probe: impl FnOnce(&mut dyn SimEngine) -> Result<()>,
 ) -> Result<()> {
-    let window = asserts_suppressed();
-    set_no_throw(true);
+    let held = assert_hold();
+    set_assert_hold(AssertHold::Discard);
     let probed = probe(e);
-    set_no_throw(window);
-    let _ = e.take_pending_warnings();
-    let _ = rethrow_store::take();
+    set_assert_hold(held);
     probed
 }
 
