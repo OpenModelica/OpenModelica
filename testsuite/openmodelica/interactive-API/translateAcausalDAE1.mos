@@ -1,6 +1,7 @@
 // name: translateAcausalDAE1
 // keywords: acausal DAE separate compilation
 // status: correct
+// suite: cSources
 //
 // Generates separately-compilable DAE residual code for each top-level
 // component of a flowsheet and stitches them together with the connection
