@@ -30,6 +30,11 @@
 #
 # See the full OSMC Public License conditions for more details.
 
+# NOTE: OMEdit is built with CMake; this qmake project is NOT a build system any
+# more. It is kept only because `lupdate` reads SOURCES/HEADERS/TRANSLATIONS from
+# it to update the .ts files -- see Resources/nls/README.md. Keep the source
+# lists below in sync with OMEditLIB/CMakeLists.txt, or new translatable strings
+# will be missed.
 include(../OMEdit.config.pre.pri)
 TARGET = OMEdit
 
@@ -69,8 +74,6 @@ win32 {
   host_short =
 
   CONFIG += osg
-} else { # Unix libraries and includes
-  include(OMEditLIB.unix.config.pri)
 }
 
 INCLUDEPATH += . ../ \

@@ -65,6 +65,10 @@ add_omedit_test(Homotopy "${OMEDIT_TEST_HOMOTOPY_SOURCES}")
 # to figure out why it takes so long in the first place.
 # set_tests_properties(Homotopy PROPERTIES TIMEOUT 300)
 
+set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
+                                              MergeExtendsModifiers/MergeExtendsModifiersTest.h)
+add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")

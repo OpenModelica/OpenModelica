@@ -51,7 +51,7 @@ etc. You will need to create a fork of each repository that you want to push to 
 clicking the Fork button in the GitHub web interface).
 
 If you do not checkout the repositories for some GUI clients (such as OMOptim.git), these
-directories will be ignored by autoconf and skipped during compilation.
+directories are skipped during compilation.
 
 To checkout a specific version of OpenModelica, say tag `v1.16.2` do:
 
@@ -89,8 +89,22 @@ git submodule update --init --recursive libraries
 
 ## Build OpenModelica
 
+OpenModelica is built with [CMake](https://cmake.org/); it is the only supported build
+system.
+
+```bash
+cd OpenModelica
+cmake -S . -B build_cmake
+cmake --build build_cmake --parallel <Nr. of cores> --target install
+./build_cmake/install_cmake/bin/omc --help
+```
+
+For dependencies, platform specifics and configuration options see:
+
 * [Linux/WSL/OSX Instructions](OMCompiler/README.Linux.md)
 * [Windows Instructions](OMCompiler/README.Windows.md)
+* [CMake build instructions](README.cmake.md) (all platforms, configuration options)
+* [CMake build instructions for MSVC](README.cmake.msvc.md)
 
 We automatically generate nightly builds for
 [Windows](https://openmodelica.org/download/download-windows/) and for various flavours of

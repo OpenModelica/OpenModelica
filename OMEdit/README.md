@@ -16,15 +16,19 @@ Follow the instructions matching your OS:
 
 ### Compile/Debug from Qt Creator
 
-Compile OMEdit once using the build instructions above so all dependencies of OMEdit are ready. Then follow these steps,
+Compile OpenModelica once with CMake using the build instructions above so all
+dependencies of OMEdit are ready. Then follow these steps,
 
-  - Load the `OMEdit.pro` file in Qt Creator.
-  - Configure the project with the compiler you used to compile OMEdit earlier.
-  - Go to project build settings in Qt Creator. Add a custom build step to copy executable `OMEdit` from `OpenModelica/OMEdit/bin` to `OpenModelica/build/bin`
-  - Add the build environment variables `CXX` and `OMBUILDDIR`. `CXX` is only needed if your default is `gcc` and you want to use `clang`. `OMBUILDDIR` should point to `OpenModelica/build`.
-  - Change the run settings to run the executable `OpenModelica/build/bin/OMEdit` instead of `OpenModelica/OMEdit/bin/OMEdit`.
+  - Open the top level `OpenModelica/CMakeLists.txt` as a project in Qt Creator.
+  - Configure the project with the same compiler and CMake options you used on the
+    command line. Qt Creator picks up `CMAKE_INSTALL_PREFIX` from the CMake configuration,
+    so `OMEdit` ends up in the same install tree as the rest of OpenModelica.
+  - Build the `install` target, or the `OMEdit` target followed by `install` if you only
+    changed OMEdit sources.
+  - Change the run settings to run the installed executable, e.g.
+    `OpenModelica/build_cmake/install_cmake/bin/OMEdit`, so OMEdit finds `omc` and the
+    shared libraries next to it.
   - Compile/debug OMEdit.
-![Build Settings](build_settings.png)
 
 ## Coding Style
 
