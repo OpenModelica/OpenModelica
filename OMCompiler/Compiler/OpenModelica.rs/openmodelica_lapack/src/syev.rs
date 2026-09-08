@@ -416,7 +416,7 @@ fn dsteqr(n: usize, d: &mut [f64], e: &mut [f64], z: &mut [f64], ldz: usize) -> 
 
                 let mut g = (d[l] - p) / (2.0 * e[l - 1]);
                 let mut r = dlapy2(g, 1.0);
-                g = d[m - 1] - p + (e[l - 1] / (g + libm::copysign(r, g)));
+                g = d[m - 1] - p + (e[l - 1] / (g + r.copysign(g)));
                 let mut s = 1.0;
                 let mut c = 1.0;
                 p = 0.0;
@@ -499,7 +499,7 @@ fn dsteqr(n: usize, d: &mut [f64], e: &mut [f64], z: &mut [f64], ldz: usize) -> 
 
                 let mut g = (d[l - 2] - p) / (2.0 * e[l - 2]);
                 let mut r = dlapy2(g, 1.0);
-                g = d[m - 1] - p + (e[l - 2] / (g + libm::copysign(r, g)));
+                g = d[m - 1] - p + (e[l - 2] / (g + r.copysign(g)));
                 let mut s = 1.0;
                 let mut c = 1.0;
                 p = 0.0;

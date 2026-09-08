@@ -130,6 +130,7 @@ openmodelica_solvers/src/dassl.rs
 openmodelica_solvers/src/delay.rs
 openmodelica_solvers/src/events.rs
 openmodelica_solvers/src/fixedstep.rs
+openmodelica_solvers/src/fmath.rs
 openmodelica_solvers/src/gbode/conf.rs
 openmodelica_solvers/src/gbode/ctrl.rs
 openmodelica_solvers/src/gbode/err.rs

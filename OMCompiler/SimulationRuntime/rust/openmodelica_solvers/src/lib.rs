@@ -67,6 +67,7 @@ pub mod counters;
 pub mod dassl;
 pub mod events;
 pub mod fixedstep;
+pub mod fmath;
 pub mod delay;
 pub mod gbode;
 pub mod klu;
@@ -219,7 +220,7 @@ pub trait Dae {
 pub fn bisection_iterations(width: f64, ttol: f64) -> i64 {
     match simflags::with_flags(|f| f.max_bisection_iter) {
         Some(n) if n > 0 => n as i64,
-        _ => 1 + libm::ceil(libm::log(libm::fabs(width) / ttol) / libm::log(2.0)) as i64,
+        _ => 1 + fmath::ceil(fmath::log(fmath::fabs(width) / ttol) / fmath::log(2.0)) as i64,
     }
 }
 
@@ -292,16 +293,16 @@ pub fn format_g(v: f64, p: i32) -> String {
 }
 
 /// `v`'s decimal exponent and the mantissa in `[1, 10)`. `log10` is not exactly
-/// rounded (the `libm` crate's lands an ULP off an exact power of ten, where glibc
-/// does not), so the mantissa decides the exponent rather than the other way round —
-/// otherwise `1e-06` prints as `10e-07`.
+/// rounded (the `libm` crate's, in the `no_std` build, lands an ULP off an exact
+/// power of ten where glibc does not), so the mantissa decides the exponent
+/// rather than the other way round — otherwise `1e-06` prints as `10e-07`.
 pub(crate) fn decimal_exp(v: f64) -> (i32, f64) {
-    let mut exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
-    let mut m = v / libm::pow(10.0, exp as f64);
-    if libm::fabs(m) >= 10.0 {
+    let mut exp = fmath::floor(fmath::log10(fmath::fabs(v))) as i32;
+    let mut m = v / fmath::pow(10.0, exp as f64);
+    if fmath::fabs(m) >= 10.0 {
         m /= 10.0;
         exp += 1;
-    } else if libm::fabs(m) < 1.0 {
+    } else if fmath::fabs(m) < 1.0 {
         m *= 10.0;
         exp -= 1;
     }

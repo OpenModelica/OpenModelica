@@ -7,6 +7,7 @@
 //! Jacobian's sparsity says depend on it. There is no output grid: one result row
 //! is emitted per accepted quantum change, at that change's own time.
 
+use openmodelica_solvers::fmath;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -319,19 +320,19 @@ fn delta_q(
     let mut next_q;
     if state_der >= 0.0 {
         // quantity of the state will increase
-        next_q = (libm::floor(x / dq) + 1.0) * dq;
+        next_q = (fmath::floor(x / dq) + 1.0) * dq;
         if next_q <= x + EPS {
             next_q += dq;
         }
     } else {
-        next_q = libm::floor(x / dq) * dq;
+        next_q = fmath::floor(x / dq) * dq;
         if next_q >= x - EPS {
             next_q -= dq;
         }
     }
 
-    let diff_q = libm::fabs(next_q - x);
-    let d_tnext_q = libm::fabs(diff_q / state_der);
+    let diff_q = fmath::fabs(next_q - x);
+    let d_tnext_q = fmath::fabs(diff_q / state_der);
 
     Ok((d_tnext_q, next_q, diff_q))
 }

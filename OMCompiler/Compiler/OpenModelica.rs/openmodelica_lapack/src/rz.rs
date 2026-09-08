@@ -23,7 +23,7 @@ pub enum Est {
 }
 
 fn sign(x: f64, y: f64) -> f64 {
-    libm::copysign(x, y)
+    x.copysign(y)
 }
 
 /// `DLAIC1`: given the singular vector `x` of an estimate `sest` for `L`, the
