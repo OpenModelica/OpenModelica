@@ -8,6 +8,7 @@
   - [1.3 Install MSYS2](#13-install-msys2)
   - [1.4 Install Additional Programs](#14-install-additional-programs)
   - [1.5 Environment Variables](#15-environment-variables)
+  - [1.6 Rust toolchain](#16-rust-toolchain)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
 - [3 Installer](#3-installer)
@@ -69,6 +70,9 @@ Install the following programs:
   - [Java SE Development Kit](https://www.oracle.com/java/technologies/downloads/) (for javac)
   - [TortoiseSVN](https://tortoisesvn.net/), SVN tool for Windows
   - [CMake](https://cmake.org/download/) (>= v3.21)
+  - [rustup](https://rustup.rs) (optional if you disable it; see
+    [1.6 Rust toolchain](#16-rust-toolchain) for which toolchain to pick and how to
+    disable)
 
 ## 1.5 Environment Variables
 
@@ -101,6 +105,71 @@ Additional remarks:
     You change this in `C:\OMDev\tools\msys\etc\profile`, but it can have unexpected side effects.
   - If you want to use the msys shell from Windows command line  make sure you set
     environment variable `MSYSTEM=UCRT64` or call `C:\OMDev\tools\msys\ucrt64.exe`.
+
+## 1.6 Rust toolchain
+
+Parts of OpenModelica are written in Rust: the C simulation runtime writes its
+result files through `libomc_result` (`OM_RUST_RESULT_WRITERS`) and the GUI
+clients read them back through the same library (`OM_RUST_RESULT_READERS`). Both
+options default to whether `cargo` is found on the `PATH`, so a toolchain-less
+build still configures -- it falls back to the C readers and writers, which
+handle `.mat`, `.csv` and `.plt` but not `.arrow`, and CMake says so with a
+`STATUS` line. Turning either option on explicitly without a `cargo` is a hard
+error.
+
+The crates use the 2024 edition, so `rustc`/`cargo` 1.85 or newer. Install
+[rustup](https://rustup.rs) on Windows (not through pacman) with `winget install
+Rustlang.Rustup`, or by running `rustup-init.exe` from the rustup page.
+
+> [!NOTE]
+> MSYS does not inherit the Windows `PATH` unless you set `MSYS2_PATH_TYPE=inherit`
+> (see [1.5 Environment Variables](#15-environment-variables)). If `cargo --version`
+> works in a Windows shell but not in the MSYS2 one, that is why; either set that
+> variable or add `%USERPROFILE%\.cargo\bin` to the `PATH` inside MSYS.
+
+### Pick the toolchain matching your C/C++ compiler
+
+The Rust library is linked straight into the C/C++ binaries, so the Rust ABI has
+to be the one your compiler uses. The two Windows ABIs are not interchangeable:
+they disagree on the C runtime and on how the import library is named
+(`libomc_result.dll.a` for GNU, `omc_result.dll.lib` for MSVC).
+
+| Building with | Toolchain to select |
+|---------------|---------------------|
+| OMDev / MSYS2 (UCRT64 or MINGW64), the setup this file describes | `stable-x86_64-pc-windows-gnu` |
+| MSVC | `stable-x86_64-pc-windows-msvc` |
+
+A stock rustup on Windows installs the **MSVC** toolchain by default, so an OMDev
+build needs the GNU one installed and selected explicitly. `override set` records
+the choice for this directory, so run it in your OpenModelica checkout and it will
+not disturb other projects:
+
+```bash
+cd /path/to/OpenModelica
+rustup toolchain install stable-x86_64-pc-windows-gnu
+rustup override set stable-x86_64-pc-windows-gnu
+# Check what cargo will actually build for:
+cargo -vV
+```
+
+The `host:` line of `cargo -vV` is the triple that matters; it must end in `-gnu`
+for an OMDev build and in `-msvc` for an MSVC build. A mismatch shows up later as
+a link failure or as a missing artifact ("No rule to make target ...
+omc_result.dll").
+
+To build without Rust at all, turn both options off. You then lose the `.arrow`
+result format:
+
+```bash
+cmake -S . -B build_cmake -Wno-dev -G "MSYS Makefiles" \
+  -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
+```
+
+Two larger Rust components are off by default. `-DOM_ENABLE_RUST_SIM_RUNTIME=ON`
+builds the simulation runtime `--simCodeTarget=C+Rust` links, and also works with
+a stable toolchain. `-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as the
+Rust port, which needs the pinned nightly toolchain described in
+[Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 # 2 Compile OpenModelica
 
@@ -155,4 +224,4 @@ If something does not work check the following:
 
 --------------
 
-Last updated 2026-08-18.
+Last updated 2026-09-08.
