@@ -480,8 +480,12 @@ public
       "makes room for extra more entries so that adding them does not grow the buffer"
       input IntMatrix m;
       input Integer extra;
+      input Boolean withAux = false;
     algorithm
       Vector.reserve(m.data, Vector.size(m.data) + extra);
+      if withAux then
+        Vector.reserve(m.aux, Vector.size(m.aux) + extra);
+      end if;
     end reserveData;
 
     function clearRow
@@ -1167,6 +1171,135 @@ public
         print(toString(adj, "Final") + "\n");
       end if;
     end upgrade;
+
+    function equalRows
+      "equation index -> index of the equal equation in seed_eqns, 0 if none.
+      Its rows in a final matrix over (seed_eqns, seed_vars) are its rows in one
+      over (eqns, vars), so nothing is shared unless the variables are the same
+      in the same order."
+      input EquationPointers seed_eqns;
+      input VariablePointers seed_vars;
+      input EquationPointers eqns;
+      input VariablePointers vars;
+      output array<Integer> seed_index = arrayCreate(EquationPointers.lastUsedIndex(eqns), 0);
+    protected
+      Integer n = VariablePointers.size(vars), i;
+      Pointer<Equation> seed_eqn;
+    algorithm
+      if n <> VariablePointers.size(seed_vars) or n <> VariablePointers.lastUsedIndex(vars) or n <> VariablePointers.lastUsedIndex(seed_vars) then return; end if;
+      for j in 1:n loop
+        if not referenceEq(VariablePointers.getVarAt(vars, j), VariablePointers.getVarAt(seed_vars, j)) then return; end if;
+      end for;
+      for eqn in EquationPointers.toList(eqns) loop
+        i := EquationPointers.getEqnIndex(seed_eqns, Equation.getEqnName(eqn));
+        if i > 0 then
+          seed_eqn := EquationPointers.getEqnAt(seed_eqns, i);
+          if Equation.isEqual(Pointer.access(eqn), Pointer.access(seed_eqn)) then
+            seed_index[EquationPointers.getEqnIndex(eqns, Equation.getEqnName(eqn))] := i;
+          end if;
+        end if;
+      end for;
+    end equalRows;
+
+    function upgradeFrom
+      "upgrade, taking the rows of equations with a seed_index (see equalRows)
+      from seed, a final matrix of strictness st that shares its variables"
+      input output Matrix adj;
+      input Matrix full;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+      input Matrix seed;
+      input array<Integer> seed_index;
+    protected
+      Integer min, max, rows, eqn_start, eqn_size, seed_start, own_entries = 0, shared_entries = 0;
+      Boolean fresh = isEmpty(adj);
+      IntMatrix m, own_m;
+      IntMatrix.Builder builder;
+      list<Integer> own = {};
+      list<ComponentRef> filtered;
+      array<Integer> data, aux, seed_data, seed_aux;
+    algorithm
+      max := Solvability.rank(Solvability.fromStrictness(st));
+      min := if fresh then -1 else Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
+      adj := match (adj, full, seed)
+        case (_, FULL(), FINAL()) guard(min < max) algorithm
+          if fresh then
+            adj := initialize(full.mapping, st);
+          end if;
+          adj := match adj
+            case FINAL() algorithm
+              if fresh then
+                adj.modes := Vector.copy(seed.modes);
+              end if;
+              rows := IntMatrix.rows(adj.m);
+              for index in UnorderedMap.valueList(eqns_map) loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                if seed_index[index] > 0 then
+                  (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
+                  for k in 0:eqn_size - 1 loop
+                    shared_entries := shared_entries + seed.m.len[seed_start + k];
+                  end for;
+                else
+                  own := index :: own;
+                  for k in 0:eqn_size - 1 loop
+                    own_entries := own_entries + adj.m.len[eqn_start + k];
+                  end for;
+                  own_entries := own_entries + UnorderedSet.size(full.occurrences[index]) * eqn_size;
+                end if;
+              end for;
+              own := listReverse(own);
+
+              // the own rows are built the way upgrade builds all rows
+              builder := IntMatrix.newBuilder(own_entries, true);
+              data := IntMatrix.entries(adj.m);
+              aux := IntMatrix.payload(adj.m);
+              for index in own loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                for k in eqn_size - 1:-1:0 loop
+                  for p in adj.m.start[eqn_start + k] + adj.m.len[eqn_start + k] - 1:-1:adj.m.start[eqn_start + k] loop
+                    IntMatrix.builderAddAux(builder, eqn_start + k, data[p], if arrayLength(aux) > 0 then aux[p] else 0);
+                  end for;
+                end for;
+              end for;
+              for index in own loop
+                filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[index]), full.solvabilities[index], vars_map, min + 1, max);
+                upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, full.dependencies[index], full.repetitions[index], vars_map, vars_map, builder, adj.mapping, adj.modes);
+              end for;
+              own_m := IntMatrix.fromBuilder(builder, rows);
+
+              m := IntMatrix.new(rows);
+              IntMatrix.reserveData(m, shared_entries + IntMatrix.nonZeroCount(own_m), true);
+              data := IntMatrix.entries(own_m);
+              aux := IntMatrix.payload(own_m);
+              seed_data := IntMatrix.entries(seed.m);
+              seed_aux := IntMatrix.payload(seed.m);
+              if arrayLength(seed_aux) == 0 then
+                seed_aux := arrayCreate(arrayLength(seed_data), 0);
+              end if;
+              for index in UnorderedMap.valueList(eqns_map) loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                if seed_index[index] > 0 then
+                  (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
+                  for k in 0:eqn_size - 1 loop
+                    IntMatrix.copyRow(seed.m, seed_start + k, seed_data, seed_aux, m, eqn_start + k);
+                  end for;
+                else
+                  for k in 0:eqn_size - 1 loop
+                    IntMatrix.copyRow(own_m, eqn_start + k, data, aux, m, eqn_start + k);
+                  end for;
+                end if;
+              end for;
+              adj.m  := m;
+              adj.mT := IntMatrix.transpose(m, arrayLength(adj.mapping.var_StA));
+            then adj;
+            else adj;
+          end match;
+        then adj;
+        else upgrade(adj, full, vars_map, eqns_map, eqns, st);
+      end match;
+    end upgradeFrom;
 
     function expand
       "expands the adjacency matrix adj with new information provided by vn and en.
