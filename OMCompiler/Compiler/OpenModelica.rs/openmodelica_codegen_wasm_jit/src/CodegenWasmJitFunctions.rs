@@ -352,6 +352,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_str_data", &[WTy::I32], &[WTy::I32]),
     ("rt_concat", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_streq", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_extobj_arg_f64", &[WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    ("rt_extobj_arg_i32", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_extobj_arg_str", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_extobj_arg_arr", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_strcmp", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_substring", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_int_string", &[WTy::I32], &[WTy::I32]),
@@ -1461,6 +1465,8 @@ pub(crate) struct SimCtx {
     /// literal, as in C's `varArrayNameValues`.
     pub(crate) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
     pub(crate) const_groups: Arc<HashMap<String, ConstGroup>>,
+    /// External object cref key -> the mangled name of its class's destructor.
+    pub(crate) extobj_dtors: Arc<HashMap<String, String>>,
     /// `SimData` byte offset of the `terminate` flag, written by a fired
     /// `terminate(...)` when-operator (see `lower_when_op`).
     pub(crate) terminate_off: u32,
@@ -6345,6 +6351,16 @@ fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentRef, key: &s
     Ok(Some(group.wty))
 }
 
+/// A Jacobian column array element (`x.$pDER<M>.dummyVar<M>[i]`) no column
+/// equation defines: the backend kept only the elements that depend on the seeds,
+/// so the rest are structurally zero.
+fn is_jac_column_elem_key(key: &str) -> bool {
+    let Some(stem) = key.strip_suffix(']') else { return false };
+    let Some((base, _)) = stem.rsplit_once('[') else { return false };
+    let Some((qual, last)) = base.rsplit_once('.') else { return false };
+    last.starts_with("dummyVar") && qual.rsplit('.').next().is_some_and(|m| m.starts_with("$pDER"))
+}
+
 fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
     match exp {
         DAE::Exp::ICONST { integer } => Some(*integer),
@@ -6915,6 +6931,10 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             if let Some(wty) = emit_sim_const_index_error(ctx, cref, &key)? {
                 return Ok(Some(wty));
             }
+            if is_jac_column_elem_key(&key) {
+                ctx.emit(we::Instruction::F64Const(0.0.into()));
+                return Ok(Some(WTy::F64));
+            }
             crate::CodegenWasmJit::record_error(format!(
                 "CodegenWasmJit: simulation reference to unknown variable `{key}`{}",
                 fn_context()
@@ -7102,6 +7122,14 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
         ctx.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
         return Ok(true);
     }
+    if let Some(dtor) = ctx.sim()?.extobj_dtors.get(&key).cloned() {
+        if let RhsSource::Exp(e) = &rhs {
+            let e: &DAE::Exp = e;
+            if let DAE::Exp::CALL { expLst, .. } = e {
+                return emit_extobj_construct(ctx, slot.off, &dtor, expLst, RhsSource::Exp(e));
+            }
+        }
+    }
     // Stack order for a store is [addr, value]: push the base, evaluate the rhs,
     // coerce to the slot type, then store at the constant offset.
     ctx.emit(we::Instruction::LocalGet(data));
@@ -7111,6 +7139,67 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
         WTy::F64 => ctx.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
         WTy::I32 => ctx.emit(we::Instruction::I32Store(mem_arg(slot.off, 2))),
     }
+    Ok(true)
+}
+
+/// `obj := Ctor(args)`: an external object is constructed once. The runtime keeps
+/// the arguments the live object was built from (`rt_extobj_arg_*`, keyed by slot
+/// and position); when every argument compares equal the object is kept, otherwise
+/// the old one is destructed before the constructor runs. An argument of a type the
+/// runtime cannot compare (a record) always forces reconstruction.
+fn emit_extobj_construct(
+    ctx: &mut FnCtx,
+    off: u32,
+    dtor: &str,
+    args: &List<Arc<DAE::Exp>>,
+    rhs: RhsSource,
+) -> Result<bool> {
+    use we::Instruction as I;
+    let didx = ctx.by_name.get(dtor).ok_or("CodegenWasmJit: external-object destructor was not compiled")?.index;
+    let data = ctx.sim()?.data_local;
+    let same = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Load(mem_arg(off, 2)));
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::I32Ne);
+    ctx.emit(I::LocalSet(same));
+    for (pos, arg) in args.iter().enumerate() {
+        let (rt_fn, wty) = match exp_sigty(arg) {
+            Ok(SigTy::Real) => ("rt_extobj_arg_f64", WTy::F64),
+            Ok(SigTy::Int | SigTy::Bool | SigTy::Ptr) => ("rt_extobj_arg_i32", WTy::I32),
+            Ok(SigTy::Str) => ("rt_extobj_arg_str", WTy::I32),
+            Ok(SigTy::Array { .. }) => ("rt_extobj_arg_arr", WTy::I32),
+            _ => {
+                ctx.emit(I::I32Const(0));
+                ctx.emit(I::LocalSet(same));
+                continue;
+            }
+        };
+        ctx.emit(I::LocalGet(same));
+        ctx.emit(I::I32Const(off as i32));
+        ctx.emit(I::I32Const(pos as i32));
+        let w = compile_exp(ctx, arg)?;
+        coerce(ctx, w, wty);
+        ctx.emit(I::Call(rt_index(rt_fn)?));
+        ctx.emit(I::I32And);
+        ctx.emit(I::LocalSet(same));
+    }
+    ctx.emit(I::LocalGet(same));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    let old = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Load(mem_arg(off, 2)));
+    ctx.emit(I::LocalTee(old));
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(old));
+    ctx.emit(I::Call(didx));
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(data));
+    let rw = rhs.push(ctx)?;
+    coerce(ctx, rw, WTy::I32);
+    ctx.emit(I::I32Store(mem_arg(off, 2)));
+    ctx.emit(I::End);
     Ok(true)
 }
 
@@ -7752,7 +7841,7 @@ pub(crate) use generic_calls::{
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, IterSlot, NlsResidual, NlsResiduals,
     backup_known_outputs, residual_rows, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
