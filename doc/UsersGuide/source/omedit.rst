@@ -2003,10 +2003,11 @@ The feature is opt-in and disabled by default.
   -  *Language Server Protocol (LSP)* - when this group is checked, OMEdit
      starts the language server process and connects to it.
 
-  -  *Server Executable* - path to the language server executable.
-     Leave blank (recommended) to use the server bundled with OMEdit.
-     Use *Browse* to select a custom server or *Auto Detect* to locate one
-     automatically.
+  -  *Server Executable* - path to the language server executable.  Use
+     *Download...* below to install one, *Browse* to select a server you
+     already have, or *Auto Detect* to search for one.  Left blank, OMEdit
+     looks for a server in the OpenModelica installation; a default
+     installation does not contain one.
 
   -  *Restart Server* - stops the language server and starts it again.  The
      library list is kept in step with OMC automatically, so this is only
@@ -2017,7 +2018,7 @@ The feature is opt-in and disabled by default.
   -  *Download...* - fetches a standalone language server, which needs no
      Node.js, and points *Server Executable* at it.  The drop-down next to the
      button chooses the release: the version marked *(recommended)* is the one
-     this OMEdit was built against, while *Latest release* takes the newest
+     this OMEdit has been tested with, while *Latest release* takes the newest
      release published on GitHub, which may be newer than any version OMEdit
      has been tried with.
 
@@ -2036,17 +2037,19 @@ language server takes effect immediately; a restart is not required.
 
 **Getting a language server**
 
-There are two ways to have a language server to talk to.
+The simplest way is *Download...* on the options page, which fetches a
+standalone server for your platform.  It has no external dependency at all: the
+runtime is built into the executable.
 
-The simplest is *Download...* on the options page, which fetches a standalone
-server for your platform.  It has no external dependency at all: the runtime is
-built into the executable.
+You can also point *Server Executable* at a server you already have:
 
-OMEdit also ships with a pre-built server that runs on
-`Node.js <https://nodejs.org>`_ (version 16 or later).  If Node.js is not
-installed when you enable the language server, OMEdit shows a one-time setup
-dialog offering both routes, with platform-specific installation instructions
-for Node.js.
+-  a standalone binary - set the path directly, no Node.js needed;
+
+-  a ``.js`` file - OMEdit runs it with ``node``, so
+   `Node.js <https://nodejs.org>`_ (version 16 or later) has to be installed.
+
+If you enable a ``.js`` server while Node.js is not on the PATH, OMEdit shows a
+one-time setup dialog with installation instructions for your platform:
 
 .. list-table::
    :header-rows: 1
@@ -2063,29 +2066,14 @@ for Node.js.
    * - Linux (Fedora/RHEL)
      - ``sudo dnf install nodejs``
 
-After installing Node.js, open *Tools > Options > Language Server*, check the
-*Language Server Protocol (LSP)* group, leave *Server Executable* blank, and
-click *OK*.  The language server starts immediately.
+**If the server stops**
 
-Node.js is only needed for the bundled server.  A server installed with
-*Download...* does not use it.
-
-**Configuration via omedit.ini**
-
-The same settings can be written directly to ``~/.config/openmodelica/omedit.ini``:
-
-.. code-block:: ini
-
-   [languageServer]
-   enabled=true
-   executable=
-   libraries=/path/to/Modelica 4.0.0;/path/to/MyLibrary
-   logging=false
-
-Leave ``executable`` empty to use the bundled server.  ``libraries`` is an
-optional semicolon-separated list of library roots; leave it empty for the
-fastest startup (hover and in-file features still work).  Set ``logging=true``
-to echo language server messages to the Messages Browser.
+If the server process exits unexpectedly, OMEdit restarts it automatically
+after a short delay, up to 5 times within a 3 minute window.  Past that it
+stops retrying and reports the failure as an error message.  Every crash and
+restart attempt is appended to ``languageserver_crash.log`` in OMEdit's
+temporary directory (*Tools > Open Temporary Directory*), so the log can be
+attached to a bug report.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
