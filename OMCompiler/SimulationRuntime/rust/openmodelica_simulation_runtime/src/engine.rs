@@ -5,9 +5,8 @@
 //! back as an error instead of unwinding past us.
 
 use core::ffi::{c_char, c_int, c_long};
-use core::sync::atomic::{AtomicBool, Ordering};
 
-use openmodelica_sim_meta::driver::{self, Result, SimEngine};
+use openmodelica_sim_meta::driver::{self, AssertHold, Result, SimEngine};
 
 use crate::abi::*;
 use crate::data::RtData;
@@ -34,15 +33,6 @@ unsafe extern "C" {
         gout: *mut f64,
         stage: c_int,
     ) -> c_int;
-}
-
-/// C's `noThrowAsserts`, as the driver opens and closes its window.
-static NO_THROW: AtomicBool = AtomicBool::new(false);
-/// A violated `assert()` the model only noted inside it (C's `needToReThrow`).
-static NOTED_ASSERT: AtomicBool = AtomicBool::new(false);
-
-pub fn set_no_throw(v: bool) {
-    NO_THROW.store(v, Ordering::Relaxed);
 }
 
 unsafe extern "C" {
@@ -124,7 +114,7 @@ impl CEngine {
             _ => error_stage::SIMULATION,
         };
         let si = self.rt.info();
-        si.noThrowAsserts = NO_THROW.load(Ordering::Relaxed) as modelica_boolean;
+        si.noThrowAsserts = (driver::assert_hold() != AssertHold::Throw) as modelica_boolean;
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -148,14 +138,14 @@ impl CEngine {
     }
 
     /// What a model call's return means: a violated assertion the model only
-    /// noted (`needToReThrow`) is kept for the driver to settle when it closes the
-    /// assert window; a jump it took raises the open region's `hit` word rather
-    /// than ending the run -- as long as a region is open to absorb it.
+    /// noted (`needToReThrow`) goes to the driver's window to settle when it closes;
+    /// a jump it took raises the open region's `hit` word rather than ending the
+    /// run -- as long as a region is open to absorb it.
     fn absorb(&mut self, rc: c_int) -> Result<()> {
         let si = self.rt.info();
         if si.needToReThrow != 0 {
             si.needToReThrow = 0;
-            NOTED_ASSERT.store(true, Ordering::Relaxed);
+            driver::note_no_throw_assert();
         }
         if rc != -1 {
             return Ok(());
@@ -614,10 +604,6 @@ impl SimEngine for CEngine {
 
     fn set_rhs_final(&mut self, final_eval: bool) {
         unsafe { crate::support::RHSFinalFlag = final_eval as c_int };
-    }
-
-    fn take_noted_assert(&mut self) -> bool {
-        NOTED_ASSERT.swap(false, Ordering::Relaxed)
     }
 
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
