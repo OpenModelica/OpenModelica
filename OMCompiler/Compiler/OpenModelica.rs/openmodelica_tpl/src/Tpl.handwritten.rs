@@ -15,6 +15,7 @@
 // in place, appending to any other handle copies its prefix first, so clones
 // are O(1) and the persistent semantics of Tpl.mo's cons list hold.
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use metamodelica::gc::{MMTrace, MMVisitor};
 use super::*;
@@ -86,7 +87,110 @@ impl MMTrace for Tok {
     }
 }
 
-type Buf = Mutex<Vec<Tok>>;
+const MIN_CAP: usize = 8;
+
+/// Append-only token storage: a fixed allocation plus the count of tokens
+/// written into it, so a reader can borrow a token without taking a lock.
+/// That is the point — rendering walks every token of every block, and a mutex
+/// plus a `Tok` clone per token was ~1.5 % of an `omc` run.
+///
+/// The allocation is only ever reallocated through `&mut self`, i.e. while the
+/// `Arc` is unshared and the borrow checker guarantees no `&Tok` is outstanding.
+/// A shared buffer that runs out of room is forked instead (`Toks::push`), which
+/// is the same thing that already happens when two views race for the tip.
+struct Buf {
+    data: *mut Tok,
+    cap: usize,
+    len: AtomicUsize,
+    tail: Mutex<()>,
+}
+
+impl Buf {
+    fn with_capacity(cap: usize) -> Buf {
+        let cap = cap.max(MIN_CAP);
+        let layout = std::alloc::Layout::array::<Tok>(cap).unwrap();
+        let data = unsafe { std::alloc::alloc(layout) } as *mut Tok;
+        if data.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+        Buf { data, cap, len: AtomicUsize::new(0), tail: Mutex::new(()) }
+    }
+
+    /// Appends iff the caller's view owns the tip and there is room; hands the
+    /// token back otherwise, for the caller to grow or fork.
+    fn push_at(&self, len: usize, tok: Tok) -> std::result::Result<(), Tok> {
+        let _g = self.tail.lock().unwrap();
+        if len == self.cap || self.len.load(Ordering::Relaxed) != len {
+            return Err(tok);
+        }
+        unsafe { self.data.add(len).write(tok) };
+        self.len.store(len + 1, Ordering::Release);
+        Ok(())
+    }
+
+    /// Appends to a buffer no one else can reach yet, so without the lock. The
+    /// caller guarantees the room.
+    fn push_unshared(&mut self, tok: Tok) {
+        let len = *self.len.get_mut();
+        debug_assert!(len < self.cap);
+        unsafe { self.data.add(len).write(tok) };
+        *self.len.get_mut() = len + 1;
+    }
+
+    /// Doubles the allocation, *moving* the tokens rather than cloning them.
+    /// Sound only because `&mut self` proves the buffer is unshared.
+    fn grow(&mut self) {
+        let len = *self.len.get_mut();
+        let cap = self.cap * 2;
+        let layout = std::alloc::Layout::array::<Tok>(cap).unwrap();
+        let data = unsafe { std::alloc::alloc(layout) } as *mut Tok;
+        if data.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+        unsafe {
+            std::ptr::copy_nonoverlapping(self.data, data, len);
+            std::alloc::dealloc(self.data as *mut u8, std::alloc::Layout::array::<Tok>(self.cap).unwrap());
+        }
+        self.data = data;
+        self.cap = cap;
+    }
+
+    /// # Safety
+    /// `i` must be below a length this buffer has published — every `Toks`
+    /// view's `len` is, because a view copies the length the buffer had when the
+    /// view was taken and a *shared* buffer only ever grows its length.
+    ///
+    /// Reading needs no atomic of its own. As with `Arc`'s own `Deref`, the
+    /// happens-before that makes the token visible is whatever moved the `Toks`
+    /// handle to this thread: everything below that handle's `len` was written
+    /// and published by `push_at`'s release store before the handle existed.
+    unsafe fn get(&self, i: usize) -> &Tok {
+        debug_assert!(i < self.len.load(Ordering::Relaxed));
+        unsafe { &*self.data.add(i) }
+    }
+}
+
+impl Drop for Buf {
+    fn drop(&mut self) {
+        unsafe {
+            for i in 0..*self.len.get_mut() {
+                std::ptr::drop_in_place(self.data.add(i));
+            }
+            std::alloc::dealloc(self.data as *mut u8, std::alloc::Layout::array::<Tok>(self.cap).unwrap());
+        }
+    }
+}
+
+// The raw pointer denies both by default; a token is written once and then only
+// read, and `get` hands out a `&Tok` that crosses threads with the text —
+// templates render on a thread pool (`System.launchParallelTasks`).
+unsafe impl Send for Buf {}
+unsafe impl Sync for Buf {}
+
+const _: fn() = || {
+    fn shareable<T: Send + Sync>() {}
+    shareable::<Tok>();
+};
 
 /// The tokens of a text in output order: a prefix view of a shared buffer.
 #[derive(Clone, Default)]
@@ -100,31 +204,43 @@ impl Toks {
         self.len == 0
     }
 
-    fn get(&self, i: usize) -> Tok {
-        self.buf.as_ref().unwrap().lock().unwrap()[i].clone()
+    fn get(&self, i: usize) -> &Tok {
+        debug_assert!(i < self.len);
+        unsafe { self.buf.as_ref().unwrap().get(i) }
     }
 
-    fn last(&self) -> Option<Tok> {
+    fn last(&self) -> Option<&Tok> {
         if self.len == 0 { None } else { Some(self.get(self.len - 1)) }
     }
 
     fn push(&mut self, tok: Tok) {
-        if let Some(buf) = &self.buf {
-            let mut v = buf.lock().unwrap();
-            if v.len() == self.len {
-                v.push(tok);
-            } else {
-                let mut copy = Vec::with_capacity(self.len + 8);
-                copy.extend_from_slice(&v[..self.len]);
-                copy.push(tok);
-                drop(v);
-                self.buf = Some(Arc::new(Mutex::new(copy)));
-            }
-        } else {
-            let mut v = Vec::with_capacity(8);
-            v.push(tok);
-            self.buf = Some(Arc::new(Mutex::new(v)));
+        let tok = match &mut self.buf {
+            None => tok,
+            Some(arc) => match arc.push_at(self.len, tok) {
+                Ok(()) => {
+                    self.len += 1;
+                    return;
+                }
+                Err(tok) => match Arc::get_mut(arc) {
+                    // Sole owner of a full buffer: grow it in place.
+                    Some(buf) if buf.len.load(Ordering::Relaxed) == self.len => {
+                        buf.grow();
+                        buf.push_unshared(tok);
+                        self.len += 1;
+                        return;
+                    }
+                    _ => tok,
+                },
+            },
+        };
+        // Another view owns the tip, or holds a prefix of a buffer we would
+        // have to reallocate; fork off a copy of our own prefix.
+        let mut fresh = Buf::with_capacity((self.len + 1).next_power_of_two());
+        for i in 0..self.len {
+            fresh.push_unshared(self.get(i).clone());
         }
+        fresh.push_unshared(tok);
+        self.buf = Some(Arc::new(fresh));
         self.len += 1;
     }
 
@@ -136,8 +252,11 @@ impl Toks {
         if self.len == 0 {
             return Toks::default();
         }
-        let v = self.buf.as_ref().unwrap().lock().unwrap()[..self.len].to_vec();
-        Toks { buf: Some(Arc::new(Mutex::new(v))), len: self.len }
+        let mut fresh = Buf::with_capacity(self.len);
+        for i in 0..self.len {
+            fresh.push_unshared(self.get(i).clone());
+        }
+        Toks { buf: Some(Arc::new(fresh)), len: self.len }
     }
 
     /// `Tpl.Tokens` keeps the tokens reversed.
@@ -156,10 +275,7 @@ impl MMTrace for Toks {
         if !v.visit_shared(Arc::as_ptr(buf) as *const (), Arc::strong_count(buf), "Tpl::Toks") {
             return Ok(());
         }
-        let r = match buf.try_lock() {
-            Ok(g) => g.iter().try_for_each(|t| t.mm_accept(v)),
-            Err(_) => Err(()),
-        };
+        let r = (0..self.len).try_for_each(|i| self.get(i).mm_accept(v));
         v.leave_shared();
         r
     }
@@ -356,7 +472,7 @@ pub fn writeText(mut inText: Text, inTextToWrite: Text) -> Result<Text> {
         Text::File(f) => {
             let st = &mut *f.state.lock().unwrap();
             for i in 0..other.toks.len {
-                tokFileText(&f.file, st, &other.toks.get(i), true)?;
+                tokFileText(&f.file, st, other.toks.get(i), true)?;
             }
         }
     }
@@ -366,7 +482,7 @@ pub fn writeText(mut inText: Text, inTextToWrite: Text) -> Result<Text> {
 pub fn softNewLine(mut inText: Text) -> Result<Text> {
     match &mut inText {
         Text::Mem(m) => {
-            if let Some(last) = m.toks.last() && !last.at_start_of_line() {
+            if m.toks.last().is_some_and(|t| !t.at_start_of_line()) {
                 m.toks.push(Tok::NewLine);
             }
         }
@@ -530,7 +646,7 @@ pub fn nextIter(mut txt: Text) -> Result<Text> {
             let item = if m.toks.is_empty() {
                 options.empty.as_ref().map(Tok::from_mm)
             } else if m.toks.len == 1 {
-                Some(m.toks.get(0))
+                Some(m.toks.get(0).clone())
             } else {
                 Some(Tok::Block(std::mem::take(&mut m.toks), interned_BT_TEXT()))
             };
@@ -668,10 +784,10 @@ impl Items<'_> {
             Items::Vec(v) => v.len(),
         }
     }
-    fn get(&self, i: usize) -> Tok {
+    fn get(&self, i: usize) -> &Tok {
         match self {
             Items::Buf(t) => t.get(i),
-            Items::Vec(v) => v[i].clone(),
+            Items::Vec(v) => &v[i],
         }
     }
     fn from_mm_list(toks: &Tokens) -> Items<'static> {
@@ -718,7 +834,7 @@ fn tok<S: Sink>(s: &mut S, t: &Tok, (nchars, isstart, aind): Pos) -> Pos {
 
 fn tokens<S: Sink>(s: &mut S, items: &Items, from: usize, mut pos: Pos) -> Pos {
     for i in from..items.len() {
-        pos = tok(s, &items.get(i), pos);
+        pos = tok(s, items.get(i), pos);
     }
     pos
 }
@@ -777,16 +893,16 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
             match (&o.separator, o.alignNum, o.wrapWidth) {
                 (None, 0, 0) => tokens(s, items, 0, (nchars, isstart, aind)),
                 (Some(sep), 0, 0) => {
-                    let (mut pos, mut st, a) = tok(s, &items.get(0), (nchars, isstart, aind));
+                    let (mut pos, mut st, a) = tok(s, items.get(0), (nchars, isstart, aind));
                     let mut ai = a;
                     for i in 1..items.len() {
                         (pos, st, ai) = tok(s, &Tok::from_mm(sep), (pos, st, ai));
-                        (pos, st, ai) = tok(s, &items.get(i), (pos, st, ai));
+                        (pos, st, ai) = tok(s, items.get(i), (pos, st, ai));
                     }
                     (pos, st, a)
                 }
                 (Some(sep), anum, wwidth) => {
-                    let (mut pos, mut st, a) = tok(s, &items.get(0), (nchars, isstart, aind));
+                    let (mut pos, mut st, a) = tok(s, items.get(0), (nchars, isstart, aind));
                     let mut ai = a;
                     let mut idx = 1 + o.alignOfset;
                     for i in 1..items.len() {
@@ -795,7 +911,7 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
                         if wwidth > 0 && pos >= wwidth {
                             (pos, st, ai) = tok(s, &Tok::from_mm(&o.wrapSeparator), (pos, st, ai));
                         }
-                        (pos, st, ai) = tok(s, &items.get(i), (pos, st, ai));
+                        (pos, st, ai) = tok(s, items.get(i), (pos, st, ai));
                         idx += 1;
                     }
                     (pos, st, a)
@@ -812,7 +928,7 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
                         } else if wwidth > 0 && pos >= wwidth {
                             (pos, st, ai) = tok(s, &Tok::from_mm(&o.wrapSeparator), (pos, st, ai));
                         }
-                        (pos, st, ai) = tok(s, &items.get(i), (pos, st, ai));
+                        (pos, st, ai) = tok(s, items.get(i), (pos, st, ai));
                         idx += 1;
                     }
                     (pos, st, aind)
