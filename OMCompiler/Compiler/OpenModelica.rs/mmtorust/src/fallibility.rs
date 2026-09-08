@@ -327,6 +327,10 @@ struct Walk {
     /// [`resolve_walk`]; a `match` still not exhaustive there fails when no arm
     /// matches, which is observable to callers.
     match_keys: Vec<Vec<CoverKey>>,
+    /// Constructor patterns on the left of a `:=`, one per statement. They
+    /// mismatch unless the record is the only shape of its type, which needs
+    /// the hierarchy — decided in [`resolve_walk`].
+    assign_keys: Vec<CoverKey>,
     /// True if the body contains an explicit `fail()` call outside a catch
     /// boundary.  (Catch boundaries are not yet tracked; see module docs.)
     has_fail: bool,
@@ -511,20 +515,16 @@ impl Walk {
         }
         match alg {
             Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } => {
-                // MetaModelica's `:=` is a *pattern* assignment: if the LHS is
-                // anything other than a plain variable reference (or a tuple
-                // of plain variable references), the match can fail at runtime
-                // and the surrounding function therefore fallible. Codegen
-                // lowers these to `let PAT = RHS else { bail!("pattern
-                // mismatch") };`, which only typechecks when the function
-                // returns `Result`. Examples:
-                //   `Cons(h, t) := xs;`        — list cons pattern
-                //   `SOME(x) := opt;`          — uniontype variant pattern
-                //   `(a, SOME(b)) := pair;`    — tuple containing a refutable
-                //                                sub-pattern
-                if exp_is_refutable_lhs(assignComponent) {
-                    self.has_fail = true;
-                    self.reasons.insert("refutable `:=` pattern");
+                // MetaModelica's `:=` is a *pattern* assignment: unless the
+                // LHS is irrefutable the match can fail at runtime, and codegen
+                // lowers it to `let PAT = RHS else { bail!(..) };`.
+                match assign_lhs_cover_key(assignComponent, &self.outer_scope) {
+                    CoverKey::Irrefutable => {}
+                    key @ CoverKey::Ctor(_) => self.assign_keys.push(key),
+                    _ => {
+                        self.has_fail = true;
+                        self.reasons.insert("refutable `:=` pattern");
+                    }
                 }
                 self.scan_exp(assignComponent);
                 self.scan_exp(value);
@@ -965,32 +965,25 @@ fn boolean_assert(item: &Absyn::AlgorithmItem) -> Option<(&Absyn::Exp, bool, &Ab
     Some((value, asserted, info))
 }
 
-/// True when an expression used on the LHS of a MetaModelica `:=` assignment
-/// produces a *refutable* pattern — one whose match can fail at runtime, in
-/// which case codegen emits `bail!("pattern mismatch")` to surface the failure
-/// to the caller, making the surrounding function fallible.
-///
-/// Plain variables and tuples-of-plain-variables are irrefutable; anything
-/// involving a constructor, cons-cell, literal, range, or destructuring
-/// expression is refutable. Wildcards (`_`) are irrefutable but appear in
-/// pattern position only inside a containing tuple.
-///
-/// Conservative: when in doubt, classify as refutable. A spurious "fallible"
-/// classification just keeps a `Result<>` return where it wasn't needed, while
-/// a spurious "infallible" classification produces uncompilable code.
-fn exp_is_refutable_lhs(e: &Absyn::Exp) -> bool {
+/// Coverage of the LHS of a `:=`. Variable references (subscripted or
+/// field-qualified too) and tuples of them assign; a constructor pattern with
+/// irrefutable sub-patterns is returned as [`CoverKey::Ctor`] for
+/// [`resolve_walk`] to settle; everything else can mismatch.
+fn assign_lhs_cover_key(e: &Absyn::Exp, scope: &BTreeSet<String>) -> CoverKey {
     use Absyn::Exp::*;
     match e {
-        // A plain identifier on the LHS is an ordinary assignment.
-        CREF { .. } => false,
-        // `(a, b, c) := rhs` — only irrefutable if every component is itself
-        // irrefutable on the LHS.
-        TUPLE { expressions } => (&**expressions).into_iter().any(|e| exp_is_refutable_lhs(e)),
-        // Every other Exp shape that can syntactically appear on the LHS of
-        // `:=` denotes a refutable pattern match: constructor applications
-        // (CALL), cons-cells (CONS), literal lists/arrays, as-patterns,
-        // ranges, and even bare literals.
-        _ => true,
+        CREF { .. } => CoverKey::Irrefutable,
+        TUPLE { expressions } => {
+            if (&**expressions).into_iter().all(|e| assign_lhs_cover_key(e, scope) == CoverKey::Irrefutable) {
+                CoverKey::Irrefutable
+            } else {
+                CoverKey::Other
+            }
+        }
+        _ => match pat_cover_key(e, scope) {
+            key @ (CoverKey::Irrefutable | CoverKey::Ctor(_)) => key,
+            _ => CoverKey::Other,
+        },
     }
 }
 
@@ -1168,8 +1161,9 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
 }
 
 /// Resolve a [`CoverKey::Ctor`]'s raw callee name: a record of a uniontype
-/// becomes [`CoverKey::Variant`], anything else [`CoverKey::Other`]. Records
-/// outside a uniontype stay unresolved, matching codegen's `pats_cover_ty`.
+/// becomes [`CoverKey::Variant`], anything else [`CoverKey::Other`]. A record
+/// that is the only shape of its type (`hierarchy::record_is_sole_shape`) is a
+/// `Variant` of itself with `total == 1`.
 fn resolve_cover_key(
     key: &CoverKey,
     top_level: &BTreeMap<String, NameNode<'_>>,
@@ -1182,6 +1176,9 @@ fn resolve_cover_key(
     let NodeKind::Class(rc) = &node.kind else { return CoverKey::Other };
     if !matches!(rc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
         return CoverKey::Other;
+    }
+    if crate::hierarchy::record_is_sole_shape(&qname, top_level) {
+        return CoverKey::Variant { union_: qname.clone(), variant: rc.name.clone(), total: 1 };
     }
     let Some((union_, _)) = qname.rsplit_once('.') else { return CoverKey::Other };
     let Some(unode) = crate::hierarchy::lookup_node(union_, top_level) else { return CoverKey::Other };
@@ -1679,6 +1676,12 @@ fn resolve_walk(
         if !cover_keys_exhaustive(&resolved) {
             rs.always = true;
             rs.reasons.insert("non-exhaustive `match`".to_owned());
+        }
+    }
+    for key in &w.assign_keys {
+        if !cover_keys_exhaustive(&[resolve_cover_key(key, top_level, caller_qname)]) {
+            rs.always = true;
+            rs.reasons.insert("refutable `:=` pattern".to_owned());
         }
     }
     for raw in &w.calls {
