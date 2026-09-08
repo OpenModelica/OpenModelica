@@ -728,8 +728,8 @@ fn layout_for(
         // equation itself, so this is a flag rather than a count.
         cb.functionRemovedInitialEquations.is_some() as u32,
         unsafe { crate::support::compiledWithSymSolver } as u8,
-        // `has_when` asks whether `functionAlgebraics` ends with `storePreValues`;
-        // only the wasm-jit codegen folds that in, C's runtime does it after.
+        // `has_when` marks the wasm-jit form of `functionAlgebraics` (the discrete
+        // update); C's is the plain algebraic pass, the engine adds `storePreValues`.
         false,
         has_homotopy,
         openmodelica_sim_meta::HomotopyMethod::from_code(cb.homotopyMethod as u8),
