@@ -513,6 +513,15 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
   # Standalone build for the target platform. The release publishes one per
   # platform; there is no universal macOS binary, so a cross build picks the
   # asset for CMAKE_SYSTEM_*, not for the host.
+  #
+  # Bumping MODELICA_LS_VERSION means replacing every hash below. They are the
+  # digests GitHub reports for the release assets, so they can be regenerated
+  # rather than recomputed by hand:
+  #
+  #   gh api repos/OpenModelica/modelica-language-server/releases/tags/v<version> \
+  #     --jq '.assets[] | select(.name | test("^modelica-language-server-(linux|macos|windows)"))
+  #           | "\(.name)\t\(.digest)"'
+  #
   set(_ls_asset "")
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
