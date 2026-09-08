@@ -3085,11 +3085,11 @@ algorithm
   comp := InstNode.component(node);
 
   crefExp := match comp
-    case Component.ITERATOR()
+    case _ guard ComponentRef.isIterator(cref)
       algorithm
         checkUnsubscriptableCref(cref, info);
       then
-        Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(node, comp.ty));
+        Expression.CREF(Type.UNKNOWN(), cref);
 
     case Component.ENUM_LITERAL()
       algorithm
