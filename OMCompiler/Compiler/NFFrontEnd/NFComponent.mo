@@ -985,6 +985,16 @@ public
     end match;
   end isInvalid;
 
+  function isIterator
+    input Component component;
+    output Boolean iterator;
+  algorithm
+    iterator := match component
+      case ITERATOR() then true;
+      else false;
+    end match;
+  end isIterator;
+
   function isTypeAttribute
     input Component component;
     output Boolean isAttribute;

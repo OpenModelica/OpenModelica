@@ -105,12 +105,13 @@ public
     input InstNode node;
     input list<Absyn.Subscript> subs;
     input ComponentRef restCref = EMPTY();
+    input Boolean isIterator = false;
     output ComponentRef cref;
   protected
     list<Subscript> sl;
   algorithm
     sl := list(Subscript.RAW_SUBSCRIPT(s) for s in subs);
-    cref := CREF(node, sl, Type.UNKNOWN(), Origin.CREF, restCref);
+    cref := CREF(node, sl, Type.UNKNOWN(), if isIterator then Origin.ITERATOR else Origin.CREF, restCref);
   end fromAbsyn;
 
   function fromAbsynCref

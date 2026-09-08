@@ -494,6 +494,16 @@ uniontype InstNode
     end match;
   end isComponent;
 
+  function isIterator
+    input InstNode node;
+    output Boolean iterator;
+  algorithm
+    iterator := match node
+      case COMPONENT_NODE() then Component.isIterator(Pointer.access(node.component));
+      else false;
+    end match;
+  end isIterator;
+
   function isRef
     input InstNode node;
     output Boolean isRef;
