@@ -184,6 +184,65 @@ public
     end if;
   end singular;
 
+  function fromSeed
+    "the matching of a causalized partition with nearly the same equations and
+    variables, transferred by name. A pair is kept when the variable is still a
+    solvable occurrence of the equation, the rest is left for the matching
+    algorithm to repair."
+    input Partition.Partition seed;
+    input Adjacency.Matrix adj;
+    input VariablePointers vars;
+    input EquationPointers eqns;
+    output Matching matching = EMPTY_MATCHING;
+  protected
+    Matching seed_matching;
+    Adjacency.Mapping seed_map, map;
+    array<Integer> var_to_eqn, eqn_to_var, data, var_index;
+    Integer e, v, eqn, var, eqn_start, eqn_len, seed_start, seed_len, seed_var_start, var_start, var_len, offset, first;
+  algorithm
+    if isNone(seed.matching) or isNone(seed.adjacencyMatrix) then return; end if;
+    seed_matching := Util.getOption(seed.matching);
+    () := match (Adjacency.Matrix.getMappingOpt(Util.getOption(seed.adjacencyMatrix)), adj)
+      case (SOME(seed_map), Adjacency.Matrix.FINAL(mapping = map)) algorithm
+        var_index := arrayCreate(arrayLength(seed_map.var_AtS), -1);
+        for i in 1:arrayLength(var_index) loop
+          var_index[i] := VariablePointers.getVarIndex(vars, BVariable.getVarName(VariablePointers.getVarAt(seed.unknowns, i)));
+        end for;
+        data := Adjacency.IntMatrix.entries(adj.m);
+        var_to_eqn := arrayCreate(arrayLength(map.var_StA), -1);
+        eqn_to_var := arrayCreate(arrayLength(map.eqn_StA), -1);
+        for i in 1:arrayLength(seed_map.eqn_AtS) loop
+          e := EquationPointers.getEqnIndex(eqns, Equation.getEqnName(EquationPointers.getEqnAt(seed.equations, i)));
+          if e < 1 then continue; end if;
+          (seed_start, seed_len) := seed_map.eqn_AtS[i];
+          (eqn_start, eqn_len) := map.eqn_AtS[e];
+          for k in 0:min(seed_len, eqn_len) - 1 loop
+            v := seed_matching.eqn_to_var[seed_start + k];
+            if v < 1 then continue; end if;
+            (seed_var_start, _) := seed_map.var_AtS[seed_map.var_StA[v]];
+            offset := v - seed_var_start;
+            v := var_index[seed_map.var_StA[v]];
+            if v < 1 then continue; end if;
+            (var_start, var_len) := map.var_AtS[v];
+            if offset >= var_len then continue; end if;
+            var := var_start + offset;
+            eqn := eqn_start + k;
+            first := adj.m.start[eqn];
+            for p in first:first + adj.m.len[eqn] - 1 loop
+              if data[p] == var then
+                eqn_to_var[eqn] := var;
+                var_to_eqn[var] := eqn;
+                break;
+              end if;
+            end for;
+          end for;
+        end for;
+        matching := MATCHING(var_to_eqn, eqn_to_var);
+      then ();
+      else ();
+    end match;
+  end fromSeed;
+
   function continue_
     input output Matching matching;
     input Adjacency.Matrix adj;
