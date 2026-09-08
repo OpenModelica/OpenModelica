@@ -5,7 +5,7 @@
 //! three by file suffix exactly like `SimulationResultsImpl__openFile`.
 
 fn read_result_bytes(filename: &str) -> Result<Vec<u8>, String> {
-    openmodelica_wasi::fs::read(filename).map_err(|e| e.to_string())
+    openmodelica_mat_reader::fs::read(filename).map_err(|e| e.to_string())
 }
 
 // ─────────────────────────────────── CSV ──────────────────────────────────

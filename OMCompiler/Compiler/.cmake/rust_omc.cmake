@@ -1912,8 +1912,8 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
         ${RUST_OMC_DIR}/wasm/omplot/index.html
-        ${RUST_OMC_DIR}/openmodelica_result_web/src/lib.rs
-        ${RUST_OMC_DIR}/openmodelica_result_web/Cargo.toml
+        ${RUST_SIMRT_DIR}/openmodelica_result_web/src/lib.rs
+        ${RUST_SIMRT_DIR}/openmodelica_result_web/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
@@ -1923,6 +1923,22 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/fmi-simulator/wasi.js
         ${RUST_OMC_DIR}/wasm/fmi-simulator/selftest.html
         ${_three_js})
+    # The standalone page modules (anim, omplot) are wasm-bindgen'd like
+    # omc.wasm and want the same -Oz: openmodelica_result_web alone drops
+    # 3.9 MB to 2.4 MB, paid by every visitor to the OMPlot page and by every
+    # report that ships it. Set before _web_launcher_extra, whose COMMAND
+    # fragments are expanded where they are written.
+    set(_anim_opt_cmd "")
+    set(_omplot_opt_cmd "")
+    if(_profile STREQUAL "release" AND WASM_OPT_EXECUTABLE)
+      set(_anim_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
+          ${_web_dir}/anim/openmodelica_animation_wasm_bg.wasm
+          -o ${_web_dir}/anim/openmodelica_animation_wasm_bg.wasm)
+      set(_omplot_opt_cmd COMMAND ${WASM_OPT_EXECUTABLE} -Oz ${WASM_OPT_FEATURES}
+          ${_web_dir}/omplot/openmodelica_result_web_bg.wasm
+          -o ${_web_dir}/omplot/openmodelica_result_web_bg.wasm)
+    endif()
+
     set(_web_launcher_extra
         # The chart engine and the shared look, imported by both simulator pages.
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}
@@ -1954,6 +1970,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${WASM_BINDGEN_EXECUTABLE}
                 ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_animation_wasm.wasm
                 --out-dir ${_web_dir}/anim --target web
+        ${_anim_opt_cmd}
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/anim/animation.js
                 ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
@@ -1965,6 +1982,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${WASM_BINDGEN_EXECUTABLE}
                 ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_result_web.wasm
                 --out-dir ${_web_dir}/omplot --target web
+        ${_omplot_opt_cmd}
         COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/wasm/omplot/index.html ${_web_dir}/omplot/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
         COMMAND ${CMAKE_COMMAND} -E copy

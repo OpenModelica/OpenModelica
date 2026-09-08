@@ -9,8 +9,8 @@ edition = "2024"
 workspace = "../../../Compiler/OpenModelica.rs"
 
 [dependencies]
-openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }
-openmodelica_mat_reader = { path = "../openmodelica_mat_reader" }
+openmodelica_result_diff = { path = "../openmodelica_result_diff" }
+openmodelica_mat_reader = { path = "../openmodelica_mat_reader", default-features = false }
 openmodelica_arrow_writer = { path = "../openmodelica_arrow_writer" }
 openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 openmodelica_hdf5_result = { path = "../openmodelica_hdf5_result", optional = true }
@@ -20,7 +20,11 @@ arrow-ipc = { version = "59", default-features = false }
 serde_json = "1"
 
 [features]
-default = []
+default = ["vfs"]
+# The in-memory filesystem the wasm targets need, through
+# `openmodelica_mat_reader::fs`. On by default; a native-only consumer can opt
+# out with `default-features = false`.
+vfs = ["openmodelica_mat_reader/vfs"]
 # SDF and MTSF, i.e. the readers that need the HDF5 C library.
 hdf5 = ["dep:openmodelica_hdf5_result", "openmodelica_hdf5_result/library"]
 static-hdf5 = ["hdf5", "openmodelica_hdf5_result/static-hdf5"]

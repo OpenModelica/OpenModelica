@@ -390,8 +390,6 @@ openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_program_util/Cargo.toml
-openmodelica_result_web/Cargo.toml
-openmodelica_result_web/src/lib.rs
 openmodelica_revision/Cargo.toml
 openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs

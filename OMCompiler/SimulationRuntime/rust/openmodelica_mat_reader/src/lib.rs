@@ -14,9 +14,11 @@
 use std::cmp::Ordering;
 use std::io::{Read, Seek, SeekFrom};
 
+pub mod fs;
+
 // The result file is read lazily via the fs facade's `Read + Seek` handle: a real
 // `std::fs::File` natively, an in-memory `Cursor` on the web target.
-type Src = openmodelica_wasi::fs::Reader;
+type Src = fs::Reader;
 
 /// How much of data_2 is worth holding in memory. Under it the whole matrix is
 /// read once and every lookup is an index; over it only what the caller asks for
@@ -354,7 +356,7 @@ impl MatReader {
     /// Open and parse `filename`. Returns a textual error on the first problem,
     /// mirroring `omc_new_matlab4_reader`.
     pub fn open(filename: &str) -> Result<MatReader, String> {
-        let mut file = openmodelica_wasi::fs::open_read(filename).map_err(|e| e.to_string())?;
+        let mut file = fs::open_read(filename).map_err(|e| e.to_string())?;
         const MATRIX_NAMES: [&str; 6] =
             ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
 

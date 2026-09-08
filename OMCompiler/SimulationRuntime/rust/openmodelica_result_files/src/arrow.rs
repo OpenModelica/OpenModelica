@@ -277,7 +277,7 @@ fn unit_defs(units: Option<&Table>, display: Option<&Table>) -> Vec<UnitDef> {
 
 impl ArrowReader {
     pub fn open(filename: &str) -> Result<ArrowReader, String> {
-        let bytes = openmodelica_wasi::fs::read(filename).map_err(|e| e.to_string())?;
+        let bytes = openmodelica_mat_reader::fs::read(filename).map_err(|e| e.to_string())?;
         ArrowReader::from_bytes(bytes)
     }
 

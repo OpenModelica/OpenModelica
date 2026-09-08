@@ -11,6 +11,7 @@ use std::ffi::{CStr, CString, c_char, c_double, c_int, c_uint};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
 
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::file::{self, ResultFile, Tolerances, TubeDiff};
 
 pub mod writer;
@@ -32,6 +33,9 @@ pub struct omc_result_tolerances {
     pub reltol: c_double,
     pub reltol_diff_min_max: c_double,
     pub range_delta: c_double,
+    /// `omc_result_algorithm`.
+    pub algorithm: c_int,
+    pub nominal_value: c_double,
 }
 
 /// One variable's tube comparison; the arrays live until `omc_result_tube_free`.
@@ -89,7 +93,17 @@ impl omc_result_tolerances {
             return Tolerances::default();
         }
         let t = unsafe { *p };
-        Tolerances { reltol: t.reltol, reltol_diff_min_max: t.reltol_diff_min_max, range_delta: t.range_delta }
+        Tolerances {
+            reltol: t.reltol,
+            reltol_diff_min_max: t.reltol_diff_min_max,
+            range_delta: t.range_delta,
+            algorithm: match t.algorithm {
+                0 => Algorithm::Rectangle,
+                1 => Algorithm::Ellipse,
+                _ => Algorithm::Ellipse2014,
+            },
+            nominal_value: t.nominal_value,
+        }
     }
 }
 
@@ -309,7 +323,13 @@ pub extern "C" fn omc_result_write(
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_result_default_tolerances() -> omc_result_tolerances {
     let t = Tolerances::default();
-    omc_result_tolerances { reltol: t.reltol, reltol_diff_min_max: t.reltol_diff_min_max, range_delta: t.range_delta }
+    omc_result_tolerances {
+        reltol: t.reltol,
+        reltol_diff_min_max: t.reltol_diff_min_max,
+        range_delta: t.range_delta,
+        algorithm: t.algorithm as c_int,
+        nominal_value: t.nominal_value,
+    }
 }
 
 /// `diffSimulationResults`: the names of the `n` `vars` (the reference's

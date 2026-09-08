@@ -7476,6 +7476,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_result_diff"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_result_files"
 version = "0.1.0"
 dependencies = [
@@ -7486,7 +7490,7 @@ dependencies = [
  "openmodelica_hdf5_result",
  "openmodelica_mat_reader",
  "openmodelica_mat_writer",
- "openmodelica_wasi",
+ "openmodelica_result_diff",
  "serde_json",
 ]
 
@@ -7494,6 +7498,7 @@ dependencies = [
 name = "openmodelica_result_web"
 version = "0.1.0"
 dependencies = [
+ "openmodelica_result_diff",
  "openmodelica_result_files",
  "openmodelica_wasi",
  "wasm-bindgen",

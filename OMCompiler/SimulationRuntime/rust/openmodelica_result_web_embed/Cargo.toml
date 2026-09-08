@@ -1,0 +1,32 @@
+# Builds `openmodelica_result_web` for the browser and hands the result to a
+# host program: the wasm-bindgen glue and module as `&str`/`&[u8]`, or written
+# into a directory by the `install-result-web` binary.
+#
+# The recipe lives here, in a crate beside the module it packages, rather than in
+# whatever build system happens to be driving -- `openmodelica_wasm_jit` embeds
+# its own wasm the same way. CMake only supplies the tool paths
+# (`OMC_WASM_OPT`, `OMC_WASM_OPT_FEATURES`), exactly as it does there.
+[package]
+name = "openmodelica_result_web_embed"
+version = "0.1.0"
+edition = "2024"
+
+# Its own workspace root, deliberately. It is not part of omc -- an omc build
+# must not run its build.rs, which would build the browser module -- and it has
+# to be usable from a bare
+#   cargo run --manifest-path .../Cargo.toml --bin install-result-web -- DIR
+# with no workspace to load. Same arrangement as openmodelica_lapack.
+[workspace]
+
+[[bin]]
+name = "install-result-web"
+path = "src/install.rs"
+
+[dependencies]
+
+[build-dependencies]
+# The wasm-bindgen CLI as a library, so the schema version cannot drift from the
+# module's: cargo resolves it instead of asking for `cargo install
+# wasm-bindgen-cli --version ...` on PATH. Keep it equal to the `wasm-bindgen`
+# that `openmodelica_result_web` pins.
+wasm-bindgen-cli-support = "=0.2.125"
