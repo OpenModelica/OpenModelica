@@ -85,6 +85,17 @@ private slots:
    * can still point OMEdit at a server of their own.
    */
   void configuredSettingWins();
+  /*!
+   * \brief reportsMissingRuntimeFiles
+   * Tests that a server installed without the tree-sitter files is reported,
+   * since such a server starts and then answers nothing.
+   */
+  void reportsMissingRuntimeFiles();
+  /*!
+   * \brief reportsNothingWhenRuntimeFilesPresent
+   * Tests that a complete installation reports no missing files.
+   */
+  void reportsNothingWhenRuntimeFilesPresent();
   void cleanupTestCase();
 
 private:

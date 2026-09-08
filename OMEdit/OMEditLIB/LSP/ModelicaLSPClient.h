@@ -52,6 +52,10 @@ public:
   static QString defaultServerName();
   // Locates the Modelica language server shipped alongside OMEdit, if any.
   static QString findBundledServer();
+  // Tree-sitter files the server reads from its own directory but that are
+  // missing. A server without them starts, reports no capabilities and answers
+  // nothing, which is otherwise invisible.
+  static QStringList missingRuntimeFiles(const QString &executable);
   // Resolves the executable to launch: the configured path if set, otherwise the
   // bundled server, otherwise defaultServerName() on PATH. Empty if none is available.
   // Shared by MainWindow::startLanguageServer() and the Options page so both agree.

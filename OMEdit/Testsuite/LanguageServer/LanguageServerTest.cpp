@@ -149,6 +149,34 @@ void LanguageServerTest::configuredSettingWins()
   QCOMPARE(ModelicaLSPClient::resolveExecutable(configured), configured);
 }
 
+void LanguageServerTest::reportsMissingRuntimeFiles()
+{
+  QDir(installedServerDirectory()).removeRecursively();
+  const QString server = installedServerDirectory() % QStringLiteral("/") % serverBinaryName();
+  createServerFile(server);
+
+  // The server on its own cannot parse anything: it loads the grammar and the
+  // tree-sitter runtime from its own directory.
+  QCOMPARE(ModelicaLSPClient::missingRuntimeFiles(server),
+           QStringList({QStringLiteral("tree-sitter-modelica.wasm"),
+                        QStringLiteral("web-tree-sitter.wasm")}));
+
+  createServerFile(installedServerDirectory() % QStringLiteral("/tree-sitter-modelica.wasm"));
+  QCOMPARE(ModelicaLSPClient::missingRuntimeFiles(server),
+           QStringList({QStringLiteral("web-tree-sitter.wasm")}));
+}
+
+void LanguageServerTest::reportsNothingWhenRuntimeFilesPresent()
+{
+  QDir(installedServerDirectory()).removeRecursively();
+  const QString server = installedServerDirectory() % QStringLiteral("/") % serverBinaryName();
+  createServerFile(server);
+  createServerFile(installedServerDirectory() % QStringLiteral("/tree-sitter-modelica.wasm"));
+  createServerFile(installedServerDirectory() % QStringLiteral("/web-tree-sitter.wasm"));
+
+  QVERIFY(ModelicaLSPClient::missingRuntimeFiles(server).isEmpty());
+}
+
 void LanguageServerTest::cleanupTestCase()
 {
   Helper::OpenModelicaHome = mOriginalOpenModelicaHome;

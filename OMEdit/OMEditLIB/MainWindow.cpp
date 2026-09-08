@@ -234,6 +234,15 @@ void MainWindow::startLanguageServer()
   if (!canStart) {
     return;
   }
+  // Warn rather than refuse: a future server may well embed these, and a wrong
+  // guess must not stop it starting. Silence is the thing worth avoiding.
+  const QStringList missing = ModelicaLSPClient::missingRuntimeFiles(executable);
+  if (!missing.isEmpty()) {
+    onLanguageServerLogMessage(tr("Language server is missing %1 in %2. It will start but is "
+                                  "likely to report no hover or go to definition results.")
+                               .arg(missing.join(QStringLiteral(", ")),
+                                    QFileInfo(executable).absolutePath()));
+  }
   LSPClient *pLSPClient = new ModelicaLSPClient(this);
   connect(pLSPClient, SIGNAL(logMessage(QString,int)), this, SLOT(onLanguageServerLogMessage(QString,int)));
   connect(pLSPClient, SIGNAL(serverError(QString)), this, SLOT(onLanguageServerLogMessage(QString)));

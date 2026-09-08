@@ -39,8 +39,10 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <QStringBuilder>
 
 /*!
  * \brief ModelicaLSPClient::ModelicaLSPClient
@@ -117,6 +119,32 @@ QString ModelicaLSPClient::findBundledServer()
     }
   }
   return QString();
+}
+
+/*!
+ * \brief ModelicaLSPClient::missingRuntimeFiles
+ * The server loads the Modelica grammar and the tree-sitter runtime from its own
+ * directory rather than embedding them. If they are absent it still starts and
+ * still answers initialize, but with no capabilities, and hover and go to
+ * definition return nothing -- with no error anywhere to explain it.
+ * \param executable the server that is about to be started
+ * \return names of the missing files, empty when all are present
+ */
+QStringList ModelicaLSPClient::missingRuntimeFiles(const QString &executable)
+{
+  QStringList missing;
+  if (executable.isEmpty()) {
+    return missing;
+  }
+  const QString directory = QFileInfo(executable).absolutePath();
+  const QStringList required = {QStringLiteral("tree-sitter-modelica.wasm"),
+                                QStringLiteral("web-tree-sitter.wasm")};
+  for (const QString &name : required) {
+    if (!QFile::exists(directory % QStringLiteral("/") % name)) {
+      missing << name;
+    }
+  }
+  return missing;
 }
 
 /*!
