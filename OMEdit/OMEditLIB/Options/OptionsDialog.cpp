@@ -3229,10 +3229,6 @@ void OptionsDialog::saveLanguageServerSettings()
     mpSettings->setValue("languageServer/executable", executable);
   }
   mpSettings->setValue("languageServer/logging", mpLanguageServerPage->getEnableLoggingCheckBox()->isChecked());
-  // Earlier builds kept a separate library list here. The libraries now follow
-  // the ones loaded in OMC, so drop the leftover key instead of leaving a value
-  // in omedit.ini that nothing reads.
-  mpSettings->remove("languageServer/libraries");
   // Apply the change to the running session without requiring a restart.
   if (enabled) {
     const bool settingsChanged = (wasEnabled != enabled) || (oldExecutable != executable);
