@@ -504,6 +504,9 @@ if(MODELICA_LS_DIR)
                   "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm"
                   "${MODELICA_LS_DIR}/web-tree-sitter.wasm"
             DESTINATION ${MODELICA_LS_INSTALL_DIR})
+    # Also handed to OMEditGUI, which puts them beside the built executable so a
+    # build-tree OMEdit finds a server without being installed first.
+    set(MODELICA_LS_STAGE_FILES "${MODELICA_LS_DIR}/server.js;${MODELICA_LS_DIR}/tree-sitter-modelica.wasm;${MODELICA_LS_DIR}/web-tree-sitter.wasm" PARENT_SCOPE)
     message(STATUS "Modelica language server: installing from ${MODELICA_LS_DIR}")
   else()
     message(WARNING "MODELICA_LS_DIR=${MODELICA_LS_DIR} does not contain server.js and both "
@@ -620,6 +623,12 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       install(FILES "${_ls_cache}/tree-sitter-modelica.wasm"
                     "${_ls_cache}/web-tree-sitter.wasm"
               DESTINATION ${MODELICA_LS_INSTALL_DIR})
+      # Also handed to OMEditGUI, which puts them beside the built executable so
+      # a build-tree OMEdit finds a server without being installed first. The
+      # binary is renamed there too, so pass the name it must end up with.
+      set(MODELICA_LS_STAGE_FILES "${_ls_cache}/tree-sitter-modelica.wasm;${_ls_cache}/web-tree-sitter.wasm" PARENT_SCOPE)
+      set(MODELICA_LS_STAGE_EXE "${_ls_cache}/${_ls_asset}" PARENT_SCOPE)
+      set(MODELICA_LS_STAGE_EXE_NAME "${_ls_installed_name}" PARENT_SCOPE)
       message(STATUS "Modelica language server: installing ${_ls_asset} and its WASM files into ${MODELICA_LS_INSTALL_DIR}")
     else()
       # Not fatal: a build without network access still produces a working
@@ -629,4 +638,26 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
                       "MODELICA_LS_DIR to install a local build.")
     endif()
   endif()
+endif()
+
+# Same check the client makes at run time, made here instead so a bundle that
+# would be silently useless is caught while building rather than by a user
+# wondering why hover does nothing. It should never fire -- both branches above
+# install all three files or none -- so it is an assertion, not a policy.
+#
+# A warning rather than an error, matching ModelicaLSPClient::missingRuntimeFiles:
+# a future server may embed the grammar, and that must not fail the install.
+if(MODELICA_LS_DIR OR OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
+  install(CODE "
+    set(_ls_dir \"\${CMAKE_INSTALL_PREFIX}/${MODELICA_LS_INSTALL_DIR}\")
+    file(GLOB _ls_present \"\${_ls_dir}/*\")
+    if(_ls_present)
+      foreach(_ls_needed tree-sitter-modelica.wasm web-tree-sitter.wasm)
+        if(NOT EXISTS \"\${_ls_dir}/\${_ls_needed}\")
+          message(WARNING \"Modelica language server installed without \${_ls_needed}. \"
+                          \"It will start but report no hover or go to definition results.\")
+        endif()
+      endforeach()
+    endif()
+  ")
 endif()

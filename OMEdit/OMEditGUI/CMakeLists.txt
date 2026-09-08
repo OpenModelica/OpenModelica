@@ -134,3 +134,31 @@ elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND CMAKE_CROSSCOMPILING)
 else ()
   omc_install_gui_client(OMEdit)
 endif()
+
+# Put the Modelica language server beside the built OMEdit as well as in the
+# install tree. findBundledServer() looks next to the executable first, and a
+# build-tree OMEdit has no share directory of its own -- Helper::OpenModelicaHome
+# comes from omc, which points into the build tree -- so without this the server
+# is only found after `cmake --install`, and anyone testing from the build tree
+# sees the feature do nothing at all.
+#
+# MODELICA_LS_STAGE_* are set by OMEditLIB, which is added before this directory.
+if(MODELICA_LS_STAGE_FILES OR MODELICA_LS_STAGE_EXE)
+  set(_ls_build_dir $<TARGET_FILE_DIR:OMEdit>/ls)
+  add_custom_command(TARGET OMEdit POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E make_directory ${_ls_build_dir}
+                     COMMENT "Staging the Modelica language server beside OMEdit")
+  foreach(_ls_file ${MODELICA_LS_STAGE_FILES})
+    add_custom_command(TARGET OMEdit POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                               "${_ls_file}" ${_ls_build_dir})
+  endforeach()
+  if(MODELICA_LS_STAGE_EXE)
+    # copy_if_different keeps the executable bit, and skips the ~120 MB copy on
+    # every relink once it is there.
+    add_custom_command(TARGET OMEdit POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                               "${MODELICA_LS_STAGE_EXE}"
+                               ${_ls_build_dir}/${MODELICA_LS_STAGE_EXE_NAME})
+  endif()
+endif()
