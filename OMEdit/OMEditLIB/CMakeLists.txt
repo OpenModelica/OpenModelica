@@ -530,8 +530,11 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       set(_ls_asset "modelica-language-server-macos-x64")
       set(_ls_sha256 "9b7abb1375c764cf86013ee7c8f20661e8add3d80ff8575c61c1a9be3ca87532")
     endif()
-  elseif(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Only a 64-bit Windows build is published. CMAKE_SIZEOF_VOID_P is empty
+    # until a compiler has been probed, so it only vetoes when it is set.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+       AND (NOT CMAKE_SIZEOF_VOID_P OR CMAKE_SIZEOF_VOID_P EQUAL 8))
       set(_ls_asset "modelica-language-server-windows-x64.exe")
       set(_ls_sha256 "3622e8d68aa791dd45c17032f307df58991e33a2e9eac09a0fa483f3425fa5dc")
     endif()
