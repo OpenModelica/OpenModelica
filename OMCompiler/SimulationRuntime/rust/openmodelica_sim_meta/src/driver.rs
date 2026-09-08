@@ -3303,16 +3303,21 @@ pub(crate) fn emit_initial_row(
     check_asserts(e, sim_data, layout, omclog::WARNING)
 }
 
-/// Pre-event snapshot row (state just before a discrete update). Skips
-/// `functionAlgebraics` for `has_when` models — there it saves `pre` early, which
-/// would break the post-event edge test.
-fn capture_pre(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
+/// Evaluate at a point just before a discrete update. Skips `functionAlgebraics`
+/// for `has_when` models — there it saves `pre` early, which would break the
+/// post-event edge test.
+fn eval_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
     write_time(e, sim_data, time)?;
     if layout.has_when {
-        eval_ode(e, sim_data, layout)?;
+        eval_ode(e, sim_data, layout)
     } else {
-        eval_continuous(e, sim_data, layout)?;
+        eval_continuous(e, sim_data, layout)
     }
+}
+
+/// Pre-event snapshot row (state just before a discrete update).
+fn capture_pre(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
+    eval_pre(e, sim_data, layout, time)?;
     capture_row(e, rows, sim_data, layout)
 }
 
@@ -7053,11 +7058,12 @@ struct SolverCore {
     maxs: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
-    /// Chattering detector: a ring of the last [`CHATTER_LIMIT`] state-event times
-    /// + a consecutive-event counter. Fires once.
+    /// C's `chatteringInfo`: a ring over the last [`CHATTER_LIMIT`] events, whether
+    /// each was a state event and when. Fires once.
     chatter_times: [f64; CHATTER_LIMIT],
+    chatter_steps: [bool; CHATTER_LIMIT],
     chatter_idx: usize,
-    chatter_consec: u32,
+    chatter_count: usize,
     chatter_emitted: bool,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
@@ -7070,7 +7076,8 @@ struct SolverCore {
     jac_a: Option<JacAInfo>,
 }
 
-/// Consecutive state events within one output step that count as chattering.
+/// C's `numEventLimit`: state events in a row within one output step that count
+/// as chattering.
 const CHATTER_LIMIT: usize = 100;
 
 /// The model-call handle the hand-written solvers (gbode, the fixed-step ones)
@@ -7460,8 +7467,9 @@ impl SolverCore {
             maxs,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
+            chatter_steps: [false; CHATTER_LIMIT],
             chatter_idx: 0,
-            chatter_consec: 0,
+            chatter_count: 0,
             chatter_emitted: false,
             step_emit: StepEmit::new(),
             sample_limit: f64::INFINITY,
@@ -7585,12 +7593,14 @@ impl SolverCore {
         Ok(())
     }
 
-    /// Record a state event at `time`. `Some((t0, time))` once [`CHATTER_LIMIT`]
-    /// consecutive events span less than `step_size`.
+    /// Record a state event at `time` (C's `handleEvents`). `Some((t0, time))` once
+    /// the whole ring is state events spanning less than `step_size`.
     fn note_chatter_event(&mut self, time: f64, step_size: f64) -> Option<(f64, f64)> {
+        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
+        self.chatter_steps[self.chatter_idx] = true;
+        self.chatter_count += 1;
         self.chatter_times[self.chatter_idx] = time;
-        self.chatter_consec += 1;
-        let hit = if !self.chatter_emitted && self.chatter_consec >= CHATTER_LIMIT as u32 {
+        let hit = if !self.chatter_emitted && self.chatter_count == CHATTER_LIMIT {
             let t0 = self.chatter_times[(self.chatter_idx + 1) % CHATTER_LIMIT];
             (time - t0 < step_size).then_some((t0, time))
         } else {
@@ -7603,9 +7613,12 @@ impl SolverCore {
         hit
     }
 
-    /// A step with no state event breaks the run.
-    fn note_clean_step(&mut self) {
-        self.chatter_consec = 0;
+    /// A time event with no state event: C's `handleEvents` enters it as a break in
+    /// the run. A step with no event at all leaves the ring alone.
+    fn note_time_event(&mut self) {
+        self.chatter_count -= self.chatter_steps[self.chatter_idx] as usize;
+        self.chatter_steps[self.chatter_idx] = false;
+        self.chatter_idx = (self.chatter_idx + 1) % CHATTER_LIMIT;
     }
 
     /// Record a state event for chattering detection, reporting the run once it
@@ -8024,6 +8037,7 @@ impl SolverCore {
         let t = self.t;
         self.state_events += 1;
         log_state_event(t, flips, model);
+        self.note_chatter(model, flips[0])?;
         if let Some(r) = rows.as_deref_mut()
             && !no_event_emit()
         {
@@ -8180,7 +8194,6 @@ impl SolverCore {
                     if !flips.is_empty() {
                         *did_step = true;
                         event_step = true;
-                        self.note_chatter(model, flips[0])?;
                         if defers(self.t) {
                             log_state_event(self.t, &flips, model);
                             return Ok(Step::Event { time: self.t });
@@ -8192,17 +8205,10 @@ impl SolverCore {
                     check_asserts(e, sim_data, layout, omclog::INFO)?;
                     continue;
                 }
-                // A zero-crossing root at `t` (< target): DASKR stops on the
-                // crossing, so the root itself is the event.
+                // A zero-crossing root at `t` (< target): the integrator stopped
+                // on a sign change of its own root probes.
                 if rooted {
                     let troot = self.t;
-                    event_step = true;
-                    let roots = self.roots_nonzero();
-                    log_state_event(troot, &roots, model);
-                    if !defers(troot) {
-                        self.state_events += 1;
-                        self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
-                    }
                     let left = self.event_left();
                     if let Some((t_l, y_l)) = &left {
                         eval_event_left(e, sim_data, layout, self.states_base, *t_l, y_l)?;
@@ -8216,18 +8222,44 @@ impl SolverCore {
                     if self.solver_root_finding() {
                         store_operators_at(e, sim_data, layout, troot)?;
                     }
+                    // C's `simulationUpdate` at the root: `updateContinuousSystem`,
+                    // then `checkForStateEvent` against the last accepted point. C
+                    // never reads `jroot`: a probe-only sign change (a nonlinear
+                    // system settling on another branch mid-search) is no event.
+                    let roots = if left.is_none() {
+                        eval_pre(e, sim_data, layout, troot)?;
+                        e.call1_if_present("functionZeroCrossingsEquations", sim_data)?;
+                        save_zero_crossings(e, sim_data, layout)?
+                    } else {
+                        self.roots_nonzero()
+                    };
+                    if roots.is_empty() {
+                        if layout.has_when {
+                            eval_continuous(e, sim_data, layout)?;
+                        }
+                        check_asserts(e, sim_data, layout, omclog::INFO)?;
+                        continue;
+                    }
+                    event_step = true;
+                    log_state_event(troot, &roots, model);
+                    if !defers(troot) {
+                        self.state_events += 1;
+                        self.note_chatter(model, roots[0])?;
+                    }
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
                     if let Some(r) = rows.as_deref_mut()
                         && !no_event_emit()
                     {
-                        if bisected {
+                        if left.is_none() || bisected {
                             capture_row(e, r, sim_data, layout)?;
                         } else {
                             capture_pre(e, r, sim_data, layout, troot)?;
                         }
                     }
-                    let _ = save_zero_crossings(e, sim_data, layout)?;
+                    if left.is_some() {
+                        let _ = save_zero_crossings(e, sim_data, layout)?;
+                    }
                     if defers(troot) {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
@@ -8260,8 +8292,6 @@ impl SolverCore {
                     }
                     continue;
                 }
-                // Reached the target with no state event: breaks a chattering run.
-                self.note_clean_step();
             } else if target > self.t && !self.dae {
                 // `dassl.c`'s "Desired step size too small": one Euler step instead.
                 let h = target - self.t;
@@ -8295,6 +8325,7 @@ impl SolverCore {
                 self.fire_time_event_here(e, samp, sim_data, layout, ctx, te)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
+                self.note_time_event();
                 if let Some(r) = rows.as_deref_mut()
                     && emit_post_event_row(model, te)
                 {
