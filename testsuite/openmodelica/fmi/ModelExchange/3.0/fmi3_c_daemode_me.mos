@@ -1,0 +1,63 @@
+// name: fmi3_c_daemode_me.mos
+// keywords: FMI 3.0 export Model Exchange daeMode fmi-ls-dae
+// status: correct
+// teardown_command: rm -rf DaeModeMeC.fmu DaeModeMeC.log DaeModeMeC_FMU.* DaeModeMeC_info.json DaeModeMeC_external_functions.json DaeModeMeC_md.xml DaeModeMeC_lsdae.xml
+//
+// A --daeMode model exported as a Model Exchange FMU by the C target, through
+// fmi-ls-dae. The FMU is an ordinary ODE FMU until the importer sets the
+// structural parameter the manifest names, and a DAE FMU after: the importer
+// then owns the states, their derivatives and the algebraic variables, sets
+// them like any other variable, and reads the residuals back.
+//
+// The value references of the switch and the residuals follow the event
+// indicators, the same numbers the wasm target assigns (fmi3_wasm_daemode_me).
+//
+
+loadFile("fmi3_c_daemode_me.mo"); getErrorString();
+buildModelFMU(DaeModeMeC, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq DaeModeMeC.fmu extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml > DaeModeMeC_lsdae.xml"); getErrorString();
+readFile("DaeModeMeC_lsdae.xml"); getErrorString();
+
+system("unzip -cqq DaeModeMeC.fmu modelDescription.xml > DaeModeMeC_md.xml"); getErrorString();
+system("grep -E \"_D_daeMode|_D_DAEres\" DaeModeMeC_md.xml | sed \"s/^ *//\""); getErrorString();
+
+// Result:
+// true
+// ""
+// "DaeModeMeC.fmu"
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiDAEManifest
+// xmlns:fmi-ls=\"http://fmi-standard.org/fmi-ls-manifest\"
+// fmi-ls:fmi-ls-name=\"org.fmi-standard.fmi-ls-dae\"
+// fmi-ls:fmi-ls-version=\"1.0.0-alpha.1\"
+// fmi-ls:fmi-ls-description=\"Layered standard for DAE support in FMI.\">
+// <EnableDAEParameter valueReference=\"9\"/>
+// <AlgebraicVariables>
+// <AlgebraicVariable valueReference=\"3\"/>
+// <AlgebraicVariable valueReference=\"4\"/>
+// </AlgebraicVariables>
+// <ModelStructure>
+// <InitialUnknown valueReference=\"1\"/>
+// <EventIndicator valueReference=\"8\"/>
+// <Residual valueReference=\"10\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+// <Residual valueReference=\"11\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+// <Residual valueReference=\"12\" dependencies=\"0 1 3\" dependenciesKind=\"dependent dependent dependent\"/>
+// </ModelStructure>
+// </fmiDAEManifest>"
+// ""
+// 0
+// ""
+// <Boolean name="_D_daeMode" valueReference="9" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
+// <Float64 name="_D_DAEres0" valueReference="10" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 0"/>
+// <Float64 name="_D_DAEres1" valueReference="11" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 1"/>
+// <Float64 name="_D_DAEres2" valueReference="12" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual 2"/>
+// 0
+// ""
+// endResult
