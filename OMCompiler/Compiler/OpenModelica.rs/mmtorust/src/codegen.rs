@@ -17301,10 +17301,8 @@ fn ctor_is_sole_record(name: &str, ty: &Ty, top_level: &BTreeMap<String, NameNod
             None => return false,
         },
     };
-    match resolve_single_record_qname(&qname, top_level) {
-        Some(rec) => crate::hierarchy::record_is_sole_shape(&rec, top_level),
-        None => crate::hierarchy::record_is_sole_shape(&qname, top_level),
-    }
+    resolve_single_record_qname(&qname, top_level).is_some()
+        || crate::hierarchy::record_is_sole_shape(&qname, top_level)
 }
 
 /// Convert a FieldAccess pattern chain to dotted expression syntax (e.g., `a.b.c`).
@@ -18206,10 +18204,32 @@ fn emit_pat_assign<'a>(
             // destructured by value; refutable Arc-crossing patterns take the
             // separate `match_deref!` path and discard `surface`).
             let needs_borrow = type_destructure_needs_borrow(scrut_ty, ctx);
-            let scrut_borrowed = needs_borrow && !matches!(pat_for_render, TypedPat::Tuple(_));
+            let irrefutable = pat_is_irrefutable(pat_for_render, top_level);
+            // A sole-record constructor on an Arc-wrapped value is matched
+            // through `&*` instead of `match_deref!`.
+            let ctor_pat = match pat_for_render {
+                TypedPat::As { pat, .. } => pat.as_ref(),
+                p => p,
+            };
+            let outer_arc = irrefutable && match ctor_pat {
+                TypedPat::Constructor { ty, .. } =>
+                    is_arc_wrapped(scrut_ty, ctx) || is_arc_wrapped(ty, ctx) || constructor_needs_arc(ty, ctx),
+                _ => false,
+            };
+            let scrut_borrowed = (needs_borrow || outer_arc) && !matches!(pat_for_render, TypedPat::Tuple(_));
             // Render shallow with deferrals for Arc-edge crossings.
             let mut deferrals: Vec<(String, TypedPat, Ty)> = Vec::new();
-            let surface = render_shallow(pat_for_render, scrut_ty, ctx, env, top_level, fresh, &mut deferrals, /*force_ref=*/false, scrut_borrowed);
+            // `x as FOO(..)` on an Arc value binds `x` from the Arc itself
+            // below, so only the inner pattern is matched through `&*`.
+            let as_var = match pat_for_render {
+                TypedPat::As { var, .. } if outer_arc => {
+                    env.vars.insert(var.clone(), scrut_ty.clone());
+                    Some(var.clone())
+                }
+                _ => None,
+            };
+            let render_pat = if as_var.is_some() { ctor_pat } else { pat_for_render };
+            let surface = render_shallow(render_pat, scrut_ty, ctx, env, top_level, fresh, &mut deferrals, /*force_ref=*/false, scrut_borrowed);
             // When the scrutinee is Arc-wrapped (list<T> → List<T>; recursive
             // uniontypes wrapped in Arc), destructuring a variant pattern such as
             // `Cons { head, tail }` only succeeds via the `deref_patterns`
@@ -18302,11 +18322,15 @@ fn emit_pat_assign<'a>(
             // `render_shallow`'s deferral machinery — recursion through
             // nested Arc fields is handled directly by the macro's repeated
             // `Deref @ …` instead of follow-up `emit_pat_assign` calls.
-            let irrefutable = pat_is_irrefutable(pat_for_render, top_level);
-            // A sole-record constructor cannot mismatch, but still needs
-            // `match_deref!` to peel an Arc; its `_` arm is then dead.
+            // An irrefutable constructor pattern still needs `match_deref!` (with
+            // a dead `_` arm) when its Arc layout is unknown, or under
+            // `IfLetElse`, whose `_` arm is the `Err` recovery.
+            let plain_let = irrefutable
+                && (!pat_has_constructor(pat_for_render)
+                    || (!matches!(fail_mode, FailureMode::IfLetElse(_))
+                        && plain_let_shape(ctor_pat, scrut_ty)));
             let pat_needs_match_deref =
-                (!irrefutable || pat_has_constructor(pat_for_render))
+                !plain_let
                 && (type_destructure_needs_borrow(scrut_ty, ctx)
                     || pat_has_str_lit(pat_for_render)
                     || pat_requires_arc_deref(pat_for_render, ctx));
@@ -18464,7 +18488,14 @@ fn emit_pat_assign<'a>(
                         writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();
                     }
                     _ => {
-                        if needs_borrow {
+                        if outer_arc {
+                            let n = *fresh; *fresh += 1;
+                            writeln!(out, "{indent}let __arc{n} = {scrut_expr};").unwrap();
+                            if let Some(v) = &as_var {
+                                writeln!(out, "{indent}let {} = __arc{n}.clone();", escape_ident(v)).unwrap();
+                            }
+                            writeln!(out, "{indent}let {surface} = &*__arc{n};").unwrap();
+                        } else if needs_borrow {
                             writeln!(out, "{indent}let {surface} = {scrut_for_pat};").unwrap();
                         } else {
                             writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();
@@ -18509,6 +18540,20 @@ fn emit_pat_assign<'a>(
                 emit_body!(out, indent, fail_mode.clone());
             }
         }
+    }
+}
+
+/// Can an irrefutable pattern with a constructor be lowered to a plain `let`?
+/// Only when every constructor's Arc layout is known: from the scrutinee or
+/// the pattern type for a constructor, from the element types for a tuple.
+fn plain_let_shape(pat: &TypedPat, ty: &Ty) -> bool {
+    match (pat, ty) {
+        (TypedPat::Wildcard | TypedPat::Var(_), _) => true,
+        (TypedPat::Constructor { ty: pty, .. }, _) =>
+            !matches!(ty, Ty::Unknown) || !matches!(pty, Ty::Unknown),
+        (TypedPat::Tuple(ps), Ty::Tuple(ts)) =>
+            ps.len() == ts.len() && ps.iter().zip(ts).all(|(p, t)| plain_let_shape(p, t)),
+        _ => false,
     }
 }
 
@@ -18666,7 +18711,16 @@ fn render_shallow<'a>(
                 _ => vec![Ty::Unknown; pats.len()],
             };
             let parts: Vec<String> = pats.iter().zip(tys.iter())
-                .map(|(p, t)| render_shallow(p, t, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed))
+                .map(|(p, t)| {
+                    if is_arc_wrapped(t, ctx) && !matches!(p, TypedPat::Wildcard | TypedPat::Var(_)) {
+                        let n = *fresh; *fresh += 1;
+                        let tmp = format!("__t{n}");
+                        deferrals.push((format!("{tmp}.clone()"), p.clone(), t.clone()));
+                        tmp
+                    } else {
+                        render_shallow(p, t, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed)
+                    }
+                })
                 .collect();
             format!("({})", parts.join(", "))
         }
