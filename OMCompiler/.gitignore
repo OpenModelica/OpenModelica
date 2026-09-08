@@ -206,12 +206,8 @@ SimulationRuntime/c/libSimulationRuntimeC.dll
 
 SimulationRuntime/OMSICpp/.vs/
 SimulationRuntime/OMSICpp/CMakeSettings.json
-SimulationRuntime/OMSICpp/omcWrapper/.vs
-SimulationRuntime/OMSICpp/omcWrapper/CMakeSettings.json
 SimulationRuntime/cpp/.vs/
 SimulationRuntime/cpp/CMakeSettings.json
-SimulationRuntime/cpp/omcWrapper/.vs
-SimulationRuntime/cpp/omcWrapper/CMakeSettings.json
 SimulationRuntime/OMSI/.vs/
 SimulationRuntime/OMSI/CMakeSettings.json
 tags
