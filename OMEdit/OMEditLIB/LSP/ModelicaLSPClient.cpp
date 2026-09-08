@@ -90,12 +90,15 @@ QString ModelicaLSPClient::findBundledServer()
 {
   QDir appDir(QCoreApplication::applicationDirPath());
 
+  // Installed by the build into <prefix>/share/omedit/ls, beside the
+  // translations. A standalone binary is preferred over server.js because it
+  // needs no Node.js.
 #ifdef Q_OS_WIN
-  const QString binaryName = QStringLiteral("languageserver/modelica-language-server.exe");
+  const QString binaryName = QStringLiteral("ls/modelica-language-server.exe");
 #else
-  const QString binaryName = QStringLiteral("languageserver/modelica-language-server");
+  const QString binaryName = QStringLiteral("ls/modelica-language-server");
 #endif
-  const QString jsName = QStringLiteral("languageserver/server.js");
+  const QString jsName = QStringLiteral("ls/server.js");
 
   QStringList directories;
   directories << appDir.absolutePath()
