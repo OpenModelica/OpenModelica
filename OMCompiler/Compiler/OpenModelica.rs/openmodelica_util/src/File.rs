@@ -484,6 +484,14 @@ pub fn releaseReference(file: File) -> Result<()> {
 }
 
 pub fn writeSpace(file: File, n: i32) -> Result<()> {
+    write_space(&file, n)
+}
+
+pub fn write_str(file: &File, s: &str) -> Result<()> {
+    file.inner.lock().unwrap().write_bytes(s.as_bytes(), "write")
+}
+
+pub fn write_space(file: &File, n: i32) -> Result<()> {
     const BLANKS: [u8; 64] = [b' '; 64];
     let mut guard = file.inner.lock().unwrap();
     let mut left = n.max(0) as usize;
@@ -492,6 +500,18 @@ pub fn writeSpace(file: File, n: i32) -> Result<()> {
         guard.write_bytes(&BLANKS[..k], "writeSpace")?;
         left -= k;
     }
+    Ok(())
+}
+
+/// Flushes buffered output so a reader that follows sees the whole file.
+pub fn flush(file: &File) -> Result<()> {
+    let mut guard = file.inner.lock().unwrap();
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some(f) = guard.file.as_mut() {
+        f.flush().map_err(|_| "File.flush: write failed")?;
+    }
+    #[cfg(target_arch = "wasm32")]
+    guard.flush_to_vfs();
     Ok(())
 }
 

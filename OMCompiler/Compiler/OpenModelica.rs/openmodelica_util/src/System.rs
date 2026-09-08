@@ -164,7 +164,11 @@ pub fn strcmp_offset(string1: ArcStr, offset1: i32, length1: i32, string2: ArcSt
 }
 
 pub fn stringFind(r#str: ArcStr, searchStr: ArcStr) -> Result<i32> {
-    Ok(r#str.find(searchStr.as_str()).map(|i| i as i32).unwrap_or(-1))
+    let found = match searchStr.as_bytes() {
+        [c] if c.is_ascii() => r#str.find(*c as char),
+        _ => r#str.find(searchStr.as_str()),
+    };
+    Ok(found.map(|i| i as i32).unwrap_or(-1))
 }
 
 pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {

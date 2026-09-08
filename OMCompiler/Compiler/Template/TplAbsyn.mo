@@ -1159,6 +1159,10 @@ algorithm
         //  = adaptTextToString(argval, stmts, locals, tplPackage);
         (_,exptype,_) := argval;
         exptype := deAliasedType(exptype, astDefs);
+        if isTextType(exptype) then
+          (stmts, locals, argval) := textConditionToIsEmpty(argval, stmts, locals);
+          exp := emptyExpression;
+        end if;
         mcases
           := elabCasesFromCondition(exptype, isnot, rhsval, tbranch, ebranch, tplPackage);
         ( argvals, fname, iargs, oargs, scEnv, accMMDecls)
@@ -4148,6 +4152,35 @@ algorithm
   end matchcontinue;
 end isAlwaysMatchedBool;
 
+protected function isTextType
+  input TypeSignature ts;
+  output Boolean b;
+algorithm
+  b := match ts
+    case TEXT_TYPE() then true;
+    else false;
+  end match;
+end isTextType;
+
+protected function textConditionToIsEmpty
+  "A Text condition tests emptiness through Tpl.isEmpty, so the generated
+   code does not depend on the representation of Text."
+  input tuple<MMExp, TypeSignature, SourceInfo> inArgValue;
+  input output list<MMExp> stmts;
+  input output TypedIdents locals;
+  output tuple<MMExp, TypeSignature, SourceInfo> outArgValue;
+protected
+  MMExp mmexp;
+  SourceInfo sinfo;
+  Ident retid;
+algorithm
+  (mmexp, _, sinfo) := inArgValue;
+  retid := returnTempVarNamePrefix + intString(listLength(locals));
+  locals := addLocalValue(retid, BOOLEAN_TYPE(), locals);
+  stmts := MM_ASSIGN({retid}, MM_FN_CALL(PATH_IDENT("Tpl", IDENT("isEmpty")), {mmexp})) :: stmts;
+  outArgValue := (MM_IDENT(IDENT(retid)), BOOLEAN_TYPE(), sinfo);
+end textConditionToIsEmpty;
+
 public function adaptTextToString
   input tuple<MMExp, TypeSignature, SourceInfo> inArgValue;
   input Expression inArgExp;
@@ -4258,13 +4291,10 @@ algorithm
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("false", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
+    // the condition value is Tpl.isEmpty(text), see textConditionToIsEmpty
     case (TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
-       casesForTrueFalseCondition(isnot,
-          //MEM_TEXT( tokens = {} )
-          RECORD_MATCH( PATH_IDENT("Tpl", IDENT("MEM_TEXT")),
-                        {("tokens",LIST_MATCH({}))} ),
-          tbranch, ebranchOpt);
+       casesForTrueFalseCondition(isnot, LITERAL_MATCH("true", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
     else
       algorithm
@@ -6734,7 +6764,7 @@ end pathIdentString;
 
 
 protected
-constant Tpl.Text eTxt = Tpl.MEM_TEXT({}, {});
+constant Tpl.Text eTxt = Tpl.emptyTxt;
 
 public function typeSignatureString
   input TypeSignature inTS;
