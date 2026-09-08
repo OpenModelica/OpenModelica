@@ -34,7 +34,7 @@ thread_local! {
         RefCell::new(openmodelica_util::BaseHashTable::emptyHashTableWork(
             openmodelica_util::Flags::getConfigInt(openmodelica_util::Flags::INST_CACHE_SIZE.clone()).unwrap_or(25343),
             (
-                (Arc::new(AbsynUtil::pathHash) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
+                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathHash, Arc<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
                 (Arc::new(metamodelica::fnptr!(AbsynUtil::pathEqual, Arc<Absyn::Path>, Arc<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>, Arc<Absyn::Path>) -> metamodelica::Result<bool> + 'static>),
                 (Arc::new(AbsynUtil::pathStringDefault) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>) -> metamodelica::Result<ArcStr> + 'static>),
                 // `opaqVal` in InstHashTable is a private helper returning the

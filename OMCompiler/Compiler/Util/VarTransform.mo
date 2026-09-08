@@ -1194,22 +1194,16 @@ public function replaceExpRepeated2 "help function to replaceExpRepeated"
     output Boolean res;
   end VisitFunc;
 
+protected
+  DAE.Exp e1;
+  Boolean b;
 algorithm
-  outExp := matchcontinue equal
-    local
-      DAE.Exp e1,res;
-      Boolean b;
-    case _
-      algorithm
-        true := i > maxIter;
-      then e;
-    case true then e;
-    else
-      algorithm
-        (e1,b) := replaceExp(e,repl,func);
-        res := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*ExpressionBasics.expEqual(e,e1)*/);
-      then res;
-  end matchcontinue;
+  if i > maxIter or equal then
+    outExp := e;
+  else
+    (e1,b) := replaceExp(e,repl,func);
+    outExp := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*ExpressionBasics.expEqual(e,e1)*/);
+  end if;
 end replaceExpRepeated2;
 
 public function replaceExp

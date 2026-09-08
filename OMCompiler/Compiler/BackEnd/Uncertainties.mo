@@ -2360,21 +2360,20 @@ protected function pickReductionCandidates
   input list<tuple<list<Integer>,list<Integer>>> elems;
   output list<list<Integer>> elemsOut;
 algorithm
-elemsOut:=matchcontinue elems
+elemsOut:=match elems
   local
     list<Integer> occurrence,vars;
     list<tuple<list<Integer>,list<Integer>>> tail;
     list<list<Integer>> newElems;
   case {} then {};
-  case (occurrence,vars)::tail
+  case (occurrence,vars)::tail guard listLength(vars)>1 and listLength(occurrence)>1
     algorithm
-      true := listLength(vars)>1 and listLength(occurrence)>1;
       newElems := pickReductionCandidates(tail);
     then
       vars::newElems;
   case _::tail
      then pickReductionCandidates(tail);
-end matchcontinue;
+end match;
 end pickReductionCandidates;
 
 protected function reduceVariables
@@ -2419,24 +2418,21 @@ protected function reduceVariablesInMatrix
   input Integer count;
   output ExtAdjacencyMatrix mOut;
 algorithm
-  mOut:=matchcontinue candidates
+  mOut:=match candidates
     local
       list<Integer> candidate,variables;
       Integer temp;
       list<list<Integer>> candidatesTail;
       ExtAdjacencyMatrix newM;
-    case {}
+    case {} guard count>0
       algorithm
-        true:=count>0;
         print("Warning: The system of equations is under-determined. The results may be incorrect.\n");
         then
           m;
     case {}
         then
           m;
-    case _
-      algorithm
-        true:=intEq(count,0);
+    case _ guard intEq(count,0)
       then m;
     case candidate::candidatesTail
       algorithm
@@ -2447,7 +2443,7 @@ algorithm
         newM := removeVarsNotInSet(m,variables);
         newM := reduceVariablesInMatrix(newM,candidatesTail,count-1);
       then newM;
-  end matchcontinue;
+  end match;
 end reduceVariablesInMatrix;
 
 protected function findReductionCantidates
@@ -3026,19 +3022,11 @@ protected function fixUnderdeterminedSystem
    input Integer neqs;
    output list<list<Integer>> mOut;
 algorithm
-  mOut:=matchcontinue neqs
-     local
-        list<Integer> dummyEq;
-        list<list<Integer>> new_m;
-     case _
-        algorithm
-          true:=intGt(nvars,neqs);
-          dummyEq:=List.intRange(nvars);
-          new_m:=fixUnderdeterminedSystem(listAppend(m,{dummyEq}),nvars,neqs+1);
-        then new_m;
-     case _
-           then m;
-  end matchcontinue;
+  if intGt(nvars,neqs) then
+    mOut:=fixUnderdeterminedSystem(listAppend(m,{List.intRange(nvars)}),nvars,neqs+1);
+  else
+    mOut:=m;
+  end if;
 end fixUnderdeterminedSystem;
 
 protected function getExtAdjacencyMatrix

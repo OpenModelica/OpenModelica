@@ -4333,19 +4333,10 @@ protected function PR_Global_Relabel_init_l_label
   input Integer max;
   input array<Integer> l_label;
 algorithm
-  () := matchcontinue l_label
-    case _
-      algorithm
-        true := intGt(i,ne);
-      then
-        ();
-    else
-      algorithm
-        arrayUpdate(l_label,i,max);
-        PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
-      then
-        ();
-  end matchcontinue;
+  if not intGt(i,ne) then
+    arrayUpdate(l_label,i,max);
+    PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
+  end if;
 end PR_Global_Relabel_init_l_label;
 
 protected function PR_Global_Relabel_init_r_label
@@ -4835,27 +4826,18 @@ protected function ks_rand_cheapmatching1
   input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
+protected
+  list<Integer> onecolums1,onerows1;
+  Integer c;
+  Boolean b;
 algorithm
-  () := matchcontinue ass2
-    local
-      list<Integer> onecolums1,onerows1;
-      Integer c;
-      Boolean b;
-      case _
-        algorithm
-          false := intLe(i,ne);
-        then
-          ();
-      case _
-        algorithm
-          ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
-          c := randarr[i];
-          b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
-          (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-          ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-        then
-          ();
-    end matchcontinue;
+  if intLe(i,ne) then
+    ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
+    c := randarr[i];
+    b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
+    (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+    ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+  end if;
 end ks_rand_cheapmatching1;
 
 protected function ks_rand_cheapmatching2
@@ -6595,23 +6577,15 @@ protected function checkAssignment
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
+protected
+  list<Integer> unassigned;
 algorithm
-  outUnassigned := matchcontinue inUnassigned
-    local
-      Integer r;
-      list<Integer> unassigned;
-    case _
-      algorithm
-        true := intGt(indx,ne);
-      then
-        inUnassigned;
-    case _
-      algorithm
-        r := ass1[indx];
-        unassigned := List.consOnTrue(intLt(r,0), indx, inUnassigned);
-      then
-        checkAssignment(indx+1,ne,ass1,ass2,unassigned);
-  end matchcontinue;
+  if intGt(indx,ne) then
+    outUnassigned := inUnassigned;
+  else
+    unassigned := List.consOnTrue(intLt(ass1[indx],0), indx, inUnassigned);
+    outUnassigned := checkAssignment(indx+1,ne,ass1,ass2,unassigned);
+  end if;
 end checkAssignment;
 
 protected function getAssignment
@@ -6622,11 +6596,8 @@ protected function getAssignment
   output array<Integer> ass1 "ass[eqnindx]=varindx";
   output array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  (ass1,ass2) := matchcontinue(clearMatching, iSyst)
-    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
-      algorithm
-        true := intGe(nVars,arrayLength(ass1));
-        true := intGe(nEqns,arrayLength(ass2));
+  (ass1,ass2) := match(clearMatching, iSyst)
+    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))) guard intGe(nVars,arrayLength(ass1)) and intGe(nEqns,arrayLength(ass2))
       then
         (ass2,ass1);
     else
@@ -6635,7 +6606,7 @@ algorithm
         ass1 := arrayCreate(nVars,-1);
       then
         (ass2,ass1);
-  end matchcontinue;
+  end match;
 end getAssignment;
 
 // =============================================================================

@@ -949,18 +949,16 @@ protected function getArrayVars
   input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplIn; //non-array vars,arrayVars
   output tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> tplOut;
 algorithm
-  tplOut := matchcontinue(varIn,tplIn)
+  tplOut := match(varIn,tplIn)
     local
       DAE.ComponentRef cref;
       list<BackendDAE.Var> varLstIn, arrVarLstIn;
-  case(BackendDAE.VAR(varName=cref),(varLstIn, arrVarLstIn))
-    algorithm
-    true := ComponentReference.isArrayElement(cref);
+  case(BackendDAE.VAR(varName=cref),(varLstIn, arrVarLstIn)) guard ComponentReference.isArrayElement(cref)
   then(varLstIn, varIn::arrVarLstIn);
   case(_,(varLstIn, arrVarLstIn))
     algorithm
   then(varIn::varLstIn, arrVarLstIn);
-  end matchcontinue;
+  end match;
 end getArrayVars;
 
 protected function dispatchLoopEquations
@@ -1074,7 +1072,7 @@ public function insertSUMexp "exp traversal function for insertSUMexp"
   output DAE.Exp expOut;
   output tuple<DAE.ComponentRef, DAE.Exp> tplOut;
 algorithm
-  (expOut,tplOut) := matchcontinue(expIn,tplIn)
+  (expOut,tplOut) := match(expIn,tplIn)
     local
       DAE.ComponentRef cref0,cref1;
       DAE.Exp repl, exp1, exp2;
@@ -1088,13 +1086,11 @@ algorithm
      algorithm
        (exp1,_) := insertSUMexp(exp1,tplIn);
      then(DAE.UNARY(op,exp1),tplIn);
-   case(DAE.CREF(componentRef=cref1),(cref0,repl))
-     algorithm
-       true := crefPartlyEqual(cref0,cref1);
+   case(DAE.CREF(componentRef=cref1),(cref0,repl)) guard crefPartlyEqual(cref0,cref1)
      then(repl,tplIn);
    else
      then (expIn,tplIn);
-   end matchcontinue;
+   end match;
 end insertSUMexp;
 
 protected function getIndexSubScript

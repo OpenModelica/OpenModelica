@@ -1873,7 +1873,7 @@ same as modEqual with the difference that we allow:
   input DAE.Mod mod2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(mod1,mod2)
+  equal := match(mod1,mod2)
     local
       SCode.Final f1,f2;
       SCode.Each each1,each2;
@@ -1883,34 +1883,21 @@ algorithm
     // adrpo: handle non-overlap: final parameter Real eAxis_ia[3](each final unit="1") = {1,2,3};
     //        mod1 = final each unit="1" mod2 = final = {1,2,3}
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
-    case(DAE.MOD(f1,_,_,NONE(),_),DAE.MOD(f2,SCode.NOT_EACH(),{},SOME(_),_))
-      algorithm
-        true := SCodeUtil.finalEqual(f1, f2);
+    case(DAE.MOD(f1,_,_,NONE(),_),DAE.MOD(f2,SCode.NOT_EACH(),{},SOME(_),_)) guard SCodeUtil.finalEqual(f1, f2)
       then
         true;
 
-    case(DAE.MOD(binding = eqmod1),DAE.MOD(_,SCode.NOT_EACH(),{},eqmod2,_))
-      algorithm
-        true := eqModSubsetOrEqual(eqmod1,eqmod2);
+    case(DAE.MOD(binding = eqmod1),DAE.MOD(_,SCode.NOT_EACH(),{},eqmod2,_)) guard eqModSubsetOrEqual(eqmod1,eqmod2)
       then
         true;
 
     // handle subset equal
-    case(DAE.MOD(f1,each1,submods1,eqmod1,_),DAE.MOD(f2,each2,submods2,eqmod2,_))
-      algorithm
-        true := SCodeUtil.finalEqual(f1, f2);
-        true := SCodeUtil.eachEqual(each1,each2);
-        true := subModsEqual(submods1,submods2);
-        true := eqModSubsetOrEqual(eqmod1,eqmod2);
+    case(DAE.MOD(f1,each1,submods1,eqmod1,_),DAE.MOD(f2,each2,submods2,eqmod2,_)) guard SCodeUtil.finalEqual(f1, f2) and SCodeUtil.eachEqual(each1,each2) and subModsEqual(submods1,submods2) and eqModSubsetOrEqual(eqmod1,eqmod2)
       then
         true;
 
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
-    case(DAE.REDECL(f1, each1),DAE.REDECL(f2, each2))
-      algorithm
-        true := SCodeUtil.finalEqual(f1, f2);
-        true := SCodeUtil.eachEqual(each1, each2);
-        true := SCodeUtil.elementEqual(mod1.element, mod2.element);
+    case(DAE.REDECL(f1, each1),DAE.REDECL(f2, each2)) guard SCodeUtil.finalEqual(f1, f2) and SCodeUtil.eachEqual(each1, each2) and SCodeUtil.elementEqual(mod1.element, mod2.element)
       then
         true;
 
@@ -1918,7 +1905,7 @@ algorithm
 
     else false;
 
-  end matchcontinue;
+  end match;
 end modSubsetOrEqualOrNonOverlap;
 
 protected function eqModSubsetOrEqual "
@@ -2589,22 +2576,20 @@ protected function getUnelabedSubMod2
   input SCode.Ident inIdent;
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue inSubMods
+  outMod := match inSubMods
     local
       SCode.Ident id;
       SCode.Mod m;
       list<SCode.SubMod> rest_mods;
 
-    case SCode.NAMEMOD(ident = id, mod = m) :: _
-      algorithm
-        true := stringEqual(id, inIdent);
+    case SCode.NAMEMOD(ident = id, mod = m) :: _ guard stringEqual(id, inIdent)
       then
         m;
 
     case _ :: rest_mods
       then getUnelabedSubMod2(rest_mods, inIdent);
 
-  end matchcontinue;
+  end match;
 end getUnelabedSubMod2;
 
 public function isUntypedMod

@@ -996,7 +996,7 @@ pub(crate) fn reset_declined_externals() {
 
 pub(crate) fn note_declined_external(f: &SimCodeFunction::Function::Function, why: String) {
     let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, .. } = f else { return };
-    let Ok(ident) = AbsynUtil::pathLastIdent(name.clone()) else { return };
+    let ident = AbsynUtil::pathLastIdent(name.clone());
     DECLINED_EXTERNALS.with(|d| d.borrow_mut().insert(ident.to_string(), why));
 }
 
@@ -8171,7 +8171,7 @@ fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
 /// which matters where the frontend left the call itself untyped.
 fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
     let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
-    let name = AbsynUtil::pathLastIdent(path.clone()).ok()?;
+    let name = AbsynUtil::pathLastIdent(path.clone());
     let args: Vec<&Arc<DAE::Exp>> = (&**expLst).into_iter().collect();
     match (name.as_str(), args.len()) {
         ("smooth", 2) => Some(args[1].clone()),
@@ -8896,7 +8896,7 @@ fn compile_call(
         return Ok(vec![rty]);
     }
     // Otherwise it must be a (builtin) math/string function.
-    let name = AbsynUtil::pathLastIdent(Arc::new(path.clone()))?.to_string();
+    let name = AbsynUtil::pathLastIdent(Arc::new(path.clone())).to_string();
     // `print(s)`: write the String to the model's stdout via the host `rt_print`.
     // A void procedure, so it yields no result; the owned handle is released after.
     if name == "print" {

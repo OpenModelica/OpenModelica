@@ -2854,18 +2854,16 @@ protected function getChangedClass
   input String suffix;
   output String name;
 algorithm
-  name := matchcontinue elt
+  name := match elt
     local
       String fileName;
-    case SCode.CLASS(name=name,info=SOURCEINFO())
-      algorithm
-        false := System.regularFileExists(name + suffix);
+    case SCode.CLASS(name=name,info=SOURCEINFO()) guard not System.regularFileExists(name + suffix)
       then name;
     case SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
       algorithm
         true := System.fileIsNewerThan(fileName, name + suffix);
       then name;
-  end matchcontinue;
+  end match;
 end getChangedClass;
 
 protected function isChanged
