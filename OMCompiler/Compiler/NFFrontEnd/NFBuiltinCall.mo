@@ -151,6 +151,7 @@ public
       case "scalar" then typeScalarCall(call, context, info);
       case "shiftSample" then typeShiftSampleCall(call, context, info);
       case "smooth" then typeSmoothCall(call, context, info);
+      case "spatialDistribution" then typeSpatialDistribution(call, context, info);
       case "String" then typeStringCall(call, context, info);
       case "subSample" then typeSubSampleCall(call, context, info);
       case "superSample" then typeSuperSampleCall(call, context, info);
@@ -2260,6 +2261,27 @@ protected
     Structural.markExp(factor);
     callExp := Expression.CALL(ty_call);
   end typeSuperSampleCall;
+
+  function typeSpatialDistribution
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity;
+  protected
+    Call ty_call;
+  algorithm
+    if InstContext.inSubexpression(context) or InstContext.inAlgorithm(context) then
+      Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_CONTEXT, {}, info);
+      fail();
+    end if;
+
+    ty_call as Call.TYPED_CALL(ty = ty, var = var, purity = purity) :=
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
+    callExp := Expression.CALL(ty_call);
+  end typeSpatialDistribution;
 
   function typePureCall
     input Call call;

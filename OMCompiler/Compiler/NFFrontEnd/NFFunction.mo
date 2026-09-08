@@ -1948,6 +1948,8 @@ uniontype Function
           case "shiftSample" then true;
           // Needs to check that second argument is real or array of real or record of reals.
           case "smooth" then true;
+          // May only be used in certain context, and has other special rules.
+          case "spatialDistribution" then true;
           case "subSample" then true;
           // needs unboxing and return type fix.
           case "superSample" then true;

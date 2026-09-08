@@ -922,6 +922,12 @@ public constant ErrorTypes.Message NON_POSITIVE_NTH_ROOT = ErrorTypes.MESSAGE(42
   "Invalid operation nthRoot(v = %s, n = %s), n must be a positive integer.");
 public constant ErrorTypes.Message NEGATIVE_NTH_ROOT = ErrorTypes.MESSAGE(423, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid operation nthRoot(v = %s, n = %s), v must be non-negative when n is even.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_CONTEXT = ErrorTypes.MESSAGE(424, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "spatialDistribution may only be used as the right hand side of an equation.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT0 = ErrorTypes.MESSAGE(425, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The first output of spatialDistribution may only be ignored if positiveVelocity is true.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT1 = ErrorTypes.MESSAGE(426, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The second output of spatialDistribution may not be ignored.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
