@@ -7108,14 +7108,14 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   //
   // The version is a choice rather than always the newest release: the language
   // server is released independently of OMEdit, so "latest" can be a version this
-  // OMEdit has never been tried against. The default is the release OMEdit bundles
-  // and was built against; "Latest release" is there for users who want a fix or a
-  // feature that landed after it.
+  // OMEdit has never been tried with. The list starts at the release installed
+  // with OMEdit; "Latest release" is there for users who want a fix or a feature
+  // that landed after it.
   mpDownloadVersionComboBox = new QComboBox;
   mpDownloadVersionComboBox->addItem(tr("%1 (recommended)").arg(testedServerVersion()), testedServerVersion());
   mpDownloadVersionComboBox->addItem(tr("Latest release"), QString());
   mpDownloadVersionComboBox->setToolTip(tr("Which modelica-language-server release to download. %1 is the version "
-                                           "this OMEdit was built against; the latest release may be newer than that.")
+                                           "installed with OMEdit; the latest release may be newer than that.")
                                         .arg(testedServerVersion()));
   mpDownloadServerButton = new QPushButton(tr("Download..."));
   mpDownloadServerButton->setAutoDefault(false);
@@ -7192,7 +7192,8 @@ QString LanguageServerPage::testedServerVersion()
 #ifdef MODELICA_LS_VERSION
   return QStringLiteral("v") % QStringLiteral(MODELICA_LS_VERSION);
 #else
-  // The qmake build has no bundling step and so does not define it.
+  // The qmake build does not install a server and so does not define it. Keep it
+  // in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt.
   return QStringLiteral("v0.3.3");
 #endif
 }
