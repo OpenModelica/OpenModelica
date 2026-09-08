@@ -4569,7 +4569,7 @@ struct TailCallPlan {
 /// fallback case, which is handled by the leading `pat_is_irrefutable`
 /// check).
 fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
-    if pats.iter().any(|p| pat_is_irrefutable(p)) { return true; }
+    if pats.iter().any(|p| pat_is_irrefutable(p, top_level)) { return true; }
     match ty {
         Ty::Bool => {
             pats.iter().any(|p| matches!(p, TypedPat::Lit(Lit::Bool(true))))
@@ -4584,13 +4584,13 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
             let nil = pats.iter().any(|p| matches!(p, TypedPat::EmptyList));
             let cons = pats.iter().any(|p| matches!(p,
                 TypedPat::Cons { head, tail }
-                    if pat_is_irrefutable(head) && pat_is_irrefutable(tail)));
+                    if pat_is_irrefutable(head, top_level) && pat_is_irrefutable(tail, top_level)));
             nil && cons
         }
         Ty::Option(_) => {
             let none = pats.iter().any(|p| matches!(p, TypedPat::None_));
             let some = pats.iter().any(|p| matches!(p,
-                TypedPat::Some_(inner) if pat_is_irrefutable(inner)));
+                TypedPat::Some_(inner) if pat_is_irrefutable(inner, top_level)));
             none && some
         }
         Ty::Tuple(elem_tys) => {
@@ -4624,7 +4624,7 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
                 })
                 .collect();
             !variants.is_empty()
-                && variants.iter().all(|v| pats.iter().any(|p| pat_covers_variant(p, v)))
+                && variants.iter().all(|v| pats.iter().any(|p| pat_covers_variant(p, v, top_level)))
         }
         // Enumeration: exhaustive iff every declared literal is matched.
         Ty::Enumeration(qname) => {
@@ -4636,7 +4636,7 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
                 .map(|l| l.literal.to_string())
                 .collect();
             !lits.is_empty()
-                && lits.iter().all(|lit| pats.iter().any(|p| pat_covers_variant(p, lit)))
+                && lits.iter().all(|lit| pats.iter().any(|p| pat_covers_variant(p, lit, top_level)))
         }
         // Numeric / string scalars can only be made exhaustive by an
         // irrefutable case (handled at the top of this function).
@@ -4649,14 +4649,14 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
 /// simple name) whose field subpatterns are all irrefutable — i.e. it matches
 /// *every* value of that variant. Unit variants/literals are constructor
 /// patterns with no fields and so are covered unconditionally.
-fn pat_covers_variant(pat: &TypedPat, variant_simple: &str) -> bool {
+fn pat_covers_variant(pat: &TypedPat, variant_simple: &str, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
     match pat {
-        TypedPat::As { pat: inner, .. } => pat_covers_variant(inner, variant_simple),
+        TypedPat::As { pat: inner, .. } => pat_covers_variant(inner, variant_simple, top_level),
         TypedPat::Constructor { name, fields, named_fields, .. } => {
             let simple = name.rsplit('.').next().unwrap_or(name);
             simple == variant_simple
-                && fields.iter().all(pat_is_irrefutable)
-                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p))
+                && fields.iter().all(|p| pat_is_irrefutable(p, top_level))
+                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p, top_level))
         }
         _ => false,
     }
@@ -16017,6 +16017,17 @@ fn pat_has_str_lit(pat: &TypedPat) -> bool {
     }
 }
 
+fn pat_has_constructor(pat: &TypedPat) -> bool {
+    match pat {
+        TypedPat::Constructor { .. } => true,
+        TypedPat::Some_(inner) => pat_has_constructor(inner),
+        TypedPat::As { pat: inner, .. } => pat_has_constructor(inner),
+        TypedPat::Cons { head, tail } => pat_has_constructor(head) || pat_has_constructor(tail),
+        TypedPat::Tuple(ps) => ps.iter().any(pat_has_constructor),
+        _ => false,
+    }
+}
+
 /// Decide whether the match expression's outer scrutinee needs to be wrapped
 /// in `match_deref!{ ... }`. We switch into match_deref mode whenever any of
 /// the following holds for the input or its destructured sub-elements:
@@ -17262,14 +17273,37 @@ fn pat_introduces_binding(pat: &TypedPat) -> bool {
     }
 }
 
-fn pat_is_irrefutable(pat: &TypedPat) -> bool {
+/// Must agree with `fallibility`'s `resolve_cover_key`: a function typed
+/// infallible there must never be handed a `return Err` from here.
+fn pat_is_irrefutable(pat: &TypedPat, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
     match pat {
         TypedPat::Wildcard | TypedPat::Var(_) => true,
-        TypedPat::Tuple(ps) => ps.iter().all(pat_is_irrefutable),
-        TypedPat::As { pat, .. } => pat_is_irrefutable(pat),
+        TypedPat::Tuple(ps) => ps.iter().all(|p| pat_is_irrefutable(p, top_level)),
+        TypedPat::As { pat, .. } => pat_is_irrefutable(pat, top_level),
         TypedPat::Index { .. } => true,
         TypedPat::FieldAccess { .. } => true,
+        TypedPat::Constructor { name, fields, named_fields, ty } => {
+            ctor_is_sole_record(name, ty, top_level)
+                && fields.iter().all(|p| pat_is_irrefutable(p, top_level))
+                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p, top_level))
+        }
         _ => false,
+    }
+}
+
+/// See `hierarchy::record_is_sole_shape`; the sole record of a uniontype is
+/// typed with the uniontype's qname.
+fn ctor_is_sole_record(name: &str, ty: &Ty, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
+    let qname = match ty {
+        Ty::RustStruct(q) => q.clone(),
+        _ => match lookup_record_through_unions(name, top_level) {
+            Some((q, _)) => q,
+            None => return false,
+        },
+    };
+    match resolve_single_record_qname(&qname, top_level) {
+        Some(rec) => crate::hierarchy::record_is_sole_shape(&rec, top_level),
+        None => crate::hierarchy::record_is_sole_shape(&qname, top_level),
     }
 }
 
@@ -18268,8 +18302,11 @@ fn emit_pat_assign<'a>(
             // `render_shallow`'s deferral machinery — recursion through
             // nested Arc fields is handled directly by the macro's repeated
             // `Deref @ …` instead of follow-up `emit_pat_assign` calls.
+            let irrefutable = pat_is_irrefutable(pat_for_render, top_level);
+            // A sole-record constructor cannot mismatch, but still needs
+            // `match_deref!` to peel an Arc; its `_` arm is then dead.
             let pat_needs_match_deref =
-                !pat_is_irrefutable(pat_for_render)
+                (!irrefutable || pat_has_constructor(pat_for_render))
                 && (type_destructure_needs_borrow(scrut_ty, ctx)
                     || pat_has_str_lit(pat_for_render)
                     || pat_requires_arc_deref(pat_for_render, ctx));
@@ -18292,6 +18329,14 @@ fn emit_pat_assign<'a>(
                 };
                 let fail_owned;
                 let fail: &str = match &fail_mode {
+                    FailureMode::IfLetElse(else_code) => {
+                        // The else-recovery, used as the `_`-arm body. It is a
+                        // sequence of statements that diverges, so wrapping it
+                        // in a block expression type-checks against the Ok arm.
+                        fail_owned = format!("{{\n{else_code}{indent}    }}");
+                        &fail_owned
+                    }
+                    _ if irrefutable => "unreachable!()",
                     // Both `Function` and `TryArm` defer to `ctx.qmode`: a
                     // refutable destructuring is a `?`-like failure point, so it
                     // must follow the same propagation as `unwrap_break_err!`
@@ -18314,13 +18359,6 @@ fn emit_pat_assign<'a>(
                         _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
-                    FailureMode::IfLetElse(else_code) => {
-                        // The else-recovery, used as the `_`-arm body. It is a
-                        // sequence of statements that diverges, so wrapping it
-                        // in a block expression type-checks against the Ok arm.
-                        fail_owned = format!("{{\n{else_code}{indent}    }}");
-                        &fail_owned
-                    }
                 };
                 // Collect all binding names introduced by the (possibly
                 // re-named) pattern, together with their owned types. The
@@ -18409,7 +18447,7 @@ fn emit_pat_assign<'a>(
             // emitted in Bare mode (raw `Result<T>`), so we still need an
             // `Ok(..)` unwrap. The else-branch only runs on the Err case;
             // pattern mismatch is impossible by construction.
-            if pat_is_irrefutable(pat_for_render)
+            if irrefutable
                 && let FailureMode::IfLetElse(else_code) = &fail_mode
             {
                 let inner = format!("{indent}    ");
@@ -18420,7 +18458,7 @@ fn emit_pat_assign<'a>(
                 writeln!(out, "{indent}}}").unwrap();
                 return;
             }
-            if pat_is_irrefutable(pat_for_render) {
+            if irrefutable {
                 match pat_for_render {
                     TypedPat::Tuple(_) => {
                         writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();

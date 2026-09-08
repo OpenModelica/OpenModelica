@@ -3070,7 +3070,15 @@ pub fn infer_pat<'a>(
                     // emitter mis-binds the bare last segment to a same-named
                     // top-level package and lists that package's members as
                     // "fields" (E0574).
-                    let ty = lookup_ctor_ty(&canonical, top_level);
+                    let mut ty = lookup_ctor_ty(&canonical, top_level);
+                    // `Sets.SETS` under `import DAE.Connect.{Sets}` resolves only
+                    // through the scope; codegen's `pat_is_irrefutable` needs the type.
+                    if ty == Ty::Unknown
+                        && let Some((q, node)) = resolve_call_node(&canonical, top_level, pkg_prefix)
+                        && crate::hierarchy::record_is_sole_shape(&q, top_level)
+                    {
+                        ty = node.ty.clone();
+                    }
                     TypedPat::Constructor { name: canonical, fields, named_fields, ty }
                 }
             }

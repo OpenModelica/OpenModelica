@@ -1846,6 +1846,31 @@ pub(crate) fn collect_type_vars_in_env(env: &std::collections::HashMap<String, T
     }
 }
 
+fn record_child_count(node: &NameNode<'_>) -> usize {
+    node.children.values().filter(|ch| matches!(&ch.kind,
+        NodeKind::Class(cc) if matches!(cc.restriction,
+            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))).count()
+}
+
+/// Is `qname` a record that is the only shape of its type — the sole record
+/// of a uniontype, or a record declared outside any uniontype? Such a
+/// constructor pattern can never mismatch. `fallibility::resolve_cover_key`
+/// and codegen's `pat_is_irrefutable` must both go through here.
+pub(crate) fn record_is_sole_shape(qname: &str, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
+    let Some(node) = lookup_node(qname, top_level) else { return false };
+    let NodeKind::Class(c) = &node.kind else { return false };
+    if !matches!(c.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
+        return false;
+    }
+    let Some((parent, _)) = qname.rsplit_once('.') else { return true };
+    let Some(p) = lookup_node(parent, top_level) else { return false };
+    match &p.kind {
+        NodeKind::Class(pc) if matches!(pc.restriction, Absyn::Restriction::R_UNIONTYPE) =>
+            record_child_count(p) == 1,
+        _ => true,
+    }
+}
+
 pub(crate) fn lookup_node<'a>(dotted: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Option<&'a NameNode<'a>> {
     let mut parts = dotted.split('.');
     let first = parts.next().unwrap_or("");
