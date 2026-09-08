@@ -148,7 +148,8 @@ public
             then fail();
           end match;
 
-          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          // DAE mode: SimCode reads only the DAE partition jacobian
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func, kind <> NBPartition.Kind.DAE);
           bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
           bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
           bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
@@ -171,8 +172,9 @@ public
     input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true "also create the partition jacobian";
   algorithm
-    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, knowns, name, func, simJacobian) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -438,6 +440,7 @@ protected
     input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true;
   protected
     JacobianType jacType;
     VariablePointers unknowns;
@@ -463,7 +466,7 @@ protected
     end match;
 
     // create the simulation jacobian
-    if Partition.Partition.isODEorDAE(part) then
+    if simJacobian and Partition.Partition.isODEorDAE(part) then
       partialCandidates := part.unknowns;
       unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
       jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
