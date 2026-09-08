@@ -168,6 +168,19 @@ impl CEngine {
         // own `longjmp` is what makes the driver print the initialization notice.
         Err(driver::ASSERT_ERR)
     }
+
+    /// C's `storePreValues` closing `updateContinuousSystem`, whose C body is
+    /// stubbed out under this runtime.
+    fn store_pre_values(&mut self) {
+        let md = self.rt.model();
+        let (sd, si) = (self.rt.local(0), self.rt.info());
+        unsafe {
+            core::ptr::copy_nonoverlapping(sd.realVars, si.realVarsPre, md.nVariablesReal.max(0) as usize);
+            core::ptr::copy_nonoverlapping(sd.integerVars, si.integerVarsPre, md.nVariablesInteger.max(0) as usize);
+            core::ptr::copy_nonoverlapping(sd.booleanVars, si.booleanVarsPre, md.nVariablesBoolean.max(0) as usize);
+        }
+        self.store_pre_strings();
+    }
 }
 
 impl SimEngine for CEngine {
@@ -252,7 +265,9 @@ impl SimEngine for CEngine {
             }
             "functionAlgebraics" => {
                 self.rt.info().callStatistics.functionAlgebraics += 1;
-                self.call_cb(cb.functionAlgebraics)
+                self.call_cb(cb.functionAlgebraics)?;
+                self.store_pre_values();
+                Ok(())
             }
             "functionDAE" => {
                 self.rt.info().callStatistics.updateDiscreteSystem += 1;
@@ -460,7 +475,11 @@ impl SimEngine for CEngine {
                         self.stage,
                     )
                 };
-                self.absorb(rc)
+                self.absorb(rc)?;
+                if b == driver::eval_stage::ALGEBRAIC {
+                    self.store_pre_values();
+                }
+                Ok(())
             }
             // The driver names a sub-clock by its flat index, which is what a wasm
             // module's dispatcher takes; C's takes the `(base, sub)` pair.
