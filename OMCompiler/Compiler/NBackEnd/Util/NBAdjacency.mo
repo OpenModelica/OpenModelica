@@ -462,6 +462,20 @@ public
       end for;
     end setRow;
 
+    function setRowFromArray
+      "setRow with the first n entries of values"
+      input IntMatrix m;
+      input Integer row;
+      input array<Integer> values;
+      input Integer n;
+    algorithm
+      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, row, n);
+      for i in 1:n loop
+        Vector.push(m.data, values[i]);
+      end for;
+    end setRowFromArray;
+
     function reserveData
       "makes room for extra more entries so that adding them does not grow the buffer"
       input IntMatrix m;
