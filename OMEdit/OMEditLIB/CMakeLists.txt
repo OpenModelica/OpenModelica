@@ -461,9 +461,10 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
 #
 # The build downloads the standalone server for the target platform from the
 # modelica-language-server release named by MODELICA_LS_VERSION and installs it
-# beside OMEdit's translations, in <datarootdir>/omedit/ls. It is a single
-# self-contained executable: nothing else has to be installed to use it, in
-# particular not Node.js.
+# beside OMEdit's translations, in <datarootdir>/omedit/ls. It brings its own
+# runtime, so nothing else has to be installed to use it, in particular not
+# Node.js -- but it does not embed the tree-sitter grammar, so the two .wasm
+# files are installed with it and must stay in the same directory.
 #
 # With *Server Executable* left empty on the Language Server options page OMEdit
 # runs this server. The user can still download another release from that page,
@@ -489,7 +490,8 @@ target_compile_definitions(OMEditLib PRIVATE MODELICA_LS_VERSION="${MODELICA_LS_
 
 # Beside Resources/nls above. findBundledServer() looks here through
 # <prefix>/share/omedit, which holds on Windows too: OMEdit.exe lives in bin/,
-# so bin/../share/omedit resolves to the same place.
+# so bin/../share/omedit resolves to the same place. OMEditGUI stages the same
+# files next to the built executable, for running without installing.
 set(MODELICA_LS_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omedit/ls)
 
 if(MODELICA_LS_DIR)

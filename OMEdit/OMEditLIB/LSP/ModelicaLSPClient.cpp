@@ -81,12 +81,14 @@ QJsonObject ModelicaLSPClient::initializationOptions(const QStringList &librarie
 
 /*!
  * \brief ModelicaLSPClient::findBundledServer
- * Looks for the Modelica language server shipped alongside OMEdit.
- * Prefers a standalone binary (no Node.js required) over server.js.
- * Checks next to the executable first (Windows / dev builds), then the
- * installed share directory (Linux / macOS), and finally the share directory
- * of the OpenModelica installation OMEdit is talking to — a binary run from
- * the build tree has no share directory of its own.
+ * Looks for the Modelica language server shipped alongside OMEdit, in the
+ * "ls" directory the build installs and stages. Prefers a standalone binary
+ * over server.js, since the binary needs no Node.js.
+ *
+ * Checked in order: next to the executable, which covers a Windows install and
+ * a run straight out of the build tree, where the build stages a copy; then
+ * ../share/omedit, the Linux and macOS install layout; and finally the share
+ * directory of the OpenModelica installation OMEdit is talking to.
  */
 QString ModelicaLSPClient::findBundledServer()
 {

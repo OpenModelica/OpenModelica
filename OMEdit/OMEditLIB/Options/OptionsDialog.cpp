@@ -7183,7 +7183,7 @@ void LanguageServerPage::restartServer()
 
 /*!
  * \brief LanguageServerPage::testedServerVersion
- * Tag of the modelica-language-server release this OMEdit is built against,
+ * Tag of the modelica-language-server release installed with this OMEdit,
  * kept in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt so the
  * download offer and the bundled server cannot drift apart.
  */
@@ -7240,7 +7240,7 @@ QString LanguageServerPage::platformServerAsset()
  * downloaded file can be checked against it before OMEdit ever runs it.
  *
  * The digests are taken from the GitHub release API rather than pinned in
- * OMEdit: a pin only covers the one release OMEdit was built against, and the
+ * OMEdit: a pin only covers the one release OMEdit ships, and the
  * user may pick any published version here.
  * \return false when the release could not be read at all. A release that
  *     publishes no digest yields an empty entry, which the caller reports.

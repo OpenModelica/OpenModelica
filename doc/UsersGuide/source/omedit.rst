@@ -2039,8 +2039,11 @@ OpenModelica installs a
 `Modelica language server <https://github.com/OpenModelica/modelica-language-server>`_
 alongside OMEdit, so nothing has to be set up to use the feature: check the
 *Language Server Protocol (LSP)* group, leave *Server Executable* blank, and
-click *OK*.  It is a single self-contained executable, so Node.js is **not**
-required.
+click *OK*.  It brings its own runtime, so Node.js is **not** required.
+
+It is installed in ``share/omedit/ls`` as three files: the server itself and
+the two ``.wasm`` files it parses Modelica with.  They belong together - a
+server without them starts, and then answers nothing.
 
 **Using a different server**
 
@@ -2051,7 +2054,10 @@ rights are needed.
 
 You can also point *Server Executable* at a server of your own:
 
--  a standalone binary - set the path directly, no Node.js needed;
+-  a standalone binary - set the path directly, no Node.js needed.  Keep
+   ``tree-sitter-modelica.wasm`` and ``web-tree-sitter.wasm`` in the same
+   directory; without them the server starts but reports nothing, and OMEdit
+   says so in the Messages Browser;
 
 -  a ``.js`` file - OMEdit runs it with ``node``, so
    `Node.js <https://nodejs.org>`_ (version 16 or later) has to be installed.
