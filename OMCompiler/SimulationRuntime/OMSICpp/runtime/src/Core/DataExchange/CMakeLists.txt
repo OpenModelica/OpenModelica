@@ -13,7 +13,7 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 if(NOT BOOST_STATIC_LINKING)
-  target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName}  ${ModelicaName})
+  target_link_libraries (${DataExchangeName} omsicpp_boost_libs ${ExtensionUtilitiesName}  ${ModelicaName})
 
 endif(NOT BOOST_STATIC_LINKING)
 

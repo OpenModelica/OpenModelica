@@ -11,7 +11,7 @@ else(OPENMP_FOUND)
   set(OpenMP_CXX_FLAGS "")
 endif(OPENMP_FOUND)
 
-target_link_libraries(${CppDASSLName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${UMFPACK_LIB})
+target_link_libraries(${CppDASSLName} ${SolverName} ${ExtensionUtilitiesName} omsicpp_boost_libs ${UMFPACK_LIB})
 
 if(OPENMP_FOUND)
   set_target_properties(${CppDASSLName} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})

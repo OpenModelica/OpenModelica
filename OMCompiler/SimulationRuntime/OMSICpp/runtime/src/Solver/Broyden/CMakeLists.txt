@@ -12,7 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${BroydenName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+target_link_libraries(${BroydenName} ${SolverName} ${ExtensionUtilitiesName} omsicpp_boost_libs ${LAPACK_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${BroydenName} runtime/include/Solver/Modelica.h)
 
 

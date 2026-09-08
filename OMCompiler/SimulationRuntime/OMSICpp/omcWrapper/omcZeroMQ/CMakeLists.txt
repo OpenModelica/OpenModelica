@@ -80,5 +80,5 @@ add_executable(${OMCZeroMQName} src/omc.cpp src/omcZeromqTask.cpp)
 #link with gc lib
 #target_link_libraries(${OMCZeroMQName}   ${ZeroMQ_LIB} ${OMCCAPIName} ${Boost_LIBRARIES} ${OMCGC_LIB} )
 #target_link_libraries(${OMCZeroMQName}  ${ZeroMQ_LIBRARY} ${OMCCAPIName} ${Boost_LIBRARIES}  )
-target_link_libraries(${OMCZeroMQName} ${Boost_LIBRARIES} libzmq ${OMCCAPIName})
+target_link_libraries(${OMCZeroMQName} omsicpp_boost_libs libzmq ${OMCCAPIName})
 install(TARGETS ${OMCZeroMQName} DESTINATION bin )

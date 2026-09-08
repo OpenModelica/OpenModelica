@@ -12,7 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries (${RTEulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries (${RTEulerName} ${SolverName} omsicpp_boost_libs ${LAPACK_LIBRARIES})
 
 
 install(TARGETS ${RTEulerName} DESTINATION ${LIBINSTALLEXT})

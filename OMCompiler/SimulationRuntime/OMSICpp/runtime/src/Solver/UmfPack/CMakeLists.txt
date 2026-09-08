@@ -15,7 +15,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${UmfPackName}  ${SolverName}  ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
+target_link_libraries(${UmfPackName}  ${SolverName}  ${MathName} ${SUITESPARSE_LIBRARIES} omsicpp_boost_libs ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 
 
 

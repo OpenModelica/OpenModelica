@@ -33,6 +33,19 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
+if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  message(WARNING
+    "Building the C++ simulation runtime with Clang on MinGW/MSYS2. MSYS2's "
+    "prebuilt Boost packages (libboost_program_options-mt.a, etc.) are compiled "
+    "with GCC, not Clang. Code that directly uses Boost.ProgramOptions (e.g. "
+    "OMCFactory.cpp) can then fail to link with errors like \"multiple "
+    "definition of boost::program_options::validators::get_single_string"
+    "<char>(...)::empty\", because Clang and GCC emit incompatible "
+    "guard-variable/COMDAT symbols for that header-inline template static. "
+    "If you hit that, reconfigure this build with GCC instead "
+    "(-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++).")
+endif()
+
 if(OPENMODELICA_NEW_CMAKE_BUILD)
 include(cmake_3.14.cmake)
 else(OPENMODELICA_NEW_CMAKE_BUILD)

@@ -11,7 +11,7 @@ else(OPENMP_FOUND)
   set(OpenMP_CXX_FLAGS "")
 endif(OPENMP_FOUND)
 
-target_link_libraries(${PeerName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES})
+target_link_libraries(${PeerName} ${SolverName} ${ExtensionUtilitiesName} omsicpp_boost_libs)
 
 if(OPENMP_FOUND)
   set_target_properties(${PeerName} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})

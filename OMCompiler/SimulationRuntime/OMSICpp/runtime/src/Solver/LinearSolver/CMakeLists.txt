@@ -4,11 +4,11 @@ project(${LinearSolverName})
 if(DGESV_FOUND)
   include_directories (${DGESV_INCLUDE_DIR})
   add_library(${LinearSolverName} LinearSolver.cpp LinearSolverSettings.cpp FactoryExport.cpp  ${DGESV_SRCS} )
-  target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${ModelicaName})
+  target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES} ${ModelicaName})
 else()
   #use full lapack
   add_library(${LinearSolverName} LinearSolver.cpp LinearSolverSettings.cpp FactoryExport.cpp )
-  target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+  target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 endif(DGESV_FOUND)
 
 if(NOT BUILD_SHARED_LIBS)
@@ -20,7 +20,7 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${LinearSolverName} runtime/include/Core/Modelica.h)
-target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} omsicpp_boost_libs ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 
 
 

@@ -10,7 +10,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ReduceDAEName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${ReduceDAEName} ${Boost_LIBRARIES} ${OMCCAPI_LIB} )
+target_link_libraries(${ReduceDAEName} omsicpp_boost_libs ${OMCCAPI_LIB} )
 add_precompiled_header(${ReduceDAEName} Include/Core/Modelica.h)
 
 install(FILES "ReduceDAESettings.xml" DESTINATION share/omc/runtime/cpp/config)

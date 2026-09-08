@@ -5,7 +5,7 @@ set(BASE_LIB "" CACHE INTERNAL "" )
 
 
 add_library(${SystemBaseName} LinearAlgLoopDefaultImplementation.cpp NonLinearAlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimObjects.cpp SimVars.cpp FactoryExport.cpp)
-target_link_libraries(${SystemBaseName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}   ${ExtensionUtilitiesName})
+target_link_libraries(${SystemBaseName} omsicpp_boost_libs ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}   ${ExtensionUtilitiesName})
 
 
 if(NOT BUILD_SHARED_LIBS)

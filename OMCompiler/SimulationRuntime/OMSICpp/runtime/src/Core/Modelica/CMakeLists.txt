@@ -10,7 +10,7 @@ if(NOT BUILD_SHARED_LIBS)
 
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
+target_link_libraries(${ModelicaName} omsicpp_boost_libs)
 
 if(MSVC)
   set(LINKER_LIB_PREFIX "")

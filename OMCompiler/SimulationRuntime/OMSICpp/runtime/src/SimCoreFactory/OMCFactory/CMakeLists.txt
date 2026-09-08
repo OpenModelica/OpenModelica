@@ -11,9 +11,9 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 if(WIN32)
-  target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} wsock32 ws2_32)
+  target_link_libraries(${OMCFactoryName} omsicpp_boost_libs ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} wsock32 ws2_32)
 else(WIN32)
-  target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} ${CPPTHREADS_LIBRARY})
+  target_link_libraries(${OMCFactoryName} omsicpp_boost_libs ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} ${CPPTHREADS_LIBRARY})
 endif(WIN32)
 add_precompiled_header(${OMCFactoryName} runtime/include/Core/Modelica.h)
 
