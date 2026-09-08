@@ -896,22 +896,17 @@ public function dimensionsKnown
   input DAE.Type inType;
   output Boolean outRes;
 algorithm
-  outRes := matchcontinue inType
+  outRes := match inType
     local
       DAE.Dimension d;
       DAE.Dimensions dims;
       Type tp;
 
-    case DAE.T_ARRAY(dims = d::dims, ty = tp)
-      algorithm
-        true := Expression.dimensionKnown(d);
-        true := dimensionsKnown(DAE.T_ARRAY(tp, dims));
+    case DAE.T_ARRAY(dims = d::dims, ty = tp) guard Expression.dimensionKnown(d) and dimensionsKnown(DAE.T_ARRAY(tp, dims))
       then
         true;
 
-    case DAE.T_ARRAY(dims = {}, ty = tp)
-      algorithm
-        true := dimensionsKnown(tp);
+    case DAE.T_ARRAY(dims = {}, ty = tp) guard dimensionsKnown(tp)
       then
         true;
 
@@ -922,7 +917,7 @@ algorithm
       then dimensionsKnown(tp);
 
     else true;
-  end matchcontinue;
+  end match;
 end dimensionsKnown;
 
 public function getDimensionSizes "Return the dimension sizes of a Type."
@@ -1583,18 +1578,16 @@ protected function subtypeTypelist "PR. function: subtypeTypelist
   input Boolean requireRecordNamesEqual;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inTypeLst1, inTypeLst2)
+  outBoolean := match (inTypeLst1, inTypeLst2)
     local
       Type t1,t2;
       list<DAE.Type> rest1,rest2;
 
     case ({}, {}) then true;
-    case ((t1 :: rest1), (t2 :: rest2))
-      algorithm
-        true := subtype(t1, t2, requireRecordNamesEqual);
+    case ((t1 :: rest1), (t2 :: rest2)) guard subtype(t1, t2, requireRecordNamesEqual)
       then subtypeTypelist(rest1, rest2, requireRecordNamesEqual);
     else false;  /* default */
-  end matchcontinue;
+  end match;
 end subtypeTypelist;
 
 protected function subtypeVarlist "This function checks if the Var list in the first list is a
@@ -1767,15 +1760,13 @@ protected function lookupComponent2 "This function finds a named Var in a list o
   input String inIdent;
   output DAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVarLst,inIdent)
+  outVar := match (inVarLst,inIdent)
     local
       DAE.Var v;
       String n,m;
       list<DAE.Var> vs;
 
-    case (((v as DAE.TYPES_VAR(name = n)) :: _),m)
-      algorithm
-        true := stringEq(n, m);
+    case (((v as DAE.TYPES_VAR(name = n)) :: _),m) guard stringEq(n, m)
       then
         v;
 
@@ -1784,7 +1775,7 @@ algorithm
         v := lookupComponent2(vs, n);
       then
         v;
-  end matchcontinue;
+  end match;
 end lookupComponent2;
 
 public function makeArray "This function makes an array type given a Type and an Absyn.ArrayDim"
@@ -1938,7 +1929,7 @@ public function liftArrayRight "This function adds an array dimension to *the ri
   input DAE.Dimension inIntegerOption;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType,inIntegerOption)
+  outType := match (inType,inIntegerOption)
     local
       Type ty_1,ty;
       DAE.Dimension dim;
@@ -1954,16 +1945,15 @@ algorithm
       then
         DAE.T_ARRAY(ty_1, {dim});
 
-    case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec),d)
+    case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec),d) guard not listEmpty(TypesDump.getDimensions(ty))
       algorithm
-        false := listEmpty(TypesDump.getDimensions(ty));
         ty_1 := liftArrayRight(ty,d);
       then DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec);
 
     case (tty,d)
       then
         DAE.T_ARRAY(tty,{d});
-  end matchcontinue;
+  end match;
 end liftArrayRight;
 
 public function unliftArray "This function turns an array of a type into that type."
@@ -2546,7 +2536,7 @@ protected function makeReturnType "author: LS
   input list<DAE.Var> inVarLst;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue inVarLst
+  outType := match inVarLst
     local
       Type ty;
       Var var;
@@ -2564,7 +2554,7 @@ algorithm
       then DAE.T_TUPLE(
         list(makeReturnTypeSingle(v) for v in vl),
         SOME(list(TypesDump.getVarName(v) for v in vl)));
-  end matchcontinue;
+  end match;
 end makeReturnType;
 
 protected function makeReturnTypeSingle "author: LS
@@ -3194,22 +3184,19 @@ protected function varsElabEquivalent
   input DAE.Var inVar2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(inVar1, inVar2)
+  isEqual := match(inVar1, inVar2)
     local
       DAE.Ident id1, id2;
       DAE.Type ty1, ty2;
 
     case (DAE.TYPES_VAR(name = id1, ty = ty1),
-          DAE.TYPES_VAR(name = id2, ty = ty2))
-      algorithm
-        true := stringEqual(id1, id2);
-        true := typesElabEquivalent(ty1, ty2);
+          DAE.TYPES_VAR(name = id2, ty = ty2)) guard stringEqual(id1, id2) and typesElabEquivalent(ty1, ty2)
       then
         true;
 
     else false;
 
-  end matchcontinue;
+  end match;
 end varsElabEquivalent;
 
 public function matchProp
@@ -6765,16 +6752,14 @@ public function allHaveBindings
   input list<DAE.Var> inVars;
   output Boolean b;
 algorithm
-  b := matchcontinue inVars
+  b := match inVars
     local
       DAE.Var v;
       list<DAE.Var> rest;
 
     case {} then true;
 
-    case v::_
-      algorithm
-        false := hasBinding(v);
+    case v::_ guard not hasBinding(v)
       then
         false;
 
@@ -6785,7 +6770,7 @@ algorithm
       then
         true;
 
-  end matchcontinue;
+  end match;
 end allHaveBindings;
 
 public function hasBinding
@@ -6803,20 +6788,10 @@ public function typeErrorSanityCheck
   input String inType2;
   input SourceInfo inInfo;
 algorithm
-  () := matchcontinue inInfo
-    case _
-      algorithm
-        false := stringEq(inType1, inType2);
-      then
-        ();
-
-    else
-      algorithm
-        Error.addSourceMessage(Error.ERRONEOUS_TYPE_ERROR, {inType1}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
+  if stringEq(inType1, inType2) then
+    Error.addSourceMessage(Error.ERRONEOUS_TYPE_ERROR, {inType1}, inInfo);
+    fail();
+  end if;
 end typeErrorSanityCheck;
 
 public function dimNotFixed

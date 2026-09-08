@@ -58,7 +58,7 @@ pub fn getProfStats() -> ProfStats {
 
 // `profStatsStr` calls `intString` to format each field. `intString` is
 // infallible and now returns `ArcStr` directly (no `.unwrap()` needed).
-pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> Result<ArcStr> {
+pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> ArcStr {
     let s: ArcStr = (match stats.clone() {
         PROFSTATS { .. } => { let mut __mm_s = String::new();
             __mm_s.push_str(&*head);
@@ -97,7 +97,7 @@ pub fn profStatsStr(stats: ProfStats, head: ArcStr, delimiter: ArcStr) -> Result
             __mm_s.push_str(&*intString(stats.reclaimed_bytes_before_gc.clone()));
             ArcStr::from(__mm_s) },
     });
-    Ok(s)
+    s
 }
 
 pub fn setForceUnmapOnGcollect(forceUnmap: bool) {}

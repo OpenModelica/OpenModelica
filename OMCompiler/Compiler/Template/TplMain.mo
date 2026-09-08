@@ -261,7 +261,7 @@ public function tplMainTest
   input String inFile;
 algorithm
 
-  () := matchcontinue inFile
+  () := match inFile
     local
       //Tpl.Tokens toks, txttoks;
       String  str, strOut, ident, cval;
@@ -1427,7 +1427,7 @@ is\\n verbatim!
       then
         ();
 
-  end matchcontinue;
+  end match;
 end tplMainTest;
 
 

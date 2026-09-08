@@ -58,6 +58,7 @@ mmtorust/src/fallibility.rs
 mmtorust/src/fix.rs
 mmtorust/src/hierarchy.rs
 mmtorust/src/main.rs
+mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs
 mmtorust/src/scripting_api_qt.rs
 mmtorust/src/typedexp.rs

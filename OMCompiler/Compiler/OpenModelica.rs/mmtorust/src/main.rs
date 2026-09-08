@@ -15,11 +15,12 @@ mod validate;
 mod dep_analysis;
 mod unused_functions;
 mod const_patterns;
+mod mc_disjoint;
 mod mutable_cycles;
 mod scripting_api_qt;
 use rayon::prelude::*;
 
-fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
+fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Option<String>) {
     let mut failures = 0;
     let t0 = std::time::Instant::now();
     let mut all_classes: Vec<MM::Class> = Vec::new();
@@ -91,6 +92,15 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     for w in &info.matchcontinue_as_match {
         eprintln!("{w}");
     }
+    // `--mc-report <file>`: dump one line per matchcontinue the lint could not
+    // clear, with the arm that blocks it and why (see `fallibility::mc_report`).
+    if let Some(path) = mc_report_path {
+        match std::fs::write(&path, info.mc_report.join("\n") + "\n") {
+            Ok(()) => println!("--mc-report: wrote {} line(s) to {path}", info.mc_report.len()),
+            Err(e) => eprintln!("--mc-report: {path}: {e}"),
+        }
+        if !fix { return; }
+    }
     if !info.matchcontinue_as_match.is_empty() {
         println!(
             "Fallibility analysis: {} matchcontinue expression(s) could be rewritten as `match`",
@@ -102,7 +112,7 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     // the MetaModelica sources and stop (no code generation). The user then
     // verifies the rewrites by rebuilding the boot compiler / running tests.
     if fix {
-        match fix::apply_match_fixes(&info.matchcontinue_as_match_locs) {
+        match fix::apply_match_fixes(&info.matchcontinue_as_match_locs, &info.matchcontinue_guard_hoists) {
             Ok(s) => println!(
                 "--fix: rewrote {} matchcontinue → match across {} file(s); {} skipped",
                 s.rewritten, s.files_changed, s.skipped,
@@ -414,6 +424,10 @@ fn main() {
     // `--fix` rewrites provably-safe `matchcontinue`s to `match` in the sources
     // (see `crate::fix`) instead of generating code.
     let fix = args.iter().any(|a| a == "--fix");
+    let mc_report_path: Option<String> = args.iter()
+        .position(|a| a == "--mc-report")
+        .and_then(|i| args.get(i + 1))
+        .cloned();
     // `--sources <file>` reads the list of MetaModelica files to transpile from
     // `<file>` instead of the default `compilerSources.txt`. This is how the
     // build transpiles only the subset needed to build the Susan binary
@@ -488,6 +502,6 @@ fn main() {
         Some("unused-functions") => run_unused_functions(parsed),
         Some("const-patterns") => run_const_patterns(parsed),
         Some("mutable-cycles") => run_mutable_cycles(parsed),
-        _ => start_compilation(parsed, fix),
+        _ => start_compilation(parsed, fix, mc_report_path),
     }
 }

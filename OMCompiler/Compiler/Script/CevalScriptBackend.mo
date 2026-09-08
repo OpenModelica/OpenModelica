@@ -6937,25 +6937,8 @@ protected function applyRewriteRulesOnBackend
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue inBackendDAE
-    local
-
-    // no rewrites!
-    case _
-      algorithm
-        true := RewriteRules.noRewriteRulesBackEnd();
-      then
-        inBackendDAE;
-
-    // some rewrites
-    case _
-      algorithm
-        false := RewriteRules.noRewriteRulesBackEnd();
-        outBackendDAE := BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
-      then
-        outBackendDAE;
-
-  end matchcontinue;
+  outBackendDAE := if RewriteRules.noRewriteRulesBackEnd() then inBackendDAE
+                   else BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
 end applyRewriteRulesOnBackend;
 
 protected function getClassnamesInClassList

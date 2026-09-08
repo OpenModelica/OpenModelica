@@ -675,25 +675,17 @@ protected function replaceFinalVars
   input BackendVarTransform.VariableReplacements inRepl;
   output BackendDAE.Variables outVars;
   output BackendVarTransform.VariableReplacements outRepl;
+protected
+  Integer numrepl;
+  BackendDAE.Variables globalKnownVars1;
+  BackendVarTransform.VariableReplacements repl1;
 algorithm
-  (outVars,outRepl) := matchcontinue(inNumRepl,inVars,inRepl)
-    local
-      Integer numrepl;
-      BackendDAE.Variables globalKnownVars,globalKnownVars1,globalKnownVars2;
-      BackendVarTransform.VariableReplacements repl,repl1,repl2;
-
-    case(numrepl,globalKnownVars,repl)
-      algorithm
-      true := intEq(0,numrepl);
-    then (globalKnownVars,repl);
-
-    case(_,globalKnownVars,repl)
-      algorithm
-      (globalKnownVars1, (repl1,numrepl)) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars,replaceFinalVarTraverser,(repl,0));
-      (globalKnownVars2, repl2) := replaceFinalVars(numrepl,globalKnownVars1,repl1);
-    then (globalKnownVars2,repl2);
-
-  end matchcontinue;
+  if intEq(0,inNumRepl) then
+    (outVars,outRepl) := (inVars,inRepl);
+  else
+    (globalKnownVars1, (repl1,numrepl)) := BackendVariable.traverseBackendDAEVarsWithUpdate(inVars,replaceFinalVarTraverser,(inRepl,0));
+    (outVars,outRepl) := replaceFinalVars(numrepl,globalKnownVars1,repl1);
+  end if;
 end replaceFinalVars;
 
 
