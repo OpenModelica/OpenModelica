@@ -8011,6 +8011,23 @@ impl SolverCore {
         stats.time_events = self.time_events;
     }
 
+    /// C's `SOLVER_METHOD_NAME` for the integrator this core runs.
+    fn method_label(&self) -> &'static str {
+        match &self.solver {
+            Solver::Daskr(_) => "dassl",
+            #[cfg(sundials)]
+            Solver::Cvode(_) => "cvode",
+            #[cfg(sundials)]
+            Solver::Ida(_) => "ida",
+            Solver::Gbode(_) => "gbode",
+            Solver::Fixed(f) => match f.kind() {
+                crate::fixedstep::FixedKind::Euler => "euler",
+                _ => "rungekutta",
+            },
+            Solver::Sym(_) => "symSolver",
+        }
+    }
+
     /// Whether the solver returns after each internal step, which
     /// `-noEquidistantTimeGrid` needs. CVODE here does not.
     fn reports_steps(&self) -> bool {
@@ -8964,6 +8981,7 @@ impl CsDriver {
 
     pub fn fill_stats(&self, stats: &mut SolveStats) {
         self.core.fill_stats(stats);
+        stats.method = self.core.method_label();
     }
 }
 
