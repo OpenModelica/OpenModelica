@@ -43,10 +43,18 @@ pub struct Run {
     pub jacobians: u64,
     pub state_events: u64,
     pub time_events: u64,
-    /// When the events happened, in order — what a plot marks and a test checks.
-    pub event_times: Vec<f64>,
+    /// The events handled, in order — what a plot marks and a test checks.
+    pub event_times: Vec<Event>,
     /// Discarded steps taken again at half the size.
     pub retries: u64,
+}
+
+/// One event the master handled: a time event it was told of, or a state event it
+/// located (or the FMU asked for after a step).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Event {
+    pub time: f64,
+    pub time_event: bool,
 }
 
 /// A run that ended before its first step.
@@ -966,7 +974,8 @@ pub fn simulate(
                 terminated_at = Some(t);
                 break 'grid;
             }
-            if event_at.is_none() && next_event <= t + grid_epsilon(opts) {
+            let time_event = event_at.is_none() && next_event <= t + grid_epsilon(opts);
+            if time_event {
                 event_at = Some(next_event);
                 time_events += 1;
             } else if event_at.is_some() {
@@ -983,7 +992,7 @@ pub fn simulate(
             // C clears `retry` with every accepted step, an event step included.
             halved = None;
             t = te;
-            event_times.push(te);
+            event_times.push(Event { time: te, time_event });
             ode.commit_point(t, &x, &xp)?;
             ode.forget_point();
             {

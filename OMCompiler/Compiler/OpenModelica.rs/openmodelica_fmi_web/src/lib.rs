@@ -605,7 +605,7 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
                     "jacobians": r.jacobians,
                     "stateEvents": r.state_events,
                     "timeEvents": r.time_events,
-                    "eventTimes": r.event_times,
+                    "eventTimes": r.event_times.iter().map(|e| e.time).collect::<Vec<_>>(),
                     "terminatedAt": r.terminated_at,
                     "cancelled": r.cancelled,
                     "solver": opts.solver.as_str(),

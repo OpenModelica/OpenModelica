@@ -24,6 +24,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
+use openmodelica_sim_meta::omclog;
 use openmodelica_fmi_driver::api::Fmi3;
 use openmodelica_fmi_driver::component::WasmArtifact;
 use openmodelica_fmi_driver::{cs, me, Options, Solver};
@@ -703,7 +704,8 @@ fn run_fmi(
             for (_, category, message) in inst.take_log() {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
-            let (r, s) = driven?;
+            let (r, s, events) = driven?;
+            log.push_str(&events);
             (r, s, elapsed)
         }
         Form::Dylink { .. } => {
@@ -717,11 +719,12 @@ fn run_fmi(
                 .map_err(|e| e.to_string())?;
                 linked_ms = ms(t);
                 let t = Instant::now();
-                let (r, s) = drive(inst, kind, md, &opts)?;
-                Ok((r, s, ms(t)))
+                let (r, s, events) = drive(inst, kind, md, &opts)?;
+                Ok((r, s, events, ms(t)))
             });
             log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
-            let (r, s, e) = driven?;
+            let (r, s, events, e) = driven?;
+            log.push_str(&events);
             log.push_str(&format!(
                 "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
@@ -745,10 +748,23 @@ fn drive<T>(
     kind: InterfaceKind,
     md: &openmodelica_fmi::ModelDescription,
     opts: &Options,
-) -> std::result::Result<(openmodelica_fmi_driver::record::Recorder, String), String>
+) -> std::result::Result<(openmodelica_fmi_driver::record::Recorder, String, String), String>
 where
     T: openmodelica_fmi_driver::api::Fmi3ModelExchange + openmodelica_fmi_driver::api::Fmi3CoSimulation,
 {
+    // The master's events under `-lv LOG_EVENTS`, as the standalone driver logs its own.
+    let events_log = |events: &[(f64, bool)]| -> String {
+        if !omclog::active(omclog::EVENTS) {
+            return String::new();
+        }
+        events
+            .iter()
+            .map(|(t, time_event)| {
+                let kind = if *time_event { "time" } else { "state" };
+                format!("LOG_EVENTS        | info    | {kind} event at time={t:.12}\n")
+            })
+            .collect()
+    };
     match kind {
         InterfaceKind::ModelExchange => {
             let run = me::simulate(inst, md, opts).map_err(|e| e.to_string())?;
@@ -760,7 +776,8 @@ where
                 "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
-            Ok((run.recorder, s))
+            let events: Vec<(f64, bool)> = run.event_times.iter().map(|e| (e.time, e.time_event)).collect();
+            Ok((run.recorder, s, events_log(&events)))
         }
         _ => {
             let run = cs::simulate(inst, md, opts).map_err(|e| e.to_string())?;
@@ -768,7 +785,7 @@ where
                 "{} communication steps, {} events, {} early returns",
                 run.steps, run.events, run.early_returns
             );
-            Ok((run.recorder, s))
+            Ok((run.recorder, s, String::new()))
         }
     }
 }
