@@ -469,3 +469,27 @@ OpenModelica, e.g.,
 ```perl
 $OPENMODELICAHOME="$1build_cmake_release/install_cmake";
 ```
+
+## 7. Modelica libraries (omlibrary)
+
+An OpenModelica installation ships a cache of Modelica libraries in
+`<prefix>/share/omlibrary/cache` so that `installPackage` works without network access.
+The `omlibrary` target downloads the libraries listed in `libraries/install-index.json` and
+stages them in the build directory, from where `install` copies them to the installation.
+
+Since it uses the installed `omc` to do the downloading, OpenModelica has to be built and
+installed first.
+
+```sh
+cmake --build build_cmake --target install --parallel <Nr. of cores>
+cmake --build build_cmake --target omlibrary
+# Copy the downloaded libraries into the installation. Either install everything again
+cmake --build build_cmake --target install
+# or only the libraries
+cmake --install build_cmake --component omlibrary
+```
+
+Installing honors `DESTDIR`, e.g., `make install DESTDIR=/some/where`.
+
+The libraries used by the testsuite are a different, larger set (`libraries/index.json`) and
+are handled by the `libs-for-testing` target instead.
