@@ -11836,15 +11836,26 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             Ok(ctx.q(&format!("({arg1}).get({arg2})")))
         },
         "referenceEq" => {
-            let arg1 = args.first().map(|a| emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            let arg2 = args.get(1).map(|a| emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)).unwrap_or_default();
+            let ty1 = args.first().map(|a| a.ty()).unwrap_or_default();
+            let ty2 = args.get(1).map(|a| a.ty()).unwrap_or_default();
+            // The operands are only borrowed, so a plain owned Arc/List local
+            // reads as `&*x` (the `Var` arm decides ownership) instead of a clone.
+            let ty = if ty_contains_unknown(&ty1) { &ty2 } else { &ty1 };
+            let borrowable = referenceeq_derefs_to_pointee(ty, ctx) || matches!(ty, Ty::List(_));
+            let arg1 = args.first().map(|a| {
+                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
+                emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)
+            }).unwrap_or_default();
+            let arg2 = args.get(1).map(|a| {
+                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
+                emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)
+            }).unwrap_or_default();
+            ctx.borrow_reads = false;
             // The lowering is type-directed; see [`try_emit_reference_eq`].
             // Both sides carry the same MM type, but one may have decayed to
             // Unknown during typing — try the first side's type, then the
             // second's, before giving up on representation info entirely.
             // referenceEq is infallible: returns bool directly, no ctx.q() needed
-            let ty1 = args.first().map(|a| a.ty()).unwrap_or_default();
-            let ty2 = args.get(1).map(|a| a.ty()).unwrap_or_default();
             Ok(try_emit_reference_eq(&arg1, &arg2, &ty1, ctx, top_level)
                 .or_else(|| try_emit_reference_eq(&arg1, &arg2, &ty2, ctx, top_level))
                 // Fallback for types the structural lowering cannot decide —
@@ -17924,6 +17935,15 @@ fn referenceeq_derefs_to_pointee(ty: &Ty, ctx: &GenCtx) -> bool {
     }
 }
 
+/// `&List<T>` for a list operand: a borrow-only read arrives as `&*x` (which
+/// would deref to the node), everything else as an owned expression.
+fn list_operand_ref(operand: &str) -> String {
+    match operand.strip_prefix("&*") {
+        Some(local) => format!("&({local})"),
+        None => format!("&({operand})"),
+    }
+}
+
 /// Lower MetaModelica `referenceEq(a, b)` to a Rust expression, given the
 /// operands' already-emitted text (`lhs`/`rhs` must be valid Rust *value*
 /// expressions) and their MM type.
@@ -17997,7 +18017,9 @@ fn try_emit_reference_eq<'a>(
         // and Cons by head identity + tail allocation — O(1), true whenever
         // the MMC pointer compare would be.
         Ty::List(_) => Some(format!(
-            "metamodelica::ReferenceEq::reference_eq(&({lhs}), &({rhs}))"
+            "metamodelica::ReferenceEq::reference_eq({}, {})",
+            list_operand_ref(lhs),
+            list_operand_ref(rhs)
         )),
         _ if referenceeq_derefs_to_pointee(ty, ctx) => {
             Some(format!("referenceEq(&*({lhs}),&*({rhs}))"))
