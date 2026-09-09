@@ -70,4 +70,6 @@ function(omc_result_reader_library)
     install(PROGRAMS ${_lib} DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
   add_dependencies(omc::result rust_omc_result)
+  # Where the Windows install(RUNTIME_DEPENDENCIES) scans have to look for omc_result.dll.
+  set(OMC_RESULT_LIB_DIR ${_out} PARENT_SCOPE)
 endfunction()
