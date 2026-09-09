@@ -1213,6 +1213,14 @@ macro_rules! shared_instance_methods {
 
     fn terminate(&self) -> Status {
         let mut st = self.st.borrow_mut();
+        #[cfg(feature = "cs")]
+        if omclog::active(omclog::STATS) {
+            if let Some(d) = &st.cs {
+                let mut stats = openmodelica_sim_meta::SolveStats::default();
+                d.fill_stats(&mut stats);
+                stdio::print(openmodelica_sim_meta::stats::log_stats_block(&stats).as_bytes());
+            }
+        }
         st.destruct_external_objects();
         Status::Ok
     }
