@@ -1278,6 +1278,11 @@ algorithm
           if not listEmpty(SimCodeUtil.getFMI3Terminals(simCode)) then
             Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
           end if;
+          // fmi-ls-dae: create extra/org.fmi-standard.fmi-ls-dae/ for a --daeMode
+          // Model Exchange model; the CodegenFMU3 template writes the manifest into it.
+          if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
+            Util.createDirectoryTree(fmutmp + "/extra/org.fmi-standard.fmi-ls-dae/");
+          end if;
         end if;
 
         /*

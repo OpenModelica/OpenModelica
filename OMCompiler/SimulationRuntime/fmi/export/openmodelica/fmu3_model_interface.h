@@ -125,6 +125,10 @@ typedef struct {
   fmi3Float64 stopTime;
 
   int _need_update;
+  /* fmi-ls-dae: Configuration Mode is the only place the DAE-mode structural
+   * parameter may be set, and _dae_mode is what it was set to. */
+  int _configuration_mode;
+  int _dae_mode;
   int _held_assert_logged;
   int _terminate_simulation_requested;
   int _has_jacobian;

@@ -58,6 +58,7 @@
 #endif
 #include "../simulation/solver/delay.h"
 #include "../simulation/solver/discrete_changes.h"
+#include "../simulation/solver/dae_mode.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 #include "../simulation/solver/synchronous.h"
@@ -86,6 +87,48 @@ DLLExport pthread_key_t fmu3_thread_data_key;
 fmi3ValueReference vrStates[NUMBER_OF_STATES] = STATES;
 fmi3ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 #endif
+
+/* ---------------------------------------------------------------------------
+ * fmi-ls-dae
+ *
+ * A --daeMode model has no explicit ODE: its continuous equations are the
+ * residual F(t, x, x', z) = 0 over the states, their derivatives and the
+ * algebraic DAE variables. Such an FMU is an ordinary ODE FMU until the importer
+ * sets the structural parameter the fmi-ls-dae manifest names
+ * (FMI3_DAE_ENABLE_VR, settable in Configuration Mode only), and a DAE FMU
+ * after: the importer owns x, x' and z, sets them like any other variable, and
+ * reads the residuals back from the value references following the switch.
+ * ------------------------------------------------------------------------- */
+#ifndef FMI3_DAE_ENABLE_VR
+/* A model whose FMU header predates fmi-ls-dae: no DAE formulation, and value
+ * references that no getter can reach. */
+#define FMI3_DAE_ENABLE_VR ((fmi3ValueReference)-1)
+#define FMI3_DAE_RESIDUAL_VR_START ((fmi3ValueReference)-1)
+#endif
+
+/* The number of residuals a --daeMode model exposes, 0 for an ODE model. */
+static size_t fmuDaeResidualCount(ModelInstance *comp)
+{
+  DAEMODE_DATA *dae;
+  if (!comp || !comp->fmuData || !comp->fmuData->simulationInfo) return 0;
+  dae = comp->fmuData->simulationInfo->daeModeData;
+  if (!dae || !dae->evaluateDAEResiduals || dae->nResidualVars <= 0) return 0;
+  return (size_t)dae->nResidualVars;
+}
+
+/* Whether the importer switched this instance into DAE mode. */
+static int fmuInDaeMode(ModelInstance *comp)
+{
+  return comp->_dae_mode && fmuDaeResidualCount(comp) > 0;
+}
+
+/* The DAE-mode counterpart of functionODE/functionAlgebraics: evaluate the
+ * requested stages of the residual equations over the point the importer set. */
+static void fmuEvalDae(ModelInstance *comp, int evalStages)
+{
+  comp->fmuData->simulationInfo->daeModeData->evaluateDAEResiduals(
+      comp->fmuData, comp->threadData, evalStages);
+}
 
 // ---------------------------------------------------------------------------
 // FMI 3.0 logging helpers
@@ -373,8 +416,12 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     /* simulationUpdate's order: the timers (a tick coincident with an event samples
      * the values before it), then the event, then the timers again below. */
     if (comp->_need_update) {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      if (fmuInDaeMode(comp)) {
+        fmuEvalDae(comp, EVAL_DYNAMIC | EVAL_ALGEBRAIC);
+      } else {
+        comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+        comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      }
     }
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
     if (syncRet != 0) {
@@ -408,7 +455,13 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     */
     updateDiscreteSystem(comp->fmuData, threadData);
 
-    comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
+    if (fmuInDaeMode(comp)) {
+      /* dae_mode.c's evaluateDAEResiduals_wrapperEventUpdate: the discrete
+       * equations of the residual form, with discreteCall set. */
+      evaluateDAEResiduals_wrapperEventUpdate(comp->fmuData, comp->threadData);
+    } else {
+      comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
+    }
 
     /* deactivate sample events */
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
@@ -596,9 +649,14 @@ fmi3Status updateIfNeeded(ModelInstance *comp, const char *func)
       /* As in simulationUpdate, a violated assert() is held (needToReThrow);
        * completedIntegratorStep turns it into an event, Event Mode evaluates live. */
       holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-      overwriteOldSimulationData(comp->fmuData);
-      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      if (fmuInDaeMode(comp)) {
+        fmuEvalDae(comp, EVAL_DYNAMIC | EVAL_ALGEBRAIC);
+        overwriteOldSimulationData(comp->fmuData);
+      } else {
+        comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+        overwriteOldSimulationData(comp->fmuData);
+        comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      }
       comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
@@ -817,6 +875,10 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
+
+  /* fmi-ls-dae: an ODE FMU until the importer says otherwise */
+  comp->_configuration_mode = 0;
+  comp->_dae_mode = 0;
 
   /* allocate memory for Jacobian */
   comp->_has_jacobian = 0;
@@ -2212,7 +2274,11 @@ fmi3Status internalGetDerivatives(ModelInstance* c, const char *func, fmi3Float6
     holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      if (fmuInDaeMode(comp)) {
+        fmuEvalDae(comp, EVAL_DYNAMIC | EVAL_ALGEBRAIC);
+      } else {
+        comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      }
       overwriteOldSimulationData(comp->fmuData);
     }
     releaseAsserts(comp);
@@ -2271,7 +2337,13 @@ fmi3Status internalGetEventIndicators(ModelInstance* c, const char *func, fmi3Fl
     holdAsserts(comp, (comp->state & (model_state_me_continuous_time_mode | model_state_cs_step_in_progress | model_state_cs_step_complete)) != 0);
     if (comp->_need_update)
     {
-      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      if (fmuInDaeMode(comp)) {
+        /* the zero-crossing stage of the residual equations, as ida_solver does
+         * for a --daeMode model before function_ZeroCrossings */
+        fmuEvalDae(comp, EVAL_DYNAMIC | EVAL_ZEROCROSS);
+      } else {
+        comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      }
       comp->_need_update = 0;
     }
     releaseAsserts(comp);
@@ -3205,7 +3277,20 @@ fmi3Status fmi3EnterInitializationMode(fmi3Instance instance, fmi3Boolean tolera
 
 fmi3Status fmi3ExitInitializationMode(fmi3Instance instance)
 {
-  return (fmi3Status)omcExitInitializationMode(fmu3InnerComp(instance));
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  /* fmi-ls-dae: a --daeMode model has no explicit ODE, so this runtime cannot
+   * answer with der(x) and the algebraic variables the way an ordinary Model
+   * Exchange FMU does. Say so here rather than integrating garbage: the
+   * importer has had Configuration Mode to switch the FMU into DAE mode. */
+  if (fmuDaeResidualCount(comp) > 0 && !comp->_dae_mode) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR,
+                 "fmi3ExitInitializationMode: this FMU carries a DAE formulation "
+                 "(fmi-ls-dae) that the C runtime can only serve in DAE mode. Set the "
+                 "structural parameter the fmi-ls-dae manifest names, in Configuration Mode.")
+    return fmi3Error;
+  }
+  return (fmi3Status)omcExitInitializationMode(comp);
 }
 
 fmi3Status fmi3EnterEventMode(fmi3Instance instance)
@@ -3287,7 +3372,8 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
         values[k] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
-      } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
+      } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START &&
+                 evr < (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START + (fmi3ValueReference)NUMBER_OF_EVENT_INDICATORS) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
         fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
         fmi3Status s = omcGetEventIndicators((ModelInstance*)comp, ei, NUMBER_OF_EVENT_INDICATORS);
@@ -3296,6 +3382,23 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
 #else
         return fmi3Error;
 #endif
+      } else if (evr >= (fmi3ValueReference)FMI3_DAE_RESIDUAL_VR_START &&
+                 evr < (fmi3ValueReference)FMI3_DAE_RESIDUAL_VR_START + (fmi3ValueReference)fmuDaeResidualCount(comp)) {
+        /* fmi-ls-dae: F(t, x, x', z) over the point the importer set. Only
+         * meaningful in DAE mode; in ODE mode the model owes the derivatives
+         * and the algebraic variables, which this runtime cannot solve for. */
+        size_t idx = (size_t)(evr - (fmi3ValueReference)FMI3_DAE_RESIDUAL_VR_START);
+        if (!fmuInDaeMode(comp)) {
+          FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR,
+                       "fmi3GetFloat64: residual #%zu is only readable in DAE mode (fmi-ls-dae)", idx)
+          return fmi3Error;
+        }
+        if (comp->_need_update) {
+          setThreadData(comp);
+          fmuEvalDae(comp, EVAL_DYNAMIC);
+          comp->_need_update = 0;
+        }
+        values[k] = (fmi3Float64)comp->fmuData->simulationInfo->daeModeData->residualVars[idx];
       } else {
         fmi3ValueReference lvr = (fmi3ValueReference)(evr - FMI3_REAL_VR_OFFSET);
         fmi3Float64 value;
@@ -3338,9 +3441,17 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
-      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
+      fmi3ValueReference evr = valueReferences[i] + (fmi3ValueReference)j;
+      fmi3ValueReference lvr;
       fmi3Boolean value;
-      fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
+      fmi3Status s;
+      /* fmi-ls-dae: the DAE-mode switch is not a model variable */
+      if (evr == (fmi3ValueReference)FMI3_DAE_ENABLE_VR) {
+        values[k] = fmuInDaeMode(c) ? fmi3True : fmi3False;
+        continue;
+      }
+      lvr = (fmi3ValueReference)(evr - FMI3_BOOLEAN_VR_OFFSET);
+      s = omcGetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
       values[k] = value ? fmi3True : fmi3False;
     }
@@ -3382,8 +3493,12 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
       fmi3ValueReference evr = vr + (fmi3ValueReference)j;
       fmi3ValueReference lvr;
       fmi3Float64 value;
-      /* time and event indicators are not settable */
-      if (evr == (fmi3ValueReference)FMI3_TIME_VR || evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
+      /* time, event indicators and the fmi-ls-dae residuals are not settable.
+       * The DAE-mode switch is a Boolean, so a Float64 set of it is a mistake
+       * the importer should hear about rather than a value silently dropped. */
+      if (evr == (fmi3ValueReference)FMI3_TIME_VR ||
+          evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
+        if (evr == (fmi3ValueReference)FMI3_DAE_ENABLE_VR) return fmi3Error;
         continue;
       }
       lvr = (fmi3ValueReference)(evr - FMI3_REAL_VR_OFFSET);
@@ -3424,9 +3539,28 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
   for (i = 0; i < nValueReferences; i++) {
     size_t cnt = fmi3ArrayLength(valueReferences[i]);
     for (j = 0; j < cnt; j++, k++) {
-      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
+      fmi3ValueReference evr = valueReferences[i] + (fmi3ValueReference)j;
+      fmi3ValueReference lvr;
       fmi3Boolean value = values[k] ? fmi3True : fmi3False;
-      fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
+      fmi3Status s;
+      /* fmi-ls-dae: the switch into DAE mode. A structural parameter, so
+       * Configuration Mode is the only place it may be set. */
+      if (evr == (fmi3ValueReference)FMI3_DAE_ENABLE_VR) {
+        if (!c->_configuration_mode) {
+          FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR,
+                       "fmi3SetBoolean: the fmi-ls-dae DAE-mode parameter can only be set in Configuration Mode")
+          return fmi3Error;
+        }
+        if (value && fmuDaeResidualCount(c) == 0) {
+          FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR,
+                       "fmi3SetBoolean: this FMU has no DAE formulation (fmi-ls-dae)")
+          return fmi3Error;
+        }
+        c->_dae_mode = value ? 1 : 0;
+        continue;
+      }
+      lvr = (fmi3ValueReference)(evr - FMI3_BOOLEAN_VR_OFFSET);
+      s = omcSetBoolean(c, &lvr, 1, &value);
       if (s > fmi3Warning) return (fmi3Status)s;
     }
   }
@@ -3751,8 +3885,24 @@ fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueRefere
 /* ---------------------------------------------------------------------------
  * Configuration / Reconfiguration Mode (no structural parameters)
  * ------------------------------------------------------------------------- */
-fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
-fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
+/* fmi-ls-dae: Configuration Mode is where the DAE-mode structural parameter may
+ * be set. Nothing else in this FMU is configurable, so entering and leaving it
+ * only tracks that the importer is there. */
+fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  comp->_configuration_mode = 1;
+  return fmi3OK;
+}
+
+fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance)
+{
+  ModelInstance *comp = fmu3InnerComp(instance);
+  if (!comp) return fmi3Error;
+  comp->_configuration_mode = 0;
+  return fmi3OK;
+}
 
 /* ---------------------------------------------------------------------------
  * Clock related functions (no clocks exposed yet)

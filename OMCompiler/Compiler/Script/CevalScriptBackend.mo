@@ -4367,6 +4367,28 @@ algorithm
   end try;
 end translateModelFMU;
 
+protected function canExportDaeModeFMU
+  "Which targets can export a --daeMode model as an FMU. The wasm runtime serves
+   the residual form for both FMU kinds; the C runtime serves it for FMI 3.0
+   Model Exchange, as fmi-ls-dae, where the importer owns the DAE residuals and
+   the algebraic variables. Everything else still has to refuse: a
+   Co-Simulation FMU has to integrate on its own, which the C runtime cannot do
+   for a DAE-mode model, and fmi-ls-dae is an FMI 3.0 layered standard."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output Boolean canExport;
+algorithm
+  canExport := isWasmFMU or
+               (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
+                Config.simCodeTarget() == "C");
+  if canExport and not isWasmFMU then
+    // The wasm path says this from SimCodeMain, where it writes the manifest.
+    Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
+      {SimCodeUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
+  end if;
+end canExportDaeModeFMU;
+
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
   input FCore.Cache inCache;
@@ -4411,7 +4433,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
@@ -4887,7 +4909,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});

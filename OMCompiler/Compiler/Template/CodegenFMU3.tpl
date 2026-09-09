@@ -524,6 +524,28 @@ case SIMVAR(__) then
   '<Float64 name="<%nm%>" valueReference="<%intAdd(stringInt(daeModeVR), intAdd(1, index))%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
 end DaeResidualVariable3;
 
+template fmiLsDaeManifestFile(SimCode simCode, String FMUType, String fileNamePrefixHash)
+ "Writes extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml into the FMU for a
+  --daeMode Model Exchange model. Returns the empty string (the content is written
+  to a file). The wasm target writes the same manifest from SimCodeMain; here the
+  FMU is packaged out of the .fmutmp directory, so the file only has to land in it."
+::=
+match simCode
+case SIMCODE(daeModeData=SOME(_)) then
+  if isFMIMEType(FMUType) then
+  let()= textFile(fmiLsDaeManifestXml(simCode), '<%fileNamePrefixHash%>.fmutmp/extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml')
+  ''
+end fmiLsDaeManifestFile;
+
+template fmiLsDaeManifestXml(SimCode simCode)
+ "fmiLsDaeManifest with the XML declaration, as it is written to a file."
+::=
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <%fmiLsDaeManifest(simCode)%>
+  >>
+end fmiLsDaeManifestXml;
+
 template fmiLsDaeManifest(SimCode simCode)
  "fmi-ls-dae's manifest (extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml)
   for a --daeMode Model Exchange FMU: the switch, the algebraic variables the

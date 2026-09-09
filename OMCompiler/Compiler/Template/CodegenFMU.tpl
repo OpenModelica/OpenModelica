@@ -124,6 +124,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.xml')
 
+  // Generate optional extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml (--daeMode ME)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiLsDaeManifestFile(simCode, FMUType, fileNamePrefixHash)
+
   // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
 
@@ -218,6 +221,8 @@ end translateModel;
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
+     // ... and its header, which the main file includes under --daeMode
+     let()= textFile(simulationFile_dae_header(simCode), '<%modelNamePrefix%>_16dae.h')
      // inline solver
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
@@ -330,6 +335,11 @@ case SIMCODE(__) then
   #define FMI3_CLOCK_VR_OFFSET   (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
   #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+  // fmi-ls-dae: the structural parameter that switches a --daeMode model into DAE
+  // mode is the first value reference past the event indicators, and the residuals
+  // follow it. SimCodeUtil.getFMI3DaeModeValueReference assigns the same numbers.
+  #define FMI3_DAE_ENABLE_VR (FMI3_EVENT_INDICATOR_VR_START + NUMBER_OF_EVENT_INDICATORS)
+  #define FMI3_DAE_RESIDUAL_VR_START (FMI3_DAE_ENABLE_VR + 1)
   <%SimCodeUtil.fmi3ArrayDefines(simCode)%>
   >>
   else if isFMIVersion20(FMUVersion) then
