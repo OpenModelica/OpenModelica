@@ -243,6 +243,11 @@ fn failed(e: &mut Engine, sim_data: u32, err: &'static str) -> Status {
     err_status(driver::enrich_trap(e, err))
 }
 
+/// C's "Invalid value reference": the reason a getter or setter refuses `vr`.
+fn bad_vr(call: &str, vr: u32, what: &str) -> Status {
+    err_status(&alloc::format!("{call}: value reference {vr} is not {what} of this FMU"))
+}
+
 fn err_status(msg: &str) -> Status {
     if msg != driver::ASSERT_ERR && msg != driver::INIT_FAILED_ERR && msg != driver::SOLVER_FAILED_ERR
     {
@@ -256,10 +261,11 @@ fn report_ext_error(msg: &str) {
     fmi_log(Status::Error, CAT_ERROR, msg);
 }
 
-/// C's `FILTERED_LOG` / `isCategoryLogged`.
+/// C's `FILTERED_LOG` / `isCategoryLogged`. The reason a call fails is not
+/// filtered: the status alone tells the importer nothing.
 fn fmi_log(status: Status, cat: u32, msg: &str) {
     let cats = logger().cats;
-    if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
+    if matches!(status, Status::Error | Status::Fatal) || cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
         log_raw(status, cat, msg);
     }
 }
@@ -1258,7 +1264,7 @@ macro_rules! shared_instance_methods {
         for vr in vrs {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::F64 => out.push(e.negate.apply_f64(st.read_f64(e.off))),
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetFloat64", vr, "a Float64 variable")),
             }
         }
         Ok(out)
@@ -1279,7 +1285,7 @@ macro_rules! shared_instance_methods {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
                     out.push(e.negate.apply_i32(st.read_i32(e.off)))
                 }
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetInt32", vr, "an Int32 variable")),
             }
         }
         Ok(out)
@@ -1296,7 +1302,7 @@ macro_rules! shared_instance_methods {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
                     out.push(e.negate.apply_i32(st.read_i32(e.off)) as i64)
                 }
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetInt64", vr, "an Int64 variable")),
             }
         }
         Ok(out)
@@ -1318,7 +1324,7 @@ macro_rules! shared_instance_methods {
         for vr in vrs {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => out.push(st.read_i32(e.off) as u64),
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetUInt64", vr, "a UInt64 variable")),
             }
         }
         Ok(out)
@@ -1337,7 +1343,7 @@ macro_rules! shared_instance_methods {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
                     out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
                 }
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetBoolean", vr, "a Boolean variable")),
             }
         }
         Ok(out)
@@ -1350,7 +1356,7 @@ macro_rules! shared_instance_methods {
         for vr in vrs {
             match st.vrs.resolve(vr) {
                 Some(e) if e.is_string => out.push(st.read_string(e.off)),
-                _ => return Err(Status::Error),
+                _ => return Err(bad_vr("fmi3GetString", vr, "a String variable")),
             }
         }
         Ok(out)
@@ -1370,7 +1376,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetFloat64: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
@@ -1381,7 +1387,7 @@ macro_rules! shared_instance_methods {
                         st.record_override(if start { e.start_off } else { e.off }, WTy::F64, v, start);
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetFloat64", vr, "a settable Float64 variable"),
             }
         }
         st.need_update = true;
@@ -1398,7 +1404,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetInt32: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
@@ -1408,7 +1414,7 @@ macro_rules! shared_instance_methods {
                         st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetInt32", vr, "a settable Int32 variable"),
             }
         }
         st.need_update = true;
@@ -1419,7 +1425,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetInt64: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
@@ -1429,7 +1435,7 @@ macro_rules! shared_instance_methods {
                         st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetInt64", vr, "a settable Int64 variable"),
             }
         }
         st.need_update = true;
@@ -1449,7 +1455,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetUInt64: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
@@ -1459,7 +1465,7 @@ macro_rules! shared_instance_methods {
                         st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetUInt64", vr, "a settable UInt64 variable"),
             }
         }
         st.need_update = true;
@@ -1470,7 +1476,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetBoolean: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, v) in vrs.into_iter().zip(values) {
             if vr == st.dae_enable_vr && vr != 0 {
@@ -1491,7 +1497,7 @@ macro_rules! shared_instance_methods {
                         st.record_override(e.off, WTy::I32, iv as f64, false);
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetBoolean", vr, "a settable Boolean variable"),
             }
         }
         st.need_update = true;
@@ -1502,7 +1508,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         let vrs = st.vrs.expand(&vrs);
         if vrs.len() != values.len() {
-            return Status::Error;
+            return err_status(&alloc::format!("fmi3SetString: {} values for {} value references", values.len(), vrs.len()));
         }
         for (vr, val) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
@@ -1513,7 +1519,7 @@ macro_rules! shared_instance_methods {
                         st.init_string_overrides.push((e.off, val)); // see the field
                     }
                 }
-                _ => return Status::Error,
+                _ => return bad_vr("fmi3SetString", vr, "a settable String variable"),
             }
         }
         st.need_update = true;
