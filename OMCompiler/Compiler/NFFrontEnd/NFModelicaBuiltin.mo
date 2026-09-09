@@ -1435,7 +1435,7 @@ annotation(preferredView="text");
 end checkSettings;
 
 function loadFile
-  "Loads a Modelica file (*.mo)."
+  "Loads a Modelica file (``*.mo``)."
   input String fileName;
   input String encoding = "UTF-8";
   input Boolean uses = true;
@@ -1455,7 +1455,7 @@ annotation(Documentation(info="<html>
 end loadFile;
 
 function loadFiles
-  "Loads Modelica files (*.mo)."
+  "Loads Modelica files (``*.mo``)."
   input String[:] fileNames;
   input String encoding = "UTF-8";
   input Integer numThreads = OpenModelica.Scripting.numProcessors();

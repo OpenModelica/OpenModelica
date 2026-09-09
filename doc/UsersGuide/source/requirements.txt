@@ -1,8 +1,9 @@
-bibtexparser
+breathe
 gitpython
 natsort
-breathe
+ompython >= 4.0
+pybtex
+PyGithub
 sphinx
 sphinxcontrib-bibtex
 sphinxcontrib-programoutput
-ompython
