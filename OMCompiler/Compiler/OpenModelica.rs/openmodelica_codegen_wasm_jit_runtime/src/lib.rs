@@ -2180,6 +2180,30 @@ pub extern "C" fn rt_str_from_cstr(p: u32) -> u32 {
     obj
 }
 
+/// Release the elements of a `String[…]` a shared-memory `external "C"` is about to
+/// write `char*`s over.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_array_clear(obj: u32) {
+    let data = arr_data(obj);
+    for i in 0..rt_array_total(obj) {
+        let p = data + i * 4;
+        rt_release(unsafe { load_u32(p) });
+        unsafe { store_u32(p, 0) };
+    }
+}
+
+/// C's `unpack_string_array`: the `char*` the callee wrote into each element of a
+/// `String[…]` output, as `String`s; an element it left null is "".
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_array_from_cstr(obj: u32) {
+    let data = arr_data(obj);
+    for i in 0..rt_array_total(obj) {
+        let p = data + i * 4;
+        let s = rt_str_from_cstr(unsafe { load_u32(p) });
+        unsafe { store_u32(p, s) };
+    }
+}
+
 /// Allocate a `String` object holding `s` and return its pointer.
 fn new_str_from(s: &str) -> u32 {
     let bytes = s.as_bytes();

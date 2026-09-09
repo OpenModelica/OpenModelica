@@ -344,6 +344,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_f77_arr_out", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     // A `char*` a shared-memory `external "C"` returned or wrote, as a `String`.
     ("rt_str_from_cstr", &[WTy::I32], &[WTy::I32]),
+    // A `String[…]` output: its elements released before the call, and the
+    // `char*`s the callee wrote over them read back after it.
+    ("rt_str_array_clear", &[WTy::I32], &[]),
+    ("rt_str_array_from_cstr", &[WTy::I32], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
