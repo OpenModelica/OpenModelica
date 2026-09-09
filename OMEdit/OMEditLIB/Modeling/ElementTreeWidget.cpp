@@ -88,6 +88,24 @@ QString makeTooltip(const QString &restriction, const QString &name, const QStri
 }
 
 /*!
+ * \brief elementTreeItemName
+ * Returns the name used for an element in the tree (same as ElementTreeItem::mName).
+ * Central place so that ElementTreeItem::updateData and the model updates stay in sync.
+ * \param pElement
+ * \return
+ */
+static QString elementTreeItemName(ModelInstance::Element *pElement)
+{
+  if (pElement->isExtend()) {
+    return pElement->getType();
+  } else if (pElement->isClass()) {
+    auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(pElement);
+    return pReplaceableClass->getName();
+  }
+  return pElement->getName();
+}
+
+/*!
  * \brief ElementTreeItem::ElementTreeItem
  * \param pElement
  * \param pParentElementTreeItem
@@ -96,24 +114,52 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
 {
   mpParentElementTreeItem = pParentElementTreeItem;
   mpModelInstanceElement = pElement;
+  updateData();
+}
+
+/*!
+ * \brief ElementTreeItem::updateData
+ * Recomputes the name, display name and tooltip from the current model instance element.
+ * Used by the constructor and by setElement to refresh an existing item in place.
+ */
+void ElementTreeItem::updateData()
+{
+  mName.clear();
+  mDisplayName.clear();
+  mTooltip.clear();
+  ModelInstance::Element *pElement = mpModelInstanceElement;
+  if (!pElement) {
+    return;
+  }
+  mName = elementTreeItemName(pElement);
   if (pElement->isExtend()) {
-    mName = pElement->getType();
-    mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
     mDisplayName = "extends " % pElement->getType();
     if (pElement->getModel()) {
       mTooltip = makeTooltip(pElement->getModel()->getRestriction(), mName, "", pElement->getModel()->getComment());
     }
   } else if (pElement->isClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(pElement);
-    mName = pReplaceableClass->getName();
     mDisplayName = pReplaceableClass->getName() % " = " % pReplaceableClass->getBaseClass();
     mTooltip = "<b>" % pReplaceableClass->getBaseClass() % "</b>";
   } else {
-    mName = pElement->getName();
     mDisplayName = pElement->getName();
     mTooltip = makeTooltip(pElement->getType(), mName, pElement->getDimensions().getAbsynDimensionsString(), pElement->getComment());
   }
   mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
+}
+
+/*!
+ * \brief ElementTreeItem::setElement
+ * Updates the model instance element an existing item points to and refreshes its displayed data.
+ * \param pElement
+ */
+void ElementTreeItem::setElement(ModelInstance::Element *pElement)
+{
+  if (!pElement || mpModelInstanceElement == pElement) {
+    return;
+  }
+  mpModelInstanceElement = pElement;
+  updateData();
 }
 
 /*!
@@ -161,6 +207,23 @@ ElementTreeItem* ElementTreeItem::findChild(const QString &name, Qt::CaseSensiti
     }
     return nullptr;
   }
+}
+
+/*!
+ * \brief ElementTreeItem::findChildByName
+ * Finds the child with the given name among the direct children only.
+ * Child names are unique within a parent, so matching by name is enough.
+ * \param name
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::findChildByName(const QString &name) const
+{
+  for (ElementTreeItem *child : mChildren) {
+    if (child->getName() == name) {
+      return child;
+    }
+  }
+  return nullptr;
 }
 
 /*!
@@ -476,16 +539,24 @@ void ElementTreeModel::removeElements()
 
 /*!
  * \brief ElementTreeModel::addElements
- * Adds the Elements of the model to the Element Browser.
+ * Updates the Element Browser tree with the Elements of the model.
+ * When the same model instance is updated (e.g. its parameters are edited) the tree is updated
+ * incrementally: existing items are matched by name and updated in place, new items are inserted
+ * and items that no longer exist are removed. This keeps the expanded/collapsed state of the nodes
+ * intact.
+ * When a different model instance is passed (e.g. switching from one model to another) the whole
+ * tree is rebuilt, since the two models may contain elements with the same names.
  * \param pModel
  */
 void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
   mpElementWidget->setIgnoreSelectionChange(true);
-  // remove the existing elements if there are any
-  removeElements();
-  // add model elements recursively
-  addElementsHelper(pModel, mpRootElementTreeItem);
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (mpModelWidget != pModelWidget) {
+    removeElements();
+    mpModelWidget = pModelWidget;
+  }
+  updateElementsHelper(pModel, mpRootElementTreeItem);
   mpElementWidget->setIgnoreSelectionChange(false);
 }
 
@@ -507,38 +578,101 @@ ElementTreeItem* ElementTreeModel::findElementTreeItem(const QString &name, Elem
 }
 
 /*!
- * \brief ElementTreeModel::addElementsHelper
- * Helper function for ElementTreeModel::addElements
- * Adds the items recursively.
+ * \brief ElementTreeModel::updateElementsHelper
+ * Builds or incrementally updates the Element Browser tree.
+ * When the parent has no existing children this performs a full rebuild.
+ * When the parent already has children it matches items by name, updates
+ * existing items in place, inserts new items and removes stale ones, which
+ * preserves the expanded/collapsed state of the tree.
  * \param pModel
  * \param pParentElementTreeItem
  */
-void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
+void ElementTreeModel::updateElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
 {
-  if (pModel) {
-    QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
-    int row = 0;
-    const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
-    if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      QVector<ModelInstance::Element*> elements = pModel->getElements();
-      QVector<ModelInstance::Element*> visibleElements;
-      for (ModelInstance::Element* element : elements) {
-        // show only public or all elements if access is diagram
-        if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
-          visibleElements.append(element);
-        }
+  if (!pModel) {
+    return;
+  }
+  QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
+  const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
+  if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
+    QVector<ModelInstance::Element*> elements = pModel->getElements();
+    QVector<ModelInstance::Element*> visibleElements;
+    for (ModelInstance::Element* element : elements) {
+      // show only public or all elements if access is diagram
+      if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        visibleElements.append(element);
       }
-      beginInsertRows(index, row, visibleElements.size() - 1);
-      foreach (auto pElement, visibleElements) {
-        pParentElementTreeItem->insertChild(row++, new ElementTreeItem(pElement, pParentElementTreeItem));
+    }
+    // the set of child names that should exist after the update
+    QSet<QString> newNames;
+    QHash<QString, ModelInstance::Element*> newElementsByName;
+    QVector<QString> newOrder;
+    foreach (auto pElement, visibleElements) {
+      QString childName = elementTreeItemName(pElement);
+      newNames.insert(childName);
+      newElementsByName.insert(childName, pElement);
+      newOrder.append(childName);
+    }
+    // remove the children that no longer exist
+    for (int i = pParentElementTreeItem->childrenSize() - 1; i >= 0; --i) {
+      ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
+      if (!newNames.contains(pElementTreeItem->getName())) {
+        beginRemoveRows(index, i, i);
+        pParentElementTreeItem->removeChild(pElementTreeItem);
+        endRemoveRows();
+      }
+    }
+    // lookup of the remaining children by name
+    QHash<QString, ElementTreeItem*> existingChildrenByName;
+    for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
+      ElementTreeItem *pChild = pParentElementTreeItem->child(i);
+      existingChildrenByName.insert(pChild->getName(), pChild);
+    }
+    // batches of new items: multiple consecutive new items are inserted in one go
+    int batchStartRow = 0;
+    QVector<ModelInstance::Element*> batchElements;
+    auto insertBatch = [this, index, pParentElementTreeItem, &batchStartRow, &batchElements]() {
+      beginInsertRows(index, batchStartRow, batchStartRow + batchElements.size() - 1);
+      int batchRow = batchStartRow;
+      foreach (ModelInstance::Element *pElement, batchElements) {
+        pParentElementTreeItem->insertChild(batchRow++, new ElementTreeItem(pElement, pParentElementTreeItem));
       }
       endInsertRows();
-
-      for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
-        ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
-        addElementsHelper(visibleElements.at(i)->getModel(), pElementTreeItem);
+      // recurse into the newly inserted items to build their children
+      batchRow = batchStartRow;
+      foreach (ModelInstance::Element *pElement, batchElements) {
+        ElementTreeItem *pNewItem = pParentElementTreeItem->child(batchRow++);
+        updateElementsHelper(pElement->getModel(), pNewItem);
       }
+      batchElements.clear();
+    };
+    // update the existing children in place and insert the new ones in batches, keeping the tree order
+    int row = 0;
+    foreach (const QString &childName, newOrder) {
+      ElementTreeItem *pElementTreeItem = existingChildrenByName.value(childName, nullptr);
+      if (pElementTreeItem) {
+        // flush any pending batch of new items
+        if (!batchElements.isEmpty()) {
+          insertBatch();
+        }
+        // update the existing item with the new element data and emit dataChanged so the view refreshes its display
+        pElementTreeItem->setElement(newElementsByName.value(childName));
+        QModelIndex childIndex = elementTreeItemIndex(pElementTreeItem);
+        emit dataChanged(childIndex, childIndex);
+        updateElementsHelper(pElementTreeItem->getModelInstanceElement()->getModel(), pElementTreeItem);
+      } else {
+        // a new item; accumulate it for batch insertion
+        if (batchElements.isEmpty()) {
+          batchStartRow = row;
+        }
+        batchElements.append(newElementsByName.value(childName));
+      }
+      ++row;
+    }
+    // flush any remaining batch of new items
+    if (!batchElements.isEmpty()) {
+      insertBatch();
     }
   }
 }

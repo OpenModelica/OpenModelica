@@ -56,6 +56,7 @@ public:
   int childrenSize() const {return mChildren.size();}
   ElementTreeItem* child(int row) const;
   ElementTreeItem* findChild(const QString &name, Qt::CaseSensitivity caseSensitivity) const;
+  ElementTreeItem* findChildByName(const QString &name) const;
   void insertChild(int position, ElementTreeItem *pElementTreeItem);
   void removeChildren();
   void removeChild(ElementTreeItem *pElementTreeItem);
@@ -66,7 +67,9 @@ public:
   QString getName() const {return mName;}
   QString getNameStructure() const {return mNameStructure;}
   ModelInstance::Element* getModelInstanceElement() const {return mpModelInstanceElement;}
+  void setElement(ModelInstance::Element *pElement);
 private:
+  void updateData();
   ModelInstance::Element *mpModelInstanceElement = nullptr;
   ElementTreeItem *mpParentElementTreeItem = 0;
   bool mIsRootItem = false;
@@ -79,6 +82,7 @@ private:
 };
 
 class ElementWidget;
+class ModelWidget;
 class ElementTreeProxyModel : public QSortFilterProxyModel
 {
   Q_OBJECT
@@ -114,7 +118,8 @@ public:
 private:
   ElementWidget *mpElementWidget;
   ElementTreeItem* mpRootElementTreeItem;
-  void addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem);
+  ModelWidget *mpModelWidget = nullptr;
+  void updateElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem);
 };
 
 class ElementTreeView : public QTreeView
