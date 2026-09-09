@@ -61,7 +61,7 @@ LIST** ASSC_fromDense(int* dense, int nv_, int ne_, int* nnz){
     mat[i] = allocList(allocAsscElement, free, copyAsscElement);
     for(int j=0; j<nv_; j++){
       if(dense[i*nv_+j] != 0){
-        ASSC_ELEMENT elem = {.index = j, .value = dense[i*nv_+j]};
+        ASSC_ELEMENT elem = {j, dense[i*nv_+j]};  /* {index, value} - no designated initializers, MSVC C++17 rejects them */
         listPushBack(mat[i], &elem);
         count++;
       };
@@ -118,7 +118,7 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
       adj_col = MMC_CDR(adj_col);
       val_col = MMC_CDR(val_col);
 
-      ASSC_ELEMENT elem = {.index = ((int)adj_i)-1, .value = (int)val_i};
+      ASSC_ELEMENT elem = {((int)adj_i)-1, (int)val_i};
       listPushBack(rows[i], &elem);
     }
   }

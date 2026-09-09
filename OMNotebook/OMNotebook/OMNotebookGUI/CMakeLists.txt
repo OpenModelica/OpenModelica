@@ -129,34 +129,8 @@ else()
   target_compile_options(OMNotebook PRIVATE -Wall -Wextra -Wno-missing-field-initializers -Wsuggest-override)
 endif()
 
-if(MINGW)
-  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
-
-  # Find windeployqt6
-  find_program(WINDEPLOYQT_EXECUTABLE
-    NAMES windeployqt windeployqt6
-    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
-    REQUIRED
-  )
-
-  install(CODE "
-    message(STATUS \"Running windeployqt6 on OMNotebook...\")
-    execute_process(
-      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
-        --no-compiler-runtime
-        --no-system-d3d-compiler
-        --no-quick-import
-        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
-        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
-        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMNotebook.exe\"
-      RESULT_VARIABLE WINDEPLOYQT_RESULT
-      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
-      ERROR_VARIABLE  WINDEPLOYQT_ERROR
-    )
-    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
-      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
-    endif()
-    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
-  ")
+# Bundle the Qt runtime next to OMNotebook.exe: MinGW/MSYS2 and native MSVC.
+if(MINGW OR (MSVC AND NOT CMAKE_CROSSCOMPILING))
+  omc_windeployqt(OMNotebook)
 endif()
 

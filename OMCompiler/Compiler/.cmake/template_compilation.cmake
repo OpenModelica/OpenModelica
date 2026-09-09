@@ -56,7 +56,9 @@ macro(omc_add_template_target)
         # path of whoever ran the build; the bootstrapping snapshot produced by
         # .cmake/bootstrap_sources.cmake has to be the same no matter where it was
         # generated.
-        COMMAND ${OMC_EXE} -d=failtrace --tplOutputDir=${output_dir} ${file_name} > ${output_log_file} || (cat ${output_log_file} && false)
+        # Use `${CMAKE_COMMAND} -E cat`/`false` rather than the shell builtins so
+        # this works with MSVC where there is no `cat`/`false` on PATH.
+        COMMAND ${OMC_EXE} -d=failtrace --tplOutputDir=${output_dir} ${file_name} > ${output_log_file} 2>&1 || (${CMAKE_COMMAND} -E cat ${output_log_file} && ${CMAKE_COMMAND} -E false)
 
         OUTPUT ${output_mo_file}
         COMMENT "Generating ${output_mo_file} from ${template_file}"

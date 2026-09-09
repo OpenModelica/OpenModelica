@@ -1,4 +1,3 @@
-
 # Rust (mmtorust) omc port. When enabled, the compiler is produced by
 # transpiling the MetaModelica sources to Rust and cargo-building them; bomc/omc
 # are never compiled from C, so we skip the entire C-build path below (the
@@ -321,6 +320,14 @@ target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_D
 # We can maybe copy these headers to some specific location after generation and avoid this.
 target_include_directories(OpenModelicaCompiler INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/c_files)
 
+# MSVC: consumers of this DLL (omc.exe, libOMCDLL, ...) must see the shared
+# MetaModelica runtime's DLLDirection-annotated data symbols as
+# __declspec(dllimport). IMPORT_INTO is INTERFACE only - this DLL and the
+# generated omc_* code it is built from must keep DLLDirection == DLLExport.
+if(MSVC)
+  target_compile_definitions(OpenModelicaCompiler INTERFACE IMPORT_INTO=1)
+endif()
+
 # OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
 # an omc not compiled without large stack size. The tpl parser is quite recursive and will
@@ -340,11 +347,27 @@ endif()
 
 
 
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
+
+if(MSVC AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
+  # omparse and omcfrontendcpp are absorbed whole into OpenModelicaCompiler.dll,
+  # but unlike omcruntime/omcbackendruntime they define DLLDirection-annotated
+  # symbols (omparse's modelicaParserKey, ...), so they cannot be compiled with
+  # IMPORT_INTO and their objects still carry plain mmc_* references. The GUI
+  # clients do not call them directly, so link them PRIVATE and expose only their
+  # usage requirements ($<COMPILE_ONLY>) - that keeps omparse.lib / omcfrontendcpp
+  # .lib off the GUI client link lines where a stray pull would drag in
+  # OpenModelicaRuntimeC's omc_init.c.obj and clash with the DLL exports (LNK2005).
+  target_link_libraries(OpenModelicaCompiler PRIVATE omc::parser omc::compiler::frontendcpp)
+  target_link_libraries(OpenModelicaCompiler INTERFACE
+    "$<COMPILE_ONLY:omc::parser>"
+    "$<COMPILE_ONLY:omc::compiler::frontendcpp>")
+else()
+  target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
+  target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::frontendcpp)
+endif()
 
 # On Windows we need explicitly tell the dll to export all symbols. It is not so good
 # that we have to export all symbols. However, OMEdit uses some of the functions in the
@@ -353,6 +376,15 @@ if(MINGW)
   target_link_options(OpenModelicaCompiler PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
   set_target_properties(OpenModelicaCompiler PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+  # Pull the entire static MetaModelica runtime into the DLL so every runtime
+  # symbol is present and exported (WINDOWS_EXPORT_ALL_SYMBOLS + the DLLDirection
+  # annotations). Without this, lazy archive extraction skips the objects that
+  # omcruntime (compiled IMPORT_INTO) only references through __imp_ - e.g. the
+  # result readers - leaving them unresolved. /IGNORE:4217 silences the resulting
+  # "locally defined symbol imported" notes.
+  target_link_options(OpenModelicaCompiler PRIVATE
+    "/WHOLEARCHIVE:$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>"
+    /IGNORE:4217)
 endif()
 
 # OMC Executable.
@@ -390,37 +422,47 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/bootstrap_sources.cmake)
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
-  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
-
-  set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
-  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
-  set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
-  # OMC_RESULT_LIB_DIR is empty unless the Rust result readers/writers are on.
-  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR} ${OMC_RESULT_LIB_DIR})
-
   if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
     cmake_policy(SET CMP0207 NEW)
   endif()
 
-  message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
-  install(TARGETS OpenModelicaCompiler
-          RUNTIME_DEPENDENCIES
-            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
-            PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-            POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
+  if(NOT MSVC)
+    # MinGW/MSYS2 build: runtime DLLs come from the MSYS2 installation.
+    omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
+    set(RUNTIME_SEARCH_DIRS "${MSYSTEM_PREFIX_ESCAPED}/bin")
+
+    set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
+    set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
+    set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
+    # OMC_RESULT_LIB_DIR is empty unless the Rust result readers/writers are on.
+    set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR} ${OMC_RESULT_LIB_DIR})
+
+    message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${RUNTIME_SEARCH_DIRS} ${RUNTIME_LIB_DIRS}")
+    install(TARGETS OpenModelicaCompiler
+            RUNTIME_DEPENDENCIES
+              DIRECTORIES ${RUNTIME_SEARCH_DIRS} ${RUNTIME_LIB_DIRS}
+              PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+              POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
+
+    # libopenblas.dll is linked dynamically (-lopenblas) by the *generated*
+    # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
+    # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
+    # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
+    # Install it explicitly so e.g. buildModelFMU() can bundle it into the
+    # exported FMU.
+    install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT omc
+            OPTIONAL)
+  else()
+    # MSVC + vcpkg build: X_VCPKG_APPLOCAL_DEPS_INSTALL handles DLL deployment via applocal.ps1.
+    # Using install(TARGETS ... RUNTIME_DEPENDENCIES ...) here would conflict with vcpkg's
+    # overridden install() which does not understand the RUNTIME_DEPENDENCIES keyword.
+    # LAPACK/BLAS come from vcpkg (lapack-reference -> OpenBLAS) and are deployed the same way.
+    install(TARGETS OpenModelicaCompiler)
+  endif()
   install(TARGETS omc
           COMPONENT omc)
-
-  # libopenblas.dll is linked dynamically (-lopenblas) by the *generated*
-  # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
-  # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
-  # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
-  # Install it explicitly so e.g. buildModelFMU() can bundle it into the
-  # exported FMU.
-  install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
-          DESTINATION ${CMAKE_INSTALL_BINDIR}
-          COMPONENT omc
-          OPTIONAL)
 else(WIN32)
   install(TARGETS omc OpenModelicaCompiler
           COMPONENT omc)

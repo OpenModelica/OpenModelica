@@ -74,6 +74,17 @@ add_library(omc::compiler::runtime ALIAS omcruntime)
 
 target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
+# MSVC: omcruntime is absorbed into OpenModelicaCompiler.dll but also linked by
+# the Qt GUI clients (for SettingsImpl__* / System_* / ...). Compile its
+# references to the MetaModelica runtime as __declspec(dllimport) (IMPORT_INTO)
+# so a GUI client that pulls an omcruntime object does not also drag in
+# OpenModelicaRuntimeC's omc_init.c.obj & co. and clash with the DLL's exports
+# (LNK2005). omcruntime defines no DLLDirection-annotated symbol itself, so its
+# own SettingsImpl__* / System_* stay plain and resolve straight from omcruntime.
+if(MSVC)
+  target_compile_definitions(omcruntime PRIVATE IMPORT_INTO=1)
+endif()
+
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
@@ -115,6 +126,12 @@ install(TARGETS omcruntime)
 # Library: omcbackendruntime
 add_library(omcbackendruntime STATIC)
 add_library(omc::compiler::backendruntime ALIAS omcbackendruntime)
+
+# MSVC: same as omcruntime - import the MetaModelica runtime symbols so pulling
+# an object of this static lib into a GUI client does not duplicate mmc_init & co.
+if(MSVC)
+  target_compile_definitions(omcbackendruntime PRIVATE IMPORT_INTO=1)
+endif()
 
 set(OMC_BACKENDRUNTIIME_SOURCES
     HpcOmSchedulerExt_omc.cpp

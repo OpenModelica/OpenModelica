@@ -27,8 +27,12 @@
 
 #ifndef __META_MODELICA_STRING_LIT__H
 #define __META_MODELICA_STRING_LIT__H
-extern void *mmc_emptystring;
-extern void *mmc_strings_len1[256];
-extern void *mmc_string_uninitialized;
-extern void *mmc_strings_boolString[2];
+#include "../openmodelica.h"
+/* These are global data referenced from inline code in the MetaModelica headers
+ * (mmc_mk_scon etc.), so on a shared-library Windows build consumers must see
+ * them as __declspec(dllimport) - DLLDirection keys off IMPORT_INTO. */
+DLLDirection extern void *mmc_emptystring;
+DLLDirection extern void *mmc_strings_len1[256];
+DLLDirection extern void *mmc_string_uninitialized;
+DLLDirection extern void *mmc_strings_boolString[2];
 #endif

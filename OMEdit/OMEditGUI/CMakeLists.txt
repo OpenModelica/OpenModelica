@@ -18,6 +18,18 @@ if(MSVC)
   # rc_omedit.rc already embeds OMEdit.manifest; /MANIFEST:NO stops CMake adding
   # a second one (avoids the duplicate-resource error and lld-link's mt.exe call).
   target_link_options(OMEdit PRIVATE /MANIFEST:NO)
+
+  # OMEdit uses a large slice of the MetaModelica runtime directly (rtclock,
+  # omc_error, the result readers, ...). The DLLDirection-annotated part comes
+  # from OpenModelicaCompiler.dll via IMPORT_INTO, but the not-yet-annotated
+  # functions are still referenced as plain symbols, which drags their defining
+  # objects out of the static OpenModelicaRuntimeC and they then collide with the
+  # same functions exported by the DLL (LNK2005). Everything OMEdit actually
+  # *calls* that holds state (the thread-data key, the string caches,
+  # omc_alloc_interface, ...) is annotated and comes from the DLL, so the pulled
+  # duplicates are dead code; let the linker keep the first definition.
+  # TODO: annotate the remaining runtime headers with DLLDirection and drop this.
+  target_link_options(OMEdit PRIVATE /FORCE:MULTIPLE /IGNORE:4006)
 endif()
 
 if(APPLE)
@@ -132,6 +144,13 @@ elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND CMAKE_CROSSCOMPILING)
   endif()
 
   install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/qt.conf\" \"[Paths]\\nPrefix = .\\nPlugins = .\\nQml = qml\\n\")")
+elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND NOT CMAKE_CROSSCOMPILING)
+  # Native MSVC build against an official Qt on CMAKE_PREFIX_PATH. The non-Qt
+  # runtime DLLs (from vcpkg) are deployed by X_VCPKG_APPLOCAL_DEPS_INSTALL;
+  # windeployqt.exe runs natively here and brings the full Qt runtime, including
+  # the QtWebEngine assets OMEdit needs.
+  omc_install_gui_client(OMEdit)
+  omc_windeployqt(OMEdit)
 else ()
   omc_install_gui_client(OMEdit)
 endif()

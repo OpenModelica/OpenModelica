@@ -35,6 +35,10 @@ extern "C" {
 #endif
 
 #include <setjmp.h>
+/* DLLDirection: dllimport for MSVC consumers of the shared/absorbed runtime. */
+#ifndef DLLDirection
+#include "../openmodelica.h"
+#endif
 
 #define MMC_TRY_STACK() { jmp_buf *oldMMCJumper = threadData->mmc_jumper; { MMC_TRY_INTERNAL(mmc_stack_overflow_jumper) threadData->mmc_stack_overflow_jumper = &new_mmc_jumper;
 #define MMC_ELSE_STACK() } else { threadData->mmc_jumper = oldMMCJumper; threadData->mmc_stack_overflow_jumper = old_jumper;
@@ -45,17 +49,17 @@ static inline void printStacktraceMessages(void)
 {
 }
 #else
-void printStacktraceMessages(void);
+DLLDirection void printStacktraceMessages(void);
 #endif
-void mmc_setStacktraceMessages(int numSkip, int numFrames);
-void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
-void init_metamodelica_segv_handler(void);
+DLLDirection void mmc_setStacktraceMessages(int numSkip, int numFrames);
+DLLDirection void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
+DLLDirection void init_metamodelica_segv_handler(void);
 #if defined(OMC_MINIMAL_RUNTIME)
 static inline void mmc_init_stackoverflow(threadData_t *threadData)
 {
 }
 #else
-void mmc_init_stackoverflow(threadData_t *threadData);
+DLLDirection void mmc_init_stackoverflow(threadData_t *threadData);
 #endif
 
 #if defined(__linux__) || defined(__APPLE__)

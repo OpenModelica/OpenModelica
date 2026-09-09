@@ -15,6 +15,7 @@ add_library(omc::simrt::runtime::gc ALIAS OpenModelicaRuntimeCGC)
 target_include_directories(OpenModelicaRuntimeCGC
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/gc>
     # omc_gc.h pulls "omc_inline.h" + "util/omc_msvc.h" (both under c/) on _MSC_VER.
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>

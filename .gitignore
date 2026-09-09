@@ -1,6 +1,7 @@
 /.cache/
 /.claude/
 /.externalToolBuilders/*.launch
+/.mailmap
 /.metadata/
 /.project
 /.settings
@@ -9,31 +10,33 @@
 /autom4te.cache/
 /build/
 /build_cmake*/
+/CMakeUserPresets.json
+/vcpkg/
 /config.guess
 /config.log
 /config.status
 /config.sub
 /configure
-/install-sh
 /install_cmake/
+/install-sh
 /install/
 /issues/
-/.mailmap
 /Makefile
-/OMCompiler/SimulationRuntime/ModelicaExternalC/build/
 /OMCompiler/compile
 /OMCompiler/depcomp
 /OMCompiler/ltmain.sh
 /OMCompiler/missing
+/OMCompiler/SimulationRuntime/ModelicaExternalC/build/
 /OMEncryption/
 /OMJava/
 /OMPublicKey/
 /OMPython/
 /OMSetup/
 /OpenModelicaSetup/
-/testsuite/libraries-for-testing/.ccache/
 /testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/libFFITestLib.dll
+/testsuite/libraries-for-testing/.ccache/
 trace.txt
+/build.log
 
 # Claude handoffs
 **/HANDOFF*.md

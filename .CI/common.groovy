@@ -414,6 +414,54 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
   }
 }
 
+/**
+ * Configure and build OMC with the *native* MSVC toolchain (cl.exe + Ninja +
+ * vcpkg) via the CMakePresets.json in the repo root. Windows agents only.
+ *
+ * Agent prerequisites:
+ *  - Visual Studio 2022 with the "Desktop development with C++" workload
+ *    (MSVC v143, C++ CMake tools -> cmake + ninja). vcvars64.bat is located
+ *    through vswhere.exe.
+ *  - Long path support enabled (some vcpkg ports exceed MAX_PATH).
+ *  - For the 'msvc-ninja-gui' preset: an official Qt 6 for MSVC with QT_ROOT_DIR
+ *    pointing at its <version>/msvc2022_64 prefix.
+ *
+ * The vcpkg checkout at <root>/vcpkg is cloned on first run and then kept across
+ * builds (it is excluded from the git clean), and vcpkg's binary cache is put on
+ * a persistent per-agent path so the ports restore in seconds even when the
+ * build tree is wiped. Override the cache location with OM_VCPKG_BINARY_CACHE.
+ *
+ * @param configurePreset  CMake configure preset ('msvc-ninja' or 'msvc-ninja-gui')
+ * @param buildPreset       CMake build preset (defaults to configurePreset)
+ */
+void buildOMC_MSVC(String configurePreset = 'msvc-ninja', String buildPreset = null) {
+  echo "Running on: ${env.NODE_NAME}"
+  buildPreset = buildPreset ?: configurePreset
+
+  // Like standardSetup() for Windows, but keep the vcpkg checkout so it is not
+  // re-cloned and re-bootstrapped on every build.
+  bat 'git clean -ffdx -e OMSetup -e vcpkg && git submodule foreach --recursive "git clean -ffdx"'
+
+  def binaryCache = env.OM_VCPKG_BINARY_CACHE ?: 'C:\\OM\\vcpkg-binary-cache'
+  withEnv(["VCPKG_DEFAULT_BINARY_CACHE=${binaryCache}"]) {
+    bat label: "cmake ${configurePreset}", script: """
+      @echo on
+      if not exist "%VCPKG_DEFAULT_BINARY_CACHE%" mkdir "%VCPKG_DEFAULT_BINARY_CACHE%"
+
+      for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALL=%%i"
+      if not defined VSINSTALL ( echo No Visual Studio with the C++ toolset on this agent & exit /b 1 )
+      call "%VSINSTALL%\\VC\\Auxiliary\\Build\\vcvars64.bat" || exit /b 1
+
+      if not exist vcpkg\\.git ( git clone https://github.com/microsoft/vcpkg.git || exit /b 1 )
+
+      cmake --version
+      cmake --preset ${configurePreset} || exit /b 1
+      cmake --build --preset ${buildPreset} --parallel ${numPhysicalCPU()} || exit /b 1
+      build\\${configurePreset}\\install_cmake\\bin\\omc.exe --version || exit /b 1
+    """
+  }
+}
+
 // Fixed path for the Rust working copy (rust_omc.cmake's RUST_OMC_DIR): sccache
 // hashes CARGO_MANIFEST_DIR into the Rust cache key and SCCACHE_BASEDIRS does not
 // rewrite env values, so a per-job path makes every crate of ours a guaranteed
@@ -1001,6 +1049,15 @@ private def shouldWeBuildWindows() {
   return params.BUILD_WINDOWS
 }
 
+private def shouldWeBuildWindowsMSVC() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build Windows MSVC")) {
+      return true
+    }
+  }
+  return params.BUILD_WINDOWS_MSVC
+}
+
 private def shouldWeBuildAlpine() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build Alpine")) {
@@ -1099,6 +1156,8 @@ Map evaluateBuildFlags() {
   print "shouldWeEnableMacOSCMakeBuild: ${flags.shouldWeEnableMacOSCMakeBuild}"
   flags.shouldWeBuildWindows = shouldWeBuildWindows()
   print "shouldWeBuildWindows: ${flags.shouldWeBuildWindows}"
+  flags.shouldWeBuildWindowsMSVC = shouldWeBuildWindowsMSVC()
+  print "shouldWeBuildWindowsMSVC: ${flags.shouldWeBuildWindowsMSVC}"
   flags.shouldWeRunTests = shouldWeRunTests()
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
   flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
