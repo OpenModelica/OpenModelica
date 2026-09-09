@@ -5327,8 +5327,8 @@ dependencies = [
  "getrandom 0.3.4",
  "js-sys",
  "libc",
+ "libmimalloc-sys",
  "metamodelica",
- "mimalloc",
  "openmodelica_backend_main",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_frontend_types",
@@ -5729,15 +5729,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
-]
-
-[[package]]
-name = "mimalloc"
-version = "0.1.52"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d4139bb28d14ad1facf21d5eb8825051b326e172d216b39f6d31df53cc97862"
-dependencies = [
- "libmimalloc-sys",
 ]
 
 [[package]]
