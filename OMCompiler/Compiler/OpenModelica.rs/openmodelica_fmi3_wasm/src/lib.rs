@@ -1073,10 +1073,9 @@ macro_rules! shared_instance_methods {
         // must run through the driver's sample schedule, so build it eagerly.
         #[cfg(feature = "cs")]
         if st.defer != CsDefer::None {
-            let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            let (meta, defer) = (st.meta.clone(), st.defer);
-            let sync = st.sync.take();
-            match CsDriver::new(&mut Engine, &meta, sim_data, t, defer, sync) {
+            let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
+            let st = &mut *st;
+            match CsDriver::new(&mut Engine, &st.meta, sim_data, t, defer, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(err) => return err_status(err),
             }
@@ -1127,8 +1126,7 @@ macro_rules! shared_instance_methods {
         let (up, clocks_handled) = if let Some(mut d) = st.cs.take() {
             // Route through the driver so its sample and clock schedules advance in
             // step with the integrator (see `CsDriver::do_event_update`).
-            let meta = st.meta.clone();
-            let r = d.do_event_update(&mut e, &meta, time);
+            let r = d.do_event_update(&mut e, &st.meta, time);
             st.cs = Some(d);
             match r {
                 Ok(up) => (up, true),
@@ -1821,26 +1819,22 @@ impl GuestCoSimulationInstance for Instance {
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
         let target = current_communication_point + communication_step_size;
-        let defer = st.defer;
-        let meta = st.meta.clone();
+        let (sim_data, t, defer) = (st.sim_data, st.read_f64(TIME_OFF), st.defer);
         let mut e = Engine;
+        let st = &mut *st;
         // Build the driver on first use, over the initialized state at the start
         // point (FMI ran Initialization Mode; the importer may also have set inputs).
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
-            let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            let sync = st.sync.take();
-            match CsDriver::new(&mut e, &meta, sim_data, t, defer, sync) {
+            match CsDriver::new(&mut e, &st.meta, sim_data, t, defer, st.sync.take()) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
         }
-        let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let sim_data = st.sim_data;
+        let Some(driver) = st.cs.as_mut() else { return Err(Status::Error) };
         st.event_mode = false;
-        let outcome = driver.step_to(&mut e, &meta, target, defer, &mut st.dss);
+        let outcome = driver.step_to(&mut e, &st.meta, target, defer, &mut st.dss);
         let last = driver.time();
-        st.cs = Some(driver);
         // C's `fmi2DoStep`: the getters now report the new time's values. The step
         // ended on `functionAlgebraics`, so a DAE model's unknowns are current and
         // the refresh must not solve for them a second time.
