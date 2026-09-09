@@ -591,7 +591,7 @@ impl Integrator {
         directional: bool,
         n_alg: Option<usize>,
     ) -> Result<Integrator> {
-        if let Some(n_alg) = n_alg {
+        if let Some(n_alg) = n_alg.filter(|n| nx + n > 0) {
             if solver != Solver::Ida {
                 return Err(Error::Unsupported(format!(
                     "integrating in DAE mode with `{}`: only IDA takes a residual form",

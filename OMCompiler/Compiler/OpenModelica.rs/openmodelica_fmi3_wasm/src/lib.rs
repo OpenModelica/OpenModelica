@@ -1496,9 +1496,7 @@ macro_rules! shared_instance_methods {
                 if !st.configuring {
                     return err_status("fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode");
                 }
-                if v && !st.layout.dae_mode() {
-                    return err_status("fmi-ls-dae: this FMU has no DAE formulation");
-                }
+                // A `--daeMode` export with every residual eliminated still declares it.
                 st.dae_mode = v;
                 continue;
             }
