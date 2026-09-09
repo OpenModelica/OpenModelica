@@ -91,6 +91,10 @@ constant Integer fmuTranslation = 35;
 // Build projects already run this session; a failed build installs nothing.
 constant Integer extLibraryBuildIndex = 36;
 
+// Simplified if-conditions of the adjacency-row traversals, one translation:
+// SOME(HashTableExpToExp.HashTable). See BackendDAEUtil.simplifyIfCondCached.
+constant Integer adjacencyIfCondCache = 37;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -130,6 +134,7 @@ algorithm
   setGlobalRoot(fmi3VariableAliasCache, NONE());
   setGlobalRoot(fmuTranslation, NONE());
   setGlobalRoot(extLibraryBuildIndex, {});
+  setGlobalRoot(adjacencyIfCondCache, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");
