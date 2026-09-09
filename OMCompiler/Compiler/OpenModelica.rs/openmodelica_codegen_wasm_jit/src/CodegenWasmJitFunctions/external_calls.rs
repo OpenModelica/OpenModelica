@@ -44,6 +44,8 @@ pub(super) fn emit_shared_external_call(
         /// A String argument: the callee got a `rt_str_data` pointer into it, so
         /// this side still owns the handle and releases it once the call is done.
         Owned { handle: u32 },
+        /// A `String[…]` output: the callee wrote `char*`s over its elements.
+        StrArray { handle: u32 },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -134,10 +136,17 @@ pub(super) fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(ptr));
                 cleanups.push(Cleanup::F77Array { handle, ptr, is_out });
             }
-            SigTy::Array { .. } => {
+            SigTy::Array { elem, .. } => {
                 // C reads and writes the row-major elements in place.
                 push_value(ctx, "an array", WTy::I32)?;
                 if !native {
+                    if is_out && matches!(**elem, SigTy::Str) {
+                        let handle = ctx.alloc_temp(WTy::I32);
+                        ctx.emit(we::Instruction::LocalTee(handle));
+                        ctx.emit(we::Instruction::LocalGet(handle));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_str_array_clear")?));
+                        cleanups.push(Cleanup::StrArray { handle });
+                    }
                     ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
                 }
             }
@@ -240,6 +249,10 @@ pub(super) fn emit_shared_external_call(
                     ctx.emit(we::Instruction::LocalGet(*handle));
                     ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
                 }
+                Cleanup::StrArray { handle } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
+                }
             }
         }
         release_heap_locals(ctx)?;
@@ -337,6 +350,10 @@ pub(super) fn emit_shared_external_call(
             Cleanup::Owned { handle } => {
                 ctx.emit(we::Instruction::LocalGet(*handle));
                 ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+            }
+            Cleanup::StrArray { handle } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
             }
         }
     }
