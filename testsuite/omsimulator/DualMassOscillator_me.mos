@@ -70,11 +70,11 @@ val(system2.s2, {0.0,0.1});
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.91153010887923
-// info:      system2.s2: 1.9553626027155
+// info:      system1.s1: 0.91152650486321
+// info:      system2.s2: 1.9553665042812
 // info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 18242 NumRhsEvals  = 20006 NumLinSolvSetups = 1341
-//          NumNonlinSolvIters = 20005 NumNonlinSolvConvFails = 0 NumErrTestFails = 256
+//          NumSteps = 18185 NumRhsEvals  = 19938 NumLinSolvSetups = 1337
+//          NumNonlinSolvIters = 19937 NumNonlinSolvConvFails = 0 NumErrTestFails = 254
 // "
 // record SimulationResult
 //     resultFile = "DualMassOscillator.CoupledSystem_res.mat",
