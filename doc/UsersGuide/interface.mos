@@ -24,6 +24,7 @@ algorithm
   cmt := if (cmt == \"\") then \"\" else \"\\n\\n\" + cmt + \"\\n\";
   out := out + cmt;
   OpenModelica.Scripting.writeFile(\"tmp/interface.inc.tmp\", doc1, false);
+  OpenModelica.Scripting.writeFile(\"tmp/interface.inc.tmp.rst\", \"\", false);
   // Disable wrapping in order to fix some modelica:// links
   OpenModelica.Scripting.system(\"pandoc --wrap=none -t rst -f html -o tmp/interface.inc.tmp.rst tmp/interface.inc.tmp\");
   OpenModelica.Scripting.system(\"sed -i= 's,`\\\\([^`]*\\\\) <modelica://OpenModelica.Scripting.\\\\([A-Za-z0-9_-]*\\\\)>`__,:ref:`\\\\1 <\\\\2>`,g' tmp/interface.inc.tmp.rst\");
@@ -45,5 +46,10 @@ algorithm
 end isDeprecatedVersion;
 ");
 getErrorString();
+
+// reSTInterface reads tmp/interface.inc.tmp.rst through a literal path, which omc
+// evaluates once while instantiating the reduction below - before any call of the
+// function has run pandoc to produce it.
+writeFile("tmp/interface.inc.tmp.rst", "");getErrorString();
 
 writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not isDeprecatedVersion(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();

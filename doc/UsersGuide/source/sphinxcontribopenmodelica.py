@@ -1,15 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
 import os
+import logging
+import re
 import shutil
 import traceback
 from os.path import basename
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 import subprocess
 
 #from sphinx.util.compat import Directive
@@ -22,6 +21,90 @@ import docutils.parsers.rst.directives.images
 from docutils.statemachine import ViewList
 
 from OMPython import OMCSessionLocal, OMSessionException
+
+
+class OMCMessages(logging.Handler):
+  """Collect the omc messages OMPython logs.
+
+  OMPython 4 asks omc for its messages after every sendExpression, which empties
+  omc's buffer, so the getErrorString() and countMessages() these directives used
+  to call afterwards come back empty and the errors an example is meant to
+  demonstrate never reach the page. The messages are still logged, so pick them
+  up from there and rebuild what getErrorString() would have returned.
+  """
+
+  # One entry of the summary OMPython logs when it saw an error:
+  #   00: [kind:level:id] [file:readonly:lineStart:colStart:lineEnd:colEnd] message
+  _long = re.compile(r"^\d+: \[[^\]:]*:([a-z]+):\d+\] "
+                     r"\[([^:]*):(true|false):(\d+):(\d+):(\d+):(\d+)\] (.*)\Z",
+                     re.DOTALL)
+  # A single message:
+  #   [OMC log for '...']: [kind:level:id] message
+  _short = re.compile(r"^\[OMC log for '.*?'\]: \[[^\]:]*:([a-z]+):\d+\] (.*)\Z",
+                      re.DOTALL)
+
+  def __init__(self):
+    super().__init__(level=logging.DEBUG)
+    self.messages = []
+    self._pending = []
+
+  def emit(self, record):
+    # OMPython's own output still belongs in the build log; propagate is off so
+    # that notifications can be collected without also printing all of them.
+    if record.levelno >= logging.WARNING:
+      logging.getLogger().handle(record)
+
+    text = record.getMessage()
+    if text.startswith("OMC reported 'error'-level messages"):
+      # Supersedes the individual messages of the same call: this one carries
+      # the source positions as well.
+      entries = []
+      for line in text.split("\n"):
+        m = self._long.match(line)
+        if m:
+          entries.append(self._entry(*m.groups()))
+      if entries:
+        self._pending = entries
+      return
+    m = self._short.match(text)
+    if m:
+      level, message = m.groups()
+      self._pending.append((level, "%s: %s" % (level.capitalize(), message)))
+
+  @staticmethod
+  def _entry(level, filename, readonly, lstart, cstart, lend, cend, message):
+    """Format one message the way omc's getErrorString() does."""
+    where = ""
+    if filename or lstart != "0":
+      where = "[%s:%s:%s-%s:%s:%s] " % (filename, lstart, cstart, lend, cend,
+                                        "readonly" if readonly == "true" else "writable")
+    return (level, "%s%s: %s" % (where, level.capitalize(), message))
+
+  def collect(self):
+    """Move the messages of the last sendExpression into the running list."""
+    self.messages.extend(self._pending)
+    self._pending = []
+
+  def clear(self):
+    self.messages = []
+    self._pending = []
+
+  def counts(self):
+    """(notifications+, errors, warnings), like omc's countMessages()."""
+    ne = sum(1 for level, _ in self.messages if level == "error")
+    nw = sum(1 for level, _ in self.messages if level == "warning")
+    return (len(self.messages), ne, nw)
+
+  def text(self):
+    """What omc's getErrorString() would have returned."""
+    return "\n".join(message for _, message in self.messages)
+
+
+messages = OMCMessages()
+_omlogger = logging.getLogger("OMPython")
+_omlogger.setLevel(logging.INFO)
+_omlogger.addHandler(messages)
+_omlogger.propagate = False
 
 omc = OMCSessionLocal()
 
@@ -39,6 +122,8 @@ def sendExpression(expr, parsed=True):
     return omc.sendExpression(expr, parsed=parsed, raise_on_error=False)
   except OMSessionException as e:
     return str(e)
+  finally:
+    messages.collect()
 
 omhome = sendExpression("getInstallationDirectoryPath()")
 # Pinning the path to the libraries shipped with this omc keeps the build
@@ -72,12 +157,13 @@ def fixPaths(s):
   return str(s).replace(omhome, u"«OPENMODELICAHOME»").replace(dochome, u"«DOCHOME»").strip()
 
 def onlyNotifications():
-  (nm,ne,nw) = sendExpression("countMessages()")
+  (nm,ne,nw) = messages.counts()
   return ne+nw == 0
 
 def getErrorString(state):
-  (nm,ne,nw) = sendExpression("countMessages()")
-  s = fixPaths(sendExpression("OpenModelica.Scripting.getErrorString()"))
+  (nm,ne,nw) = messages.counts()
+  s = fixPaths(messages.text())
+  messages.clear()
   if nm==0:
     return []
   node = nodes.paragraph()
@@ -138,9 +224,10 @@ class ExecMosDirective(directives.code.CodeBlock):
         else:
           res.append(fixPaths(sendExpression(str(s), parsed=False)))
         if not ('noerror' in self.options or erroratend):
-          errs = fixPaths(sendExpression('getErrorString()', parsed=False))
-          if errs!='""':
-            res.append(errs)
+          errs = fixPaths(messages.text())
+          messages.clear()
+          if errs:
+            res.append('"%s"' % errs)
       # res += sys.stdout.readlines()
       self.content = res
       if 'ompython-output' in self.options:
