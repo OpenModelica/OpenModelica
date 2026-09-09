@@ -444,8 +444,19 @@ pub fn run(
     let res = match face {
         Face::Simulation => run_simulation(&loaded, &flags, &out, simflags, &mut log),
         Face::ModelExchange(solver) => {
+            // A bare `fmi3:me` integrates with the model's own `-s`, as the standalone would.
             let solver = match (solver, flags.dae_mode) {
-                (None, false) => Solver::Dassl,
+                (None, false) => match flags.solver.and_then(master_solver) {
+                    Some(s) => s,
+                    None => {
+                        if let Some(s) = flags.solver {
+                            log.push_str(&format!(
+                                "LOG_STDOUT        | info    | the Model Exchange master has no {s:?}; integrating with DASKR\n"
+                            ));
+                        }
+                        Solver::Dassl
+                    }
+                },
                 (None, true) | (Some(Solver::Ida), true) => Solver::Ida,
                 (Some(s), false) => s,
                 (Some(s), true) => {
@@ -463,6 +474,21 @@ pub fn run(
         Face::CoSimulation => run_fmi(&loaded, &flags, &out, None, &mut log),
     };
     (res, log)
+}
+
+/// The master's integrator for a `-s` the standalone runtime knows; `None` for one
+/// the master has no counterpart of.
+fn master_solver(s: openmodelica_sim_meta::simflags::Solver) -> Option<Solver> {
+    use openmodelica_sim_meta::simflags::Solver as S;
+    Some(match s {
+        S::Dassl => Solver::Dassl,
+        S::Ida => Solver::Ida,
+        S::Cvode => Solver::Cvode,
+        S::Gbode => Solver::Gbode,
+        S::Euler => Solver::Euler,
+        S::RungeKutta => Solver::RungeKutta,
+        S::SymSolver | S::SymSolverSsc | S::Qss | S::Optimization => return None,
+    })
 }
 
 /// The run's `-variableFilter`, compiled. `None` keeps everything: an absent,
