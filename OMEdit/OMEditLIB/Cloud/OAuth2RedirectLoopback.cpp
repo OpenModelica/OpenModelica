@@ -42,6 +42,7 @@
 #include "Cloud/OAuth2Redirect.h"
 
 #include <QDesktopServices>
+#include <QHash>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
@@ -111,13 +112,16 @@ private:
       return;
     }
     connect(pSocket, &QTcpSocket::readyRead, this, [this, pSocket]() {
-      mRequest += pSocket->readAll();
+      // A browser may have several connections open at once, so each buffers on its own.
+      QByteArray &buffer = mRequests[pSocket];
+      buffer += pSocket->readAll();
       // The request line is all that is needed and it ends at the first newline.
-      const int end = mRequest.indexOf('\n');
+      const int end = buffer.indexOf('\n');
       if (end < 0) {
         return;
       }
-      const QByteArray line = mRequest.left(end).trimmed();
+      const QByteArray line = buffer.left(end).trimmed();
+      mRequests.remove(pSocket);
       pSocket->write(kResponsePage);
       pSocket->disconnectFromHost();
       // "GET /?code=...&state=... HTTP/1.1"
@@ -132,7 +136,10 @@ private:
              query.queryItemValue(QStringLiteral("state"), QUrl::FullyDecoded),
              error.isEmpty() ? QString() : tr("The service refused the sign-in: %1").arg(error));
     });
-    connect(pSocket, &QTcpSocket::disconnected, pSocket, &QObject::deleteLater);
+    connect(pSocket, &QTcpSocket::disconnected, this, [this, pSocket]() {
+      mRequests.remove(pSocket);
+      pSocket->deleteLater();
+    });
   }
 
   //! Emit finished() exactly once, however the flow ends.
@@ -149,7 +156,7 @@ private:
 
   QTcpServer *mpServer;
   QTimer *mpTimeout;
-  QByteArray mRequest;
+  QHash<QTcpSocket*, QByteArray> mRequests;
   bool mSettled = false;
 };
 

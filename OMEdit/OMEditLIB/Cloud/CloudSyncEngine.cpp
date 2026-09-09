@@ -520,10 +520,13 @@ void CloudSyncEngine::runNext()
       return;
     }
     case SyncAction::AdoptIdentical: {
+      const LocalEntry local = mLocal.value(action.relativePath);
       RemoteItem item;
       item.id = action.remoteId;
       item.revision = mRemote.value(action.relativePath).remoteRevision;
-      recordFromItem(action.relativePath, item, mLocal.value(action.relativePath).contentHash);
+      item.size = local.size;
+      item.isFolder = action.isFolder;
+      recordFromItem(action.relativePath, item, local.contentHash);
       runNext();
       return;
     }

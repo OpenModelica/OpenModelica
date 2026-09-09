@@ -272,6 +272,7 @@ private slots:
 
   void uploadsAWorkingCopy();
   void downloadsIntoAnEmptyWorkingCopy();
+  void identicalBytesAreAdopted();
   void conflictKeepsBothVersions();
   void conflictTakesTheRemoteVersion();
   void cancellingAConflictEndsTheRun();
@@ -400,6 +401,25 @@ void CloudSyncEngineTest::downloadsIntoAnEmptyWorkingCopy()
   QVERIFY(!error.isError());
   QCOMPARE(readFile(mMount.localRoot + QStringLiteral("/package.mo")), QByteArray("package P end P;"));
   QCOMPARE(readFile(mMount.localRoot + QStringLiteral("/Sub/M.mo")), QByteArray("model M end M;"));
+}
+
+void CloudSyncEngineTest::identicalBytesAreAdopted()
+{
+  const QByteArray contents = "package P end P;";
+  writeFile(mMount.localRoot + QStringLiteral("/package.mo"), contents);
+  mpProvider->add(QStringLiteral("package.mo"), mRootId, contents);
+
+  const CloudError error = run(newEngine());
+  QVERIFY(!error.isError());
+  QVERIFY(mLastConflicts.isEmpty());
+  QCOMPARE(mpProvider->items.size(), 1);
+
+  CloudManifest manifest;
+  QVERIFY(manifest.load(mMount.manifestPath()));
+  const ManifestEntry entry = manifest.entries.value(QStringLiteral("package.mo"));
+  QCOMPARE(entry.contentHash, hashOf(contents));
+  QCOMPARE(entry.size, qint64(contents.size()));
+  QCOMPARE(entry.isFolder, false);
 }
 
 void CloudSyncEngineTest::conflictKeepsBothVersions()
