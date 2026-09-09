@@ -44,6 +44,7 @@ set(OMC_RUNTIME_SOURCES
     ErrorMessage.cpp
     System_omc.c
     Lapack_omc.cpp
+    omc_lapack.c
     Settings_omc.cpp
     UnitParserExt_omc.cpp
     unitparser.cpp
@@ -94,7 +95,32 @@ if(OM_OMC_ENABLE_COLPACK)
 endif()
 
 if(OM_OMC_USE_LAPACK)
-  target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  if(WIN32)
+    # Do not import LAPACK into the compiler on Windows. OpenBLAS allocates its
+    # per-thread buffers in DllMain, which Windows charges as committed memory
+    # (~128 MB per hardware thread) on every omc process even though the
+    # compiler never writes to them. lapackimpl.c loads the library on demand
+    # instead, with the thread count pinned to one across the load. See #16638.
+    #
+    # Hand it the library the build resolved so it does not have to guess: an
+    # import library such as libopenblas.dll.a names the DLL beside it. Only the
+    # first entry is needed, it is the one carrying the LAPACK routines, and the
+    # loader in lapackimpl.c falls back to the usual names if it does not open.
+    list(GET LAPACK_LIBRARIES 0 OMC_LAPACK_DLL)
+    if(OMC_LAPACK_DLL MATCHES "^-l(.+)$")
+      # A bare linker flag rather than a path, e.g. -lopenblas.
+      set(OMC_LAPACK_DLL "lib${CMAKE_MATCH_1}")
+    endif()
+    get_filename_component(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}" NAME)
+    string(REGEX REPLACE "\\.(a|lib)$" "" OMC_LAPACK_DLL "${OMC_LAPACK_DLL}")
+    if(NOT OMC_LAPACK_DLL MATCHES "\\.dll$")
+      set(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}.dll")
+    endif()
+    message(STATUS "omc will load LAPACK on demand from ${OMC_LAPACK_DLL}")
+    target_compile_definitions(omcruntime PRIVATE OMC_LAPACK_DLL_NAMES="${OMC_LAPACK_DLL}")
+  else()
+    target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  endif()
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
