@@ -30,7 +30,9 @@ algorithm
   out := out + \"\\n\" + sum(\"\" + l + \"\\n\" for l in OpenModelica.Scripting.stringSplit(OpenModelica.Scripting.readFile(\"tmp/interface.inc.tmp.rst\"), \"\\n\")) + \"  \\n\";
   s := OpenModelica.Scripting.list(cl, interfaceOnly=true);
   if stringLength(s) > 0 then
-    out := out + \"\\n.. code-block :: modelica\\n\\n\";
+    // Pygments' Modelica lexer rejects OpenModelica's $Code() default values,
+    // so those few listings are included unhighlighted instead of warning.
+    out := out + \"\\n.. code-block :: \" + (if OpenModelica.Scripting.regexBool(s, \"[$]\") then \"text\" else \"modelica\") + \"\\n\\n\";
     out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
   end if;
 end reSTInterface;
