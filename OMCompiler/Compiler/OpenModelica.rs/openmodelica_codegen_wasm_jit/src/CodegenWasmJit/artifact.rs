@@ -779,15 +779,17 @@ where
     T: openmodelica_fmi_driver::api::Fmi3ModelExchange + openmodelica_fmi_driver::api::Fmi3CoSimulation,
 {
     // The master's events under `-lv LOG_EVENTS`, as the standalone driver logs its own.
-    let events_log = |events: &[(f64, bool)]| -> String {
+    let events_log = |events: &[(f64, bool, Option<u32>)]| -> String {
         if !omclog::active(omclog::EVENTS) {
             return String::new();
         }
         events
             .iter()
-            .map(|(t, time_event)| {
+            .map(|(t, time_event, indicator)| {
                 let kind = if *time_event { "time" } else { "state" };
-                format!("LOG_EVENTS        | info    | {kind} event at time={t:.12}\n")
+                // The standalone numbers its crossings from 1.
+                let on = indicator.map(|k| format!(" [{}]", k + 1)).unwrap_or_default();
+                format!("LOG_EVENTS        | info    | {kind} event at time={t:.12}{on}\n")
             })
             .collect()
     };
@@ -802,7 +804,8 @@ where
                 "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
-            let events: Vec<(f64, bool)> = run.event_times.iter().map(|e| (e.time, e.time_event)).collect();
+            let events: Vec<(f64, bool, Option<u32>)> =
+                run.event_times.iter().map(|e| (e.time, e.time_event, e.indicator)).collect();
             Ok((run.recorder, s, events_log(&events)))
         }
         _ => {
