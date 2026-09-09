@@ -679,6 +679,7 @@ pub struct SIMULATION_INFO {
     pub terminal: modelica_boolean,
     pub discreteCall: modelica_boolean,
     pub needToIterate: modelica_boolean,
+    pub discreteStateChanged: modelica_boolean,
     pub simulationSuccess: modelica_boolean,
     pub sampleActivated: modelica_boolean,
     pub solveContinuous: modelica_boolean,

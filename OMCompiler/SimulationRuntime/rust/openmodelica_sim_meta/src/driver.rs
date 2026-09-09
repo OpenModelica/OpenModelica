@@ -907,10 +907,23 @@ pub fn set_ext_error_reporter(f: fn(&str)) {
     EXT_ERROR_REPORTER.store(f as usize, Ordering::Relaxed);
 }
 
-/// An external function's `ModelicaError`: report it and flag the unwind that
-/// follows. It has no condition and no source position, so the trap must not go
-/// looking for the assertion block a model `assert()` would have left.
-pub fn note_runtime_error(msg: &str) {
+/// Whether one is installed, i.e. whether `omc_assert` is C's `omc_assert_fmi`:
+/// `fmi2Instantiate` swaps it in for the `FUNCTION_CONTEXT` pointer, so a function's
+/// `assert()` inside an FMU is the importer's to see, not a `LOG_ASSERT` block.
+pub fn ext_errors_go_to_logger() -> bool {
+    EXT_ERROR_REPORTER.load(Ordering::Relaxed) != 0
+}
+
+/// `omc_assert_fmi`'s one-line form for the importer: the position, then the message.
+pub fn ext_assert_message(file: &str, line: i32, msg: &str) -> String {
+    if file.is_empty() || line == 0 {
+        return msg.into();
+    }
+    format!("{file}:{line}: {msg}")
+}
+
+/// Report through it without the unwind flag [`note_runtime_error`] raises.
+pub fn report_ext_error(msg: &str) {
     match EXT_ERROR_REPORTER.load(Ordering::Relaxed) {
         0 => omclog::debug(omclog::ASSERT, false, msg),
         p => {
@@ -918,6 +931,13 @@ pub fn note_runtime_error(msg: &str) {
             f(msg);
         }
     }
+}
+
+/// An external function's `ModelicaError`: report it and flag the unwind that
+/// follows. It has no condition and no source position, so the trap must not go
+/// looking for the assertion block a model `assert()` would have left.
+pub fn note_runtime_error(msg: &str) {
+    report_ext_error(msg);
     note_runtime_error_flag();
 }
 
@@ -2222,6 +2242,29 @@ pub fn take_suppressed_assert(e: &mut dyn SimEngine, sim_data: u32, log: bool) -
     let armed = drain_asserts(e, sim_data, omclog::INFO, log)?;
     let (info, _, noted) = rethrow_store::take();
     Ok(armed || info.is_some() || noted)
+}
+
+/// C's `simulationUpdate` tail for FMI Event Mode: a held assert is forgiven when
+/// something fired or the discrete state moved from `before`, and fails otherwise.
+/// `log` is clear where the violation was already reported where it was held; the
+/// answer says whether there was one to settle.
+pub fn settle_event_asserts(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    before: &[u8],
+    fired: bool,
+    log: bool,
+) -> Result<bool> {
+    if !take_suppressed_assert(e, sim_data, log)? {
+        return Ok(false);
+    }
+    if fired || discrete_snapshot(e, sim_data, layout)? != before {
+        omclog::info(omclog::ASSERT, false, "Found event, previous asserts are ignored.");
+        return Ok(true);
+    }
+    omclog::error(omclog::ASSERT, false, "No event found, but assert was triggered. Throwing now!");
+    Err(ASSERT_ERR)
 }
 
 /// Leave it and settle what was recorded (C's `simulationUpdate` tail): an event
@@ -3958,7 +4001,7 @@ fn locate_zc_root(
 
 /// Snapshot of the discrete state — boolean/integer algebraics and held relations
 /// — used to detect when an event's discrete update has reached a fixed point.
-fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
+pub fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<u8>> {
     let mut buf = vec![0u8; ((layout.n_bool_alg() + layout.n_int_alg()) * 4 + layout.n_rel * 4) as usize];
     let (bools, rest) = buf.split_at_mut((layout.n_bool_alg() * 4) as usize);
     let (ints, rels) = rest.split_at_mut((layout.n_int_alg() * 4) as usize);
@@ -7312,7 +7355,7 @@ fn reached_eps(t: f64, span: f64) -> f64 {
 const DASSL_STEP_EPS: f64 = 1e-13;
 
 /// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
-const SAMPLE_EPS: f64 = 1e-14;
+pub const SAMPLE_EPS: f64 = 1e-14;
 
 
 /// `dassl.c`'s floor on a step worth handing to DASKR.
@@ -8537,6 +8580,11 @@ impl CsDriver {
     /// The time reached so far (FMI's `last-successful-time`).
     pub fn time(&self) -> f64 {
         self.core.t
+    }
+
+    /// A sample or clock is due at `time`: the event the master stopped on is a time event.
+    pub fn time_event_due(&self, time: f64) -> bool {
+        self.samp.next_time() <= time + SAMPLE_EPS || self.sync.next_time() <= time + SYNC_EPS
     }
 
     /// Advance to `t_target`. `defer` decides which events are reported to the
