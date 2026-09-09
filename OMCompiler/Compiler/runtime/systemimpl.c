@@ -63,6 +63,7 @@ extern "C" {
 #include "util/rtclock.h"
 #include "omc_config.h"
 #include "errorext.h"
+#include "omc_lapack.h"
 #include "settingsimpl.h"
 #include "printimpl.h"
 
@@ -2046,14 +2047,12 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
 }
 
 /* adrpo 2011-06-23
- * extern definition to dgesv_ from -llapack
- * as we do not link with -lsim and the one
- * in matrix.h got renamed to _omc_dgesv_ to
- * avoid name clashes!
+ * dgesv_ comes from -llapack, since we do not link with -lsim and the one in
+ * matrix.h got renamed to _omc_dgesv_ to avoid name clashes. It is declared by
+ * omc_lapack.h and reached through OMC_LAPACK() so that this call shares the
+ * Windows on-demand loading with the rest of the compiler.
  */
 #ifdef HAVE_LAPACK
-
-extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 int SystemImpl__dgesv(void *lA, void *lB, void **res)
 {
@@ -2085,7 +2084,7 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   assert(ipiv != 0);
   lda = sz;
   ldb = sz;
-  dgesv_(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
+  OMC_LAPACK(dgesv_)(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
 
   tmp = mmc_mk_nil();
   while (sz--) {
