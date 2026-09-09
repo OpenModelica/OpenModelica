@@ -140,7 +140,7 @@ pub extern "C" fn rt_nls_assert_failed(
     nls::note_assert();
     if report {
         use openmodelica_sim_meta::TIME_OFF;
-        use openmodelica_sim_meta::driver::{AssertInfo, log_assert_block};
+        use openmodelica_sim_meta::driver::{self, AssertInfo, log_assert_block};
         let info = AssertInfo {
             msg: rt_string(msg),
             file: rt_string(file),
@@ -150,8 +150,16 @@ pub extern "C" fn rt_nls_assert_failed(
             line_end: eline,
             col_end: ecol,
         };
-        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        // A function's `assert()` (no condition) inside an FMU is `omc_assert_fmi`,
+        // which reports to the importer instead, as `rt_assert` does for one that
+        // the solver does not absorb.
+        if cond == 0 && driver::ext_errors_go_to_logger() {
+            driver::report_ext_error(&driver::ext_assert_message(&info.file, info.line_start, &info.msg));
+        } else {
+            let time =
+                if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+            log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        }
     }
     for h in [msg, file, cond] {
         if h != 0 {

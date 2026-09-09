@@ -574,6 +574,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.noThrowDivZero = 0;
     si.noThrowAsserts = 0;
     si.needToReThrow = 0;
+    si.discreteStateChanged = 0;
     si.discreteCall = 0;
     si.needToIterate = 0;
     si.simulationSuccess = 0;

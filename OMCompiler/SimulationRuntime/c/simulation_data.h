@@ -838,6 +838,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean terminal;           /* true at the end of the simulation */
   modelica_boolean discreteCall;       /* true for a discrete step */
   modelica_boolean needToIterate;      /* true if reinit has been activated, iteration about the system is needed */
+  modelica_boolean discreteStateChanged; /* true if the last updateDiscreteSystem moved a discrete variable or a relation */
   modelica_boolean simulationSuccess;  /* =0 the simulation run successful, otherwise an error code is set */ // FIXME why is this a boolean?
   modelica_boolean sampleActivated;    /* true if a sample expresion is going to be actived */
   modelica_boolean solveContinuous;    /* true during continuous integration to avoid zero-crossings jumps */

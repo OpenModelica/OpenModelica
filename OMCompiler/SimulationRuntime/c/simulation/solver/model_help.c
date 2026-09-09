@@ -105,6 +105,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   modelica_boolean discreteChanged = FALSE;
   modelica_boolean relationChanged = FALSE;
   data->simulationInfo->needToIterate = FALSE;
+  data->simulationInfo->discreteStateChanged = FALSE;
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
@@ -133,6 +134,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   /* Update discrete system until nothing changes any more */
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
+    data->simulationInfo->discreteStateChanged = TRUE;
     storePreValues(data);
     updateRelationsPre(data);
 
@@ -1289,6 +1291,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->noThrowDivZero = 0;
   data->simulationInfo->noThrowAsserts = 0;
   data->simulationInfo->needToReThrow = 0;
+  data->simulationInfo->discreteStateChanged = 0;
   data->simulationInfo->discreteCall = 0;
 
   /* initialize model error code */

@@ -28,7 +28,7 @@ use core::cell::RefCell;
 
 use openmodelica_sim_meta::driver::{
     self, dae_solve_explicit, eval_stage, event_update, run_initialization, set_param_overrides,
-    set_zc_tolerance, Samples, SimEngine,
+    set_zc_tolerance, EventUpdate, Samples, SimEngine,
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
@@ -309,12 +309,7 @@ fn rt_string(handle: i32) -> String {
 
 /// C's `omc_assert_fmi_common`: the source position, then the message.
 fn assert_message(msg: i32, file: i32, sline: i32) -> String {
-    let msg = rt_string(msg);
-    let file = rt_string(file);
-    if file.is_empty() || sline == 0 {
-        return msg;
-    }
-    alloc::format!("{file}:{sline}: {msg}")
+    driver::ext_assert_message(&rt_string(file), sline, &rt_string(msg))
 }
 
 /// The `assert()`s a driver window suppressed, drained by `take_pending_warnings`.
@@ -573,6 +568,16 @@ enum Mode {
     Ready,
 }
 
+/// What one Event Mode update did (see `MeState::run_event_update`).
+struct Updated {
+    up: EventUpdate,
+    next: Option<f64>,
+    reselected: bool,
+    ticked: bool,
+    /// A sample or clock fired: an event whatever the discrete variables did.
+    fired: bool,
+}
+
 struct MeState {
     sim_data: u32,
     layout: Layout,
@@ -802,6 +807,70 @@ impl MeState {
         }
         self.need_update = false;
         Ok(())
+    }
+
+    /// The event update at `time`: C's `simulationUpdate` order — the timers, then the
+    /// event, then the timers again for an event clock — with the CS driver ordering
+    /// its own schedule where it owns one.
+    fn run_event_update(&mut self, e: &mut Engine, time: f64) -> driver::Result<Updated> {
+        let (sim_data, layout) = (self.sim_data, self.layout);
+        let mut ticked = false;
+        #[cfg(feature = "cs")]
+        let cs_owns_clocks = self.cs.is_some();
+        #[cfg(not(feature = "cs"))]
+        let cs_owns_clocks = false;
+        let sample_due = self.samples.as_ref().is_some_and(|s| s.next_time() <= time + driver::SAMPLE_EPS);
+        if !cs_owns_clocks && self.sync.as_ref().is_some_and(|s| s.next_time() <= time + openmodelica_sim_meta::sync::SYNC_EPS) {
+            let mut sync = self.sync.take().expect("checked");
+            self.write_i32(layout.rel_fresh_off, 0);
+            let r = driver::eval_continuous(e, sim_data, &layout)
+                .and_then(|()| driver::fmi_handle_timers(e, &mut sync, &self.meta, sim_data, time));
+            self.sync = Some(sync);
+            ticked = r?;
+        }
+
+        // The CS driver owns the instance's clock schedule and fires the timers
+        // itself, so `fmi_handle_timers` below must not fire them a second time.
+        #[cfg(feature = "cs")]
+        let (up, clocks_handled, fired) = if let MeState { cs: Some(d), meta, .. } = self {
+            // Route through the driver so its sample and clock schedules advance in
+            // step with the integrator (see `CsDriver::do_event_update`).
+            let due = d.time_event_due(time);
+            (d.do_event_update(e, meta, time)?, true, due)
+        } else {
+            (event_update(e, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due)
+        };
+        #[cfg(not(feature = "cs"))]
+        let (up, clocks_handled, fired) = (event_update(e, sim_data, &layout, self.samples.as_mut(), time)?, false, sample_due);
+
+        // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
+        // later evaluation restores the relations and hides the next crossing.
+        self.write_i32(layout.rel_fresh_off, 0);
+
+        // After the discrete update, as `perform_simulation` has it rather than before
+        // it as C's FMU export does: the state-set Jacobian is worth no more than the
+        // point it is evaluated at.
+        let reselected = self.dss.reselect(e, sim_data, &self.meta)?;
+        if reselected {
+            self.need_update = true;
+            self.dae_current = false;
+        }
+
+        // The event clocks the update fired; the earliest of the next sample and
+        // the next activation.
+        let mut next = up.next_event_time;
+        if !clocks_handled {
+            if let Some(mut sync) = self.sync.take() {
+                let r = driver::fmi_handle_timers(e, &mut sync, &self.meta, sim_data, time);
+                let tc = sync.next_time();
+                self.sync = Some(sync);
+                ticked |= r?;
+                if tc.is_finite() {
+                    next = Some(next.map_or(tc, |n: f64| n.min(tc)));
+                }
+            }
+        }
+        Ok(Updated { up, next, reselected, ticked, fired: fired || ticked })
     }
 
     /// C's `initialization()`, repeatable: the overrides stay, so the importer can
@@ -1094,107 +1163,51 @@ macro_rules! shared_instance_methods {
         st.continuous_time = false;
         st.event_mode = true;
         st.assert_held = false;
-        st.assert_logged = false;
         Status::Ok
     }
 
     /// The master has located the event and set time/states; run the discrete
     /// update here. `iterate_discrete` already runs to a fixed point, so one pass
     /// always suffices and `new-discrete-states-needed` stays false.
+    ///
+    /// C's `simulationUpdate` holds a violated `assert()` over the whole update: one
+    /// the event itself raises is forgiven when something did happen at this point,
+    /// and fails the call otherwise (`settle_event_asserts`).
     fn update_discrete_states(&self) -> Result<DiscreteStatesInfo, Status> {
         let mut st = self.st.borrow_mut();
         let (sim_data, layout) = (st.sim_data, st.layout);
         let time = st.read_f64(TIME_OFF);
         let mut e = Engine;
-
-        // C's `simulationUpdate`: the timers, then the event, then (below) the
-        // timers again for an event clock. The CS driver orders its own schedule.
-        let mut ticked = false;
-        #[cfg(feature = "cs")]
-        let cs_owns_clocks = st.cs.is_some();
-        #[cfg(not(feature = "cs"))]
-        let cs_owns_clocks = false;
-        if !cs_owns_clocks && st.sync.as_ref().is_some_and(|s| s.next_time() <= time + openmodelica_sim_meta::sync::SYNC_EPS) {
-            let mut sync = st.sync.take().expect("checked");
-            st.write_i32(layout.rel_fresh_off, 0);
-            let r = driver::eval_continuous(&mut e, sim_data, &layout)
-                .and_then(|()| driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time));
-            st.sync = Some(sync);
-            match r {
-                Ok(fired) => ticked = fired,
-                Err(err) => return Err(failed(&mut e, sim_data, err)),
-            }
-        }
-
-        // The CS driver owns the instance's clock schedule and fires the timers
-        // itself, so `fmi_handle_timers` below must not fire them a second time.
-        #[cfg(feature = "cs")]
-        let (up, clocks_handled) = if let Some(mut d) = st.cs.take() {
-            // Route through the driver so its sample and clock schedules advance in
-            // step with the integrator (see `CsDriver::do_event_update`).
-            let r = d.do_event_update(&mut e, &st.meta, time);
-            st.cs = Some(d);
-            match r {
-                Ok(up) => (up, true),
-                Err(err) => return Err(failed(&mut e, sim_data, err)),
-            }
-        } else {
-            match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
-                Ok(up) => (up, false),
-                Err(err) => return Err(failed(&mut e, sim_data, err)),
-            }
-        };
-        #[cfg(not(feature = "cs"))]
-        let (up, clocks_handled) = match event_update(&mut e, sim_data, &layout, st.samples.as_mut(), time) {
-            Ok(up) => (up, false),
+        let before = match driver::discrete_snapshot(&e, sim_data, &layout) {
+            Ok(b) => b,
             Err(err) => return Err(failed(&mut e, sim_data, err)),
         };
-
-        // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
-        // later evaluation restores the relations and hides the next crossing.
-        st.write_i32(layout.rel_fresh_off, 0);
-
-        // After the discrete update, as `perform_simulation` has it rather than before
-        // it as C's FMU export does: the state-set Jacobian is worth no more than the
-        // point it is evaluated at.
-        let reselected = {
-            let m = &mut *st;
-            match m.dss.reselect(&mut e, sim_data, &m.meta) {
-                Ok(changed) => changed,
-                Err(err) => return Err(failed(&mut e, sim_data, err)),
-            }
+        driver::open_assert_window();
+        let updated = st.run_event_update(&mut e, time);
+        let settled = match &updated {
+            Ok(u) => driver::settle_event_asserts(&mut e, sim_data, &layout, &before, u.fired, !st.assert_logged),
+            Err(_) => driver::take_suppressed_assert(&mut e, sim_data, false).map(|_| false),
         };
-        if reselected {
-            st.need_update = true;
-        st.dae_current = false;
+        // Settled, so the next violation is a new one to report.
+        if !matches!(settled, Ok(false)) {
+            st.assert_logged = false;
         }
-
-        // The event clocks the update fired; the earliest of the next sample and
-        // the next activation.
-        let mut next = up.next_event_time;
-        let pending_sync = if clocks_handled { None } else { st.sync.take() };
-        if let Some(mut sync) = pending_sync {
-            let r = driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time);
-            let tc = sync.next_time();
-            st.sync = Some(sync);
-            match r {
-                Ok(fired) => ticked |= fired,
-                Err(err) => return Err(failed(&mut e, sim_data, err)),
-            }
-            if tc.is_finite() {
-                next = Some(next.map_or(tc, |n: f64| n.min(tc)));
-            }
+        let u = match updated {
+            Ok(u) => u,
+            Err(err) => return Err(failed(&mut e, sim_data, err)),
+        };
+        if let Err(err) = settled {
+            return Err(failed(&mut e, sim_data, err));
         }
-
         Ok(DiscreteStatesInfo {
             new_discrete_states_needed: false,
-            terminate_simulation: up.terminate,
+            terminate_simulation: u.up.terminate,
             // C's `updateSolverNominals`: a pivoted state set integrates other
             // variables, with other nominals.
-            nominals_of_continuous_states_changed: reselected,
-            values_of_continuous_states_changed: up.states_changed || ticked || reselected,
-            next_event_time_defined: next.is_some(),
-            next_event_time: next.unwrap_or(0.0),
+            nominals_of_continuous_states_changed: u.reselected,
+            values_of_continuous_states_changed: u.up.states_changed || u.ticked || u.reselected,
+            next_event_time_defined: u.next.is_some(),
+            next_event_time: u.next.unwrap_or(0.0),
         })
     }
 
