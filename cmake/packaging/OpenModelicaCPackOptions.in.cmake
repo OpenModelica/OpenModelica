@@ -40,6 +40,10 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
   set(CPACK_DEBIAN_PACKAGE_SECTION "math")
 
+  # The documentation is the same on every architecture.
+  set(CPACK_DEBIAN_DOC_PACKAGE_ARCHITECTURE "all")
+  set(CPACK_DEBIAN_DOC_PACKAGE_SECTION "doc")
+
 elseif(CPACK_GENERATOR STREQUAL "RPM")
   # Options and settings that are specific to RPM packages.
   # https://cmake.org/cmake/help/latest/cpack_gen/rpm.html
@@ -50,6 +54,9 @@ elseif(CPACK_GENERATOR STREQUAL "RPM")
   set(CPACK_RPM_COMPONENT_INSTALL ON)
 
   set(CPACK_RPM_PACKAGE_LICENSE ${CPACK_RESOURCE_FILE_LICENSE})
+
+  # The documentation is the same on every architecture.
+  set(CPACK_RPM_DOC_PACKAGE_ARCHITECTURE "noarch")
 
 
 elseif(CPACK_GENERATOR STREQUAL "productbuild")
