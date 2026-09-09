@@ -10,6 +10,11 @@ convertUnits("K","Unknown");getErrorString();
 convertUnits("Pa","mmHg");getErrorString();
 convertUnits("m3/Pa","ml/mmHg");getErrorString();
 convertUnits("s-1","d-1");getErrorString();
+convertUnits("J","eV");getErrorString();
+convertUnits("eV","J");getErrorString();
+convertUnits("J","keV");getErrorString();
+convertUnits("keV","J");getErrorString();
+convertUnits("eV","keV");getErrorString();
 
 getDerivedUnits("K");getErrorString();
 getDerivedUnits("W");getErrorString();
@@ -35,6 +40,16 @@ getDerivedUnits("n");getErrorString();
 // (true, 7.500615758456563e-9, 0.0)
 // ""
 // (true, 1.1574074074074073e-5, 0.0)
+// ""
+// (true, 1.6021766340000001e-19, 0.0)
+// ""
+// (true, 6.241509074460762e18, 0.0)
+// ""
+// (true, 1.6021766340000001e-16, 0.0)
+// ""
+// (true, 6.241509074460762e15, 0.0)
+// ""
+// (true, 1000.0, 0.0)
 // ""
 // {"degC", "degF", "degRk"}
 // ""
