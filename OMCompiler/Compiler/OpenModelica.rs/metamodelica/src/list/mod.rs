@@ -253,7 +253,12 @@ impl<T: Clone> List<T> {
         if lst2.is_empty() {
             return self.clone();
         }
-        lst2.prepend_reverse(&self.clone().reverse())
+        let items: Vec<&T> = self.into_iter().collect();
+        let mut result = lst2.clone();
+        for item in items.into_iter().rev() {
+            result = cons(item.clone(), result);
+        }
+        result
     }
     /// Returns the length of a list. O(n).
     pub fn len(&self) -> i32 {
@@ -359,8 +364,31 @@ impl<T: PartialEq + Clone> List<T> {
     }
 }
 
-pub fn listAppend<T: Clone>(lst1: List<T>, lst2: List<T>) -> List<T> {
-    lst1.append(&lst2)
+/// Relinks the last node of a uniquely owned `lst1` onto `lst2` without
+/// allocating; from the first shared node on, the suffix is copied.
+pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
+    if lst2.is_empty() {
+        return lst1;
+    }
+    let mut cur: &mut List<T> = &mut lst1;
+    loop {
+        let unique_cons = match cur.0.as_ref() {
+            None => {
+                *cur = lst2;
+                return lst1;
+            }
+            Some(node) => {
+                Arc::strong_count(node) == 1 && Arc::weak_count(node) == 0 && matches!(&**node, Cons { .. })
+            }
+        };
+        if !unique_cons {
+            let suffix = cur.clone();
+            *cur = suffix.append(&lst2);
+            return lst1;
+        }
+        let Some(Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else { unreachable!() };
+        cur = tail;
+    }
 }
 
 /// Free-function form of the `listReverse` builtin (the `List::reverse` method).
