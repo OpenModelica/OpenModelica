@@ -12625,7 +12625,8 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         | "builtinIndex"
         | "builtinGraphIndex"
         | "operatorOverloadingCache"
-        | "backendCevalInterface" => Some("openmodelica_frontend"),
+        | "backendCevalInterface"
+        | "adjacencyIfCondCache" => Some("openmodelica_frontend"),
         // openmodelica_frontend_base — inlineHashTable holds a
         // VarTransform.VariableReplacements value; VarTransform/Inline live in
         // the frontend base crate, so the thread_local is declared there.

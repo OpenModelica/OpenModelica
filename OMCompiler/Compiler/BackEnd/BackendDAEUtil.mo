@@ -70,6 +70,7 @@ import BackendDAEEXT;
 import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
+import BaseHashTable;
 import BinaryTree;
 import Causalize;
 import CheckModel;
@@ -105,6 +106,7 @@ import FlagsUtil;
 import Global;
 import HpcOmEqSystems;
 import HashSet;
+import HashTableExpToExp;
 import IndexReduction;
 import Initialization;
 import Inline;
@@ -3213,7 +3215,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_,tpl) := Expression.traverseExpTopDown(expThen, traversingadjacencyRowExpSolvableFinder, tpl);
@@ -3274,7 +3276,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_,tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
@@ -3297,6 +3299,29 @@ algorithm
       then fail();
   end matchcontinue;
 end traversingadjacencyRowIfExp;
+
+protected function simplifyIfCondCached
+  "The same if-conditions are simplified in every adjacency row of every
+   matrix build (thousands per translation); cleared in getSolvedSystem."
+  input DAE.Exp cond;
+  output DAE.Exp simplified;
+protected
+  Option<HashTableExpToExp.HashTable> opt;
+  HashTableExpToExp.HashTable ht;
+algorithm
+  opt := getGlobalRoot(Global.adjacencyIfCondCache);
+  ht := match opt
+    case SOME(ht) then ht;
+    else HashTableExpToExp.emptyHashTableSized(1013);
+  end match;
+  try
+    simplified := BaseHashTable.get(cond, ht);
+  else
+    simplified := ExpressionSimplify.simplify(cond);
+    ht := BaseHashTable.add((cond, simplified), ht);
+    setGlobalRoot(Global.adjacencyIfCondCache, SOME(ht));
+  end try;
+end simplifyIfCondCached;
 
 protected function traversingAdjacencyRowIfExpEnhanced
   "author: kabdelhak FHB 2020-01
@@ -3340,7 +3365,7 @@ algorithm
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
         /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
-        expCond := ExpressionSimplify.simplify(expCond);
+        expCond := simplifyIfCondCached(expCond);
         tpl := match expCond
           case DAE.BCONST(true) algorithm
             (_, tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
@@ -7628,6 +7653,7 @@ algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
   StackOverflow.clearStacktraceMessages();
+  setGlobalRoot(Global.adjacencyIfCondCache, NONE());
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);

@@ -99,4 +99,8 @@ thread_local! {
     // them, so the placeholders are never invoked in practice.
     pub static backendCevalInterface: RefCell<crate::BackendCevalInterface::BackendInterfaceFunctions> =
         RefCell::new(<crate::BackendCevalInterface::BackendInterfaceFunctions as ::std::default::Default>::default());
+
+    // Index 37 — adjacencyIfCondCache: BackendDAEUtil.simplifyIfCondCached
+    pub static adjacencyIfCondCache: RefCell<Option<crate::HashTableExpToExp::HashTable>> =
+        const { RefCell::new(None) };
 }
