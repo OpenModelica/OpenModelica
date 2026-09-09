@@ -45,6 +45,7 @@ struct DoStepOut {
     event_handling_needed: u32,
     terminate: u32,
     early_return: u32,
+    discarded: u32,
     last_successful_time: f64,
 }
 
@@ -353,6 +354,7 @@ impl Fmi3CoSimulation for HostFmu {
             terminate: out.terminate != 0,
             early_return: out.early_return != 0,
             last_successful_time: out.last_successful_time,
+            discarded: out.discarded != 0,
         })
     }
 }

@@ -549,7 +549,8 @@ impl Fmi3CoSimulation for DylinkInstance {
         let event = f(self, 0)? != 0;
         let terminate = f(self, 1)? != 0;
         let early = f(self, 2)? != 0;
+        let discarded = f(self, 3)? != 0;
         let last = self.fmu.read_f64(p + 16).map_err(|e| err("fmi3DoStep", e))?;
-        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last })
+        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last, discarded })
     }
 }

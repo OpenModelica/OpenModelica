@@ -235,7 +235,9 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         }
     }
 
-    let (digest, files) = hash_inputs(&loader_dir, &[]);
+    // The loader binds the adapter's WIT, so a changed interface rebuilds it too.
+    let wit_dir = loader_dir.parent().expect("crate has a parent dir").join("openmodelica_fmi3_wasm").join("wit");
+    let (digest, files) = hash_inputs(&loader_dir, &[wit_dir]);
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }

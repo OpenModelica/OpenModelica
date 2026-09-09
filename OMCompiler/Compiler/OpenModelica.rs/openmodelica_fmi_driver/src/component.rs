@@ -732,6 +732,7 @@ impl Fmi3CoSimulation for WasmInstance {
             terminate: r.terminate_simulation,
             early_return: r.early_return,
             last_successful_time: r.last_successful_time,
+            discarded: r.discarded,
         })
     }
 }

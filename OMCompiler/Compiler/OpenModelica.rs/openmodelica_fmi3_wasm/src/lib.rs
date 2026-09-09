@@ -1853,18 +1853,30 @@ impl GuestCoSimulationInstance for Instance {
                 event_handling_needed: false,
                 terminate_simulation: false,
                 early_return: false,
+                discarded: false,
             }),
             Ok(CsStep::Event { time }) => Ok(DoStepResult {
                 last_successful_time: time,
                 event_handling_needed: true,
                 terminate_simulation: false,
                 early_return: time + eps < target,
+                discarded: false,
             }),
             Ok(CsStep::Terminated) => Ok(DoStepResult {
                 last_successful_time: last,
                 event_handling_needed: false,
                 terminate_simulation: true,
                 early_return: false,
+                discarded: false,
+            }),
+            // C's `retrySimulationStep` got half way and no further: the master
+            // takes it from there.
+            Ok(CsStep::Discarded) => Ok(DoStepResult {
+                last_successful_time: last,
+                event_handling_needed: false,
+                terminate_simulation: false,
+                early_return: true,
+                discarded: true,
             }),
             Err(err) => Err(failed(&mut e, sim_data, err)),
         }

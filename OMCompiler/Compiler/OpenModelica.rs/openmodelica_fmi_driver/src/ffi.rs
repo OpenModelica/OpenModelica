@@ -757,7 +757,7 @@ impl Fmi3CoSimulation for FmuInstance<'_> {
         let Some(f) = self.v().do_step else { return missing("fmi3DoStep") };
         let (mut event, mut term, mut early) = (false, false, false);
         let mut last = current_communication_point;
-        check("fmi3DoStep", unsafe {
+        let raw = unsafe {
             f(
                 self.handle,
                 current_communication_point,
@@ -768,12 +768,18 @@ impl Fmi3CoSimulation for FmuInstance<'_> {
                 &mut early,
                 &mut last,
             )
-        })?;
+        };
+        // `fmi3Discard` leaves the outputs valid: the FMU stands at `last`.
+        let discarded = Status::from_raw(raw) == Status::Discard;
+        if !discarded {
+            check("fmi3DoStep", raw)?;
+        }
         Ok(DoStep {
             event_handling_needed: event,
             terminate: term,
             early_return: early,
             last_successful_time: last,
+            discarded,
         })
     }
 }
