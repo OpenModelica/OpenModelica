@@ -42,7 +42,6 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
-#include <QStandardPaths>
 #include <QTextStream>
 #include <QTimer>
 
@@ -120,18 +119,8 @@ bool LSPClient::start(const QString &executable, const QString &rootUri, const Q
   mPendingRequests.clear();
   mNextId = 1;
 
-  if (executable.endsWith(QStringLiteral(".js"))) {
-    QString node = findNodeExecutable();
-    if (node.isEmpty()) {
-      emit serverError(tr("Node.js not found on PATH. The language server cannot start."));
-      return false;
-    }
-    mpProcess->setProgram(node);
-    mpProcess->setArguments({executable, QStringLiteral("--stdio")});
-  } else {
-    mpProcess->setProgram(executable);
-    mpProcess->setArguments({QStringLiteral("--stdio")});
-  }
+  mpProcess->setProgram(executable);
+  mpProcess->setArguments({QStringLiteral("--stdio")});
   mpProcess->start();
   if (!mpProcess->waitForStarted(5000)) {
     emit serverError(tr("Failed to start language server: %1").arg(executable));
@@ -781,15 +770,6 @@ void LSPClient::handleNotification(const QString &method, const QJsonObject &par
     return;
   }
   // Other server-initiated notifications (diagnostics, etc.) are not yet consumed.
-}
-
-/*!
- * \brief LSPClient::findNodeExecutable
- * Returns the full path to the node executable, or an empty string if not found.
- */
-QString LSPClient::findNodeExecutable()
-{
-  return QStandardPaths::findExecutable(QStringLiteral("node"));
 }
 
 /*!

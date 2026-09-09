@@ -144,7 +144,7 @@ endif()
 #
 # MODELICA_LS_STAGE_* are set by OMEditLIB, which is added before this directory.
 if(MODELICA_LS_STAGE_FILES OR MODELICA_LS_STAGE_EXE)
-  set(_ls_build_dir $<TARGET_FILE_DIR:OMEdit>/ls)
+  set(_ls_build_dir $<TARGET_FILE_DIR:OMEdit>/ls/modelica)
   add_custom_command(TARGET OMEdit POST_BUILD
                      COMMAND ${CMAKE_COMMAND} -E make_directory ${_ls_build_dir}
                      COMMENT "Staging the Modelica language server beside OMEdit")
@@ -154,11 +154,18 @@ if(MODELICA_LS_STAGE_FILES OR MODELICA_LS_STAGE_EXE)
                                "${_ls_file}" ${_ls_build_dir})
   endforeach()
   if(MODELICA_LS_STAGE_EXE)
-    # copy_if_different keeps the executable bit, and skips the ~120 MB copy on
-    # every relink once it is there.
+    # copy_if_different skips the ~120 MB copy on every relink once it is there.
     add_custom_command(TARGET OMEdit POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
                                "${MODELICA_LS_STAGE_EXE}"
                                ${_ls_build_dir}/${MODELICA_LS_STAGE_EXE_NAME})
+    if(UNIX)
+      # The copy inherits the source's permissions, and a file(DOWNLOAD) result
+      # is not executable -- so without this the staged server exists and then
+      # fails to start with "execvp: Permission denied". install(PROGRAMS) sets
+      # the bit for an installed OMEdit; nothing did for the build tree.
+      add_custom_command(TARGET OMEdit POST_BUILD
+                         COMMAND chmod +x ${_ls_build_dir}/${MODELICA_LS_STAGE_EXE_NAME})
+    endif()
   endif()
 endif()

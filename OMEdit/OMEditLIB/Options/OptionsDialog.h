@@ -1204,7 +1204,7 @@ private:
   QComboBox *mpDownloadVersionComboBox;
 
   static QString platformServerAsset();
-  static QString testedServerVersion();
+  static QString installedServerVersion();
   QString selectedReleaseTag() const;
   bool fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog);
   bool downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination, const QString &expectedSha256,

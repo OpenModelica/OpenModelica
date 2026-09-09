@@ -53,7 +53,6 @@
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
 #include "LSP/ModelicaLSPClient.h"
-#include "LSP/LSPSetupDialog.h"
 #include <limits>
 
 #include <QDir>
@@ -3174,20 +3173,20 @@ void OptionsDialog::saveTraceabilitySettings()
  */
 void OptionsDialog::readLanguageServerSettings()
 {
-  if (mpSettings->contains("languageServer/enabled")) {
-    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled").toBool());
-  } else {
-    mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
-  }
-  if (mpSettings->contains("languageServer/executable")) {
-    mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
-  } else {
-    mpLanguageServerPage->getServerExecutableTextBox()->setText(QString());
-  }
+  // On unless the user has turned it off: the server is installed with OMEdit,
+  // so the feature works without anything being set up. Absence of the key is
+  // a first run, not a decision to disable, so saveLanguageServerSettings()
+  // always writes it rather than removing it when off.
+  mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled", true).toBool());
+  // A path OMEdit cannot start is not shown, so the box does not display a
+  // setting that resolveExecutable() ignores. Saving the page then clears it.
+  const QString executable = mpSettings->value("languageServer/executable").toString();
+  mpLanguageServerPage->getServerExecutableTextBox()->setText(ModelicaLSPClient::isRunnableServerPath(executable)
+                                                              ? executable : QString());
   mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
   // Restart applies to the saved configuration, so offer it only when the saved
   // configuration has the server enabled.
-  mpLanguageServerPage->setServerRestartEnabled(mpSettings->value("languageServer/enabled", false).toBool());
+  mpLanguageServerPage->setServerRestartEnabled(mpSettings->value("languageServer/enabled", true).toBool());
 }
 
 /*!
@@ -3197,31 +3196,15 @@ void OptionsDialog::readLanguageServerSettings()
 void OptionsDialog::saveLanguageServerSettings()
 {
   // Capture previous LSP-relevant settings to decide whether a running server must restart.
-  const bool wasEnabled = mpSettings->value("languageServer/enabled", false).toBool();
+  const bool wasEnabled = mpSettings->value("languageServer/enabled", true).toBool();
   const QString oldExecutable = mpSettings->value("languageServer/executable").toString().trimmed();
 
   bool enabled = mpLanguageServerPage->getLanguageServerGroupBox()->isChecked();
   QString executable = mpLanguageServerPage->getServerExecutableTextBox()->text().trimmed();
 
-  // When enabling, check that Node.js is present for .js-based servers
-  if (enabled) {
-    const QString resolved = ModelicaLSPClient::resolveExecutable(executable);
-    if (resolved.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
-      LSPSetupDialog setupDialog(this);
-      setupDialog.exec();
-      if (setupDialog.result() == QDialog::Rejected) {
-        // User chose to disable — uncheck the groupbox before saving
-        mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(false);
-        enabled = false;
-      }
-    }
-  }
-
-  if (!enabled) {
-    mpSettings->remove("languageServer/enabled");
-  } else {
-    mpSettings->setValue("languageServer/enabled", enabled);
-  }
+  // Written either way. Removing the key would read back as the default, which
+  // is on, so turning the feature off would not survive a restart.
+  mpSettings->setValue("languageServer/enabled", enabled);
   if (executable.isEmpty()) {
     mpSettings->remove("languageServer/executable");
   } else {
@@ -7084,7 +7067,17 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // Server executable
   mpServerExecutableLabel = new Label(tr("Server Executable:"));
   mpServerExecutableTextBox = new QLineEdit;
-  mpServerExecutableTextBox->setPlaceholderText(tr("e.g. modelica-language-server"));
+  // Left empty, OMEdit runs the server installed with it. Name that server, so
+  // the empty box says what it is going to do rather than asking for a path.
+  const QString installed = ModelicaLSPClient::findBundledServer();
+  const QString placeholder = installed.isEmpty()
+      ? tr("No language server is installed with OMEdit - use Download... or set a path")
+      : tr("%1 (installed with OMEdit)").arg(installed);
+  mpServerExecutableTextBox->setPlaceholderText(placeholder);
+  // The placeholder is a full path and is elided in the box, so repeat it where
+  // it can be read in full.
+  mpServerExecutableTextBox->setToolTip(tr("Path to the language server to run. Leave empty to use the one "
+                                           "installed with OMEdit.\n\n%1").arg(placeholder));
   mpBrowseServerExecutableButton = new QPushButton(Helper::browse);
   mpBrowseServerExecutableButton->setAutoDefault(false);
   connect(mpBrowseServerExecutableButton, SIGNAL(clicked()), SLOT(browseServerExecutable()));
@@ -7103,8 +7096,7 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // server the settings still say is disabled, which nothing would then stop.
   mpRestartServerButton->setEnabled(false);
   connect(mpRestartServerButton, SIGNAL(clicked()), SLOT(restartServer()));
-  // Offers the standalone server for platforms where OMEdit does not bundle one,
-  // so a language server can be obtained without installing Node.js.
+  // Offers the standalone server for platforms where OMEdit does not bundle one.
   //
   // The version is a choice rather than always the newest release: the language
   // server is released independently of OMEdit, so "latest" can be a version this
@@ -7112,15 +7104,15 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
   // with OMEdit; "Latest release" is there for users who want a fix or a feature
   // that landed after it.
   mpDownloadVersionComboBox = new QComboBox;
-  mpDownloadVersionComboBox->addItem(tr("%1 (recommended)").arg(testedServerVersion()), testedServerVersion());
+  mpDownloadVersionComboBox->addItem(tr("%1 (recommended)").arg(installedServerVersion()), installedServerVersion());
   mpDownloadVersionComboBox->addItem(tr("Latest release"), QString());
   mpDownloadVersionComboBox->setToolTip(tr("Which modelica-language-server release to download. %1 is the version "
-                                           "installed with OMEdit; the latest release may be newer than that.")
-                                        .arg(testedServerVersion()));
+                                           "installed with OMEdit.")
+                                        .arg(installedServerVersion()));
   mpDownloadServerButton = new QPushButton(tr("Download..."));
   mpDownloadServerButton->setAutoDefault(false);
   mpDownloadServerButton->setToolTip(tr("Downloads the standalone Modelica language server for this platform "
-                                        "from the selected GitHub release. No Node.js is required to run it."));
+                                        "from the selected GitHub release."));
   mpDownloadServerButton->setEnabled(!platformServerAsset().isEmpty());
   mpDownloadVersionComboBox->setEnabled(!platformServerAsset().isEmpty());
   connect(mpDownloadServerButton, SIGNAL(clicked()), SLOT(downloadServerExecutable()));
@@ -7155,13 +7147,22 @@ LanguageServerPage::LanguageServerPage(OptionsDialog *pOptionsDialog)
  */
 void LanguageServerPage::browseServerExecutable()
 {
-  mpServerExecutableTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
+  const QString selected = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile));
+  if (selected.isEmpty()) {
+    return;
+  }
+  // Say so here rather than accepting a path that resolveExecutable() would
+  // then ignore, leaving the box showing a server OMEdit is not running.
+  if (!ModelicaLSPClient::isRunnableServerPath(selected)) {
+    QMessageBox::warning(this, Helper::applicationName,
+                         tr("%1 is a script, not a language server OMEdit can start.\n\n"
+                            "Select a language server executable, or leave the field empty to use the "
+                            "one installed with OMEdit.").arg(selected));
+    return;
+  }
+  mpServerExecutableTextBox->setText(selected);
 }
 
-/*!
- * \brief LanguageServerPage::autoDetectServerExecutable
- * Searches PATH for the modelica-language-server executable.
- */
 /*!
  * \brief LanguageServerPage::restartServer
  * Stops the running language server and starts it again.
@@ -7182,12 +7183,12 @@ void LanguageServerPage::restartServer()
 }
 
 /*!
- * \brief LanguageServerPage::testedServerVersion
+ * \brief LanguageServerPage::installedServerVersion
  * Tag of the modelica-language-server release installed with this OMEdit,
  * kept in step with MODELICA_LS_VERSION in OMEditLIB/CMakeLists.txt so the
- * download offer and the bundled server cannot drift apart.
+ * download offer and the installed server cannot drift apart.
  */
-QString LanguageServerPage::testedServerVersion()
+QString LanguageServerPage::installedServerVersion()
 {
 #ifdef MODELICA_LS_VERSION
   return QStringLiteral("v") % QStringLiteral(MODELICA_LS_VERSION);
@@ -7343,14 +7344,11 @@ bool LanguageServerPage::downloadReleaseAsset(const QString &tag, const QString 
     if (error == QNetworkReply::ContentNotFoundError) {
       // The release does not publish this asset. Standalone binaries are not
       // built for every platform yet, so say so instead of reporting a bare 404.
-      const QString bundled = ModelicaLSPClient::findBundledServer();
-      const QString alternative = bundled.endsWith(QStringLiteral(".js"))
-          ? tr("Try another version, or install Node.js (https://nodejs.org) to use the server installed with OMEdit.")
-          : tr("Try another version, or point Server Executable at a server you built yourself.");
       QMessageBox::information(this, Helper::applicationName,
                                tr("Release %1 does not provide %2.\n\n"
-                                  "A standalone server is not published for this platform in that release. %3")
-                               .arg(tag.isEmpty() ? tr("latest") : tag, asset, alternative));
+                                  "A standalone server is not published for this platform in that release. "
+                                  "Try another version, or point Server Executable at a server you built yourself.")
+                               .arg(tag.isEmpty() ? tr("latest") : tag, asset));
     } else if (error >= QNetworkReply::SslHandshakeFailedError && error <= QNetworkReply::UnknownNetworkError) {
       QMessageBox::critical(this, Helper::applicationName,
                             tr("Failed to download %1 securely:\n%2\n\n"
@@ -7408,12 +7406,9 @@ void LanguageServerPage::downloadServerExecutable()
 {
   const QString asset = platformServerAsset();
   if (asset.isEmpty()) {
-    const QString bundled = ModelicaLSPClient::findBundledServer();
     QMessageBox::information(this, Helper::applicationName,
-                             tr("No standalone language server is published for this platform.\n\n%1")
-                             .arg(bundled.endsWith(QStringLiteral(".js"))
-                                  ? tr("Install Node.js (https://nodejs.org) to use the server installed with OMEdit instead.")
-                                  : tr("Build a server yourself and point Server Executable at it.")));
+                             tr("No standalone language server is published for this platform.\n\n"
+                                "Build a server yourself and point Server Executable at it."));
     return;
   }
 
@@ -7522,26 +7517,21 @@ void LanguageServerPage::downloadServerExecutable()
                               "Click OK to start using it.").arg(tag.isEmpty() ? tr("latest release") : tag, serverPath));
 }
 
+/*!
+ * \brief LanguageServerPage::autoDetectServerExecutable
+ * Fills Server Executable with the server OMEdit would run: the one installed
+ * with it, else one on PATH.
+ */
 void LanguageServerPage::autoDetectServerExecutable()
 {
-  // Resolves the bundled server, or a standalone one on PATH when the bundled
-  // server.js cannot run because Node.js is missing.
+  // Resolves the server installed with OMEdit, or one on PATH.
   const QString found = ModelicaLSPClient::resolveExecutable(QString());
   if (!found.isEmpty()) {
     mpServerExecutableTextBox->setText(found);
-    // Only a server.js needs Node.js; a standalone server runs on its own.
-    if (found.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty()) {
-      QMessageBox::information(this, Helper::applicationName,
-                               tr("Found the bundled language server at:\n%1\n\n"
-                                  "Node.js is required to run it but was not found on the PATH.\n"
-                                  "Install Node.js from https://nodejs.org, then click OK to start "
-                                  "the language server.")
-                               .arg(found));
-    }
     return;
   }
-  // A default OMEdit build installs no server at all, so pointing at Node.js
-  // would be advice for a file that is not there: the download is the way in.
+  // A build without network access installs no server, so the download is the
+  // way in.
   QMessageBox::information(this, Helper::applicationName,
                            tr("No language server found.\n\n"
                               "Use Download... to fetch one, or point Server Executable at a "

@@ -388,8 +388,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 #endif
 
-  if (!testsuiteRunning && pSettings->contains("languageServer/enabled") &&
-      pSettings->value("languageServer/enabled").toBool()) {
+  // On unless the user has turned it off; the same default the options page reads.
+  if (!testsuiteRunning && pSettings->value("languageServer/enabled", true).toBool()) {
     pMainwindow->startLanguageServer();
   }
 

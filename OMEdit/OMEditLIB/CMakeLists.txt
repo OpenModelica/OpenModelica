@@ -20,7 +20,6 @@ set(CMAKE_AUTOUIC ON)
 set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       LSP/LSPFileWatcher.cpp
                       LSP/ModelicaLSPClient.cpp
-                      LSP/LSPSetupDialog.cpp
                       Util/Helper.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
@@ -159,7 +158,6 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
 set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       LSP/LSPFileWatcher.h
                       LSP/ModelicaLSPClient.h
-                      LSP/LSPSetupDialog.h
                       LSP/LSPProtocol.h
                       Util/Helper.h
                       Util/Utilities.h
@@ -461,10 +459,10 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
 #
 # The build downloads the standalone server for the target platform from the
 # modelica-language-server release named by MODELICA_LS_VERSION and installs it
-# beside OMEdit's translations, in <datarootdir>/omedit/ls. It brings its own
-# runtime, so nothing else has to be installed to use it, in particular not
-# Node.js -- but it does not embed the tree-sitter grammar, so the two .wasm
-# files are installed with it and must stay in the same directory.
+# beside OMEdit's translations, in <datarootdir>/omedit/ls/modelica. It brings
+# its own runtime, so nothing else has to be installed to use it -- but it does
+# not embed the tree-sitter grammar, so the two .wasm files are installed with
+# it and must stay in the same directory.
 #
 # With *Server Executable* left empty on the Language Server options page OMEdit
 # runs this server. The user can still download another release from that page,
@@ -492,27 +490,41 @@ target_compile_definitions(OMEditLib PRIVATE MODELICA_LS_VERSION="${MODELICA_LS_
 # <prefix>/share/omedit, which holds on Windows too: OMEdit.exe lives in bin/,
 # so bin/../share/omedit resolves to the same place. OMEditGUI stages the same
 # files next to the built executable, for running without installing.
-set(MODELICA_LS_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omedit/ls)
+#
+# One directory per language under ls/, so a server for another language can be
+# installed beside this one rather than sharing a directory with it -- the
+# servers load runtime files from their own directory by name.
+set(MODELICA_LS_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omedit/ls/modelica)
+
+if(WIN32)
+  set(MODELICA_LS_EXE_NAME "modelica-language-server.exe")
+else()
+  set(MODELICA_LS_EXE_NAME "modelica-language-server")
+endif()
 
 if(MODELICA_LS_DIR)
-  # A locally built server: the three files of a Node.js build, which must stay
-  # together. All three are installed, so all three must be present -- a
-  # configure that checked only server.js reported success and then failed at
+  # A locally built server: the standalone binary and the two WASM files, which
+  # must stay together. All three are installed, so all three must be present --
+  # a configure that checked only the binary reported success and then failed at
   # install time.
-  if(EXISTS "${MODELICA_LS_DIR}/server.js"
+  if(EXISTS "${MODELICA_LS_DIR}/${MODELICA_LS_EXE_NAME}"
      AND EXISTS "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm"
      AND EXISTS "${MODELICA_LS_DIR}/web-tree-sitter.wasm")
-    install(FILES "${MODELICA_LS_DIR}/server.js"
-                  "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm"
+    # PROGRAMS rather than FILES: the server has to be executable once installed.
+    install(PROGRAMS "${MODELICA_LS_DIR}/${MODELICA_LS_EXE_NAME}"
+            DESTINATION ${MODELICA_LS_INSTALL_DIR})
+    install(FILES "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm"
                   "${MODELICA_LS_DIR}/web-tree-sitter.wasm"
             DESTINATION ${MODELICA_LS_INSTALL_DIR})
     # Also handed to OMEditGUI, which puts them beside the built executable so a
     # build-tree OMEdit finds a server without being installed first.
-    set(MODELICA_LS_STAGE_FILES "${MODELICA_LS_DIR}/server.js;${MODELICA_LS_DIR}/tree-sitter-modelica.wasm;${MODELICA_LS_DIR}/web-tree-sitter.wasm" PARENT_SCOPE)
+    set(MODELICA_LS_STAGE_FILES "${MODELICA_LS_DIR}/tree-sitter-modelica.wasm;${MODELICA_LS_DIR}/web-tree-sitter.wasm" PARENT_SCOPE)
+    set(MODELICA_LS_STAGE_EXE "${MODELICA_LS_DIR}/${MODELICA_LS_EXE_NAME}" PARENT_SCOPE)
+    set(MODELICA_LS_STAGE_EXE_NAME "${MODELICA_LS_EXE_NAME}" PARENT_SCOPE)
     message(STATUS "Modelica language server: installing from ${MODELICA_LS_DIR}")
   else()
-    message(WARNING "MODELICA_LS_DIR=${MODELICA_LS_DIR} does not contain server.js and both "
-                    "WASM files - OMEdit will be installed without a language server")
+    message(WARNING "MODELICA_LS_DIR=${MODELICA_LS_DIR} does not contain ${MODELICA_LS_EXE_NAME} "
+                    "and both WASM files - OMEdit will be installed without a language server")
   endif()
 elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
   # Standalone build for the target platform. The release publishes one per
@@ -565,12 +577,6 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
                    "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} - OMEdit will be "
                    "installed without one, and can download or be pointed at a server at runtime")
   else()
-    if(WIN32)
-      set(_ls_installed_name "modelica-language-server.exe")
-    else()
-      set(_ls_installed_name "modelica-language-server")
-    endif()
-
     # The standalone build does not embed the tree-sitter grammar or its
     # runtime; it loads both from beside the executable. Without them the server
     # starts and answers initialize, but with no capabilities, and returns
@@ -621,7 +627,7 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       # installed. The WASM files are read, not run.
       install(PROGRAMS "${_ls_cache}/${_ls_asset}"
               DESTINATION ${MODELICA_LS_INSTALL_DIR}
-              RENAME ${_ls_installed_name})
+              RENAME ${MODELICA_LS_EXE_NAME})
       install(FILES "${_ls_cache}/tree-sitter-modelica.wasm"
                     "${_ls_cache}/web-tree-sitter.wasm"
               DESTINATION ${MODELICA_LS_INSTALL_DIR})
@@ -630,7 +636,7 @@ elseif(OM_OMEDIT_BUNDLE_LANGUAGE_SERVER)
       # binary is renamed there too, so pass the name it must end up with.
       set(MODELICA_LS_STAGE_FILES "${_ls_cache}/tree-sitter-modelica.wasm;${_ls_cache}/web-tree-sitter.wasm" PARENT_SCOPE)
       set(MODELICA_LS_STAGE_EXE "${_ls_cache}/${_ls_asset}" PARENT_SCOPE)
-      set(MODELICA_LS_STAGE_EXE_NAME "${_ls_installed_name}" PARENT_SCOPE)
+      set(MODELICA_LS_STAGE_EXE_NAME "${MODELICA_LS_EXE_NAME}" PARENT_SCOPE)
       message(STATUS "Modelica language server: installing ${_ls_asset} and its WASM files into ${MODELICA_LS_INSTALL_DIR}")
     else()
       # Not fatal: a build without network access still produces a working

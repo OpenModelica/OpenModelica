@@ -58,17 +58,6 @@ private slots:
    */
   void findsInstalledBinary();
   /*!
-   * \brief prefersBinaryOverScript
-   * Tests that a standalone server wins over server.js, which needs Node.js.
-   */
-  void prefersBinaryOverScript();
-  /*!
-   * \brief findsScriptWhenNoBinary
-   * Tests that a server.js install is still found when no standalone server
-   * is present.
-   */
-  void findsScriptWhenNoBinary();
-  /*!
    * \brief ignoresEmptyInstallation
    * Tests that nothing is reported when share/omedit/ls holds no server.
    */
@@ -85,6 +74,12 @@ private slots:
    * can still point OMEdit at a server of their own.
    */
   void configuredSettingWins();
+  /*!
+   * \brief ignoresConfiguredScript
+   * Tests that a configured .js path is treated as unset, so a setting left
+   * over from the Node.js server resolves to the installed one.
+   */
+  void ignoresConfiguredScript();
   /*!
    * \brief reportsMissingRuntimeFiles
    * Tests that a server installed without the tree-sitter files is reported,

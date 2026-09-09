@@ -210,7 +210,6 @@ SOURCES += Util/Helper.cpp \
   LSP/LSPClient.cpp \
   LSP/LSPFileWatcher.cpp \
   LSP/ModelicaLSPClient.cpp \
-  LSP/LSPSetupDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -340,7 +339,6 @@ HEADERS  += Util/Helper.h \
   LSP/LSPFileWatcher.h \
   LSP/ModelicaLSPClient.h \
   LSP/LSPProtocol.h \
-  LSP/LSPSetupDialog.h
 
 CONFIG(osg) {
 

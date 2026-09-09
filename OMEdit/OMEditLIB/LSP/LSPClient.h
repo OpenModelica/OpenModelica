@@ -69,8 +69,6 @@ public:
   void stop();
   bool isRunning() const;
 
-  static QString findNodeExecutable();
-
   void updateLibraries(const QStringList &libraries);
   void openDocument(const QString &uri, const QString &languageId, const QString &text);
   void changeDocument(const QString &uri, const QString &text);

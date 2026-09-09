@@ -82,8 +82,7 @@ QJsonObject ModelicaLSPClient::initializationOptions(const QStringList &librarie
 /*!
  * \brief ModelicaLSPClient::findBundledServer
  * Looks for the Modelica language server shipped alongside OMEdit, in the
- * "ls" directory the build installs and stages. Prefers a standalone binary
- * over server.js, since the binary needs no Node.js.
+ * "ls" directory the build installs and stages.
  *
  * Checked in order: next to the executable, which covers a Windows install and
  * a run straight out of the build tree, where the build stages a copy; then
@@ -94,15 +93,14 @@ QString ModelicaLSPClient::findBundledServer()
 {
   QDir appDir(QCoreApplication::applicationDirPath());
 
-  // Installed by the build into <prefix>/share/omedit/ls, beside the
-  // translations. A standalone binary is preferred over server.js because it
-  // needs no Node.js.
+  // Installed by the build into <prefix>/share/omedit/ls/modelica, beside the
+  // translations. One directory per language, so another server can be
+  // installed beside this one.
 #ifdef Q_OS_WIN
-  const QString binaryName = QStringLiteral("ls/modelica-language-server.exe");
+  const QString binaryName = QStringLiteral("ls/modelica/modelica-language-server.exe");
 #else
-  const QString binaryName = QStringLiteral("ls/modelica-language-server");
+  const QString binaryName = QStringLiteral("ls/modelica/modelica-language-server");
 #endif
-  const QString jsName = QStringLiteral("ls/server.js");
 
   QStringList directories;
   directories << appDir.absolutePath()
@@ -111,13 +109,10 @@ QString ModelicaLSPClient::findBundledServer()
     directories << QDir::cleanPath(Helper::OpenModelicaHome + QStringLiteral("/share/omedit"));
   }
 
-  // Prefer a standalone binary — no Node.js required — over server.js.
-  for (const QString &name : {binaryName, jsName}) {
-    for (const QString &directory : directories) {
-      const QString candidate = directory + QStringLiteral("/") + name;
-      if (QFile::exists(candidate)) {
-        return candidate;
-      }
+  for (const QString &directory : directories) {
+    const QString candidate = directory + QStringLiteral("/") + binaryName;
+    if (QFile::exists(candidate)) {
+      return candidate;
     }
   }
   return QString();
@@ -150,28 +145,35 @@ QStringList ModelicaLSPClient::missingRuntimeFiles(const QString &executable)
 }
 
 /*!
- * \brief ModelicaLSPClient::resolveExecutable
- * Resolves the server to run: the configured one, else a bundled one, else a
- * standalone server on PATH.
+ * \brief ModelicaLSPClient::isRunnableServerPath
+ * Whether a configured path is something OMEdit can start.
  *
- * A bundled server.js cannot run without Node.js, so when Node.js is missing a
- * standalone server on PATH is preferred over it. The unusable bundled path is
- * still returned as a last resort, so the caller can tell the user that Node.js
- * is what is missing instead of reporting no server at all.
+ * OMEdit runs the server directly. A .js server is not that: it is a script for
+ * an interpreter OMEdit does not launch, so pointing *Server Executable* at one
+ * -- through Browse, or from a setting written before the JS server was dropped
+ * -- would only produce a failure to start. Treated as unset instead, so the
+ * server installed with OMEdit is used.
+ * \param executable the configured path, which may be empty
+ * \return false for a path OMEdit cannot start
+ */
+bool ModelicaLSPClient::isRunnableServerPath(const QString &executable)
+{
+  return !executable.endsWith(QStringLiteral(".js"), Qt::CaseInsensitive);
+}
+
+/*!
+ * \brief ModelicaLSPClient::resolveExecutable
+ * Resolves the server to run: the configured one, else the one installed with
+ * OMEdit, else a server on PATH.
  */
 QString ModelicaLSPClient::resolveExecutable(const QString &configured)
 {
-  if (!configured.isEmpty()) {
+  if (!configured.isEmpty() && isRunnableServerPath(configured)) {
     return configured;
   }
   const QString bundled = findBundledServer();
-  const bool bundledNeedsNode = bundled.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty();
-  if (!bundled.isEmpty() && !bundledNeedsNode) {
+  if (!bundled.isEmpty()) {
     return bundled;
   }
-  const QString onPath = QStandardPaths::findExecutable(defaultServerName());
-  if (!onPath.isEmpty()) {
-    return onPath;
-  }
-  return bundled;
+  return QStandardPaths::findExecutable(defaultServerName());
 }

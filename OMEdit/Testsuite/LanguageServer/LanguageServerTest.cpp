@@ -74,7 +74,7 @@ void LanguageServerTest::createServerFile(const QString &filePath)
 
 QString LanguageServerTest::installedServerDirectory() const
 {
-  return mTemporaryHome % QStringLiteral("/share/omedit/ls");
+  return mTemporaryHome % QStringLiteral("/share/omedit/ls/modelica");
 }
 
 void LanguageServerTest::initTestCase()
@@ -95,27 +95,6 @@ void LanguageServerTest::findsInstalledBinary()
   createServerFile(server);
 
   QCOMPARE(ModelicaLSPClient::findBundledServer(), server);
-}
-
-void LanguageServerTest::prefersBinaryOverScript()
-{
-  QDir(installedServerDirectory()).removeRecursively();
-  const QString binary = installedServerDirectory() % QStringLiteral("/") % serverBinaryName();
-  const QString script = installedServerDirectory() % QStringLiteral("/server.js");
-  createServerFile(script);
-  createServerFile(binary);
-
-  // The standalone server needs no Node.js, so it wins.
-  QCOMPARE(ModelicaLSPClient::findBundledServer(), binary);
-}
-
-void LanguageServerTest::findsScriptWhenNoBinary()
-{
-  QDir(installedServerDirectory()).removeRecursively();
-  const QString script = installedServerDirectory() % QStringLiteral("/server.js");
-  createServerFile(script);
-
-  QCOMPARE(ModelicaLSPClient::findBundledServer(), script);
 }
 
 void LanguageServerTest::ignoresEmptyInstallation()
@@ -147,6 +126,19 @@ void LanguageServerTest::configuredSettingWins()
   // A server the user configured is used as given, installed one or not.
   const QString configured = QDir::tempPath() % QStringLiteral("/a-server-of-my-own");
   QCOMPARE(ModelicaLSPClient::resolveExecutable(configured), configured);
+}
+
+void LanguageServerTest::ignoresConfiguredScript()
+{
+  QDir(installedServerDirectory()).removeRecursively();
+  const QString server = installedServerDirectory() % QStringLiteral("/") % serverBinaryName();
+  createServerFile(server);
+
+  // OMEdit runs the server directly, so a .js path -- from Browse, or written
+  // by a version that still ran one under Node.js -- is not something it can
+  // start. The installed server is used instead of failing to launch a script.
+  const QString script = QDir::tempPath() % QStringLiteral("/modelica-language-server/server.js");
+  QCOMPARE(ModelicaLSPClient::resolveExecutable(script), server);
 }
 
 void LanguageServerTest::reportsMissingRuntimeFiles()

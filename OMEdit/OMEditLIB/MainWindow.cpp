@@ -228,10 +228,7 @@ void MainWindow::startLanguageServer()
   QSettings *pSettings = Utilities::getApplicationSettings();
   const QString configured = pSettings->value("languageServer/executable").toString().trimmed();
   const QString executable = ModelicaLSPClient::resolveExecutable(configured);
-  // For .js servers, skip when Node.js is absent. The user is notified in the Options dialog.
-  bool canStart = !executable.isEmpty() &&
-                  !(executable.endsWith(QStringLiteral(".js")) && LSPClient::findNodeExecutable().isEmpty());
-  if (!canStart) {
+  if (executable.isEmpty()) {
     return;
   }
   // Warn rather than refuse: a future server may well embed these, and a wrong
