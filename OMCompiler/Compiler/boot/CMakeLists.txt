@@ -100,7 +100,7 @@ add_custom_target(copy_bootstrap_builtins DEPENDS ${BOOTSTRAP_BUILTIN_FILES})
 add_dependencies(bomc copy_bootstrap_builtins)
 
 # On Windows it also needs to have the dlls it depends on (remember bomc is being used without being installed)
-# think of this as a manual install for it. Luckily it depends only on just two dlls for now,
+# think of this as a manual install for it. There is no rpath to fall back on here.
 if(WIN32)
   add_custom_command (
     TARGET bomc
@@ -108,6 +108,15 @@ if(WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::simrt::runtime> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::3rd::omcgc> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
     COMMENT "Copying libOpenModelicaRuntimeC.dll and libomcgc.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+
+  # omcruntime links libomc_result when the Rust result readers/writers are on.
+  if(TARGET omc::result)
+    add_custom_command (
+      TARGET bomc
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::result> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
+      COMMENT "Copying omc_result.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+  endif()
 endif()
 
 # add_custom_command(
