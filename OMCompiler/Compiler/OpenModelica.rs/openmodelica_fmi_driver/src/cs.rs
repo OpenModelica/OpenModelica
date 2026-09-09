@@ -103,6 +103,17 @@ pub fn simulate(
             Err(e) => return Err(e),
         };
         steps += 1;
+        if r.discarded {
+            // C's `retrySimulationStep`: the FMU retook the step half way and stands
+            // there; that end is the row and the communication point is skipped.
+            if r.last_successful_time <= t {
+                return Err(Error::Solver("fmi3DoStep discarded the step without progress"));
+            }
+            t = r.last_successful_time;
+            rec.sample(as_common(inst), t)?;
+            next = grid.next();
+            continue;
+        }
         // An FMU may return at the very time it started from when an event sits
         // there: the event is handled below and the step retaken. Only a run of
         // such steps with nothing in between is a stuck FMU.

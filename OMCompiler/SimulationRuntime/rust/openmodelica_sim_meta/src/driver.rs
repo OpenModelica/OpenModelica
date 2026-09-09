@@ -8414,6 +8414,8 @@ pub struct CsDriver {
     resume: Option<MasterEvent>,
     /// The zero-crossing values at the last accepted point, for the no-states walk.
     zc0: Vec<f64>,
+    /// C's `performSimulation` catch around one `fmi2DoStep`.
+    retry: StepRetry,
 }
 
 /// What the master's Event Mode resolved; the integrator resumes as
@@ -8446,6 +8448,9 @@ pub enum CsStep {
     Event { time: f64 },
     /// `terminate()` fired; `last_time` is where it stopped.
     Terminated,
+    /// The retried step got half way and no further: the model stands at `time()`
+    /// (FMI's `fmi3Discard`), and the master resumes from there.
+    Discarded,
 }
 
 /// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
@@ -8524,7 +8529,9 @@ impl CsDriver {
         if core.n_states == 0 && layout.n_zc > 0 {
             read_zero_crossings(e, sim_data, layout, &mut zc0)?;
         }
-        Ok(CsDriver { core, samp, sync, fixed_h, resume: None, zc0 })
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, layout)?;
+        Ok(CsDriver { core, samp, sync, fixed_h, resume: None, zc0, retry })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -8543,17 +8550,70 @@ impl CsDriver {
         defer: CsDefer,
         dss: &mut StateSelection,
     ) -> Result<CsStep> {
-        // C's `simulationUpdate` window over the step, as `drive` holds it over a
-        // row; the integrator suspends it over its trials. An event handed to the
-        // master counts as found.
+        let layout = &model.layout;
+        let sim_data = self.core.sim_data;
+        let out = match self.attempt(e, model, t_target, defer, dss) {
+            // C's `performSimulation` catch: back to the accepted point, half the
+            // interval, then the rest; the rest failing leaves the master at half way.
+            Err(err) if is_model_throw(err) => match self.retry.undo(e, sim_data, layout)? {
+                None => return Err(err),
+                Some(t0) => {
+                    self.resync(e, layout, t0)?;
+                    match self.attempt(e, model, t0 + 0.5 * (t_target - t0), defer, dss)? {
+                        CsStep::Reached => {
+                            self.retry.store(e, sim_data, layout)?;
+                            match self.attempt(e, model, t_target, defer, dss) {
+                                Err(err) if is_model_throw(err) => {
+                                    let Some(t1) = self.retry.undo(e, sim_data, layout)? else { return Err(err) };
+                                    self.resync(e, layout, t1)?;
+                                    CsStep::Discarded
+                                }
+                                out => out?,
+                            }
+                        }
+                        other => other,
+                    }
+                }
+            },
+            out => out?,
+        };
+        self.retry.store(e, sim_data, layout)?;
+        Ok(out)
+    }
+
+    /// The integrator back on the point `StepRetry::undo` restored.
+    fn resync(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout, t: f64) -> Result<()> {
+        self.core.t = t;
+        self.core.read_states(e)?;
+        self.core.restart()?;
+        self.resume = None;
+        if self.core.n_states == 0 && layout.n_zc > 0 {
+            read_zero_crossings(e, self.core.sim_data, layout, &mut self.zc0)?;
+        }
+        Ok(())
+    }
+
+    /// One try at the step, under C's `simulationJumpBuffer` region and the
+    /// `simulationUpdate` assert window. An event handed to the master counts as found.
+    fn attempt(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        t_target: f64,
+        defer: CsDefer,
+        dss: &mut StateSelection,
+    ) -> Result<CsStep> {
+        self.retry.open(e, &mut Vec::new());
         open_assert_window();
         let out = self.step(e, model, t_target, defer, dss);
         if matches!(out, Ok(CsStep::Event { .. })) {
             rethrow_store::note_event();
         }
         let settled = close_assert_window(e, self.core.sim_data);
+        let caught = self.retry.close(e);
         let out = out?;
         settled?;
+        caught?;
         Ok(out)
     }
 
