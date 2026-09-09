@@ -26,6 +26,9 @@
  */
 
 #include "../meta/meta_modelica_data.h"
+/* Bring in the DLLDirection-annotated declarations so these definitions carry
+ * __declspec(dllexport) when built into OpenModelicaCompiler.dll on MSVC. */
+#include "modelica_string_lit.h"
 static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_0,0,"");
 void* mmc_emptystring = MMC_REFSTRINGLIT(OMC_STRINGLIT_0);
 static MMC_DEFSTRINGLIT(OMC_STRINGLIT_1_01,1,"\x01");

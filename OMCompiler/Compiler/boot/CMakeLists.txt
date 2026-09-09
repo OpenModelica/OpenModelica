@@ -41,6 +41,18 @@ if(MSVC)
   target_compile_options(bomc PRIVATE /wd4102) # unreferenced label
   target_compile_options(bomc PRIVATE /wd4267) # conversion from 'size_t' to 'int', possible loss of data
   target_compile_options(bomc PRIVATE /wd4244) # conversion from '' to '', possible loss of data
+
+  # omcruntime is compiled with IMPORT_INTO on MSVC (so the Qt GUI clients can
+  # link it without duplicating the runtime), which turns its references to the
+  # DLLDirection-annotated runtime helpers - the result readers, ... - into
+  # __declspec(dllimport). bomc is a standalone exe with no DLL to import them
+  # from; it links the static OpenModelicaRuntimeC, but lazy archive extraction
+  # never pulls the defining objects because nothing references the plain
+  # symbols. Force the whole runtime archive in so the definitions are present
+  # and the linker can satisfy the __imp_ references locally (LNK4217).
+  target_link_options(bomc PRIVATE
+    "/WHOLEARCHIVE:$<TARGET_LINKER_FILE:OpenModelicaRuntimeC>"
+    /IGNORE:4217)
 endif()
 
 
@@ -116,6 +128,18 @@ if(WIN32)
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:omc::result> ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin
       COMMENT "Copying omc_result.dll for the bootstrapped omc (to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin).")
+  endif()
+
+  # With MSVC + vcpkg dynamic linking, bomc.exe also needs the vcpkg DLLs at runtime
+  # since they are not installed to a standard system location.
+  if(MSVC AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+    add_custom_command(
+      TARGET bomc
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+              "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin"
+              "${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin"
+      COMMENT "Copying vcpkg DLLs for bomc.exe to ${CMAKE_CURRENT_BINARY_DIR}/bootstrapped/bin")
   endif()
 endif()
 

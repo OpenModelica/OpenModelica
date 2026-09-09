@@ -8,6 +8,12 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omnotebook)
 omc_option(OM_ENABLE_DRMODELICA "Install the DrModelica example notebooks with OMNotebook" ON)
 omc_option(OM_ENABLE_DRCONTROL  "Install the DrControl example notebooks with OMNotebook"  ON)
 
+# MSVC: this client only consumes the shared MetaModelica runtime, so its
+# DLLDirection-annotated data symbols must come in as __declspec(dllimport).
+if(MSVC)
+  add_compile_definitions(IMPORT_INTO=1)
+endif()
+
 # Qt options
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

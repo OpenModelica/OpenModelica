@@ -5,6 +5,12 @@ project(OMEdit)
 ## to the install component 'omedit' if it is not explicitly changed.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omedit)
 
+# MSVC: this client only consumes the shared MetaModelica runtime, so its
+# DLLDirection-annotated data symbols must come in as __declspec(dllimport).
+if(MSVC)
+  add_compile_definitions(IMPORT_INTO=1)
+endif()
+
 omc_option(OM_OMEDIT_INSTALL_RUNTIME_DLLS "Install the required runtime dll dependency DLLs to the binary directory. Valid only for Windows builds." ON)
 omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." OFF)
 omc_option(OM_OMEDIT_ANIMATION_QUICK3D "Use the Qt Quick 3D animation backend instead of OpenSceneGraph." OFF)
