@@ -171,7 +171,7 @@ fn column(a: &dyn Array) -> Result<Col, String> {
 
 impl ArrowJsonReader {
     pub fn open(filename: &str) -> Result<ArrowJsonReader, String> {
-        let bytes = openmodelica_wasi::fs::read(filename).map_err(|e| e.to_string())?;
+        let bytes = openmodelica_mat_reader::fs::read(filename).map_err(|e| e.to_string())?;
         ArrowJsonReader::from_bytes(bytes)
     }
 

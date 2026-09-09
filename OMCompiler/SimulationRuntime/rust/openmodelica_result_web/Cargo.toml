@@ -1,0 +1,23 @@
+# The result-file module for the browser (wasm-bindgen'd into web/omplot/): the
+# JS bindings over `openmodelica_result_files::ResultFile`, used by the OMPlot
+# page and by modelica-result-compare's reports.
+#
+# It lives beside the runtime crates it is made of, not in the compiler tree,
+# and takes them as explicit path dependencies -- so it builds from the runtime
+# workspace on a pristine checkout, with no transpiled MetaModelica anywhere in
+# the graph. `workspace` still points at the compiler workspace so an omc build
+# compiles it exactly once.
+[package]
+name = "openmodelica_result_web"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+openmodelica_result_diff = { path = "../openmodelica_result_diff" }
+openmodelica_result_files = { path = "../openmodelica_result_files" }
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }
+wasm-bindgen = "=0.2.125"

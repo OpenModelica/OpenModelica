@@ -23,6 +23,20 @@ openmodelica_simulation_runtime = { path = "openmodelica_simulation_runtime" }
 # The result-file reader library for OMEdit/OMPlot (cargo build -p openmodelica_result_capi).
 openmodelica_result_capi = { path = "openmodelica_result_capi" }
 
+# The browser module the OMPlot page and modelica-result-compare's reports use:
+#   cargo build -p openmodelica_result_web --release --target wasm32-unknown-unknown
+# Reached from *this* root, not from its own manifest -- that one points at the
+# compiler workspace, which a pristine checkout cannot load. Target-gated so a
+# native build of the runtime does not compile wasm-bindgen for the host.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+openmodelica_result_web = { path = "openmodelica_result_web" }
+
+# openmodelica_result_web_embed packages that module for a host consumer. Its own
+# workspace root, and deliberately not a dependency here: its build.rs runs the
+# whole wasm build, which a `cargo check` of the runtime has no use for.
+#   cargo run --release --manifest-path openmodelica_result_web_embed/Cargo.toml \
+#             --bin install-result-web -- DIR
+
 [workspace]
 exclude = [
   "daskr",
@@ -36,7 +50,10 @@ exclude = [
   "openmodelica_regex",
   "openmodelica_result_capi",
   "openmodelica_result_cli",
+  "openmodelica_result_diff",
   "openmodelica_result_files",
+  "openmodelica_result_web",
+  "openmodelica_result_web_embed",
   "openmodelica_sim_meta",
   "openmodelica_simulation_runtime",
   "openmodelica_solvers",

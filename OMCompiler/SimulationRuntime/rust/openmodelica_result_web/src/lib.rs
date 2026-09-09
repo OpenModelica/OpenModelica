@@ -1,9 +1,14 @@
-//! Result files for the OMPlot web page, without omc: the JS bindings over
+//! Result files in the browser, without omc: the JS bindings over
 //! `openmodelica_result_files::ResultFile`. The bytes handed in from the page
 //! are parked in the in-memory VFS for the reader's lifetime.
+//!
+//! Used by the OMPlot page and by `modelica-result-compare`'s reports, which is
+//! why it sits beside the runtime crates it is built from and takes them as
+//! plain path dependencies: it has to build without a transpiled compiler.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use openmodelica_result_files::cmp::Algorithm;
 use openmodelica_result_files::{Tolerances, file};
 use wasm_bindgen::prelude::*;
 
@@ -38,8 +43,25 @@ fn js_err(msg: String) -> JsError {
     JsError::new(&msg)
 }
 
-fn tol(reltol: f64, reltol_diff_min_max: f64, range_delta: f64) -> Tolerances {
-    Tolerances { reltol, reltol_diff_min_max, range_delta }
+fn tol(
+    reltol: f64,
+    reltol_diff_min_max: f64,
+    range_delta: f64,
+    algorithm: Option<String>,
+    nominal_value: Option<f64>,
+) -> Result<Tolerances, JsError> {
+    let algorithm = match algorithm.as_deref() {
+        None | Some("") => Algorithm::Ellipse2014,
+        Some(a) => Algorithm::parse(a).map_err(js_err)?,
+    };
+    let default = Tolerances::default();
+    Ok(Tolerances {
+        reltol,
+        reltol_diff_min_max,
+        range_delta,
+        algorithm,
+        nominal_value: nominal_value.filter(|v| *v > 0.0).unwrap_or(default.nominal_value),
+    })
 }
 
 #[wasm_bindgen]
@@ -181,8 +203,40 @@ pub fn diff_all(
     reltol: f64,
     reltol_diff_min_max: f64,
     range_delta: f64,
+    algorithm: Option<String>,
+    nominal_value: Option<f64>,
 ) -> Result<Vec<String>, JsError> {
-    file::diff_all(&mut actual.inner, &mut reference.inner, vars, tol(reltol, reltol_diff_min_max, range_delta)).map_err(js_err)
+    let tol = tol(reltol, reltol_diff_min_max, range_delta, algorithm, nominal_value)?;
+    file::diff_all(&mut actual.inner, &mut reference.inner, vars, tol).map_err(js_err)
+}
+
+/// Every compared variable's verdict in one call, as JSON
+/// `[{"name":…,"errors":…,"delta_error":…}]`; `errors` is -1 for a variable that
+/// could not be compared. `diff_all` answers only *which* variables differ, and
+/// a page that shows counts would otherwise need a call per variable.
+#[wasm_bindgen]
+pub fn verdicts(
+    actual: &mut ResultFile,
+    reference: &mut ResultFile,
+    reltol: f64,
+    reltol_diff_min_max: f64,
+    range_delta: f64,
+    algorithm: Option<String>,
+    nominal_value: Option<f64>,
+) -> Result<String, JsError> {
+    let tol = tol(reltol, reltol_diff_min_max, range_delta, algorithm, nominal_value)?;
+    let rows = file::verdicts(&mut actual.inner, &mut reference.inner, tol).map_err(js_err)?;
+    let mut out = String::from("[");
+    for (name, errors, delta) in rows {
+        if out.len() > 1 {
+            out.push(',');
+        }
+        out.push_str("{\"name\":");
+        json_str(&mut out, &name);
+        out.push_str(&format!(",\"errors\":{errors},\"delta_error\":{delta}}}"));
+    }
+    out.push(']');
+    Ok(out)
 }
 
 /// `diffSimulationResultsHtml` as data: one variable's tube comparison.
@@ -194,8 +248,11 @@ pub fn diff_variable(
     reltol: f64,
     reltol_diff_min_max: f64,
     range_delta: f64,
+    algorithm: Option<String>,
+    nominal_value: Option<f64>,
 ) -> Result<TubeDiff, JsError> {
-    let d = file::diff_variable(&mut actual.inner, &mut reference.inner, var, tol(reltol, reltol_diff_min_max, range_delta)).map_err(js_err)?;
+    let tol = tol(reltol, reltol_diff_min_max, range_delta, algorithm, nominal_value)?;
+    let d = file::diff_variable(&mut actual.inner, &mut reference.inner, var, tol).map_err(js_err)?;
     Ok(TubeDiff {
         differs: d.differs,
         time: d.time,

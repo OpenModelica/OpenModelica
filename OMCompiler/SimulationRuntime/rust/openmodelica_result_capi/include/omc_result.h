@@ -45,10 +45,20 @@ extern "C" {
 
 typedef struct omc_result omc_result;
 
+/* Which tube comparison to run; ELLIPSE2014 is diffSimulationResults's own,
+ * RECTANGLE and ELLIPSE are csv-compare's (see openmodelica_result_diff). */
+typedef enum omc_result_algorithm {
+  OMC_RESULT_RECTANGLE = 0,
+  OMC_RESULT_ELLIPSE = 1,
+  OMC_RESULT_ELLIPSE2014 = 2
+} omc_result_algorithm;
+
 typedef struct omc_result_tolerances {
-  double reltol;             /* 1e-3 */
-  double reltol_diff_min_max; /* 1e-4 */
-  double range_delta;        /* 0.002 */
+  double reltol;             /* 1e-3, ELLIPSE2014 only */
+  double reltol_diff_min_max; /* 1e-4, ELLIPSE2014 only */
+  double range_delta;        /* 0.002; the tube width, csv-compare's --tolerance */
+  int algorithm;             /* omc_result_algorithm; OMC_RESULT_ELLIPSE2014 */
+  double nominal_value;      /* 0.001, RECTANGLE/ELLIPSE only: tube height floor */
 } omc_result_tolerances;
 
 /* One variable's tube comparison (diffSimulationResultsHtml as data). */
