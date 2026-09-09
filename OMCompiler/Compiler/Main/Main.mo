@@ -690,9 +690,14 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
-  // OpenBLAS sizes its thread pool from the environment when it loads.
+  // OpenBLAS sizes its thread pool from the environment when it loads, and
+  // which of the two variables it reads depends on how it was built. The MSYS2
+  // package used on Windows is built with USE_OPENMP, and such a build ignores
+  // OPENBLAS_NUM_THREADS entirely and honours only OMP_NUM_THREADS, so both
+  // have to be set to keep the pool down to a single thread.
   if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
     System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+    System.setEnv("OMP_NUM_THREADS", "1", false);
   end if;
   setDefaultCC();
   SymbolTable.reset();
