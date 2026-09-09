@@ -71,9 +71,9 @@ unloadOMSimulator();
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.9169316895219363
-// info:      system2.s2: 1.9495200849017982
+// info:      system1.s1: 0.9168577295013569
+// info:      system2.s2: 1.9496000393988535
 // info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 3930 NumRhsEvals  = 4788 NumLinSolvSetups = 489
-//          NumNonlinSolvIters = 4787 NumNonlinSolvConvFails = 0 NumErrTestFails = 164
+//          NumSteps = 3943 NumRhsEvals  = 4816 NumLinSolvSetups = 501
+//          NumNonlinSolvIters = 4815 NumNonlinSolvConvFails = 0 NumErrTestFails = 166
 // endResult
