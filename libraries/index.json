@@ -552,18 +552,17 @@
     "ThermoSysPro": {
       "versions": {
         "3.2.0": {
-          "path": "ThermoSysPro",
+          "path": "ThermoSysPro 3.2",
           "provides": [
             "0.0.0",
-            "4.0.0"
+            "3.1.0"
           ],
-          "sha": "ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501",
           "support": "experimental",
           "uses": {
-            "Modelica": "3.2.2"
+            "Modelica": "3.2.3"
           },
           "version": "3.2.0",
-          "zipfile": "https://gitlab.pam-retd.fr/thermosysproandco/ThermoSysPro/-/archive/ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501/ThermoSysPro-ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501.zip"
+          "zipfile": "https://build.openmodelica.org/libraries/ThermoSysPro/ThermoSysPro-3.2.zip"
         }
       }
     },

@@ -166,9 +166,9 @@ else
   print("Installed: {lib} {version}\\n");
 end if;
 ''')
-  fout.write(f'system("touch .openmodelica/{stamp}")')
+  fout.write(f'system("touch .openmodelica/{stamp}")\n')
 
 with open(args.filenameprefix + "index.json", "w") as fout:
-  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2))
+  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2) + "\n")
 with open("Makefile.version", "w") as fout:
-  fout.write(f'STAMP={stamp}')
+  fout.write(f'STAMP={stamp}\n')
