@@ -39,22 +39,9 @@ extern "C" {
 #define NaN NAN
 #endif
 
-union MSVC_FLOAT_HACK
-{
-   unsigned char Bytes[4];
-   float Value;
-};
-#ifndef INFINITY
-static union MSVC_FLOAT_HACK __INFINITY = {{0x00, 0x00, 0x80, 0x7F}};
-#define INFINITY (__INFINITY.Value)
-#endif
-
-#ifndef NAN
-static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
-#define NAN (__NAN.Value)
-#endif
-
-/* for non GNU compilers (clang-cl supports __attribute__, so exclude it) */
+/* for non GNU compilers (clang-cl supports __attribute__, so exclude it).
+ * INFINITY and NAN come from <math.h> above; MSVC has provided them since
+ * VS 2013, which is already this header's floor. */
 #if !defined(__GNUC__) && !defined(__clang__)
 #define __attribute__(x)
 #endif
@@ -88,6 +75,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define trunc(a) ((double)((int)(a)))
 #endif
 
+/* strtok_r is POSIX; MSVC provides strtok_s with an identical signature. */
+#define strtok_r strtok_s
+
 #define PATH_MAX _MAX_PATH
 #include <stdarg.h>
 char *realpath(const char *path, char *resolved_path);
@@ -97,12 +87,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 
 #include <float.h>
-#if !defined(isinf) && !defined(__clang__)
-#define isinf(d) (!_finite(d) && !_isnan(d))
-#endif
-#if !defined(isnan) && !defined(__clang__)
-#define isnan _isnan
-#endif
+/* isinf()/isnan() are provided by <math.h> on MSVC (VS 2013+) and clang-cl. */
 #define fpu_error(x) (isinf(x) || isnan(x))
 
 

@@ -6,9 +6,16 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omshell)
 
 project(OMShell)
 
+# MSVC: this client only consumes the shared MetaModelica runtime, so its
+# DLLDirection-annotated data symbols must come in as __declspec(dllimport).
+if(MSVC)
+  add_compile_definitions(IMPORT_INTO=1)
+endif()
+
 ## mosh needs GNU readline. Native Windows (MinGW/MSYS2) has it, but the xwin
-## cross sysroot does not, so default OFF only when cross-compiling.
-if(CMAKE_CROSSCOMPILING)
+## cross sysroot does not, and vcpkg does not provide it for the native MSVC
+## build either, so default OFF for both of those.
+if(CMAKE_CROSSCOMPILING OR MSVC)
   set(_om_omshell_terminal_default OFF)
 else()
   set(_om_omshell_terminal_default ON)

@@ -6,7 +6,8 @@
 	url = ../OMSimulator.git
 [submodule "OMCompiler/3rdParty"]
 	path = OMCompiler/3rdParty
-	url = ../OMCompiler-3rdParty
+	url = https://github.com/AnHeuermann/OMCompiler-3rdParty.git
+	branch = msvc-fixes
 [submodule "OMSens_Qt"]
 	path = OMSens_Qt
 	url = ../OMSens_Qt.git
