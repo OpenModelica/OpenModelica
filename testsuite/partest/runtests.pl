@@ -36,6 +36,10 @@ use Time::HiRes qw( usleep gettimeofday tv_interval stat );
 
 use Fcntl;
 
+# The exit status runtest.pl uses to report that it could not start the test.
+# Kept in sync with the constant of the same name there.
+use constant SPAWN_FAILED => 111;
+
 # Force the children to not use parallel mark
 $ENV{GC_MARKERS}="1";
 
@@ -304,6 +308,11 @@ my @test_list;
 my $test_queue = Thread::Queue->new();
 my $tests_failed :shared = 0;
 my @failed_tests :shared;
+# Set when a test could not be started at all. That is a fault of the machine
+# and not of the tests, so the run is abandoned rather than reported: carrying
+# on would turn one exhausted machine into thousands of failed tests.
+my $spawn_failed :shared = 0;
+my $spawn_error :shared = "";
 my $testscript = cwd() . "/runtest.pl";
 -f $testscript or die "runtests.pl must be started from the partest directory; no runtest.pl in " . cwd() . "\n";
 if ( $osname eq 'MSWin32' ) {
@@ -398,13 +407,31 @@ sub add_tests {
 # Run the tests by dequeuing them from the list of tests and calling the
 # runtest.pl script.
 sub run_tests {
-  while(defined(my $test_full = $test_queue->dequeue_nb())) {
+  while(!$spawn_failed and defined(my $test_full = $test_queue->dequeue_nb())) {
     (my $test_dir, my $test) = $test_full =~ /(.*)\/([^\/]*)$/;
 
     my $t0 = [gettimeofday];
     my $cmd = "$testscript $test_full $have_dwdiff $nocolour $withxmlcmd $with_omc $rebase_test";
     # print ("CMD: ", $cmd, "\n");
-    my $x = system("$cmd") >> 8;
+    my $rc = system("$cmd");
+
+    # -1 is a process that was never created, and SPAWN_FAILED is runtest.pl
+    # saying the same thing about the test it was asked to start. Note that -1
+    # must be tested before the shift: Perl shifts it as an unsigned value, so
+    # $rc >> 8 would be a large positive number and the test that never ran
+    # would be counted as a passing one.
+    if ($rc == -1 or ($rc >> 8) == SPAWN_FAILED) {
+      lock($spawn_failed);
+      if (!$spawn_failed) {
+        lock($spawn_error);
+        $spawn_error = $rc == -1 ? "Could not start '$cmd': $!"
+                                 : "Could not start the test $test_full";
+        $spawn_failed = 1;
+      }
+      return;
+    }
+
+    my $x = $rc >> 8;
     my $elapsed = tv_interval ( $t0, [gettimeofday]);
 
     if($use_db) {
@@ -555,6 +582,22 @@ for(my $i = 0; $i < $thread_count; $i++) {
 foreach my $thr (threads->list()) {
   $thr->join();
   print "{joined thread: " . $thr->tid() . "}"
+}
+
+# Nothing below this point can say anything true about the testsuite if the
+# machine stopped being able to start processes part way through the run.
+if ($spawn_failed) {
+  print color 'reset';
+  # Whatever is left is from a previous run, and publishing it would present
+  # the tests that did run as the whole result.
+  unlink("$testsuite_root/result.xml", "$testsuite_root/partest/result.xml") if $withxml;
+  print STDERR "\n\nABORTED: a test could not be started.\n" .
+               "$spawn_error\n\n" .
+               "The operating system refused to create a process, which normally means\n" .
+               "this machine has run out of memory, commit charge or handles. That is\n" .
+               "not a test failure, and the rest of the run has been abandoned because\n" .
+               "every remaining test would have been reported as failed.\n";
+  exit 8;
 }
 
 
