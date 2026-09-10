@@ -1022,15 +1022,15 @@ fn flat_array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<GroupEntr
 }
 
 /// Parse a subscript list to constant 1-based integer indices, or `None` if any
-/// subscript is not a constant integer / enum literal (a slice, `:`, expression).
+/// subscript is not a constant integer / enum / Boolean literal (a slice, `:`,
+/// expression).
 fn const_int_subscripts(subs: &List<Arc<DAE::Subscript>>) -> Result<Option<Vec<i32>>> {
     let mut out = Vec::new();
     for sub in &**subs {
         match &**sub {
-            DAE::Subscript::INDEX { exp } => match &**exp {
-                DAE::Exp::ICONST { integer } => out.push(*integer),
-                DAE::Exp::ENUM_LITERAL { index, .. } => out.push(*index),
-                _ => return Ok(None),
+            DAE::Subscript::INDEX { exp } => match crate::CodegenWasmJitFunctions::const_index_value(exp) {
+                Some(ix) => out.push(ix),
+                None => return Ok(None),
             },
             _ => return Ok(None),
         }

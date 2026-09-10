@@ -205,11 +205,11 @@ pub(super) fn restore_local(ctx: &mut FnCtx, name: &str, prev: Option<(u32, SigT
     }
 }
 
-/// Lower a `for iter in range loop ...` statement. An Integer (or enumeration)
-/// scalar `start:stop` / `start:step:stop` range uses an efficient counter loop
-/// (no allocation); any other iterable — an array variable, an array literal, a
-/// slice — is evaluated to an array once and iterated element by element
-/// ([`compile_for_array`]).
+/// Lower a `for iter in range loop ...` statement. A scalar `start:stop` /
+/// `start:step:stop` range counts in `i32` with no allocation — Integer,
+/// enumeration and Boolean all step through consecutive values; any other
+/// iterable — an array variable, an array literal, a slice — is evaluated to an
+/// array once and iterated element by element ([`compile_for_array`]).
 pub(super) fn compile_for(
     ctx: &mut FnCtx,
     iter: &ArcStr,
@@ -217,27 +217,28 @@ pub(super) fn compile_for(
     body: &List<Arc<DAE::Statement>>,
     ty: &DAE::Type,
 ) -> Result<()> {
-    if let DAE::Exp::RANGE { .. } = range {
-        if matches!(sig_ty_quiet(ty), Ok(SigTy::Int)) {
-            return compile_for_int_range(ctx, iter, range, body);
-        }
+    if let DAE::Exp::RANGE { .. } = range
+        && let Ok(sty @ (SigTy::Int | SigTy::Bool)) = sig_ty_quiet(ty)
+    {
+        return compile_for_counting_range(ctx, iter, range, body, sty);
     }
     compile_for_array(ctx, iter, range, body)
 }
 
-/// The counter-loop lowering for an Integer scalar range (see [`compile_for`]).
-fn compile_for_int_range(
+/// The counter-loop lowering for a scalar counting range (see [`compile_for`]).
+fn compile_for_counting_range(
     ctx: &mut FnCtx,
     iter: &ArcStr,
     range: &DAE::Exp,
     body: &List<Arc<DAE::Statement>>,
+    sty: SigTy,
 ) -> Result<()> {
     let DAE::Exp::RANGE { start, step, stop, .. } = range else {
         return Err("CodegenWasmJit: for-loop over non-range expression not supported");
     };
     // Allocate the iterator local and stop/step locals.
     let it = ctx.alloc_temp(WTy::I32);
-    let prev = ctx.locals.insert(iter.to_string(), (it, SigTy::Int));
+    let prev = ctx.locals.insert(iter.to_string(), (it, sty));
     let stop_l = ctx.alloc_temp(WTy::I32);
     let step_l = ctx.alloc_temp(WTy::I32);
 

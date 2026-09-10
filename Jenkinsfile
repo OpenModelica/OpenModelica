@@ -641,11 +641,14 @@ pipeline {
           }
         }
 
+        // The Rust omc with the wasm-jit target: no C compiler or linker per
+        // model, which is where the ~1000 runs went. The rust image because that
+        // is the glibc the unstashed omc was built against.
         stage('14 testsuite-compliance') {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
               label 'linux'
               args '''
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
@@ -655,6 +658,7 @@ pipeline {
           }
           environment {
             LIBRARIES = "/cache/omlibrary"
+            COMPLIANCEEXTRAFLAGS = "--simCodeTarget=wasm-jit"
             COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures --flakyTests=.CI/compliance.flaky"
             COMPLIANCEPREFIX = "compliance"
           }

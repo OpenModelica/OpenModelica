@@ -1233,8 +1233,10 @@ void compliance() {
     // do nothing for now
   } else {
   standardSetup()
-  unstash 'omc-clang'
-  makeLibsAndCache()
+  // installTestLibraries() rather than makeLibsAndCache(): the suite needs only
+  // ModelicaCompliance, and a CMake install tree has no Makefile to drive.
+  unstash 'omc-cmake-rust'
+  installTestLibraries()
   sh 'HOME=$PWD/libraries/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"

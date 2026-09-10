@@ -751,8 +751,7 @@ pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, i
 /// the address on the stack. Same row-major linear index as [`index_loaded`].
 pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
     let acc = ctx.alloc_temp(WTy::I32);
-    let w = compile_exp(ctx, &idx_exps[0])?;
-    coerce(ctx, w, WTy::I32);
+    emit_subscript_index(ctx, &idx_exps[0])?;
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Sub);
     ctx.emit(we::Instruction::LocalSet(acc));
@@ -761,8 +760,7 @@ pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_ex
         ctx.emit(we::Instruction::LocalGet(arr_idx));
         emit_array_dim(ctx, axis0 as u32 + 1)?;
         ctx.emit(we::Instruction::I32Mul);
-        let w = compile_exp(ctx, ie)?;
-        coerce(ctx, w, WTy::I32);
+        emit_subscript_index(ctx, ie)?;
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::I32Sub);
         ctx.emit(we::Instruction::I32Add);

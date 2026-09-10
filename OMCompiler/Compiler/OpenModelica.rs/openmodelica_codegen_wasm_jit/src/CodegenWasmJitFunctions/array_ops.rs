@@ -195,6 +195,18 @@ pub(super) fn index_subscripts(subs: &List<Arc<DAE::Subscript>>, rank: u32) -> R
     Ok(out)
 }
 
+/// One subscript expression as a 1-based `i32` index: [`const_index_value`]'s
+/// run-time counterpart, [`BOOL_SUB_BIAS`] included.
+pub(super) fn emit_subscript_index(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
+    let w = compile_exp(ctx, exp)?;
+    coerce(ctx, w, WTy::I32);
+    if matches!(exp_sigty(exp), Ok(SigTy::Bool)) {
+        ctx.emit(we::Instruction::I32Const(BOOL_SUB_BIAS));
+        ctx.emit(we::Instruction::I32Add);
+    }
+    Ok(())
+}
+
 /// Given an owned array handle on top of the stack plus the `INDEX` expressions
 /// (one per dimension), compute the row-major linear index, load the scalar
 /// element, release the array, and leave the (owned, if heap) element. Returns
@@ -205,8 +217,7 @@ pub(super) fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::E
 
     // acc = (i0 - 1); then acc = acc * dim(axis) + (i_axis - 1) row-major.
     let acc = ctx.alloc_temp(WTy::I32);
-    let w = compile_exp(ctx, &idx_exps[0])?;
-    coerce(ctx, w, WTy::I32);
+    emit_subscript_index(ctx, &idx_exps[0])?;
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::I32Sub);
     ctx.emit(we::Instruction::LocalSet(acc));
@@ -215,8 +226,7 @@ pub(super) fn index_loaded(ctx: &mut FnCtx, elem: &SigTy, idx_exps: &[Arc<DAE::E
         ctx.emit(we::Instruction::LocalGet(arr_t));
         emit_array_dim(ctx, axis0 as u32 + 1)?; // 1-based axis
         ctx.emit(we::Instruction::I32Mul);
-        let w = compile_exp(ctx, ie)?;
-        coerce(ctx, w, WTy::I32);
+        emit_subscript_index(ctx, ie)?;
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::I32Sub);
         ctx.emit(we::Instruction::I32Add);

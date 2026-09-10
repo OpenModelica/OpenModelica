@@ -2944,7 +2944,9 @@ function evalBuiltinSqrt
   output Expression result;
 algorithm
   result := match arg
-    case Expression.REAL() then Expression.REAL(sqrt(arg.value));
+    case Expression.REAL() guard arg.value >= 0.0 then Expression.REAL(sqrt(arg.value));
+    // Left for the generated code's assertion rather than folded to NaN.
+    case Expression.REAL() then fail();
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalBuiltinSqrt;

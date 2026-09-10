@@ -279,9 +279,7 @@ impl ExtIncludes {
         };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
-        // No prologue: external C source includes what it uses. A source that needs
-        // more gets it from `--cflags`, as `-include`.
-        std::fs::write(&tu, self.sources.join("\n") + "\n" + wrappers)
+        std::fs::write(&tu, [INCLUDE_PREAMBLE, &self.sources.join("\n"), "\n", wrappers].concat())
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
@@ -349,6 +347,14 @@ pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
 /// scope the compiler converts each argument to what the callee really takes
 /// (`ExternalMedia`'s `setState_ph` declares a `double` for a Modelica `Integer`).
 pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
+
+/// Prologue of a translation unit built from `Include` C sources. `size_t` is the
+/// specification's array-dimension type (CodegenC's `SIMEXTARGSIZE`), so the
+/// sources cannot spell their own prototypes without it. Nothing else belongs
+/// here — a source needing more gets it from `--cflags` as `-include`. Not
+/// `openmodelica.h`: the C target adds it, but it reaches `setjmp.h`, which does
+/// not compile for wasm32-wasip1.
+pub const INCLUDE_PREAMBLE: &str = "#include <stddef.h> /* the spec's array-dimension type */\n";
 
 /// One wrapper per function still to be found. Taking the address of a function
 /// the sources never declare does not compile, so the caller falls back to the
