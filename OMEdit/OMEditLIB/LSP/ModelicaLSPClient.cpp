@@ -145,30 +145,13 @@ QStringList ModelicaLSPClient::missingRuntimeFiles(const QString &executable)
 }
 
 /*!
- * \brief ModelicaLSPClient::isRunnableServerPath
- * Whether a configured path is something OMEdit can start.
- *
- * OMEdit runs the server directly. A .js server is not that: it is a script for
- * an interpreter OMEdit does not launch, so pointing *Server Executable* at one
- * -- through Browse, or from a setting written before the JS server was dropped
- * -- would only produce a failure to start. Treated as unset instead, so the
- * server installed with OMEdit is used.
- * \param executable the configured path, which may be empty
- * \return false for a path OMEdit cannot start
- */
-bool ModelicaLSPClient::isRunnableServerPath(const QString &executable)
-{
-  return !executable.endsWith(QStringLiteral(".js"), Qt::CaseInsensitive);
-}
-
-/*!
  * \brief ModelicaLSPClient::resolveExecutable
  * Resolves the server to run: the configured one, else the one installed with
  * OMEdit, else a server on PATH.
  */
 QString ModelicaLSPClient::resolveExecutable(const QString &configured)
 {
-  if (!configured.isEmpty() && isRunnableServerPath(configured)) {
+  if (!configured.isEmpty()) {
     return configured;
   }
   const QString bundled = findBundledServer();

@@ -60,7 +60,6 @@ public:
   // bundled server, otherwise defaultServerName() on PATH. Empty if none is available.
   // Shared by MainWindow::startLanguageServer() and the Options page so both agree.
   static QString resolveExecutable(const QString &configured);
-  static bool isRunnableServerPath(const QString &executable);
 
 protected:
   QJsonObject initializationOptions(const QStringList &libraries) const override;

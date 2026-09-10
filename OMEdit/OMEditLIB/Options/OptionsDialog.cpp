@@ -3183,11 +3183,7 @@ void OptionsDialog::readLanguageServerSettings()
   // a first run, not a decision to disable, so saveLanguageServerSettings()
   // always writes it rather than removing it when off.
   mpLanguageServerPage->getLanguageServerGroupBox()->setChecked(mpSettings->value("languageServer/enabled", true).toBool());
-  // A path OMEdit cannot start is not shown, so the box does not display a
-  // setting that resolveExecutable() ignores. Saving the page then clears it.
-  const QString executable = mpSettings->value("languageServer/executable").toString();
-  mpLanguageServerPage->getServerExecutableTextBox()->setText(ModelicaLSPClient::isRunnableServerPath(executable)
-                                                              ? executable : QString());
+  mpLanguageServerPage->getServerExecutableTextBox()->setText(mpSettings->value("languageServer/executable").toString());
   mpLanguageServerPage->getEnableLoggingCheckBox()->setChecked(mpSettings->value("languageServer/logging", false).toBool());
   // Restart applies to the saved configuration, so offer it only when the saved
   // configuration has the server enabled.
@@ -7160,15 +7156,6 @@ void LanguageServerPage::browseServerExecutable()
 {
   const QString selected = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile));
   if (selected.isEmpty()) {
-    return;
-  }
-  // Say so here rather than accepting a path that resolveExecutable() would
-  // then ignore, leaving the box showing a server OMEdit is not running.
-  if (!ModelicaLSPClient::isRunnableServerPath(selected)) {
-    QMessageBox::warning(this, Helper::applicationName,
-                         tr("%1 is a script, not a language server OMEdit can start.\n\n"
-                            "Select a language server executable, or leave the field empty to use the "
-                            "one installed with OMEdit.").arg(selected));
     return;
   }
   mpServerExecutableTextBox->setText(selected);
