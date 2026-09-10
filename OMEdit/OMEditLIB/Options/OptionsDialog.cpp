@@ -51,6 +51,9 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
+#include "Cloud/CloudAccount.h"
+#include "Cloud/CloudConfig.h"
+#include "Cloud/CloudMount.h"
 #include <limits>
 
 #include <QStringBuilder>
@@ -132,6 +135,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
+  mpCloudStoragePage = new CloudStoragePage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
   if (!MainWindow::instance()->isTestsuiteRunning()) {
@@ -183,6 +187,7 @@ void OptionsDialog::readSettings()
   readOMSimulatorSettings();
   readSensitivityOptimizationSettings();
   readTraceabilitySettings();
+  readCloudStorageSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -3298,6 +3303,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
   pTraceabilityItem->setText(tr("Traceability"));
+  // Cloud Storage Item
+  QListWidgetItem *pCloudStorageItem = new QListWidgetItem(mpOptionsList);
+  pCloudStorageItem->setIcon(QIcon(":/Resources/icons/libraries.svg"));
+  pCloudStorageItem->setText(tr("Cloud Storage"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -3328,6 +3337,7 @@ void OptionsDialog::createPages()
   addPage(mpOMSimulatorPage);
   addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
+  addPage(mpCloudStoragePage);
 }
 
 void OptionsDialog::addPage(QWidget* pPage)
@@ -3435,6 +3445,7 @@ void OptionsDialog::saveSettings()
   saveOMSimulatorSettings();
   saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
+  saveCloudStorageSettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
   mpSettings->sync();
@@ -6969,4 +6980,244 @@ void CRMLPage::browseCompilerProcessFile()
 void CRMLPage::resetCompilerProcessPath()
 {
   mpCompilerProcessTextBox->setText(OptionsDefaults::CRML::process);
+}
+
+void OptionsDialog::readCloudStorageSettings()
+{
+  mpCloudStoragePage->readRegistrations();
+}
+
+void OptionsDialog::saveCloudStorageSettings()
+{
+  mpCloudStoragePage->saveRegistrations();
+}
+
+//! @class CloudStoragePage
+//! Cloud storage accounts and the OAuth applications this installation uses.
+
+CloudStoragePage::CloudStoragePage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // accounts
+  mpAccountsGroupBox = new QGroupBox(tr("Accounts"));
+  mpAccountsListWidget = new QListWidget;
+  mpAccountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  mpAddGoogleDriveButton = new QPushButton(tr("Add Google Drive Account"));
+  connect(mpAddGoogleDriveButton, SIGNAL(clicked()), SLOT(addGoogleDriveAccount()));
+  mpAddOneDriveButton = new QPushButton(tr("Add OneDrive Account"));
+  connect(mpAddOneDriveButton, SIGNAL(clicked()), SLOT(addOneDriveAccount()));
+  mpSignOutButton = new QPushButton(tr("Sign Out"));
+  connect(mpSignOutButton, SIGNAL(clicked()), SLOT(signOutAccount()));
+  mpStatusLabel = new Label;
+  mpStatusLabel->setElideMode(Qt::ElideMiddle);
+  mpStatusLabel->setWordWrap(true);
+
+  QGridLayout *pAccountsLayout = new QGridLayout;
+  pAccountsLayout->addWidget(mpAccountsListWidget, 0, 0, 4, 1);
+  pAccountsLayout->addWidget(mpAddGoogleDriveButton, 0, 1);
+  pAccountsLayout->addWidget(mpAddOneDriveButton, 1, 1);
+  pAccountsLayout->addWidget(mpSignOutButton, 2, 1);
+  pAccountsLayout->setRowStretch(3, 1);
+  pAccountsLayout->addWidget(mpStatusLabel, 4, 0, 1, 2);
+  mpAccountsGroupBox->setLayout(pAccountsLayout);
+
+  // client registrations
+  mpRegistrationGroupBox = new QGroupBox(tr("OAuth Applications"));
+  Label *pRegistrationNoteLabel =
+      new Label(tr("Normally supplied by the deployment in cloud_config.json. Fill these in to use your own "
+                   "registered applications instead."));
+  pRegistrationNoteLabel->setWordWrap(true);
+  mpGoogleClientIdTextBox = new QLineEdit;
+  mpGoogleClientSecretTextBox = new QLineEdit;
+  // Masked, so it stays out of screenshots and screen shares. It is not actually
+  // confidential - see the tooltip - but a field labelled "secret" showing its
+  // value in the clear reads as a bug.
+  mpGoogleClientSecretTextBox->setEchoMode(QLineEdit::Password);
+  mpGoogleClientSecretTextBox->setToolTip(tr("Required by Google even though this is a public client: its token "
+                                             "endpoint rejects a PKCE exchange without one. It is not confidential - "
+                                             "the web build serves it to every visitor. The registered redirect URI "
+                                             "and origin are what protect the application."));
+  mpGoogleFullDriveScopeCheckBox = new QCheckBox(tr("Request access to the whole Google Drive"));
+  mpGoogleFullDriveScopeCheckBox->setToolTip(tr("Off, OMEdit sees only what it created. On, it asks for the whole "
+                                                "Drive - a restricted scope, which requires your own client to pass "
+                                                "Google's app verification."));
+  mpOneDriveClientIdTextBox = new QLineEdit;
+
+  QGridLayout *pRegistrationLayout = new QGridLayout;
+  pRegistrationLayout->addWidget(pRegistrationNoteLabel, 0, 0, 1, 2);
+  pRegistrationLayout->addWidget(new Label(tr("Google Drive client ID:")), 1, 0);
+  pRegistrationLayout->addWidget(mpGoogleClientIdTextBox, 1, 1);
+  pRegistrationLayout->addWidget(new Label(tr("Google Drive client secret:")), 2, 0);
+  pRegistrationLayout->addWidget(mpGoogleClientSecretTextBox, 2, 1);
+  pRegistrationLayout->addWidget(mpGoogleFullDriveScopeCheckBox, 3, 0, 1, 2);
+  pRegistrationLayout->addWidget(new Label(tr("OneDrive client ID:")), 4, 0);
+  pRegistrationLayout->addWidget(mpOneDriveClientIdTextBox, 4, 1);
+  mpRegistrationGroupBox->setLayout(pRegistrationLayout);
+
+  // mounted folders
+  mpMountsGroupBox = new QGroupBox(tr("Mounted Folders"));
+  Label *pMountsNoteLabel =
+      new Label(tr("A ticked folder is brought up to date after every save. Untick it to synchronise only when "
+                   "asked."));
+  pMountsNoteLabel->setWordWrap(true);
+  mpMountsListWidget = new QListWidget;
+  mpMountsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  connect(mpMountsListWidget, SIGNAL(itemChanged(QListWidgetItem*)), SLOT(mountAutoPushChanged(QListWidgetItem*)));
+  mpForgetMountButton = new QPushButton(tr("Forget Folder"));
+  connect(mpForgetMountButton, SIGNAL(clicked()), SLOT(forgetMount()));
+
+  QGridLayout *pMountsLayout = new QGridLayout;
+  pMountsLayout->addWidget(pMountsNoteLabel, 0, 0, 1, 2);
+  pMountsLayout->addWidget(mpMountsListWidget, 1, 0, 2, 1);
+  pMountsLayout->addWidget(mpForgetMountButton, 1, 1);
+  pMountsLayout->setRowStretch(2, 1);
+  mpMountsGroupBox->setLayout(pMountsLayout);
+
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpAccountsGroupBox);
+  pMainLayout->addWidget(mpMountsGroupBox);
+  pMainLayout->addWidget(mpRegistrationGroupBox);
+  pMainLayout->addStretch();
+  setLayout(pMainLayout);
+
+  connect(CloudAccountManager::instance(), SIGNAL(accountAdded(QString)), SLOT(onAccountAdded(QString)));
+  connect(CloudAccountManager::instance(), &CloudAccountManager::addAccountPhase, mpStatusLabel, &Label::setText);
+  connect(CloudAccountManager::instance(), SIGNAL(addAccountFailed(CloudError)), SLOT(onAddAccountFailed(CloudError)));
+}
+
+void CloudStoragePage::showEvent(QShowEvent *pEvent)
+{
+  QWidget::showEvent(pEvent);
+  readRegistrations();
+  refreshAccounts();
+  refreshMounts();
+}
+
+void CloudStoragePage::refreshMounts()
+{
+  mFillingMounts = true;
+  mpMountsListWidget->clear();
+  const QList<CloudMount> mounts = CloudMountManager::instance()->mounts();
+  for (const CloudMount &mount : mounts) {
+    QListWidgetItem *pItem = new QListWidgetItem(mpMountsListWidget);
+    pItem->setText(mount.remoteName);
+    pItem->setData(Qt::UserRole, mount.mountId);
+    pItem->setFlags(pItem->flags() | Qt::ItemIsUserCheckable);
+    pItem->setCheckState(mount.autoPush ? Qt::Checked : Qt::Unchecked);
+  }
+  mFillingMounts = false;
+}
+
+void CloudStoragePage::mountAutoPushChanged(QListWidgetItem *pItem)
+{
+  if (mFillingMounts || !pItem) {
+    return;
+  }
+  CloudMount mount = CloudMountManager::instance()->mount(pItem->data(Qt::UserRole).toString());
+  if (!mount.isValid()) {
+    return;
+  }
+  mount.autoPush = pItem->checkState() == Qt::Checked;
+  CloudMountManager::instance()->updateMount(mount);
+}
+
+void CloudStoragePage::forgetMount()
+{
+  QListWidgetItem *pItem = mpMountsListWidget->currentItem();
+  if (!pItem) {
+    return;
+  }
+  const int answer = QMessageBox::question(
+      this, QString("%1 - %2").arg(Helper::applicationName, tr("Forget Folder")),
+      tr("Forget %1?\n\nThe local copy and its synchronisation state are removed. Nothing in the cloud is "
+         "touched, and the folder can be opened again at any time.")
+          .arg(pItem->text()),
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  if (answer != QMessageBox::Yes) {
+    return;
+  }
+  CloudMountManager::instance()->removeMount(pItem->data(Qt::UserRole).toString());
+  refreshMounts();
+}
+
+void CloudStoragePage::refreshAccounts()
+{
+  mpAccountsListWidget->clear();
+  const QList<CloudAccount *> accounts = CloudAccountManager::instance()->accounts();
+  for (CloudAccount *pAccount : accounts) {
+    QListWidgetItem *pItem = new QListWidgetItem(mpAccountsListWidget);
+    pItem->setText(QString("%1 - %2").arg(cloudProviderDisplayName(pAccount->kind()), pAccount->displayName()));
+    pItem->setData(Qt::UserRole, pAccount->key());
+    if (!pAccount->isSignedIn()) {
+      pItem->setText(pItem->text() + tr(" (signed out)"));
+    }
+  }
+}
+
+void CloudStoragePage::readRegistrations()
+{
+  const CloudClientRegistration google = CloudConfig::instance()->registration(CloudProviderKind::GoogleDrive);
+  mpGoogleClientIdTextBox->setText(google.clientId);
+  mpGoogleClientSecretTextBox->setText(google.clientSecret);
+  mpGoogleFullDriveScopeCheckBox->setChecked(google.fullDriveScope);
+  mpOneDriveClientIdTextBox->setText(CloudConfig::instance()->registration(CloudProviderKind::OneDrive).clientId);
+}
+
+void CloudStoragePage::saveRegistrations()
+{
+  // Only write back what the user actually typed: storing the deployment's own
+  // values as user settings would pin them past a configuration update.
+  CloudClientRegistration google = CloudConfig::instance()->registration(CloudProviderKind::GoogleDrive);
+  if (mpGoogleClientIdTextBox->text() != google.clientId
+      || mpGoogleClientSecretTextBox->text() != google.clientSecret
+      || mpGoogleFullDriveScopeCheckBox->isChecked() != google.fullDriveScope) {
+    google.clientId = mpGoogleClientIdTextBox->text();
+    google.clientSecret = mpGoogleClientSecretTextBox->text();
+    google.fullDriveScope = mpGoogleFullDriveScopeCheckBox->isChecked();
+    CloudConfig::instance()->setRegistration(CloudProviderKind::GoogleDrive, google);
+  }
+  CloudClientRegistration oneDrive = CloudConfig::instance()->registration(CloudProviderKind::OneDrive);
+  if (mpOneDriveClientIdTextBox->text() != oneDrive.clientId) {
+    oneDrive.clientId = mpOneDriveClientIdTextBox->text();
+    CloudConfig::instance()->setRegistration(CloudProviderKind::OneDrive, oneDrive);
+  }
+}
+
+void CloudStoragePage::addGoogleDriveAccount()
+{
+  mpStatusLabel->setText(tr("Signing in to Google Drive..."));
+  saveRegistrations();
+  CloudAccountManager::instance()->addAccount(CloudProviderKind::GoogleDrive);
+}
+
+void CloudStoragePage::addOneDriveAccount()
+{
+  mpStatusLabel->setText(tr("Signing in to OneDrive..."));
+  saveRegistrations();
+  CloudAccountManager::instance()->addAccount(CloudProviderKind::OneDrive);
+}
+
+void CloudStoragePage::signOutAccount()
+{
+  QListWidgetItem *pItem = mpAccountsListWidget->currentItem();
+  if (!pItem) {
+    return;
+  }
+  CloudAccountManager::instance()->removeAccount(pItem->data(Qt::UserRole).toString());
+  refreshAccounts();
+  mpStatusLabel->setText(tr("Signed out."));
+}
+
+void CloudStoragePage::onAccountAdded(const QString &key)
+{
+  CloudAccount *pAccount = CloudAccountManager::instance()->account(key);
+  mpStatusLabel->setText(pAccount ? tr("Signed in as %1.").arg(pAccount->displayName()) : tr("Signed in."));
+  refreshAccounts();
+}
+
+void CloudStoragePage::onAddAccountFailed(const CloudError &error)
+{
+  mpStatusLabel->setText(tr("Sign-in failed: %1").arg(error.message));
 }

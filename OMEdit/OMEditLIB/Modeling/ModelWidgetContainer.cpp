@@ -5682,7 +5682,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString(), true, true);
+  MainWindow::instance()->openFileFetchingFromCloud(pItem->text(), pItem->data(Qt::UserRole).toString());
 }
 
 void WelcomePageWidget::openRecentModelItem(QListWidgetItem *pItem)

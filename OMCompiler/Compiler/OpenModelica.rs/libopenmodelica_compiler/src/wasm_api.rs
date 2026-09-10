@@ -243,6 +243,50 @@ pub fn wasi_write_file(path: &str, bytes: &[u8]) {
     openmodelica_wasi::write(path, bytes.to_vec());
 }
 
+/// Write many files in one call, from an array of `{ path: string, bytes:
+/// Uint8Array }`. Restoring a cached package tree is one postMessage rather than
+/// one per file. Returns how many were written; a malformed entry is skipped.
+#[wasm_bindgen]
+pub fn wasi_write_files(entries: JsValue) -> usize {
+    let Ok(arr) = entries.dyn_into::<js_sys::Array>() else {
+        return 0;
+    };
+    let mut written = 0;
+    for entry in arr.iter() {
+        let path = js_sys::Reflect::get(&entry, &JsValue::from_str("path"))
+            .ok()
+            .and_then(|v| v.as_string());
+        let bytes = js_sys::Reflect::get(&entry, &JsValue::from_str("bytes"))
+            .ok()
+            .and_then(|v| v.dyn_into::<js_sys::Uint8Array>().ok());
+        if let (Some(path), Some(bytes)) = (path, bytes) {
+            openmodelica_wasi::write(&path, bytes.to_vec());
+            written += 1;
+        }
+    }
+    written
+}
+
+/// Remove `path`, whether it is a file or a directory (the store's directories
+/// are implicit, so a directory means every key beneath it). Returns true if
+/// anything was removed. Embedded builtins are immutable and unaffected.
+#[wasm_bindgen]
+pub fn wasi_remove(path: &str) -> bool {
+    if openmodelica_wasi::remove(path) {
+        return true;
+    }
+    if openmodelica_wasi::is_dir(path) {
+        return openmodelica_wasi::fs::remove_dir_all(path).is_ok();
+    }
+    false
+}
+
+/// Move `from` to `to`, either a single file or a whole subtree.
+#[wasm_bindgen]
+pub fn wasi_rename(from: &str, to: &str) -> bool {
+    openmodelica_wasi::fs::rename(from, to).is_ok()
+}
+
 /// Drain the files the last command tried to download but did not find in the
 /// VFS, as an array of `{ urls: string[], filename: string }`. `omc_eval` is
 /// synchronous, so it cannot fetch over the network itself; instead the JS host
