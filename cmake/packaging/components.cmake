@@ -89,3 +89,9 @@ cpack_add_component(omlibrary
                     DEPENDS omc
                     DESCRIPTION "The cache of Modelica libraries that omc can install without network access."
                     )
+
+## Documentation
+cpack_add_component(doc
+                    DISPLAY_NAME "Documentation"
+                    DESCRIPTION "The OpenModelica User's Guide and the system documentation."
+                    )

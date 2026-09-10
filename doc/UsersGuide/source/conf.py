@@ -21,6 +21,10 @@ from datetime import date
 
 sys.setrecursionlimit(2000)
 
+# The guide can be built out of the source tree, in which case the repository is
+# not three levels up any more and has to be pointed at.
+omroot = os.environ.get('OPENMODELICA_SOURCE_ROOT', '../../..')
+
 if not 'OPENMODELICAHOME' in os.environ:
   if os.path.isdir('../../../build_cmake/install'):
     os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build_cmake/install')
@@ -86,8 +90,8 @@ today_fmt = '%Y'
 # built documents.
 #
 # The short X.Y version.
-if os.path.exists('../../../.git'):
-  r = git.repo.Repo('../../../')
+if os.path.exists(os.path.join(omroot, '.git')):
+  r = git.repo.Repo(omroot)
   release = r.git.describe(["--tags","--match=v*.*.*"])
   versionx = re.search("^v([0-9]+)[.]([0-9]+)[.]([0-9]+)", release)
   version = versionx.group(0)
@@ -114,7 +118,7 @@ if os.path.exists('../../../.git'):
     thisreleasestr = "v%d.%d.%d" % thisrelease
     docheadcommit = r.commit('HEAD').tree['doc'].hexsha
     thissha = r.commit('HEAD').hexsha
-    semver = subprocess.check_output(["sh", "-c", "cd ../../../ && common/semver.sh"]).decode("utf-8").strip()
+    semver = subprocess.check_output(["sh", "-c", "cd '%s' && common/semver.sh" % omroot]).decode("utf-8").strip()
     link = "`%s <https://github.com/OpenModelica/OpenModelica/commit/%s>`__ (`diff <https://github.com/OpenModelica/OpenModelica/compare/%s...%s>`__, `doc <https://github.com/OpenModelica/OpenModelica-doc/compare/%s...%s>`__)" % (semver,thissha,prevrelease,thissha,prevrelease,docheadcommit)
   releaselink = """.. only :: html or epub
 
@@ -420,8 +424,12 @@ epub_copyright = copyright
 # The format is a list of tuples containing the path and title.
 #epub_post_files = []
 
-# A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
+# A list of files that should not be packed into the epub file. The video is
+# shown on the HTML pages only -- EPUB has no core media type for it, so Sphinx
+# leaves it out of the manifest and warns. It is skipped in omedit.rst with
+# 'only:: html and not epub', since the EPUB builder's format is 'html' too and
+# a plain 'only:: html' would still emit it.
+epub_exclude_files = ['search.html', '_static/interactive-simulation.mp4']
 
 # The depth of the table of contents in toc.ncx.
 #epub_tocdepth = 3
