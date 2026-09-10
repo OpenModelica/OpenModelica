@@ -1779,12 +1779,29 @@ function(omc_rust_setup_wasm)
                         "'${RUST_OMC_WASM_MODE}'.")
   endif()
 
-  # wasm-bindgen-cli is mandatory for this target; the wasm32 rustup target must
-  # also be installed. REQUIRED → a clear configure error instead of a cryptic
-  # mid-build failure. (WASM_OPT_EXECUTABLE is found at file scope and reused
+  # wasm-bindgen, built from the pinned wasm-bindgen-cli-support rather than
+  # found on PATH: cargo then resolves the same schema version the bindgen'd
+  # crates depend on, so no `cargo install wasm-bindgen-cli --version ...` is
+  # needed and an out-of-date one cannot break the build. Built out of the
+  # canonical tree, not the per-build mirror — it is a standalone workspace with
+  # no generated sources, so sharing it costs nothing and sccache keys on the
+  # manifest directory. (WASM_OPT_EXECUTABLE is found at file scope and reused
   # here; it is optional, only shrinking the release bundle.)
-  find_program(WASM_BINDGEN_EXECUTABLE wasm-bindgen REQUIRED
-               HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+  #
+  # The wasm32 rustup target must still be installed.
+  set(_wb_src ${RUST_OMC_SRC_DIR}/openmodelica_wasm_bindgen)
+  set(_wb_dir ${CMAKE_CURRENT_BINARY_DIR}/wasm-bindgen)
+  set(WASM_BINDGEN_EXECUTABLE ${_wb_dir}/release/omc-wasm-bindgen${CMAKE_EXECUTABLE_SUFFIX})
+  add_custom_command(
+    OUTPUT ${WASM_BINDGEN_EXECUTABLE}
+    WORKING_DIRECTORY ${_wb_src}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release --locked
+            --manifest-path ${_wb_src}/Cargo.toml --target-dir ${_wb_dir}
+    DEPENDS ${_wb_src}/src/main.rs ${_wb_src}/Cargo.toml ${_wb_src}/Cargo.lock
+    COMMENT "Rust: building wasm-bindgen from wasm-bindgen-cli-support"
+    VERBATIM)
+  add_custom_target(rust_wasm_bindgen DEPENDS ${WASM_BINDGEN_EXECUTABLE})
 
   set(_wasm_target wasm32-unknown-unknown)
   set(_wasm_name OpenModelicaCompiler)
@@ -2079,7 +2096,8 @@ function(omc_rust_setup_wasm)
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
     ${_web_launcher_extra}
-    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
+    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${WASM_BINDGEN_EXECUTABLE}
+            ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
   add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)

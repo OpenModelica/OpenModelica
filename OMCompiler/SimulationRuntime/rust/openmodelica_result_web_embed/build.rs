@@ -87,7 +87,8 @@ fn build(runtime: &Path, out: &Path, pkg: &Path) -> Result<(), String> {
         .input_path(&wasm)
         .web(true)
         // The library defaults this the other way from the CLI, leaving `init()`
-        // nowhere to fetch the module from. CMake still uses the CLI.
+        // nowhere to fetch the module from. `openmodelica_wasm_bindgen`, which
+        // CMake builds for the same reason, sets it the same way.
         .map(|b| b.omit_default_module_path(false))
         .and_then(|b| b.typescript(false).generate(pkg))
         // The versions resolve in separate workspaces, so they can be bumped apart.

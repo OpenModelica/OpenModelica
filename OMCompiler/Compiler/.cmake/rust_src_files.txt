@@ -1,7 +1,9 @@
 # Hand-written Rust omc sources copied into each build's working copy (see
 # rust_omc.cmake); mmtorust generates the rest. Paths relative to OpenModelica.rs.
 # Regenerate from a git checkout:
-#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$'
+#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$|^openmodelica_wasm_bindgen/'
+# openmodelica_wasm_bindgen is left out on purpose: it is a build tool, compiled
+# from the canonical tree, and nothing in the working copy refers to it.
 #
 .cargo/config.toml
 .cmake/windows-deps.cmake

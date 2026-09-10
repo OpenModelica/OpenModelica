@@ -63,10 +63,10 @@ apt install rustup binaryen
 rustup toolchain install nightly-2026-05-31 --profile minimal \
   --component rustc-codegen-cranelift-preview clippy rustfmt rust-analyzer \
   --target wasm32-unknown-unknown
-# For the web targets:
+# For the web targets. wasm-bindgen is not installed: the build compiles
+# `openmodelica_wasm_bindgen` from the pinned wasm-bindgen-cli-support, so cargo
+# keeps its schema version equal to the one the bindgen'd crates depend on.
 rustup target add wasm32-unknown-unknown
-export WASM_BINDGEN_VERSION=0.2.125
-cargo install wasm-bindgen-cli --version "${WASM_BINDGEN_VERSION}"
 # The web wasm-jit ModelicaExternalC side module (modelicaexternalc.wasm) is compiled
 # from C with clang targeting wasm32-wasi (real WASI file I/O via path_open, unlike
 # Emscripten). Needs wasi-libc, lld (wasm-ld), and the wasm32 compiler-rt builtins.
