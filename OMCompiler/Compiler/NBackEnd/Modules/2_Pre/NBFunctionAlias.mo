@@ -79,7 +79,7 @@ public
     extends Module.wrapper;
     input Partition.Kind kind;
   protected
-    Module.aliasInterface func;
+    Module.functionAliasInterface func;
   algorithm
     func := getModule();
 

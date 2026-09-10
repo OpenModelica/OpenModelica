@@ -306,7 +306,7 @@ public
       (function FunctionAlias.main(kind = kind), "FunctionAlias"),
       (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
       (function simplify(init = false), "Simplify 1"),
-      (function Alias.main(kind = kind),  "Alias"),
+      (function Alias.pre(kind = kind), "Pre Causalization Alias"),
       (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
       (removeStream,       "Remove Stream"),
       (DetectStates.main,  "Detect States"),
@@ -318,6 +318,7 @@ public
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
       (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
+      (Alias.post,                                                          "Post Causalization Alias"),
       (Initialization.main,                                                 "Initialization")
     }, mainModules);
 

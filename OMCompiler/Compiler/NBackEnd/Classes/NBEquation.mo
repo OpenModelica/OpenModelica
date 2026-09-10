@@ -4551,9 +4551,17 @@ public
       input output EquationPointers equations "only an output for mapping";
     protected
       ComponentRef name;
-      Integer index;
     algorithm
       name := Equation.getEqnName(eqn);
+      equations := removeByName(name, equations);
+    end remove;
+
+    function removeByName
+      input ComponentRef name;
+      input output EquationPointers equations "only an output for mapping";
+    protected
+      Integer index;
+    algorithm
       () := match UnorderedMap.get(name, equations.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.delete(index, equations.eqArr);
@@ -4562,7 +4570,7 @@ public
         then ();
         else ();
       end match;
-    end remove;
+    end removeByName;
 
     function map
       "Traverses all equations and applies a function to them."
