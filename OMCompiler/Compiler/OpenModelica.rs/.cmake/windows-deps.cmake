@@ -1,18 +1,17 @@
 # Provision the Windows (x86_64-pc-windows-msvc) third-party libs the C/C++
-# runtime links, cross-built from Linux with the xwin toolchain: PThreads4W,
-# OpenBLAS (LAPACK/BLAS), and Boost (cpp runtime, via vcpkg with the
-# x64-windows-xwin overlay triplet). Included from the top-level CMakeLists
-# before OMCPThreads.cmake (which find_package(pthreads CONFIG)); a no-op unless
+# runtime links, cross-built from Linux with the xwin toolchain: PThreads4W and
+# OpenBLAS (LAPACK/BLAS). Included from the top-level CMakeLists before
+# OMCPThreads.cmake (which find_package(pthreads CONFIG)); a no-op unless
 # cross-compiling to Windows. Only the downloaded artifacts are cached
-# (OM_WINDOWS_DOWNLOADS_DIR, bundle-able into a source tarball); the build/install
-# trees stay under the build dir.
+# (OM_DOWNLOADS_DIR); the build/install trees stay under the build dir.
+# Boost is in cmake/OMCBoost.cmake instead, which covers every cross target.
 
 if(NOT (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows"))
   return()
 endif()
 
 option(OM_WINDOWS_FETCH_DEPS
-  "Cross-compiling to Windows: fetch PThreads4W/OpenBLAS and build Boost via vcpkg during configure." ON)
+  "Cross-compiling to Windows: fetch and build PThreads4W/OpenBLAS during configure." ON)
 if(NOT OM_WINDOWS_FETCH_DEPS)
   return()
 endif()
@@ -24,8 +23,6 @@ endif()
 
 find_package(Git REQUIRED)
 
-set(OM_WINDOWS_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/windows-deps/downloads" CACHE PATH
-    "Cache for downloaded Windows dependency artifacts; bundle into the source tarball for offline builds.")
 set(_om_win_build "${CMAKE_BINARY_DIR}/windows-deps")
 set(_om_xwin_toolchain "${CMAKE_CURRENT_LIST_DIR}/xwin-toolchain.cmake")
 
@@ -34,7 +31,7 @@ set(_om_xwin_toolchain "${CMAKE_CURRENT_LIST_DIR}/xwin-toolchain.cmake")
 # so build it and emit pthreadsConfig.cmake exporting PThreads4W::PThreads4W.)
 set(OM_WINDOWS_PTHREADS4W_REF "904b10a2b5de3ac0a8b9dfe45bb36a2b157acd68" CACHE STRING
     "pthreads4w (jwinarske CMake fork) git commit to build.")
-set(_om_p4w_src "${OM_WINDOWS_DOWNLOADS_DIR}/pthreads4w")
+set(_om_p4w_src "${OM_DOWNLOADS_DIR}/pthreads4w")
 set(_om_p4w_prefix "${_om_win_build}/pthreads4w")
 set(_om_p4w_cfgdir "${_om_win_build}/pthreads4w-cmake")
 if(NOT EXISTS "${_om_p4w_cfgdir}/pthreadsConfig.cmake")
@@ -94,7 +91,7 @@ set(pthreads_DIR "${_om_p4w_cfgdir}" CACHE PATH "" FORCE)
 # --- OpenBLAS (lib/libopenblas.lib is a usable MSVC import lib) ---
 set(OM_WINDOWS_OPENBLAS_VERSION "0.3.33" CACHE STRING "OpenBLAS prebuilt release to fetch.")
 set(_om_openblas_sha256 "7ad797ef0c9a5c42e28903bf726eaaaade307dafe187ff0e923d90cd4002780c")
-set(_om_openblas_zip "${OM_WINDOWS_DOWNLOADS_DIR}/OpenBLAS-${OM_WINDOWS_OPENBLAS_VERSION}-x64.zip")
+set(_om_openblas_zip "${OM_DOWNLOADS_DIR}/OpenBLAS-${OM_WINDOWS_OPENBLAS_VERSION}-x64.zip")
 set(_om_openblas_prefix "${_om_win_build}/openblas")
 if(NOT EXISTS "${_om_openblas_prefix}/lib/libopenblas.lib")
   if(NOT EXISTS "${_om_openblas_zip}")
@@ -110,51 +107,6 @@ endif()
 set(BLA_VENDOR OpenBLAS CACHE STRING "" FORCE)
 list(PREPEND CMAKE_PREFIX_PATH "${_om_openblas_prefix}")
 
-# --- Boost via vcpkg (only the cpp simulation runtime needs it) ---
-if(OM_OMC_ENABLE_CPP_RUNTIME)
-  set(OM_WINDOWS_VCPKG_REF "2026.06.01" CACHE STRING "vcpkg git ref to check out.")
-  # Exactly the Boost libraries the cpp runtime includes (vcpkg pulls transitive
-  # deps). Not the `boost` meta-port: it drags in python/mpi/locale ports that
-  # need vcpkg-msbuild and cannot cross from Linux.
-  set(OM_WINDOWS_VCPKG_PACKAGES
-      "boost-filesystem;boost-serialization;boost-program-options;boost-system;boost-thread;boost-atomic;boost-chrono;boost-log;boost-asio;boost-ublas;boost-lambda;boost-circular-buffer;boost-intrusive;boost-lexical-cast;boost-foreach;boost-assign;boost-multi-array;boost-multi-index;boost-property-tree;boost-range;boost-optional;boost-math;boost-container;boost-algorithm;boost-tuple;boost-unordered;boost-variant;boost-bind;boost-function;boost-smart-ptr;boost-any;boost-typeof;boost-type-index;boost-numeric-conversion"
-      CACHE STRING "vcpkg ports to install (x64-windows-xwin triplet).")
-  set(_om_vcpkg "${_om_win_build}/vcpkg")
-  if(NOT EXISTS "${_om_vcpkg}/vcpkg")
-    if(NOT EXISTS "${_om_vcpkg}/.git")
-      execute_process(
-        COMMAND "${GIT_EXECUTABLE}" clone --depth 1 --branch "${OM_WINDOWS_VCPKG_REF}"
-                https://github.com/microsoft/vcpkg "${_om_vcpkg}"
-        RESULT_VARIABLE _rc)
-      if(_rc)
-        message(FATAL_ERROR "vcpkg clone failed (${_rc}).")
-      endif()
-    endif()
-    execute_process(COMMAND "${_om_vcpkg}/bootstrap-vcpkg.sh" -disableMetrics
-                    WORKING_DIRECTORY "${_om_vcpkg}" RESULT_VARIABLE _rc)
-    if(_rc)
-      message(FATAL_ERROR "vcpkg bootstrap failed (${_rc}).")
-    endif()
-  endif()
-
-  set(_om_vcpkg_ports "")
-  foreach(_p ${OM_WINDOWS_VCPKG_PACKAGES})
-    list(APPEND _om_vcpkg_ports "${_p}:x64-windows-xwin")
-  endforeach()
-  # VCPKG_BINARY_SOURCES=clear: cache only the asset downloads, not built packages.
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E env VCPKG_BINARY_SOURCES=clear
-            "${_om_vcpkg}/vcpkg" install ${_om_vcpkg_ports}
-            "--overlay-triplets=${CMAKE_CURRENT_LIST_DIR}"
-            "--downloads-root=${OM_WINDOWS_DOWNLOADS_DIR}/vcpkg"
-    WORKING_DIRECTORY "${_om_vcpkg}"
-    RESULT_VARIABLE _rc)
-  if(_rc)
-    message(FATAL_ERROR "vcpkg install failed (${_rc}): ${_om_vcpkg_ports}")
-  endif()
-  list(PREPEND CMAKE_PREFIX_PATH "${_om_vcpkg}/installed/x64-windows-xwin")
-endif()
-
 # Bundle the fetched runtime DLLs next to omc.exe (Windows resolves DLLs from the
 # executable's directory). Built during configure, so they exist on disk now.
 if(EXISTS "${_om_openblas_prefix}/bin/libopenblas.dll")
@@ -164,10 +116,4 @@ file(GLOB_RECURSE _om_p4w_dll "${_om_p4w_prefix}/pthreadVC3.dll")
 if(_om_p4w_dll)
   list(GET _om_p4w_dll 0 _om_p4w_dll)
   install(FILES "${_om_p4w_dll}" TYPE BIN COMPONENT omc)
-endif()
-if(DEFINED _om_vcpkg AND EXISTS "${_om_vcpkg}/installed/x64-windows-xwin/bin")
-  file(GLOB _om_boost_dlls "${_om_vcpkg}/installed/x64-windows-xwin/bin/boost_*.dll")
-  if(_om_boost_dlls)
-    install(FILES ${_om_boost_dlls} TYPE BIN COMPONENT omc)
-  endif()
 endif()

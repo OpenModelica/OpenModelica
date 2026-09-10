@@ -114,10 +114,11 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 
-# Boost.Context (vcpkg dep of boost-asio): use the Windows-fibers backend, which
-# is pure C++ — no assembly. The default fcontext backend assembles a MASM
-# trampoline via ml64, and llvm-ml64 rejects Boost's MASM (EXPORT / .seh_); its
-# CMake build can't select the clang-gas .S variant that would assemble cleanly.
+# Boost.Context (a Boost.Asio dependency, so cmake/OMCBoost.cmake builds it):
+# use the Windows-fibers backend, which is pure C++ — no assembly. The default
+# fcontext backend assembles a MASM trampoline via ml64, and llvm-ml64 rejects
+# Boost's MASM (EXPORT / .seh_); its CMake build can't select the clang-gas .S
+# variant that would assemble cleanly.
 set(BOOST_CONTEXT_IMPLEMENTATION winfib CACHE STRING "" FORCE)
 
 # Qt's WrapVulkanHeaders (a Qt6::Gui dep) finds the host /usr/include/vulkan and

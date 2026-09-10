@@ -14,7 +14,10 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
 
 
 # Boost and a threading library are required for the CPP-runtime.
-if(APPLE)
+if(OM_FETCH_BOOST)
+ # Built into this project by cmake/OMCBoost.cmake.
+ set(Boost_FOUND TRUE)
+elseif(APPLE)
  # MacPorts installs the Boost configuration file in a non-standard location,
  # keep using the old FindBoost module for now.
  find_package(Boost COMPONENTS program_options filesystem REQUIRED)
@@ -42,6 +45,21 @@ target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/Inc
 target_link_libraries(OMCppConfig INTERFACE Boost::boost)
 
 function(get_linker_flag_from_library_target TARGET OUT_VAR)
+    # An in-project Boost (OM_FETCH_BOOST) has no IMPORTED_LOCATION.
+    get_target_property(aliased ${TARGET} ALIASED_TARGET)
+    if(aliased)
+        set(TARGET ${aliased})
+    endif()
+    get_target_property(imported ${TARGET} IMPORTED)
+    if(NOT imported)
+        get_target_property(lib_base ${TARGET} OUTPUT_NAME)
+        if(NOT lib_base)
+            set(lib_base ${TARGET})
+        endif()
+        set(${OUT_VAR} "-l${lib_base}" PARENT_SCOPE)
+        return()
+    endif()
+
     # Get the actual library file path
     get_target_property(lib_location ${TARGET} IMPORTED_LOCATION)
 

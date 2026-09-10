@@ -824,6 +824,7 @@ void buildRustNightlyShared() {
       -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
       -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
       -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
+      -DOM_DOWNLOADS_DIR=/cache/thirdparty \
       -DRUST_OMC_WASM_ARTIFACTS_OUT=${d}/wasm
   """
   withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
@@ -868,6 +869,11 @@ List nightlyCommonFlags(Map t) {
                 '-DRUST_OMC_CI=ON',
                 "-DRUST_OMC_TARGET=${t.triple}",
                 '-DOM_USE_CCACHE=OFF',
+                // The downloads default under the build tree, which
+                // standardSetup()'s `git clean -ffdx` deletes first, so they
+                // would be re-fetched once per stage per night (Boost alone is
+                // a 108 MB tarball).
+                '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
                 "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
   if (t.sccache) {
     flags += ['-DCMAKE_C_COMPILER_LAUNCHER=sccache', '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache']

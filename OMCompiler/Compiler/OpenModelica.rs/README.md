@@ -175,15 +175,24 @@ lld-link (validated on 3rdParty/zlib + the configure below).
 
 OpenModelica's CMake already supports MSVC, but expects the Windows dependency
 libraries to be supplied — the xwin sysroot provides only the CRT/SDK. The
-LAPACK/BLAS (OpenBLAS) and Boost deps are fetched automatically at configure
-time by `.cmake/windows-deps.cmake` (auto-included when cross-compiling to
-Windows; toggle with `OM_WINDOWS_FETCH_DEPS`): OpenBLAS as the prebuilt MSVC
-release, Boost cross-built through vcpkg with the checked-in overlay triplet
-`.cmake/x64-windows-xwin.cmake`. Only the downloaded artifacts are cached, under
-`OM_WINDOWS_DOWNLOADS_DIR` — repoint it at an in-source directory to bundle them
-into an offline source tarball. PThreads4W is the one dep still passed by hand
-(its vcpkg port is nmake-only and cannot cross from Linux): build it from its
-CMake fork with the toolchain and pass `-Dpthreads_DIR=<prefix>`.
+LAPACK/BLAS (OpenBLAS) dep is fetched automatically at configure time by
+`.cmake/windows-deps.cmake` (auto-included when cross-compiling to Windows;
+toggle with `OM_WINDOWS_FETCH_DEPS`), as the prebuilt MSVC release. PThreads4W is
+built from the same file (its vcpkg port is nmake-only and cannot cross from
+Linux, so it is cloned from its CMake fork, built with the toolchain, and wrapped
+in a generated `pthreadsConfig.cmake`).
+
+Boost, which the C++ simulation runtime needs, comes from `cmake/OMCBoost.cmake`
+instead, which is not Windows-specific: it builds Boost from source under
+whatever toolchain is configured, so the macOS cross builds below get it the same
+way. See `OM_FETCH_BOOST` there.
+
+Everything any of this downloads goes into one directory, `OM_DOWNLOADS_DIR`
+(default `<build>/downloads`, shared with the wasm toolchain pieces
+`rust_omc.cmake` fetches). Point it outside the build tree to survive a wiped
+build directory, or at an in-source directory to bundle it into an offline source
+tarball. Only the downloads live there; everything unpacked or built from them
+stays under the build directory.
 
 ```bash
 # Disable the Fortran components: flang can compile Fortran to windows-msvc
