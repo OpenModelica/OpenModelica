@@ -16,7 +16,10 @@
 //                          side halves the wall clock for the same CPU-seconds.
 //   3. 'GUI clients'       the Qt clients per target, off stage 2's cdylib
 //                          (RUST_OMC_PREBUILT_CDYLIB), so no cargo build of the
-//                          compiler runs a second time.
+//                          compiler runs a second time. These are the only
+//                          stages needing a cross Qt kit, so each runs on its
+//                          target's build-deps:*-rust-qt-* image rather than
+//                          the plain -rust one.
 //   4. 'package'           the Windows zip, and `lipo` over the two macOS trees
 //                          into one universal distribution.
 //
@@ -43,9 +46,9 @@ pipeline {
     booleanParam(name: 'BUILD_WINDOWS', defaultValue: true, description: 'Build the Windows x86-64 distribution')
     booleanParam(name: 'BUILD_MACOS', defaultValue: true, description: 'Build the macOS universal (x86-64 + arm64) distribution')
     booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot) for the platforms that have a Qt kit on the image')
-    // The image carries Qt kits for msvc2022_64, gcc_64 and wasm, but none for
-    // macOS, so the macOS GUI stages cannot run yet. Flip this once a
-    // macos kit is added (see nightlyTarget() in common.groovy).
+    // build-deps:*-rust-qt-mac now carries the macOS Qt kit, but nightlyTarget()
+    // still has no `qt:` configuration for either macOS target, so the stages
+    // would error out. Flip this once that is filled in (see common.groovy).
     booleanParam(name: 'BUILD_MACOS_GUI_CLIENTS', defaultValue: false, description: 'Build the Qt GUI clients for macOS as well (needs a macOS Qt kit on the image)')
     // Read at queue time by the jobGroup option above. A nightly yields to
     // everything a person is waiting for.
@@ -166,7 +169,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-win-x86_64'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
@@ -187,7 +190,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
@@ -208,7 +211,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +

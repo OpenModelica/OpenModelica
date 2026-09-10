@@ -522,7 +522,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-wasm'
               label 'linux'
               // EM_CACHE on a persistent volume so the Qt-wasm sysroot (libc/libc++
               // and the ASYNCIFY/memory-growth variants) is built once, not per run.
@@ -551,7 +551,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-wasm'
               label 'linux'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +

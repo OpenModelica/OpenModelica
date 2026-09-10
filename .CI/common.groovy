@@ -734,7 +734,8 @@ String nightlyInstallDir(String name) { return "install/${name}" }
 //   triple    the rustc target triple (RUST_OMC_TARGET, and cargo's subdirectory)
 //   toolchain the CMake toolchain file for the C/C++ half of the tree
 //   configure the flags only this platform needs
-//   qt        the Qt kit for the GUI stage; empty = the image has no kit for it
+//   qt        the Qt kit for the GUI stage; empty = not configured yet, which
+//             makes the stage error out rather than build without Qt
 //   sccache   whether this target's C/C++ compiler can run under sccache
 //   cdylib    the file name cargo gives libOpenModelicaCompiler for it
 Map nightlyTarget(String name) {
