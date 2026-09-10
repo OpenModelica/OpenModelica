@@ -796,7 +796,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
   endif
 
-  LDFLAGS=-L"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" <%additionalLinkerFlags_GCC%> -Wl,--no-undefined
+  LDFLAGS=-L"$(OMHOME)/lib/<%Autoconf.triple%>/omc/omsicpp" <%additionalLinkerFlags_GCC%>
+  ifeq ($(findstring linux,$(PLATFORM)),linux)
+    LDFLAGS+=-Wl,--no-undefined
+  endif
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
 
@@ -830,9 +833,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,$(if $(findstring darwin,$(PLATFORM)),,-static)))
   else ifeq ($(findstring clang,$(CC)),clang)
-    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,$(if $(findstring darwin,$(PLATFORM)),,-static)))
   endif
 
   CPPFILES=$(CALCHELPERMAINFILE)
