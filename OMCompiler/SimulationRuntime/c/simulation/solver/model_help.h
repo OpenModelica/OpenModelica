@@ -90,6 +90,7 @@ static inline double numericalJacobianStep(double y, double hyprime, double ewtI
 void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
 
 void freeModelDataVars(MODEL_DATA* modelData);
+void freeModelDataVarArrays(MODEL_DATA* modelData);
 
 void scalarAllocArrayAttributes(MODEL_DATA* modelData);
 
