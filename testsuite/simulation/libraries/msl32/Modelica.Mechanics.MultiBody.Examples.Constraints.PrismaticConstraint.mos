@@ -37,6 +37,33 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// Warning: The linear system:
+// 1 : bodyOfConstraint.v_0[1] = 0.21486551488510405 * freeMotionScalarInit.v_rel_a_1 + (-0.5318108111446446) * freeMotionScalarInit.v_rel_a_2 + 0.8191520442889918 * freeMotionScalarInit.v_rel_a_3
+// 2 : 0.0 = 0.8191520442889918 * bodyOfConstraint.v_0[1] + (-0.09960050292505122) * bodyOfConstraint.v_0[2] + 0.5648625214636235 * bodyOfConstraint.v_0[3]
+// 3 : bodyOfConstraint.v_0[2] = 0.9663834860128886 * freeMotionScalarInit.v_rel_a_1 + 0.23702889650558212 * freeMotionScalarInit.v_rel_a_2 + (-0.09960050292505122) * freeMotionScalarInit.v_rel_a_3
+// 4 : bodyOfConstraint.v_0[3] = (-0.14119408087712543) * freeMotionScalarInit.v_rel_a_1 + 0.8130157214783864 * freeMotionScalarInit.v_rel_a_2 + 0.5648625214636235 * freeMotionScalarInit.v_rel_a_3
+// [
+//   0.0 , -0.21486551488510405 , 0.0 , 1.0 ;
+//   -0.5648625214636235 , 0.0 , 0.09960050292505122 , -0.8191520442889918 ;
+//   0.0 , -0.9663834860128886 , 1.0 , 0.0 ;
+//   1.0 , 0.14119408087712543 , 0.0 , 0.0
+// ]
+//   *
+// [
+//   bodyOfConstraint.v_0[3] ;
+//   freeMotionScalarInit.v_rel_a_1 ;
+//   bodyOfConstraint.v_0[2] ;
+//   bodyOfConstraint.v_0[1]
+// ]
+//   =
+// [
+//   (-0.5318108111446446) * freeMotionScalarInit.v_rel_a_2 + 0.8191520442889918 * freeMotionScalarInit.v_rel_a_3 ;
+//   -0.0 ;
+//   0.23702889650558212 * freeMotionScalarInit.v_rel_a_2 + (-0.09960050292505122) * freeMotionScalarInit.v_rel_a_3 ;
+//   0.8130157214783864 * freeMotionScalarInit.v_rel_a_2 + 0.5648625214636235 * freeMotionScalarInit.v_rel_a_3
+// ]
+//  might be structurally or numerically singular for variable bodyOfConstraint.v_0[1] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
+//
 // "true
 // "
 // ""
