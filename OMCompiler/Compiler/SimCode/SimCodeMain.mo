@@ -998,6 +998,7 @@ algorithm
   // The same templates the C target uses, so the XML is byte-identical to it. No
   // sourceFiles: a wasm FMU carries no C. The XML declaration comes from
   // fmuModelDescriptionFile, which the C target reaches these through.
+  System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   if FMI.isFMIVersion20(FMUVersion) then
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU2.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
@@ -1034,6 +1035,7 @@ algorithm
     documentationDir := fmutmp + "/documentation/";
     ExecStat.execStat("FMU documentation");
   end if;
+  System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
     CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
@@ -1674,7 +1676,8 @@ algorithm
   // a failing translation would otherwise read an earlier command's tick.
   List.map_0({ClockIndexes.RT_CLOCK_FRONTEND,ClockIndexes.RT_CLOCK_BACKEND,
               ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES,
-              ClockIndexes.RT_CLOCK_BUILD_MODEL},System.realtimeClear);
+              ClockIndexes.RT_CLOCK_BUILD_MODEL,ClockIndexes.RT_CLOCK_FMU_BACKEND,
+              ClockIndexes.RT_CLOCK_FMU_SIMCODE,ClockIndexes.RT_CLOCK_FMU_TEMPLATES},System.realtimeClear);
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};
@@ -1773,8 +1776,23 @@ algorithm
     print(flatString);
   end if;
 
+  // The simCode clock ticks on every FMU export and on nothing else.
+  if Flags.isSet(Flags.EXEC_STAT) and System.realtimeNtick(ClockIndexes.RT_CLOCK_FMU_SIMCODE) > 0 then
+    Error.addCompilerNotification("FMU-only work: backend " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_BACKEND)
+      + ", simCode " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_SIMCODE)
+      + ", templates " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_TEMPLATES));
+  end if;
+
   success := true;
 end translateModel;
+
+protected function fmuOverheadTime
+  "Seconds accumulated on one of the RT_CLOCK_FMU_* clocks, 0 if it never ran."
+  input Integer clockIndex;
+  output String str;
+algorithm
+  str := System.snprintff("%.4g", 20, if System.realtimeNtick(clockIndex) > 0 then System.realtimeAccumulated(clockIndex) else 0.0);
+end fmuOverheadTime;
 
 public function translateModelCallBackend
   input FlatModel flatModel;
@@ -1919,8 +1937,10 @@ algorithm
       if (isFMI2) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_BACKEND);
         (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);
         dlow := BackendDAEUtil.setFunctionTree(dlow, funcs);
+        System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_BACKEND);
       else
         fmiDer := {};
       end if;
@@ -2408,11 +2428,13 @@ algorithm
     // DAE-mode model has none of. The specification lets an importer assume a
     // dependency on every known instead.
     if isFMU then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
         (_, modelStructure, modelInfo, _, uniqueEqIndex, _) :=
           SimCodeUtil.createFMIModelStructure({}, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       end if;
       fmiSimulationFlags := SimCodeUtil.createFMISimulationFlags();
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
     end if;
 
     // update hash table
