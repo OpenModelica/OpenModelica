@@ -129,6 +129,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_extobj_arg_i32", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_extobj_arg_str", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_extobj_arg_arr", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_extobj_arg_rec", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_strcmp", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_substring", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_int_string", &[WTy::I32], &[WTy::I32]),

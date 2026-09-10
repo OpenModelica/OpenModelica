@@ -1707,15 +1707,18 @@ fn rec_data_off(nheap: u32) -> u32 {
 /// Allocate a zero-initialized record object: `nheap` heap fields and `size`
 /// total payload bytes (refcount 1; the heap-field table and field data are left
 /// zero — the codegen fills the table and the fields). Zeroing means heap fields
-/// start as the null handle, so releasing a partially built record is safe.
+/// start as the null handle, so releasing a partially built record is safe. The
+/// allocator's rounding tail is zeroed too, so [`rec_same`] can compare two
+/// records of one class as bytes.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_record_new(nheap: u32, size: u32) -> u32 {
     stat_inc(STAT_RECORD_NEW);
     let obj = rt_alloc(size);
+    let payload = unsafe { load_u32(obj - HEADER as u32) } - HEADER as u32;
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + REC_NHEAP_OFF, nheap);
-        core::ptr::write_bytes((obj + 8) as *mut u8, 0, size.saturating_sub(8) as usize);
+        core::ptr::write_bytes((obj + 8) as *mut u8, 0, payload.saturating_sub(8) as usize);
     }
     obj
 }
@@ -2214,6 +2217,7 @@ enum ExtObjArg {
     Bits(u64),
     Str(u32),
     Arr(u32),
+    Rec(u32),
 }
 struct ExtObjArgs(core::cell::UnsafeCell<alloc::vec::Vec<((u32, u32), ExtObjArg)>>);
 // Single-threaded wasm: no concurrent access.
@@ -2229,12 +2233,14 @@ fn extobj_arg_same(slot: u32, pos: u32, new: ExtObjArg) -> i32 {
         (Some((_, ExtObjArg::Bits(a))), ExtObjArg::Bits(b)) => a == b,
         (Some((_, ExtObjArg::Str(a))), ExtObjArg::Str(b)) => unsafe { str_bytes(*a) == str_bytes(*b) },
         (Some((_, ExtObjArg::Arr(a))), ExtObjArg::Arr(b)) => arr_same(*a, *b),
+        (Some((_, ExtObjArg::Rec(a))), ExtObjArg::Rec(b)) => rec_same(*a, *b),
         _ => false,
     };
     match entry {
         Some(e) => match core::mem::replace(&mut e.1, new) {
             ExtObjArg::Str(old) => rt_release(old),
             ExtObjArg::Arr(old) => rt_array_release(old),
+            ExtObjArg::Rec(old) => rt_record_release(old),
             ExtObjArg::Bits(_) => {}
         },
         None => table.push(((slot, pos), new)),
@@ -2242,8 +2248,53 @@ fn extobj_arg_same(slot: u32, pos: u32, new: ExtObjArg) -> i32 {
     same as i32
 }
 
-/// Same shape, element kind and elements (strings by content, nested arrays
-/// recursively); records are never equal.
+/// Two handles of the same heap element kind: strings by content, arrays and
+/// records recursively. Only the heap kinds reach here — an array's scalar
+/// elements are compared in bulk by [`arr_same`] and a record's by [`rec_same`].
+fn same_handle(kind: u32, x: u32, y: u32) -> bool {
+    if x == 0 || y == 0 {
+        return x == y;
+    }
+    match kind {
+        EK_STR => unsafe { str_bytes(x) == str_bytes(y) },
+        EK_ARRAY => arr_same(x, y),
+        EK_RECORD => rec_same(x, y),
+        _ => x == y,
+    }
+}
+
+/// Same layout and same field values: the object's words from `nheap` on (the
+/// inline heap-field table included, so two record classes never match), with
+/// each heap field's handle word skipped and its value compared by kind instead.
+/// [`rt_record_new`] zeroes every byte this reads, padding included.
+fn rec_same(a: u32, b: u32) -> bool {
+    if a == 0 || b == 0 {
+        return a == b;
+    }
+    unsafe {
+        // As `rt_record_copy`: the allocator's word just before the object.
+        let total = load_u32(a - HEADER as u32);
+        let nheap = load_u32(a + REC_NHEAP_OFF);
+        if total != load_u32(b - HEADER as u32) || nheap != load_u32(b + REC_NHEAP_OFF) {
+            return false;
+        }
+        let data = rec_data_off(nheap);
+        let handles: alloc::vec::Vec<u32> = (0..nheap).map(|k| data + load_u32(a + 8 + k * 8 + 4)).collect();
+        for w in 1..(total - HEADER as u32) / 4 {
+            let off = w * 4;
+            if !handles.contains(&off) && load_u32(a + off) != load_u32(b + off) {
+                return false;
+            }
+        }
+        (0..nheap).all(|k| {
+            let kind = load_u32(a + 8 + k * 8);
+            let off = handles[k as usize];
+            same_handle(kind, load_u32(a + off), load_u32(b + off))
+        })
+    }
+}
+
+/// Same shape, element kind and elements (see [`same_handle`]).
 fn arr_same(a: u32, b: u32) -> bool {
     if a == 0 || b == 0 {
         return a == b;
@@ -2260,9 +2311,9 @@ fn arr_same(a: u32, b: u32) -> bool {
         }
         let (da, db) = (arr_data(a), arr_data(b));
         match kind {
-            EK_STR => (0..total).all(|i| str_bytes(load_u32(da + 4 * i)) == str_bytes(load_u32(db + 4 * i))),
-            EK_ARRAY => (0..total).all(|i| arr_same(load_u32(da + 4 * i), load_u32(db + 4 * i))),
-            EK_RECORD => false,
+            EK_STR | EK_ARRAY | EK_RECORD => {
+                (0..total).all(|i| same_handle(kind, load_u32(da + 4 * i), load_u32(db + 4 * i)))
+            }
             _ => {
                 let n = (total * elem_stride(kind)) as usize;
                 core::slice::from_raw_parts(da as *const u8, n) == core::slice::from_raw_parts(db as *const u8, n)
@@ -2289,6 +2340,11 @@ pub extern "C" fn rt_extobj_arg_str(slot: u32, pos: u32, s: u32) -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_extobj_arg_arr(slot: u32, pos: u32, a: u32) -> i32 {
     extobj_arg_same(slot, pos, ExtObjArg::Arr(a))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_extobj_arg_rec(slot: u32, pos: u32, r: u32) -> i32 {
+    extobj_arg_same(slot, pos, ExtObjArg::Rec(r))
 }
 
 /// `stringCompare(a, b)` → -1 / 0 / 1 (lexicographic over bytes).
