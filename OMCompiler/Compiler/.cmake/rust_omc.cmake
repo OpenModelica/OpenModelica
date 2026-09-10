@@ -335,9 +335,9 @@ file(WRITE ${_wasi_toolchain}
   "set(CMAKE_C_FLAGS_INIT \"-O2\")\n"
   "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
   "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
-set(_wasi_libc_src ${CMAKE_BINARY_DIR}/downloads/wasi-libc/wasi-libc-wasi-sdk-32)
+set(_wasi_libc_src ${OM_DOWNLOADS_DIR}/wasi-libc/wasi-libc-wasi-sdk-32)
 if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
-  set(_wasi_tgz ${CMAKE_BINARY_DIR}/downloads/wasi-libc-wasi-sdk-32.tar.gz)
+  set(_wasi_tgz ${OM_DOWNLOADS_DIR}/wasi-libc-wasi-sdk-32.tar.gz)
   message(STATUS "Downloading wasi-libc (wasi-sdk-32) source…")
   file(DOWNLOAD
        https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
@@ -349,9 +349,9 @@ if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_libc_src}/CMakeLists.tx
     file(REMOVE ${_wasi_tgz})
     message(FATAL_ERROR "Failed to download wasi-libc source (${_wasi_dl})")
   else()
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc)
+    file(MAKE_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc)
     execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
-                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc
+                    WORKING_DIRECTORY ${OM_DOWNLOADS_DIR}/wasi-libc
                     RESULT_VARIABLE _wasi_untar)
     if(NOT _wasi_untar EQUAL 0)
       message(FATAL_ERROR "Failed to unpack wasi-libc source")
@@ -764,7 +764,7 @@ get_property(RUST_IPOPT_NATIVE_DIR GLOBAL PROPERTY OMC_RUST_IPOPT_NATIVE_DIR)
 if(RUST_OMC_PREBUILT_WASM_DIR)
   set(_wasi_p1_adapter ${RUST_OMC_PREBUILT_WASM_DIR}/wasi_snapshot_preview1.reactor.wasm)
 else()
-  set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
+  set(_wasi_p1_adapter ${OM_DOWNLOADS_DIR}/wasi_snapshot_preview1.reactor.wasm)
 endif()
 if(NOT RUST_OMC_PREBUILT_WASM_DIR AND NOT EXISTS ${_wasi_p1_adapter})
   message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
@@ -2026,7 +2026,7 @@ function(omc_rust_setup_wasm)
     # three.js is large minified vendor code, not kept in git. Download and cache
     # it at configure time, pinned to r169 (matching the vendored OrbitControls.js)
     # with an integrity hash. Cached in the build tree; re-download only if absent.
-    set(_three_js ${CMAKE_BINARY_DIR}/downloads/three.module.min.js)
+    set(_three_js ${OM_DOWNLOADS_DIR}/three.module.min.js)
     if(NOT EXISTS ${_three_js})
       message(STATUS "Downloading three.module.min.js (r169)…")
       file(DOWNLOAD
@@ -2044,8 +2044,8 @@ function(omc_rust_setup_wasm)
     # jco's js-component-bindgen, which runs on the WASI preview2 shim. Both are
     # vendor code, not kept in git: download the pinned npm tarballs at configure
     # time and unpack them into the build tree.
-    set(_jco_vendor ${CMAKE_BINARY_DIR}/downloads/jco-transpile/package/vendor)
-    set(_p2_shim ${CMAKE_BINARY_DIR}/downloads/preview2-shim/package/dist/browser)
+    set(_jco_vendor ${OM_DOWNLOADS_DIR}/jco-transpile/package/vendor)
+    set(_p2_shim ${OM_DOWNLOADS_DIR}/preview2-shim/package/dist/browser)
     foreach(_pkg IN ITEMS
             "jco-transpile|0.4.2|6f65610ecef99501084de896e299885fc6f645ee77413a820c20aa3d53f21bc7"
             "preview2-shim|0.19.0|625d787a571bb1dd4b4e1d0fe51e2ef2f0b24e689d7cfcaff6c47ee866dc3526")
@@ -2053,9 +2053,9 @@ function(omc_rust_setup_wasm)
       list(GET _p 0 _p_name)
       list(GET _p 1 _p_ver)
       list(GET _p 2 _p_hash)
-      set(_p_dir ${CMAKE_BINARY_DIR}/downloads/${_p_name})
+      set(_p_dir ${OM_DOWNLOADS_DIR}/${_p_name})
       if(NOT EXISTS ${_p_dir}/package/package.json)
-        set(_p_tgz ${CMAKE_BINARY_DIR}/downloads/${_p_name}-${_p_ver}.tgz)
+        set(_p_tgz ${OM_DOWNLOADS_DIR}/${_p_name}-${_p_ver}.tgz)
         message(STATUS "Downloading @bytecodealliance/${_p_name} ${_p_ver}…")
         file(DOWNLOAD
              https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz

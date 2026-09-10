@@ -35,7 +35,12 @@ include(cmake/omc_check_exists.cmake)
 ## Get the revision info. The version is saved in the variable SOURCE_REVISION
 include(cmake/omc_git_revision.cmake)
 
-# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W/OpenBLAS/Boost.
+# Every configure-time download in the tree lands here. Point it outside the
+# build tree to survive a wipe, or in-source to bundle for an offline tarball.
+set(OM_DOWNLOADS_DIR "${CMAKE_BINARY_DIR}/downloads" CACHE PATH
+    "Cache for everything the configure step downloads.")
+
+# Cross-compiling to Windows (xwin toolchain): fetch PThreads4W and OpenBLAS.
 # Before OMCPThreads.cmake, which find_package(pthreads CONFIG REQUIRED).
 include(${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/Compiler/OpenModelica.rs/.cmake/windows-deps.cmake)
 

@@ -121,7 +121,9 @@ set(BasiLibName             ${LIBPREFIX}Base)
 # ── Boost ─────────────────────────────────────────────────────────────────────
 set(Boost_USE_MULTITHREADED ON)
 
-if(CMAKE_VERSION VERSION_LESS "3.30.0")
+if(OM_FETCH_BOOST)
+  # cmake/OMCBoost.cmake built it and set Boost_LIBRARIES to the targets.
+elseif(CMAKE_VERSION VERSION_LESS "3.30.0")
   FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
 else()
   FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)

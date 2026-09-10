@@ -43,9 +43,13 @@ omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack."
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-# Its own switch because it is the last thing in the C runtime tree needing Boost
-# and oneTBB, which a cross build has no reason to acquire.
+# Its own switch because it is the last thing in the C runtime tree needing
+# oneTBB, which a cross build has no reason to acquire.
 omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica (--parmodauto) runtime." ON)
+
+# Boost for the two options above, so it is included here rather than at the top
+# level: it reads them.
+include(${CMAKE_SOURCE_DIR}/cmake/OMCBoost.cmake)
 
 # OFF builds only the simulation runtime: what cross-compiling the target side
 # wants, since the compiler runs on -- and is built for -- the build host. Also

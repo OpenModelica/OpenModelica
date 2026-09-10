@@ -9,7 +9,6 @@
 .cmake/darwin-toolchain.cmake
 .cmake/windows-deps.cmake
 .cmake/windows-qt-deploy.cmake
-.cmake/x64-windows-xwin.cmake
 .cmake/xwin-toolchain.cmake
 .config/nextest.toml
 .gitignore
