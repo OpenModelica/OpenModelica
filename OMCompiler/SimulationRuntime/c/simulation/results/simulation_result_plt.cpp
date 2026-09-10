@@ -242,12 +242,19 @@ void plt_free(simulation_result *self,DATA *data, threadData_t *threadData)
   int varn = 0, i, var;
   FILE* f = NULL;
 
+  if(!pltData)
+  {
+    return;
+  }
+
   rt_tick(SIM_TIMER_OUTPUT);
 
   f = omc_fopen(self->filename, "w");
   if(!f)
   {
     deallocResult(pltData);
+    free(pltData);
+    self->storage = NULL;
     throwStreamPrint(threadData, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
   }
 
@@ -343,12 +350,12 @@ void plt_free(simulation_result *self,DATA *data, threadData_t *threadData)
   }
 
   deallocResult(pltData);
+  free(pltData);
+  self->storage = NULL;
   if(fclose(f))
   {
     throwStreamPrint(threadData, "Error, couldn't write to output file %s\n", self->filename);
   }
-  free(self->storage);
-  self->storage = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 

@@ -27,6 +27,8 @@
 
 #include "simulation_result.h"
 
+#include <stdlib.h>
+
 extern "C" {
 
 static void sim_result_doNothing(simulation_result* self, DATA *data, threadData_t *threadData)
@@ -44,5 +46,21 @@ simulation_result sim_result = {
   sim_result_doNothing, /* writeParam */
   sim_result_doNothing, /* free */
 };
+
+void deinitializeResultData(DATA *data, threadData_t *threadData)
+{
+  if (sim_result.free) {
+    sim_result.free(&sim_result, data, threadData);
+  }
+  free((void*) sim_result.filename);
+  sim_result.filename = NULL;
+  sim_result.numpoints = 0;
+  sim_result.cpuTime = 0;
+  sim_result.storage = NULL;
+  sim_result.init = sim_result_doNothing;
+  sim_result.emit = sim_result_doNothing;
+  sim_result.writeParameterData = sim_result_doNothing;
+  sim_result.free = sim_result_doNothing;
+}
 
 }
