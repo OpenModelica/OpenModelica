@@ -565,16 +565,28 @@ on the host, unless the two happen to match.
 docker run --rm -it -v "$PWD/build_cmake/_packages:/pkg:ro" ubuntu:26.04 bash
 ```
 
-and inside it, letting `apt` pull the dependencies:
+Inside the container, put the packages in a local apt repository. That is what lets apt
+resolve the dependencies *between* them, so you find out whether the packaging is right:
 
 ```sh
+apt-get update && apt-get install -y dpkg-dev
+mkdir /repo && cp /pkg/*.deb /repo/ && (cd /repo && dpkg-scanpackages . > Packages)
+echo "deb [trusted=yes] file:/repo ./" > /etc/apt/sources.list.d/local.list
 apt-get update
-apt-get install -y /pkg/openmodelica-omc_*.deb /pkg/openmodelica-simrt_*.deb /pkg/openmodelica-omlibrary_*.deb
+
+apt-get install -y openmodelica-omc     # pulls openmodelica-simrt with it
 omc --version
 ```
 
-Use `apt-get install`, not `dpkg -i`: `dpkg` does not resolve dependencies, so it will report
-success and leave you with an `omc` that cannot start or cannot compile a model.
+Two ways to get this wrong:
+
+- `dpkg -i` does not resolve dependencies at all. It reports success and leaves you with an
+  `omc` that cannot start, or that fails at the first `simulate()` with
+  `fatal error: 'omc_simulation_settings.h' file not found`.
+- `apt-get install /pkg/openmodelica-omc_*.deb` installs a *file*. apt pulls the missing
+  system libraries, but it does not go looking for `openmodelica-simrt` in `/pkg` — it only
+  knows about the file you named — so it stops with an unmet dependency. Either name every
+  package you want on the command line, or use the local repository above.
 
 ### Source packages
 

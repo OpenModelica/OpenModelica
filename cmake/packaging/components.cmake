@@ -50,10 +50,25 @@ endif()
 
 include(CPack)
 
+# omc and simrt need each other, and both directions are real: simulating a model means
+# generating C, and that C includes simrt's headers and links its libSimulationRuntimeC,
+# while libSimulationRuntimeC in turn links the libOpenModelicaRuntimeC, libomcgc and
+# libomc_result that are installed here. Saying so in only one direction is what let
+# `apt-get install openmodelica-omc` produce an omc that could not compile anything:
+# "fatal error: 'omc_simulation_settings.h' file not found".
+#
+# The Autoconf packaging had the same inversion -- its libomcsimulation held
+# libSimulationRuntimeC while libOpenModelicaRuntimeC sat in libomc above it -- and hid it
+# by having the omc package depend on both. It is a cycle here because these three
+# libraries are neither the compiler nor the solver runtime but the base both are built on,
+# and there is no component for that yet. Splitting one out (the omc-common/libomc layer of
+# the old packaging) is part of deciding the final package granularity, see
+# https://github.com/OpenModelica/OpenModelica/issues/16377.
 cpack_add_component(omc
                     DISPLAY_NAME "OpenModelica core compiler(omc)"
                     # For graphical multi-component installers, set this to required.
                     REQUIRED
+                    DEPENDS simrt
                     DESCRIPTION "The OpenModelica Compiler without any of the simulation support."
                     )
 
