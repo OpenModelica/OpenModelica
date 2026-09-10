@@ -1231,6 +1231,12 @@ function(omc_rust_setup_codegen)
         COMMAND ${CMAKE_COMMAND} -E copy ${_wasi_p1_adapter} ${_wasm_out}/wasi_snapshot_preview1.reactor.wasm
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_WASI_PIC_SYSROOT} ${_wasm_out}/wasi-pic-sysroot)
     set(_wasm_collect_deps rust_codegen rust_wasm_runtime rust_wasi_pic_sysroot)
+    # openmodelica_wasm_jit is a host build: its solver crates link these.
+    foreach(_native_collect rust_sundials_native_collect rust_ipopt_native_collect)
+      if(TARGET ${_native_collect})
+        list(APPEND _wasm_collect_deps ${_native_collect})
+      endif()
+    endforeach()
     if(_wasi_builtins)
       # In the sysroot copy, so the hand-over carries the builtins the libc.so
       # was linked against rather than relying on the consumer's clang.

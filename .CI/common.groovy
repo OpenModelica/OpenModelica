@@ -956,7 +956,7 @@ void packageRustNightlyWindows(List stashes) {
   String zip = "OpenModelica-${tagName()}-x86_64-windows.zip"
   sh "rm -f ${zip} && (cd ${nightlyInstallDir('win64')} && zip -q -r -9 -y ${env.WORKSPACE}/${zip} .)"
   sh "ls -l ${zip}"
-  archiveArtifacts artifacts: zip, fingerprint: true
+  uploadRustNightly(zip)
 }
 
 // Stage 4, macOS: lipo the two per-architecture install trees into one universal
@@ -982,7 +982,19 @@ void packageRustNightlyMacUniversal(List stashes) {
   """
   String tgz = "OpenModelica-${tagName()}-macos-universal.tar.gz"
   sh "rm -f ${tgz} && tar -C ${out} -czf ${tgz} ."
-  archiveArtifacts artifacts: tgz, fingerprint: true
+  uploadRustNightly(tgz)
+}
+
+// build.openmodelica.org/omc/rust/latest/, under the artifact's own name
+// (tagName() is `latest` on master). `rust-builds` is the publisher config
+// rooted at omc/rust/.
+void uploadRustNightly(String archive) {
+  if (env.BRANCH_NAME != 'master') {
+    echo "${env.BRANCH_NAME} is not master: not publishing ${archive}"
+    return
+  }
+  sshPublisher(publishers: [sshPublisherDesc(configName: 'rust-builds',
+    transfers: [sshTransfer(sourceFiles: archive, remoteDirectory: 'latest')])])
 }
 
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
