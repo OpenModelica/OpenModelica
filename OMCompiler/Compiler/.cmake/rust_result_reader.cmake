@@ -69,11 +69,15 @@ function(omc_result_reader_library)
     IMPORTED_LOCATION ${_lib}
     IMPORTED_NO_SONAME TRUE
     INTERFACE_INCLUDE_DIRECTORIES ${_crate}/include)
+  # Component omc: omcruntime links this PUBLIC, so omc itself does not run without it. That
+  # also puts it below OMPlot, OMEdit and the simulation runtime, which link it too -- they all
+  # depend on the omc component already. This function is called from the top-level
+  # CMakeLists.txt, where the default component is the catch-all, so it has to be spelled out.
   if(_implib)
     set_target_properties(omc::result PROPERTIES IMPORTED_IMPLIB ${_implib})
-    install(PROGRAMS ${_lib} DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(PROGRAMS ${_lib} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT omc)
   else()
-    install(PROGRAMS ${_lib} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(PROGRAMS ${_lib} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
   endif()
   add_dependencies(omc::result rust_omc_result)
   # Where the Windows install(RUNTIME_DEPENDENCIES) scans have to look for omc_result.dll.
