@@ -4,6 +4,11 @@ project(OMParser CXX)
 find_package(Java REQUIRED Runtime)
 
 option(WITH_LIBCXX OFF)
+# The bundled ANTLR4 C++ runtime defaults WITH_STATIC_CRT ON, which builds
+# antlr4_static with /MT. The rest of OpenModelica (and vcpkg's x64-windows
+# triplet) uses the dynamic CRT /MD, so linking OMEdit fails with LNK2038
+# (RuntimeLibrary mismatch). Force the dynamic CRT here.
+set(WITH_STATIC_CRT OFF CACHE BOOL "Statically link the CRT in the bundled ANTLR4 runtime" FORCE)
 omc_add_subdirectory(3rdParty/antlr4/runtime/Cpp)
 set(OMAntlr4_ANTLRJAR ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/antlr4/tool/antlr-4.8-complete.jar CACHE PATH "Path to antlr jar.")
 

@@ -5,6 +5,12 @@ project(OMPlot)
 ## to the install component 'omplot' if it is not explicitly changed.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME omplot)
 
+# MSVC: this client only consumes the shared MetaModelica runtime, so its
+# DLLDirection-annotated data symbols must come in as __declspec(dllimport).
+if(MSVC)
+  add_compile_definitions(IMPORT_INTO=1)
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)

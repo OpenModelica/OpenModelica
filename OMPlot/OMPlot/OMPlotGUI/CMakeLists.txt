@@ -49,7 +49,18 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
 endif ()
 
 target_link_libraries(OMPlotLib PUBLIC omqwt)
-target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
+# OMPlotLib calls the result-reader helpers (read_matlab4/read_csv/omc_matlab4_*)
+# internally. On MSVC those are DLLDirection-exported from OpenModelicaCompiler.dll
+# and OMPlotLib is compiled with IMPORT_INTO, so link OpenModelicaCompiler (its
+# import lib) rather than absorbing a second static copy of OpenModelicaRuntimeC -
+# a copy that OMEdit, which links both DLLs, would otherwise see twice. Elsewhere
+# OpenModelicaRuntimeC is itself a shared library, so the plain runtime link is
+# fine and kept.
+if(MSVC)
+  target_link_libraries(OMPlotLib PUBLIC OpenModelicaCompiler)
+else()
+  target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
+endif()
 # Result files: the Rust omc_result library (also opens .arrow), or the C readers.
 # PUBLIC, so OMEdit (which links OMPlotLib) follows the same choice.
 if(OM_RUST_RESULT_READERS)
@@ -75,33 +86,7 @@ target_link_libraries(OMPlot PRIVATE OMPlotLib)
 install(TARGETS OMPlotLib)
 omc_install_gui_client(OMPlot)
 
-if(MINGW)
-  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
-
-  # Find windeployqt6
-  find_program(WINDEPLOYQT_EXECUTABLE
-    NAMES windeployqt windeployqt6
-    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
-    REQUIRED
-  )
-
-  install(CODE "
-    message(STATUS \"Running windeployqt6 on OMPlot...\")
-    execute_process(
-      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
-        --no-compiler-runtime
-        --no-system-d3d-compiler
-        --no-quick-import
-        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
-        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
-        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMPlot.exe\"
-      RESULT_VARIABLE WINDEPLOYQT_RESULT
-      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
-      ERROR_VARIABLE  WINDEPLOYQT_ERROR
-    )
-    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
-      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
-    endif()
-    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
-  ")
+# Bundle the Qt runtime next to OMPlot.exe: MinGW/MSYS2 and native MSVC.
+if(MINGW OR (MSVC AND NOT CMAKE_CROSSCOMPILING))
+  omc_windeployqt(OMPlot)
 endif()

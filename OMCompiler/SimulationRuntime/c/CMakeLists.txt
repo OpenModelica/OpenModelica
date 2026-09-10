@@ -68,14 +68,20 @@ add_subdirectory(gc)
 add_subdirectory(meta)
 add_subdirectory(util)
 
-# For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
-# It has some dll exporting issues in it that need to be resolved.
+# On MSVC OpenModelicaRuntimeC is a static library that gets absorbed whole into
+# OpenModelicaCompiler.dll (and SimulationRuntimeC.dll). The DLLDirection-
+# annotated runtime symbols are re-exported from there; the pure consumers
+# (omc.exe, libOMCDLL, the Qt GUI clients) import them by compiling with
+# IMPORT_INTO. Anything that *defines* those symbols - the generated omc_* code
+# in bomc / OpenModelicaCompiler, the *_omc.cpp runtime - must keep
+# DLLDirection == DLLExport, i.e. must NOT get IMPORT_INTO, so it is set narrowly
+# on the consumers (OpenModelicaCompiler's INTERFACE, each GUI client) rather
+# than on this library's INTERFACE.
 if(MSVC)
   add_library(OpenModelicaRuntimeC STATIC)
 else()
   add_library(OpenModelicaRuntimeC SHARED)
 endif()
-
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
 target_link_libraries(OpenModelicaRuntimeC
@@ -90,6 +96,10 @@ target_link_libraries(OpenModelicaRuntimeC
 # to use winsock2.h in some 3rdParty libraries and the two can not be used simultaneously.
 # winsock2.h is backwards compatible with winsock.h.
 target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
+# NOMINMAX: keep windows.h from defining the min()/max() function-like macros,
+# which otherwise break std::min/std::max and std::numeric_limits<>::max() in
+# C++ consumers (e.g. Compiler/runtime/OMGraphics_omc.cpp). Inert off Windows.
+target_compile_definitions(OpenModelicaRuntimeC PUBLIC NOMINMAX)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)

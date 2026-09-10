@@ -60,11 +60,11 @@ This example tests quadrature functions:
 The function <code>funB</code> defines the spatial distribution of the flux density with respect to the rotor surface.
 </p>
 <p>
-As the rotor position increases, the flux linkage of a coil of width <code>&beta;</code> is caculated 
+As the rotor position increases, the flux linkage of a coil of width <code>&beta;</code> is caculated
 by integration over the interval <code>[pos + &pi;/2 - beta/2, pos + &pi;/2 + &beta;/2]</code>.
 </p>
 <p>
-The maximum of the flux linkage <code>psi0</code> is calculated analytically. 
+The maximum of the flux linkage <code>psi0</code> is calculated analytically.
 </p>
 <ul>
 <li><code>psi1</code> is the result of the moving integral using <strong>d=1 trapezoidal rule</strong></li>
@@ -75,7 +75,7 @@ The maximum of the flux linkage <code>psi0</code> is calculated analytically.
 <li><code>psi6</code> is the result of the moving integral using <strong>d=6 Newton-Cotes</strong></li>
 </ul>
 <p>
-At <code>time = 0</code>, the positive maximum of flux density distribution is at <code>pos = &pi;/2</code>, 
+At <code>time = 0</code>, the positive maximum of flux density distribution is at <code>pos = &pi;/2</code>,
 the coil spans the angle <code>[&pi;/2; - &beta;/2, &pi;/2; + &beta;/2]</code>. Therefore the flux linkage has a maximum.
 </p>
 <p>
@@ -133,7 +133,7 @@ Since flux linkage is not differentiable, a derivative with first-order lag is u
 
 <h4>Description</h4>
 <p>
-Compute definite integral over function f(u,...) from u=a up to u=b using the 
+Compute definite integral over function f(u,...) from u=a up to u=b using the
 <a href=\\\"https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas\\\">closed Newton-Cotes formulas</a>.
 </p>
 <p>
@@ -176,7 +176,7 @@ Compute definite integral over function f(u,...) from u=a up to u=b using the
 
 <h4>Description</h4>
 <p>
-Compute definite integral over function f(u,...) from u=a up to u=b using the 
+Compute definite integral over function f(u,...) from u=a up to u=b using the
 <a href=\\\"https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas\\\">closed Newton-Cotes formulas</a>.
 </p>
 <p>

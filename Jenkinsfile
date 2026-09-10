@@ -5,6 +5,7 @@ def shouldWeBuildEnterpriseLinux
 def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
+def shouldWeBuildWindowsMSVC
 def shouldWeRunTests
 def shouldWeRunRustTests
 
@@ -25,6 +26,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_WINDOWS', defaultValue: false, description: 'Build with Windows using CMake')
+    booleanParam(name: 'BUILD_WINDOWS_MSVC', defaultValue: false, description: 'Build with native MSVC (Visual Studio + Ninja + vcpkg) using CMake')
     booleanParam(name: 'BUILD_ALPINE', defaultValue: false, description: 'Build with Alpine (musl libc) using CMake')
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
@@ -61,6 +63,7 @@ pipeline {
           shouldWeBuildFedora = buildFlags.shouldWeBuildFedora
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
+          shouldWeBuildWindowsMSVC = buildFlags.shouldWeBuildWindowsMSVC
           shouldWeRunTests = buildFlags.shouldWeRunTests
           shouldWeRunRustTests = buildFlags.shouldWeRunRustTests
         }
@@ -269,6 +272,30 @@ pipeline {
                 '-DCMAKE_BUILD_TYPE=Release',
                 '-DCMAKE_INSTALL_PREFIX=build',
                 '-G "MSYS Makefiles"'])
+            }
+          }
+        }
+
+        // Native MSVC (Visual Studio + Ninja + vcpkg), in addition to the OMDev
+        // (MSYS2) Windows build above. Opt-in: PR label 'CI/Build Windows MSVC'
+        // or the BUILD_WINDOWS_MSVC parameter. Needs an agent with Visual Studio
+        // 2022 (Desktop C++); see common.buildOMC_MSVC().
+        stage('cmake-MSVC') {
+          agent {
+            node {
+              label 'windows-no-release'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildWindowsMSVC }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.buildOMC_MSVC('msvc-ninja')
             }
           }
         }
