@@ -20,6 +20,7 @@ function(omc_result_reader_library)
   set(_cargo_cmd build)
   set(_target_flag "")
   set(_out ${_target_dir}/release)
+  set(_env ${CMAKE_COMMAND} -E env)
   if(RUST_OMC_TARGET)
     set(_target_flag --target ${RUST_OMC_TARGET})
     set(_out ${_target_dir}/${RUST_OMC_TARGET}/release)
@@ -27,6 +28,11 @@ function(omc_result_reader_library)
       set(_cargo_cmd xwin build)
     elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
       set(_cargo_cmd zigbuild)
+      # zig ships no Apple frameworks, so the link needs the SDK (CoreFoundation,
+      # via chrono's iana-time-zone). ld64 would otherwise name the dylib by its
+      # path in this build tree; @rpath defers that to whoever loads it.
+      list(APPEND _env "SDKROOT=${CMAKE_OSX_SYSROOT}"
+           "RUSTFLAGS=-Clink-arg=-Wl,-install_name,@rpath/libomc_result.dylib")
     endif()
   endif()
   if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")
@@ -52,7 +58,7 @@ function(omc_result_reader_library)
     OUTPUT ${_lib}
     WORKING_DIRECTORY ${_workspace}
     JOB_SERVER_AWARE TRUE
-    COMMAND ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --target-dir ${_target_dir} ${_target_flag} -p openmodelica_result_capi
+    COMMAND ${_env} ${CARGO_EXECUTABLE} ${_cargo_cmd} --release --target-dir ${_target_dir} ${_target_flag} -p openmodelica_result_capi
     DEPENDS ${_rust_srcs}
     COMMENT "Rust: building libomc_result (result-file readers for OMEdit/OMPlot)"
     VERBATIM)

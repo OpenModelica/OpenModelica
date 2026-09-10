@@ -108,6 +108,8 @@ fn main() {
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
         s.spawn(|| build_lapack_dylink(&crate_dir, &out_dir));
     });
+
+    publish_prebuilt(&out_dir);
 }
 
 /// Build the **fused** artifact runtime: the FMI 3.0 adapter, the in-wasm driver
@@ -128,6 +130,9 @@ fn build_wasip1_fused_adapter(
     if let Ok(path) = std::env::var("OMC_FMI3_FUSED_WASIP1") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
     let adapter_dir = crate_dir
@@ -546,6 +551,9 @@ fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(&dest, &stamp) {
+        return;
+    }
 
     let (hash, files) = hash_inputs(&lapack_dir, &[]);
     let hash = format!("{hash}-{}", wasm_opt_key());
@@ -729,6 +737,17 @@ fn build_solver_dylinks(out_dir: &Path, sundials_dir: Option<&Path>, adapters: &
                 copy(&dir.join(&f), &out_dir.join(&f));
             }
         }
+        return;
+    }
+    // All or nothing: linking one group needs the wasm toolchain the hand-over
+    // exists to avoid, so a partial set is no better than none.
+    let stamp = out_dir.join("solver_dylinks.hash");
+    if all.iter().all(|g| {
+        ["", "_stub"].iter().all(|kind| {
+            let f = out_dir.join(format!("solver_{}{kind}.wasm", g.name));
+            prebuilt_in(&f, &stamp)
+        })
+    }) {
         return;
     }
     if sundials_dir.is_none() {
@@ -1250,6 +1269,9 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(&dest, &stamp) {
+        return;
+    }
 
     // Every crate the adapter reaches through a `path` dep, transitively: the
     // runtime and sim_meta are only the first hop — sim_meta reaches daskr, and a
@@ -1368,6 +1390,9 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     if let Ok(path) = std::env::var("OMC_WASM_EXTERNAL_C") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -1592,6 +1617,9 @@ fn build_jit_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, dest:
         std::fs::write(&stamp, format!("override:{path}")).ok();
         return;
     }
+    if prebuilt_in(dest, &stamp) {
+        return;
+    }
 
     // Cache hit: the cached wasm is present and its inputs are unchanged.
     if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(hash) {
@@ -1656,6 +1684,9 @@ fn build_wasip1_runtime(
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -1732,6 +1763,9 @@ fn build_wasip1_interactive_runtime(
     if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1_INTERACTIVE") {
         copy(Path::new(&path), &dest);
         std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    if prebuilt_in(&dest, &stamp) {
         return;
     }
 
@@ -1943,6 +1977,46 @@ fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) {
 fn copy(from: &Path, to: &Path) {
     std::fs::copy(from, to)
         .unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
+}
+
+/// The blobs this script produces are wasm whatever platform omc itself is being
+/// built for, so a multi-stage CI builds them once and hands them over:
+/// `OMC_WASM_PREBUILT_OUT` collects them, `OMC_WASM_PREBUILT_IN` takes them. A
+/// build reading them needs no wasm toolchain, which is what lets the Windows
+/// and macOS cross builds run without one. Missing from the directory, a blob is
+/// built as usual. Trusted, not checked, like the per-blob overrides above.
+///
+/// True when `dest` was filled from the hand-over, in which case the caller is
+/// done: the stamp is written so nothing downstream rebuilds it either.
+fn prebuilt_in(dest: &Path, stamp: &Path) -> bool {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_IN");
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else { return false };
+    let name = dest.file_name().expect("a blob has a file name");
+    let src = PathBuf::from(dir).join(name);
+    if !src.is_file() {
+        return false;
+    }
+    copy(&src, dest);
+    std::fs::write(stamp, format!("prebuilt:{}", src.display())).ok();
+    true
+}
+
+/// Copy every blob in `out_dir` to `OMC_WASM_PREBUILT_OUT`, for a later build's
+/// `OMC_WASM_PREBUILT_IN`. Called once, after everything has been produced.
+fn publish_prebuilt(out_dir: &Path) {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_OUT");
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_OUT") else { return };
+    let dir = PathBuf::from(dir);
+    std::fs::create_dir_all(&dir).expect("create the wasm hand-over directory");
+    for e in std::fs::read_dir(out_dir).expect("read OUT_DIR").flatten() {
+        let p = e.path();
+        // The blobs only: not the nested cargo target directories, and not the
+        // FMU loaders (OMC_FMU_LOADERS_OUT's job).
+        let take = p.extension().is_some_and(|x| x == "wasm");
+        if take && p.is_file() {
+            copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
+        }
+    }
 }
 
 fn env(key: &str) -> String {

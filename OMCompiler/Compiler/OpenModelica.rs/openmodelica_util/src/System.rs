@@ -2408,6 +2408,22 @@ pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static HANDLER_INSTALLED: AtomicBool = AtomicBool::new(false);
 
+    // libc binds neither of these for Apple: SI_USER is only in the Linux
+    // modules, and its siginfo_t there is opaque with accessors while Apple's
+    // has plain fields.
+    #[cfg(target_vendor = "apple")]
+    const SI_USER: core::ffi::c_int = 0x10001; // <sys/signal.h>
+    #[cfg(not(target_vendor = "apple"))]
+    const SI_USER: core::ffi::c_int = libc::SI_USER;
+    #[cfg(target_vendor = "apple")]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid }
+    }
+    #[cfg(not(target_vendor = "apple"))]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid() }
+    }
+
     extern "C" fn alarm_handler(
         signo: core::ffi::c_int,
         si: *mut libc::siginfo_t,
@@ -2416,7 +2432,7 @@ pub fn alarm(seconds: i32) -> i32 {
         use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
             // Our own group broadcast coming back, not a second deadline.
-            if !si.is_null() && (*si).si_code == libc::SI_USER && (*si).si_pid() == libc::getpid() {
+            if !si.is_null() && (*si).si_code == SI_USER && si_pid(si) == libc::getpid() {
                 return;
             }
             if !ALARM_EXPIRED.swap(true, SeqCst) {
