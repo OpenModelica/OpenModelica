@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.21)
 # Qt-for-WebAssembly build of OMEdit. See HANDOFF.md.
 # Standalone configure (own scratch dir, NOT a build-* under the repo):
 #   source /opt/emsdk/emsdk_env.sh
-#   TC=/opt/Qt/6.10.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
+#   TC=/opt/Qt/6.11.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
 #   cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TC \
-#     -DQT_HOST_PATH=/opt/Qt/6.10.2/gcc_64 -S . -B /tmp/omedit-test
+#     -DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64 -S . -B /tmp/omedit-test
 project(OMEditQtWasm LANGUAGES C CXX)
 
 set(CMAKE_AUTOMOC ON)

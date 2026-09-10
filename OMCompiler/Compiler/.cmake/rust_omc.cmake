@@ -1722,7 +1722,7 @@ else()
 endif()
 
 function(omc_rust_omshell_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})
@@ -1771,7 +1771,7 @@ endfunction()
 # message when absent. Reads omc_rust_setup_wasm's _web_dir and file-scope
 # RUST_OMC_DIR.
 function(omc_rust_omnotebook_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})
@@ -1823,7 +1823,7 @@ endfunction()
 # Qt OMEdit web page: same shape as the OMShell/OMNotebook pages, pointed at the
 # build-tree OpenModelicaScriptingAPIQt sources (OMC_SCRIPTING_API_QT_DIR).
 function(omc_rust_omedit_qt_web_page)
-  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.10.2/wasm_singlethread"
+  set(OMSHELL_QT_WASM_PREFIX "/opt/Qt/6.11.2/wasm_singlethread"
       CACHE PATH "Qt-for-WebAssembly install prefix used to build the Qt OMShell web page.")
   set(_tc ${OMSHELL_QT_WASM_PREFIX}/lib/cmake/Qt6/qt.toolchain.cmake)
   if(NOT EXISTS ${_tc})

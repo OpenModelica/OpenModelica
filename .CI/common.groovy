@@ -752,8 +752,8 @@ Map nightlyTarget(String name) {
       // OpenBLAS, Boost and PThreads4W are fetched/built by windows-deps.cmake,
       // which the top-level CMakeLists includes when cross-compiling to Windows.
       configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
-      qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.10.2/msvc2022_64',
-           '-DQT_HOST_PATH=/opt/Qt/6.10.2/gcc_64',
+      qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/msvc2022_64',
+           '-DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64',
            // OpenSceneGraph's vcpkg port pulls in openimageio; Quick3D is the
            // animation backend that cross-builds (as in the wasm build).
            '-DOM_OMEDIT_ANIMATION_QUICK3D=ON'],
