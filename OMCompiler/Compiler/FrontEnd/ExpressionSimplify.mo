@@ -1861,10 +1861,13 @@ algorithm
     case ("change",DAE.CALL(expLst ={_}))
       then DAE.BCONST(false);
 
-    // sqrt function
+    // sqrt function; a negative argument is left for the generated code's
+    // assertion to report rather than folded to NaN.
     case("sqrt",DAE.CALL(expLst={e}))
       algorithm
-        r := sqrt(Expression.toReal(e));
+        r := Expression.toReal(e);
+        true := r >= 0.0;
+        r := sqrt(r);
       then
         DAE.RCONST(r);
 

@@ -141,13 +141,6 @@ pub(crate) fn compile_include_library(
     }
 }
 
-const INCLUDE_PREAMBLE: &str = "\
-/* No preamble: the Modelica specification gives an external \"C\" translation unit
-   nothing beyond what its own Include sources bring in, so omc must not add headers
-   or declarations here. A library that fails to compile is fixed upstream, or gets
-   `-std=`/`-include` flags in the library-testing configuration. */
-";
-
 #[cfg(not(target_arch = "wasm32"))]
 fn compile_include_tu(
     prefix: &str,
@@ -164,7 +157,8 @@ fn compile_include_tu(
     std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
-    std::fs::write(&tu, [INCLUDE_PREAMBLE, &includes.join("\n"), "\n", wrappers].concat())
+    let preamble = openmodelica_wasm_jit::model::INCLUDE_PREAMBLE;
+    std::fs::write(&tu, [preamble, &includes.join("\n"), "\n", wrappers].concat())
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);

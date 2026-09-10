@@ -566,10 +566,45 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
     }
 }
 
-pub fn systemCallParallel(_inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
-    // Fan-out N shell commands across a thread pool and collect the exit
-    // codes. Not used by code paths exercised today; defer until needed.
-    todo!("System.systemCallParallel: parallel shell-out not yet ported")
+/// `numThreads` workers pulling off a shared index, exit codes collected in
+/// input order (C's `systemCallWorkerThread`).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn systemCallParallel(inStrings: List<ArcStr>, numThreads: i32) -> List<i32> {
+    use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
+
+    let calls: Vec<ArcStr> = (&*inStrings).into_iter().cloned().collect();
+    if calls.is_empty() {
+        return metamodelica::nil();
+    }
+    if calls.len() == 1 {
+        return list_from_vec(vec![systemCall(calls[0].clone(), literal!(""))]);
+    }
+    let threads = (numThreads.max(1) as usize).min(calls.len());
+    let next = AtomicUsize::new(0);
+    let results: Vec<AtomicI32> = calls.iter().map(|_| AtomicI32::new(-1)).collect();
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                if i >= calls.len() {
+                    break;
+                }
+                results[i].store(systemCall(calls[i].clone(), literal!("")), Ordering::Relaxed);
+            });
+        }
+    });
+    list_from_vec(results.into_iter().map(AtomicI32::into_inner).collect())
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn systemCallParallel(inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
+    // No OS threads and no subprocesses in the browser; keep the shape.
+    list_from_vec(
+        (&*inStrings)
+            .into_iter()
+            .map(|c| systemCall(c.clone(), literal!("")))
+            .collect(),
+    )
 }
 
 pub fn spawnCall(_path: ArcStr, _str: ArcStr) -> i32 {

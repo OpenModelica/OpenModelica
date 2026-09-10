@@ -124,18 +124,13 @@ pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {
 fn sim_subs_into(subs: &List<Arc<DAE::Subscript>>, s: &mut String) -> Result<()> {
     for sub in &**subs {
         match &**sub {
-            DAE::Subscript::INDEX { exp } => match &**exp {
-                DAE::Exp::ICONST { integer } => {
+            DAE::Subscript::INDEX { exp } => match const_index_value(exp) {
+                Some(ix) => {
                     s.push('[');
-                    s.push_str(&integer.to_string());
+                    s.push_str(&ix.to_string());
                     s.push(']');
                 }
-                DAE::Exp::ENUM_LITERAL { index, .. } => {
-                    s.push('[');
-                    s.push_str(&index.to_string());
-                    s.push(']');
-                }
-                _ => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
+                None => return Err("CodegenWasmJit: non-constant subscript in simulation cref"),
             },
             _ => return Err("CodegenWasmJit: unsupported subscript in simulation cref"),
         }
@@ -200,10 +195,15 @@ pub(super) fn is_jac_column_elem_key(key: &str) -> bool {
     last.starts_with("dummyVar") && qual.rsplit('.').next().is_some_and(|m| m.starts_with("$pDER"))
 }
 
-pub(super) fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
+/// `b[Boolean]` is indexed `false, true`, but a Boolean subscript expression
+/// evaluates to 0/1. C's `daeSubscriptExp` adds the same bias.
+pub(crate) const BOOL_SUB_BIAS: i32 = 1;
+
+pub(crate) fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
     match exp {
         DAE::Exp::ICONST { integer } => Some(*integer),
         DAE::Exp::ENUM_LITERAL { index, .. } => Some(*index),
+        DAE::Exp::BCONST { bool } => Some(*bool as i32 + BOOL_SUB_BIAS),
         _ => None,
     }
 }

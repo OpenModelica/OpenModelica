@@ -144,8 +144,7 @@ fn emit_sim_flat_index(ctx: &mut FnCtx, dims: &[u32], sub_exps: &[Arc<DAE::Exp>]
     for (k, exp) in sub_exps.iter().enumerate() {
         ctx.emit(we::Instruction::I32Const(dims[k] as i32));
         ctx.emit(we::Instruction::I32Mul);
-        let wt = compile_exp(ctx, exp)?;
-        coerce(ctx, wt, WTy::I32);
+        emit_subscript_index(ctx, exp)?;
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::I32Sub); // e_k - 1 (1-based -> 0-based)
         ctx.emit(we::Instruction::I32Add);
