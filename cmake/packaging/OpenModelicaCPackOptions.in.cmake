@@ -1,11 +1,3 @@
-
-# cpack reads this file once per generator, with CPACK_GENERATOR set to the one it is
-# about to run, so everything here can depend on which kind of package is being built.
-# Settings that hold for every generator belong in the top-level CMakeLists.txt instead,
-# before include(CPack) -- see the Packaging section there.
-#
-# set(CPACK_RESOURCE_FILE_README "${PROJECT_SOURCE_DIR}/README.md")
-
 # dpkg and rpm both refuse a version that does not start with a digit, and the OpenModelica
 # version is a `git describe` that starts with a "v" (and, without tags to describe against,
 # may be a bare commit hash). cmake/omc_git_revision.cmake turns that into a package version
@@ -18,6 +10,26 @@ if(CPACK_GENERATOR MATCHES "^(DEB|RPM)$" AND "@OM_PACKAGE_VERSION@" STREQUAL "")
     "'@SOURCE_REVISION_BASE@'. Configure against a checkout whose tags are present "
     "(`git fetch --tags`, and no --depth on the clone), or put the version to package in "
     "OMVERSION.txt.")
+endif()
+
+
+# No source packages. CPack's source packaging archives the whole source directory while
+# ignoring only the VCS directories, so it includes the build directory -- and with it the
+# multi-gigabyte archive it is at that moment writing into build_cmake/_CPack_Packages/.
+# It never errors, it just grows, which looks like cpack hanging.
+#
+# It cannot be switched off from the project: setting CPACK_SOURCE_GENERATOR to "" does
+# nothing, because CPack treats an empty value as unset and restores its own default. So
+# refuse here. CPACK_INSTALLED_DIRECTORIES is set by CPackSourceConfig.cmake and by nothing
+# else, which is what distinguishes a source run from a plain `cpack -G TXZ`.
+#
+# Release tarballs are made with git-archive-all in the apt-build repository, which handles
+# the dozen git submodules the sources are spread over.
+if(CPACK_INSTALLED_DIRECTORIES)
+  message(FATAL_ERROR
+    "OpenModelica does not build source packages: CPack would archive the build directory "
+    "into itself. Use git-archive-all (apt-build repository) for a source tarball, or "
+    "`cpack --config CPackConfig.cmake -G TXZ` for an archive of the *installation*.")
 endif()
 
 
@@ -54,11 +66,32 @@ if(CPACK_GENERATOR STREQUAL "DEB")
   # See the file common.cmake for a list of the components.
   set(CPACK_DEB_COMPONENT_INSTALL ON)
 
-  # use dpkg-shlibdeps to generate better package dependency list.
-  # set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  # Let dpkg-shlibdeps work out the Depends: from what the binaries actually link, the way
+  # dh_shlibdeps did for the Autoconf packaging. Without it the packages carry no Depends at
+  # all: they install into a clean container and then omc does not start, because nothing
+  # pulled in libcurl, LAPACK or BLAS.
+  #
+  # PRIVATE_DIRS names the directory our own shared libraries live in. They have no package
+  # of their own to be found in, so dpkg-shlibdeps has to be told where they are or it fails
+  # with "no dependency information found" for every one of them.
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+      "${CPACK_TEMPORARY_INSTALL_DIRECTORY}/@CMAKE_INSTALL_LIBDIR@")
 
   # Allow setting our own inter-component dependencies
   set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
+
+  # Simulating a model means generating C and building it, so omc needs a compiler, a make
+  # and a cmake at *run* time. dpkg-shlibdeps cannot find these -- omc executes them, it
+  # does not link them -- so they are named here.
+  #
+  # gfortran is here for its libgfortran.so *symlink*, not for the compiler: the generated
+  # makefile links -lgfortran (the reference LAPACK needs it) and the linker will not take
+  # the libgfortran.so.5 that libgfortran5 ships. dpkg-shlibdeps only ever finds the
+  # runtime library, so the -dev half has to be asked for by name. The RPM spec has
+  # required gcc-gfortran for the same reason.
+  set(CPACK_DEBIAN_OMC_PACKAGE_DEPENDS
+      "clang, cmake, build-essential, gfortran, libexpat1-dev, liblapack-dev, zip, unzip")
 
   # Set the section control field
   # https://www.debian.org/doc/debian-policy/ch-archive.html#s-subsections
