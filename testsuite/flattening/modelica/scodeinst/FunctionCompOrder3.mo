@@ -21,7 +21,7 @@ end FunctionCompOrder3;
 // function f
 //   input Real x;
 //   output Real y;
-//   protected parameter Integer n = 3;
+//   protected final parameter Integer n = 3;
 //   protected Real[n] z = {1.0, 1.0, 1.0};
 // algorithm
 //   y := z[1];
