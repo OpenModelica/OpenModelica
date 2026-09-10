@@ -30,7 +30,7 @@ end CevalRecord9;
 // class CevalRecord9
 //   parameter Real AAmb = 1.0;
 //   final parameter Real ambientConstructions.material.c = 1.0 / AAmb;
-//   parameter Real ambientConstructions.construction.layer.material.c = ambientConstructions.material.c;
+//   parameter Real ambientConstructions.construction.layer.material.c = 1.0;
 //   parameter Real ambientConstructions.construction.material.c = 1.0;
 // end CevalRecord9;
 // endResult

@@ -25,7 +25,6 @@ Modelica.Electrical.Analog.Examples.CompareTransformers.mos \
 Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mos \
 Modelica.Electrical.Analog.Examples.DifferenceAmplifier.mos \
 Modelica.Electrical.Analog.Examples.HeatingMOSInverter.mos \
-Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate.mos \
 Modelica.Electrical.Analog.Examples.HeatingRectifier.mos \
 Modelica.Electrical.Analog.Examples.HeatingResistor.mos \
 Modelica.Electrical.Analog.Examples.IdealTriacCircuit.mos \
@@ -153,7 +152,6 @@ Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance.mos 
 Modelica.Math.Nonlinear.Examples.quadratureLobatto3.mos \
 Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint.mos \
 Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint.mos \
-Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque.mos \
@@ -282,6 +280,8 @@ Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mos \
 Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mos \
+Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate.mos \
+Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

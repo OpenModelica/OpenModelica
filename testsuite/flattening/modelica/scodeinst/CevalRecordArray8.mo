@@ -46,13 +46,13 @@ end CevalRecordArray8;
 //   final parameter Boolean multiZone.theZon[1,1].roo.datConExtWin[1].isFloor = false;
 //   final parameter Real multiZone.theZon[1,1].roo.solRadExc.datConExtWin[1].til = 0.0;
 //   final parameter Boolean multiZone.theZon[1,1].roo.solRadExc.datConExtWin[1].isFloor = false;
-//   final parameter Boolean multiZone.theZon[1,1].roo.solRadExc.isFloorConExtWin[1] = false;
+//   final parameter Boolean multiZone.theZon[1,1].roo.solRadExc.isFloorConExtWin[1] = multiZone.theZon[1,1].roo.isFloorConExtWin[1];
 //   protected final parameter Boolean multiZone.theZon[1,1].roo.isFloorConExtWin[1] = false;
 //   final parameter Real multiZone.theZon[2,1].roo.datConExtWin[1].til = 0.0;
 //   final parameter Boolean multiZone.theZon[2,1].roo.datConExtWin[1].isFloor = false;
 //   final parameter Real multiZone.theZon[2,1].roo.solRadExc.datConExtWin[1].til = 0.0;
 //   final parameter Boolean multiZone.theZon[2,1].roo.solRadExc.datConExtWin[1].isFloor = false;
-//   final parameter Boolean multiZone.theZon[2,1].roo.solRadExc.isFloorConExtWin[1] = false;
+//   final parameter Boolean multiZone.theZon[2,1].roo.solRadExc.isFloorConExtWin[1] = multiZone.theZon[2,1].roo.isFloorConExtWin[1];
 //   protected final parameter Boolean multiZone.theZon[2,1].roo.isFloorConExtWin[1] = false;
 // end CevalRecordArray8;
 // endResult

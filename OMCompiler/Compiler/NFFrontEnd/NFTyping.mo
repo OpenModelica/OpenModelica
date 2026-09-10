@@ -1009,7 +1009,6 @@ protected
   Component c;
   Binding binding;
   String name;
-  Variability comp_var;
   Attributes attrs;
   Type ty;
 algorithm
@@ -1040,12 +1039,7 @@ algorithm
             binding := TypeCheck.matchBinding(binding, c.ty, name, node, context);
           end if;
 
-          comp_var := checkComponentBindingVariability(name, c, binding, context);
-
-          if comp_var <> attrs.variability then
-            attrs.variability := comp_var;
-            c.attributes := attrs;
-          end if;
+          checkComponentBindingVariability(name, c, binding, context);
         else
           if Binding.isBound(c.condition) or InstContext.inInstanceAPI(context) then
             binding := Binding.INVALID_BINDING(binding, ErrorExt.getCheckpointMessages());
@@ -1096,13 +1090,7 @@ algorithm
       algorithm
         name := InstNode.name(component);
         binding := typeBinding(c.binding, InstContext.set(context, NFInstContext.BINDING));
-        comp_var := checkComponentBindingVariability(name, c, binding, context);
-
-        if comp_var <> attrs.variability then
-          attrs.variability := comp_var;
-          c.attributes := attrs;
-        end if;
-
+        checkComponentBindingVariability(name, c, binding, context);
         c.binding := binding;
         InstNode.updateComponent(c, node);
       then
@@ -1137,7 +1125,6 @@ function checkComponentBindingVariability
   input Component component;
   input Binding binding;
   input InstContext.Type context;
-  output Variability var;
 protected
   Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
 algorithm
@@ -1158,17 +1145,6 @@ algorithm
     if not InstContext.inRelaxed(context) then
       fail();
     end if;
-  end if;
-
-  // Mark parameters that have a structural cref as binding as also
-  // structural. This is perhaps not optimal, but is required right now
-  // to avoid structural singularity and other issues.
-  if comp_var == Variability.PARAMETER and
-     ((bind_var == Variability.STRUCTURAL_PARAMETER and Binding.isCrefExp(binding)) or
-      bind_var == Variability.NON_STRUCTURAL_PARAMETER) then
-    var := bind_var;
-  else
-    var := comp_var;
   end if;
 end checkComponentBindingVariability;
 
