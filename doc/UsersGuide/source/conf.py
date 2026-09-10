@@ -424,8 +424,12 @@ epub_copyright = copyright
 # The format is a list of tuples containing the path and title.
 #epub_post_files = []
 
-# A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
+# A list of files that should not be packed into the epub file. The video is
+# shown on the HTML pages only -- EPUB has no core media type for it, so Sphinx
+# leaves it out of the manifest and warns. It is skipped in omedit.rst with
+# 'only:: html and not epub', since the EPUB builder's format is 'html' too and
+# a plain 'only:: html' would still emit it.
+epub_exclude_files = ['search.html', '_static/interactive-simulation.mp4']
 
 # The depth of the table of contents in toc.ncx.
 #epub_tocdepth = 3

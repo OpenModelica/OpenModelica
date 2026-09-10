@@ -90,9 +90,7 @@ cpack_add_component(omlibrary
                     DESCRIPTION "The cache of Modelica libraries that omc can install without network access."
                     )
 
-# Named 'doc', not 'docs': CPack derives its per-component variables by
-# upper-casing the name, and zlib (vendored in OMSimulator) already installs into
-# a component called 'Docs'. It also gives the Debian convention, openmodelica-doc.
+## Documentation
 cpack_add_component(doc
                     DISPLAY_NAME "Documentation"
                     DESCRIPTION "The OpenModelica User's Guide and the system documentation."

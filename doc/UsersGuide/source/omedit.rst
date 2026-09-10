@@ -1259,9 +1259,11 @@ in real-time (with a scaling factor just like simulation flag
 factor during the interactive simulation). In the synchronous mode, the
 speed of the simulation does not directly correspond to real-time.
 
-.. raw:: html
+.. only:: html and not epub
 
-   <video controls width="640" src="_static/interactive-simulation.mp4"></video>
+   .. raw:: html
+
+      <video controls width="640" src="_static/interactive-simulation.mp4"></video>
 
 How to Create User Defined Shapes - Icons
 -----------------------------------------

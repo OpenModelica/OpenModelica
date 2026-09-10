@@ -30,7 +30,7 @@ Sphinx and that Python environment have to be the same one: `conf.py`, the
 `requirements.txt`. Configuring prints which `sphinx-build` and which interpreter
 were picked, so a mismatch is visible before the build starts.
 
-### GITHUB_AUTH
+### GITHUB_AUTH (optional)
 
 Create a read-only personal access token (API token) on GitHub.com and define an
 environment variable `GITHUB_AUTH` with your secret API token.

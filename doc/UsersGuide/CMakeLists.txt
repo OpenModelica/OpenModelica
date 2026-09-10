@@ -61,10 +61,51 @@ foreach(tool SPHINX_BUILD_EXECUTABLE PANDOC_EXECUTABLE INKSCAPE_EXECUTABLE GNUPL
   endif()
 endforeach()
 
-# sphinx-build and the interpreter that runs the helper scripts have to come
-# from the same environment: conf.py, the openmodelica extension and
-# resolve-crossref.py all import from source/requirements.txt. Report both so a
-# mismatch is visible while configuring rather than halfway through a build.
+# conf.py, the openmodelica extension and the helper scripts all import from
+# source/requirements.txt, so an interpreter without those packages cannot build
+# the guide. Say so now: otherwise the first missing one surfaces as a traceback
+# several steps into a build that has already spent minutes running omc.
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_requirements.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}/source/requirements.txt"
+  OUTPUT_VARIABLE OM_USERSGUIDE_MISSING_REQUIREMENTS
+  ERROR_VARIABLE OM_USERSGUIDE_REQUIREMENTS_ERROR
+  RESULT_VARIABLE OM_USERSGUIDE_REQUIREMENTS_RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(NOT OM_USERSGUIDE_REQUIREMENTS_RESULT EQUAL 0)
+  message(FATAL_ERROR "Could not check the User's Guide requirements with "
+                      "${Python3_EXECUTABLE}: ${OM_USERSGUIDE_REQUIREMENTS_ERROR}")
+endif()
+
+if(OM_USERSGUIDE_MISSING_REQUIREMENTS)
+  string(REPLACE "\n" " " OM_USERSGUIDE_MISSING_REQUIREMENTS
+                 "${OM_USERSGUIDE_MISSING_REQUIREMENTS}")
+  message(FATAL_ERROR
+    "${Python3_EXECUTABLE} is missing: ${OM_USERSGUIDE_MISSING_REQUIREMENTS}\n"
+    "Install them with\n"
+    "  ${Python3_EXECUTABLE} -m pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/source/requirements.txt\n"
+    "or build against an interpreter that already has them, for instance a "
+    "virtualenv, with\n"
+    "  -DPython3_EXECUTABLE=<venv>/bin/python3 -DSPHINX_BUILD_EXECUTABLE=<venv>/bin/sphinx-build")
+endif()
+
+# sphinx-build has to come from that same environment: the extension runs inside
+# *its* interpreter, not the one checked above. Both are cached on the first
+# configure, so an activated virtualenv does not change them afterwards -- only
+# passing them explicitly does.
+get_filename_component(OM_USERSGUIDE_PYTHON_DIR "${Python3_EXECUTABLE}" DIRECTORY)
+get_filename_component(OM_USERSGUIDE_SPHINX_DIR "${SPHINX_BUILD_EXECUTABLE}" DIRECTORY)
+if(NOT OM_USERSGUIDE_PYTHON_DIR STREQUAL OM_USERSGUIDE_SPHINX_DIR)
+  message(WARNING
+    "sphinx-build and the Python interpreter come from different places:\n"
+    "  ${SPHINX_BUILD_EXECUTABLE}\n"
+    "  ${Python3_EXECUTABLE}\n"
+    "The guide is built by the first and its requirements were checked against "
+    "the second, so this only works if both environments have them.")
+endif()
+
 message(STATUS "User's Guide: ${SPHINX_BUILD_EXECUTABLE}")
 message(STATUS "User's Guide: ${Python3_EXECUTABLE}")
 message(STATUS "User's Guide: documenting ${OM_USERSGUIDE_OMHOME}")
@@ -181,11 +222,31 @@ add_custom_target(usersguide
   COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
           "${SPHINX_BUILD_EXECUTABLE}" -b html -t nomathjax
           -d "${UG_BUILD}/doctrees" "${UG_SOURCE}" "${UG_BUILD}/html"
+  # Sphinx signs off with the output directory relative to where it ran, which
+  # is not somewhere the reader of a build log has any reason to know about.
+  COMMAND ${CMAKE_COMMAND} -E echo "User's Guide: ${UG_BUILD}/html/index.html"
   WORKING_DIRECTORY "${UG_WORKDIR}"
   COMMENT "Building the OpenModelica User's Guide"
   VERBATIM)
 
 add_dependencies(usersguide usersguide-figures)
+
+## The guide as an EPUB #############################################################################
+
+# Published alongside the HTML for offline reading. Same options as the HTML
+# build: the EPUB has no MathJax to load either.
+add_custom_target(usersguide-epub
+  DEPENDS "${UG_SOURCE}/githubreleases.rst"
+  COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
+          "${SPHINX_BUILD_EXECUTABLE}" -b epub -t nomathjax
+          -d "${UG_BUILD}/doctrees-epub" "${UG_SOURCE}" "${UG_BUILD}/epub"
+  COMMAND ${CMAKE_COMMAND} -E echo
+          "User's Guide: ${UG_BUILD}/epub/OpenModelicaUsersGuide.epub"
+  WORKING_DIRECTORY "${UG_WORKDIR}"
+  COMMENT "Building the OpenModelica User's Guide as EPUB"
+  VERBATIM)
+
+add_dependencies(usersguide-epub usersguide-figures)
 
 ## The guide as a PDF ###############################################################################
 
@@ -200,6 +261,7 @@ if(LATEXMK_EXECUTABLE)
     COMMAND ${CMAKE_COMMAND} -E env ${UG_ENV}
             "${SPHINX_BUILD_EXECUTABLE}" -b latex
             -d "${UG_BUILD}/doctrees-latex" "${UG_SOURCE}" "${UG_BUILD}/latex"
+    COMMAND ${CMAKE_COMMAND} -E echo "User's Guide LaTeX sources: ${UG_BUILD}/latex"
     WORKING_DIRECTORY "${UG_WORKDIR}"
     COMMENT "Generating the LaTeX sources of the OpenModelica User's Guide"
     VERBATIM)
@@ -212,6 +274,8 @@ if(LATEXMK_EXECUTABLE)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/prepare_latex.cmake"
     COMMAND ${CMAKE_COMMAND} -E chdir "${UG_BUILD}/latex"
             "${LATEXMK_EXECUTABLE}" -pdf OpenModelicaUsersGuide.tex
+    COMMAND ${CMAKE_COMMAND} -E echo
+            "User's Guide: ${UG_BUILD}/latex/OpenModelicaUsersGuide.pdf"
     COMMENT "Compiling the OpenModelica User's Guide to PDF"
     VERBATIM)
 
@@ -222,8 +286,6 @@ endif()
 
 ## Installation #####################################################################################
 
-# OPTIONAL so that installing or packaging a build tree in which the guide was
-# never built is not an error: it is an opt-in target that is not part of 'all'.
 install(DIRECTORY "${OM_USERSGUIDE_HTML_DIR}/"
         DESTINATION "${CMAKE_INSTALL_DOCDIR}/UsersGuide/html"
         COMPONENT doc
@@ -232,6 +294,7 @@ install(DIRECTORY "${OM_USERSGUIDE_HTML_DIR}/"
         PATTERN ".buildinfo" EXCLUDE)
 
 install(FILES "${UG_BUILD}/latex/OpenModelicaUsersGuide.pdf"
+              "${UG_BUILD}/epub/OpenModelicaUsersGuide.epub"
         DESTINATION "${CMAKE_INSTALL_DOCDIR}/UsersGuide"
         COMPONENT doc
         OPTIONAL)
