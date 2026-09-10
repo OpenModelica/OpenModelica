@@ -982,6 +982,7 @@ impl UnitParser {
         self.add_derived(d("plane angle", "revolutions", "rev", "rad", 0, 31415926535897932, 5000000000000000, 0, 1, 1.0));
         self.add_derived(d("angular velocity", "revolutions per minute", "rpm", "rad/s", 0, 31415926535897932, 300000000000000000, 0, 1, 1.0));
         self.add_derived(d("energy", "watt hour", "Wh", "J", 0, 3600, 1, 0, 1, 1.0));
+        self.add_derived(d("energy", "electron volt", "eV", "J", -19, 1602176634, 1000000000, 0, 1, 1.0));
         self.add_derived(d("velocity", "knot", "kn", "m/s", 0, 1852, 3600, 0, 1, 1.0));
         self.add_derived(d("mass", "metric ton", "t", "kg", 3, 1, 1, 0, 1, 1.0));
         self.add_derived(d("volume", "litre", "l", "m3", 0, 1, 1000, 0, 1, 1.0));
