@@ -90,6 +90,7 @@ import BaseHashTable;
 import Builtin;
 import CheckModel;
 import ClassInf;
+import ClockIndexes;
 import CommonSubExpression.isCSECref;
 import ComponentReference;
 import ComponentReferenceBasics;
@@ -612,18 +613,22 @@ algorithm
 
     // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
     if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex, fmiDerInitFuncTree) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       // the FMIDERINIT jacobian is created here, i.e. after the functions have been
       // elaborated, so the functions it calls on its own have to be added now
       (modelInfo, literalsAcc, recordDeclsAcc) := addFmiDerInitFunctions(program, fmiDerInitFuncTree,
         BackendDAEUtil.getFunctions(inBackendDAE.shared), modelInfo, literalsAcc, recordDeclsAcc);
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
 
     // Collect FMI sim flags
     if isFMU then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       fmiSimulationFlags := createFMISimulationFlags();
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
     end if;
 
     // collect symbolic jacobians in linear loops of the overall jacobians
@@ -14193,9 +14198,10 @@ protected
   BackendDAE.EqSystems eqs;
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
-  String strMatchingAlgorithm, strIndexReductionMethod;
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
-  array<Integer> match1,match2;
+  BackendDAE.StrongComponents comps;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> match1,match2,mapIncRowEqn;
   Boolean debug = false;
   UnorderedSet<DAE.ComponentRef> initialUnknowns, indepCrefSet;
 algorithm
@@ -14236,18 +14242,21 @@ algorithm
     end if;
   end for;
 
-  // Calculate adjacencyMatrix, with the newly added equations and vars
-  (outAdjacencyMatrix, _, _, _) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
+  // Calculate adjacencyMatrix, with the newly added equations and vars. The
+  // function tree is what the BLT sorting below passes, so one matrix serves both.
+  (currentSystem, outAdjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(
+    currentSystem, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   // Perform the match on the adjacencyMatrix
   (match1, match2) := Matching.PerfectMatching(outAdjacencyMatrix);
-  currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
-  // update the DAE with the new matching information
-  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
+  comps := BackendDAEUtil.getStrongComponents(currentSystem);
+  currentSystem.matching := BackendDAE.MATCHING(match1, match2, comps);
 
-  // run the matching algorithm on the newly created DAE
-  strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
-  strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
-  tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
+  // All causalizeDAE would still do on a matched system is sort it into BLT form,
+  // rebuilding the adjacency matrix to get there.
+  if listEmpty(comps) then
+    (currentSystem, _) := BackendDAETransform.strongComponentsScalar(currentSystem, shared, mapEqnIncRow, mapIncRowEqn);
+  end if;
+  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
 
   if debug then
     BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");

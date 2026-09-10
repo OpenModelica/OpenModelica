@@ -1140,6 +1140,15 @@ algorithm
     case ("timerTock",_)
       then Values.REAL(-1.0);
 
+    case ("timerAccumulated",{Values.INTEGER(i)})
+      algorithm
+        true := System.realtimeNtick(i) > 0;
+      then
+        Values.REAL(System.realtimeAccumulated(i));
+
+    case ("timerAccumulated",_)
+      then Values.REAL(-1.0);
+
     case ("readFile",{Values.STRING(str)})
       then Values.STRING(System.readFile(str));
 
