@@ -25,8 +25,16 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # Curl_wasm.rs implementation on wasm, so the dep is native-only. On wasm the host
 # performs the transfer (Curl_wasm only bookkeeps via the VFS), so no browser/JS
 # crates are needed here.
-[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows")))'.dependencies]
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "windows", target_os = "macos")))'.dependencies]
 curl.workspace = true
+
+# macOS links the system libcurl out of the SDK, as Linux links the distribution's
+# -- but curl-rust's default `ssl` feature drags openssl-sys in on every unix, and
+# there is no OpenSSL in the SDK (nor in a cross toolchain). Without the feature
+# the crate just links libcurl, whose own TLS backend serves https; only
+# curl-rust's OpenSSL-specific API is lost, which Curl.rs does not use.
+[target.'cfg(target_os = "macos")'.dependencies]
+curl = { version = "0.4", default-features = false }
 
 # On Windows there is no system libcurl to link; build the bundled libcurl from
 # source (static-curl). The `ssl` feature selects the OS TLS backend (schannel)

@@ -273,9 +273,10 @@ const os_triple_suffix: &str = if cfg!(target_os = "macos") {
 
 /// `@host_short@` = `$host_cpu-$host_os`: the multiarch-style directory
 /// component under `lib/` where the omc runtime libraries are installed
-/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). The OMDev Windows file uses the
-/// empty string (no per-triple subdirectory on Windows installs).
-pub const triple: &str = if cfg!(windows) {
+/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). It mirrors CMake's
+/// `CMAKE_LIBRARY_ARCHITECTURE`, which is a GNU multiarch notion and empty on
+/// Windows and on macOS -- both install straight into `lib/omc`.
+pub const triple: &str = if cfg!(any(windows, target_vendor = "apple")) {
     ""
 } else {
     const_str::concat!(target_arch_str, os_triple_suffix)

@@ -14,6 +14,16 @@ endif()
 cmake_minimum_required(VERSION 3.14)
 project(OMModelicaExternalC)
 
+# For the Rust omc these shared libraries deliberately do not link the C runtime
+# (see ModelicaExternalC_shared below): omc resolves their ModelicaUtilities
+# symbols out of its own process at dlopen. ELF is happy to leave them
+# undefined; Mach-O has to be told to defer them.
+function(omc_defer_modelica_utilities tgt)
+  if(OM_OMC_ENABLE_RUST AND APPLE)
+    target_link_options(${tgt} PRIVATE -Wl,-undefined,dynamic_lookup)
+  endif()
+endfunction()
+
 ## ModelicaExternalC #########################################################################
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaInternal.c
@@ -52,6 +62,7 @@ endif()
 if(NOT OM_OMC_ENABLE_RUST)
   target_link_libraries(ModelicaExternalC_shared PUBLIC omc::simrt::runtime)
 endif()
+omc_defer_modelica_utilities(ModelicaExternalC_shared)
 
 if(MINGW)
   target_link_options(ModelicaExternalC_shared PRIVATE -Wl,--export-all-symbols)
@@ -88,6 +99,7 @@ omc_modelica_matio_hdf5(ModelicaMatIO_shared PUBLIC)
 if(NOT OM_OMC_ENABLE_RUST)
   target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
 endif()
+omc_defer_modelica_utilities(ModelicaMatIO_shared)
 
 if(MINGW)
   target_link_options(ModelicaMatIO_shared PRIVATE -Wl,--export-all-symbols)
@@ -111,6 +123,8 @@ set_target_properties(ModelicaIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaIO CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(ModelicaIO_shared PUBLIC ModelicaMatIO_shared)
+
+omc_defer_modelica_utilities(ModelicaIO_shared)
 
 if(MINGW)
   target_link_options(ModelicaIO_shared PRIVATE -Wl,--export-all-symbols)
@@ -149,6 +163,8 @@ target_link_libraries(ModelicaStandardTables_shared PUBLIC ModelicaIO_shared)
 if(UNIX)
   target_link_libraries(ModelicaStandardTables_shared PUBLIC m)
 endif()
+
+omc_defer_modelica_utilities(ModelicaStandardTables_shared)
 
 if(MINGW)
   target_link_options(ModelicaStandardTables_shared PRIVATE -Wl,--export-all-symbols)

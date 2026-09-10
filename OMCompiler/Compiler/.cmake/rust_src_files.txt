@@ -4,6 +4,7 @@
 #   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$'
 #
 .cargo/config.toml
+.cmake/darwin-toolchain.cmake
 .cmake/windows-deps.cmake
 .cmake/windows-qt-deploy.cmake
 .cmake/x64-windows-xwin.cmake
@@ -13,6 +14,7 @@
 Cargo.lock
 Cargo.toml
 libopenmodelica_compiler/Cargo.toml
+libopenmodelica_compiler/build.rs
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh
 libopenmodelica_compiler/include/omc_rust_embedding.h

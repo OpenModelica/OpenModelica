@@ -24,6 +24,13 @@ fn main() {
 
     let mec_dest = out_dir.join("modelicaexternalc_dylink.wasm");
     let libc_dest = out_dir.join("libc_pic.wasm");
+    let usertab_dest = out_dir.join("usertab_dylink.wasm");
+
+    // The CI hand-over: with all three side modules already built there is
+    // nothing here that needs a wasm toolchain or the sysroot.
+    if [&mec_dest, &libc_dest, &usertab_dest].iter().all(|d| prebuilt_in(d)) {
+        return;
+    }
 
     // PIC wasi sysroot: provided by CMake's rust_wasi_pic_sysroot target.
     let sysroot = ensure_pic_wasi_sysroot();
@@ -42,8 +49,36 @@ fn main() {
 
     let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
         .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
-    copy(&usertab, &out_dir.join("usertab_dylink.wasm"));
+    copy(&usertab, &usertab_dest);
 
+    publish_prebuilt(&[&mec_dest, &libc_dest, &usertab_dest]);
+}
+
+/// The side modules this script builds are wasm whatever platform omc is being
+/// built for, so a multi-stage CI builds them once and hands them over:
+/// `OMC_WASM_PREBUILT_OUT` collects them, `OMC_WASM_PREBUILT_IN` takes them --
+/// which is what lets a build with no wasm toolchain (the Windows and macOS
+/// cross builds) get through this script. The same directory serves
+/// `openmodelica_wasm_jit`'s blobs. Trusted, not checked.
+fn prebuilt_in(dest: &Path) -> bool {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_IN");
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else { return false };
+    let src = PathBuf::from(dir).join(dest.file_name().expect("a blob has a file name"));
+    if !src.is_file() {
+        return false;
+    }
+    copy(&src, dest);
+    true
+}
+
+fn publish_prebuilt(blobs: &[&PathBuf]) {
+    println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_OUT");
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_OUT") else { return };
+    let dir = PathBuf::from(dir);
+    std::fs::create_dir_all(&dir).expect("create the wasm hand-over directory");
+    for b in blobs {
+        copy(b, &dir.join(b.file_name().expect("a blob has a file name")));
+    }
 }
 
 /// The preview1→preview2 reactor adapter: `OMC_WASI_P1_ADAPTER` from CMake.
