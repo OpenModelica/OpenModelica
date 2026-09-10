@@ -1518,28 +1518,25 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data *)self->storage;
 
-  rt_tick(SIM_TIMER_OUTPUT);
-
-  if (!matData->pFile)
+  if (!matData)
   {
-    rt_accumulate(SIM_TIMER_OUTPUT);
     return;
   }
 
-  if (matData->nEmits > 0)
+  rt_tick(SIM_TIMER_OUTPUT);
+
+  if (matData->pFile)
   {
-    updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
-    matData->nEmits = 0;
+    if (matData->nEmits > 0)
+    {
+      updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
+    }
+    fclose(matData->pFile);
   }
 
-  if (matData->data_2)
-  {
-    free(matData->data_2);
-    matData->data_2 = NULL;
-  }
-
-  fclose(matData->pFile);
-  matData->pFile = NULL;
+  free(matData->data_2);
+  delete matData;
+  self->storage = NULL;
 
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
