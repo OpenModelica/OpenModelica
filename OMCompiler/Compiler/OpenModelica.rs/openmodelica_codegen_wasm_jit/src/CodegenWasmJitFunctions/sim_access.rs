@@ -575,8 +575,9 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
 /// `obj := Ctor(args)`: an external object is constructed once. The runtime keeps
 /// the arguments the live object was built from (`rt_extobj_arg_*`, keyed by slot
 /// and position); when every argument compares equal the object is kept, otherwise
-/// the old one is destructed before the constructor runs. An argument of a type the
-/// runtime cannot compare (a record) always forces reconstruction.
+/// the old one is destructed before the constructor runs. Strings compare by
+/// content, arrays and records structurally; an argument of a type the runtime
+/// cannot compare at all forces reconstruction.
 fn emit_extobj_construct(
     ctx: &mut FnCtx,
     off: u32,
@@ -599,6 +600,7 @@ fn emit_extobj_construct(
             Ok(SigTy::Int | SigTy::Bool | SigTy::Ptr) => ("rt_extobj_arg_i32", WTy::I32),
             Ok(SigTy::Str) => ("rt_extobj_arg_str", WTy::I32),
             Ok(SigTy::Array { .. }) => ("rt_extobj_arg_arr", WTy::I32),
+            Ok(SigTy::Record { .. }) => ("rt_extobj_arg_rec", WTy::I32),
             _ => {
                 ctx.emit(I::I32Const(0));
                 ctx.emit(I::LocalSet(same));
