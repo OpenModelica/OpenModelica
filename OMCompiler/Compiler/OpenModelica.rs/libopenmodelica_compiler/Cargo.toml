@@ -35,7 +35,7 @@ libc.workspace = true
 
 # Optional global allocators (native only; see the `mimalloc`/`jemalloc` features).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-mimalloc = { version = "0.1", optional = true }
+libmimalloc-sys = { version = "0.1", optional = true }
 tikv-jemallocator = { version = "0.6", optional = true }
 # The wasm-jit engine, for `OMC_WASM_PRECOMPILE_CACHE`: the build compiles the
 # model-independent blobs once so no run has to. The wasm build keeps no on-disk
@@ -85,7 +85,7 @@ scripting_api = ["dep:openmodelica_scripting_qt"]
 # Rust allocation the omc launcher drives. Both off by default; enable one to
 # A/B the backend allocation-bound phases (matching/sorting, loadModel).
 # `jemalloc` wins if both are set, so there is never a duplicate allocator.
-mimalloc = ["dep:mimalloc"]
+mimalloc = ["dep:libmimalloc-sys"]
 jemalloc = ["dep:tikv-jemallocator"]
 
 # Forward the wasm-jit engine choice (default wasmtime; see

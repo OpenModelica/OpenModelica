@@ -52,6 +52,56 @@ const EXTERNAL_DEFAULTABLE_QNAMES: &[&str] = &[
     "SOURCEINFO", "SourceInfo",
 ];
 
+/// A package can hand-write part of itself in `<Package>.handwritten.rs` next
+/// to the generated `<Package>.rs`. Its leading comment lines name the .mo
+/// items it takes over:
+///
+/// ```text
+/// // mmtorust-replaces: Text emptyTxt writeTok    (defined in the file, re-exported)
+/// // mmtorust-drops: tokString blockString        (made obsolete, not generated)
+/// ```
+///
+/// The generated file skips both and re-exports the first set from the
+/// hand-written module, so callers keep their `Package::item` paths.
+/// Fallibility and the other analyses still come from the .mo declarations,
+/// so the Rust signatures must agree with them.
+#[derive(Clone, Default)]
+struct HandwrittenItems {
+    replaces: Vec<String>,
+    drops: HashSet<String>,
+}
+
+impl HandwrittenItems {
+    fn read(dir: &str, name: &str) -> std::io::Result<Self> {
+        let path = format!("{dir}/{name}.handwritten.rs");
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::default()),
+            Err(e) => return Err(e),
+        };
+        let mut items = Self::default();
+        for line in content.lines() {
+            if let Some(rest) = line.strip_prefix("// mmtorust-replaces:") {
+                items.replaces.extend(rest.split_whitespace().map(str::to_owned));
+            } else if let Some(rest) = line.strip_prefix("// mmtorust-drops:") {
+                items.drops.extend(rest.split_whitespace().map(str::to_owned));
+            }
+        }
+        if items.replaces.is_empty() && items.drops.is_empty() {
+            return Err(std::io::Error::other(format!("{path} declares no `// mmtorust-replaces:` or `// mmtorust-drops:` items")));
+        }
+        Ok(items)
+    }
+
+    fn contains(&self, name: &str) -> bool {
+        self.drops.contains(name) || self.replaces.iter().any(|n| n == name)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.replaces.is_empty() && self.drops.is_empty()
+    }
+}
+
 /// Top-level package names whose generated `.rs` is *skipped* in the driver
 /// and replaced by a hand-written file (see the `match *name` near
 /// `dir_classes` in the driver). Types declared inside these packages get no
@@ -122,12 +172,6 @@ const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // reader); hand-written in `openmodelica_util/src/TaskGraphResults.rs`
     // using `roxmltree`.
     "TaskGraphResults",
-    // All bodies are `external "C"` into the CORBA communication runtime
-    // (`runtime/Corba_omc.cpp`, or the `corbaimpl_stub_omc.c` stub build). The
-    // Rust port is built WITHOUT CORBA, mirroring the stub: `haveCorba`
-    // reports false and the rest fail. Hand-written in
-    // `openmodelica_util/src/Corba.rs`.
-    "Corba",
     // All bodies are `external "C"` wrappers over `runtime/zeromqimpl.c` (the
     // interactive `--interactive=zmq` server socket used by OMEdit). Hand-
     // written FFI against the system `libzmq.so.5` in
@@ -429,6 +473,9 @@ struct GenCtx {
     /// `pub(crate)`. Populated by [`crate::visibility::analyze`]; consulted by
     /// [`emit_function`] when choosing the visibility keyword.
     keep_public: BTreeSet<String>,
+    /// Items of this package provided by a hand-written sibling file, see
+    /// [`HandwrittenItems`]. Skipped by [`emit_node`].
+    handwritten: HandwrittenItems,
     /// While true, [`Self::type_vis`] forces `pub` regardless of the analysis.
     /// Set around emitting a single-record uniontype's backing struct, whose
     /// `pub type <record> = <struct>;` alias is always emitted `pub`: a
@@ -717,6 +764,7 @@ impl GenCtx {
             variant_shapes: HashMap::new(),
             fallible_functions,
             keep_public: BTreeSet::new(),
+            handwritten: HandwrittenItems::default(),
             force_pub_type: false,
             partial_eq_required,
             reference_eq_required,
@@ -1759,7 +1807,8 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             eprintln!("[mmtorust] codegen start {file_path}");
         }
         let file_t0 = std::time::Instant::now();
-        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames);
+        let handwritten = HandwrittenItems::read(dir, name)?;
+        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames, &handwritten);
         if !file_missing.is_empty() {
             missing_imports.lock().unwrap().extend(file_missing);
         }
@@ -2329,9 +2378,10 @@ fn collect_no_mod_uniontypes(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &st
     }
 }
 
-fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>) -> (String, BTreeSet<String>) {
+fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>, handwritten: &HandwrittenItems) -> (String, BTreeSet<String>) {
     let mut ctx = GenCtx::new(top_name, current_crate, crate_map.clone(), nullable_global_roots.clone(), top_level_uniontype_names.clone(), recursive_types, types_containing_mutable, types_containing_array, types_containing_dyn_fn, types_directly_containing_dyn_fn, fn_type_vars.clone(), fallible_functions.clone(), partial_eq_required.clone(), reference_eq_required.clone(), default_required.clone(), defaultable_struct_qnames.clone(), types_needing_default.clone(), copy_type_qnames.clone());
     ctx.keep_public = keep_public.clone();
+    ctx.handwritten = handwritten.clone();
     ctx.no_mod_uniontypes = no_mod_uniontypes.clone();
     if let NodeKind::Class(c) = &node.kind {
         // Diagnostics (`sourceInfo()`) report the .mo relative to
@@ -2463,6 +2513,12 @@ use arcstr::{{ArcStr, literal, format}};
     if !ctx.unqual_modules.is_empty() || !ctx.named.is_empty() || !ctx.implicit_modules.is_empty() {
         writeln!(out).unwrap();
     }
+    if !handwritten.is_empty() {
+        writeln!(out, "#[path = \"{top_name}.handwritten.rs\"]\nmod handwritten;").unwrap();
+        if !handwritten.replaces.is_empty() {
+            writeln!(out, "pub use handwritten::{{{}}};\n", handwritten.replaces.join(", ")).unwrap();
+        }
+    }
     out.push_str(&body);
     // Strict-import check: `implicit_modules` holds the top-level packages this
     // file references in emitted code but does not explicitly import (a plain
@@ -2483,6 +2539,9 @@ use arcstr::{{ArcStr, literal, format}};
 // ── Node emission ─────────────────────────────────────────────────────────────
 
 fn emit_node<'a>(out: &mut String, name: &str, node: &NameNode<'_>, indent: &str, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) {
+    if ctx.current_path.is_empty() && name != ctx.top_name && ctx.handwritten.contains(name) {
+        return;
+    }
     if let NodeKind::Component(m) = &node.kind {
         if m.variability == Absyn::Variability::CONST
             // `override_default_exp` wins over the AST default. It carries the
@@ -4510,7 +4569,7 @@ struct TailCallPlan {
 /// fallback case, which is handled by the leading `pat_is_irrefutable`
 /// check).
 fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
-    if pats.iter().any(|p| pat_is_irrefutable(p)) { return true; }
+    if pats.iter().any(|p| pat_is_irrefutable(p, top_level)) { return true; }
     match ty {
         Ty::Bool => {
             pats.iter().any(|p| matches!(p, TypedPat::Lit(Lit::Bool(true))))
@@ -4525,13 +4584,13 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
             let nil = pats.iter().any(|p| matches!(p, TypedPat::EmptyList));
             let cons = pats.iter().any(|p| matches!(p,
                 TypedPat::Cons { head, tail }
-                    if pat_is_irrefutable(head) && pat_is_irrefutable(tail)));
+                    if pat_is_irrefutable(head, top_level) && pat_is_irrefutable(tail, top_level)));
             nil && cons
         }
         Ty::Option(_) => {
             let none = pats.iter().any(|p| matches!(p, TypedPat::None_));
             let some = pats.iter().any(|p| matches!(p,
-                TypedPat::Some_(inner) if pat_is_irrefutable(inner)));
+                TypedPat::Some_(inner) if pat_is_irrefutable(inner, top_level)));
             none && some
         }
         Ty::Tuple(elem_tys) => {
@@ -4565,7 +4624,7 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
                 })
                 .collect();
             !variants.is_empty()
-                && variants.iter().all(|v| pats.iter().any(|p| pat_covers_variant(p, v)))
+                && variants.iter().all(|v| pats.iter().any(|p| pat_covers_variant(p, v, top_level)))
         }
         // Enumeration: exhaustive iff every declared literal is matched.
         Ty::Enumeration(qname) => {
@@ -4577,7 +4636,7 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
                 .map(|l| l.literal.to_string())
                 .collect();
             !lits.is_empty()
-                && lits.iter().all(|lit| pats.iter().any(|p| pat_covers_variant(p, lit)))
+                && lits.iter().all(|lit| pats.iter().any(|p| pat_covers_variant(p, lit, top_level)))
         }
         // Numeric / string scalars can only be made exhaustive by an
         // irrefutable case (handled at the top of this function).
@@ -4590,14 +4649,14 @@ fn pats_cover_ty(pats: &[&TypedPat], ty: &Ty, top_level: &BTreeMap<String, NameN
 /// simple name) whose field subpatterns are all irrefutable — i.e. it matches
 /// *every* value of that variant. Unit variants/literals are constructor
 /// patterns with no fields and so are covered unconditionally.
-fn pat_covers_variant(pat: &TypedPat, variant_simple: &str) -> bool {
+fn pat_covers_variant(pat: &TypedPat, variant_simple: &str, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
     match pat {
-        TypedPat::As { pat: inner, .. } => pat_covers_variant(inner, variant_simple),
+        TypedPat::As { pat: inner, .. } => pat_covers_variant(inner, variant_simple, top_level),
         TypedPat::Constructor { name, fields, named_fields, .. } => {
             let simple = name.rsplit('.').next().unwrap_or(name);
             simple == variant_simple
-                && fields.iter().all(pat_is_irrefutable)
-                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p))
+                && fields.iter().all(|p| pat_is_irrefutable(p, top_level))
+                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p, top_level))
         }
         _ => false,
     }
@@ -5937,15 +5996,24 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, outputs: &HashSet<St
                 // bodies (stmts/result/locals). Without this, the same variable
                 // used in several arms' guards would be marked last-use in each
                 // arm independently and moved out of the first guard (E0382).
+                //
+                // A name a pattern *binds* is arm-local, so a read of it in one
+                // arm's body may be its last use — `pat_binds` goes into `acc`,
+                // where it keeps the name live *above* the match (an escaping
+                // binding writes the outer variable back), but not into any
+                // arm's `clive`. Names a pattern *reads* — a subscript or
+                // field-access base — belong in `decision` like a guard read.
                 let live_out = live.clone();
                 let mut decision = HashSet::new();
+                let mut pat_binds = HashSet::new();
                 for case in cases.iter() {
                     if let Some(g) = &case.guard {
                         collect_exp_names(g, &mut decision);
                     }
-                    collect_pat_names(&case.pattern, &mut decision);
+                    collect_pat_names_split(&case.pattern, &mut pat_binds, &mut decision);
                 }
                 let mut acc = decision.clone();
+                acc.extend(pat_binds.iter().cloned());
                 for case in cases.iter_mut() {
                     let mut clive = live_out.clone();
                     clive.extend(decision.iter().cloned());
@@ -6431,6 +6499,193 @@ fn collect_pat_names(pat: &TypedPat, out: &mut HashSet<String>) {
     }
 }
 
+/// A tuple scrutinee that needs `match_deref!` is matched through `&(…)`, so
+/// every arm binding is a `&T` and an arm that just *names* a column clones it
+/// back out at each use. A column bound irrefutably (a plain variable, or `_`)
+/// in every arm carries no matching information, so drop it from the tuple and
+/// let the arm bind it from the original place, where it is owned and the
+/// ordinary last-use move applies. Returns the narrowed scrutinee and patterns
+/// plus, per case, the `(bound name, element)` pairs the arm body must bind.
+///
+/// The element has to be a plain local read: it is re-emitted once per arm (the
+/// arms are mutually exclusive, so it is still evaluated at most once), which is
+/// only sound for a read with no side effects.
+fn match_drop_columns(
+    kind: &MatchKind,
+    input: &TypedExp,
+    cases: &[TypedCase],
+    as_binding: Option<&str>,
+    ctx: &GenCtx,
+    top_level: &BTreeMap<String, NameNode<'_>>,
+) -> Option<(TypedExp, Vec<TypedCase>, Vec<Vec<(String, TypedExp)>>)> {
+    if !matches!(kind, MatchKind::Match) || as_binding.is_some() || ctx.tail_lowering.is_some() {
+        return None;
+    }
+    let TypedExp::Tuple(elems) = input else { return None };
+    if elems.len() < 2 {
+        return None;
+    }
+    // Only worth it where the bindings would be references: a by-value match
+    // already moves them on last use.
+    if !match_uses_match_deref(&input.ty(), cases, ctx, top_level) {
+        return None;
+    }
+    // Only plain local reads, and only names that appear in exactly one column:
+    // an arm binds its dropped columns one after another, so two columns reading
+    // the same place would move it twice.
+    let mut elem_names: Vec<Option<String>> = Vec::with_capacity(elems.len());
+    for e in elems {
+        elem_names.push(match e {
+            TypedExp::Var { name, segments, .. }
+                if !name.contains('.')
+                    && segments.len() <= 1
+                    && segments.iter().all(|s| s.subscripts.is_empty()) =>
+                Some(var_base_name(name, segments)),
+            _ => None,
+        });
+    }
+    for i in 0..elem_names.len() {
+        if let Some(n) = &elem_names[i]
+            && elem_names.iter().enumerate().any(|(j, m)| j != i && m.as_ref() == Some(n))
+        {
+            elem_names[i] = None;
+        }
+    }
+    // Every arm must destructure the tuple positionally (or ignore it whole).
+    let arm_pats: Vec<Option<&Vec<TypedPat>>> = cases.iter().map(|c| match &c.pattern {
+        TypedPat::Tuple(ps) if ps.len() == elems.len() => Some(ps),
+        _ => None,
+    }).collect();
+    for (case, ps) in cases.iter().zip(arm_pats.iter()) {
+        if ps.is_none() && !matches!(case.pattern, TypedPat::Wildcard) {
+            return None;
+        }
+    }
+    let droppable = |i: usize| -> bool {
+        if elem_names[i].is_none() {
+            return false;
+        }
+        cases.iter().zip(arm_pats.iter()).all(|(case, ps)| {
+            let Some(ps) = ps else { return true };
+            match &ps[i] {
+                TypedPat::Wildcard => true,
+                TypedPat::Var(n) =>
+                    // The binding must be arm-local: one that also names a
+                    // function output or an enclosing-scope variable is written
+                    // back by machinery that expects the pattern binding to
+                    // exist. A case-local *is* fine — Susan declares its
+                    // template variables that way, and the arm's `let` stands in
+                    // for the declaration — unless it carries an initializer,
+                    // which is hoisted to a block around the whole match. And a
+                    // guard runs before the arm body, so it cannot see the
+                    // body's binding.
+                    !ctx.fn_outputs.contains(n)
+                        && !ctx.fn_scope_vars.contains(n)
+                        && !case.locals.iter().any(|(ln, _, d, _)| ln == n && d.is_some())
+                        && !case.guard.as_ref().is_some_and(|g| exp_reads_name(g, n)),
+                _ => false,
+            }
+        })
+    };
+    let drop: Vec<bool> = (0..elems.len()).map(droppable).collect();
+    let n_drop = drop.iter().filter(|d| **d).count();
+    // Something has to be left to match on.
+    if n_drop == 0 || n_drop == elems.len() {
+        return None;
+    }
+    // A single surviving column is matched on its own rather than as a
+    // one-element tuple, which is not a tuple in Rust anyway.
+    let only = (n_drop + 1 == elems.len()).then(|| drop.iter().position(|d| !d).unwrap());
+    let keep = |v: &[TypedPat]| -> TypedPat {
+        match only {
+            Some(k) => v[k].clone(),
+            None => TypedPat::Tuple(
+                v.iter().enumerate().filter(|(i, _)| !drop[*i]).map(|(_, p)| p.clone()).collect(),
+            ),
+        }
+    };
+    let new_input = match only {
+        Some(k) => elems[k].clone(),
+        None => TypedExp::Tuple(
+            elems.iter().enumerate().filter(|(i, _)| !drop[*i]).map(|(_, e)| e.clone()).collect(),
+        ),
+    };
+    let mut new_cases = Vec::with_capacity(cases.len());
+    let mut prologue = Vec::with_capacity(cases.len());
+    for (case, ps) in cases.iter().zip(arm_pats.iter()) {
+        let mut binds = Vec::new();
+        let mut c = case.clone();
+        if let Some(ps) = ps {
+            for (i, p) in ps.iter().enumerate() {
+                if drop[i] && let TypedPat::Var(n) = p {
+                    binds.push((n.clone(), elems[i].clone()));
+                }
+            }
+            c.pattern = keep(ps);
+        }
+        new_cases.push(c);
+        prologue.push(binds);
+    }
+    Some((new_input, new_cases, prologue))
+}
+
+/// True when the pattern contains an `as` binding anywhere.
+fn pat_has_as_binding(pat: &TypedPat) -> bool {
+    match pat {
+        TypedPat::As { .. } => true,
+        TypedPat::Wildcard | TypedPat::Lit(_) | TypedPat::EmptyList | TypedPat::None_
+        | TypedPat::Todo(_) | TypedPat::Var(_) | TypedPat::Index { .. } => false,
+        TypedPat::Some_(p) | TypedPat::FieldAccess { base: p, .. } => pat_has_as_binding(p),
+        TypedPat::Cons { head, tail } => pat_has_as_binding(head) || pat_has_as_binding(tail),
+        TypedPat::Tuple(ps) => ps.iter().any(pat_has_as_binding),
+        TypedPat::Constructor { fields, named_fields, .. } =>
+            fields.iter().any(pat_has_as_binding)
+                || named_fields.iter().any(|(_, p)| pat_has_as_binding(p)),
+    }
+}
+
+/// [`collect_pat_names`], but keeping the names the pattern *binds* apart from
+/// the ones it *reads* (a subscript or field-access base).
+fn collect_pat_names_split(pat: &TypedPat, binds: &mut HashSet<String>, reads: &mut HashSet<String>) {
+    match pat {
+        TypedPat::Wildcard
+        | TypedPat::Lit(_)
+        | TypedPat::EmptyList
+        | TypedPat::None_
+        | TypedPat::Todo(_) => {}
+        TypedPat::Var(n) => {
+            binds.insert(n.clone());
+        }
+        TypedPat::Some_(p) => collect_pat_names_split(p, binds, reads),
+        TypedPat::Cons { head, tail } => {
+            collect_pat_names_split(head, binds, reads);
+            collect_pat_names_split(tail, binds, reads);
+        }
+        TypedPat::Tuple(ps) => {
+            for p in ps {
+                collect_pat_names_split(p, binds, reads);
+            }
+        }
+        TypedPat::Constructor { fields, named_fields, .. } => {
+            for p in fields {
+                collect_pat_names_split(p, binds, reads);
+            }
+            for (_, p) in named_fields {
+                collect_pat_names_split(p, binds, reads);
+            }
+        }
+        TypedPat::As { var, pat } => {
+            binds.insert(var.clone());
+            collect_pat_names_split(pat, binds, reads);
+        }
+        TypedPat::Index { base, index } => {
+            collect_exp_names(base, reads);
+            collect_exp_names(index, reads);
+        }
+        TypedPat::FieldAccess { base, .. } => collect_pat_names_split(base, binds, reads),
+    }
+}
+
 /// Maintained Rust source for functions whose automatic lowering is provably
 /// wrong, keyed by the function's qualified MetaModelica name. [`emit_function`]
 /// writes the returned text verbatim instead of generating a body. The source
@@ -6455,7 +6710,7 @@ fn function_source_replacement(qname: &str) -> Option<&'static str> {
     }
 }
 
-const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: Arc<metamodelica::List<T>>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<Arc<metamodelica::List<T>>> {
+const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: metamodelica::List<T>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<metamodelica::List<T>> {
     fn sort_slice<T: Clone>(v: &[T], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<T>> {
         let n = v.len();
         if n < 2 {
@@ -6565,10 +6820,10 @@ fn cref_dotted2(cref: &Absyn::ComponentRef) -> Option<String> {
     match cref {
         C::CREF_FULLYQUALIFIED { componentRef } => cref_dotted2(componentRef),
         C::CREF_QUAL { name, subscripts, componentRef }
-            if matches!(&**subscripts, metamodelica::List::Nil) =>
+            if matches!(&**subscripts, metamodelica::ListNode::Nil) =>
         {
             if let C::CREF_IDENT { name: n2, subscripts: s2 } = &**componentRef
-                && matches!(&**s2, metamodelica::List::Nil)
+                && matches!(&**s2, metamodelica::ListNode::Nil)
             {
                 return Some(format!("{name}.{n2}"));
             }
@@ -6581,19 +6836,19 @@ fn cref_dotted2(cref: &Absyn::ComponentRef) -> Option<String> {
 fn subst_exp_list(
     l: &metamodelica::List<Arc<Absyn::Exp>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::Exp>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|e| subst_exp(e, map))))
+) -> metamodelica::List<Arc<Absyn::Exp>> {
+    metamodelica::List::from_iter(l.into_iter().map(|e| subst_exp(e, map)))
 }
 
 fn subst_subscripts(
     l: &metamodelica::List<Arc<Absyn::Subscript>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::Subscript>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|s| match &**s {
+) -> metamodelica::List<Arc<Absyn::Subscript>> {
+    metamodelica::List::from_iter(l.into_iter().map(|s| match &**s {
         Absyn::Subscript::SUBSCRIPT { subscript } =>
             Arc::new(Absyn::Subscript::SUBSCRIPT { subscript: subst_exp(subscript, map) }),
         Absyn::Subscript::NOSUB => s.clone(),
-    })))
+    }))
 }
 
 /// Rewrite every `Pkg.const` component reference in an expression.
@@ -6616,9 +6871,9 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
             ifExp: subst_exp(ifExp, map),
             trueBranch: subst_exp(trueBranch, map),
             elseBranch: subst_exp(elseBranch, map),
-            elseIfBranch: Arc::new(metamodelica::List::from_iter(
+            elseIfBranch: metamodelica::List::from_iter(
                 elseIfBranch.into_iter().map(|(c, t)| (subst_exp(c, map), subst_exp(t, map))),
-            )),
+            ),
         }),
         E::CALL { function_, functionArgs, typeVars } => Arc::new(E::CALL {
             function_: function_.clone(), functionArgs: subst_fargs(functionArgs, map), typeVars: typeVars.clone(),
@@ -6628,7 +6883,7 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
         }),
         E::ARRAY { arrayExp } => Arc::new(E::ARRAY { arrayExp: subst_exp_list(arrayExp, map) }),
         E::MATRIX { matrix } => Arc::new(E::MATRIX {
-            matrix: Arc::new(metamodelica::List::from_iter(matrix.into_iter().map(|row| subst_exp_list(row, map)))),
+            matrix: metamodelica::List::from_iter(matrix.into_iter().map(|row| subst_exp_list(row, map))),
         }),
         E::RANGE { start, step, stop } => Arc::new(E::RANGE {
             start: subst_exp(start, map), step: step.as_ref().map(|s| subst_exp(s, map)), stop: subst_exp(stop, map),
@@ -6646,7 +6901,7 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
         }),
         E::MATCHEXP { matchTy, inputExp, localDecls, cases, comment } => Arc::new(E::MATCHEXP {
             matchTy: matchTy.clone(), inputExp: subst_exp(inputExp, map), localDecls: localDecls.clone(),
-            cases: Arc::new(metamodelica::List::from_iter(cases.into_iter().map(|cse| subst_case(cse, map)))),
+            cases: metamodelica::List::from_iter(cases.into_iter().map(|cse| subst_case(cse, map))),
             comment: comment.clone(),
         }),
         // Leaves with no sub-expressions.
@@ -6660,10 +6915,10 @@ fn subst_fargs(fa: &Arc<Absyn::FunctionArgs>, map: &HashMap<String, Arc<Absyn::E
     match &**fa {
         F::FUNCTIONARGS { args, argNames } => Arc::new(F::FUNCTIONARGS {
             args: subst_exp_list(args, map),
-            argNames: Arc::new(metamodelica::List::from_iter(argNames.into_iter().map(|na| {
+            argNames: metamodelica::List::from_iter(argNames.into_iter().map(|na| {
                 let Absyn::NamedArg { argName, argValue } = &**na;
                 Arc::new(Absyn::NamedArg { argName: argName.clone(), argValue: subst_exp(argValue, map) })
-            }))),
+            })),
         }),
         F::FOR_ITER_FARG { exp, iterType, iterators } => Arc::new(F::FOR_ITER_FARG {
             exp: subst_exp(exp, map), iterType: iterType.clone(), iterators: subst_for_iterators(iterators, map),
@@ -6675,30 +6930,30 @@ fn subst_for_iterators(
     l: &Absyn::ForIterators,
     map: &HashMap<String, Arc<Absyn::Exp>>,
 ) -> Absyn::ForIterators {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|it| {
+    metamodelica::List::from_iter(l.into_iter().map(|it| {
         let Absyn::ForIterator { name, guardExp, range } = &**it;
         Arc::new(Absyn::ForIterator {
             name: name.clone(),
             guardExp: guardExp.as_ref().map(|g| subst_exp(g, map)),
             range: range.as_ref().map(|r| subst_exp(r, map)),
         })
-    })))
+    }))
 }
 
 fn subst_alg_item_list(
     l: &metamodelica::List<Arc<Absyn::AlgorithmItem>>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>> {
-    Arc::new(metamodelica::List::from_iter(l.into_iter().map(|it| subst_alg_item(it, map))))
+) -> metamodelica::List<Arc<Absyn::AlgorithmItem>> {
+    metamodelica::List::from_iter(l.into_iter().map(|it| subst_alg_item(it, map)))
 }
 
 fn subst_alg_elseif(
-    l: &metamodelica::List<(Arc<Absyn::Exp>, Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>>)>,
+    l: &metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)>,
     map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> Arc<metamodelica::List<(Arc<Absyn::Exp>, Arc<metamodelica::List<Arc<Absyn::AlgorithmItem>>>)>> {
-    Arc::new(metamodelica::List::from_iter(
+) -> metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)> {
+    metamodelica::List::from_iter(
         l.into_iter().map(|(cond, body)| (subst_exp(cond, map), subst_alg_item_list(body, map))),
-    ))
+    )
 }
 
 fn subst_alg_item(it: &Arc<Absyn::AlgorithmItem>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::AlgorithmItem> {
@@ -9838,7 +10093,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // unconditionally `metamodelica::cons`, and a glob-imported bare
             // `cons` is shadowed when the function has a local binding named
             // `cons` (e.g. a `Constraint` list in BackendDAEUtil), turning the
-            // call into `Arc<List<..>>(..)` — E0618 "expected function".
+            // call into `List<..>(..)` — E0618 "expected function".
             format!("metamodelica::cons({head_s}, {tail_s})")
         }
 
@@ -10602,7 +10857,7 @@ fn emit_reduction<'a>(
             // The reduction body's static type carries type variables from a
             // callee's signature (e.g. `tuple21<T1,T2>`'s `T1` flowing into
             // the accumulator) that aren't in scope at the caller. Emitting
-            // them verbatim would produce `Arc<List<T1>>` against an
+            // them verbatim would produce `List<T1>` against an
             // undeclared name; defer to Rust inference instead. The body
             // assignment to `__x` pins the concrete type from the call site.
             "_".to_owned()
@@ -10625,7 +10880,7 @@ fn emit_reduction<'a>(
             // over the cons-cells and avoids the Vec allocation entirely.
             let elem_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{elem_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{elem_ty}> = metamodelica::nil();"),
                 "__acc = cons(__x, __acc);".to_owned(),
                 "__acc.reverse()".to_owned(),
             )
@@ -10634,7 +10889,7 @@ fn emit_reduction<'a>(
             // Reverse-iteration order: cons directly onto the accumulator.
             let elem_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{elem_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{elem_ty}> = metamodelica::nil();"),
                 "__acc = cons(__x, __acc);".to_owned(),
                 "__acc".to_owned(),
             )
@@ -10715,7 +10970,7 @@ fn emit_reduction<'a>(
             // matches the existing helper's argument order: prepend __x onto acc.
             let inner_ty = match ty { Ty::List(t) => ty_or_underscore(t, ctx), _ => "_".to_owned() };
             (
-                format!("let mut __acc: Arc<metamodelica::List<{inner_ty}>> = metamodelica::nil();"),
+                format!("let mut __acc: metamodelica::List<{inner_ty}> = metamodelica::nil();"),
                 "__acc = __x.append(&__acc);".to_owned(),
                 "__acc".to_owned(),
             )
@@ -11581,15 +11836,26 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             Ok(ctx.q(&format!("({arg1}).get({arg2})")))
         },
         "referenceEq" => {
-            let arg1 = args.first().map(|a| emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            let arg2 = args.get(1).map(|a| emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)).unwrap_or_default();
+            let ty1 = args.first().map(|a| a.ty()).unwrap_or_default();
+            let ty2 = args.get(1).map(|a| a.ty()).unwrap_or_default();
+            // The operands are only borrowed, so a plain owned Arc/List local
+            // reads as `&*x` (the `Var` arm decides ownership) instead of a clone.
+            let ty = if ty_contains_unknown(&ty1) { &ty2 } else { &ty1 };
+            let borrowable = referenceeq_derefs_to_pointee(ty, ctx) || matches!(ty, Ty::List(_));
+            let arg1 = args.first().map(|a| {
+                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
+                emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)
+            }).unwrap_or_default();
+            let arg2 = args.get(1).map(|a| {
+                ctx.borrow_reads = borrowable && matches!(a, TypedExp::Var { .. });
+                emit_builtin_call_arg_raw(func, 1, a, is_const, ctx, top_level)
+            }).unwrap_or_default();
+            ctx.borrow_reads = false;
             // The lowering is type-directed; see [`try_emit_reference_eq`].
             // Both sides carry the same MM type, but one may have decayed to
             // Unknown during typing — try the first side's type, then the
             // second's, before giving up on representation info entirely.
             // referenceEq is infallible: returns bool directly, no ctx.q() needed
-            let ty1 = args.first().map(|a| a.ty()).unwrap_or_default();
-            let ty2 = args.get(1).map(|a| a.ty()).unwrap_or_default();
             Ok(try_emit_reference_eq(&arg1, &arg2, &ty1, ctx, top_level)
                 .or_else(|| try_emit_reference_eq(&arg1, &arg2, &ty2, ctx, top_level))
                 // Fallback for types the structural lowering cannot decide —
@@ -11808,7 +12074,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // where the loop binds a `&_` whose `_` Rust can't resolve from the
             // body alone).
             let arg = args.first().map(|a| emit_builtin_call_arg_raw(func, 0, a, is_const, ctx, top_level)).unwrap_or_default();
-            Ok(format!("Arc::new({arg}.borrow().iter().cloned().collect::<metamodelica::List<_>>())"))
+            Ok(format!("{arg}.borrow().iter().cloned().collect::<metamodelica::List<_>>()"))
         },
         // Modelica trigonometric, exponential and square-root builtins.
         // The MetaModelica compiler accepts these bare-name builtins (declared
@@ -12370,7 +12636,8 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         | "builtinIndex"
         | "builtinGraphIndex"
         | "operatorOverloadingCache"
-        | "backendCevalInterface" => Some("openmodelica_frontend"),
+        | "backendCevalInterface"
+        | "adjacencyIfCondCache" => Some("openmodelica_frontend"),
         // openmodelica_frontend_base — inlineHashTable holds a
         // VarTransform.VariableReplacements value; VarTransform/Inline live in
         // the frontend base crate, so the thread_local is declared there.
@@ -12573,7 +12840,7 @@ fn find_record_split<'a>(segments: &[CrefSegment], ctx: &GenCtx, top_level: &'a 
                     .map(|n| n.children.contains_key(&segments[1].name))
                     .unwrap_or(true)
             }
-            // For non-record local types (Arc<List<_>>, enums, primitives, …)
+            // For non-record local types (List<_>, enums, primitives, …)
             // we keep the original shadowing behaviour. A field access on
             // those is either via `var_field!` (enum) or a downstream
             // type-error that points at the real bug.
@@ -14440,6 +14707,16 @@ fn emit_range<'a>(start: &TypedExp, step: Option<&TypedExp>, stop: &TypedExp, is
 }
 
 fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_binding: Option<&str>, is_const: bool, ctx: &mut GenCtx, top_level: &'a BTreeMap<String, NameNode<'a>>) -> String {
+    // Columns of a tuple scrutinee that carry no matching information are moved
+    // out of the tuple and bound in the arm bodies instead (see
+    // [`match_drop_columns`]); everything below then works on the narrowed
+    // scrutinee and patterns.
+    let dropped = match_drop_columns(kind, input, cases, as_binding, ctx, top_level);
+    let (input, cases, drop_prologue): (&TypedExp, &[TypedCase], Vec<Vec<(String, TypedExp)>>) =
+        match &dropped {
+            Some((i, c, p)) => (i, c.as_slice(), p.clone()),
+            None => (input, cases, Vec::new()),
+        };
     let mut input_ty = input.ty();
     // MetaModelica scalar-context rule: a multi-output (tuple-typed) call whose
     // result is matched against patterns that *structurally require a non-tuple
@@ -14558,7 +14835,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // The macro provides stable-Rust replacements for nightly's `deref_patterns`:
     // a `::match_deref::Deref @ <inner>` token sequence inside an arm pattern
     // desugars to `if let inner = Deref::deref(binding) { … }`. This lets us match
-    // through `Arc<List<T>>`, recursive `Arc<Enum>` variants, and `ArcStr` literal
+    // through `List<T>`, recursive `Arc<Enum>` variants, and `ArcStr` literal
     // patterns — all of which were the previous use cases for the
     // `#![feature(deref_patterns)]` attribute.
     //
@@ -14594,12 +14871,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // own match ergonomics on `&T` then makes the bindings by-reference,
     // which matches the implicit_ref regime in
     // `emit_pat_with_implicit_bind`. We extend this to `Ty::List`
-    // (`Arc<metamodelica::List<T>>`).
+    // (`metamodelica::List<T>`).
     let input_is_arc_recursive = is_arc_wrapped(&input_ty, ctx)
         || matches!(input_ty, Ty::List(_));
     // A `matchcontinue` with a tuple scrutinee whose elements include `Arc<…>`
     // values needs the subject rebuilt as a tuple of references: each
-    // `Arc<List<T>>` / `Arc<Enum>` element gets `.as_ref()` (yielding
+    // `List<T>` / `Arc<Enum>` element gets `.as_ref()` (yielding
     // `&List<T>` / `&Enum`), every other element is passed by value. Rust's
     // match ergonomics then makes all bindings inside the tuple pattern
     // by-reference, which is exactly the regime `emit_pat_with_implicit_bind`
@@ -14737,7 +15014,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             // infallible (the fallibility analysis uses the same predicate
             // on the Absyn side; the two must agree).
             let exhaustive = cases_exhaustive(kind, cases, &input_ty, top_level);
-            let arms: Vec<String> = cases.iter().map(|case| {
+            let arms: Vec<String> = cases.iter().enumerate().map(|(case_idx, case)| {
                 // Pattern bindings that name a *function output*. In
                 // MetaModelica a match-case pattern variable lives in the
                 // enclosing (function) scope, so binding an output in a pattern
@@ -14931,6 +15208,42 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
                     }
                 }
+                // Pin each pattern binding's mode rather than letting it inherit
+                // the enclosing scope's: the pattern shadows the name, and the
+                // shadow is what the arm's reads see. Only a whole-value or
+                // tuple-column binding under a by-value scrutinee is `Owned` —
+                // below the top level `emit_pat` decides per sub-pattern, and a
+                // field whose type crosses an Arc edge is bound `ref` even in a
+                // by-value match (`connections: ref cl`).
+                {
+                    let mut owned_binds: HashSet<&str> = HashSet::new();
+                    if !input_is_arc && !pat_has_as_binding(&case.pattern) {
+                        match (&case.pattern, &input_ty) {
+                            (TypedPat::Var(n), t) if !ty_needs_arc_match_deref(t, ctx) => {
+                                owned_binds.insert(n);
+                            }
+                            (TypedPat::Tuple(ps), Ty::Tuple(ts)) if ps.len() == ts.len() => {
+                                for (p, t) in ps.iter().zip(ts.iter()) {
+                                    if let TypedPat::Var(n) = p
+                                        && !ty_needs_arc_match_deref(t, ctx)
+                                    {
+                                        owned_binds.insert(n);
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    for (n, _) in &typed_pat_bindings {
+                        // An escaping binding is renamed away, so reads of the
+                        // name inside the arm are the enclosing variable's.
+                        if escaping_outputs.contains(n) {
+                            continue;
+                        }
+                        let mode = if owned_binds.contains(n.as_str()) { PlaceMode::Owned } else { PlaceMode::Ref };
+                        ctx.place_mode.insert(n.clone(), mode);
+                    }
+                }
                 let user_guard = case.guard.as_ref()
                     .map(|g| emit_exp(g, is_const, ctx, top_level));
                 // Combine pattern-induced guards (e.g. from real-literal
@@ -14974,6 +15287,23 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         }
                     }
                 }
+                // Bind the columns [`match_drop_columns`] took out of the
+                // scrutinee. They are owned locals here, so reads of them follow
+                // the normal move/clone rules. Emitted after the guard, which by
+                // construction does not name them.
+                let col_prologue: String = match drop_prologue.get(case_idx) {
+                    None => String::new(),
+                    Some(binds) => binds.iter().map(|(n, e)| {
+                        let init = emit_exp(e, is_const, ctx, top_level);
+                        let t = e.ty();
+                        if !matches!(t, Ty::Unknown) {
+                            ctx.fn_env_vars.insert(n.clone(), t);
+                        }
+                        ctx.fn_scope_vars.insert(n.clone());
+                        ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
+                        format!("            let mut {} = {init};\n", escape_ident(n))
+                    }).collect(),
+                };
                 // Tail-call lowering: detect the algorithm-side terminal
                 // self-assign pattern. When the case ends with
                 // `(a,…) := <rhs>;` and the case `result` is exactly that same
@@ -14995,8 +15325,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 } else {
                     &case.stmts[..]
                 };
-                let arm_str = if stmts_for_arm.is_empty() && case.locals.is_empty() && escaping_outputs.is_empty() {
+                let bare_arm = stmts_for_arm.is_empty() && case.locals.is_empty() && escaping_outputs.is_empty();
+                let arm_str = if bare_arm && col_prologue.is_empty() {
                     format!("        {pat}{guard} => {result}")
+                } else if bare_arm {
+                    format!("        {pat}{guard} => {{\n{col_prologue}            {result}\n        }}")
                 } else {
                     // Seed the arm's local env from the enclosing function scope:
                     // inputs/outputs/protected are visible inside the arm body and
@@ -15023,6 +15356,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     record_pattern_variants(&case.pattern, input, &mut local_env, top_level);
                     let mut fresh_local: u32 = 0;
                     let mut body = String::new();
+                    body.push_str(&col_prologue);
                     // Write each pattern-bound function output back to the real
                     // output from its renamed temp (see `escaping_outputs`). The
                     // temp is by-reference under match_deref, so deref-then-clone
@@ -15038,8 +15372,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // subsequent re-assignment to <name> would update the local copy
                     // and the original pattern binding (read by user code) would stay
                     // stale. See appendLastList's inner `l :: ll := ll;` loop.
+                    // A column [`match_drop_columns`] took out of the scrutinee is
+                    // bound by `col_prologue` above and stands in the same way.
                     let pat_binding_names: std::collections::HashSet<String> =
-                        typedexp::pat_bindings(&case.pattern).iter().map(|(n, _)| n.clone()).collect();
+                        typedexp::pat_bindings(&case.pattern).iter().map(|(n, _)| n.clone())
+                            .chain(drop_prologue.get(case_idx).into_iter().flatten().map(|(n, _)| n.clone()))
+                            .collect();
                     let arm_alias_scope = current_scope_children(ctx, top_level);
                     // Which no-initialiser case-locals are read before assignment
                     // inside this arm, and so must keep the implicit type-default.
@@ -15397,7 +15735,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // body in `::match_deref::match_deref!{}` (each arm is a
                 // separate `let pat = … else { bail }`), but we *can* wrap a
                 // single arm's destructure when its pattern crosses an Arc
-                // edge (e.g. `Cons { tail: Nil }` against `Arc<List<T>>`) or
+                // edge (e.g. `Cons { tail: Nil }` against `List<T>`) or
                 // matches a `String` literal against an `ArcStr`. The arm
                 // then becomes `match_deref!{ match &__mc_input { <pat> => …
                 // _ => bail }}` inside the IIFE — the `_` branch falls
@@ -15923,10 +16261,10 @@ fn emit_pat<'a>(pat: &TypedPat, ctx: &mut GenCtx, top_level: &'a BTreeMap<String
 /// Return true if matching `pat` against a scrutinee of `ty` will cross an
 /// Arc edge — i.e. the pattern destructures through an `Arc<T>` wrapper.
 /// Crossing an Arc edge happens for:
-///   - `Ty::List(_)` (lowered to `Arc<metamodelica::List<T>>`).
+///   - `Ty::List(_)` (lowered to `metamodelica::List<T>`).
 ///   - Any type marked recursive in `ctx.recursive_types` (uniontype enums and
 ///     their variant records are stored behind `Arc`).
-///   - The `tail` field of a `Cons` pattern (typed as `Arc<List<T>>` regardless
+///   - The `tail` field of a `Cons` pattern (typed as `List<T>` regardless
 ///     of the outer scrutinee, since the field itself is Arc-wrapped).
 /// Once we cross an Arc edge, the `deref_patterns` feature binds every
 /// nested name by reference; `mut <name>` is therefore rejected as a
@@ -15958,12 +16296,23 @@ fn pat_has_str_lit(pat: &TypedPat) -> bool {
     }
 }
 
+fn pat_has_constructor(pat: &TypedPat) -> bool {
+    match pat {
+        TypedPat::Constructor { .. } => true,
+        TypedPat::Some_(inner) => pat_has_constructor(inner),
+        TypedPat::As { pat: inner, .. } => pat_has_constructor(inner),
+        TypedPat::Cons { head, tail } => pat_has_constructor(head) || pat_has_constructor(tail),
+        TypedPat::Tuple(ps) => ps.iter().any(pat_has_constructor),
+        _ => false,
+    }
+}
+
 /// Decide whether the match expression's outer scrutinee needs to be wrapped
 /// in `match_deref!{ ... }`. We switch into match_deref mode whenever any of
 /// the following holds for the input or its destructured sub-elements:
 ///
 ///   * The scrutinee is `Arc<…>` over a recursive uniontype (`is_arc_wrapped`).
-///   * The scrutinee is `Arc<metamodelica::List<T>>` (every `Ty::List`).
+///   * The scrutinee is `metamodelica::List<T>` (every `Ty::List`).
 ///   * A `(_, _, …)` tuple scrutinee contains at least one Arc-crossing
 ///     element — `type_destructure_needs_borrow` already recurses through
 ///     tuples.
@@ -15983,7 +16332,7 @@ fn match_uses_match_deref(input_ty: &Ty, cases: &[TypedCase], ctx: &GenCtx, top_
 
 /// True when destructuring `pat` against a scrutinee of type `scrut_ty`
 /// would require descending through an `Arc<…>` edge — e.g. a constructor
-/// pattern whose field type is `Arc<List<…>>` and whose sub-pattern is
+/// pattern whose field type is `List<…>` and whose sub-pattern is
 /// anything other than a bare `_` / variable binding (which doesn't
 /// destructure further). When this returns true the match must be wrapped
 /// in `::match_deref::match_deref!{ … }` so the inner pattern can match
@@ -15994,7 +16343,7 @@ fn pat_crosses_arc_edge(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: 
         !matches!(p, TypedPat::Wildcard | TypedPat::Var(_))
     }
     // A Constructor / Cons / EmptyList pattern matched against an Arc-wrapped
-    // (or List, which is itself Arc<List<...>>) scrutinee must peel the smart
+    // (or List, which is itself List<...>) scrutinee must peel the smart
     // pointer with `Deref @ ...`. This applies whether the Arc edge is the
     // outer scrutinee or sits behind a Some/Cons.tail; the caller already
     // recurses with the inner type, so checking the *current* scrutinee here
@@ -16222,7 +16571,7 @@ fn pat_deref_bindings(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: &B
     // Otherwise, recurse type-aware to find where Arc edges are crossed.
     match pat {
         TypedPat::Cons { head, tail } => {
-            // The Cons.tail field is `Arc<List<T>>` — itself an Arc edge —
+            // The Cons.tail field is `List<T>` — itself an Arc edge —
             // so everything below the tail subtree is in deref. The head
             // is bound by value (type T) without crossing an Arc edge, so
             // recurse type-aware into it.
@@ -16244,12 +16593,14 @@ fn pat_deref_bindings(pat: &TypedPat, scrut_ty: &Ty, ctx: &GenCtx, top_level: &B
             }
         }
         TypedPat::Constructor { fields, named_fields, name, .. } => {
-            // Look up field types so we can detect Arc-wrapped fields. The
-            // field types come from the record definition for this variant.
-            let field_tys = record_field_tys(name, top_level)
-                .or_else(|| lookup_record_through_unions(name, top_level)
-                    .and_then(|(canonical, _)| record_field_tys(&canonical, top_level)))
-                .or_else(|| record_field_tys_from_scrutinee_ctor(name, scrut_ty, top_level))
+            // Look up field types so we can detect Arc-wrapped fields, through
+            // the same resolution `emit_pat_with_implicit_bind_md` uses.
+            let pkg_prefix = if ctx.current_path.is_empty() {
+                ctx.top_name.clone()
+            } else {
+                format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
+            };
+            let field_tys = ctor_field_tys(name, Some(scrut_ty), &pkg_prefix, top_level)
                 .unwrap_or_default();
             for (i, p) in fields.iter().enumerate() {
                 let fty = field_tys.get(i).map(|(_, t)| t.clone()).unwrap_or(Ty::Unknown);
@@ -16454,14 +16805,14 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     //    within an implicitly-borrowing pattern"). Emit bare names. Once
     //    set, it propagates to every nested sub-pattern.
     //
-    // 2. `in_deref` (regime 2): subject is `Arc<List<T>>` matched directly
+    // 2. `in_deref` (regime 2): subject is `List<T>` matched directly
     //    via `deref_patterns`, or we're inside the `Cons.tail` of one. A
     //    bare `head: x` would try to move from behind the Arc (E0507), so
     //    we emit explicit `ref x`.
     //
     // `implicit_ref` only enters via the outer `emit_match` call (which
     // tracks whether the match is wrapped in `match_deref!{ ... }`). Don't
-    // re-derive it from inner scrut_ty: a nested `(Arc<List<T>>, Arc<Tree>)`
+    // re-derive it from inner scrut_ty: a nested `(List<T>, Arc<Tree>)`
     // tuple scrutinee is *not* implicit-borrowed even though its second
     // element is a recursive Arc-wrapped uniontype — `emit_match` decides at
     // the outer level whether match_deref is in scope. Just propagate what
@@ -16491,7 +16842,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     // pattern (see `match_uses_match_deref` in `emit_match`).
     // Pattern-shape fallback: when scrut_ty is Unknown (typedexp couldn't
     // pin a generic call's return type, etc.) but the pattern itself proves
-    // the scrutinee is wrapped in an `Arc<List<_>>`, force the Arc-edge
+    // the scrutinee is wrapped in an `List<_>`, force the Arc-edge
     // prefix. Without this, the outermost `Cons` of a Cons/Nil chain over a
     // generic-returning call's result emits without `Deref @` and Rust
     // rejects the pattern with E0308.
@@ -16531,7 +16882,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     // `#[tailcall::tailcall]` bodies where match_deref would hide arms from
     // the tailcall rewriter), the OUTER scrutinee has already been peeled
     // by `.as_ref()` — and inner Arc edges (e.g. `Cons.tail` typed
-    // `Arc<List<T>>`) are not destructured further by the legacy lowering,
+    // `List<T>`) are not destructured further by the legacy lowering,
     // so no Deref prefix is needed there either. Hence we gate the prefix
     // on `in_match_deref` alone, not on `implicit_ref`.
     let arc_prefix: &str = if in_match_deref && at_arc_edge { "Deref @ " } else { "" };
@@ -16543,7 +16894,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             Some(renamed) => bind_var(&renamed.clone()),
             None => bind_var(name),
         },
-        TypedPat::EmptyList   => format!("{arc_prefix}metamodelica::List::Nil"),
+        TypedPat::EmptyList   => format!("{arc_prefix}metamodelica::ListNode::Nil"),
         TypedPat::Some_(inner) => {
             // Propagate the Option's inner type into the sub-pattern so it can
             // decide whether a `Deref @` prefix is required at an Arc edge
@@ -16607,14 +16958,14 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             // that itself crosses an Arc edge (e.g. an element which is a
             // recursive uniontype) gets `in_deref` set correctly.
             let elem_ty: Ty = match scrut_ty { Some(Ty::List(t)) => (**t).clone(), _ => Ty::Unknown };
-            // The `tail` field of `metamodelica::List::Cons` is `Arc<List<T>>`
+            // The `tail` field of `metamodelica::ListNode::Cons` is `List<T>`
             // (itself an Arc edge), so emit the tail sub-pattern with a
             // synthetic `Ty::List(elem)` scrutinee. Inside `match_deref!`
             // this triggers another `::match_deref::Deref @` prefix on the
             // tail's variant pattern; outside it forces `ref <name>` binding
             // (the legacy Arc<List> behavior).
             let tail_ty = Ty::List(Box::new(elem_ty.clone()));
-            let body = format!("metamodelica::List::Cons {{ head: {}, tail: {} }}",
+            let body = format!("metamodelica::ListNode::Cons {{ head: {}, tail: {} }}",
                 emit_pat_with_implicit_bind_md(head, allow_implicit_bind, mut_bindings, in_deref, implicit_ref, in_match_deref, Some(&elem_ty), ctx, top_level),
                 emit_pat_with_implicit_bind_md(tail, allow_implicit_bind, mut_bindings, true, implicit_ref, in_match_deref, Some(&tail_ty), ctx, top_level));
             format!("{arc_prefix}{body}")
@@ -16770,47 +17121,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             } else {
                 format!("{}.{}", ctx.top_name, ctx.current_path.join("."))
             };
-            let field_tys_for_ctor = || {
-                if name.contains('.') {
-                    if let Some((qname, _)) = crate::typedexp::resolve_call_node(name, top_level, &pkg_prefix_for_lookup)
-                        && let Some(tys) = record_field_tys(&qname, top_level)
-                    {
-                        return Some(tys);
-                    }
-                    // Direct lookup first; fall back to lookup-through-unions for names
-                    // like "Flags.FLAGS" where the record is at "Flags.Flag.FLAGS".
-                    if let Some(tys) = record_field_tys(name, top_level) {
-                        return Some(tys);
-                    }
-                    if let Some((canonical, _)) = lookup_record_through_unions(name, top_level) {
-                        return record_field_tys(&canonical, top_level);
-                    }
-                    // The scrutinee's type tells us the enclosing uniontype, which lets
-                    // us recover the record's field layout when neither direct lookup
-                    // nor the bottom-up uniontype walk succeeds — e.g. when `name`
-                    // resolves only through an import alias and the simple-name pass
-                    // would otherwise miss it.
-                    if let Some(ty) = scrut_ty {
-                        let simple = name.rsplit_once('.').map_or(name.as_str(), |(_, s)| s);
-                        if let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(simple, ty, top_level) {
-                            return Some(from_scrut);
-                        }
-                    }
-                    // Last resort: search by simple name. Better than emitting a TODO
-                    // for a record we just couldn't find by qualified path.
-                    let simple = name.rsplit_once('.').map_or(name.as_str(), |(_, s)| s);
-                    let by_simple = record_field_tys_by_simple_name(simple, top_level);
-                    if !by_simple.is_empty() {
-                        return Some(by_simple);
-                    }
-                    return None;
-                }
-                if let Some(ty) = scrut_ty
-                    && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(name, ty, top_level) {
-                        return Some(from_scrut);
-                    }
-                Some(record_field_tys_by_simple_name(name, top_level))
-            };
+            let field_tys_for_ctor = || ctor_field_tys(name, scrut_ty, &pkg_prefix_for_lookup, top_level);
             let body = if named_fields.is_empty() && fields.is_empty() {
                 // Empty MetaModelica pattern `case NODE()` or `case NODE` —
                 // decide based on the type: struct/variant types need `{ .. }` to avoid
@@ -16996,9 +17307,9 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
             // `var @ inner` matches the same value against both sides, so the
             // inner needs the same `scrut_ty` to decide whether to emit a
             // `Deref @ ` prefix (e.g. an `As` pattern sitting on `Cons.tail`,
-            // which is itself `Arc<List<T>>`, must wrap its inner Cons/Nil
+            // which is itself `List<T>`, must wrap its inner Cons/Nil
             // sub-pattern in `Deref @ …`). Passing `None` here previously
-            // dropped that information, producing `tail: rest @ List::Cons{…}`
+            // dropped that information, producing `tail: rest @ metamodelica::ListNode::Cons{…}`
             // and a `&Arc<…>` vs `List<…>` mismatch.
             format!("{} @ {}", outer, emit_pat_with_implicit_bind_md(pat, false, false, in_deref || force_ref, implicit_ref, in_match_deref, scrut_ty, ctx, top_level))
         }
@@ -17014,6 +17325,58 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
 
         TypedPat::Todo(s) => format!("_ /* todo: {} */", s.chars().take(40).collect::<String>()),
     }
+}
+
+/// The `(field name, type)` list for a constructor pattern's record.
+///
+/// [`pat_deref_bindings`] has to resolve it exactly as
+/// [`emit_pat_with_implicit_bind_md`] does: a field type one of them misses is
+/// a field the other binds `ref` (an Arc edge crossed) while believing it
+/// owned, and the arm then assigns an owned value to a `&T` (it was
+/// `InnerOuter.addOuterConnectIfEmpty`'s `connections: ref cl`). Hence one
+/// function for both.
+fn ctor_field_tys<'a>(
+    name: &str,
+    scrut_ty: Option<&Ty>,
+    pkg_prefix: &str,
+    top_level: &'a BTreeMap<String, NameNode<'a>>,
+) -> Option<Vec<(String, Ty)>> {
+    let simple = name.rsplit_once('.').map_or(name, |(_, s)| s);
+    if name.contains('.') {
+        if let Some((qname, _)) = crate::typedexp::resolve_call_node(name, top_level, pkg_prefix)
+            && let Some(tys) = record_field_tys(&qname, top_level)
+        {
+            return Some(tys);
+        }
+        // Direct lookup first; fall back to lookup-through-unions for names
+        // like "Flags.FLAGS" where the record is at "Flags.Flag.FLAGS".
+        if let Some(tys) = record_field_tys(name, top_level) {
+            return Some(tys);
+        }
+        if let Some((canonical, _)) = lookup_record_through_unions(name, top_level) {
+            return record_field_tys(&canonical, top_level);
+        }
+        // The scrutinee's type tells us the enclosing uniontype, which lets us
+        // recover the record's field layout when neither direct lookup nor the
+        // bottom-up uniontype walk succeeds — e.g. when `name` resolves only
+        // through an import alias and the simple-name pass would otherwise miss
+        // it.
+        if let Some(ty) = scrut_ty
+            && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(simple, ty, top_level)
+        {
+            return Some(from_scrut);
+        }
+        // Last resort: search by simple name. Better than emitting a TODO for a
+        // record we just couldn't find by qualified path.
+        let by_simple = record_field_tys_by_simple_name(simple, top_level);
+        return (!by_simple.is_empty()).then_some(by_simple);
+    }
+    if let Some(ty) = scrut_ty
+        && let Some(from_scrut) = record_field_tys_from_scrutinee_ctor(name, ty, top_level)
+    {
+        return Some(from_scrut);
+    }
+    Some(record_field_tys_by_simple_name(name, top_level))
 }
 
 fn record_field_tys_from_scrutinee_ctor<'a>(
@@ -17203,15 +17566,36 @@ fn pat_introduces_binding(pat: &TypedPat) -> bool {
     }
 }
 
-fn pat_is_irrefutable(pat: &TypedPat) -> bool {
+/// Must agree with `fallibility`'s `resolve_cover_key`: a function typed
+/// infallible there must never be handed a `return Err` from here.
+fn pat_is_irrefutable(pat: &TypedPat, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
     match pat {
         TypedPat::Wildcard | TypedPat::Var(_) => true,
-        TypedPat::Tuple(ps) => ps.iter().all(pat_is_irrefutable),
-        TypedPat::As { pat, .. } => pat_is_irrefutable(pat),
+        TypedPat::Tuple(ps) => ps.iter().all(|p| pat_is_irrefutable(p, top_level)),
+        TypedPat::As { pat, .. } => pat_is_irrefutable(pat, top_level),
         TypedPat::Index { .. } => true,
         TypedPat::FieldAccess { .. } => true,
+        TypedPat::Constructor { name, fields, named_fields, ty } => {
+            ctor_is_sole_record(name, ty, top_level)
+                && fields.iter().all(|p| pat_is_irrefutable(p, top_level))
+                && named_fields.iter().all(|(_, p)| pat_is_irrefutable(p, top_level))
+        }
         _ => false,
     }
+}
+
+/// See `hierarchy::record_is_sole_shape`; the sole record of a uniontype is
+/// typed with the uniontype's qname.
+fn ctor_is_sole_record(name: &str, ty: &Ty, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
+    let qname = match ty {
+        Ty::RustStruct(q) => q.clone(),
+        _ => match lookup_record_through_unions(name, top_level) {
+            Some((q, _)) => q,
+            None => return false,
+        },
+    };
+    resolve_single_record_qname(&qname, top_level).is_some()
+        || crate::hierarchy::record_is_sole_shape(&qname, top_level)
 }
 
 /// Convert a FieldAccess pattern chain to dotted expression syntax (e.g., `a.b.c`).
@@ -17486,7 +17870,7 @@ fn is_static_const_emittable(exp: &TypedExp, ctx: &GenCtx, top_level: &BTreeMap<
 /// True if the lowered Rust type for `ty` implements `Sync` for the purposes of
 /// `pub static` storage. The only non-`Sync` MetaModelica primitive we generate
 /// today is `Array<T> = Rc<RefCell<Vec<T>>>` (see `metamodelica::Array`); every
-/// other built-in maps to a `Sync` Rust type (`Arc<List<T>>`, `ArcStr`,
+/// other built-in maps to a `Sync` Rust type (`List<T>`, `ArcStr`,
 /// `Mutable<T> = Arc<Mutex<T>>`, primitives, function pointers, etc.).
 ///
 /// User-defined struct/enum types are checked against
@@ -17533,7 +17917,7 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
 
 /// Whether a value of this type is represented at the Rust level as a
 /// shared-pointer *handle* (`Arc<Enum>` for recursive uniontypes,
-/// `Arc<List<T>>` for lists, `ArcStr` for strings, `Rc<RefCell<Vec<T>>>` for
+/// `List<T>` for lists, `ArcStr` for strings, `Rc<RefCell<Vec<T>>>` for
 /// arrays) whose clones all designate the same MetaModelica heap object.
 ///
 /// `referenceEq` lowers to a pointer comparison; for handle-represented
@@ -17543,11 +17927,20 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
 /// result always-false. See [`try_emit_reference_eq`].
 fn referenceeq_derefs_to_pointee(ty: &Ty, ctx: &GenCtx) -> bool {
     match ty {
-        // list<T> → Arc<List<T>>; String → ArcStr; array<T> → Rc<RefCell<Vec<T>>>.
+        // list<T> → List<T>; String → ArcStr; array<T> → Rc<RefCell<Vec<T>>>.
         Ty::List(_) | Ty::Str | Ty::Array(_) => true,
         // Recursive uniontypes / variant-narrowed values / recursive generics
         // → Arc<Enum>.
         _ => is_arc_wrapped(ty, ctx),
+    }
+}
+
+/// `&List<T>` for a list operand: a borrow-only read arrives as `&*x` (which
+/// would deref to the node), everything else as an owned expression.
+fn list_operand_ref(operand: &str) -> String {
+    match operand.strip_prefix("&*") {
+        Some(local) => format!("&({local})"),
+        None => format!("&({operand})"),
     }
 }
 
@@ -17624,7 +18017,9 @@ fn try_emit_reference_eq<'a>(
         // and Cons by head identity + tail allocation — O(1), true whenever
         // the MMC pointer compare would be.
         Ty::List(_) => Some(format!(
-            "metamodelica::ReferenceEq::reference_eq(&*({lhs}), &*({rhs}))"
+            "metamodelica::ReferenceEq::reference_eq({}, {})",
+            list_operand_ref(lhs),
+            list_operand_ref(rhs)
         )),
         _ if referenceeq_derefs_to_pointee(ty, ctx) => {
             Some(format!("referenceEq(&*({lhs}),&*({rhs}))"))
@@ -17794,7 +18189,7 @@ fn type_destructure_needs_borrow(ty: &Ty, ctx: &GenCtx) -> bool {
 }
 
 /// True when the *pattern's shape* already proves the scrutinee is wrapped in
-/// an `Arc<_>` (or `Arc<List<_>>`/`Arc<Option<_>>`/etc.) and must be matched
+/// an `Arc<_>` (or `List<_>`/`Arc<Option<_>>`/etc.) and must be matched
 /// through `match_deref!` rather than a bare `let … = … else { fail };`.
 ///
 /// Used as a fallback when typedexp can't fully resolve the scrutinee's type
@@ -17818,8 +18213,8 @@ fn pat_requires_arc_deref(pat: &TypedPat, ctx: &GenCtx) -> bool {
         //     callback `fun()` whose return type is `Ty::Unknown` — has no such
         //     scrutinee type, so we recover it from the pattern's own `ty`); or
         //   * a nested field is itself an Arc-edge pattern (e.g. a
-        //     `FCore::Cache { …, scope: List::Cons{…}, .. }` destructure) —
-        //     the inner List::Cons is on an `Arc<List<_>>` field even though
+        //     `FCore::Cache { …, scope: metamodelica::ListNode::Cons{…}, .. }` destructure) —
+        //     the inner metamodelica::ListNode::Cons is on an `List<_>` field even though
         //     the outer Constructor's own type is a plain struct.
         TypedPat::Constructor { fields, named_fields, ty, .. } => {
             // `is_arc_wrapped` only recognises the bare recursive-uniontype
@@ -18113,11 +18508,33 @@ fn emit_pat_assign<'a>(
             // destructured by value; refutable Arc-crossing patterns take the
             // separate `match_deref!` path and discard `surface`).
             let needs_borrow = type_destructure_needs_borrow(scrut_ty, ctx);
-            let scrut_borrowed = needs_borrow && !matches!(pat_for_render, TypedPat::Tuple(_));
+            let irrefutable = pat_is_irrefutable(pat_for_render, top_level);
+            // A sole-record constructor on an Arc-wrapped value is matched
+            // through `&*` instead of `match_deref!`.
+            let ctor_pat = match pat_for_render {
+                TypedPat::As { pat, .. } => pat.as_ref(),
+                p => p,
+            };
+            let outer_arc = irrefutable && match ctor_pat {
+                TypedPat::Constructor { ty, .. } =>
+                    is_arc_wrapped(scrut_ty, ctx) || is_arc_wrapped(ty, ctx) || constructor_needs_arc(ty, ctx),
+                _ => false,
+            };
+            let scrut_borrowed = (needs_borrow || outer_arc) && !matches!(pat_for_render, TypedPat::Tuple(_));
             // Render shallow with deferrals for Arc-edge crossings.
             let mut deferrals: Vec<(String, TypedPat, Ty)> = Vec::new();
-            let surface = render_shallow(pat_for_render, scrut_ty, ctx, env, top_level, fresh, &mut deferrals, /*force_ref=*/false, scrut_borrowed);
-            // When the scrutinee is Arc-wrapped (list<T> → Arc<List<T>>; recursive
+            // `x as FOO(..)` on an Arc value binds `x` from the Arc itself
+            // below, so only the inner pattern is matched through `&*`.
+            let as_var = match pat_for_render {
+                TypedPat::As { var, .. } if outer_arc => {
+                    env.vars.insert(var.clone(), scrut_ty.clone());
+                    Some(var.clone())
+                }
+                _ => None,
+            };
+            let render_pat = if as_var.is_some() { ctor_pat } else { pat_for_render };
+            let surface = render_shallow(render_pat, scrut_ty, ctx, env, top_level, fresh, &mut deferrals, /*force_ref=*/false, scrut_borrowed);
+            // When the scrutinee is Arc-wrapped (list<T> → List<T>; recursive
             // uniontypes wrapped in Arc), destructuring a variant pattern such as
             // `Cons { head, tail }` only succeeds via the `deref_patterns`
             // feature, which deref's through the Arc. The deref produces a
@@ -18130,7 +18547,7 @@ fn emit_pat_assign<'a>(
             //
             // We must also recurse through Tuple types: a let-let pattern
             // `(STRING{r#str=key}, tokens) := parse_string(..)` has
-            // scrut_ty = (Arc<JSON>, Arc<List<Token>>), where the outer tuple
+            // scrut_ty = (Arc<JSON>, List<Token>), where the outer tuple
             // itself isn't Arc-wrapped but the first element is. Without
             // borrowing the whole tuple, the inner Constructor pattern would
             // still trigger Arc deref_patterns and fail to move non-Copy
@@ -18194,8 +18611,8 @@ fn emit_pat_assign<'a>(
             //
             // The legacy `let PAT = &(expr) else { fail };` form relied on the
             // nightly `deref_patterns` feature to peel the `Arc<…>` around
-            // `&Arc<List<T>>` etc. On stable we have no auto-deref, so the
-            // raw pattern fails to compile (E0308 "expected `Arc<List<T>>`,
+            // `&List<T>` etc. On stable we have no auto-deref, so the
+            // raw pattern fails to compile (E0308 "expected `List<T>`,
             // found `List<_>`"). Replace it with a `::match_deref::match_deref!`
             // wrapped `match` that yields a tuple of the pattern's clones:
             //
@@ -18209,8 +18626,15 @@ fn emit_pat_assign<'a>(
             // `render_shallow`'s deferral machinery — recursion through
             // nested Arc fields is handled directly by the macro's repeated
             // `Deref @ …` instead of follow-up `emit_pat_assign` calls.
+            // An irrefutable constructor pattern still needs `match_deref!` (with
+            // a dead `_` arm) when its Arc layout is unknown, or under
+            // `IfLetElse`, whose `_` arm is the `Err` recovery.
+            let plain_let = irrefutable
+                && (!pat_has_constructor(pat_for_render)
+                    || (!matches!(fail_mode, FailureMode::IfLetElse(_))
+                        && plain_let_shape(ctor_pat, scrut_ty)));
             let pat_needs_match_deref =
-                !pat_is_irrefutable(pat_for_render)
+                !plain_let
                 && (type_destructure_needs_borrow(scrut_ty, ctx)
                     || pat_has_str_lit(pat_for_render)
                     || pat_requires_arc_deref(pat_for_render, ctx));
@@ -18233,6 +18657,14 @@ fn emit_pat_assign<'a>(
                 };
                 let fail_owned;
                 let fail: &str = match &fail_mode {
+                    FailureMode::IfLetElse(else_code) => {
+                        // The else-recovery, used as the `_`-arm body. It is a
+                        // sequence of statements that diverges, so wrapping it
+                        // in a block expression type-checks against the Ok arm.
+                        fail_owned = format!("{{\n{else_code}{indent}    }}");
+                        &fail_owned
+                    }
+                    _ if irrefutable => "unreachable!()",
                     // Both `Function` and `TryArm` defer to `ctx.qmode`: a
                     // refutable destructuring is a `?`-like failure point, so it
                     // must follow the same propagation as `unwrap_break_err!`
@@ -18255,13 +18687,6 @@ fn emit_pat_assign<'a>(
                         _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
-                    FailureMode::IfLetElse(else_code) => {
-                        // The else-recovery, used as the `_`-arm body. It is a
-                        // sequence of statements that diverges, so wrapping it
-                        // in a block expression type-checks against the Ok arm.
-                        fail_owned = format!("{{\n{else_code}{indent}    }}");
-                        &fail_owned
-                    }
                 };
                 // Collect all binding names introduced by the (possibly
                 // re-named) pattern, together with their owned types. The
@@ -18350,7 +18775,7 @@ fn emit_pat_assign<'a>(
             // emitted in Bare mode (raw `Result<T>`), so we still need an
             // `Ok(..)` unwrap. The else-branch only runs on the Err case;
             // pattern mismatch is impossible by construction.
-            if pat_is_irrefutable(pat_for_render)
+            if irrefutable
                 && let FailureMode::IfLetElse(else_code) = &fail_mode
             {
                 let inner = format!("{indent}    ");
@@ -18361,13 +18786,20 @@ fn emit_pat_assign<'a>(
                 writeln!(out, "{indent}}}").unwrap();
                 return;
             }
-            if pat_is_irrefutable(pat_for_render) {
+            if irrefutable {
                 match pat_for_render {
                     TypedPat::Tuple(_) => {
                         writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();
                     }
                     _ => {
-                        if needs_borrow {
+                        if outer_arc {
+                            let n = *fresh; *fresh += 1;
+                            writeln!(out, "{indent}let __arc{n} = {scrut_expr};").unwrap();
+                            if let Some(v) = &as_var {
+                                writeln!(out, "{indent}let {} = __arc{n}.clone();", escape_ident(v)).unwrap();
+                            }
+                            writeln!(out, "{indent}let {surface} = &*__arc{n};").unwrap();
+                        } else if needs_borrow {
                             writeln!(out, "{indent}let {surface} = {scrut_for_pat};").unwrap();
                         } else {
                             writeln!(out, "{indent}let {surface} = {scrut_expr};").unwrap();
@@ -18412,6 +18844,20 @@ fn emit_pat_assign<'a>(
                 emit_body!(out, indent, fail_mode.clone());
             }
         }
+    }
+}
+
+/// Can an irrefutable pattern with a constructor be lowered to a plain `let`?
+/// Only when every constructor's Arc layout is known: from the scrutinee or
+/// the pattern type for a constructor, from the element types for a tuple.
+fn plain_let_shape(pat: &TypedPat, ty: &Ty) -> bool {
+    match (pat, ty) {
+        (TypedPat::Wildcard | TypedPat::Var(_), _) => true,
+        (TypedPat::Constructor { ty: pty, .. }, _) =>
+            !matches!(ty, Ty::Unknown) || !matches!(pty, Ty::Unknown),
+        (TypedPat::Tuple(ps), Ty::Tuple(ts)) =>
+            ps.len() == ts.len() && ps.iter().zip(ts).all(|(p, t)| plain_let_shape(p, t)),
+        _ => false,
     }
 }
 
@@ -18514,7 +18960,7 @@ fn render_shallow<'a>(
                 escape_ident(name)
             }
         }
-        TypedPat::EmptyList => "metamodelica::List::Nil".to_owned(),
+        TypedPat::EmptyList => "metamodelica::ListNode::Nil".to_owned(),
         TypedPat::None_ => "None".to_owned(),
         TypedPat::Some_(inner) => {
             let inner_ty = match scrut_ty {
@@ -18530,21 +18976,21 @@ fn render_shallow<'a>(
         TypedPat::Cons { head, tail } => {
             let elem_ty = match scrut_ty { Ty::List(t) => (**t).clone(), _ => Ty::Unknown };
             let h = render_shallow(head, &elem_ty, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed);
-            // The `tail` field of `metamodelica::List::Cons` is `Arc<List<T>>`, and
+            // The `tail` field of `metamodelica::ListNode::Cons` is `List<T>`, and
             // the surface MetaModelica type `list<T>` is also lowered to
-            // `Arc<List<T>>`, so binding the tail directly in the pattern yields a
+            // `List<T>`, so binding the tail directly in the pattern yields a
             // value of exactly the right user-visible type. We still route the
             // tail through a fresh `__tN` temporary so that a non-trivial sub-pattern
             // (e.g. another `Cons`, a constructor, or a name that shadows an
             // already-bound variable) can be re-emitted by `emit_pat_assign` against
-            // an owned `Arc<List<T>>` scrutinee. The deferred expression is therefore
+            // an owned `List<T>` scrutinee. The deferred expression is therefore
             // `__tN.clone()` (an Arc bump), NOT `(*__tN).clone()` — the latter would
             // strip the Arc and produce a `List<T>` value, which no longer matches
             // the surface type.
             // Wildcards pass through unchanged — there is nothing to bind.
             // A simple `Var(name)` sub-pattern can also be bound directly in the
-            // pattern: by-value matching on an `Arc<List<T>>` moves the `tail`
-            // field out as an `Arc<List<T>>`, which is exactly the surface type
+            // pattern: by-value matching on an `List<T>` moves the `tail`
+            // field out as an `List<T>`, which is exactly the surface type
             // of the user's variable. No fresh temporary or follow-up clone is
             // needed in that case. Note that `rewrite_pat_for_existing_bindings`
             // has already substituted any name that collides with the current
@@ -18561,7 +19007,7 @@ fn render_shallow<'a>(
                     tmp
                 }
             };
-            format!("metamodelica::List::Cons {{ head: {h}, tail: {t} }}")
+            format!("metamodelica::ListNode::Cons {{ head: {h}, tail: {t} }}")
         }
         TypedPat::Tuple(pats) => {
             let tys: Vec<Ty> = match scrut_ty {
@@ -18569,7 +19015,16 @@ fn render_shallow<'a>(
                 _ => vec![Ty::Unknown; pats.len()],
             };
             let parts: Vec<String> = pats.iter().zip(tys.iter())
-                .map(|(p, t)| render_shallow(p, t, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed))
+                .map(|(p, t)| {
+                    if is_arc_wrapped(t, ctx) && !matches!(p, TypedPat::Wildcard | TypedPat::Var(_)) {
+                        let n = *fresh; *fresh += 1;
+                        let tmp = format!("__t{n}");
+                        deferrals.push((format!("{tmp}.clone()"), p.clone(), t.clone()));
+                        tmp
+                    } else {
+                        render_shallow(p, t, ctx, env, top_level, fresh, deferrals, force_ref, scrut_borrowed)
+                    }
+                })
                 .collect();
             format!("({})", parts.join(", "))
         }
@@ -19533,7 +19988,7 @@ fn record_pattern_variants_inner<'a>(
     record_constructor_pattern_bindings(inner_pat, &scrut_ty, env, top_level, shapes, ctx, md);
     // (5) List-cons patterns: walk through `head :: tail` (= TypedPat::Cons).
     //     `head` is a single element; `tail` is the same list type. When the
-    //     scrutinee is `Arc<List<T>>` and the list crosses Arc (always true
+    //     scrutinee is `List<T>` and the list crosses Arc (always true
     //     for `Ty::List`), every name binding inside the pattern is by-ref
     //     under match_deref!. Record the shape so downstream `var_field!`
     //     and `.field` emission deref correctly, and recurse so nested
@@ -21317,7 +21772,7 @@ fn fmt_param_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
         // Same for `Option<F>` / `List<F>` / `Array<F>`: any container whose
         // element is itself a function type needs the trait-object form.
         Ty::Option(inner) => format!("Option<{}>", fmt_param_ty(inner, ctx)),
-        Ty::List(inner) => format!("Arc<metamodelica::List<{}>>", fmt_param_ty(inner, ctx)),
+        Ty::List(inner) => format!("metamodelica::List<{}>", fmt_param_ty(inner, ctx)),
         Ty::Array(inner) => format!("metamodelica::Array<{}>", fmt_param_ty(inner, ctx)),
         _ => fmt_ty(ty, ctx),
     }
@@ -23734,7 +24189,7 @@ fn fmt_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
             fmt_ty(&Ty::RustEnum(union_qname.clone()), ctx)
         }
         Ty::Option(inner) => format!("Option<{}>", fmt_ty(inner, ctx)),
-        Ty::List(inner) => format!("Arc<metamodelica::List<{}>>", fmt_ty(inner, ctx)),
+        Ty::List(inner) => format!("metamodelica::List<{}>", fmt_ty(inner, ctx)),
         // MetaModelica `array<T>` has reference (aliasing) semantics: arrayUpdate
         // mutates in place and the change is visible through every alias. We model
         // that with `metamodelica::Array<T>` (alias for `Rc<RefCell<Vec<T>>>`).
@@ -23908,7 +24363,7 @@ fn component_fields<'a>(c: &'a MM::Class, children: &'a BTreeMap<String, NameNod
 /// Same as [`component_fields`] but also returns each component's original
 /// AST `TypeSpec`. The TypeSpec lets the emitter recover the type *name as
 /// written* (e.g. `Key`, `Value`) rather than its fully resolved Rust type
-/// (e.g. `ArcStr`, `Arc<metamodelica::List<TplAbsyn::ASTDef>>`). This is what
+/// (e.g. `ArcStr`, `metamodelica::List<TplAbsyn::ASTDef>`). This is what
 /// lets uniontype record fields reference sibling type aliases instead of
 /// inlining the resolved type — keeping the generated code stable across
 /// future redeclarations of the alias.
@@ -24127,10 +24582,10 @@ fn component_ref_simple_name(cref: &Absyn::ComponentRef) -> String {
 /// function input parameter — anything more complex (a literal, a nested
 /// expression) is rejected with a placeholder so the broken case shows
 /// up at compile time instead of silently dropping arguments.
-fn collect_external_arg_names(args: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::Exp>>>) -> Vec<String> {
+fn collect_external_arg_names(args: &metamodelica::List<std::sync::Arc<Absyn::Exp>>) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = args.clone();
-    while let metamodelica::List::Cons { head, tail } = &*cur {
+    while let metamodelica::ListNode::Cons { head, tail } = &*cur {
         match crate::hierarchy::strip_exp_wrappers(head) {
             // `OpenModelica.threadData()` — drop.
             Absyn::Exp::CALL { function_, .. }

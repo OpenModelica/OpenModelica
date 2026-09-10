@@ -21,6 +21,7 @@
 
 extern crate alloc;
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -1428,7 +1429,7 @@ impl SimMeta {
             }
             None => translated,
         };
-        let min_step = 4.0 * f64::EPSILON * libm::fmax(libm::fabs(self.start_time), libm::fabs(self.stop_time));
+        let min_step = 4.0 * f64::EPSILON * fmath::fmax(fmath::fabs(self.start_time), fmath::fabs(self.stop_time));
         if step < min_step && span > 0.0 {
             omclog::warning!(
                 STDOUT,
@@ -1454,7 +1455,7 @@ impl SimMeta {
         // Only when a flag moved it: `n_intervals` is exact where C re-derives it
         // from the step size the init XML carries.
         if (recalc || f.step_size.is_some()) && span > 0.0 && step > 0.0 {
-            self.n_intervals = libm::round(span / step) as u32;
+            self.n_intervals = fmath::round(span / step) as u32;
         }
         if let Some(t) = f.tolerance {
             self.tolerance = t;

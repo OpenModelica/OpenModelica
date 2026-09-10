@@ -103,6 +103,15 @@
       <p class="hint">y tolerance based on the difference between the signal's maximum and minimum</p>
       <label for="rangeDelta">rangeDelta</label><input type="number" id="rangeDelta" step="any" min="0" />
       <p class="hint">x tolerance</p>
+      <label for="algorithm">algorithm</label>
+      <select id="algorithm">
+        <option value="ellipse2014">ellipse2014 (diffSimulationResults)</option>
+        <option value="rectangle">rectangle (csv-compare)</option>
+        <option value="ellipse">ellipse (csv-compare)</option>
+      </select>
+      <p class="hint">how the tube is built; relTol and relTolDiffMinMax apply to ellipse2014 only</p>
+      <label for="nominalValue">nominalValue</label><input type="number" id="nominalValue" step="any" min="0" />
+      <p class="hint">rectangle and ellipse only: floor on the tube height, for near-zero signals</p>
     </div>
     <div class="modal-foot"><button class="ghost" data-close>Cancel</button><button id="compareRun">Compare</button></div>
   </div>
@@ -138,7 +147,7 @@ const cmpSummary = $('cmpSummary');
 const charts = createCharts(chartsEl);
 
 // The scripting API's diffSimulationResults defaults.
-const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002 };
+const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'ellipse2014', nominalValue: 0.001 };
 
 // --- state -----------------------------------------------------------------
 const files = [];       // { id, name, rf, vars, params:Set, units, nrows, selected:Set }
@@ -352,7 +361,7 @@ function applyUnit(spec, base) {
 function runCompare(actual, reference, opts) {
   setStatus('Comparing…', 'busy');
   const vars = reference.rf.compared_variables();
-  const diff = diff_all(actual.rf, reference.rf, [], opts.relTol, opts.relTolDiffMinMax, opts.rangeDelta);
+  const diff = diff_all(actual.rf, reference.rf, [], opts.relTol, opts.relTolDiffMinMax, opts.rangeDelta, opts.algorithm, opts.nominalValue);
   cmp = { actual, reference, opts, vars, compared: vars.length, diffVars: new Set(diff), current: null };
   mode = 'compare';
   const wanted = new URLSearchParams(location.search).get('var');
@@ -369,7 +378,7 @@ function renderDiffChart() {
   const v = cmp.current;
   if (!v) { showEmpty(cmp.diffVars.size ? 'Pick a variable to see its comparison.' : 'Every compared variable stays inside the reference tube.'); return; }
   let d;
-  try { d = diff_variable(cmp.actual.rf, cmp.reference.rf, v, cmp.opts.relTol, cmp.opts.relTolDiffMinMax, cmp.opts.rangeDelta); }
+  try { d = diff_variable(cmp.actual.rf, cmp.reference.rf, v, cmp.opts.relTol, cmp.opts.relTolDiffMinMax, cmp.opts.rangeDelta, cmp.opts.algorithm, cmp.opts.nominalValue); }
   catch (e) { showEmpty(String(e && e.message || e)); return; }
   const t = d.time, at = d.actual_time;
   const curves = [
@@ -387,8 +396,11 @@ function renderDiffChart() {
   }
   const cap = document.createElement('div'); cap.className = 'caption';
   cap.textContent = 'Reference time ' + fmt(t[0]) + ' to ' + fmt(t[t.length - 1]) + ', actual time ' + fmt(at[0]) + ' to '
-    + fmt(at[at.length - 1]) + '. Relative tolerance ' + o.relTol + ', absolute tolerance ' + d.abstol.toPrecision(2)
-    + ' (' + o.relTolDiffMinMax + ' relative), range delta ' + o.rangeDelta + '.';
+    + fmt(at[at.length - 1]) + '. Algorithm ' + o.algorithm + ', range delta ' + o.rangeDelta
+    + (o.algorithm === 'ellipse2014'
+        ? ', relative tolerance ' + o.relTol + ', absolute tolerance ' + d.abstol.toPrecision(2)
+          + ' (' + o.relTolDiffMinMax + ' relative).'
+        : ', tube half-height ' + d.abstol.toPrecision(2) + '.');
   chartsEl.appendChild(cap);
   d.free();
 }
@@ -404,11 +416,13 @@ const compareModal = bindModal($('compareBackdrop'), { onOpen: () => {
   }
   const o = cmp ? cmp.opts : optsFromUrl();
   $('relTol').value = o.relTol; $('relTolDiffMinMax').value = o.relTolDiffMinMax; $('rangeDelta').value = o.rangeDelta;
+  $('algorithm').value = o.algorithm; $('nominalValue').value = o.nominalValue;
 } });
 $('compareBtn').onclick = compareModal.open;
 $('compareRun').onclick = () => {
   const byId = (id) => files.find((f) => f.id === +id);
-  const opts = { relTol: +$('relTol').value, relTolDiffMinMax: +$('relTolDiffMinMax').value, rangeDelta: +$('rangeDelta').value };
+  const opts = { relTol: +$('relTol').value, relTolDiffMinMax: +$('relTolDiffMinMax').value, rangeDelta: +$('rangeDelta').value,
+                 algorithm: $('algorithm').value, nominalValue: +$('nominalValue').value };
   const actual = byId($('cmpActual').value), reference = byId($('cmpRef').value);
   if (actual === reference) { setStatus('Pick two different files to compare.', 'err'); return; }
   compareModal.close();
@@ -447,10 +461,14 @@ document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('drop'); openFiles([...e.dataTransfer.files]); });
 window.addEventListener('resize', () => charts.redraw());
 
-// --- URL: ?result=<url>&reference=<url>[&var=<name>][&relTol=&relTolDiffMinMax=&rangeDelta=] or ?file=<url>… ---
+// --- URL: ?result=<url>&reference=<url>[&var=<name>][&relTol=&relTolDiffMinMax=&rangeDelta=&algorithm=] or ?file=<url>… ---
 function optsFromUrl() {
   const p = new URLSearchParams(location.search), o = { ...DEFAULTS };
-  for (const k of Object.keys(o)) if (p.has(k) && isFinite(+p.get(k))) o[k] = +p.get(k);
+  for (const k of Object.keys(o)) {
+    if (!p.has(k)) continue;
+    if (k === 'algorithm') o[k] = p.get(k);
+    else if (isFinite(+p.get(k))) o[k] = +p.get(k);
+  }
   return o;
 }
 

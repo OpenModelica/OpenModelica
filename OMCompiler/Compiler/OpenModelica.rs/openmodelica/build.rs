@@ -38,10 +38,14 @@ fn main() {
         return;
     }
 
-    let triple = match target_os.as_str() {
-        // Same per-OS layout as `Autoconf::triple` in openmodelica_util.
-        "linux" => format!("{target_arch}-linux-gnu"),
-        "macos" => format!("{target_arch}-apple-darwin"),
+    // Where the install puts the cdylib (CMAKE_INSTALL_LIBDIR, which the runtime
+    // spells `lib/{Autoconf::triple}/omc`), and the loader's word for "the
+    // directory this binary is in": ELF writes $ORIGIN, Mach-O @loader_path.
+    let (libdir, origin, lib) = match target_os.as_str() {
+        "linux" => {
+            (format!("lib/{target_arch}-linux-gnu/omc"), "$ORIGIN", "libOpenModelicaCompiler.so")
+        }
+        "macos" => ("lib/omc".to_owned(), "@loader_path", "libOpenModelicaCompiler.dylib"),
         _ => return,
     };
     // Thin-launcher linkage. This binary contains no compiler code; it calls
@@ -54,7 +58,7 @@ fn main() {
     // installed cdylib. In a dev/build tree that path does not exist, so ld.so
     // falls through to the absolute profile dir (the just-built copy), and
     // finally $ORIGIN.
-    println!("cargo:rustc-link-arg-bins=-Wl,-rpath,$ORIGIN/../lib/{triple}/omc");
+    println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{origin}/../{libdir}");
     println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{dir}");
     // Link `-lOpenModelicaCompiler` as a *trailing* link-arg rather than a
     // plain `cargo:rustc-link-lib`: rustc emits build-script link libs ahead
@@ -64,15 +68,20 @@ fn main() {
     // (link-args go last), the reference is live and the .so is retained.
     println!("cargo:rustc-link-arg-bins=-L{dir}");
     println!("cargo:rustc-link-arg-bins=-lOpenModelicaCompiler");
-    println!("cargo:rerun-if-changed={dir}/libOpenModelicaCompiler.so");
-    println!("cargo:rustc-link-arg-bins=-Wl,-rpath,$ORIGIN");
+    println!("cargo:rerun-if-changed={dir}/{lib}");
+    println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{origin}");
     // libomcruntime.so (dlopened by the `-d=gen` pipeline) resolves the
     // compiler callback `omc_Error_getCurrentComponent`. In the static build it
     // came from the binary's own Error module (DynLoadExt.rs); now that the
     // compiler lives in libOpenModelicaCompiler.so, the .so exports it and ld.so
     // resolves it from there (the .so is a DT_NEEDED, so its dynamic symbols are
     // in the global scope for later dlopen()s). The `-u`/--export-dynamic-symbol
-    // are kept as a harmless safety net.
-    println!("cargo:rustc-link-arg-bins=-Wl,-u,omc_Error_getCurrentComponent");
-    println!("cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol=omc_Error_getCurrentComponent");
+    // are kept as a harmless safety net; ld64 spells neither, and a Mach-O
+    // dylib's exports are already visible to a later dlopen().
+    if target_os != "macos" {
+        println!("cargo:rustc-link-arg-bins=-Wl,-u,omc_Error_getCurrentComponent");
+        println!(
+            "cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol=omc_Error_getCurrentComponent"
+        );
+    }
 }

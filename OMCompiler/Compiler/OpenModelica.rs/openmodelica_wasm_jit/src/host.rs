@@ -2,6 +2,7 @@
 //! hooks) and the thread-local assert state they record, shared by both engines.
 
 use metamodelica::Result;
+use openmodelica_sim_meta::driver::AssertHold;
 
 /// A failing assertion recorded by `rt_assert`. `msg`/`file` are handles into the
 /// shared linear memory, decoded by the caller after the trap.
@@ -24,8 +25,8 @@ thread_local! {
     /// ecol, read_only, initial]`, `kind` per `driver::ASSERT_*`.
     static PENDING_WARNINGS: std::cell::RefCell<Vec<[i32; 10]>> = const { std::cell::RefCell::new(Vec::new()) };
     /// C's `noThrowAsserts`: the driver has the model on a provisional state, so
-    /// `rt_assert` records instead of telling the caller to trap.
-    static NO_THROW: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// `rt_assert` holds a violation instead of telling the caller to trap.
+    static ASSERT_HOLD: std::cell::Cell<AssertHold> = const { std::cell::Cell::new(AssertHold::Throw) };
     /// Executed `reinit`s, `(state SimData offset, value)`, for the driver's
     /// `LOG_EVENTS` block. Only filled while that stream is on.
     static PENDING_REINITS: std::cell::RefCell<Vec<(u32, f64)>> = const { std::cell::RefCell::new(Vec::new()) };
@@ -60,13 +61,13 @@ fn take_reinits_into(dst: &mut [u8], max: usize) -> u32 {
     recs.len() as u32
 }
 
-/// Driver hook (`driver::set_no_throw_hook`). Opening drops the assertion a
+/// Driver hook (`driver::set_assert_hold_hook`). Opening drops the assertion a
 /// previous phase suppressed, so `enrich_trap` reports the one that failed.
-pub fn set_no_throw_asserts(v: bool) {
-    if v {
+pub fn set_assert_hold(m: AssertHold) {
+    if m != AssertHold::Throw {
         clear_pending_assert();
     }
-    NO_THROW.with(|n| n.set(v));
+    ASSERT_HOLD.with(|n| n.set(m));
 }
 
 /// Clear any stale pending assertion before a call.
@@ -186,38 +187,40 @@ fn row_asserts(read: &dyn Fn(u32, &mut [u8]) -> bool, sim_data: u32, warn: i32) 
     openmodelica_sim_meta::driver::row_asserts(&mut MemEngine(read), sim_data, warn)
 }
 
-/// The run's shared linear memory. `rt_row_asserts` is called by the *model*
-/// module, which imports `memory` rather than exporting it, so `Caller::get_export`
-/// cannot find it; the engine sets it here instead (wasmer has [`HostMem`]).
+/// Per-store host state. Store data, not thread-locals: a run and the FMI faces
+/// of an artifact are separate stores on one thread.
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-mod sim_memory {
-    use std::cell::Cell;
-    thread_local! {
-        static MEMORY: Cell<Option<wasmtime::Memory>> = const { Cell::new(None) };
-    }
-    pub fn set(m: wasmtime::Memory) {
-        MEMORY.with(|c| c.set(Some(m)));
-    }
-    pub fn get() -> Option<wasmtime::Memory> {
-        MEMORY.with(|c| c.get())
+pub struct HostState {
+    pub wasi: openmodelica_wasi::wasi::WasiCtx,
+    /// The model module imports it, so `Caller::get_export` cannot find it.
+    pub memory: Option<wasmtime::Memory>,
+    /// What a library's `ModelicaError` throws; only a model with external "C" has it.
+    model_error: Option<(wasmtime::Tag, wasmtime::ExnRefPre)>,
+    /// The libraries' shadow stack, which a caught throw leaves claimed.
+    pub shadow_stack: Option<wasmtime::Global>,
+    /// An artifact's own `rt_ext_error_report`.
+    pub ext_error_report: Option<wasmtime::TypedFunc<u32, ()>>,
+    /// The libraries' `vsnprintf`, for `ModelicaFormat*` messages.
+    pub vsnprintf: Option<wasmtime::TypedFunc<(i32, i32, i32, i32), i32>>,
+}
+
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+impl HostState {
+    pub fn new(wasi: openmodelica_wasi::wasi::WasiCtx) -> Self {
+        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None }
     }
 }
 
-/// The run's `model_error` tag, and the libraries' shadow stack that a caught
-/// throw leaves claimed. Both belong to the run's store, so they are registered
-/// after the model module is instantiated and cleared when the next run starts.
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 mod model_error {
-    use std::cell::RefCell;
-    use wasmtime::{AsContextMut, ExnRef, ExnRefPre, ExnType, Global, Rooted, Tag, Val};
+    use super::HostState;
+    use wasmtime::{AsContextMut, ExnRef, ExnRefPre, ExnType, Rooted, Tag, Val};
 
-    thread_local! {
-        static TAG: RefCell<Option<(Tag, ExnRefPre)>> = const { RefCell::new(None) };
-        static STACK: RefCell<Option<Global>> = const { RefCell::new(None) };
-    }
-
-    /// `None` clears it — a store outlives neither the run nor its tag.
-    pub fn set_tag(mut store: impl AsContextMut, tag: Option<Tag>) -> Result<(), wasmtime::Error> {
+    /// `None` clears it.
+    pub fn set_tag(
+        mut store: impl AsContextMut<Data = HostState>,
+        tag: Option<Tag>,
+    ) -> Result<(), wasmtime::Error> {
         let entry = match tag {
             Some(tag) => {
                 let ty = ExnType::from_tag_type(&tag.ty(&store.as_context_mut()))?;
@@ -225,36 +228,32 @@ mod model_error {
             }
             None => None,
         };
-        TAG.with(|t| *t.borrow_mut() = entry);
+        store.as_context_mut().data_mut().model_error = entry;
         Ok(())
-    }
-
-    pub fn set_shadow_stack(s: Option<Global>) {
-        STACK.with(|c| *c.borrow_mut() = s);
     }
 
     /// A fresh exception object to throw, when this run catches them at all.
     pub fn exception(
-        store: &mut impl AsContextMut,
+        store: &mut impl AsContextMut<Data = HostState>,
     ) -> Result<Option<Rooted<ExnRef>>, wasmtime::Error> {
-        TAG.with(|t| match t.borrow().as_ref() {
-            Some((tag, pre)) => ExnRef::new(&mut *store, pre, tag, &[]).map(Some),
-            None => Ok(None),
-        })
+        let Some((tag, pre)) = store.as_context_mut().data_mut().model_error.take() else { return Ok(None) };
+        let exn = ExnRef::new(&mut *store, &pre, &tag, &[]);
+        store.as_context_mut().data_mut().model_error = Some((tag, pre));
+        exn.map(Some)
     }
 
     /// `rt.rt_ext_stack_save`: the libraries' shadow stack, which the module's own
     /// (`__stack_pointer` in the runtime) is not — they are separate instances here.
-    pub fn save_shadow_stack(mut store: impl AsContextMut) -> Result<i32, wasmtime::Error> {
-        match STACK.with(|c| *c.borrow()) {
+    pub fn save_shadow_stack(mut store: impl AsContextMut<Data = HostState>) -> Result<i32, wasmtime::Error> {
+        match store.as_context().data().shadow_stack {
             Some(g) => Ok(g.get(&mut store).i32().unwrap_or(0)),
             None => Ok(0),
         }
     }
 
     /// `rt.rt_ext_stack_restore`.
-    pub fn restore_shadow_stack(mut store: impl AsContextMut, sp: i32) -> Result<(), wasmtime::Error> {
-        if let Some(g) = STACK.with(|c| *c.borrow()) {
+    pub fn restore_shadow_stack(mut store: impl AsContextMut<Data = HostState>, sp: i32) -> Result<(), wasmtime::Error> {
+        if let Some(g) = store.as_context().data().shadow_stack {
             g.set(&mut store, Val::I32(sp))?;
         }
         Ok(())
@@ -263,14 +262,9 @@ mod model_error {
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub use model_error::{
-    exception as model_error_exception, restore_shadow_stack, save_shadow_stack, set_shadow_stack,
+    exception as model_error_exception, restore_shadow_stack, save_shadow_stack,
     set_tag as set_model_error_tag,
 };
-
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-pub use sim_memory::set as set_sim_memory;
-#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-pub use sim_memory::get as get_sim_memory;
 
 fn record_assert(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) {
     PENDING_ASSERT.with(|p| {
@@ -287,21 +281,20 @@ fn record_warning(rec: [i32; 10]) {
 }
 
 /// `rt_assert`: a failed `assert()`. Returns 1 when the caller must trap — a model
-/// or runtime error (`cond == 0`) always does, a user assertion is recorded
-/// instead while the driver has asserts suppressed.
+/// or runtime error (`cond == 0`) always does, a user assertion is held instead
+/// while the driver has asserts suppressed (and recorded, unless it is probing).
 fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
-    if cond != 0 && NO_THROW.with(|n| n.get()) {
+    let hold = if cond != 0 { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
+    if hold == AssertHold::Record {
         record_warning([
             openmodelica_sim_meta::driver::ASSERT_SUPPRESSED,
             cond, msg, file, sline, scol, eline, ecol, read_only, initial,
         ]);
-        // Also as a pending assertion: if the phase throws, this reports it — the
-        // in-wasm driver's own reporter cannot reach the host's error buffer.
-        record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial);
-        return 0;
     }
+    // Also as a pending assertion: if the phase throws, this reports it — the
+    // in-wasm driver's own reporter cannot reach the host's error buffer.
     record_assert(cond, msg, file, sline, scol, eline, ecol, read_only, initial);
-    1
+    (hold == AssertHold::Throw) as i32
 }
 
 /// The runtime array object as both engines' external-"C" trampolines read it:
@@ -453,18 +446,16 @@ pub mod lin_solve {
 // `rt_assert`/`rt_assert_warning` register under `rt` (not `env`) so the merged
 // wasip1 export needs no `env` namespace; `rt_host_*` feed the in-wasm session
 // driver the host clock/cancel source.
-// Generic over the store data `T` (the closures never touch it), so both the sim
-// path (`Store<WasiCtx>`) and the `-d=gen` function-eval path (`Store<()>`) reuse it.
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result<()> {
-    let wt = |r: std::result::Result<&mut wasmtime::Linker<T>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
+pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()> {
+    let wt = |r: std::result::Result<&mut wasmtime::Linker<HostState>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
     wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
         assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
     }))?;
-    wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, T>| -> std::result::Result<i32, wasmtime::Error> {
+    wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, HostState>| -> std::result::Result<i32, wasmtime::Error> {
         save_shadow_stack(&mut caller)
     }))?;
-    wt(linker.func_wrap("rt", "rt_ext_stack_restore", |mut caller: wasmtime::Caller<'_, T>, sp: i32| -> std::result::Result<(), wasmtime::Error> {
+    wt(linker.func_wrap("rt", "rt_ext_stack_restore", |mut caller: wasmtime::Caller<'_, HostState>, sp: i32| -> std::result::Result<(), wasmtime::Error> {
         restore_shadow_stack(&mut caller, sp)
     }))?;
     wt(linker.func_wrap("rt", "rt_assert_warning", |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32| {
@@ -472,8 +463,8 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     }))?;
     // Where the runtime's `rt_ext_error` reports. Unused on this engine, whose
     // libraries import `ModelicaError` from the host, which throws for itself.
-    wt(linker.func_wrap("env", "rt_host_ext_error", |caller: wasmtime::Caller<'_, T>, msg: u32| {
-        let Some(memory) = sim_memory::get() else { return };
+    wt(linker.func_wrap("env", "rt_host_ext_error", |caller: wasmtime::Caller<'_, HostState>, msg: u32| {
+        let Some(memory) = caller.data().memory else { return };
         let data = memory.data(&caller);
         let Some(rest) = data.get(msg as usize..) else { return };
         let len = rest.iter().position(|&b| b == 0).unwrap_or(0);
@@ -483,8 +474,8 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "rt",
         "rt_row_asserts",
-        |caller: wasmtime::Caller<'_, T>, sim_data: u32, warn: i32| -> i32 {
-            let Some(mem) = sim_memory::get() else { return 1 };
+        |caller: wasmtime::Caller<'_, HostState>, sim_data: u32, warn: i32| -> i32 {
+            let Some(mem) = caller.data().memory else { return 1 };
             let data = mem.data(&caller);
             row_asserts(
                 &|addr: u32, buf: &mut [u8]| {
@@ -507,7 +498,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_log",
-        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| {
+        |mut caller: wasmtime::Caller<'_, HostState>, ptr: u32, len: u32| {
             let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return };
             let off = ptr as usize;
             if let Some(b) = mem.data(&caller).get(off..off + len as usize) {
@@ -521,8 +512,8 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_write_file",
-        |caller: wasmtime::Caller<'_, T>, name: u32, name_len: u32, data: u32, data_len: u32| {
-            let Some(memory) = sim_memory::get() else { return };
+        |caller: wasmtime::Caller<'_, HostState>, name: u32, name_len: u32, data: u32, data_len: u32| {
+            let Some(memory) = caller.data().memory else { return };
             let bytes = memory.data(&caller);
             let (Some(name), Some(data)) = (
                 bytes.get(name as usize..(name + name_len) as usize),
@@ -534,25 +525,25 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         },
     ))?;
     // The in-wasm session's result file (`session.rs`'s `HostOut`).
-    wt(linker.func_wrap("env", "rt_host_result_open", |caller: wasmtime::Caller<'_, T>, path: u32, len: u32| -> i32 {
-        let Some(memory) = sim_memory::get() else { return -1 };
+    wt(linker.func_wrap("env", "rt_host_result_open", |caller: wasmtime::Caller<'_, HostState>, path: u32, len: u32| -> i32 {
+        let Some(memory) = caller.data().memory else { return -1 };
         let Some(path) = memory.data(&caller).get(path as usize..(path + len) as usize) else { return -1 };
         result_file::open(&String::from_utf8_lossy(path))
     }))?;
-    wt(linker.func_wrap("env", "rt_host_result_write", |caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| -> i32 {
-        let Some(memory) = sim_memory::get() else { return -1 };
+    wt(linker.func_wrap("env", "rt_host_result_write", |caller: wasmtime::Caller<'_, HostState>, ptr: u32, len: u32| -> i32 {
+        let Some(memory) = caller.data().memory else { return -1 };
         let Some(bytes) = memory.data(&caller).get(ptr as usize..(ptr + len) as usize) else { return -1 };
         result_file::write(bytes)
     }))?;
-    wt(linker.func_wrap("env", "rt_host_result_write_at", |caller: wasmtime::Caller<'_, T>, pos: u64, ptr: u32, len: u32| -> i32 {
-        let Some(memory) = sim_memory::get() else { return -1 };
+    wt(linker.func_wrap("env", "rt_host_result_write_at", |caller: wasmtime::Caller<'_, HostState>, pos: u64, ptr: u32, len: u32| -> i32 {
+        let Some(memory) = caller.data().memory else { return -1 };
         let Some(bytes) = memory.data(&caller).get(ptr as usize..(ptr + len) as usize) else { return -1 };
         result_file::write_at(pos, bytes)
     }))?;
     wt(linker.func_wrap("env", "rt_host_result_close", || result_file::close()))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
-    wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
+    wt(linker.func_wrap("env", "rt_host_set_assert_hold", |v: i32| set_assert_hold(AssertHold::from_i32(v))))?;
     wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
     wt(linker.func_wrap("env", "rt_host_note_no_throw_assert", || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }))?;
     // The external "C" libraries are the host's, so C's `RHSFinalFlag` is too.
@@ -562,7 +553,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_take_warnings",
-        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
+        |mut caller: wasmtime::Caller<'_, HostState>, ptr: u32, max: u32| -> u32 {
             let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
             let recs = take_pending_warnings_upto(max as usize);
             let off = ptr as usize;
@@ -576,7 +567,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_take_reinits",
-        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
+        |mut caller: wasmtime::Caller<'_, HostState>, ptr: u32, max: u32| -> u32 {
             let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
             let off = ptr as usize;
             let end = off + max as usize * REINIT_BYTES;
@@ -593,7 +584,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_name_matches",
-        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| -> i32 {
+        |mut caller: wasmtime::Caller<'_, HostState>, ptr: u32, len: u32| -> i32 {
             let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 1 };
             let data = mem.data(&caller);
             let name = data
@@ -608,7 +599,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap(
         "env",
         "rt_host_lin_solve",
-        |mut caller: wasmtime::Caller<'_, T>, handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32| -> i32 {
+        |mut caller: wasmtime::Caller<'_, HostState>, handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32| -> i32 {
             let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 1 };
             let x = lin_solve::solve(handle, colptr, rowidx, values, b_ptr, n as usize, nnz as usize, mem.data(&caller));
             match x {
@@ -828,7 +819,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     imports.define("env", "rt_host_result_close", Function::new_typed(store, || result_file::close()));
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
-    imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
+    imports.define("env", "rt_host_set_assert_hold", Function::new_typed(store, |v: i32| set_assert_hold(AssertHold::from_i32(v))));
     imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
     imports.define("env", "rt_host_note_no_throw_assert", Function::new_typed(store, || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }));
     // The wasmer host has no external-library loader, so the flag has nowhere to go.

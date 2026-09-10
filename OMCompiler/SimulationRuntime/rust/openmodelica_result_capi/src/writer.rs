@@ -17,6 +17,7 @@ use std::sync::{LazyLock, Mutex};
 use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, Resolve, VarTy};
 use openmodelica_mat_writer::{Mat4Stream, MatKind, MatVar, Neg, Precision};
 use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar, write_plt};
+use openmodelica_result_files::threads;
 use openmodelica_result_files::cmp::format_g_prec;
 
 use crate::set_error;
@@ -196,11 +197,118 @@ enum Kind {
 }
 
 pub struct omc_result_writer {
+    sink: Sink,
+    n_cols: usize,
+}
+
+/// The rows either go straight into the file, or over a queue to a thread that
+/// serializes them while the simulation takes its next step. Which one is
+/// [`threads::write`]'s decision.
+enum Sink {
+    Direct(Writer),
+    Threaded(Threaded),
+}
+
+/// Everything the serialization owns; it moves to the writer thread whole, so
+/// no file handle is ever touched from two threads.
+struct Writer {
     signals: Vec<Signal>,
     out: FileOut,
     kind: Kind,
     n_cols: usize,
     ok: bool,
+}
+
+/// Rows are handed over `HANDOFF` at a time. One row per handover would wake a
+/// sleeping thread at every step boundary, and the futex costs more than the
+/// writing it hides.
+const HANDOFF: usize = 64;
+/// Handovers that may be in flight before the caller has to wait.
+const QUEUE: usize = 4;
+
+struct Threaded {
+    work: Option<std::sync::mpsc::SyncSender<Vec<f64>>>,
+    free: std::sync::mpsc::Receiver<Vec<f64>>,
+    worker: Option<std::thread::JoinHandle<bool>>,
+    block: Vec<f64>,
+    rows: usize,
+    live: usize,
+}
+
+impl Threaded {
+    fn spawn(writer: Writer, n_cols: usize) -> Threaded {
+        let (work, jobs) = std::sync::mpsc::sync_channel::<Vec<f64>>(QUEUE);
+        let (spent, free) = std::sync::mpsc::sync_channel::<Vec<f64>>(QUEUE);
+        let worker = std::thread::spawn(move || {
+            let mut w = writer;
+            while let Ok(block) = jobs.recv() {
+                for row in block.chunks_exact(n_cols.max(1)) {
+                    w.emit(row);
+                }
+                let _ = spent.send(block);
+            }
+            w.finish()
+        });
+        Threaded {
+            work: Some(work),
+            free,
+            worker: Some(worker),
+            block: Vec::new(),
+            rows: 0,
+            live: 0,
+        }
+    }
+
+    fn emit(&mut self, row: &[f64]) {
+        // A zero-capacity block is one that has just been handed over. The
+        // floor keeps that true for a zero-width row, which would otherwise
+        // never take a buffer and spin acquiring one.
+        if self.block.capacity() == 0 {
+            self.block = self.buffer((row.len() * HANDOFF).max(1));
+        }
+        self.block.extend_from_slice(row);
+        self.rows += 1;
+        if self.rows == HANDOFF {
+            self.hand_over();
+        }
+    }
+
+    fn buffer(&mut self, capacity: usize) -> Vec<f64> {
+        let mut b = match self.free.try_recv() {
+            Ok(b) => b,
+            Err(_) if self.live < QUEUE => {
+                self.live += 1;
+                Vec::with_capacity(capacity)
+            }
+            // Every buffer is still with the writer: wait for one back, which is
+            // the only place the simulation pays for its result file.
+            Err(_) => self.free.recv().unwrap_or_else(|_| Vec::with_capacity(capacity)),
+        };
+        b.clear();
+        b
+    }
+
+    fn hand_over(&mut self) {
+        if self.rows == 0 {
+            return;
+        }
+        // The queue is as deep as the buffer pool, so holding a buffer
+        // guarantees a slot and this cannot block.
+        if let Some(work) = &self.work {
+            let _ = work.send(std::mem::take(&mut self.block));
+        }
+        self.rows = 0;
+    }
+
+    fn finish(&mut self) -> bool {
+        self.hand_over();
+        // Dropping the sender is what ends the worker's `recv` loop.
+        self.work = None;
+        match self.worker.take() {
+            Some(worker) => worker.join().unwrap_or(false),
+            None => false,
+        }
+    }
 }
 
 fn csv_columns(signals: &[Signal], col_types: &[ColTy]) -> Vec<(usize, Neg, bool)> {
@@ -260,6 +368,8 @@ impl ApplyNeg for Neg {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// A thread only when `omc` allows one, so `-n=1` and the testsuite write as
+/// they always did.
 fn open(
     path: &str,
     format: &str,
@@ -271,6 +381,23 @@ fn open(
     stop: f64,
     single: bool,
     sync: usize,
+) -> Result<omc_result_writer, String> {
+    open_where(path, format, signals, col_types, params, first_row, start, stop, single, sync, threads::write())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn open_where(
+    path: &str,
+    format: &str,
+    signals: Vec<Signal>,
+    col_types: &[ColTy],
+    params: &[f64],
+    first_row: &[f64],
+    start: f64,
+    stop: f64,
+    single: bool,
+    sync: usize,
+    threaded: bool,
 ) -> Result<omc_result_writer, String> {
     let n_cols = col_types.len().max(1);
     let file = File::create(path).map_err(|e| format!("Cannot open file {path} for writing: {e}"))?;
@@ -331,7 +458,7 @@ fn open(
                 // The C runtime reads its variable attributes from `_init.xml`,
                 // which carries no unit definitions: a file it writes leans on
                 // the predefined units alone.
-                &FileMeta { span: Some((start, stop)), units: &[] },
+                &FileMeta { span: Some((start, stop)), units: &[], zstd: None },
             );
             s.set_sync(sync > 0);
             Kind::Arrow(s)
@@ -343,10 +470,32 @@ fn open(
         "plt" => Kind::Plt { rows: Vec::new(), params: numeric(&signals, params).1 },
         other => return Err(format!("Unknown output format: {other}")),
     };
-    Ok(omc_result_writer { signals, out, kind, n_cols, ok: true })
+    let writer = Writer { signals, out, kind, n_cols, ok: true };
+    let sink = if threaded {
+        Sink::Threaded(Threaded::spawn(writer, n_cols))
+    } else {
+        Sink::Direct(writer)
+    };
+    Ok(omc_result_writer { sink, n_cols })
 }
 
 impl omc_result_writer {
+    fn emit(&mut self, row: &[f64]) {
+        match &mut self.sink {
+            Sink::Direct(w) => w.emit(row),
+            Sink::Threaded(t) => t.emit(row),
+        }
+    }
+
+    fn finish(&mut self) -> bool {
+        match &mut self.sink {
+            Sink::Direct(w) => w.finish(),
+            Sink::Threaded(t) => t.finish(),
+        }
+    }
+}
+
+impl Writer {
     fn emit(&mut self, row: &[f64]) {
         match &mut self.kind {
             Kind::Mat(s) => s.push_rows(&mut self.out, row),
@@ -464,4 +613,59 @@ pub extern "C" fn omc_result_writer_close(w: *mut omc_result_writer) -> c_int {
     }
     let mut w = unsafe { Box::from_raw(w) };
     c_int::from(catch_unwind(AssertUnwindSafe(|| w.finish())).unwrap_or(false))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn signals() -> Vec<Signal> {
+        ["time", "x"]
+            .iter()
+            .enumerate()
+            .map(|(i, name)| Signal {
+                name: (*name).to_owned(),
+                description: String::new(),
+                unit: String::new(),
+                display_unit: String::new(),
+                relative_quantity: false,
+                ty: VarTy::Real,
+                discrete: false,
+                kind: if i == 0 { OMC_RESULT_KIND_TIME } else { OMC_RESULT_KIND_COLUMN },
+                column: i as u32,
+                negate: 0,
+                unvarying: false,
+            })
+            .collect()
+    }
+
+    /// The writer thread must leave byte for byte the file the direct path
+    /// leaves, and the testsuite cannot check that: it runs at `-n=1`, where
+    /// the threaded path is never taken.
+    #[test]
+    fn a_writer_thread_writes_the_same_file() {
+        let rows: Vec<f64> =
+            (0..500).flat_map(|i| [f64::from(i) * 0.01, f64::from(i * i)]).collect();
+        let types = [ColTy::F64, ColTy::F64];
+        for format in ["mat", "arrow", "csv", "plt"] {
+            let mut written = Vec::new();
+            for threaded in [false, true] {
+                let path = std::env::temp_dir()
+                    .join(format!("omc_capi_{format}_{threaded}.out"))
+                    .to_string_lossy()
+                    .into_owned();
+                let mut w = open_where(
+                    &path, format, signals(), &types, &[], &rows[..2], 0.0, 4.99, false, 0, threaded,
+                )
+                .expect("open");
+                for row in rows.chunks_exact(2) {
+                    w.emit(row);
+                }
+                assert!(w.finish(), "{format}, threaded {threaded}: finish failed");
+                written.push(std::fs::read(&path).expect("read back"));
+                let _ = std::fs::remove_file(&path);
+            }
+            assert_eq!(written[0], written[1], "{format}: the two paths disagree");
+        }
+    }
 }

@@ -389,6 +389,17 @@ impl RtData {
     }
 }
 
+/// A `modelica_string` array the collector scans: the Strings a model builds are
+/// GC-allocated by libOpenModelicaRuntimeC, and an array from plain `calloc`
+/// keeps none of them alive.
+fn string_roots(n: usize) -> *mut modelica_string {
+    let bytes = n.max(1) * core::mem::size_of::<modelica_string>();
+    let p = unsafe { omc_alloc_interface.malloc_uncollectable.expect("omc_alloc_interface")(bytes) };
+    assert!(!p.is_null(), "out of memory allocating String variables");
+    unsafe { core::ptr::write_bytes(p as *mut u8, 0, bytes) };
+    p as *mut modelica_string
+}
+
 /// C's `initializeDataStruc`: allocate every array `DATA` points at, then lay the
 /// driver's flat address space over them.
 pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
@@ -433,7 +444,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
             (*sd).realVars = calloc(n_real.max(1));
             (*sd).integerVars = calloc(n_int.max(1));
             (*sd).booleanVars = calloc(n_bool.max(1));
-            (*sd).stringVars = calloc(n_str.max(1));
+            (*sd).stringVars = string_roots(n_str);
             *local.add(i) = sd;
         }
     }
@@ -481,16 +492,16 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.realVarsOld = calloc(n_real.max(1));
     si.integerVarsOld = calloc(n_int.max(1));
     si.booleanVarsOld = calloc(n_bool.max(1));
-    si.stringVarsOld = calloc(n_str.max(1));
+    si.stringVarsOld = string_roots(n_str);
     si.realVarsPre = calloc(n_real.max(1));
     si.integerVarsPre = calloc(n_int.max(1));
     si.booleanVarsPre = calloc(n_bool.max(1));
-    si.stringVarsPre = calloc(n_str.max(1));
+    si.stringVarsPre = string_roots(n_str);
 
     si.realParameter = calloc((md.nParametersReal as usize).max(1));
     si.integerParameter = calloc((md.nParametersInteger as usize).max(1));
     si.booleanParameter = calloc((md.nParametersBoolean as usize).max(1));
-    si.stringParameter = calloc((md.nParametersString as usize).max(1));
+    si.stringParameter = string_roots(md.nParametersString as usize);
 
     si.inputVars = calloc((md.nInputVars as usize).max(1));
     si.outputVars = calloc((md.nOutputVars as usize).max(1));
@@ -584,6 +595,9 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.external_input.n = 0;
     si.external_input.i = 0;
 
+    // `-ls`/`-lss`/`-nls` before the systems are allocated: the choice of a sparse
+    // or a dense solver is made there, as C's `readFlag`s precede its `initialize*`.
+    openmodelica_sim_meta::simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
     // The systems' own allocation, once `analyticJacobians` exists for a torn
     // system's Jacobian to be initialized into.
     crate::systems::initialize_linear_systems(data, thread_data);
@@ -714,8 +728,8 @@ fn layout_for(
         // equation itself, so this is a flag rather than a count.
         cb.functionRemovedInitialEquations.is_some() as u32,
         unsafe { crate::support::compiledWithSymSolver } as u8,
-        // `has_when` asks whether `functionAlgebraics` ends with `storePreValues`;
-        // only the wasm-jit codegen folds that in, C's runtime does it after.
+        // `has_when` marks the wasm-jit form of `functionAlgebraics` (the discrete
+        // update); C's is the plain algebraic pass, the engine adds `storePreValues`.
         false,
         has_homotopy,
         openmodelica_sim_meta::HomotopyMethod::from_code(cb.homotopyMethod as u8),

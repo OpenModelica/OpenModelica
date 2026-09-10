@@ -1,70 +1,50 @@
-//! Apache Arrow IPC file (`.arrow`, "Feather v2") result files.
+//! `arrow.modelica` result files (`.arrow`): a sequence of Arrow IPC streams —
+//! the variable table, the units, the parameters as one dense union column, the
+//! trajectories, the batch index — and a 16-byte trailer. `SPECIFICATION.md`
+//! beside this crate is the format.
 //!
-//! One record batch per block of result rows over a schema with the `time`
-//! column first and then one column per *stored* time-variant signal, typed
-//! `Float64`, `Int32`, `Boolean` or `Utf8` after the Modelica type. A
-//! discrete-time signal (and every String) is run-end encoded: one value per
-//! change, the run ends indexing the shared `time` column, so the event
-//! instants are its own time scale and nothing is repeated between events.
-//! Each field carries `description`, `unit`, `displayUnit` and `type` metadata
-//! for readers that know nothing about the variable table. Whether a variable is
-//! discrete-time is the column's own encoding, not metadata.
-//!
-//! What the MATLAB v4 file keeps in `dataInfo` — aliases sharing one column, and
-//! time-invariant values — lives in the schema metadata key [`VARIABLES_KEY`]:
-//! a JSON array with one object per result variable,
-//!
-//! ```text
-//! {"name": "a.b", "column": 3, "scale": -1.0,
-//!  "description": "...", "unit": "m", "displayUnit": "mm",
-//!  "relativeQuantity": true}
-//! {"name": "p",   "value": 2.5, ...}
-//! {"name": "time","column": 0, ...}
-//! ```
-//!
-//! `column` is the schema field index and column 0 is `time`. An entry without
-//! one is time-invariant and carries its `value` instead, typed by the JSON: a
-//! boolean, a string, or a number that `type` widens beyond the default
-//! `Float64`. An alias is `scale * column + offset` (each key omitted when it is
-//! the identity's 1 or 0); a negated Real is `scale: -1`, a negated Boolean
-//! `scale: -1, offset: 1` over the 0/1 encoding, which is its logical negation.
-//! Only the keys with content are written.
-//!
-//! `unit` and `displayUnit` are names into the [`UNITS_KEY`] table, as in FMI,
-//! because a model has far more variables than units; see [`units`].
-//! Everything else in the file is plain Arrow.
+//! Writes bytes into a caller-owned [`Out`] and does no I/O of its own. The
+//! data stream is written one record batch per block of rows, and the schema
+//! is decided up front from the variable list: one field per *stored*
+//! time-variant signal, `time` first, in the Arrow type of the variable's own
+//! (`Float64`/`Float32`, `Int32`, `Boolean`, `Utf8`, or
+//! `Dictionary<Int32, Utf8>` for an enumeration), run-end encoded when the
+//! signal is discrete-time. Aliases share their column through the variable
+//! table's `scale` and `offset`; time-invariant values go to the parameter
+//! table, each in its own type.
 
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use arrow_array::types::Int32Type;
-use arrow_array::{ArrayRef, BooleanArray, Float32Array, Float64Array, Int32Array, RecordBatch, RunArray, StringArray};
-use arrow_ipc::writer::FileWriter;
-use arrow_schema::{DataType, Field, Schema, SchemaRef};
+use arrow_array::{Array, ArrayRef, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int8Array, Int32Array, Int64Array, RecordBatch, RunArray, StringArray, UnionArray};
+use arrow_buffer::ScalarBuffer;
+use arrow_ipc::writer::{DictionaryTracker, IpcDataGenerator, IpcWriteContext, IpcWriteOptions, write_message};
+use arrow_schema::{ArrowError, DataType, Field, Schema, SchemaRef, UnionFields, UnionMode};
 
 pub mod units;
+#[cfg(feature = "json-layout")]
+pub mod json;
 
 pub use units::{BaseUnit, DisplayUnit, UnitDef};
 
 /// Turns an interned String id (what a String column or parameter holds in the
-/// result rows) back into its text.
-pub type Resolve = Box<dyn Fn(u32) -> String>;
+/// result rows) back into its text. `Send`, so a writer holding one can be
+/// handed to a thread of its own.
+pub type Resolve = Box<dyn Fn(u32) -> String + Send>;
 
-/// Schema metadata key holding the variable table (JSON, see the crate docs).
-pub const VARIABLES_KEY: &str = "modelica.variables";
-/// Schema metadata key holding the layout version of this writer.
+/// Schema metadata key naming a stream's table.
+pub const TABLE_KEY: &str = "modelica.table";
+/// Schema metadata key holding the layout version, on the variable table.
 pub const FORMAT_KEY: &str = "modelica.format";
-/// Schema metadata keys holding the run's start and stop time (the `.mat`'s
-/// `data_1` first column), absent when the writer had no run.
+/// Schema metadata keys holding the run's start and stop time, on the variable
+/// table; absent when the writer had no run.
 pub const START_TIME_KEY: &str = "modelica.startTime";
 pub const STOP_TIME_KEY: &str = "modelica.stopTime";
-/// The distinct enumeration types: a JSON array of literal-name arrays, which
-/// the `enumeration` of a variable indexes.
-pub const ENUMERATIONS_KEY: &str = "modelica.enumerations";
-/// The unit definitions a variable's `unit`/`displayUnit` names, for the units
-/// [`units::predefined`] does not already define.
-pub const UNITS_KEY: &str = "modelica.units";
-pub const FORMAT_VERSION: &str = "1";
+pub const FORMAT_VERSION: &str = "0.1";
+/// The last 8 bytes of a finished file; the 8 before them are the byte offset
+/// of the index stream.
+pub const TRAILER_MAGIC: &[u8; 8] = b"MODELICA";
 
 /// Rows per record batch when streaming.
 pub const DEFAULT_BLOCK_ROWS: usize = 1024;
@@ -181,7 +161,7 @@ pub enum ColTy {
 }
 
 impl ColTy {
-    fn data_type(self) -> DataType {
+    pub(crate) fn data_type(self) -> DataType {
         match self {
             ColTy::F64 => DataType::Float64,
             ColTy::F32 => DataType::Float32,
@@ -193,11 +173,15 @@ impl ColTy {
 }
 
 /// The type of a run-end encoded column, as `RunArray::try_new` builds it.
-fn ree_type(values: DataType) -> DataType {
+pub(crate) fn ree_type(values: DataType) -> DataType {
     DataType::RunEndEncoded(
         Arc::new(Field::new("run_ends", DataType::Int32, false)),
         Arc::new(Field::new("values", values, true)),
     )
+}
+
+fn dictionary_type() -> DataType {
+    DataType::Dictionary(Box::new(DataType::Int32), Box::new(DataType::Utf8))
 }
 
 /// One result variable, borrowing the caller's strings.
@@ -213,10 +197,10 @@ pub struct ArrowVar<'a> {
     pub discrete: bool,
     pub kind: ArrowKind,
     /// C's `time_unvarying`: a `Column` computed once at initialization, stored as
-    /// a time-invariant value like the `.mat`'s `data_1`.
+    /// a time-invariant value.
     pub unvarying: bool,
     /// The literals of an enumeration variable (typed `Integer`; value `k` is
-    /// `literals[k - 1]`), stored once in the [`ENUMERATIONS_KEY`] table.
+    /// `literals[k - 1]`), which become the dictionary of its column.
     pub enumeration: Option<&'a [String]>,
 }
 
@@ -242,6 +226,9 @@ pub struct FileMeta<'a> {
     /// The units the variables name, minus the ones every reader of
     /// [`FORMAT_VERSION`] knows (see [`UnitDef::is_predefined`]).
     pub units: &'a [UnitDef],
+    /// ZSTD level for every record batch. Needs the `zstd` feature; without it
+    /// the file is written uncompressed.
+    pub zstd: Option<i32>,
 }
 
 /// A stored column: which result-row column feeds it and how.
@@ -251,70 +238,8 @@ struct Stored {
     affine: Affine,
     /// Run-end encoded (a discrete-time signal).
     ree: bool,
-}
-
-/// The distinct enumeration types of a file, [`ENUMERATIONS_KEY`]: Modelica
-/// types an enumeration by its literals alone, so equal lists are one type.
-#[derive(Default)]
-struct Enumerations(Vec<Vec<String>>);
-
-impl Enumerations {
-    fn index(&mut self, literals: &[String]) -> usize {
-        match self.0.iter().position(|l| l == literals) {
-            Some(i) => i,
-            None => {
-                self.0.push(literals.to_vec());
-                self.0.len() - 1
-            }
-        }
-    }
-    fn json(&self) -> String {
-        let mut json = String::from("[");
-        for (i, l) in self.0.iter().enumerate() {
-            if i > 0 {
-                json.push(',');
-            }
-            json_str_list(&mut json, l);
-        }
-        json.push(']');
-        json
-    }
-}
-
-fn json_str_list(out: &mut String, list: &[String]) {
-    out.push('[');
-    for (i, s) in list.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        json_str(out, s);
-    }
-    out.push(']');
-}
-
-pub(crate) fn json_str(out: &mut String, s: &str) {
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-}
-
-fn json_f64(out: &mut String, v: f64) {
-    if v.is_finite() {
-        // Round-trips exactly; JSON has no inf/nan, those become null.
-        out.push_str(&format!("{v:?}"));
-    } else {
-        out.push_str("null");
-    }
+    /// An enumeration's literals, the dictionary of the column.
+    literals: Option<Arc<StringArray>>,
 }
 
 /// Only a stored signal is discrete-time; a parameter's variability is not.
@@ -323,173 +248,367 @@ fn is_discrete(v: &ArrowVar) -> bool {
     (v.discrete || v.ty == VarTy::String) && matches!(v.kind, ArrowKind::Column { .. }) && !v.unvarying
 }
 
-fn field_metadata(v: &ArrowVar) -> HashMap<String, String> {
-    let mut md = HashMap::new();
-    if !v.comment.is_empty() {
-        md.insert("description".to_owned(), v.comment.to_owned());
-    }
-    if !v.unit.is_empty() {
-        md.insert("unit".to_owned(), v.unit.to_owned());
-    }
-    if !v.display_unit.is_empty() {
-        md.insert("displayUnit".to_owned(), v.display_unit.to_owned());
-    }
-    if v.relative_quantity {
-        md.insert("relativeQuantity".to_owned(), "true".to_owned());
-    }
-    md.insert("type".to_owned(), type_name(v).to_owned());
-    md
-}
+/// The distinct enumeration types of a file: Modelica types an enumeration by
+/// its literals alone, so equal lists are one type and share one dictionary.
+#[derive(Default)]
+struct Enumerations(Vec<Arc<StringArray>>);
 
-/// The type a variable has when its entry names none.
-const DEFAULT_TYPE: &str = "Float64";
-
-/// The declared type as its Arrow name — the file is an Arrow file, so it names
-/// types the way Arrow does. It is the *declared* type, which the storage may
-/// narrow: a `Float64` variable is a `Float32` column under `-single`, and a
-/// discrete one is run-end encoded over this type. An enumeration is an ordinary
-/// `Int32`; the `enumeration` key is what marks it as one.
-fn type_name(v: &ArrowVar) -> &'static str {
-    match v.ty {
-        VarTy::Real => "Float64",
-        VarTy::Integer => "Int32",
-        VarTy::Boolean => "Boolean",
-        VarTy::String => "Utf8",
+impl Enumerations {
+    fn index(&mut self, literals: &[String]) -> usize {
+        let same = |a: &StringArray| a.len() == literals.len() && a.iter().zip(literals).all(|(x, y)| x == Some(y.as_str()));
+        match self.0.iter().position(|l| same(l)) {
+            Some(i) => i,
+            None => {
+                self.0.push(Arc::new(StringArray::from_iter_values(literals)));
+                self.0.len() - 1
+            }
+        }
     }
 }
 
-/// The schema and the variable table for `vars`; `stored[i]` feeds field `i + 1`.
-fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy], resolve: &dyn Fn(u32) -> String, file: &FileMeta) -> (SchemaRef, Vec<Stored>) {
-    let mut fields: Vec<Field> = Vec::new();
+/// A parameter's value, in its own type.
+enum Value {
+    Real(f64),
+    Int(i32),
+    Bool(bool),
+    Str(String),
+    /// `(enumeration type, key)`, the key being the Modelica value minus one.
+    Enum(usize, i32),
+}
+
+fn table_schema(fields: Vec<Field>, table: &str) -> SchemaRef {
+    Arc::new(Schema::new_with_metadata(fields, HashMap::from([(TABLE_KEY.to_owned(), table.to_owned())])))
+}
+
+/// Everything decided before the first row.
+struct Plan {
+    schema: SchemaRef,
+    stored: Vec<Stored>,
+    variables: RecordBatch,
+    parameters: Option<RecordBatch>,
+    units: Option<RecordBatch>,
+    display_units: Option<RecordBatch>,
+}
+
+fn plan(vars: &[ArrowVar], params: &[f64], first_row: &[f64], col_types: &[ColTy], resolve: &dyn Fn(u32) -> String, file: &FileMeta) -> Plan {
+    let mut fields: Vec<Field> = vec![Field::new("", DataType::Float64, false)];
     let mut stored: Vec<Stored> = Vec::new();
     // Result-row column -> (field index, how the field derives from the row).
-    let mut owner: HashMap<u32, (usize, Affine)> = HashMap::new();
-    let mut json = String::from("[");
+    let mut owner: HashMap<u32, (usize, Affine)> = HashMap::from([(0, (0, Affine::IDENTITY))]);
     let mut enumerations = Enumerations::default();
+    let mut values: Vec<Value> = Vec::new();
     let mut param_ix = 0usize;
-    let mut first = true;
     let col_ty = |col: u32| col_types.get(col as usize).copied().unwrap_or(ColTy::F64);
 
-    let field_for = |fields: &mut Vec<Field>, stored: &mut Vec<Stored>, enumerations: &mut Enumerations, v: &ArrowVar, src: u32, affine: Affine| -> usize {
-        let ty = col_ty(src);
-        let ree = is_discrete(v) || ty == ColTy::Str;
-        let data_type = if ree { ree_type(ty.data_type()) } else { ty.data_type() };
-        let mut md = field_metadata(v);
-        if let Some(e) = v.enumeration {
-            md.insert("enumeration".to_owned(), enumerations.index(e).to_string());
-        }
-        fields.push(Field::new(v.name, data_type, false).with_metadata(md));
-        stored.push(Stored { src: src as usize, ty, affine, ree });
-        fields.len() - 1
-    };
-
-    // `time` is field 0 whether or not the caller lists it (it always does).
-    let time_var = vars.iter().find(|v| matches!(v.kind, ArrowKind::Time));
-    let time_field = match time_var {
-        Some(v) => Field::new("time", DataType::Float64, false).with_metadata(field_metadata(v)),
-        None => Field::new("time", DataType::Float64, false)
-            .with_metadata(HashMap::from([("unit".to_owned(), "s".to_owned()), ("type".to_owned(), DEFAULT_TYPE.to_owned())])),
-    };
-    fields.push(time_field);
-    owner.insert(0, (0, Affine::IDENTITY));
+    let n = vars.len();
+    let mut name = Vec::with_capacity(n);
+    let mut description = Vec::with_capacity(n);
+    let mut unit = Vec::with_capacity(n);
+    let mut display_unit = Vec::with_capacity(n);
+    let mut parameter = Vec::with_capacity(n);
+    let mut column = Vec::with_capacity(n);
+    let mut scale = Vec::with_capacity(n);
+    let mut offset = Vec::with_capacity(n);
+    let mut relative = Vec::with_capacity(n);
 
     for v in vars {
-        // (column, alias transform, time-invariant value)
-        let (column, affine, value): (Option<usize>, Affine, Option<f64>) = match v.kind {
-            ArrowKind::Time => (Some(0), Affine::IDENTITY, None),
+        let value = |raw: f64, enumerations: &mut Enumerations| match (v.ty, v.enumeration) {
+            (VarTy::String, _) => Value::Str(resolve(raw as u32)),
+            (VarTy::Boolean, _) => Value::Bool(raw != 0.0),
+            (VarTy::Integer, Some(e)) => Value::Enum(enumerations.index(e), (raw as i32 - 1).max(0)),
+            (VarTy::Integer, None) => Value::Int(raw as i32),
+            (VarTy::Real, _) => Value::Real(raw),
+        };
+        let param = |val: Value, values: &mut Vec<Value>| -> (bool, usize, Affine) {
+            values.push(val);
+            (true, values.len() - 1, Affine::IDENTITY)
+        };
+        let (is_param, index, affine) = match v.kind {
+            ArrowKind::Time => (false, 0, Affine::IDENTITY),
             ArrowKind::Param { affine } => {
                 let p = params.get(param_ix).copied().unwrap_or(0.0);
                 param_ix += 1;
-                (None, Affine::IDENTITY, Some(affine.apply(p)))
+                param(value(affine.apply(p), &mut enumerations), &mut values)
             }
-            ArrowKind::Const { value } => (None, Affine::IDENTITY, Some(value)),
+            ArrowKind::Const { value: c } => param(value(c, &mut enumerations), &mut values),
             ArrowKind::Column { col, affine } if v.unvarying => {
                 let raw = first_row.get(col as usize).copied().unwrap_or(0.0);
-                (None, Affine::IDENTITY, Some(affine.apply(raw)))
+                param(value(affine.apply(raw), &mut enumerations), &mut values)
             }
             ArrowKind::Column { col, affine } => match owner.get(&col) {
-                Some(&(f, base)) => (Some(f), affine.relative_to(base), None),
+                Some(&(f, base)) => (false, f, affine.relative_to(base)),
                 None => {
-                    let f = field_for(&mut fields, &mut stored, &mut enumerations, v, col, affine);
+                    let ty = col_ty(col);
+                    let literals = match (ty, v.enumeration) {
+                        (ColTy::I32, Some(e)) => {
+                            let ix = enumerations.index(e);
+                            Some(enumerations.0[ix].clone())
+                        }
+                        _ => None,
+                    };
+                    let ree = is_discrete(v) || ty == ColTy::Str;
+                    let base = if literals.is_some() { dictionary_type() } else { ty.data_type() };
+                    fields.push(Field::new("", if ree { ree_type(base) } else { base }, false));
+                    stored.push(Stored { src: col as usize, ty, affine, ree, literals });
+                    let f = fields.len() - 1;
                     owner.insert(col, (f, affine));
-                    (Some(f), Affine::IDENTITY, None)
+                    (false, f, Affine::IDENTITY)
                 }
             },
         };
-        if !first {
-            json.push(',');
-        }
-        first = false;
-        json.push_str("{\"name\":");
-        json_str(&mut json, v.name);
-        if let Some(c) = column {
-            json.push_str(&format!(",\"column\":{c}"));
-        }
-        if affine.scale != 1.0 {
-            json.push_str(",\"scale\":");
-            json_f64(&mut json, affine.scale);
-        }
-        if affine.offset != 0.0 {
-            json.push_str(",\"offset\":");
-            json_f64(&mut json, affine.offset);
-        }
-        // Only a parameter has no column to carry its type and enumeration.
-        if let Some(val) = value {
-            json.push_str(",\"value\":");
-            match v.ty {
-                VarTy::String => json_str(&mut json, &resolve(val as u32)),
-                VarTy::Boolean => json.push_str(if val != 0.0 { "true" } else { "false" }),
-                VarTy::Integer if val.is_finite() => json.push_str(&(val as i64).to_string()),
-                _ => json_f64(&mut json, val),
-            }
-            if type_name(v) != DEFAULT_TYPE {
-                json.push_str(",\"type\":\"");
-                json.push_str(type_name(v));
-                json.push('"');
-            }
-            if let Some(e) = v.enumeration {
-                json.push_str(&format!(",\"enumeration\":{}", enumerations.index(e)));
-            }
-        }
-        if !v.comment.is_empty() {
-            json.push_str(",\"description\":");
-            json_str(&mut json, v.comment);
-        }
-        if !v.unit.is_empty() {
-            json.push_str(",\"unit\":");
-            json_str(&mut json, v.unit);
-        }
-        if !v.display_unit.is_empty() {
-            json.push_str(",\"displayUnit\":");
-            json_str(&mut json, v.display_unit);
-        }
-        if v.relative_quantity {
-            json.push_str(",\"relativeQuantity\":true");
-        }
-        json.push('}');
+        name.push(v.name);
+        description.push(v.comment);
+        unit.push(v.unit);
+        display_unit.push(v.display_unit);
+        parameter.push(is_param);
+        column.push(index as i32);
+        scale.push(affine.scale);
+        offset.push(affine.offset);
+        relative.push(v.relative_quantity);
     }
-    json.push(']');
-    let mut metadata = HashMap::from([(FORMAT_KEY.to_owned(), FORMAT_VERSION.to_owned()), (VARIABLES_KEY.to_owned(), json)]);
-    if !enumerations.0.is_empty() {
-        metadata.insert(ENUMERATIONS_KEY.to_owned(), enumerations.json());
-    }
-    if !file.units.is_empty() {
-        metadata.insert(UNITS_KEY.to_owned(), units::units_json(file.units));
-    }
+
+    let mut metadata = HashMap::from([(TABLE_KEY.to_owned(), "variables".to_owned()), (FORMAT_KEY.to_owned(), FORMAT_VERSION.to_owned())]);
     if let Some((start, stop)) = file.span {
         metadata.insert(START_TIME_KEY.to_owned(), format!("{start:?}"));
         metadata.insert(STOP_TIME_KEY.to_owned(), format!("{stop:?}"));
     }
-    (Arc::new(Schema::new_with_metadata(fields, metadata)), stored)
+    let variables_schema = Arc::new(Schema::new_with_metadata(
+        vec![
+            Field::new("name", DataType::Utf8, false),
+            Field::new("description", DataType::Utf8, false),
+            Field::new("unit", DataType::Utf8, false),
+            Field::new("displayUnit", DataType::Utf8, false),
+            Field::new("parameter", DataType::Boolean, false),
+            Field::new("column", DataType::Int32, false),
+            Field::new("scale", DataType::Float64, false),
+            Field::new("offset", DataType::Float64, false),
+            Field::new("relativeQuantity", DataType::Boolean, false),
+        ],
+        metadata,
+    ));
+    let variables = RecordBatch::try_new(
+        variables_schema,
+        vec![
+            Arc::new(StringArray::from(name)),
+            Arc::new(StringArray::from(description)),
+            Arc::new(StringArray::from(unit)),
+            Arc::new(StringArray::from(display_unit)),
+            Arc::new(BooleanArray::from(parameter)),
+            Arc::new(Int32Array::from(column)),
+            Arc::new(Float64Array::from(scale)),
+            Arc::new(Float64Array::from(offset)),
+            Arc::new(BooleanArray::from(relative)),
+        ],
+    )
+    .expect("arrow variable table");
+
+    let (units, display_units) = units_tables(file.units);
+    Plan { schema: table_schema(fields, "data"), stored, variables, parameters: parameters_table(&values, &enumerations), units, display_units }
 }
 
-/// The file written incrementally: schema up front, one record batch per
-/// `block_rows` rows, the footer at [`ArrowStream::finish`].
+/// The parameter table: one dense union column with a child per value type in
+/// use, so a row is a type id and an offset into the child of that type.
+fn parameters_table(values: &[Value], enumerations: &Enumerations) -> Option<RecordBatch> {
+    if values.is_empty() {
+        return None;
+    }
+    let (mut reals, mut ints, mut bools, mut strs) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    let mut enums: Vec<Vec<i32>> = vec![Vec::new(); enumerations.0.len()];
+    // (child, offset) per row, children numbered as below.
+    let n_basic = 4;
+    let mut rows: Vec<(usize, i32)> = Vec::with_capacity(values.len());
+    for v in values {
+        let (child, len) = match v {
+            Value::Real(x) => {
+                reals.push(*x);
+                (0, reals.len())
+            }
+            Value::Int(x) => {
+                ints.push(*x);
+                (1, ints.len())
+            }
+            Value::Bool(x) => {
+                bools.push(*x);
+                (2, bools.len())
+            }
+            Value::Str(x) => {
+                strs.push(x.as_str());
+                (3, strs.len())
+            }
+            Value::Enum(e, k) => {
+                enums[*e].push(*k);
+                (n_basic + e, enums[*e].len())
+            }
+        };
+        rows.push((child, len as i32 - 1));
+    }
+    let mut children: Vec<(usize, Field, ArrayRef)> = Vec::new();
+    if !reals.is_empty() {
+        children.push((0, Field::new("Float64", DataType::Float64, false), Arc::new(Float64Array::from(reals))));
+    }
+    if !ints.is_empty() {
+        children.push((1, Field::new("Int32", DataType::Int32, false), Arc::new(Int32Array::from(ints))));
+    }
+    if !bools.is_empty() {
+        children.push((2, Field::new("Boolean", DataType::Boolean, false), Arc::new(BooleanArray::from(bools))));
+    }
+    if !strs.is_empty() {
+        children.push((3, Field::new("Utf8", DataType::Utf8, false), Arc::new(StringArray::from(strs))));
+    }
+    for (e, keys) in enums.into_iter().enumerate() {
+        if !keys.is_empty() {
+            let dict = DictionaryArray::<Int32Type>::try_new(Int32Array::from(keys), enumerations.0[e].clone()).expect("arrow enumeration");
+            children.push((n_basic + e, Field::new("enumeration", dictionary_type(), false), Arc::new(dict)));
+        }
+    }
+    // Type ids count the children present, in order.
+    let type_of: HashMap<usize, i8> = children.iter().enumerate().map(|(i, c)| (c.0, i as i8)).collect();
+    let type_ids: Vec<i8> = rows.iter().map(|(c, _)| type_of[c]).collect();
+    let offsets: Vec<i32> = rows.iter().map(|(_, o)| *o).collect();
+    let fields = UnionFields::try_new((0..children.len() as i8).collect::<Vec<_>>(), children.iter().map(|c| c.1.clone()).collect::<Vec<_>>()).expect("arrow union fields");
+    let union = UnionArray::try_new(fields.clone(), ScalarBuffer::from(type_ids), Some(ScalarBuffer::from(offsets)), children.into_iter().map(|c| c.2).collect()).expect("arrow union");
+    let schema = table_schema(vec![Field::new("value", DataType::Union(fields, UnionMode::Dense), false)], "parameters");
+    Some(RecordBatch::try_new(schema, vec![Arc::new(union)]).expect("arrow parameter table"))
+}
+
+/// `modelica.units` and `modelica.displayUnits` for the units a file spells
+/// out: a unit row where the unit is not the predefined one of its name, and a
+/// display-unit row for every display unit the predefined set lacks.
+fn units_tables(defs: &[UnitDef]) -> (Option<RecordBatch>, Option<RecordBatch>) {
+    let mut name = Vec::new();
+    let mut has_base = Vec::new();
+    let mut exponents: Vec<Vec<i8>> = vec![Vec::new(); units::BASE_EXPONENTS.len()];
+    let (mut factor, mut offset) = (Vec::new(), Vec::new());
+    let (mut d_unit, mut d_name, mut d_factor, mut d_offset, mut d_inverse) = (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    for u in defs {
+        let predefined = u.same_base_as_predefined();
+        if predefined.is_none() {
+            name.push(u.name.as_str());
+            has_base.push(u.base.is_some());
+            let base = u.base.clone().unwrap_or_default();
+            for (e, out) in exponents.iter_mut().enumerate() {
+                out.push(base.exponents[e] as i8);
+            }
+            factor.push(base.factor);
+            offset.push(base.offset);
+        }
+        for d in &u.display_units {
+            if predefined.as_ref().is_some_and(|p| p.display_unit(&d.name) == Some(d)) {
+                continue;
+            }
+            d_unit.push(u.name.as_str());
+            d_name.push(d.name.as_str());
+            d_factor.push(d.factor);
+            d_offset.push(d.offset);
+            d_inverse.push(d.inverse);
+        }
+    }
+    let units = (!name.is_empty()).then(|| {
+        let mut fields = vec![Field::new("name", DataType::Utf8, false), Field::new("baseUnit", DataType::Boolean, false)];
+        let mut cols: Vec<ArrayRef> = vec![Arc::new(StringArray::from(name)), Arc::new(BooleanArray::from(has_base))];
+        for (e, values) in units::BASE_EXPONENTS.iter().zip(exponents) {
+            fields.push(Field::new(*e, DataType::Int8, false));
+            cols.push(Arc::new(Int8Array::from(values)));
+        }
+        fields.push(Field::new("factor", DataType::Float64, false));
+        fields.push(Field::new("offset", DataType::Float64, false));
+        cols.push(Arc::new(Float64Array::from(factor)));
+        cols.push(Arc::new(Float64Array::from(offset)));
+        RecordBatch::try_new(table_schema(fields, "units"), cols).expect("arrow unit table")
+    });
+    let display_units = (!d_name.is_empty()).then(|| {
+        let fields = vec![
+            Field::new("unit", DataType::Utf8, false),
+            Field::new("name", DataType::Utf8, false),
+            Field::new("factor", DataType::Float64, false),
+            Field::new("offset", DataType::Float64, false),
+            Field::new("inverse", DataType::Boolean, false),
+        ];
+        let cols: Vec<ArrayRef> = vec![
+            Arc::new(StringArray::from(d_unit)),
+            Arc::new(StringArray::from(d_name)),
+            Arc::new(Float64Array::from(d_factor)),
+            Arc::new(Float64Array::from(d_offset)),
+            Arc::new(BooleanArray::from(d_inverse)),
+        ];
+        RecordBatch::try_new(table_schema(fields, "displayUnits"), cols).expect("arrow display unit table")
+    });
+    (units, display_units)
+}
+
+/// IPC messages into a buffer that is drained to the [`Out`] as they complete,
+/// counting the bytes so a record batch's offset in the file is known.
+struct Ipc {
+    generator: IpcDataGenerator,
+    options: IpcWriteOptions,
+    context: IpcWriteContext,
+    buf: Vec<u8>,
+    written: u64,
+}
+
+impl Ipc {
+    fn new(zstd: Option<i32>) -> Ipc {
+        let mut options = IpcWriteOptions::default();
+        if let Some(level) = zstd.filter(|_| cfg!(feature = "zstd")) {
+            options = options
+                .try_with_compression(Some(arrow_ipc::CompressionType::ZSTD))
+                .and_then(|o| o.try_with_compression_level(Some(level)))
+                .expect("arrow zstd");
+        }
+        Ipc { generator: IpcDataGenerator::default(), options, context: IpcWriteContext::default(), buf: Vec::with_capacity(1 << 16), written: 0 }
+    }
+
+    fn schema(&mut self, schema: &Schema, tracker: &mut DictionaryTracker) -> Result<(), ArrowError> {
+        let encoded = self.generator.schema_to_bytes_with_dictionary_tracker(schema, tracker, &self.options);
+        write_message(&mut self.buf, encoded, &self.options)?;
+        Ok(())
+    }
+
+    /// Writes the batch (its dictionaries first) and returns the file offset of
+    /// the record batch message.
+    fn batch(&mut self, batch: &RecordBatch, tracker: &mut DictionaryTracker) -> Result<u64, ArrowError> {
+        let (dictionaries, data) = self.generator.encode(batch, tracker, &self.options, &mut self.context)?;
+        for d in dictionaries {
+            write_message(&mut self.buf, d, &self.options)?;
+        }
+        let at = self.written + self.buf.len() as u64;
+        write_message(&mut self.buf, data, &self.options)?;
+        Ok(at)
+    }
+
+    fn end_of_stream(&mut self) {
+        self.buf.extend_from_slice(&[0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0]);
+    }
+
+    /// A whole stream for a table known in advance.
+    fn table(&mut self, batch: &RecordBatch) -> Result<(), ArrowError> {
+        let mut tracker = DictionaryTracker::new(false);
+        self.schema(batch.schema_ref(), &mut tracker)?;
+        self.batch(batch, &mut tracker)?;
+        self.end_of_stream();
+        Ok(())
+    }
+
+    fn drain(&mut self, out: &mut dyn Out) {
+        if !self.buf.is_empty() {
+            out.write(&self.buf);
+            self.written += self.buf.len() as u64;
+            self.buf.clear();
+        }
+    }
+}
+
+/// The file written incrementally: the tables up front, one record batch of
+/// the data stream per `block_rows` rows, the index and the trailer at
+/// [`ArrowStream::finish`].
 pub struct ArrowStream {
     schema: SchemaRef,
     stored: Vec<Stored>,
     resolve: Resolve,
-    writer: FileWriter<Vec<u8>>,
+    ipc: Ipc,
+    tracker: DictionaryTracker,
+    /// File offset of every record batch of the data stream.
+    batches: Vec<i64>,
     n_reals: usize,
     block_rows: usize,
     /// Row-major rows not yet written.
@@ -517,22 +636,28 @@ impl ArrowStream {
         resolve: Resolve,
         file: &FileMeta,
     ) -> ArrowStream {
-        let (schema, stored) = plan(vars, params, first_row, col_types, &*resolve, file);
-        let writer = FileWriter::try_new(Vec::with_capacity(1 << 16), &schema).expect("arrow schema");
-        let mut s = ArrowStream {
-            schema,
-            stored,
+        let plan = plan(vars, params, first_row, col_types, &*resolve, file);
+        let mut ipc = Ipc::new(file.zstd);
+        for table in [Some(&plan.variables), plan.units.as_ref(), plan.display_units.as_ref(), plan.parameters.as_ref()].into_iter().flatten() {
+            ipc.table(table).expect("arrow table");
+        }
+        let mut tracker = DictionaryTracker::new(false);
+        ipc.schema(&plan.schema, &mut tracker).expect("arrow schema");
+        ipc.drain(out);
+        ArrowStream {
+            schema: plan.schema,
+            stored: plan.stored,
             resolve,
-            writer,
+            ipc,
+            tracker,
+            batches: Vec::new(),
             n_reals: n_reals.max(1) as usize,
             block_rows: block_rows.max(1),
             pending: Vec::new(),
             n_rows: 0,
             finished: false,
             sync: false,
-        };
-        s.drain(out);
-        s
+        }
     }
 
     /// Flush the sink after every block, so a reader can open the file while it
@@ -541,21 +666,16 @@ impl ArrowStream {
         self.sync = on;
     }
 
-    fn drain(&mut self, out: &mut dyn Out) {
-        let buf = self.writer.get_mut();
-        if !buf.is_empty() {
-            out.write(buf);
-            buf.clear();
-        }
-    }
-
     /// The values of one stored column over the block, as an Arrow array: every
     /// row for a continuous signal, one per run (with the run ends) for a
     /// discrete one.
     fn column(&self, s: &Stored, rows: &[f64], n: usize) -> ArrayRef {
         let at = |r: usize| s.affine.apply(rows[r * self.n_reals + s.src]);
-        let array = |picks: &dyn Fn() -> Vec<f64>| -> ArrayRef {
-            let v = picks();
+        let array = |v: Vec<f64>| -> ArrayRef {
+            if let Some(literals) = &s.literals {
+                let keys = Int32Array::from_iter_values(v.into_iter().map(|x| (x as i32 - 1).max(0)));
+                return Arc::new(DictionaryArray::<Int32Type>::try_new(keys, literals.clone()).expect("arrow enumeration"));
+            }
             match s.ty {
                 ColTy::F64 => Arc::new(Float64Array::from(v)),
                 ColTy::F32 => Arc::new(Float32Array::from_iter_values(v.into_iter().map(|x| x as f32))),
@@ -565,7 +685,7 @@ impl ArrowStream {
             }
         };
         if !s.ree {
-            return array(&|| (0..n).map(at).collect());
+            return array((0..n).map(at).collect());
         }
         let mut run_ends: Vec<i32> = Vec::new();
         let mut run_values: Vec<f64> = Vec::new();
@@ -579,7 +699,7 @@ impl ArrowStream {
                 }
             }
         }
-        let values = array(&|| run_values.clone());
+        let values = array(run_values);
         Arc::new(RunArray::<Int32Type>::try_new(&Int32Array::from(run_ends), values.as_ref()).expect("arrow run array"))
     }
 
@@ -597,8 +717,9 @@ impl ArrowStream {
         let take = n * self.n_reals;
         let batch = self.batch(&self.pending[..take]);
         self.pending.drain(..take);
-        self.writer.write(&batch).expect("arrow write");
-        self.drain(out);
+        let at = self.ipc.batch(&batch, &mut self.tracker).expect("arrow write");
+        self.batches.push(at as i64);
+        self.ipc.drain(out);
         if self.sync {
             out.flush();
         }
@@ -613,7 +734,7 @@ impl ArrowStream {
         }
     }
 
-    /// Write the last block and the footer. A second call does nothing.
+    /// Write the last block, the index and the trailer. A second call does nothing.
     pub fn finish(&mut self, out: &mut dyn Out) {
         if self.finished {
             return;
@@ -623,8 +744,16 @@ impl ArrowStream {
         if n > 0 {
             self.flush_block(out, n);
         }
-        self.writer.finish().expect("arrow finish");
-        self.drain(out);
+        self.ipc.end_of_stream();
+        self.ipc.drain(out);
+        let index_at = self.ipc.written;
+        let index = RecordBatch::try_new(table_schema(vec![Field::new("offset", DataType::Int64, false)], "index"), vec![Arc::new(Int64Array::from(std::mem::take(&mut self.batches)))])
+            .expect("arrow index");
+        self.ipc.table(&index).expect("arrow index");
+        self.ipc.buf.extend_from_slice(&(index_at as i64).to_le_bytes());
+        self.ipc.buf.extend_from_slice(TRAILER_MAGIC);
+        self.ipc.drain(out);
+        out.flush();
     }
 
     pub fn n_rows(&self) -> usize {
@@ -652,97 +781,138 @@ pub fn no_strings() -> Resolve {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow_array::cast::AsArray;
     use arrow_array::Array;
-    use arrow_ipc::reader::FileReader;
+    use arrow_ipc::reader::StreamReader;
+    use std::io::Cursor;
+
+    /// The streams of a file, by table name, up to the trailer.
+    fn tables(bytes: &[u8]) -> HashMap<String, (SchemaRef, Vec<RecordBatch>)> {
+        let mut out = HashMap::new();
+        let mut cursor = Cursor::new(bytes);
+        while (bytes.len() as u64 - cursor.position()) > 16 {
+            let mut r = StreamReader::try_new(&mut cursor, None).expect("stream");
+            let schema = r.schema();
+            let batches: Vec<RecordBatch> = r.by_ref().map(|b| b.expect("batch")).collect();
+            out.insert(schema.metadata()[TABLE_KEY].clone(), (schema, batches));
+        }
+        assert_eq!(&bytes[bytes.len() - 8..], TRAILER_MAGIC);
+        out
+    }
+
+    fn var<'a>(name: &'a str, ty: VarTy, kind: ArrowKind) -> ArrowVar<'a> {
+        ArrowVar { name, comment: "", unit: "", display_unit: "", relative_quantity: false, ty, discrete: false, kind, unvarying: false, enumeration: None }
+    }
+
+    fn time() -> ArrowVar<'static> {
+        ArrowVar { unit: "s", ..var("time", VarTy::Real, ArrowKind::Time) }
+    }
+
+    fn column(col: u32, affine: Affine) -> ArrowKind {
+        ArrowKind::Column { col, affine }
+    }
 
     #[test]
-    fn enumerations_index_one_table() {
+    fn aliases_share_a_column_and_parameters_are_a_union() {
+        let vars = [
+            time(),
+            ArrowVar { comment: "a state", unit: "m", display_unit: "mm", ..var("x", VarTy::Real, column(1, Affine::IDENTITY)) },
+            var("mx", VarTy::Real, column(1, Affine::NEGATE)),
+            ArrowVar { discrete: true, ..var("b", VarTy::Boolean, column(2, Affine::IDENTITY)) },
+            ArrowVar { discrete: true, ..var("nb", VarTy::Boolean, column(2, Affine::NOT)) },
+            var("p", VarTy::Real, ArrowKind::Param { affine: Affine::NEGATE }),
+            var("bp", VarTy::Boolean, ArrowKind::Param { affine: Affine::IDENTITY }),
+            ArrowVar { unvarying: true, ..var("u", VarTy::Real, column(3, Affine::IDENTITY)) },
+        ];
+        let rows = [0.0, 1.0, 1.0, 7.0, 0.5, 2.0, 0.0, 7.0, 1.0, 3.0, 1.0, 7.0];
+        let bytes = write_arrow(&vars, &rows, 4, &[2.5, 1.0], &[ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::F64], no_strings(), &FileMeta { span: Some((0.0, 1.0)), ..FileMeta::default() });
+        let t = tables(&bytes);
+        assert_eq!(t.len(), 4, "{:?}", t.keys());
+
+        let (schema, v) = &t["variables"];
+        assert_eq!(schema.metadata()[FORMAT_KEY], FORMAT_VERSION);
+        assert_eq!(schema.metadata()[STOP_TIME_KEY], "1.0");
+        let v = &v[0];
+        assert_eq!(v.num_rows(), 8);
+        assert!(schema.fields().iter().all(|f| !f.is_nullable()));
+        let names: Vec<&str> = v.column_by_name("name").unwrap().as_string::<i32>().iter().flatten().collect();
+        assert_eq!(names, ["time", "x", "mx", "b", "nb", "p", "bp", "u"]);
+        let col = v.column_by_name("column").unwrap().as_primitive::<Int32Type>().values();
+        assert_eq!(col, &[0, 1, 1, 2, 2, 0, 1, 2]);
+        let param = v.column_by_name("parameter").unwrap().as_boolean();
+        assert_eq!((0..8).map(|i| param.value(i)).collect::<Vec<_>>(), [false, false, false, false, false, true, true, true]);
+        assert_eq!(v.column_by_name("scale").unwrap().as_primitive::<arrow_array::types::Float64Type>().values(), &[1.0, 1.0, -1.0, 1.0, -1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(v.column_by_name("offset").unwrap().as_primitive::<arrow_array::types::Float64Type>().values(), &[0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]);
+        assert_eq!(v.column_by_name("displayUnit").unwrap().as_string::<i32>().value(1), "mm");
+
+        let (_, p) = &t["parameters"];
+        let u = p[0].column(0).as_any().downcast_ref::<UnionArray>().unwrap();
+        assert_eq!(u.len(), 3);
+        // p = -2.5 and u = 7.0 in the Float64 child, bp in the Boolean one.
+        assert_eq!(u.type_id(0), u.type_id(2));
+        assert_ne!(u.type_id(0), u.type_id(1));
+        let reals = u.child(u.type_id(0)).as_primitive::<arrow_array::types::Float64Type>();
+        assert_eq!(reals.value(u.value_offset(0)), -2.5);
+        assert_eq!(reals.value(u.value_offset(2)), 7.0);
+        assert!(u.child(u.type_id(1)).as_boolean().value(u.value_offset(1)));
+
+        let (schema, d) = &t["data"];
+        assert_eq!(schema.fields().len(), 3);
+        assert!(schema.fields().iter().all(|f| f.name().is_empty()));
+        assert_eq!(d.iter().map(|b| b.num_rows()).sum::<usize>(), 3);
+        // `b` is discrete: run-end encoded, [true, false, true] in three runs.
+        let b = d[0].column(2).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
+        assert_eq!(b.run_ends().values(), &[1, 2, 3]);
+        assert_eq!((0..3).map(|i| b.values().as_boolean().value(i)).collect::<Vec<_>>(), [true, false, true]);
+
+        let (_, ix) = &t["index"];
+        let offsets = ix[0].column(0).as_primitive::<arrow_array::types::Int64Type>().values();
+        assert_eq!(offsets.len(), 1);
+        // The trailer points at the index stream, and the index at a record batch message.
+        let index_at = i64::from_le_bytes(bytes[bytes.len() - 16..bytes.len() - 8].try_into().unwrap()) as usize;
+        assert_eq!(&bytes[index_at..index_at + 4], &[0xff; 4]);
+        let at = offsets[0] as usize;
+        assert_eq!(&bytes[at..at + 4], &[0xff; 4]);
+        let len = i32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as usize;
+        let message = arrow_ipc::root_as_message(&bytes[at + 8..at + 8 + len]).unwrap();
+        assert_eq!(message.header_type(), arrow_ipc::MessageHeader::RecordBatch);
+    }
+
+    #[test]
+    fn enumerations_are_dictionaries_with_one_child_per_type() {
         let e: Vec<String> = ["one", "two", "three"].map(String::from).to_vec();
         let f: Vec<String> = ["on", "off"].map(String::from).to_vec();
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "e", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "ep", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&e) },
-            ArrowVar { name: "fp", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: Some(&f) },
+            time(),
+            ArrowVar { discrete: true, enumeration: Some(&e), ..var("e", VarTy::Integer, column(1, Affine::IDENTITY)) },
+            ArrowVar { enumeration: Some(&e), ..var("ep", VarTy::Integer, ArrowKind::Param { affine: Affine::IDENTITY }) },
+            ArrowVar { enumeration: Some(&f), ..var("fp", VarTy::Integer, ArrowKind::Param { affine: Affine::IDENTITY }) },
+            ArrowVar { enumeration: Some(&e), ..var("ep2", VarTy::Integer, ArrowKind::Param { affine: Affine::IDENTITY }) },
+            var("n", VarTy::Integer, ArrowKind::Param { affine: Affine::IDENTITY }),
         ];
         let rows = [0.0, 1.0, 0.5, 1.0, 1.0, 3.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[2.0, 1.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
-        let reader = FileReader::try_new(std::io::Cursor::new(bytes), None).expect("readable");
-        let schema = reader.schema();
-        let f = &schema.fields()[1];
-        assert_eq!(f.metadata()["type"], "Int32");
-        assert_eq!(f.metadata()["enumeration"], "0");
-        assert_eq!(*f.data_type(), ree_type(DataType::Int32));
-        assert_eq!(schema.metadata()[ENUMERATIONS_KEY], r#"[["one","two","three"],["on","off"]]"#);
-        let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#""name":"ep","value":2,"type":"Int32","enumeration":0"#), "{json}");
-        assert!(json.contains(r#""name":"fp","value":1,"type":"Int32","enumeration":1"#), "{json}");
-        let batch = reader.into_iter().next().expect("a batch").expect("ok");
-        let ree = batch.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().expect("run-end encoded");
-        assert_eq!(ree.values().as_any().downcast_ref::<Int32Array>().expect("int32").values(), &[1, 3]);
-    }
+        let bytes = write_arrow(&vars, &rows, 2, &[2.0, 1.0, 3.0, 5.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
+        let t = tables(&bytes);
+        let (schema, d) = &t["data"];
+        assert_eq!(*schema.field(1).data_type(), ree_type(dictionary_type()));
+        let ree = d[0].column(1).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
+        let dict = ree.values().as_dictionary::<Int32Type>();
+        assert_eq!(dict.keys().values(), &[0, 2]);
+        assert_eq!(dict.values().as_string::<i32>().value(2), "three");
 
-    #[test]
-    fn aliases_share_a_column() {
-        let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "a state", unit: "m", display_unit: "mm", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "b", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "nb", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Boolean, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::NOT }, unvarying: false, enumeration: None },
-            ArrowVar { name: "p", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Param { affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "u", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 3, affine: Affine::IDENTITY }, unvarying: true, enumeration: None },
-        ];
-        let rows = [0.0, 1.0, 1.0, 7.0, 0.5, 2.0, 0.0, 7.0, 1.0, 3.0, 1.0, 7.0];
-        let bytes = write_arrow(&vars, &rows, 4, &[2.5], &[ColTy::F64, ColTy::F64, ColTy::Bool, ColTy::F64], no_strings(), &FileMeta { span: Some((0.0, 1.0)), ..FileMeta::default() });
-        let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
-        let schema = r.schema();
-        assert_eq!(schema.fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(), ["time", "x", "b"]);
-        assert_eq!(schema.field(1).metadata()["unit"], "m");
-        assert_eq!(schema.metadata()[STOP_TIME_KEY], "1.0");
-        let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","column":1,"scale":-1.0}"#), "{json}");
-        assert!(json.contains(r#"{"name":"nb","column":2,"scale":-1.0,"offset":1.0}"#), "{json}");
-        assert!(json.contains(r#"{"name":"p","value":-2.5}"#), "{json}");
-        assert!(json.contains(r#"{"name":"u","value":7.0}"#), "{json}");
-        let batches: Vec<RecordBatch> = r.map(|b| b.unwrap()).collect();
-        assert_eq!(batches.iter().map(|b| b.num_rows()).sum::<usize>(), 3);
-        // `b` is discrete: run-end encoded, [true, false, true] in three runs.
-        let b = batches[0].column(2).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
-        assert_eq!(b.run_ends().values(), &[1, 2, 3]);
-        let bv = b.values().as_any().downcast_ref::<BooleanArray>().unwrap();
-        assert_eq!((0..3).map(|i| bv.value(i)).collect::<Vec<_>>(), [true, false, true]);
-    }
-
-    /// A time-invariant value is written in the JSON type its own type calls for.
-    #[test]
-    fn parameter_values_are_typed_json() {
-        let param = |name, ty, affine| ArrowVar {
-            name,
-            comment: "",
-            unit: "",
-            display_unit: "",
-            relative_quantity: false,
-            ty,
-            discrete: false,
-            kind: ArrowKind::Param { affine },
-            unvarying: false,
-            enumeration: None,
-        };
-        let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            param("b", VarTy::Boolean, Affine::IDENTITY),
-            param("nb", VarTy::Boolean, Affine::NOT),
-            param("n", VarTy::Integer, Affine::NEGATE),
-            param("x", VarTy::Real, Affine::IDENTITY),
-        ];
-        let bytes = write_arrow(&vars, &[0.0, 1.0], 1, &[1.0, 1.0, 3.0, 2.5], &[ColTy::F64], no_strings(), &FileMeta::default());
-        let schema = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap().schema();
-        let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"b","value":true,"type":"Boolean"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"nb","value":false,"type":"Boolean"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"n","value":-3,"type":"Int32"}"#), "{json}");
-        assert!(json.contains(r#"{"name":"x","value":2.5}"#), "{json}");
+        let (_, p) = &t["parameters"];
+        let u = p[0].column(0).as_any().downcast_ref::<UnionArray>().unwrap();
+        let DataType::Union(fields, UnionMode::Dense) = p[0].schema().field(0).data_type().clone() else { panic!() };
+        // Int32, then the two enumeration types: ep and ep2 share a child.
+        assert_eq!(fields.len(), 3);
+        assert_eq!(u.type_id(0), u.type_id(2));
+        assert_ne!(u.type_id(0), u.type_id(1));
+        let ed = u.child(u.type_id(0)).as_dictionary::<Int32Type>();
+        assert_eq!(ed.keys().values(), &[1, 2]);
+        assert_eq!(ed.values().as_string::<i32>().value(0), "one");
+        let fd = u.child(u.type_id(1)).as_dictionary::<Int32Type>();
+        assert_eq!(fd.values().as_string::<i32>().value(1), "off");
+        assert_eq!(u.child(u.type_id(3)).as_primitive::<Int32Type>().value(u.value_offset(3)), 5);
     }
 
     /// The first variable to reach a column decides how it is stored; the others
@@ -750,22 +920,20 @@ mod tests {
     #[test]
     fn alias_relative_to_a_negated_owner() {
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "mx", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::NEGATE }, unvarying: false, enumeration: None },
-            ArrowVar { name: "x", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "y", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Column { col: 1, affine: Affine { scale: 2.0, offset: 3.0 } }, unvarying: false, enumeration: None },
+            time(),
+            var("mx", VarTy::Real, column(1, Affine::NEGATE)),
+            var("x", VarTy::Real, column(1, Affine::IDENTITY)),
+            var("y", VarTy::Real, column(1, Affine { scale: 2.0, offset: 3.0 })),
         ];
         let rows = [0.0, 1.0, 0.5, 2.0];
         let bytes = write_arrow(&vars, &rows, 2, &[], &[ColTy::F32, ColTy::F32], no_strings(), &FileMeta::default());
-        let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
-        let schema = r.schema();
-        let json = &schema.metadata()[VARIABLES_KEY];
-        assert!(json.contains(r#"{"name":"mx","column":1}"#), "{json}");
-        assert!(json.contains(r#"{"name":"x","column":1,"scale":-1.0}"#), "{json}");
-        assert!(json.contains(r#"{"name":"y","column":1,"scale":-2.0,"offset":3.0}"#), "{json}");
-        let b = r.map(|b| b.unwrap()).next().unwrap();
-        let mx = b.column(1).as_any().downcast_ref::<Float32Array>().unwrap();
-        assert_eq!(mx.values(), &[-1.0f32, -2.0]);
+        let t = tables(&bytes);
+        assert!(!t.contains_key("parameters"));
+        let (_, v) = &t["variables"];
+        assert_eq!(v[0].column_by_name("scale").unwrap().as_primitive::<arrow_array::types::Float64Type>().values(), &[1.0, 1.0, -1.0, -2.0]);
+        assert_eq!(v[0].column_by_name("offset").unwrap().as_primitive::<arrow_array::types::Float64Type>().values(), &[0.0, 0.0, 0.0, 3.0]);
+        let (_, d) = &t["data"];
+        assert_eq!(d[0].column(1).as_primitive::<arrow_array::types::Float32Type>().values(), &[-1.0f32, -2.0]);
     }
 
     #[test]
@@ -773,24 +941,64 @@ mod tests {
         let table = ["off", "on"];
         let resolve: Resolve = Box::new(move |id| table[id as usize].to_owned());
         let vars = [
-            ArrowVar { name: "time", comment: "", unit: "s", display_unit: "", relative_quantity: false, ty: VarTy::Real, discrete: false, kind: ArrowKind::Time, unvarying: false, enumeration: None },
-            ArrowVar { name: "s", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::String, discrete: true, kind: ArrowKind::Column { col: 1, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "n", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::Integer, discrete: true, kind: ArrowKind::Column { col: 2, affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
-            ArrowVar { name: "sp", comment: "", unit: "", display_unit: "", relative_quantity: false, ty: VarTy::String, discrete: false, kind: ArrowKind::Param { affine: Affine::IDENTITY }, unvarying: false, enumeration: None },
+            time(),
+            ArrowVar { discrete: true, ..var("s", VarTy::String, column(1, Affine::IDENTITY)) },
+            ArrowVar { discrete: true, ..var("n", VarTy::Integer, column(2, Affine::IDENTITY)) },
+            var("sp", VarTy::String, ArrowKind::Param { affine: Affine::IDENTITY }),
         ];
         // rows: time, s (id), n
         let rows = [0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0, 1.0, 2.0, 1.5, 1.0, 2.0];
         let bytes = write_arrow(&vars, &rows, 3, &[1.0], &[ColTy::F64, ColTy::Str, ColTy::I32], resolve, &FileMeta::default());
-        let r = FileReader::try_new(std::io::Cursor::new(bytes), None).unwrap();
-        let schema = r.schema();
+        let t = tables(&bytes);
+        let (schema, d) = &t["data"];
         assert!(matches!(schema.field(1).data_type(), DataType::RunEndEncoded(_, v) if *v.data_type() == DataType::Utf8));
-        assert!(schema.metadata()[VARIABLES_KEY].contains(r#"{"name":"sp","value":"on","type":"Utf8"}"#));
-        let b = r.map(|b| b.unwrap()).next().unwrap();
-        let s = b.column(1).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
+        let s = d[0].column(1).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
         assert_eq!(s.run_ends().values(), &[2, 4]);
-        let sv = s.values().as_any().downcast_ref::<StringArray>().unwrap();
-        assert_eq!((0..2).map(|i| sv.value(i)).collect::<Vec<_>>(), ["off", "on"]);
-        let n = b.column(2).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
+        assert_eq!((0..2).map(|i| s.values().as_string::<i32>().value(i)).collect::<Vec<_>>(), ["off", "on"]);
+        let n = d[0].column(2).as_any().downcast_ref::<RunArray<Int32Type>>().unwrap();
         assert_eq!(n.run_ends().values(), &[2, 4]);
+        let u = t["parameters"].1[0].column(0).as_any().downcast_ref::<UnionArray>().unwrap();
+        assert_eq!(u.child(u.type_id(0)).as_string::<i32>().value(u.value_offset(0)), "on");
+    }
+
+    #[test]
+    fn units_carry_only_what_is_not_predefined() {
+        let mut k = UnitDef::new("K");
+        k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
+        k.display_units.push(DisplayUnit::new("degC", 1.0, -273.15));
+        k.display_units.push(DisplayUnit::new("degF", 1.8, -459.67));
+        let mut thing = UnitDef::new("thing");
+        thing.display_units.push(DisplayUnit::new("kthing", 1e-3, 0.0));
+        let (units, display) = units_tables(&[k, thing]);
+        let units = units.unwrap();
+        assert_eq!(units.num_rows(), 1, "K is the predefined kelvin; only thing needs a row");
+        assert_eq!(units.column_by_name("name").unwrap().as_string::<i32>().value(0), "thing");
+        assert!(!units.column_by_name("baseUnit").unwrap().as_boolean().value(0));
+        let display = display.unwrap();
+        let unit: Vec<&str> = display.column_by_name("unit").unwrap().as_string::<i32>().iter().flatten().collect();
+        let name: Vec<&str> = display.column_by_name("name").unwrap().as_string::<i32>().iter().flatten().collect();
+        assert_eq!(unit, ["K", "thing"]);
+        assert_eq!(name, ["degF", "kthing"]);
+    }
+
+    /// Many blocks: every batch offset in the index leads to a record batch.
+    #[test]
+    fn the_index_names_every_batch() {
+        let vars = [time(), var("x", VarTy::Real, column(1, Affine::IDENTITY))];
+        let rows: Vec<f64> = (0..10).flat_map(|i| [i as f64, 10.0 * i as f64]).collect();
+        let mut out = Vec::new();
+        let mut s = ArrowStream::begin(&mut out, &vars, &[], &rows[..2], 2, &[ColTy::F64, ColTy::F64], 3, no_strings(), &FileMeta::default());
+        s.push_rows(&mut out, &rows);
+        s.finish(&mut out);
+        let t = tables(&out);
+        let offsets = t["index"].1[0].column(0).as_primitive::<arrow_array::types::Int64Type>().values().to_vec();
+        assert_eq!(offsets.len(), 4);
+        assert_eq!(t["data"].1.len(), 4);
+        for at in offsets {
+            let at = at as usize;
+            let len = i32::from_le_bytes(out[at + 4..at + 8].try_into().unwrap()) as usize;
+            let message = arrow_ipc::root_as_message(&out[at + 8..at + 8 + len]).unwrap();
+            assert_eq!(message.header_type(), arrow_ipc::MessageHeader::RecordBatch);
+        }
     }
 }

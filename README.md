@@ -36,20 +36,13 @@ git submodule foreach --recursive 'git remote set-url --push origin `git config 
 ```
 
 If you are a developer and want to update your local git repository to the latest
-developments or latest heads, use:
+developments use:
 
 ```bash
 # After cloning
 cd OpenModelica
 git checkout master
 git pull
-# To checkout the latest master on each submodule run
-# you will need to merge each submodule, but your changes will remain
-git submodule foreach --recursive "git checkout master && git pull"
-
-# Running master on all submodules might lead to build errors
-# so use this to make sure you force all submodules to the commits
-# from the OpenModelica glue project which are properly tested
 git submodule update --force --init --recursive
 ```
 
@@ -60,7 +53,8 @@ clicking the Fork button in the GitHub web interface).
 If you do not checkout the repositories for some GUI clients (such as OMOptim.git), these
 directories will be ignored by autoconf and skipped during compilation.
 
-To checkout a specific version of OpenModelica, say tag v1.16.2 do:
+To checkout a specific version of OpenModelica, say tag `v1.16.2` do:
+
 ```bash
 git clone --recurse-submodules https://github.com/OpenModelica/OpenModelica.git
 cd OpenModelica
@@ -104,71 +98,6 @@ We automatically generate nightly builds for
 them directly if you just want to run the latest development version of OpenModelica without
 the effort of compiling the sources yourself.
 
-## How to run
-
-Here is a short example session.
-This example uses [OMShell-terminal](OMShell), but OMShell, mos-scripts, or OMNotebook
-work the same way.
-
-```
-$ cd trunk/build/bin
-$ ./OMShell-terminal
-OMShell Copyright 1997-2015, Open Source Modelica Consortium (OSMC)
-Distributed under OSMC-PL and AGPL3, see www.openmodelica.org
-
-To get help on using OMShell and OpenModelica, type "help()" and press enter
-Started server using:omc -d=interactive > /tmp/omshell.log 2>&1 &
->>> loadModel(Modelica)
-true
->>> getErrorString()
-""
->> instantiateModel(Modelica.Electrical.Analog.Basic.Resistor)
-"class Modelica.Electrical.Analog.Basic.Resistor \"Ideal linear electrical resistor\"
-  Real v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
-  Real i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
-  Real p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
-  Real p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
-  Real n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
-  Real n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
-  parameter Boolean useHeatPort = false \"=true, if HeatPort is enabled\";
-  parameter Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = T_ref \"Fixed device temperature if useHeatPort = false\";
-  Real LossPower(quantity = \"Power\", unit = \"W\") \"Loss power leaving component via HeatPort\";
-  Real T_heatPort(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature of HeatPort\";
-  parameter Real R(quantity = \"Resistance\", unit = \"Ohm\", start = 1.0) \"Resistance at temperature T_ref\";
-  parameter Real T_ref(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 300.15 \"Reference temperature\";
-  parameter Real alpha(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\") = 0.0 \"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\";
-  Real R_actual(quantity = \"Resistance\", unit = \"Ohm\") \"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\";
-equation
-  assert(1.0 + alpha * (T_heatPort - T_ref) >= 1e-15, \"Temperature outside scope of model!\");
-  R_actual = R * (1.0 + alpha * (T_heatPort - T_ref));
-  v = R_actual * i;
-  LossPower = v * i;
-  v = p.v - n.v;
-  0.0 = p.i + n.i;
-  i = p.i;
-  T_heatPort = T;
-  p.i = 0.0;
-  n.i = 0.0;
-end Modelica.Electrical.Analog.Basic.Resistor;
-"
->> a:=1:5;
->> b:=3:8
-{3,4,5,6,7,8}
->>> a*b
-
->>> getErrorString()
-"[<interactive>:1:1-1:0:writable] Error: Incompatible argument types to operation scalar product in component <NO COMPONENT>, left type: Integer[5], right type: Integer[6]
-[<interactive>:1:1-1:0:writable] Error: Incompatible argument types to operation scalar product in component <NO COMPONENT>, left type: Real[5], right type: Real[6]
-[<interactive>:1:1-1:0:writable] Error: Cannot resolve type of expression a * b. The operands have types Integer[5], Integer[6] in component <NO COMPONENT>.
-"
->> b:=3:7;
->> a*b
-85
->>> listVariables()
-{b, a}
->>
-```
-
 ## How to contribute to the OpenModelica Compiler
 
 The long-term development of OpenModelica is supported by a non-profit organization - the
@@ -191,4 +120,4 @@ For a complete list of all publications related to OpenModelica see
 [doc/bibliography/openmodelica.bib](./doc/bibliography/openmodelica.bib).
 
 ------------
-Last updated: 2023-06-21
+Last updated: 2026-09-08

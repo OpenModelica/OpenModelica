@@ -1872,6 +1872,7 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix, info);
         e2 := flattenExp(eq.rhs, prefix, info);
         ty := flattenType(eq.ty, prefix, info);
+        checkEqualityEquation(e1, e2, eq.source);
       then
         Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
@@ -1930,6 +1931,50 @@ algorithm
     else eq :: equations;
   end match;
 end flattenEquation;
+
+function checkEqualityEquation
+  input Expression lhs;
+  input Expression rhs;
+  input DAE.ElementSource src;
+protected
+  Expression out0, out1, pos_vel;
+  Call call;
+algorithm
+  () := match (lhs, rhs)
+    // spatialDistribution has special rules on how its outputs can be used.
+    case (Expression.TUPLE(elements = {out0, out1}), Expression.CALL(call))
+      guard (Expression.isWildCref(out0) or Expression.isWildCref(out1)) and
+            Call.isNamed(call, "spatialDistribution")
+      algorithm
+        // The second output may not be ignored.
+        if Expression.isWildCref(out1) then
+          Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_IGNORED_OUT1, {}, ElementSource.getInfo(src));
+          fail();
+        end if;
+
+        // The first output may only be ignored if positiveVelocity is true.
+        {_, _, _, pos_vel, _, _} := Call.arguments(call);
+        Structural.markExp(pos_vel);
+        pos_vel := Ceval.tryEvalExp(pos_vel);
+
+        if not Expression.isTrue(pos_vel) then
+          Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_IGNORED_OUT0, {}, ElementSource.getInfo(src));
+          fail();
+        end if;
+      then
+        ();
+
+    // spatialDistribution may be wrapped in a noEvent.
+    case (Expression.TUPLE(), Expression.CALL(call))
+      guard Call.isNamed(call, "noEvent")
+      algorithm
+        checkEqualityEquation(lhs, listHead(Call.arguments(call)), src);
+      then
+        ();
+
+    else ();
+  end match;
+end checkEqualityEquation;
 
 function flattenIfEquation
   input Equation eq;

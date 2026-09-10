@@ -50,7 +50,7 @@ if(OM_OMC_ENABLE_RUST)
   # no `pub mod Autoconf;`, so the hand-written OMSimulatorExt.rs
   # (`use crate::Autoconf;`) fails to build. The Rust port only needs the package
   # to parse: its runtime values are never used (Autoconf.rs is hand-maintained),
-  # so substitute the .in without the C build's ldflags/Corba/etc. plumbing. The
+  # so substitute the .in without the C build's ldflags/etc. plumbing. The
   # only @vars@ used in non-string positions are OMC_TARGET_ARCH_IS_64 and
   # WITH_HWLOC (set by omc_config_unix.cmake above) and BSTATIC (set here); the
   # rest are strings and may be empty. Written to the BUILD tree (RUST_AUTOCONF_MO,
@@ -183,8 +183,6 @@ macro(add_compile_step mo_source_file)
                                                    ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c)
 endmacro(add_compile_step)
 
-
-
 # OpenModelicaScriptingAPI.mo (a compiler source) stays in Script/; the C++ Qt
 # files go under the build tree (OMEditLIB reads OMC_SCRIPTING_API_QT_DIR), so C
 # and Rust builds don't fight over Script/.
@@ -200,18 +198,14 @@ add_custom_command(
 
     COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
     COMMAND ${CMAKE_COMMAND} -E make_directory ${OMC_SCRIPTING_API_QT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.cpp ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPIQt.h ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
 
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
-    OUTPUT ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
+           ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.cpp
+           ${OMC_SCRIPTING_API_QT_DIR}/OpenModelicaScriptingAPIQt.h
     COMMENT "Generating OpenModelicaScriptingAPI.mo + Qt API"
 )
-
-
-
-
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
@@ -374,6 +368,15 @@ endif()
 # endif()
 
 
+# libOMCDLL — the omc C-API wrapper (see omcCAPI/). Needs the OpenModelicaCompiler
+# target defined above and its generated OpenModelicaScriptingAPI.h. Off by
+# default except on MinGW Windows (OM_OMC_BUILD_OMCDLL, declared in
+# OMCompiler/CMakeLists.txt); not available in the Rust omc build.
+if(OM_OMC_BUILD_OMCDLL)
+  omc_add_subdirectory(omcCAPI)
+endif()
+
+
 # Defines generate-bootstrap-sources / update-bootstrap-sources, the way to
 # refresh the pre-translated C sources bomc is built from. Neither target is part
 # of 'all'. Needs the omc target above and the interfaces of this build.
@@ -392,7 +395,8 @@ if(WIN32)
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
   set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
-  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
+  # OMC_RESULT_LIB_DIR is empty unless the Rust result readers/writers are on.
+  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR} ${OMC_RESULT_LIB_DIR})
 
   if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
     cmake_policy(SET CMP0207 NEW)
@@ -445,6 +449,15 @@ install(FILES FrontEnd/MetaModelicaBuiltin.mo
 install(FILES FrontEnd/PDEModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT omc)
+
+# Install the generated scripting-API C header so external code (and OMEdit's
+# Script/OpenModelicaScriptingAPIQt.h) can #include "OpenModelicaScriptingAPI.h"
+# against the installed tree. Generated at build time by the compile step for
+# Script/OpenModelicaScriptingAPI.mo; layout matches the old Makefile build
+# (<prefix>/include/omc/scripting-API/).
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/c_files/OpenModelicaScriptingAPI.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/scripting-API
+        COMPONENT omc)
 
 # Install the scripts to 'share' dir.
 install(DIRECTORY scripts

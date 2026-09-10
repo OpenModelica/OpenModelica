@@ -1,0 +1,37 @@
+{
+  "_comment": [
+    "Cloud storage OAuth client registrations for this deployment. Copy to",
+    "cloud_config.json and fill in. The web build reads it from the web root,",
+    "next to oauth-callback.html; the desktop build reads it from the directory",
+    "holding omedit.ini (~/.config/openmodelica on Linux).",
+    "",
+    "The filled-in file is gitignored - not because it is confidential, but so",
+    "that one deployment's registration does not become every build's default.",
+    "",
+    "Use the *Web application* client for the web build and the *Desktop app*",
+    "client for the desktop build - they are different registrations.",
+    "",
+    "clientSecret is required for Google even though this is a public client:",
+    "Google's token endpoint rejects a PKCE exchange without one. It is not",
+    "confidential - the web build serves it to every visitor. What actually",
+    "protects the application is the registered redirect URI and origin.",
+    "Microsoft needs no secret.",
+    "",
+    "redirectUri is optional. The web build defaults to /oauth-callback.html at",
+    "the origin root, so one registered URI covers every versioned deployment",
+    "path; set it only if the root is not yours to serve. The desktop build",
+    "always uses a loopback port and ignores it.",
+    "",
+    "fullDriveScope asks Google for access to the whole Drive instead of just",
+    "what OMEdit created. It is a restricted scope: turning it on means your",
+    "client needs Google app verification and an annual security assessment."
+  ],
+  "googledrive": {
+    "clientId": "<project>-<hash>.apps.googleusercontent.com",
+    "clientSecret": "GOCSPX-...",
+    "fullDriveScope": false
+  },
+  "onedrive": {
+    "clientId": "00000000-0000-0000-0000-000000000000"
+  }
+}

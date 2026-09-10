@@ -1,15 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
 import os
+import logging
+import re
 import shutil
 import traceback
 from os.path import basename
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 import subprocess
 
 #from sphinx.util.compat import Directive
@@ -21,13 +20,124 @@ from docutils.parsers.rst import directives as rstdirectives
 import docutils.parsers.rst.directives.images
 from docutils.statemachine import ViewList
 
-from OMPython import OMCSessionZMQ
+from OMPython import OMCSessionLocal, OMSessionException
 
-omc = OMCSessionZMQ()
-omhome = omc.sendExpression("getInstallationDirectoryPath()")
-omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
-omc.sendExpression('mkdir("tmp/source")')
-dochome = omc.sendExpression('cd("tmp")')
+
+class OMCMessages(logging.Handler):
+  """Collect the omc messages OMPython logs.
+
+  OMPython 4 asks omc for its messages after every sendExpression, which empties
+  omc's buffer, so the getErrorString() and countMessages() these directives used
+  to call afterwards come back empty and the errors an example is meant to
+  demonstrate never reach the page. The messages are still logged, so pick them
+  up from there and rebuild what getErrorString() would have returned.
+  """
+
+  # One entry of the summary OMPython logs when it saw an error:
+  #   00: [kind:level:id] [file:readonly:lineStart:colStart:lineEnd:colEnd] message
+  _long = re.compile(r"^\d+: \[[^\]:]*:([a-z]+):\d+\] "
+                     r"\[([^:]*):(true|false):(\d+):(\d+):(\d+):(\d+)\] (.*)\Z",
+                     re.DOTALL)
+  # A single message:
+  #   [OMC log for '...']: [kind:level:id] message
+  _short = re.compile(r"^\[OMC log for '.*?'\]: \[[^\]:]*:([a-z]+):\d+\] (.*)\Z",
+                      re.DOTALL)
+
+  def __init__(self):
+    super().__init__(level=logging.DEBUG)
+    self.messages = []
+    self._pending = []
+
+  def emit(self, record):
+    # OMPython's own output still belongs in the build log; propagate is off so
+    # that notifications can be collected without also printing all of them.
+    if record.levelno >= logging.WARNING:
+      logging.getLogger().handle(record)
+
+    text = record.getMessage()
+    if text.startswith("OMC reported 'error'-level messages"):
+      # Supersedes the individual messages of the same call: this one carries
+      # the source positions as well.
+      entries = []
+      for line in text.split("\n"):
+        m = self._long.match(line)
+        if m:
+          entries.append(self._entry(*m.groups()))
+      if entries:
+        self._pending = entries
+      return
+    m = self._short.match(text)
+    if m:
+      level, message = m.groups()
+      self._pending.append((level, "%s: %s" % (level.capitalize(), message)))
+
+  @staticmethod
+  def _entry(level, filename, readonly, lstart, cstart, lend, cend, message):
+    """Format one message the way omc's getErrorString() does."""
+    where = ""
+    if filename or lstart != "0":
+      where = "[%s:%s:%s-%s:%s:%s] " % (filename, lstart, cstart, lend, cend,
+                                        "readonly" if readonly == "true" else "writable")
+    return (level, "%s%s: %s" % (where, level.capitalize(), message))
+
+  def collect(self):
+    """Move the messages of the last sendExpression into the running list."""
+    self.messages.extend(self._pending)
+    self._pending = []
+
+  def clear(self):
+    self.messages = []
+    self._pending = []
+
+  def counts(self):
+    """(notifications+, errors, warnings), like omc's countMessages()."""
+    ne = sum(1 for level, _ in self.messages if level == "error")
+    nw = sum(1 for level, _ in self.messages if level == "warning")
+    return (len(self.messages), ne, nw)
+
+  def text(self):
+    """What omc's getErrorString() would have returned."""
+    return "\n".join(message for _, message in self.messages)
+
+
+messages = OMCMessages()
+_omlogger = logging.getLogger("OMPython")
+_omlogger.setLevel(logging.INFO)
+_omlogger.addHandler(messages)
+_omlogger.propagate = False
+
+omc = OMCSessionLocal()
+
+def sendExpression(expr, parsed=True):
+  """Send an expression to omc, keeping OMC errors out of the exception path.
+
+  Since OMPython 4 sendExpression() raises on error-level messages by default,
+  and raises regardless of raise_on_error when the expression does not parse.
+  The directives here deliberately render whatever omc reports (see
+  getErrorString()), and every line of an omc-mos block is sent on its own, so
+  an error has to come back as a result. Otherwise one bad line takes out the
+  rest of its block, or the whole Sphinx build.
+  """
+  try:
+    return omc.sendExpression(expr, parsed=parsed, raise_on_error=False)
+  except OMSessionException as e:
+    return str(e)
+  finally:
+    messages.collect()
+
+omhome = sendExpression("getInstallationDirectoryPath()")
+# Pinning the path to the libraries shipped with this omc keeps the build
+# reproducible, but a CMake install tree has no lib/omlibrary at all. Leave
+# omc's default path alone there, so it can still find ~/.openmodelica.
+omlibrary = os.path.join(omhome, "lib", "omlibrary")
+
+def setModelicaPath():
+  if os.path.isdir(omlibrary):
+    sendExpression('setModelicaPath("%s")' % omlibrary.replace("\\", "/"))
+
+setModelicaPath()
+sendExpression('mkdir("tmp/source")')
+dochome = sendExpression('cd("tmp")')
 
 class ExecDirective(Directive):
   """Execute the specified python code and insert the output into the document"""
@@ -47,12 +157,13 @@ def fixPaths(s):
   return str(s).replace(omhome, u"«OPENMODELICAHOME»").replace(dochome, u"«DOCHOME»").strip()
 
 def onlyNotifications():
-  (nm,ne,nw) = omc.sendExpression("countMessages()")
+  (nm,ne,nw) = messages.counts()
   return ne+nw == 0
 
 def getErrorString(state):
-  (nm,ne,nw) = omc.sendExpression("countMessages()")
-  s = fixPaths(omc.sendExpression("OpenModelica.Scripting.getErrorString()"))
+  (nm,ne,nw) = messages.counts()
+  s = fixPaths(messages.text())
+  messages.clear()
   if nm==0:
     return []
   node = nodes.paragraph()
@@ -90,7 +201,7 @@ class ExecMosDirective(directives.code.CodeBlock):
     erroratend = 'erroratend' in self.options or (not 'noerror' in self.options and len(self.content)==1) or 'hidden' in self.options
     try:
       if 'clear' in self.options:
-        assert(omc.sendExpression('clear()'))
+        assert(sendExpression('clear()'))
       res = []
       if 'combine-lines' in self.options:
         old = 0
@@ -107,15 +218,16 @@ class ExecMosDirective(directives.code.CodeBlock):
         else:
           res.append(">>> %s" % s)
         if s.strip().endswith(";"):
-          assert("" == omc.sendExpression(str(s), parsed=False).strip())
+          assert("" == sendExpression(str(s), parsed=False).strip())
         elif 'parsed' in self.options:
-          res.append(fixPaths(omc.sendExpression(str(s))))
+          res.append(fixPaths(sendExpression(str(s))))
         else:
-          res.append(fixPaths(omc.sendExpression(str(s), parsed=False)))
+          res.append(fixPaths(sendExpression(str(s), parsed=False)))
         if not ('noerror' in self.options or erroratend):
-          errs = fixPaths(omc.sendExpression('getErrorString()', parsed=False))
-          if errs!='""':
-            res.append(errs)
+          errs = fixPaths(messages.text())
+          messages.clear()
+          if errs:
+            res.append('"%s"' % errs)
       # res += sys.stdout.readlines()
       self.content = res
       if 'ompython-output' in self.options:
@@ -143,18 +255,23 @@ class OMCLoadStringDirective(Directive):
   }
 
   def run(self):
-    vl = ViewList()
-    vl.append(".. code-block :: modelica", "<OMC loadString>")
-    for opt in ['caption', 'name']:
-      if opt in self.options:
-        vl.append("  :%s: %s" % (opt,self.options[opt]), "<OMC loadString>")
-    vl.append("", "<OMC loadString>")
-    for n in self.content:
-      vl.append("  " + str(n), "<OMC loadString>")
-    node = docutils.nodes.paragraph()
-    omc.sendExpression("loadString(%s)" % escapeString('\n'.join([str(n) for n in self.content])))
-    self.state.nested_parse(vl, 0, node)
-    return node.children + getErrorString(self.state)
+    try:
+      vl = ViewList()
+      vl.append(".. code-block :: modelica", "<OMC loadString>")
+      for opt in ['caption', 'name']:
+        if opt in self.options:
+          vl.append("  :%s: %s" % (opt,self.options[opt]), "<OMC loadString>")
+      vl.append("", "<OMC loadString>")
+      for n in self.content:
+        vl.append("  " + str(n), "<OMC loadString>")
+      node = docutils.nodes.paragraph()
+      sendExpression("loadString(%s)" % escapeString('\n'.join([str(n) for n in self.content])))
+      self.state.nested_parse(vl, 0, node)
+      return node.children + getErrorString(self.state)
+    except Exception as e:
+      s = str(e) + "\n" + traceback.format_exc()
+      print(s)
+      return [nodes.error(None, nodes.paragraph(text = "Unable to load Modelica code"), nodes.paragraph(text = s))]
 
 class OMCGnuplotDirective(Directive):
   """Execute the specified python code and insert the output into the document"""
@@ -170,11 +287,11 @@ class OMCGnuplotDirective(Directive):
 
   def run(self):
     try:
-      filename = os.path.abspath(self.options.get('filename') or omc.sendExpression("currentSimulationResult"))
+      filename = os.path.abspath(self.options.get('filename') or sendExpression("currentSimulationResult"))
       filename = filename.replace("\\", "/")
       caption = self.options.get('caption') or "Plot generated by OpenModelica+gnuplot"
       if 'plotall' in self.options:
-        variables = list(omc.sendExpression('readSimulationResultVars(%s)' % escapeString(filename)))
+        variables = list(sendExpression('readSimulationResultVars(%s)' % escapeString(filename)))
         variables.remove('time')
       else:
         variables = self.content
@@ -197,7 +314,7 @@ class OMCGnuplotDirective(Directive):
       if filename.endswith(".csv"):
         shutil.copyfile(filename, csvfile)
       else:
-        assert(omc.sendExpression('filterSimulationResults("%s", "%s", %s)' % (filename,csvfile,varstrquoted)))
+        assert(sendExpression('filterSimulationResults("%s", "%s", %s)' % (filename,csvfile,varstrquoted)))
       with open("tmp/%s.gnuplot" % self.arguments[0], "w") as gnuplot:
         gnuplot.write('set datafile separator ","\n')
         if 'parametric' in self.options:
@@ -244,9 +361,9 @@ class OMCResetDirective(Directive):
   def run(self):
     global omc
     del(omc)
-    omc = OMCSessionZMQ()
-    omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
-    omc.sendExpression('cd("tmp")')
+    omc = OMCSessionLocal()
+    setModelicaPath()
+    sendExpression('cd("tmp")')
     return []
 
 def setup(app):

@@ -249,7 +249,7 @@ input Ident typeName;
 input String pathInProg;
 output List<tuple<SCode.Element, String>> res_elem;
 algorithm
-  res_elem := matchcontinue el
+  res_elem := match el
   local
     list<SCode.Element> elist;
     String name, nName;
@@ -269,9 +269,8 @@ algorithm
       algorithm
       nName := if(pathInProg=="")then name else pathInProg+"."+name;
       then getAllElementsOfType(elist, typeName, nName, {});
-    case SCode.CLASS(_, _, _, _, _, SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
+    case SCode.CLASS(_, _, _, _, _, SCode.PARTS(elist, _,_,_,_,_,_,_), _, _) guard isOfType(elist, typeName)
       algorithm
-        true := isOfType(elist, typeName);
       print ("*** Found a " + typeName + "\n");
       then {(el,pathInProg)};
     case _
@@ -279,7 +278,7 @@ algorithm
        //print("not of right type " + typeName + "\n");
        //print(SCodeDump.unparseElementStr(el) + "\n");
       then {};
-   end matchcontinue;
+   end match;
 end getAllElementsOfType2;
 
 
@@ -1454,19 +1453,17 @@ output Boolean result;
 output Option<SCode.Mod> mods;
   algorithm
 
-  (result, mods) := matchcontinue elems
+  (result, mods) := match elems
    local
      list<SCode.Element> rest;
      SCode.Mod mod;
      String tName;
     case {} then (false, NONE());
-    case SCode.EXTENDS(Absyn.IDENT(tName), _, mod, _, _)::_
-      algorithm
-        true := (tName == typeName);
+    case SCode.EXTENDS(Absyn.IDENT(tName), _, mod, _, _)::_ guard (tName == typeName)
         then (true, SOME(mod));
     case _::rest
         then extendsType(rest, typeName);
-   end matchcontinue;
+   end match;
 end extendsType;
 
 protected function getValue

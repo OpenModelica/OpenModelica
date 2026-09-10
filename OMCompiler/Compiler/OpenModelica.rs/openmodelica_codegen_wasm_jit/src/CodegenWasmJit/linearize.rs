@@ -59,7 +59,7 @@ fn cref_str_safe(cr: &Arc<DAE::ComponentRef>) -> String {
     }
 }
 
-fn subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>, matlab_safe: bool) -> String {
+fn subscripts(subs: &List<Arc<DAE::Subscript>>, matlab_safe: bool) -> String {
     let items: Vec<String> = lst(subs).map(|s| subscript_str(s)).collect();
     if items.is_empty() {
         return String::new();

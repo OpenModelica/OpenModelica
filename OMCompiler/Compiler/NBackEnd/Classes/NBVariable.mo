@@ -2243,6 +2243,12 @@ function isJacobianResultVar
       output Integer sz = ExpandableArray.getNumberOfElements(variables.varArr);
     end size;
 
+    function lastUsedIndex
+      "returns the last used index != size!"
+      input VariablePointers variables;
+      output Integer sz = ExpandableArray.getLastUsedIndex(variables.varArr);
+    end lastUsedIndex;
+
     function scalarSize
       "returns the scalar size."
       input VariablePointers variables;

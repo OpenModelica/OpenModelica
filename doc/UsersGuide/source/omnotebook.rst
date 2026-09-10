@@ -884,5 +884,4 @@ September 18-19, 2003.
 .. omc-reset ::
 
 .. bibliography:: openmodelica.bib extrarefs.bib
-  :cited:
   :filter: docname in docnames

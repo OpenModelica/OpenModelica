@@ -41,8 +41,7 @@ encapsulated package Main
 
   This is the main program in the Modelica specification.
   It either translates a file given as a command line argument
-  or starts a server loop communicating through CORBA or sockets
-  (The Win32 implementation only implements CORBA)"
+  or starts a server loop communicating through ZeroMQ or sockets"
 
 protected
 import Absyn;
@@ -55,7 +54,6 @@ import CevalScript;
 import CevalScriptBackend;
 import ClockIndexes;
 import Config;
-import Corba;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -552,18 +550,6 @@ algorithm
   end while;
 end interactivemode;
 
-protected function interactivemodeCorba
-"Initiate the interactive mode using corba communication."
-algorithm
-  try
-    Corba.initialize();
-    serverLoopCorba();
-  else
-    Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
-    Print.printBuf("Exiting!\n");
-  end try;
-end interactivemodeCorba;
-
 protected function interactivemodeZMQ
 "Initiate the interactive mode using ZMQ communication."
 protected
@@ -590,26 +576,6 @@ algorithm
     end if;
   end while;
 end interactivemodeZMQ;
-
-protected function serverLoopCorba
-"This function is the main loop of the server for a CORBA impl."
-protected
-  String str, reply_str;
-  Boolean cont;
-algorithm
-  cont := true;
-  while true loop
-    str := Corba.waitForCommand();
-    (cont, reply_str) := handleCommand(str);
-    if cont then
-      Corba.sendreply(reply_str);
-    else
-      break;
-    end if;
-  end while;
-  Corba.sendreply("quit requested, shutting server down\n");
-  Corba.close();
-end serverLoopCorba;
 
 public function readSettings
   " author: x02lucpo
@@ -724,9 +690,14 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
-  // OpenBLAS sizes its thread pool from the environment when it loads.
+  // OpenBLAS sizes its thread pool from the environment when it loads, and
+  // which of the two variables it reads depends on how it was built. The MSYS2
+  // package used on Windows is built with USE_OPENMP, and such a build ignores
+  // OPENBLAS_NUM_THREADS entirely and honours only OMP_NUM_THREADS, so both
+  // have to be set to keep the pool down to a single thread.
   if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
     System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+    System.setEnv("OMP_NUM_THREADS", "1", false);
   end if;
   setDefaultCC();
   SymbolTable.reset();
@@ -788,7 +759,7 @@ algorithm
 
   // Don't allow running omc as root due to security risks.
   interactiveMode := Flags.getConfigString(Flags.INTERACTIVE);
-  if System.userIsRoot() and (interactiveMode == "corba" or interactiveMode == "tcp" or interactiveMode == "zmq") then
+  if System.userIsRoot() and (interactiveMode == "tcp" or interactiveMode == "zmq") then
     Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
     print(ErrorExt.printMessagesStr(false));
     fail();
@@ -807,8 +778,6 @@ algorithm
     readSettings(args);
     if interactiveMode == "tcp" then
       interactivemode();
-    elseif interactiveMode == "corba" then
-      interactivemodeCorba();
     elseif interactiveMode == "zmq" then
       interactivemodeZMQ();
     else // No interactive flag given, try to flatten the file.

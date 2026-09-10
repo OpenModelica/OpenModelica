@@ -1,19 +1,55 @@
 #!/usr/bin/env python3
 
-import requests
-import json
-import os
-from datetime import datetime
 import argparse
+import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-parser = argparse.ArgumentParser(prog="OpenModelica index.json creator")
-parser.add_argument('--test', action="store_true")
-parser.add_argument('filenameprefix')
+import requests
+
+parser = argparse.ArgumentParser(
+  description="Create the package index (index.json) and the omc script installing the packages "
+              "(index.mos) for a set of Modelica libraries. The versions to use are listed in the "
+              "'installed' and 'testing' dicts in this script, the index itself is fetched from "
+              "libraries.openmodelica.org.")
+parser.add_argument('--test', action="store_true",
+                    help="use the libraries needed by the testsuite instead of the ones shipped "
+                         "with an installation")
+parser.add_argument('filenameprefix',
+                    help="prefix of the files to write, e.g. 'install-' writes install-index.json "
+                         "and install-index.mos. Pass an empty string to write index.json and "
+                         "index.mos")
 args = parser.parse_args()
 
 
 data = requests.get('https://libraries.openmodelica.org/index/v1/index.json').json()
-desired = {
+# The libraries that are shipped with an installation.
+installed = {
+  "Complex": {
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
+  },
+  "Modelica": {
+    "3.2.3+maint.om",
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
+  },
+  "ModelicaServices": {
+    "4.0.0+maint.om",
+    "4.1.0+maint.om",
+  },
+  "ObsoleteModelica4": { # Used by MSL 3 to 4 conversion scripts
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
+  },
+  "ModelicaReference": {
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
+  }
+}
+
+# The libraries needed by the testsuite.
+testing = {
   "BioChem": {"1.0.1+msl.3.2.1"},
   "Buildings": {"12.1.2-maint.12.x"},
   "Complex": {
@@ -71,41 +107,25 @@ desired = {
   "WasteWater": {
     "2.1.0"
   }
-} if args.test else {
-  "Complex": {
-    "4.0.0+maint.om",
-    "4.1.0+maint.om"
-  },
-  "Modelica": {
-    "3.2.3+maint.om",
-    "4.0.0+maint.om",
-    "4.1.0+maint.om"
-  },
-  "ModelicaServices": {
-    "4.0.0+maint.om",
-    "4.1.0+maint.om",
-  },
-  "ObsoleteModelica4": { # Used by MSL 3 to 4 conversion scripts
-    "4.0.0+maint.om",
-    "4.1.0+maint.om"
-  },
-  "ModelicaReference": {
-    "4.0.0+maint.om",
-    "4.1.0+maint.om"
-  }
 }
+
+# Everything that is shipped with an installation is tested as well.
+for lib, versions in installed.items():
+  testing.setdefault(lib, set()).update(versions)
+
+desired = testing if args.test else installed
 newdata = {}
-for key in data["libs"].keys():
+for key in data["libs"]:
   if key not in desired:
     continue
   newdata[key] = {"versions": {}}
   versions = data["libs"][key]["versions"]
-  for version in versions.keys():
+  for version in versions:
     if version not in desired[key]:
       continue
     newdata[key]["versions"][version] = versions[version]
 
-now = datetime.now()
+now = datetime.now(ZoneInfo("Europe/Stockholm"))
 stamp = now.strftime("%Y%m%d%H%M%S.stamp")
 
 with open(args.filenameprefix + "index.mos", "w") as fout:
@@ -135,19 +155,20 @@ if vers[1] <> "3.2.3+maint.om" then
   exit(1);
 end if;
 ''')
-  for lib in desired.keys():
-    for version in desired[lib]:
-      fout.write('''if not installPackage(%s, "%s", exactMatch=true) then
-  print("%s %s failed.\\n");
+  # Sorted, so that regenerating gives a stable order instead of the iteration order of the sets.
+  for lib in sorted(desired.keys()):
+    for version in sorted(desired[lib]):
+      fout.write(f'''if not installPackage({lib}, "{version}", exactMatch=true) then
+  print("{lib} {version} failed.\\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: %s %s\\n");
+  print("Installed: {lib} {version}\\n");
 end if;
-''' % (lib, version, lib, version, lib, version))
-  fout.write('system("touch .openmodelica/%s")' % stamp)
+''')
+  fout.write(f'system("touch .openmodelica/{stamp}")\n')
 
 with open(args.filenameprefix + "index.json", "w") as fout:
-  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2))
+  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2) + "\n")
 with open("Makefile.version", "w") as fout:
-  fout.write('STAMP=%s' % stamp)
+  fout.write(f'STAMP={stamp}\n')

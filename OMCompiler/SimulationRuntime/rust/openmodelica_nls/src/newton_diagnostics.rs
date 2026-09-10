@@ -7,6 +7,7 @@
 //! quadratic model), `Gamma_ijk` (curvature along the step) and `sigma_jj` (the
 //! solution's sensitivity to unknown `j`).
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
@@ -152,7 +153,7 @@ pub fn newton_diagnostics(
     let mut fj_min = vec![0.0f64; m * m];
     let mut xp = x0.to_vec();
     for k in 0..m {
-        let delta_x = eps * libm::fmax(libm::fabs(x0[k]), nominal_x);
+        let delta_x = eps * fmath::fmax(fmath::fabs(x0[k]), nominal_x);
         xp[k] = x0[k] + delta_x;
         (cb.jacobian)(&xp, &mut fj_pls);
         xp[k] = x0[k] - delta_x;
@@ -205,7 +206,7 @@ pub fn newton_diagnostics(
     }
     let eps_nl = 1.0e-9;
     let n_idx: Vec<usize> =
-        (0..m).filter(|&i| libm::fabs(f_x1[i] + (lambda - 1.0) * f[i]) > eps_nl).collect();
+        (0..m).filter(|&i| fmath::fabs(f_x1[i] + (lambda - 1.0) * f[i]) > eps_nl).collect();
     let p = n_idx.len();
     if p == 0 {
         info!("Newton diagnostics terminated: no non-linear equations!");
@@ -214,7 +215,7 @@ pub fn newton_diagnostics(
 
     // Nonlinear unknowns: a column of the Hessian with any entry above eps.
     let w_idx: Vec<usize> = (0..m)
-        .filter(|&j| (0..m).any(|k| (0..m).any(|i| libm::fabs(fxx[k][i][j]) > eps_nl)))
+        .filter(|&j| (0..m).any(|k| (0..m).any(|i| fmath::fabs(fxx[k][i][j]) > eps_nl)))
         .collect();
     let q = w_idx.len();
     let z_idx: Vec<usize> = (0..m).filter(|i| !w_idx.contains(i)).collect();
@@ -233,7 +234,7 @@ pub fn newton_diagnostics(
     close();
     open!("Residual function values of all equations f(x0)");
     for i in 0..m {
-        if libm::fabs(f[i]) > 1.0e-9 {
+        if fmath::fabs(f[i]) > 1.0e-9 {
             info!("f[{}] = {}", idx(i + 1, m, false), f14(f[i]));
         }
     }
@@ -278,7 +279,7 @@ pub fn newton_diagnostics(
         for &z in &z_idx {
             fz_dz += fx[i][z] * dx[z];
         }
-        max_res = libm::fmax(max_res, libm::fabs(f[i] + fz_dz));
+        max_res = fmath::fmax(max_res, fmath::fabs(f[i] + fz_dz));
     }
 
     // alpha_i: the residual's departure from its quadratic model at x0 + λ·dx.
@@ -302,8 +303,8 @@ pub fn newton_diagnostics(
             }
             w_fww_w += acc * w1_star_w0[j];
         }
-        alpha[i] = libm::fabs(f_x1_star[ni] - (1.0 - lambda) * f[ni] - 0.5 * w_fww_w)
-            / (libm::pow(lambda, 3.0) * max_res);
+        alpha[i] = fmath::fabs(f_x1_star[ni] - (1.0 - lambda) * f[ni] - 0.5 * w_fww_w)
+            / (fmath::pow(lambda, 3.0) * max_res);
     }
 
     // Gamma_ijk: curvature of nonlinear equation i along the step in (w_j, w_k).
@@ -313,7 +314,7 @@ pub fn newton_diagnostics(
             for k in 0..q {
                 let h = fxx[n_idx[i]][w_idx[j]][w_idx[k]];
                 gamma[i][j][k] = if !h.is_nan() && h != 0.0 {
-                    libm::fabs(0.5 * h * (dx[w_idx[j]] * dx[w_idx[k]]) / max_res)
+                    fmath::fabs(0.5 * h * (dx[w_idx[j]] * dx[w_idx[k]]) / max_res)
                 } else {
                     0.0
                 };
@@ -351,7 +352,7 @@ pub fn newton_diagnostics(
     };
     for row in inv_w.iter_mut() {
         for v in row.iter_mut() {
-            *v = libm::fabs(*v);
+            *v = fmath::fabs(*v);
         }
     }
     let sigma = mat_mult(&mat_mult(&inv_w, &tmp2), &w_diag);
@@ -404,12 +405,12 @@ fn print_results(
     close();
     open!("sigma_jj > {}", omclog::f(eps, 5, 3));
     for i in 0..q {
-        if libm::fabs(sigma[i][i]) > eps {
+        if fmath::fabs(sigma[i][i]) > eps {
             info!(
                 "sigma_{:<4}_{:<4} = {}",
                 w_idx[i] + 1,
                 w_idx[i] + 1,
-                omclog::f(libm::fabs(sigma[i][i]), 5, 2),
+                omclog::f(fmath::fabs(sigma[i][i]), 5, 2),
             );
         }
     }
@@ -465,7 +466,7 @@ fn print_results(
     open!("By variable");
     info!("Var no.  Var name                                  Initial guess  max(Gamma,sigma)");
     info!("-------  ----------------------------------------  -------------  ----------------");
-    let sig_diag: Vec<f64> = (0..q).map(|i| libm::fabs(sigma[i][i])).collect();
+    let sig_diag: Vec<f64> = (0..q).map(|i| fmath::fabs(sigma[i][i])).collect();
     let mut printed: Vec<usize> = Vec::new();
     for pick in rank(&sig_diag, &|i| sig_diag[i]) {
         match pick {

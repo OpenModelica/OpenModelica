@@ -317,21 +317,21 @@ function lookupCref
   output LookupState state;
 protected
   InstNode node;
-  Boolean in_enclosing;
+  Boolean in_enclosing, is_iterator;
 algorithm
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (_, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (_, foundCref, foundScope, in_enclosing, _, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
         state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundCref, foundScope, in_enclosing, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
+        (node, foundCref, foundScope, in_enclosing, is_iterator, state) := lookupSimpleCref(cref.name, cref.subscripts, scope, context);
         (foundCref, foundScope, state) :=
-          lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state, context);
+          lookupCrefInNode(cref.componentRef, node, is_iterator, foundCref, foundScope, state, context);
         state := LookupState.checkCrefVariability(foundCref, in_enclosing, context, state);
       then
         (foundCref, foundScope, state);
@@ -358,10 +358,9 @@ function lookupLocalCref
   output LookupState state;
 protected
   InstNode node;
+  Boolean is_iterator;
 algorithm
   (foundCref, foundScope, state) := matchcontinue cref
-    local
-
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
         (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
@@ -371,11 +370,11 @@ algorithm
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
+        (node, foundScope, is_iterator) := lookupLocalSimpleCref(cref.name, scope);
         state := LookupState.nodeState(node);
-        foundCref := ComponentRef.fromAbsyn(node, cref.subscripts);
+        foundCref := ComponentRef.fromAbsyn(node, cref.subscripts, isIterator = is_iterator);
         (foundCref, foundScope, state) :=
-          lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state, context);
+          lookupCrefInNode(cref.componentRef, node, is_iterator, foundCref, foundScope, state, context);
       then
         (foundCref, foundScope, state);
 
@@ -840,6 +839,7 @@ function lookupSimpleCref
   output ComponentRef cref;
   output InstNode foundScope = scope;
   output Boolean inEnclosingScope = false;
+  output Boolean isIterator = false;
   output LookupState state;
 protected
   Boolean require_builtin = false;
@@ -865,7 +865,7 @@ algorithm
     // scopes or for some reason exceed the recursion depth limit.
     for i in 1:Global.recursionDepthLimit loop
       try
-        (node, foundScope) := lookupLocalSimpleCref(name, foundScope);
+        (node, foundScope, isIterator) := lookupLocalSimpleCref(name, foundScope);
 
         if require_builtin then
           true := InstNode.isBuiltin(node);
@@ -873,7 +873,7 @@ algorithm
 
         // We found a node, return it.
         state := LookupState.nodeState(node);
-        cref := ComponentRef.fromAbsyn(node, subs);
+        cref := ComponentRef.fromAbsyn(node, subs, isIterator = isIterator);
         return;
       else
         // Stop if the current scope is encapsulated.
@@ -908,6 +908,7 @@ function lookupLocalSimpleCref
   input InstNode scope;
   output InstNode node;
   output InstNode foundScope = scope;
+  output Boolean isIterator = false;
 protected
   Boolean is_import;
 algorithm
@@ -928,6 +929,8 @@ algorithm
     // If the node is an outer node, return the inner instead.
     node := InstNode.resolveInner(node);
     foundScope := InstNode.parent(node);
+  else
+    isIterator := InstNode.isIterator(node);
   end if;
 end lookupLocalSimpleCref;
 
@@ -949,6 +952,7 @@ end lookupIterator;
 function lookupCrefInNode
   input Absyn.ComponentRef cref;
   input InstNode node;
+  input Boolean isIterator;
   input output ComponentRef foundCref;
   input output InstNode foundScope;
   input output LookupState state;
@@ -1006,7 +1010,7 @@ algorithm
   end if;
 
   (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
-  foundCref := ComponentRef.fromAbsyn(n, AbsynUtil.crefFirstSubs(cref), foundCref);
+  foundCref := ComponentRef.fromAbsyn(n, AbsynUtil.crefFirstSubs(cref), foundCref, isIterator = isIterator);
 
   if scope_is_class and not InstContext.inRelaxed(context) and
      LookupState.isNonConstantComponent(n) then
@@ -1023,7 +1027,7 @@ algorithm
     case Absyn.ComponentRef.CREF_IDENT() then (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
-      then lookupCrefInNode(cref.componentRef, n, foundCref, foundScope, state, context);
+      then lookupCrefInNode(cref.componentRef, n, isIterator, foundCref, foundScope, state, context);
   end match;
 end lookupCrefInNode;
 

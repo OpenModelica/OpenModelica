@@ -83,3 +83,9 @@ cpack_add_component(omedit
                     GROUP GUIClients
                     DESCRIPTION "The OpenModelica Graphical Connection Editor."
                     )
+
+cpack_add_component(omlibrary
+                    DISPLAY_NAME "Modelica libraries"
+                    DEPENDS omc
+                    DESCRIPTION "The cache of Modelica libraries that omc can install without network access."
+                    )

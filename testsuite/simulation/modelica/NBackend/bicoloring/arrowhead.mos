@@ -26,7 +26,7 @@ simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jaco
 // record SimulationResult
 //     resultFile = "arrowhead_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC'",
-//     messages = "LOG_JAC           | info    | Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.
+//     messages = "LOG_JAC           | info    | Using Jacobian method: Bicolored symbolical bidirectional Jacobian.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-08
 // |                 | |       | | J(row=0:'x[1]', col=0:'x[1]') = -99999999 [flat=0]

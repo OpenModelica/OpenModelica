@@ -151,7 +151,7 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // are total over `List<T>`.
         "listAppend" | "listMember" | "listLength" | "listEmpty" => Infallible,
         // `cons(head, tail)` is the function-call form of `head :: tail`. It
-        // wraps in Arc<List<_>> via a single allocation and never fails.
+        // wraps in List<_> via a single allocation and never fails.
         "cons" | "nil" => Infallible,
         "listHead" | "listRest" => Fallible,
         // `listGet` / `listDelete` bounds-check the 1-based index and bail
@@ -283,6 +283,28 @@ pub struct FallibilityInfo {
     /// by the `--fix` rewriter (`crate::fix`) to locate and rewrite the
     /// `matchcontinue`/`end matchcontinue` keywords in the `.mo` source.
     pub matchcontinue_as_match_locs: Vec<Absyn::Info>,
+    /// Per flagged `matchcontinue`, the leading `true := COND;` statements to
+    /// turn into `guard`s first — parallel to [`Self::matchcontinue_as_match`]
+    /// and empty for the ones that need only the keyword rewrite.
+    pub matchcontinue_guard_hoists: Vec<Vec<GuardHoist>>,
+    /// One line per `matchcontinue` that could *not* be rewritten, naming the
+    /// first arm that keeps it alive and why. Written out by `--mc-report`;
+    /// the raw material for deciding which fallibility source to attack next.
+    pub mc_report: Vec<String>,
+}
+
+/// One `matchcontinue` arm's `true := COND;` prefix, to be rewritten as a
+/// `guard` on the arm's pattern. Consumed by `crate::fix`.
+#[derive(Clone, Debug)]
+pub struct GuardHoist {
+    /// Span of the case pattern; the guard is inserted right after its end.
+    pub pattern_info: Absyn::Info,
+    /// The statements to delete, in source order, each with the polarity it
+    /// asserted (`false` means the condition must be negated as a guard).
+    pub stmts: Vec<(Absyn::Info, bool)>,
+    /// They were the arm's *only* statements, so its `algorithm` keyword goes
+    /// too.
+    pub drops_section: bool,
 }
 
 // ── Walk state ───────────────────────────────────────────────────────────────
@@ -299,12 +321,22 @@ struct Walk {
     /// MM names from the source (e.g. "List.map", "foo", "intAdd"). They are
     /// resolved against the hierarchy in [`resolve_called_qname`].
     calls: BTreeSet<String>,
-    /// True if the body contains a `match`/`matchcontinue` expression — a
-    /// fail-on-no-match is observable to callers.
-    has_match: bool,
+    /// Pattern-coverage keys of every `match` in the body that the syntactic
+    /// check could not prove exhaustive, one entry per `match`. Constructor
+    /// patterns need the hierarchy to resolve, so the verdict is re-taken in
+    /// [`resolve_walk`]; a `match` still not exhaustive there fails when no arm
+    /// matches, which is observable to callers.
+    match_keys: Vec<Vec<CoverKey>>,
+    /// Constructor patterns on the left of a `:=`, one per statement. They
+    /// mismatch unless the record is the only shape of its type, which needs
+    /// the hierarchy — decided in [`resolve_walk`].
+    assign_keys: Vec<CoverKey>,
     /// True if the body contains an explicit `fail()` call outside a catch
     /// boundary.  (Catch boundaries are not yet tracked; see module docs.)
     has_fail: bool,
+    /// Human-readable labels for what made this walk fallible, for the
+    /// `--mc-report` diagnostic. Never consulted by the verdict itself.
+    reasons: BTreeSet<&'static str>,
     /// True if the body calls *through a function value* — i.e. invokes one of
     /// the function's own function-typed parameters/locals (a callback), or a
     /// function-typed field of such a local. Every function value in our
@@ -367,6 +399,21 @@ struct McLint {
     /// All arms, in source order; the last element is the matchcontinue's last
     /// arm (whose fallibility the lint deliberately ignores).
     arms: Vec<Walk>,
+    /// The same arms, but scanned as if each one's leading `true := COND;`
+    /// statements had been rewritten as a `guard` (see
+    /// [`Walk::scan_class_part_hoisting_guards`]).
+    hoisted: Vec<Walk>,
+    /// The source edits that rewrite would take, one per arm that has such a
+    /// prefix. Empty when nothing needs hoisting; `None` when some arm that
+    /// does already carries a `guard` we would have to merge with.
+    guard_hoists: Option<Vec<GuardHoist>>,
+    /// The cases and their shared binding scope, for the pattern-disjointness
+    /// route to the same verdict ([`crate::mc_disjoint`]); constructor names
+    /// need the hierarchy, so it is decided in [`resolve_walk`].
+    cases: metamodelica::List<Arc<Absyn::Case>>,
+    scope: BTreeSet<String>,
+    /// The last arm is an `else`.
+    has_else: bool,
 }
 
 /// Safety obligation for one `matchcontinue` expression: it cannot fail iff
@@ -468,19 +515,16 @@ impl Walk {
         }
         match alg {
             Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } => {
-                // MetaModelica's `:=` is a *pattern* assignment: if the LHS is
-                // anything other than a plain variable reference (or a tuple
-                // of plain variable references), the match can fail at runtime
-                // and the surrounding function therefore fallible. Codegen
-                // lowers these to `let PAT = RHS else { bail!("pattern
-                // mismatch") };`, which only typechecks when the function
-                // returns `Result`. Examples:
-                //   `Cons(h, t) := xs;`        — list cons pattern
-                //   `SOME(x) := opt;`          — uniontype variant pattern
-                //   `(a, SOME(b)) := pair;`    — tuple containing a refutable
-                //                                sub-pattern
-                if exp_is_refutable_lhs(assignComponent) {
-                    self.has_fail = true;
+                // MetaModelica's `:=` is a *pattern* assignment: unless the
+                // LHS is irrefutable the match can fail at runtime, and codegen
+                // lowers it to `let PAT = RHS else { bail!(..) };`.
+                match assign_lhs_cover_key(assignComponent, &self.outer_scope) {
+                    CoverKey::Irrefutable => {}
+                    key @ CoverKey::Ctor(_) => self.assign_keys.push(key),
+                    _ => {
+                        self.has_fail = true;
+                        self.reasons.insert("refutable `:=` pattern");
+                    }
                 }
                 self.scan_exp(assignComponent);
                 self.scan_exp(value);
@@ -531,6 +575,7 @@ impl Walk {
                 // body: regardless of what it does, the failure clause can
                 // raise the failure that escapes upward.
                 self.has_fail = true;
+                self.reasons.insert("failure(...) clause");
             }
             Absyn::Algorithm::ALG_TRY { body: _, elseBody } => {
                 // `try BODY else ELSE end try;` catches a failure raised by
@@ -563,6 +608,7 @@ impl Walk {
                 for s in &**subs {
                     if let Absyn::Subscript::SUBSCRIPT { subscript } = &**s {
                         self.has_fail = true;
+                        self.reasons.insert("array subscript");
                         self.scan_exp(subscript);
                     }
                 }
@@ -590,6 +636,7 @@ impl Walk {
                 // `GenCtx::q` will panic on the analysis/codegen mismatch.
                 if matches!(op, Absyn::Operator::DIV | Absyn::Operator::DIV_EW) {
                     self.has_fail = true;
+                    self.reasons.insert("real division");
                 }
                 self.scan_exp(exp1); self.scan_exp(exp2);
             }
@@ -650,8 +697,9 @@ impl Walk {
                     // so the surrounding function stays infallible. See
                     // codegen `cases_exhaustive` for the typed-IR
                     // counterpart; the two must agree.
-                    if !match_is_exhaustive(cases, localDecls, &self.outer_scope) {
-                        self.has_match = true;
+                    let keys = match_cover_keys(cases, localDecls, &self.outer_scope);
+                    if !cover_keys_exhaustive(&keys) {
+                        self.match_keys.push(keys);
                     }
                     // A failure inside a `match` arm (guard, body, or result)
                     // escapes the match — there is no fall-through to the
@@ -738,27 +786,68 @@ impl Walk {
                     // which omit guarded arms entirely — so a fallible guard keeps
                     // the arm fallible and suppresses the (then-unsound) suggestion.
                     let mut lint_arms: Vec<Walk> = Vec::new();
+                    let mut lint_hoisted: Vec<Walk> = Vec::new();
+                    let mut guard_hoists: Option<Vec<GuardHoist>> = Some(Vec::new());
                     let mut lint_info: Option<Absyn::Info> = None;
-                    for case in &**cases {
-                        let (case_decls, guard, pattern, class_part, result, info) = match &**case {
-                            Absyn::Case::CASE { pattern, patternGuard, localDecls: case_decls, classPart, result, info, .. } =>
-                                (case_decls, patternGuard.as_deref(), Some(&**pattern), classPart, result, info),
+                    let last_case = (&**cases).into_iter().count().saturating_sub(1);
+                    for (case_ix, case) in (&**cases).into_iter().enumerate() {
+                        let (case_decls, guard, pattern, class_part, result, info, pattern_info) = match &**case {
+                            Absyn::Case::CASE { pattern, patternGuard, localDecls: case_decls, classPart, result, info, patternInfo, .. } =>
+                                (case_decls, patternGuard.as_deref(), Some(&**pattern), classPart, result, info, Some(patternInfo)),
                             Absyn::Case::ELSE { localDecls: case_decls, classPart, result, info, .. } =>
-                                (case_decls, None, None, classPart, result, info),
+                                (case_decls, None, None, classPart, result, info, None),
                         };
                         if lint_info.is_none() { lint_info = Some(info.clone()); }
                         let mut scope = match_scope.clone();
                         collect_local_decl_names(case_decls, &mut scope);
-                        let mut sub = Walk { outer_scope: scope, ..Walk::default() };
+                        let mut sub = Walk { outer_scope: scope.clone(), ..Walk::default() };
                         if let Some(g) = guard { sub.scan_exp(g); }
                         if let Some(p) = pattern { sub.scan_exp(p); }
                         sub.scan_local_decl_defaults(case_decls);
                         sub.scan_class_part(class_part);
                         sub.scan_exp(result);
                         lint_arms.push(sub);
+                        if case_ix < last_case
+                            && let (Some(pat_info), Absyn::ClassPart::ALGORITHMS { contents }) =
+                                (pattern_info, &**class_part)
+                        {
+                            let stmts: Vec<(Absyn::Info, bool)> = (&**contents).into_iter()
+                                .map_while(|it| boolean_assert(it))
+                                .map(|(_, asserted, info)| (info.clone(), asserted))
+                                .collect();
+                            let drops_section = stmts.len() == (&**contents).into_iter().count();
+                            if !stmts.is_empty() {
+                                match (&mut guard_hoists, guard.is_some()) {
+                                    // Merging with an existing guard would need
+                                    // the guard's own span, which Absyn does not
+                                    // carry; leave the whole matchcontinue alone.
+                                    (slot, true) => *slot = None,
+                                    (Some(v), false) =>
+                                        v.push(GuardHoist {
+                                            pattern_info: pat_info.clone(), stmts, drops_section }),
+                                    (None, false) => {}
+                                }
+                            }
+                        }
+                        let mut hoisted = Walk { outer_scope: scope, ..Walk::default() };
+                        if let Some(g) = guard { hoisted.scan_exp(g); }
+                        if let Some(p) = pattern { hoisted.scan_exp(p); }
+                        hoisted.scan_local_decl_defaults(case_decls);
+                        hoisted.scan_class_part_hoisting_guards(class_part, true);
+                        hoisted.scan_exp(result);
+                        lint_hoisted.push(hoisted);
                     }
                     if let Some(info) = lint_info {
-                        self.mc_lints.push(McLint { info, arms: lint_arms });
+                        self.mc_lints.push(McLint {
+                            info,
+                            arms: lint_arms,
+                            hoisted: lint_hoisted,
+                            guard_hoists,
+                            cases: (*cases).clone(),
+                            scope: match_scope,
+                            has_else: (&**cases).into_iter().last()
+                                .is_some_and(|c| matches!(&**c, Absyn::Case::ELSE { .. })),
+                        });
                     }
                 }
             }
@@ -792,8 +881,25 @@ impl Walk {
     }
 
     fn scan_class_part(&mut self, part: &Absyn::ClassPart) {
+        self.scan_class_part_hoisting_guards(part, false);
+    }
+
+    /// `hoist_guards` models rewriting the arm's leading `true := COND;` /
+    /// `false := COND;` statements as a `guard`: the statements' own
+    /// fall-through is dropped (a guard belongs to the pattern, so a `match`
+    /// falls through on it too) while `COND` is still scanned, since a *failing*
+    /// guard expression propagates and would make the rewrite unsound.
+    fn scan_class_part_hoisting_guards(&mut self, part: &Absyn::ClassPart, hoist_guards: bool) {
         if let Absyn::ClassPart::ALGORITHMS { contents } = part {
-            for it in &**contents { self.scan_algorithm_item(it); }
+            let mut leading = hoist_guards;
+            for it in &**contents {
+                if leading && let Some(cond) = boolean_assert_cond(it) {
+                    self.scan_exp(cond);
+                    continue;
+                }
+                leading = false;
+                self.scan_algorithm_item(it);
+            }
         }
         // EQUATIONS / EXTERNAL / etc. are not introduced inside match-case
         // class parts by the parser we use; if a future grammar revision
@@ -823,6 +929,7 @@ impl Walk {
     fn record_call(&mut self, name: &str) {
         if name == "fail" {
             self.has_fail = true;
+            self.reasons.insert("fail()");
         }
         // A call whose first dotted segment names one of this function's own
         // parameters/locals is a call *through a function value*: you can only
@@ -836,37 +943,47 @@ impl Walk {
         let first_seg = name.split('.').next().unwrap_or(name);
         if self.outer_scope.contains(first_seg) {
             self.calls_fn_value = true;
+            self.reasons.insert("call through a function value");
         }
         self.calls.insert(name.to_owned());
     }
 }
 
-/// True when an expression used on the LHS of a MetaModelica `:=` assignment
-/// produces a *refutable* pattern — one whose match can fail at runtime, in
-/// which case codegen emits `bail!("pattern mismatch")` to surface the failure
-/// to the caller, making the surrounding function fallible.
-///
-/// Plain variables and tuples-of-plain-variables are irrefutable; anything
-/// involving a constructor, cons-cell, literal, range, or destructuring
-/// expression is refutable. Wildcards (`_`) are irrefutable but appear in
-/// pattern position only inside a containing tuple.
-///
-/// Conservative: when in doubt, classify as refutable. A spurious "fallible"
-/// classification just keeps a `Result<>` return where it wasn't needed, while
-/// a spurious "infallible" classification produces uncompilable code.
-fn exp_is_refutable_lhs(e: &Absyn::Exp) -> bool {
+/// The `COND` of a leading `true := COND;` / `false := COND;` statement — the
+/// MetaModelica idiom for "this arm only applies when COND holds", written
+/// before `guard` existed. Returns `None` for anything else.
+fn boolean_assert_cond(item: &Absyn::AlgorithmItem) -> Option<&Absyn::Exp> {
+    boolean_assert(item).map(|(cond, _, _)| cond)
+}
+
+/// As [`boolean_assert_cond`], plus the asserted polarity (`false :=` needs the
+/// condition negated when it becomes a guard) and the statement's source span.
+fn boolean_assert(item: &Absyn::AlgorithmItem) -> Option<(&Absyn::Exp, bool, &Absyn::Info)> {
+    let Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } = item else { return None };
+    let Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } = &**algorithm_ else { return None };
+    let Absyn::Exp::BOOL { value: asserted } = **assignComponent else { return None };
+    Some((value, asserted, info))
+}
+
+/// Coverage of the LHS of a `:=`. Variable references (subscripted or
+/// field-qualified too) and tuples of them assign; a constructor pattern with
+/// irrefutable sub-patterns is returned as [`CoverKey::Ctor`] for
+/// [`resolve_walk`] to settle; everything else can mismatch.
+fn assign_lhs_cover_key(e: &Absyn::Exp, scope: &BTreeSet<String>) -> CoverKey {
     use Absyn::Exp::*;
     match e {
-        // A plain identifier on the LHS is an ordinary assignment.
-        CREF { .. } => false,
-        // `(a, b, c) := rhs` — only irrefutable if every component is itself
-        // irrefutable on the LHS.
-        TUPLE { expressions } => (&**expressions).into_iter().any(|e| exp_is_refutable_lhs(e)),
-        // Every other Exp shape that can syntactically appear on the LHS of
-        // `:=` denotes a refutable pattern match: constructor applications
-        // (CALL), cons-cells (CONS), literal lists/arrays, as-patterns,
-        // ranges, and even bare literals.
-        _ => true,
+        CREF { .. } => CoverKey::Irrefutable,
+        TUPLE { expressions } => {
+            if (&**expressions).into_iter().all(|e| assign_lhs_cover_key(e, scope) == CoverKey::Irrefutable) {
+                CoverKey::Irrefutable
+            } else {
+                CoverKey::Other
+            }
+        }
+        _ => match pat_cover_key(e, scope) {
+            key @ (CoverKey::Irrefutable | CoverKey::Ctor(_)) => key,
+            _ => CoverKey::Other,
+        },
     }
 }
 
@@ -877,7 +994,7 @@ fn exp_is_refutable_lhs(e: &Absyn::Exp) -> bool {
 ///
 /// Lexer comment / TEXT / DEFINEUNIT items are silently skipped — they
 /// don't introduce variable bindings.
-fn collect_local_decl_names(
+pub(crate) fn collect_local_decl_names(
     decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
     out: &mut BTreeSet<String>,
 ) {
@@ -925,7 +1042,7 @@ fn collect_local_decl_names(
 /// This is the sound replacement for the historical "first letter
 /// uppercase ⇒ constructor" heuristic — we now consult the actual
 /// declared scope.
-fn absyn_pat_is_irrefutable(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> bool {
+pub(crate) fn absyn_pat_is_irrefutable(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> bool {
     use Absyn::Exp::*;
     match e {
         CREF { componentRef } => match componentRef.as_ref() {
@@ -965,7 +1082,7 @@ fn absyn_pat_is_full_some(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> b
 /// the whole-match check ([`match_is_exhaustive`]) and the per-arm-subset
 /// check for `matchcontinue` safety ([`mc_check_is_safe`]) share one
 /// definition of what covers what.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum CoverKey {
     /// Matches every value of the scrutinee type: `else`, `_`, a declared
     /// variable binding, as-patterns and tuples of irrefutable patterns.
@@ -982,8 +1099,17 @@ enum CoverKey {
     BoolTrue,
     /// Literal `false`.
     BoolFalse,
-    /// Every other shape — constructor patterns, literals, partial
-    /// cons/SOME, … — contributes no type-independent coverage.
+    /// A record-constructor pattern `C(<all sub-patterns irrefutable>)`, holding
+    /// the callee name exactly as written. Name resolution needs the hierarchy,
+    /// which the syntactic walk does not have, so it stays raw until
+    /// [`resolve_cover_key`] turns it into [`CoverKey::Variant`].
+    Ctor(String),
+    /// A resolved [`CoverKey::Ctor`]: record `variant` of uniontype `union_`,
+    /// which has `total` records in all. Carrying `total` lets
+    /// [`cover_keys_exhaustive`] decide coverage without the hierarchy.
+    Variant { union_: String, variant: String, total: usize },
+    /// Every other shape — literals, partial cons/SOME, constructor patterns
+    /// with a refutable sub-pattern, … — contributes no coverage.
     Other,
 }
 
@@ -1005,6 +1131,8 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
     // the literal form here — `{l}` is therefore ARRAY/LIST with a single
     // element and does NOT contribute to Cons coverage.
     match e {
+        // `x as PAT` matches exactly what `PAT` matches.
+        Absyn::Exp::AS { exp, .. } => pat_cover_key(exp, binding_names),
         Absyn::Exp::ARRAY { arrayExp } if arrayExp.is_empty() => CoverKey::NilList,
         Absyn::Exp::LIST { exps } if exps.is_empty() => CoverKey::NilList,
         Absyn::Exp::CONS { head, rest }
@@ -1017,8 +1145,50 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
         _ if absyn_pat_is_full_some(e, binding_names) => CoverKey::FullSome,
         Absyn::Exp::BOOL { value: true } => CoverKey::BoolTrue,
         Absyn::Exp::BOOL { value: false } => CoverKey::BoolFalse,
+        Absyn::Exp::CALL { function_, functionArgs, .. } => {
+            let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs
+                else { return CoverKey::Other };
+            // A constructor pattern matches every value of its variant only if
+            // each listed sub-pattern does. Omitted named fields bind nothing
+            // and so never restrict the match.
+            let all_irrefutable = (&**args).into_iter().all(|a| absyn_pat_is_irrefutable(a, binding_names))
+                && (&**argNames).into_iter().all(|n| absyn_pat_is_irrefutable(&n.argValue, binding_names));
+            if all_irrefutable { CoverKey::Ctor(cref_to_dotted(function_.as_ref())) }
+            else { CoverKey::Other }
+        }
         _ => CoverKey::Other,
     }
+}
+
+/// Resolve a [`CoverKey::Ctor`]'s raw callee name: a record of a uniontype
+/// becomes [`CoverKey::Variant`], anything else [`CoverKey::Other`]. A record
+/// that is the only shape of its type (`hierarchy::record_is_sole_shape`) is a
+/// `Variant` of itself with `total == 1`.
+fn resolve_cover_key(
+    key: &CoverKey,
+    top_level: &BTreeMap<String, NameNode<'_>>,
+    caller_qname: &str,
+) -> CoverKey {
+    let CoverKey::Ctor(raw) = key else { return key.clone() };
+    let Some((qname, node)) = resolve_call_node(raw, top_level, caller_qname) else {
+        return CoverKey::Other;
+    };
+    let NodeKind::Class(rc) = &node.kind else { return CoverKey::Other };
+    if !matches!(rc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
+        return CoverKey::Other;
+    }
+    if crate::hierarchy::record_is_sole_shape(&qname, top_level) {
+        return CoverKey::Variant { union_: qname.clone(), variant: rc.name.clone(), total: 1 };
+    }
+    let Some((union_, _)) = qname.rsplit_once('.') else { return CoverKey::Other };
+    let Some(unode) = crate::hierarchy::lookup_node(union_, top_level) else { return CoverKey::Other };
+    let NodeKind::Class(uc) = &unode.kind else { return CoverKey::Other };
+    if !matches!(uc.restriction, Absyn::Restriction::R_UNIONTYPE) { return CoverKey::Other; }
+    let total = unode.children.values().filter(|c| matches!(&c.kind,
+        NodeKind::Class(c) if matches!(c.restriction,
+            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))).count();
+    if total == 0 { return CoverKey::Other; }
+    CoverKey::Variant { union_: union_.to_owned(), variant: rc.name.clone(), total }
 }
 
 /// Does a set of unguarded patterns (classified by [`pat_cover_key`])
@@ -1027,27 +1197,37 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
 ///   * `{}` (Nil) + `_ :: _` with both subpatterns irrefutable → List
 ///   * `NONE()` + `SOME(_)` with irrefutable inner → Option
 ///   * boolean literals `true` and `false` → Bool
+///   * every record of one uniontype, as resolved [`CoverKey::Variant`]s
 ///
-/// TODO: uniontype / record exhaustiveness — requires looking up the
-/// scrutinee's type to enumerate constructors, which needs the typed IR.
-/// See the typedexp::TypedPat counterpart in codegen (`pats_cover_ty`) for
-/// the analogous gap.
+/// Unresolved [`CoverKey::Ctor`]s never cover anything, so calling this on the
+/// raw keys straight out of the walk is sound — just less precise than after
+/// [`resolve_cover_key`].
 fn cover_keys_exhaustive(keys: &[CoverKey]) -> bool {
     use CoverKey::*;
-    keys.contains(&Irrefutable)
+    if keys.contains(&Irrefutable)
         || (keys.contains(&NilList) && keys.contains(&FullCons))
         || (keys.contains(&NoneOpt) && keys.contains(&FullSome))
         || (keys.contains(&BoolTrue) && keys.contains(&BoolFalse))
+    {
+        return true;
+    }
+    let mut seen: BTreeMap<&str, (BTreeSet<&str>, usize)> = BTreeMap::new();
+    for k in keys {
+        if let Variant { union_, variant, total } = k {
+            let e = seen.entry(union_).or_insert_with(|| (BTreeSet::new(), *total));
+            e.0.insert(variant);
+        }
+    }
+    seen.values().any(|(vs, total)| vs.len() >= *total)
 }
 
-/// Does an Absyn case set exhaustively cover the scrutinee? See
-/// [`cover_keys_exhaustive`] for the recognised shapes. Cases with a guard
-/// never contribute coverage — a guard can fail.
-fn match_is_exhaustive(
+/// Coverage keys of an Absyn case set, for [`cover_keys_exhaustive`]. Cases
+/// with a guard never contribute coverage — a guard can fail.
+fn match_cover_keys(
     cases: &metamodelica::List<Arc<Absyn::Case>>,
     match_local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
     outer_scope: &BTreeSet<String>,
-) -> bool {
+) -> Vec<CoverKey> {
     // The full set of names in scope as variable bindings for any pattern
     // in this match: outer scope (function inputs/outputs/protected) ∪
     // match-level localDecls ∪ per-case localDecls.  Built once for the
@@ -1055,7 +1235,7 @@ fn match_is_exhaustive(
     let mut match_scope: BTreeSet<String> = outer_scope.clone();
     collect_local_decl_names(match_local_decls, &mut match_scope);
 
-    let keys: Vec<CoverKey> = cases.into_iter().filter_map(|c| match &**c {
+    cases.into_iter().filter_map(|c| match &**c {
         Absyn::Case::ELSE { .. } => Some(CoverKey::Irrefutable),
         Absyn::Case::CASE { pattern, patternGuard, localDecls, .. } if patternGuard.is_none() => {
             let mut scope = match_scope.clone();
@@ -1063,8 +1243,7 @@ fn match_is_exhaustive(
             Some(pat_cover_key(pattern.as_ref(), &scope))
         }
         _ => None,
-    }).collect();
-    cover_keys_exhaustive(&keys)
+    }).collect()
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1072,7 +1251,7 @@ fn match_is_exhaustive(
 /// Return the dotted MM-side name for a `ComponentRef` (e.g. `List.map`).
 /// Mirrors `typedexp::cref_to_dotted` but kept private here so the analysis
 /// is independent of the typed-IR module's surface.
-fn cref_to_dotted(cref: &Absyn::ComponentRef) -> String {
+pub(crate) fn cref_to_dotted(cref: &Absyn::ComponentRef) -> String {
     match cref {
         Absyn::ComponentRef::CREF_IDENT { name, .. } => name.to_string(),
         Absyn::ComponentRef::CREF_QUAL { name, componentRef, .. } => {
@@ -1305,6 +1484,7 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
                 .unwrap_or_else(|| external_c_calls::lookup_or_panic(c_name, qname));
             if matches!(f, Fallibility::Fallible) {
                 rs.always = true;
+                rs.reasons.insert(format!("fallible external {c_name}"));
             }
         }
         // `function Foo = Bar(...)` aliases have no body of their own; their
@@ -1319,6 +1499,7 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
             } else if let Some(b) = builtin_fallibility(base)
                 && matches!(b, Fallibility::Fallible) {
                     rs.always = true;
+                    rs.reasons.insert(format!("alias of fallible builtin {base}"));
                 }
         }
         // A body-less function that `extends` a partial base inlines that
@@ -1364,17 +1545,50 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
     // the result is already deterministically ordered by FQN then position.
     let mut matchcontinue_as_match: Vec<String> = Vec::new();
     let mut matchcontinue_as_match_locs: Vec<Absyn::Info> = Vec::new();
+    let mut matchcontinue_guard_hoists: Vec<Vec<GuardHoist>> = Vec::new();
+    let mut mc_report: Vec<String> = Vec::new();
     for (qname, rs) in &resolved {
         for lint in &rs.mc_lints {
             // Skip the final arm: a failure there can't fall through to anything.
             let non_last = lint.arms.len().saturating_sub(1);
-            if lint.arms[..non_last].iter().all(|arm| !sources_fallible(arm, &fallible)) {
-                matchcontinue_as_match.push(format!(
-                    "warning: matchcontinue in `{qname}` ({}:{}:{}) has no fallible arm before its last — rewrite it as `match`",
+            let hoists = lint.guard_hoists.clone().unwrap_or_default();
+            let why = if lint.arms[..non_last].iter().all(|arm| !sources_fallible(arm, &fallible)) {
+                "has no fallible arm before its last"
+            } else if lint.disjoint {
+                "has pairwise disjoint case patterns"
+            } else if lint.guard_hoists.is_some()
+                && !hoists.is_empty()
+                && lint.hoisted[..non_last].iter().all(|arm| !sources_fallible(arm, &fallible))
+            {
+                "only falls through on `true := …` asserts — make them `guard`s"
+            } else {
+                // The arms do carry hoistable `true := …` prefixes, so what
+                // blocks them is the rest of their bodies.
+                let hoistable = lint.guard_hoists.is_some() && !hoists.is_empty();
+                let mut blockers: BTreeSet<String> = BTreeSet::new();
+                let mut n_blocking = 0;
+                for arm in &lint.arms[..non_last] {
+                    if sources_fallible(arm, &fallible) {
+                        n_blocking += 1;
+                        blockers.extend(why_fallible(arm, &fallible));
+                    }
+                }
+                mc_report.push(format!(
+                    "{}:{}:{}\t{qname}\tarms={}\telse={}\tblocking={n_blocking}\thoistable={}\t{}",
                     lint.info.fileName, lint.info.lineNumberStart, lint.info.columnNumberStart,
+                    lint.arms.len(), if lint.has_else { 1 } else { 0 },
+                    if hoistable { 1 } else { 0 },
+                    blockers.into_iter().collect::<Vec<_>>().join(", "),
                 ));
-                matchcontinue_as_match_locs.push(lint.info.clone());
-            }
+                continue;
+            };
+            matchcontinue_as_match.push(format!(
+                "warning: matchcontinue in `{qname}` ({}:{}:{}) {why} — rewrite it as `match`",
+                lint.info.fileName, lint.info.lineNumberStart, lint.info.columnNumberStart,
+            ));
+            matchcontinue_as_match_locs.push(lint.info.clone());
+            matchcontinue_guard_hoists.push(
+                if why.starts_with("only falls through") { hoists } else { Vec::new() });
         }
     }
 
@@ -1384,7 +1598,19 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
         external_functions: external_count,
         matchcontinue_as_match,
         matchcontinue_as_match_locs,
+        matchcontinue_guard_hoists,
+        mc_report,
     }
+}
+
+/// Why is this arm fallible under the current `fallible` set? Diagnostic only.
+fn why_fallible(rs: &ResolvedSources, fallible: &BTreeSet<String>) -> Vec<String> {
+    let mut v: Vec<String> = rs.reasons.iter().cloned().collect();
+    v.extend(rs.edges.iter().filter(|t| fallible.contains(*t)).map(|t| format!("calls {t}")));
+    if rs.mc.iter().any(|mc| !mc_check_is_safe(mc, fallible)) {
+        v.push("nested matchcontinue may fail".to_owned());
+    }
+    v
 }
 
 // ── Source resolution & fixed-point evaluation ───────────────────────────────
@@ -1399,6 +1625,8 @@ struct ResolvedSources {
     /// functions, a fallible registry classification (set by the caller in
     /// [`analyze`]).
     always: bool,
+    /// Labels explaining `always`, for the `--mc-report` diagnostic only.
+    reasons: BTreeSet<String>,
     /// FQNs of user-defined callees; fallible iff any of them is.
     edges: BTreeSet<String>,
     /// Per-`matchcontinue` safety obligations (see [`McCheck`]).
@@ -1419,6 +1647,12 @@ struct ResolvedMcCheck {
 struct ResolvedMcLint {
     info: Absyn::Info,
     arms: Vec<ResolvedSources>,
+    hoisted: Vec<ResolvedSources>,
+    guard_hoists: Option<Vec<GuardHoist>>,
+    has_else: bool,
+    /// The case patterns are pairwise disjoint, which makes the matchcontinue a
+    /// `match` on its own — see [`crate::mc_disjoint`].
+    disjoint: bool,
 }
 
 /// Resolve a [`Walk`]'s raw callee names (recursively through its
@@ -1432,9 +1666,24 @@ fn resolve_walk(
     walks: &BTreeMap<String, Walk>,
 ) -> ResolvedSources {
     let mut rs = ResolvedSources {
-        always: w.has_fail || w.has_match || w.calls_fn_value,
+        always: w.has_fail || w.calls_fn_value,
+        reasons: w.reasons.iter().map(|r| (*r).to_owned()).collect(),
         ..ResolvedSources::default()
     };
+    for keys in &w.match_keys {
+        let resolved: Vec<CoverKey> = keys.iter()
+            .map(|k| resolve_cover_key(k, top_level, caller_qname)).collect();
+        if !cover_keys_exhaustive(&resolved) {
+            rs.always = true;
+            rs.reasons.insert("non-exhaustive `match`".to_owned());
+        }
+    }
+    for key in &w.assign_keys {
+        if !cover_keys_exhaustive(&[resolve_cover_key(key, top_level, caller_qname)]) {
+            rs.always = true;
+            rs.reasons.insert("refutable `:=` pattern".to_owned());
+        }
+    }
     for raw in &w.calls {
         // Resolve user-defined callee first: a user function shadows any
         // same-named builtin (e.g. `exp` inside `Template.TplMain`
@@ -1459,6 +1708,7 @@ fn resolve_walk(
                 // fallible regardless of the underlying C symbol's own
                 // classification. Mark the caller fallible to match.
                 rs.always = true;
+                rs.reasons.insert(format!("ExternalObject constructor {target}"));
                 continue;
             }
             // Resolved to some other non-function node (record/type
@@ -1480,6 +1730,7 @@ fn resolve_walk(
         if let Some(b) = builtin_fallibility(raw).or_else(|| builtin_fallibility(bare)) {
             if matches!(b, Fallibility::Fallible) {
                 rs.always = true;
+                rs.reasons.insert(format!("fallible builtin {bare}"));
             }
             continue;
         }
@@ -1496,7 +1747,10 @@ fn resolve_walk(
     for mc in &w.mc_checks {
         rs.mc.push(ResolvedMcCheck {
             candidates: mc.candidates.iter()
-                .map(|(key, sub)| (*key, resolve_walk(sub, caller_qname, top_level, walks)))
+                .map(|(key, sub)| (
+                    resolve_cover_key(key, top_level, caller_qname),
+                    resolve_walk(sub, caller_qname, top_level, walks),
+                ))
                 .collect(),
         });
     }
@@ -1506,6 +1760,13 @@ fn resolve_walk(
             arms: lint.arms.iter()
                 .map(|sub| resolve_walk(sub, caller_qname, top_level, walks))
                 .collect(),
+            hoisted: lint.hoisted.iter()
+                .map(|sub| resolve_walk(sub, caller_qname, top_level, walks))
+                .collect(),
+            guard_hoists: lint.guard_hoists.clone(),
+            has_else: lint.has_else,
+            disjoint: crate::mc_disjoint::cases_pairwise_disjoint(
+                &lint.cases, &lint.scope, top_level, caller_qname),
         });
     }
     rs
@@ -1532,7 +1793,7 @@ fn sources_fallible(rs: &ResolvedSources, fallible: &BTreeSet<String>) -> bool {
 fn mc_check_is_safe(mc: &ResolvedMcCheck, fallible: &BTreeSet<String>) -> bool {
     let keys: Vec<CoverKey> = mc.candidates.iter()
         .filter(|(_, sub)| !sources_fallible(sub, fallible))
-        .map(|(key, _)| *key)
+        .map(|(key, _)| key.clone())
         .collect();
     cover_keys_exhaustive(&keys)
 }

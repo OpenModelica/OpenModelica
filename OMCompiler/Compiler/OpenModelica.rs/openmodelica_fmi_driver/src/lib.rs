@@ -46,8 +46,6 @@ pub enum Error {
     Solver(&'static str),
     /// The FMU's own simulation runtime reported a failure.
     Simulation(String),
-    /// The FMU asked for termination during initialization.
-    TerminatedAtInit,
     /// `-alarm=N` expired.
     Alarm,
     Cancelled,
@@ -69,9 +67,6 @@ impl std::fmt::Display for Error {
             Error::Io(m) => write!(f, "{m}"),
             Error::Solver(m) => write!(f, "{m}"),
             Error::Simulation(m) => write!(f, "{m}"),
-            Error::TerminatedAtInit => {
-                write!(f, "the FMU requested termination during initialization")
-            }
             Error::Alarm => write!(f, "simulation aborted (-alarm)"),
             Error::Cancelled => write!(f, "cancelled"),
         }
@@ -204,6 +199,9 @@ pub struct Options<'a> {
     /// `-variableFilter`: which variables the result file keeps; `None` keeps all.
     /// Borrowed, since the caller owns the compiled regex; this crate has none.
     pub keep: Option<&'a dyn Fn(&str) -> bool>,
+    /// Where the rows stream to ([`record::Recorder::stream_to`]); `None` keeps
+    /// them in the recorder.
+    pub result_file: Option<std::path::PathBuf>,
 }
 
 impl Options<'_> {
@@ -235,6 +233,7 @@ impl Options<'_> {
             cancelled: None,
             alarm: None,
             keep: None,
+            result_file: None,
         }
     }
 

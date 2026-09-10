@@ -62,13 +62,13 @@ fn unmangle(mut inSymbol: ArcStr) -> Result<ArcStr> {
 fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
     let mut outSymbol: ArcStr = arcstr::literal!("");
     let mut n: i32 = 0;
-    let mut strs: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+    let mut strs: metamodelica::List<ArcStr> = metamodelica::nil();
     let mut so: ArcStr = arcstr::literal!("");
     let mut fun: ArcStr = arcstr::literal!("");
     (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^([^(]*)[(]([^+]*[^+]*)[+][^)]*[)] *[[]0x[0-9a-fA-F]*[]]$")).clone(), 3, true, false);
     if n.clone() == 3 {
         let (__pa0, __pa1) = ::match_deref::match_deref! { match &(strs.clone()) {
-            Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa0, tail: Deref @ metamodelica::List::Cons { head: __pa1, tail: Deref @ metamodelica::List::Nil } } } => (__pa0.clone(), __pa1.clone()),
+            Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa0, tail: Deref @ metamodelica::ListNode::Cons { head: __pa1, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa0.clone(), __pa1.clone()),
             _ => return Err("pattern mismatch"),
         } };
         so = __pa0.clone();
@@ -78,7 +78,7 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
         (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^[0-9 ]*([A-Za-z0-9.]*) *0x[0-9a-fA-F]* ([A-Za-z0-9_]*) *[+] *[0-9]*$")).clone(), 3, true, false);
         if n.clone() == 3 {
             let (__pa3, __pa4) = ::match_deref::match_deref! { match &(strs.clone()) {
-                Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa3, tail: Deref @ metamodelica::List::Cons { head: __pa4, tail: Deref @ metamodelica::List::Nil } } } => (__pa3.clone(), __pa4.clone()),
+                Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa3, tail: Deref @ metamodelica::ListNode::Cons { head: __pa4, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa3.clone(), __pa4.clone()),
                 _ => return Err("pattern mismatch"),
             } };
             so = __pa3.clone();
@@ -109,8 +109,8 @@ pub fn getReadableMessage(mut delimiter: ArcStr) -> Result<ArcStr> {
     Ok(r#str)
 }
 
-pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
-    let mut symbols: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+pub fn readableStacktraceMessages() -> Result<metamodelica::List<ArcStr>> {
+    let mut symbols: metamodelica::List<ArcStr> = metamodelica::nil();
     let mut prev: ArcStr = literal!("");
     let mut n: i32 = 1;
     let mut prevN: i32 = 1;
@@ -119,7 +119,7 @@ pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
         return Ok(symbols.clone());
     }
     for mut symbol in &*({
-        let mut __acc: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+        let mut __acc: metamodelica::List<ArcStr> = metamodelica::nil();
         for mut s in (getStacktraceMessages()).into_iter().cloned() {
             let __x = stripAddresses((s.clone()).clone())?;
             __acc = cons(__x, __acc);
@@ -142,8 +142,8 @@ pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
     Ok(symbols)
 }
 
-pub fn getStacktraceMessages() -> Arc<metamodelica::List<ArcStr>> {
-    let mut symbols: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+pub fn getStacktraceMessages() -> metamodelica::List<ArcStr> {
+    let mut symbols: metamodelica::List<ArcStr> = metamodelica::nil();
     symbols
 }
 

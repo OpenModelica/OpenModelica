@@ -983,21 +983,7 @@ author:Waurich TUD 2014-05"
   input DAE.Element e;
   output list<DAE.ComponentRef> eLst;
 algorithm
-  eLst := matchcontinue e
-    local
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> lst;
-    case _
-      algorithm
-        false := isNotComplexVar(e);
-        lst := getScalarsForComplexVar(e);
-      then
-        lst;
-    else
-      algorithm
-        cref := DAEUtil.varCref(e);
-      then {cref};
-  end matchcontinue;
+  eLst := if isNotComplexVar(e) then {DAEUtil.varCref(e)} else getScalarsForComplexVar(e);
 end expandComplexElementsToCrefs;
 
 protected function hasAssertFold "fold function to check if a list of stmts has an assert.

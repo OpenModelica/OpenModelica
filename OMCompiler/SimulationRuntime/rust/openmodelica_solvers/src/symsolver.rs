@@ -11,7 +11,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
-use libm::{fabs, fmax, fmin, sqrt};
+use crate::fmath::{self, fabs, fmax, fmin, sqrt};
 
 use crate::events::{Bracket, StepEnd};
 use crate::{Ode, Result, format_e, omclog};
@@ -231,7 +231,7 @@ impl SymSolver {
                     log(|| {
                         alloc::format!(
                             "min(facmax, max(facmin, fac*sqrt(1/err))) = {}",
-                            format_e(fmin(FACMAX, fmax(FACMIN, FAC * libm::pow(1.0 / err, 4.0))))
+                            format_e(fmin(FACMAX, fmax(FACMIN, FAC * fmath::pow(1.0 / err, 4.0))))
                         )
                     });
                 }

@@ -4,7 +4,7 @@
 macro_rules! list {
     // Base case: empty list
     () => {
-        std::sync::Arc::new($crate::List::Nil)
+        $crate::nil()
     };
     // Case with a trailing comma
     ( $($x:expr),*, ) => {

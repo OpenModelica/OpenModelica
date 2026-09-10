@@ -757,17 +757,15 @@ protected function getCommunicationObjBetweenMergedTasks1 "author: Waurich TUD 2
   input HpcOmTaskGraph.Communication iCommunication;
   output HpcOmTaskGraph.Communication oCommunication;
 algorithm
- oCommunication := matchcontinue(parentCommCost, iCommunication)
+ oCommunication := match(parentCommCost, iCommunication)
    local
     Integer nV1,nV2,childNode; //sum of {numOfIntegers,numOfFloats,numOfBoolean, numOfStrings}
     list<Integer> ints1,ints2,fl1,fl2,b1,b2,s1,s2;
     Real reqT1,reqT2;
-   case(HpcOmTaskGraph.COMMUNICATION(nV1,ints1,fl1,b1,s1,childNode,reqT1), HpcOmTaskGraph.COMMUNICATION(nV2,ints2,fl2,b2,s2,_,reqT2))
-     algorithm
-       true := listMember(childNode,tasks);
+   case(HpcOmTaskGraph.COMMUNICATION(nV1,ints1,fl1,b1,s1,childNode,reqT1), HpcOmTaskGraph.COMMUNICATION(nV2,ints2,fl2,b2,s2,_,reqT2)) guard listMember(childNode,tasks)
      then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);
    else iCommunication;
- end matchcontinue;
+ end match;
 end getCommunicationObjBetweenMergedTasks1;
 
 protected function convertCommunicationToCommInfo "author: marcusw
@@ -6226,27 +6224,18 @@ protected function getPredecessorCalcTask "author:Waurich TUD 2013-11
   input list<HpcOmSimCode.Task> threadIn;
   input Integer indexIn;
   output HpcOmSimCode.Task taskOut;
+protected
+  Integer index;
+  HpcOmSimCode.Task preTask;
 algorithm
-  taskOut := matchcontinue indexIn
-    local
-      Boolean isCalc;
-      Integer index;
-      HpcOmSimCode.Task preTask;
-    case _
-      algorithm
-        true := indexIn==1;
-      then
-        HpcOmSimCode.TASKEMPTY();
-    case _
-      algorithm
-        true := indexIn >= 2;
-        index := indexIn-1;
-        preTask := listGet(threadIn,index);
-        isCalc := isCalcTask(preTask);
-        preTask := if boolNot(isCalc) then getPredecessorCalcTask(threadIn,index) else preTask;
-      then
-        preTask;
-  end matchcontinue;
+  if indexIn == 1 then
+    taskOut := HpcOmSimCode.TASKEMPTY();
+  else
+    true := indexIn >= 2;
+    index := indexIn-1;
+    preTask := listGet(threadIn,index);
+    taskOut := if isCalcTask(preTask) then preTask else getPredecessorCalcTask(threadIn,index);
+  end if;
 end getPredecessorCalcTask;
 
 protected function updateTimeFinished "author:Waurich TUD 2013-11

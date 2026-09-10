@@ -24,11 +24,9 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use core::cell::UnsafeCell;
 
 use openmodelica_mat_writer::Precision;
 use openmodelica_sim_meta::driver::{self, SimEngine};
-use openmodelica_sim_meta::result::ResultStream;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, SimMeta};
 
@@ -247,9 +245,7 @@ fn run() {
         }
     }
 
-    if let Some(mut st) = result_stream().take() {
-        st.finish();
-    }
+    openmodelica_sim_meta::result::file::finish();
     if !openmodelica_sim_meta::result::known(&m.output_format) || m.output_format == "empty" {
         return; // "empty": run only (benchmarking), no file
     }
@@ -259,52 +255,14 @@ fn run() {
     openmodelica_sim_meta::profiling::finish(&m, &path, size);
 }
 
-struct ResultCell(UnsafeCell<(Option<(Vec<bool>, Precision)>, Option<ResultStream>)>);
-unsafe impl Sync for ResultCell {}
-static RESULT: ResultCell = ResultCell(UnsafeCell::new((None, None)));
-
-fn result_stream() -> &'static mut Option<ResultStream> {
-    unsafe { &mut (*RESULT.0.get()).1 }
-}
-
 /// Route the run's rows to `<prefix>_res.<format>`, written as they arrive. A
 /// run-time `-variableFilter` was refused at the flag check (no regex engine);
 /// the model's own filter is the codegen's verdict.
 fn arm_result(m: &SimMeta) {
-    let keep = m.output_keep(None);
     // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
     let precision =
         simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-    unsafe { (*RESULT.0.get()).0 = Some((keep, precision)) };
-    driver::set_result_opener(Some(open_result));
-    driver::set_row_sink(Some(sink_rows), Some(sink_finish));
-}
-
-fn open_result(e: &mut dyn driver::SimEngine, m: &SimMeta, sim_data: u32) -> driver::Result<()> {
-    let Some((keep, precision)) = (unsafe { (*RESULT.0.get()).0.take() }) else { return Ok(()) };
-    let path = m.result_file();
-    let format = openmodelica_sim_meta::result::format_of(&path, &m.output_format);
-    let st = openmodelica_sim_meta::result::open_stream(e, m, sim_data, format, &keep, precision, || {
-        crate::result_out::open(&path)
-    })?;
-    *result_stream() = Some(st);
-    Ok(())
-}
-
-fn sink_rows(rows: &[f64]) -> bool {
-    match result_stream() {
-        Some(s) => {
-            s.push_rows(rows);
-            true
-        }
-        None => false,
-    }
-}
-
-fn sink_finish() {
-    if let Some(s) = result_stream() {
-        s.finish();
-    }
+    openmodelica_sim_meta::result::file::arm(m.output_keep(None), precision, m.result_file());
 }
 
 /// C's `linearize`: `linearized_model.<ext>` under `-outputPath`.

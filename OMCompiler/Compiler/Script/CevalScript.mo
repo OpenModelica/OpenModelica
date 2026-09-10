@@ -80,7 +80,6 @@ import CodegenMidToC;
 import CodegenWasmJitFunctions;
 import ComponentReference;
 import Config;
-import Corba;
 import DAEUtil;
 import Debug;
 import Dump;
@@ -2855,18 +2854,16 @@ protected function getChangedClass
   input String suffix;
   output String name;
 algorithm
-  name := matchcontinue elt
+  name := match elt
     local
       String fileName;
-    case SCode.CLASS(name=name,info=SOURCEINFO())
-      algorithm
-        false := System.regularFileExists(name + suffix);
+    case SCode.CLASS(name=name,info=SOURCEINFO()) guard not System.regularFileExists(name + suffix)
       then name;
     case SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
       algorithm
         true := System.fileIsNewerThan(fileName, name + suffix);
       then name;
-  end matchcontinue;
+  end match;
 end getChangedClass;
 
 protected function isChanged
@@ -3256,7 +3253,7 @@ protected
   list<String> vars;
   String omhome, omlib, omcpath, systemPath, omdev, os, touch_file, usercflags;
   String workdir, uname, senddata, gcc, gccVersion, confcmd;
-  Boolean omcfound, touch_res, rm_res, have_corba, gcc_res;
+  Boolean omcfound, touch_res, rm_res, gcc_res;
   list<Values.Value> vals;
 algorithm
   vars := {"OPENMODELICAHOME",
@@ -3275,7 +3272,6 @@ algorithm
            "C_COMPILER",
            "C_COMPILER_VERSION",
            "C_COMPILER_RESPONDING",
-           "HAVE_CORBA",
            "CONFIGURE_CMDLINE"};
   omhome := Settings.getInstallationDirectoryPath();
   omlib := Settings.getModelicaPath(Testsuite.isRunning());
@@ -3294,7 +3290,6 @@ algorithm
   // _ = System.platform();
   senddata := Autoconf.ldflags_runtime;
   gcc := System.getCCompiler();
-  have_corba := Corba.haveCorba();
   System.systemCall("rm -f " + touch_file, "");
   gcc_res := 0 == System.systemCall(gcc + " --version", touch_file);
   gccVersion := System.readFile(touch_file);
@@ -3316,7 +3311,6 @@ algorithm
            Values.STRING(gcc),
            Values.STRING(gccVersion),
            Values.BOOL(gcc_res),
-           Values.BOOL(have_corba),
            Values.STRING(confcmd)};
 
   res := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"), vals, vars, -1);

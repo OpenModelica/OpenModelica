@@ -4,6 +4,7 @@
 //! files are the C ones; the clusters are evaluated in dependency order on the
 //! runtime's single thread, where C hands them to a TBB thread pool.
 
+use openmodelica_solvers::fmath;
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -596,7 +597,7 @@ impl Json {
     fn as_i64(&self) -> Option<i64> {
         match self {
             Json::Int(i) => Some(*i),
-            Json::Float(f) if libm::trunc(*f) == *f => Some(*f as i64),
+            Json::Float(f) if fmath::trunc(*f) == *f => Some(*f as i64),
             _ => None,
         }
     }
@@ -1045,7 +1046,7 @@ impl LevelScheduler {
         if !self.schedule_available {
             return true;
         }
-        let change = libm::fabs(self.par_avg_at_last_sch - self.par_current_avg) / self.par_avg_at_last_sch;
+        let change = fmath::fabs(self.par_avg_at_last_sch - self.par_current_avg) / self.par_avg_at_last_sch;
         change > 0.5
     }
 

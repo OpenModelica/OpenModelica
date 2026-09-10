@@ -33,6 +33,7 @@ pub mod newton_diagnostics;
 #[cfg(test)]
 mod nls_c_trace;
 
+use openmodelica_solvers::fmath;
 use openmodelica_solvers::format_g;
 use openmodelica_solvers::omclog;
 use openmodelica_solvers::{counters, solverflags, sysstat};
@@ -717,7 +718,7 @@ pub fn enorm(v: &[f64]) -> f64 {
     for &x in v {
         s += x * x;
     }
-    libm::sqrt(s)
+    fmath::sqrt(s)
 }
 
 /// Solve the dense `n`×`n` system `A x = b` in place (`A` column-major, `b ← x`).
@@ -880,7 +881,7 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     }
     // C notes a casual tearing set whose Jacobian is on the way to singular, but
     // steps on it anyway: `newtonAlgorithm` only gives up on `-1`.
-    if casual && libm::fabs(det) < 1e-9 {
+    if casual && fmath::fabs(det) < 1e-9 {
         omclog::debug_string(
             omclog::DT,
             "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...",
@@ -1036,12 +1037,12 @@ fn fd_homotopy_jacobian(
     max_value: Option<&[f64]>,
     out: &mut [f64],
 ) {
-    let delta_h = libm::sqrt(f64::EPSILON * 20.0);
+    let delta_h = fmath::sqrt(f64::EPSILON * 20.0);
     let mut yp = y.to_vec();
     let mut f2 = vec![0.0f64; n];
     for j in 0..n_cols {
         let ysave = yp[j];
-        let mut hh = delta_h * (libm::fabs(ysave) + 1.0);
+        let mut hh = delta_h * (fmath::fabs(ysave) + 1.0);
         if max_value.is_some_and(|mx| ysave + hh >= mx[j]) {
             hh = -hh;
         }
@@ -1208,14 +1209,14 @@ fn homotopy_algorithm(
             for i in 0..m {
                 dot += tangent[i] * prev_tangent[i];
             }
-            if dot < 0.0 || (libm::fabs(dot) < f64::EPSILON && start_dir == -1.0 && initial_step) {
+            if dot < 0.0 || (fmath::fabs(dot) < f64::EPSILON && start_dir == -1.0 && initial_step) {
                 for v in tangent.iter_mut() {
                     *v = -*v;
                 }
             }
             // Cap tau so λ + tau·dλ ≤ 1.
-            if libm::fabs(tangent[n]) > 1e-8 {
-                tau = tau.min((1.0 - y0[n]) / libm::fabs(tangent[n]));
+            if fmath::fabs(tangent[n]) > 1e-8 {
+                tau = tau.min((1.0 - y0[n]) / fmath::fabs(tangent[n]));
             }
         }
 
@@ -1226,7 +1227,7 @@ fn homotopy_algorithm(
                 y1[i] = y0[i] + tau * tangent[i];
             }
             hom.h(&y1, &mut hvec);
-            if hvec.iter().all(|v| libm::fabs(*v) < ASSERT_RESIDUAL) {
+            if hvec.iter().all(|v| fmath::fabs(*v) < ASSERT_RESIDUAL) {
                 assert_ok = true;
                 break;
             }
@@ -1257,7 +1258,7 @@ fn homotopy_algorithm(
             for i in 0..n {
                 let mut s = 0.0;
                 for j in 0..m {
-                    s += libm::fabs(hjac[i + j * n]);
+                    s += fmath::fabs(hjac[i + j * n]);
                 }
                 res_scaling[i] = if s > 0.0 { s } else { 1.0 };
             }
@@ -1277,7 +1278,7 @@ fn homotopy_algorithm(
                 y1[i] += dy1[i];
             }
             hom.h(&y1, &mut hvec);
-            if hvec.iter().any(|v| libm::fabs(*v) >= ASSERT_RESIDUAL) {
+            if hvec.iter().any(|v| fmath::fabs(*v) >= ASSERT_RESIDUAL) {
                 corrector_ok = false;
                 break;
             }
@@ -1297,8 +1298,8 @@ fn homotopy_algorithm(
                 corr += c * c;
                 pred += p * p;
             }
-            let pred = libm::sqrt(pred);
-            bend = if pred > 0.0 { libm::sqrt(corr) / pred } else { f64::INFINITY };
+            let pred = fmath::sqrt(pred);
+            bend = if pred > 0.0 { fmath::sqrt(corr) / pred } else { f64::INFINITY };
         }
 
         if bend > t.adapt_bend || !step_accept {
@@ -1411,7 +1412,7 @@ fn homotopy_solve(
     // xScaling[i] = max(nominal[i], |xStart[i]|) from the original start values.
     let mut xscaling = vec![0.0f64; m];
     for i in 0..n {
-        xscaling[i] = libm::fabs(nominal[i]).max(libm::fabs(x[i]));
+        xscaling[i] = fmath::fabs(nominal[i]).max(fmath::fabs(x[i]));
         if xscaling[i] <= 0.0 {
             xscaling[i] = 1.0;
         }
@@ -1434,7 +1435,7 @@ fn homotopy_solve(
             x0v[i] = xstart[i] + xscaling[i] * (i as f64 / n as f64) * pert;
         }
         eval(&x0v, &mut fx0);
-        if fx0.iter().all(|v| v.is_finite() && libm::fabs(*v) < 1e6) {
+        if fx0.iter().all(|v| v.is_finite() && fmath::fabs(*v) < 1e6) {
             break;
         }
     }
@@ -1472,7 +1473,7 @@ fn init_homotopy_solve<'e>(
     let m = n + 1;
     let mut xscaling = vec![0.0f64; m];
     for i in 0..n {
-        xscaling[i] = libm::fabs(nominal[i]).max(libm::fabs(x[i]));
+        xscaling[i] = fmath::fabs(nominal[i]).max(fmath::fabs(x[i]));
     }
     xscaling[m - 1] = 1.0;
     // C's `nlsData->max`, the FD sign-flip bound; lambda's own is unbounded.
@@ -1609,7 +1610,7 @@ pub fn newton_solve(
             let d = x[i] - x_new[i];
             d2 += d * d;
         }
-        let delta_x = libm::sqrt(d2);
+        let delta_x = fmath::sqrt(d2);
         let xn = enorm(x);
         let scale = if xn > 1.0 { xn } else { 1.0 };
         let delta_x_scaled = delta_x / scale;
@@ -1635,7 +1636,7 @@ pub fn newton_solve(
             let v = fvec[i] / s;
             se2 += v * v;
         }
-        let scaled_error_f = libm::sqrt(se2);
+        let scaled_error_f = fmath::sqrt(se2);
 
         x.copy_from_slice(&x_new);
         f_old.copy_from_slice(&fvec);
@@ -1818,7 +1819,7 @@ fn hybrd_res_scaling(n: usize, fjac: &[f64], res_scaling: &mut [f64]) {
     for i in 0..n {
         let mut m = 1e-16f64;
         for v in &fjac[i * n..(i + 1) * n] {
-            m = m.max(libm::fabs(*v));
+            m = m.max(fmath::fabs(*v));
         }
         res_scaling[i] = m;
     }
@@ -2182,7 +2183,7 @@ fn hybrd_c(
             log_rung!(" - iteration making no progress:\t try scaling factor as initial point.");
         } else if retries2 < 5 && !assert_called {
             restart(&mut xv, &nlsx);
-            diag = Some(res_scaling.iter().map(|v| libm::fabs(*v).max(1e-16)).collect());
+            diag = Some(res_scaling.iter().map(|v| fmath::fabs(*v).max(1e-16)).collect());
             retries = 0;
             retries2 += 1;
             log_rung!(" - iteration making no progress:\t try with own scaling factors.");
@@ -2346,7 +2347,7 @@ pub struct Pick {
 /// away even at `f == 1`, which costs a Newton iteration on a linear residual.
 pub fn history_pick(h: &dyn History, time: f64) -> Pick {
     for k in 0..h.len() {
-        if libm::fabs(h.time(k) - time) <= MINIMAL_STEP_SIZE {
+        if fmath::fabs(h.time(k) - time) <= MINIMAL_STEP_SIZE {
             return Pick { old: Some(k), old2: None, exact: true };
         }
         if h.time(k) < time {
@@ -2389,7 +2390,7 @@ pub fn history_guess(h: &dyn History, pick: &Pick, time: f64, guess: &mut [f64])
 /// C's, the oldest entry falls off at [`HIST_DEPTH`].
 pub fn history_store(h: &mut dyn History, time: f64, x: &[f64]) {
     let count = h.len();
-    if count > 0 && libm::fabs(h.time(0) - time) <= MINIMAL_STEP_SIZE {
+    if count > 0 && fmath::fabs(h.time(0) - time) <= MINIMAL_STEP_SIZE {
         h.put(0, count, time, x);
         return;
     }
@@ -2903,9 +2904,9 @@ fn newton_c(
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             d("Need to damp, grad_f = ", grad_f);
-            d("Need to damp, error_f = ", libm::sqrt(error_f_sqrd));
+            d("Need to damp, error_f = ", fmath::sqrt(error_f_sqrd));
             d("Need to damp this!! lambda1 = ", lambda1);
-            d("Need to damp, error_f1 = ", libm::sqrt(error_f1_sqrd));
+            d("Need to damp, error_f1 = ", fmath::sqrt(error_f1_sqrd));
             d("Need to damp, forced error = ", error_f_sqrd + ALPHA * lambda1 * grad_f);
         }
 
@@ -2936,7 +2937,7 @@ fn newton_c(
             }
             let error_f2_sqrd = nsq(&fvec);
             if trace.is_some() {
-                omclog::debug_double(omclog::NLS_V, "Need to damp, error_f2 = ", libm::sqrt(error_f2_sqrd));
+                omclog::debug_double(omclog::NLS_V, "Need to damp, error_f2 = ", fmath::sqrt(error_f2_sqrd));
             }
             if error_f1_sqrd > error_f_sqrd + ALPHA * lambda2 * grad_f
                 && error_f_sqrd > 1e-12
@@ -2955,9 +2956,9 @@ fn newton_c(
                     if d <= 0.0 {
                         lam = 0.5 * lambda1;
                     } else if a2 <= 0.0 {
-                        lam = (-a2 + libm::sqrt(d)) / (3.0 * a3);
+                        lam = (-a2 + fmath::sqrt(d)) / (3.0 * a3);
                     } else {
-                        lam = -grad_f / (a2 + libm::sqrt(d));
+                        lam = -grad_f / (a2 + fmath::sqrt(d));
                     }
                 }
                 lam = lam.max(LAMBDA_MIN_C);
@@ -2978,7 +2979,7 @@ fn newton_c(
                     return (false, false);
                 }
                 if trace.is_some() {
-                    omclog::debug_double(omclog::NLS_V, "Need to damp, error_f1 = ", libm::sqrt(nsq(&fvec)));
+                    omclog::debug_double(omclog::NLS_V, "Need to damp, error_f1 = ", fmath::sqrt(nsq(&fvec)));
                 }
             }
         }
@@ -3008,12 +3009,12 @@ fn newton_c(
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
-            d("delta_x        =", libm::sqrt(delta_x_sqrd));
-            d("delta_x_scaled =", libm::sqrt(delta_x_sqrd_scaled));
-            d("newtonXTol          =", libm::sqrt(xtol_sq));
-            d("error_f        =", libm::sqrt(error_f_sqrd));
-            d("error_f_scaled =", libm::sqrt(error_f_sqrd_scaled));
-            d("newtonFTol          =", libm::sqrt(ftol_sq));
+            d("delta_x        =", fmath::sqrt(delta_x_sqrd));
+            d("delta_x_scaled =", fmath::sqrt(delta_x_sqrd_scaled));
+            d("newtonXTol          =", fmath::sqrt(xtol_sq));
+            d("error_f        =", fmath::sqrt(error_f_sqrd));
+            d("error_f_scaled =", fmath::sqrt(error_f_sqrd_scaled));
+            d("newtonFTol          =", fmath::sqrt(ftol_sq));
         }
         if neg_steps > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
@@ -3120,7 +3121,7 @@ fn newton_c(
         // on its way to singular: the step keeps the sign `dgesv` gave it (C skips the
         // `vecScalarMult(n, x, -1, x)` there) and, unless this iterate turns out to be
         // the solution, the Newton ends on it.
-        vanishing = casual && libm::fabs(det) < 1e-9;
+        vanishing = casual && fmath::fabs(det) < 1e-9;
         if vanishing {
             omclog::debug_string(
                 omclog::DT,
@@ -3168,7 +3169,7 @@ fn dgetf2(n: usize, a: &mut [f64], piv: &mut [usize]) {
     for j in 0..n {
         let mut p = j;
         for i in j + 1..n {
-            if libm::fabs(a[j * n + i]) > libm::fabs(a[j * n + p]) {
+            if fmath::fabs(a[j * n + i]) > fmath::fabs(a[j * n + p]) {
                 p = i;
             }
         }
@@ -3182,7 +3183,7 @@ fn dgetf2(n: usize, a: &mut [f64], piv: &mut [usize]) {
                 }
             }
             let d = a[j * n + j];
-            if libm::fabs(d) >= SFMIN {
+            if fmath::fabs(d) >= SFMIN {
                 let r = 1.0 / d;
                 for i in j + 1..n {
                     a[j * n + i] *= r;
@@ -3230,9 +3231,9 @@ fn dgetrs(n: usize, a: &[f64], piv: &[usize], b: &mut [f64]) {
 /// C's `compute_scaling_vector`, over a buffer that holds LU factors by then.
 fn newton_res_scaling(n: usize, jac: &[f64], scaling: &mut [f64]) {
     for i in 0..n {
-        let mut m = libm::fabs(jac[i * n]);
+        let mut m = fmath::fabs(jac[i * n]);
         for k in 1..n {
-            m = libm::fmax(libm::fabs(jac[i * n + k]), m);
+            m = fmath::fmax(fmath::fabs(jac[i * n + k]), m);
         }
         scaling[i] = if m <= 0.0 {
             1.0e-16
@@ -3262,8 +3263,8 @@ fn newton_jacobian(
         return;
     }
     for i in 0..n {
-        let mut dhh = libm::fmax(
-            SQRT_EPS * libm::fmax(libm::fabs(x[i]), libm::fabs(fvec[i])),
+        let mut dhh = fmath::fmax(
+            SQRT_EPS * fmath::fmax(fmath::fabs(x[i]), fmath::fabs(fvec[i])),
             SQRT_EPS,
         );
         if fvec[i] < 0.0 {
@@ -3653,7 +3654,7 @@ pub fn solve_nls(
     // C's "if last solving is too long ago use just old values": past five output
     // intervals neither is consulted and the current variable values stand in — a
     // casual tearing set always consults them.
-    if casual || libm::fabs(time - *mem.last_solved) < 5.0 * step_size() {
+    if casual || fmath::fabs(time - *mem.last_solved) < 5.0 * step_size() {
         let hpick = history_pick(hist, time);
         if hpick.exact {
             stat_inc(STAT_NLS_GUESS_HIT);
@@ -4379,10 +4380,10 @@ mod tests {
         let mut eval = |xs: &[f64], r: &mut [f64]| {
             for i in 0..n - 1 {
                 let k = (i + 1) as f64;
-                r[i] = libm::pow(k, k) * (k + 1.0) - libm::pow(xs[i], k) * xs[i + 1];
+                r[i] = fmath::pow(k, k) * (k + 1.0) - fmath::pow(xs[i], k) * xs[i + 1];
             }
             let k = n as f64;
-            r[n - 1] = libm::pow(k, k) - libm::pow(xs[n - 1], k) * xs[0];
+            r[n - 1] = fmath::pow(k, k) - fmath::pow(xs[n - 1], k) * xs[0];
         };
         let mut cont = |_: bool| {};
         let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true, header: true };
@@ -4426,7 +4427,7 @@ mod tests {
     fn newton_line_search_recovers() {
         let mut x = [5.0];
         let mut eval = |xs: &[f64], r: &mut [f64]| {
-            r[0] = libm::exp(xs[0]) - 1.0;
+            r[0] = fmath::exp(xs[0]) - 1.0;
         };
         assert!(newton_solve(1, &mut x, &mut eval));
         assert!(x[0].abs() < 1e-7);

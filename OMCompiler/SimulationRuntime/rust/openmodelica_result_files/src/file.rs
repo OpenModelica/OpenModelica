@@ -8,7 +8,7 @@ use openmodelica_arrow_writer::units::{self, UnitDef};
 use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowVar, ColTy, FileMeta, VarTy};
 use openmodelica_mat_writer::{MatKind, MatVar, Neg, Precision, write_mat4};
 
-use crate::cmp::{cmp_data_tubes, format_g_prec15};
+use crate::cmp::{self, Algorithm, Settings, compare, format_g_prec15};
 use crate::{OpenError, ResultReader, drop_leading_dups, leading_dup_count, time_var_name};
 
 pub struct ResultFile {
@@ -32,9 +32,9 @@ impl ResultFile {
     /// Every variable name in the file, parameters and aliases included.
     pub fn variables(&self) -> Vec<String> {
         match &self.reader {
-            r @ (ResultReader::Mat(_) | ResultReader::Arrow(_)) => r.table().unwrap().all_info().iter().map(|v| v.name.clone()).collect(),
             ResultReader::Plt(r) => r.variables().into_iter().map(str::to_owned).collect(),
             ResultReader::Csv(r) => r.variables.iter().filter(|v| !v.is_empty()).cloned().collect(),
+            r => r.table().unwrap().all_info().iter().map(|v| v.name.clone()).collect(),
         }
     }
 
@@ -239,7 +239,7 @@ impl ResultFile {
             })
             .collect();
         let units = units::declared(self.unit_defs());
-        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units }))
+        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units, zstd: None }))
     }
 
     /// The selected signals over the distinct columns they read (time first),
@@ -420,17 +420,40 @@ pub fn resample(time: &[f64], vals: &[f64], grid: &[f64]) -> Vec<f64> {
         .collect()
 }
 
-/// The tolerances of `diffSimulationResults`, with its defaults.
+/// The tolerances of `diffSimulationResults`, with its defaults, plus the
+/// choice of comparison algorithm — `Ellipse2014` is what omc has always run.
 #[derive(Clone, Copy, Debug)]
 pub struct Tolerances {
     pub reltol: f64,
     pub reltol_diff_min_max: f64,
     pub range_delta: f64,
+    pub algorithm: Algorithm,
+    /// The `nominal` stand-in csv-compare's algorithms floor the tube height at.
+    pub nominal_value: f64,
 }
 
 impl Default for Tolerances {
     fn default() -> Tolerances {
-        Tolerances { reltol: 1e-3, reltol_diff_min_max: 1e-4, range_delta: 0.002 }
+        Tolerances {
+            reltol: 1e-3,
+            reltol_diff_min_max: 1e-4,
+            range_delta: 0.002,
+            algorithm: Algorithm::Ellipse2014,
+            nominal_value: cmp::DEFAULT_NOMINAL_VALUE,
+        }
+    }
+}
+
+impl Tolerances {
+    fn settings(&self) -> Settings {
+        Settings {
+            algorithm: self.algorithm,
+            tolerance: self.range_delta,
+            reltol: self.reltol,
+            reltol_diff_min_max: self.reltol_diff_min_max,
+            nominal_value: self.nominal_value,
+            legacy_base: true,
+        }
     }
 }
 
@@ -481,13 +504,40 @@ pub fn diff_all(actual: &mut ResultFile, reference: &mut ResultFile, vars: Vec<S
     let vars = if vars.is_empty() { reference.reader.vars_filter_aliases() } else { vars };
     let mut pair = Pair::new(actual, reference)?;
     let mut out = Vec::new();
+    let settings = tol.settings();
     for var in vars {
         let Some((data, dataref)) = pair.data(&var) else { continue };
-        let mut timeref = pair.reference.time.clone().unwrap();
-        let cmp = cmp_data_tubes(pair.actual.time.as_ref().unwrap(), &mut timeref, &dataref, &data, tol.reltol, tol.range_delta, tol.reltol_diff_min_max);
-        if cmp.differs() {
-            out.push(var);
+        let timeref = pair.reference.time.clone().unwrap();
+        let time = pair.actual.time.clone().unwrap();
+        match compare(&time, &data, &timeref, &dataref, &settings) {
+            Ok(cmp) if cmp.differs() => out.push(var),
+            _ => {}
         }
+    }
+    Ok(out)
+}
+
+/// Every compared variable's verdict: its name, the number of points outside
+/// the tube (-1 when it could not be compared) and the relative error. One pass
+/// over both files, for a caller that shows the whole table rather than only
+/// which variables differ.
+pub fn verdicts(actual: &mut ResultFile, reference: &mut ResultFile, tol: Tolerances) -> Result<Vec<(String, i64, f64)>, String> {
+    let vars = reference.reader.vars_filter_aliases();
+    let time_name = reference.time_name().to_owned();
+    let mut pair = Pair::new(actual, reference)?;
+    let settings = tol.settings();
+    let mut out = Vec::new();
+    for var in vars {
+        if var == time_name {
+            continue;
+        }
+        let Some((data, dataref)) = pair.data(&var) else { continue };
+        let timeref = pair.reference.time.clone().unwrap();
+        let time = pair.actual.time.clone().unwrap();
+        out.push(match compare(&time, &data, &timeref, &dataref, &settings) {
+            Ok(c) => (var, c.error_count as i64, c.delta_error),
+            Err(_) => (var, -1, 0.0),
+        });
     }
     Ok(out)
 }
@@ -497,21 +547,23 @@ pub fn diff_variable(actual: &mut ResultFile, reference: &mut ResultFile, var: &
     let mut pair = Pair::new(actual, reference)?;
     let (data, dataref) = pair.data(var).ok_or_else(|| format!("{var} is not in both files"))?;
     let time = pair.actual.time.clone().unwrap();
-    let mut timeref = pair.reference.time.clone().unwrap();
-    let cmp = cmp_data_tubes(&time, &mut timeref, &dataref, &data, tol.reltol, tol.range_delta, tol.reltol_diff_min_max);
-    let n = cmp.n;
-    let cut = |mut v: Vec<f64>| {
-        v.truncate(n);
-        v
-    };
+    let timeref = pair.reference.time.clone().unwrap();
+    let cmp = compare(&time, &data, &timeref, &dataref, &tol.settings())?;
+    let n = cmp.time.len();
     Ok(TubeDiff {
         differs: cmp.differs(),
-        time: cut(timeref),
-        reference: cut(dataref),
-        actual: cut(cmp.calibrated),
-        high: cut(cmp.high),
-        low: cut(cmp.low),
-        error: cmp.error.unwrap_or_default(),
+        // Ellipse2014 compares on the reference's own timeline, so the
+        // reference is already aligned; the others compare on the test's.
+        reference: if cmp.algorithm == Algorithm::Ellipse2014 {
+            cmp.reference.y[..n].to_vec()
+        } else {
+            resample(&cmp.reference.x, &cmp.reference.y, &cmp.time)
+        },
+        time: cmp.time,
+        actual: cmp.values,
+        high: cmp.high,
+        low: cmp.low,
+        error: if cmp.error_count > 0 { cmp.error } else { Vec::new() },
         actual_time: time,
         actual_original: data,
         abstol: cmp.abstol,

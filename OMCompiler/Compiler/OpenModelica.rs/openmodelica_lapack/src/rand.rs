@@ -65,8 +65,8 @@ pub fn dlarnv(idist: i32, iseed: &mut [i32; 4], x: &mut [f64]) {
                 1 => u[i],
                 2 => 2.0 * u[i] - 1.0,
                 _ => {
-                    let r = crate::sqrt(-2.0 * libm::log(u[2 * i]));
-                    r * libm::cos(2.0 * core::f64::consts::PI * u[2 * i + 1])
+                    let r = crate::sqrt(-2.0 * u[2 * i].ln());
+                    r * (2.0 * core::f64::consts::PI * u[2 * i + 1]).cos()
                 }
             };
         }

@@ -9,10 +9,13 @@
 
 use core::ffi::{c_int, c_void};
 
-use openmodelica_solvers::{omclog, sysstat};
+use openmodelica_solvers::{klu, omclog, sysstat};
 
 use crate::abi::*;
 use crate::model_data::calloc;
+
+/// `OMC_MATRIX_SPARSE` (simulation_data.h).
+const OMC_MATRIX_SPARSE: c_int = 1;
 
 /// `enum EVAL_CONTEXT` (util/context.h), as `openmodelica_nls` numbers them.
 pub const CONTEXT_ALGEBRAIC: c_int = openmodelica_nls::CONTEXT_ALGEBRAIC as c_int;
@@ -30,10 +33,26 @@ struct LapackData {
     b: Vec<f64>,
 }
 
+/// C's `DATA_KLU`: the compressed matrix the generated `setA` fills through
+/// [`set_a_element_klu`], and the factorization over its pattern.
+struct KluData {
+    /// CSR of `A` for `method == 0`, CSC of `-J` for a torn system.
+    ap: Vec<i32>,
+    ai: Vec<i32>,
+    ax: Vec<f64>,
+    work: Vec<f64>,
+    /// Analyzed at the first solve, once the pattern is filled.
+    fact: Option<klu::Factorization>,
+}
+
 /// A raw pointer, not a borrow of `ls`: the scratch and the system's own arrays
 /// are used side by side throughout a solve.
 fn solver_data(ls: &LINEAR_SYSTEM_DATA) -> *mut LapackData {
     ls.solverData[0] as *mut LapackData
+}
+
+fn klu_data(ls: &LINEAR_SYSTEM_DATA) -> *mut KluData {
+    ls.solverData[0] as *mut KluData
 }
 
 /// C's `initializeLinearSystems`: allocate each system's `A`/`b`/attribute
@@ -45,6 +64,11 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
     // C prints the header whatever the count is; only the loop is conditional.
     omclog::info(omclog::LS, true, "initialize linear system solvers");
     omclog::info!(omclog::LS, false, "{} linear systems", md.nLinearSystems);
+    let (ls_flag, lss_flag) =
+        openmodelica_sim_meta::simflags::with_flags(|f| (f.ls.is_some(), f.lss.is_some()));
+    if si.lssMethod == LSS_DEFAULT && klu::AVAILABLE {
+        si.lssMethod = LSS_KLU;
+    }
     for i in 0..md.nLinearSystems as usize {
         let ls = unsafe { &mut *si.linearSystemData.add(i) };
         let size = ls.size.max(0) as usize;
@@ -86,20 +110,46 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
             ls.jacobian = jacobian;
         }
 
-        // KLU is linked (the nonlinear solver's), but nothing binds it to a linear
-        // system yet, so every one is factored densely -- as C does without
-        // SuiteSparse.
-        ls.useSparseSolver = 0;
-        ls.setAElement = Some(set_a_element);
+        // `-ls` reaches klu and umfpack too, so naming a solver can override the
+        // format.
+        ls.useSparseSolver = if lss_flag {
+            1
+        } else if ls_flag {
+            0
+        } else {
+            (ls.matrixFormat == OMC_MATRIX_SPARSE) as modelica_boolean
+        };
+        if ls.useSparseSolver != 0 && !klu::AVAILABLE {
+            omclog::info!(
+                omclog::STDOUT,
+                false,
+                "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.",
+            );
+            ls.useSparseSolver = 0;
+        }
         ls.setBElement = Some(set_b_element);
-        ls.A = calloc((size * size).max(1));
-        let scratch = Box::new(LapackData {
-            ipiv: vec![0; size.max(1)],
-            lu: vec![0.0; (size * size).max(1)],
-            work: vec![0.0; size.max(1)],
-            b: vec![0.0; size.max(1)],
-        });
-        ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
+        if ls.useSparseSolver != 0 {
+            let nnz = ls.nnz.max(0) as usize;
+            ls.setAElement = Some(set_a_element_klu);
+            let scratch = Box::new(KluData {
+                ap: vec![0; size + 1],
+                ai: vec![0; nnz.max(1)],
+                ax: vec![0.0; nnz.max(1)],
+                work: vec![0.0; size.max(1)],
+                fact: None,
+            });
+            ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
+        } else {
+            ls.setAElement = Some(set_a_element);
+            ls.A = calloc((size * size).max(1));
+            let scratch = Box::new(LapackData {
+                ipiv: vec![0; size.max(1)],
+                lu: vec![0.0; (size * size).max(1)],
+                work: vec![0.0; size.max(1)],
+                b: vec![0.0; size.max(1)],
+            });
+            ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
+        }
 
         if let Some(f) = ls.initializeStaticLSData {
             unsafe { f(data, thread_data, ls, 1) };
@@ -130,6 +180,24 @@ unsafe extern "C" fn set_b_element(
     _td: *mut threadData_t,
 ) {
     unsafe { *(*ls).b.add(row as usize) = value };
+}
+
+/// C's `setAElementKlu`: the generated `setA` calls it row by row with `nth`
+/// increasing, so `ap[row]` is the first entry of that row.
+unsafe extern "C" fn set_a_element_klu(
+    row: c_int,
+    col: c_int,
+    value: f64,
+    nth: c_int,
+    ls: *mut LINEAR_SYSTEM_DATA,
+    _td: *mut threadData_t,
+) {
+    let d = unsafe { &mut *klu_data(&*ls) };
+    if row > 0 && d.ap[row as usize] == 0 {
+        d.ap[row as usize] = nth;
+    }
+    d.ai[nth as usize] = col;
+    d.ax[nth as usize] = value;
 }
 
 /// What [`eval_jacobian`] reports when the model left through its jump buffer, so
@@ -216,7 +284,7 @@ pub fn eval_jacobian(
 /// and the C-side solver dispatch read these; the shared solvers read
 /// `solverflags`.
 pub fn apply_solver_flags(si: &mut SIMULATION_INFO, f: &openmodelica_sim_meta::simflags::SimFlags) {
-    use openmodelica_sim_meta::simflags::{Ls, Nls, NlsLs};
+    use openmodelica_sim_meta::simflags::{Ls, Lss, Nls, NlsLs};
     if let Some(ls) = f.ls {
         si.lsMethod = match ls {
             Ls::Default => LS_DEFAULT,
@@ -235,6 +303,14 @@ pub fn apply_solver_flags(si: &mut SIMULATION_INFO, f: &openmodelica_sim_meta::s
             Nls::Newton => NLS_NEWTON,
             Nls::Mixed => NLS_MIXED,
             Nls::Homotopy => NLS_HOMOTOPY,
+        };
+    }
+    if let Some(lss) = f.lss {
+        si.lssMethod = match lss {
+            Lss::Default => LSS_DEFAULT,
+            Lss::Klu | Lss::Rsparse => LSS_KLU,
+            Lss::Umfpack => LSS_UMFPACK,
+            Lss::Lis => LSS_LIS,
         };
     }
     if let Some(ls) = f.nls_ls {
@@ -261,13 +337,20 @@ pub extern "C" fn solve_linear_system(
     sysstat::begin(ls.equationIndex as i32, false, ls.size.max(0) as u32, ls.nnz.max(0) as u32);
     si.noThrowDivZero = 1;
     let method = si.lsMethod;
-    let success = match method {
-        LS_TOTALPIVOT => solve_total_pivot(data, thread_data, ls, sys_number, aux_x) as c_int,
-        LS_LAPACK => solve_lapack(data, thread_data, ls, sys_number, aux_x) as c_int,
-        LS_DEFAULT => solve_default(data, thread_data, ls, sys_number, aux_x),
-        _ => {
-            warn_once_unsupported_ls(method);
-            solve_default(data, thread_data, ls, sys_number, aux_x)
+    let success = if ls.useSparseSolver != 0 {
+        if si.lssMethod != LSS_KLU {
+            warn_once_unsupported_lss(si.lssMethod);
+        }
+        solve_klu(data, thread_data, ls, aux_x) as c_int
+    } else {
+        match method {
+            LS_TOTALPIVOT => solve_total_pivot(data, thread_data, ls, sys_number, aux_x) as c_int,
+            LS_LAPACK => solve_lapack(data, thread_data, ls, sys_number, aux_x) as c_int,
+            LS_DEFAULT => solve_default(data, thread_data, ls, sys_number, aux_x),
+            _ => {
+                warn_once_unsupported_ls(method);
+                solve_default(data, thread_data, ls, sys_number, aux_x)
+            }
         }
     };
     sysstat::end([0; 3]);
@@ -334,6 +417,131 @@ fn warn_once_unsupported_ls(method: c_int) {
         false,
         "-ls: {name} linear solver is not served by this runtime; using the default.",
     );
+}
+
+/// `-lss=<other>`: the same, for the sparse solvers KLU stands in for.
+fn warn_once_unsupported_lss(method: c_int) {
+    use core::sync::atomic::{AtomicBool, Ordering};
+    static WARNED: AtomicBool = AtomicBool::new(false);
+    if WARNED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let name = match method {
+        LSS_LIS => "lis",
+        LSS_UMFPACK => "umfpack",
+        _ => "the requested",
+    };
+    omclog::info!(
+        omclog::LS,
+        false,
+        "-lss: {name} sparse linear solver is not served by this runtime; using klu.",
+    );
+}
+
+/// C's `solveKlu` (`linearSolverKlu.c`). A `method == 0` system arrives as the
+/// CSR the generated `setA` builds and is solved transposed; a torn one as the
+/// CSC of its negated Jacobian.
+fn solve_klu(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    ls: &mut LINEAR_SYSTEM_DATA,
+    aux_x: *mut f64,
+) -> bool {
+    let si = unsafe { &mut *(*data).simulationInfo };
+    let size = ls.size.max(0) as usize;
+    let nnz = ls.nnz.max(0) as usize;
+    let time = unsafe { (**(*data).localData).timeValue };
+    let eq = ls.equationIndex;
+    if omclog::active(omclog::LS) {
+        omclog::info!(
+            omclog::LS,
+            false,
+            "Start solving Linear System {eq} (size {size}) at time {} with Klu Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6),
+        );
+    }
+    let reuse = si.currentContext == CONTEXT_SYM_JACOBIAN && si.currentJacobianEval > 0;
+    let d: &mut KluData = unsafe { &mut *klu_data(ls) };
+    let b = unsafe { core::slice::from_raw_parts_mut(ls.b, size) };
+    if ls.method == 0 {
+        if !reuse {
+            d.ap[0] = 0;
+            if let Some(f) = ls.setA {
+                unsafe { f(data, thread_data, ls) };
+            }
+            d.ap[size] = nnz as i32;
+        }
+        if let Some(f) = ls.setb {
+            unsafe { f(data, thread_data, ls) };
+        }
+    } else {
+        if !reuse {
+            if ls.jacobianIndex == -1 {
+                crate::throw(thread_data, "jacobian function pointer is invalid");
+            }
+            // C's `getAnalyticalJacobian` writes `-J` column by column through
+            // `setAElement(col, row, ..)`: the pattern's own CSC, negated.
+            if let Err(e) =
+                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut d.ax, false)
+            {
+                omclog::warning(omclog::STDOUT, false, e);
+                return false;
+            }
+            let sp = unsafe { &*(*ls.jacobian).sparsePattern };
+            for j in 0..=size {
+                d.ap[j] = unsafe { *sp.leadindex.add(j) } as i32;
+            }
+            for k in 0..nnz {
+                d.ai[k] = unsafe { *sp.index.add(k) } as i32;
+                d.ax[k] = -d.ax[k];
+            }
+        }
+        d.work.copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        residual(data, thread_data, ls, d.work.as_ptr(), b);
+    }
+    sysstat::mark_assembly_done();
+
+    if d.fact.is_none() {
+        d.fact = klu::Factorization::analyze(size, &mut d.ap, &mut d.ai);
+    }
+    let (solved, status) = match d.fact.as_mut() {
+        None => (false, klu::INVALID),
+        Some(f) => {
+            let factored = reuse || f.factor(&mut d.ap, &mut d.ai, &mut d.ax);
+            (factored && if ls.method == 1 { f.solve(b) } else { f.tsolve(b) }, f.status())
+        }
+    };
+    if !solved {
+        ls.numberOfFailures += 1;
+        omclog::warning_with_limit!(
+            omclog::STDOUT,
+            ls.numberOfFailures as u64,
+            si.maxWarnDisplays as u64,
+            "Failed to solve linear system of equations (no. {eq}) at time {time:.6}, system status {status}.",
+        );
+        return false;
+    }
+
+    if ls.method == 1 {
+        for i in 0..size {
+            unsafe { *aux_x.add(i) += b[i] };
+        }
+        residual(data, thread_data, ls, aux_x, &mut d.work);
+        let norm = d.work.iter().map(|v| v * v).sum::<f64>().sqrt();
+        if norm.is_nan() || norm > 1e-4 {
+            ls.numberOfFailures += 1;
+            omclog::warning_with_limit!(
+                omclog::LS,
+                ls.numberOfFailures as u64,
+                si.maxWarnDisplays as u64,
+                "Failed to solve linear system of equations (no. {eq}) at time {time:.6}. Residual norm is {norm:.15}.",
+            );
+            return false;
+        }
+    } else {
+        unsafe { core::ptr::copy_nonoverlapping(b.as_ptr(), aux_x, size) };
+    }
+    true
 }
 
 /// C's `solveTotalPivot` (`linearSolverTotalPivot.c`): the same `A`/`b`

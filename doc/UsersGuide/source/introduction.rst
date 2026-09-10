@@ -285,7 +285,7 @@ stream when running omc from the command-line.
   :language: modelica
 
 Note: The output emitted into stdout by system commands is put into
-log-files when running the CORBA-based clients, not into the visible GUI
+log-files when running the graphical clients, not into the visible GUI
 windows. Thus the text emitted by the above cat command would not be
 returned, which is why it is redirected to another file.
 

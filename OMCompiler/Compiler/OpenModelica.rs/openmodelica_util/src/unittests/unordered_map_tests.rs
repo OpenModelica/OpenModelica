@@ -47,8 +47,8 @@ fn to_sorted_pairs(m: Arc<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> 
     let mut vi = vals.as_ref();
     loop {
         match (ki, vi) {
-            (metamodelica::List::Cons { head: k, tail: kt },
-             metamodelica::List::Cons { head: v, tail: vt }) => {
+            (metamodelica::ListNode::Cons { head: k, tail: kt },
+             metamodelica::ListNode::Cons { head: v, tail: vt }) => {
                 pairs.push((k.to_string(), *v));
                 ki = kt.as_ref();
                 vi = vt.as_ref();
@@ -336,8 +336,8 @@ fn test_from_lists_basic() -> Result<()> {
 
 #[test]
 fn test_from_lists_empty() -> Result<()> {
-    let keys: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
-    let vals: Arc<metamodelica::List<i32>>    = metamodelica::nil();
+    let keys: metamodelica::List<ArcStr> = metamodelica::nil();
+    let vals: metamodelica::List<i32>    = metamodelica::nil();
     let m = UM::fromLists(keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(UM::isEmpty(m));
     Ok(())

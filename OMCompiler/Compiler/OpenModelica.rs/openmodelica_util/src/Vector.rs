@@ -75,13 +75,13 @@ pub fn rawArray<T: Clone + 'static>(v: Arc<Vector<T>>) -> Array<T> {
     (*v).clone()
 }
 
-pub fn fromList<T: Clone + 'static>(l: Arc<List<T>>) -> Arc<Vector<T>> {
+pub fn fromList<T: Clone + 'static>(l: List<T>) -> Arc<Vector<T>> {
     Arc::new(metamodelica::arrayFromVec(l.into_iter().cloned().collect()))
 }
 
-pub fn toList<T: Clone + 'static>(v: Arc<Vector<T>>) -> Arc<List<T>> {
+pub fn toList<T: Clone + 'static>(v: Arc<Vector<T>>) -> List<T> {
     let data = v.borrow();
-    let mut acc: Arc<List<T>> = nil();
+    let mut acc: List<T> = nil();
     for e in data.iter().rev() {
         acc = cons(e.clone(), acc);
     }
@@ -113,7 +113,7 @@ pub fn append<T: Clone + 'static>(v1: Arc<Vector<T>>, v2: Arc<Vector<T>>) {
     v1.borrow_mut().extend(extension);
 }
 
-pub fn appendList<T: Clone + 'static>(v: Arc<Vector<T>>, l: Arc<List<T>>) -> Result<()> {
+pub fn appendList<T: Clone + 'static>(v: Arc<Vector<T>>, l: List<T>) -> Result<()> {
     let mut data = v.borrow_mut();
     let mut rest = l;
     while !rest.is_empty() {
@@ -281,8 +281,8 @@ pub fn map<OT: Clone + 'static, T: Clone + 'static>(
 pub fn mapToList<OT: Clone + 'static, T: Clone + 'static>(
     v: Arc<Vector<T>>,
     r#fn: Arc<dyn ::std::ops::Fn(T) -> Result<OT> + 'static>,
-) -> Result<Arc<List<OT>>> {
-    let mut l: Arc<List<OT>> = nil();
+) -> Result<List<OT>> {
+    let mut l: List<OT> = nil();
     let len = v.borrow().len();
     for i in (0..len).rev() {
         let Some(e) = elem_at(&v, i) else { continue };
@@ -441,7 +441,7 @@ pub fn toString<T: Clone + 'static>(
     delim: ArcStr,
     strEnd: ArcStr,
 ) -> Result<ArcStr> {
-    let mut acc: Arc<List<ArcStr>> = nil();
+    let mut acc: List<ArcStr> = nil();
     let len = v.borrow().len();
     for i in (0..len).rev() {
         let Some(e) = elem_at(&v, i) else { continue };

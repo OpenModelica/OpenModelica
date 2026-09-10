@@ -63,10 +63,10 @@ apt install rustup binaryen
 rustup toolchain install nightly-2026-05-31 --profile minimal \
   --component rustc-codegen-cranelift-preview clippy rustfmt rust-analyzer \
   --target wasm32-unknown-unknown
-# For the web targets:
+# For the web targets. wasm-bindgen is not installed: the build compiles
+# `openmodelica_wasm_bindgen` from the pinned wasm-bindgen-cli-support, so cargo
+# keeps its schema version equal to the one the bindgen'd crates depend on.
 rustup target add wasm32-unknown-unknown
-export WASM_BINDGEN_VERSION=0.2.125
-cargo install wasm-bindgen-cli --version "${WASM_BINDGEN_VERSION}"
 # The web wasm-jit ModelicaExternalC side module (modelicaexternalc.wasm) is compiled
 # from C with clang targeting wasm32-wasi (real WASI file I/O via path_open, unlike
 # Emscripten). Needs wasi-libc, lld (wasm-ld), and the wasm32 compiler-rt builtins.
@@ -200,6 +200,63 @@ Status: the C and C++ simulation runtimes now **compile** with clang-cl (final
 link/install of the full distribution is the remaining work); see
 `HANDOFF-windows-msvc.md`. The Rust-only cross build (earlier section) is
 self-contained and needs none of these deps.
+
+## Cross-compiling to macOS (`*-apple-darwin`)
+
+`RUST_OMC_TARGET` takes an Apple triple as well; there it drives
+[`cargo-zigbuild`](https://github.com/rust-cross/cargo-zigbuild) instead of
+cargo-xwin, with the macOS SDK as the sysroot (zig ships no Apple frameworks).
+`.cmake/darwin-toolchain.cmake` does the same for the C/C++ half with `zig cc`,
+so both halves agree on one SDK — see the `DARWIN_SDK` / `DARWIN_ARCH` options
+there.
+
+```bash
+# One-time setup, in addition to the SDK
+rustup target add --toolchain nightly-2026-05-31 aarch64-apple-darwin x86_64-apple-darwin
+cargo install cargo-zigbuild && pip install ziglang
+
+cd ../../..
+cmake -S . -B build-mac \
+  -DCMAKE_TOOLCHAIN_FILE=OMCompiler/Compiler/OpenModelica.rs/.cmake/darwin-toolchain.cmake \
+  -DDARWIN_SDK=/path/to/MacOSX26.5.sdk -DDARWIN_ARCH=arm64 \
+  -DCMAKE_BUILD_TYPE=Release -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+  -DRUST_OMC_TARGET=aarch64-apple-darwin -DOM_ENABLE_GUI_CLIENTS=OFF \
+  -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+  -DOM_OMC_ENABLE_CPP_RUNTIME=OFF -DOM_OMC_ENABLE_PARMODELICA=OFF \
+  -DOM_ENABLE_OMSIMULATOR=OFF -DOM_OMC_ENABLE_COLPACK=OFF
+```
+
+ColPack is off because its SMPGC includes `omp.h` unconditionally and zig ships
+no OpenMP; the rest are the same reductions the Windows cross build starts from
+(no Fortran linker, no Boost). A universal distribution is the two architectures
+built separately and merged with `lipo` — `.CI/scripts/mac-universal.sh` does
+that over two install trees. Status and open items: see
+`HANDOFF-rust-nightly-cross.md`.
+
+## Building the wasm parts once for several targets
+
+Everything omc embeds or ships as wasm is the same whatever platform omc is
+built *for*, but producing it needs a wasm toolchain and several minutes. One
+build can therefore produce it for the others:
+
+```bash
+cmake -S . -B build-stage1 -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_WASM_ARTIFACTS_OUT=/somewhere/wasm
+cmake --build build-stage1 --target rust_codegen rust_wasm_runtime rust_wasm_artifacts
+
+cmake -S . -B build-win -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
+      -DRUST_OMC_TARGET=x86_64-pc-windows-msvc \
+      -DRUST_OMC_PREBUILT_WASM_DIR=/somewhere/wasm \
+      -DRUST_OMC_FMU_LOADERS=build-stage1/OMCompiler/Compiler/fmu-loaders \
+      -DRUST_OMC_PREBUILT_GENERATED_SRC=ON      # with the generated .rs in place
+```
+
+The second build runs no `clang --target=wasm32` at all: the PIC wasi-libc
+sysroot, the SUNDIALS/KLU/Lis/PRIMME and HDF5 archives and the preview1 adapter
+come from the directory, and the crates' build scripts take each blob from
+`<dir>/blobs` (`OMC_WASM_PREBUILT_IN`) rather than compiling it. Trusted, not
+checked, like `RUST_OMC_WASM_RUNTIME`. This is what
+`.CI/Jenkinsfile.rust-nightly` stage 1 hands to its per-platform stages.
 
 ## Web bundle only (make all builds just the wasm):
 ```bash

@@ -10,6 +10,7 @@
 //! the entry point that owns the filesystem is whichever one the run used: real
 //! files natively and under wasip1, the VFS in the browser.
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
@@ -104,7 +105,7 @@ impl Matrix {
 
     fn sqrt_elements(&mut self) {
         for v in &mut self.data {
-            *v = libm::sqrt(*v);
+            *v = fmath::sqrt(*v);
         }
     }
 }
@@ -870,7 +871,7 @@ fn compute_covariance_sx(ctx: &mut Ctx, sx: &CsvData, cx: &CorrelationData) -> R
     let n = sx.sxdata.len();
     let mut tmp = vec![0.0; n * n];
     for i in 0..n {
-        let d = libm::pow(sx.sxdata[i] / LAMBDA, 2.0);
+        let d = fmath::pow(sx.sxdata[i] / LAMBDA, 2.0);
         for j in 0..n {
             tmp[i * n + j] = if i == j { d } else { 0.0 };
         }
@@ -885,7 +886,7 @@ fn compute_covariance_sx(ctx: &mut Ctx, sx: &CsvData, cx: &CorrelationData) -> R
                     let colpos = variable_index(ctx, &sx.headers, &cx.column_headers[j].clone())?;
                     let xi = tmp[sx.rowcount * rowpos + rowpos];
                     let xk = tmp[sx.rowcount * colpos + colpos];
-                    let v = cx.data[ncol * i + j] * libm::sqrt(xi) * libm::sqrt(xk);
+                    let v = cx.data[ncol * i + j] * fmath::sqrt(xi) * fmath::sqrt(xk);
                     tmp[sx.rowcount * rowpos + colpos] = v;
                     tmp[sx.rowcount * colpos + rowpos] = v;
                 }
@@ -1277,14 +1278,14 @@ fn run_reconciliation(
         }
         let mut new_x = sub(ctx, &reconciled_x, xdiag)?;
         for v in &mut new_x.data {
-            *v = libm::fabs(*v);
+            *v = fmath::fabs(*v);
         }
         if log_jac() {
             print_matrix(&mut ctx.log, &new_x, "recon_X - X");
             ctx.log.push_str("*********Completed***********\n");
         }
         for i in 0..xdiag.rows {
-            let floor = libm::sqrt(sxdiag.data[i] / 10.0);
+            let floor = fmath::sqrt(sxdiag.data[i] / 10.0);
             new_x.data[i] /= if new_sx_diag.data[i] > floor { new_sx_diag.data[i] } else { floor };
         }
         print_matrix_headers(

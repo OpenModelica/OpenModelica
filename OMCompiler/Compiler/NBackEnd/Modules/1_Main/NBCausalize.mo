@@ -92,7 +92,7 @@ public
   algorithm
     bdae := match (kind, bdae)
       local
-        list<Partition> partitions, clocked;
+        list<Partition> partitions, clocked, twins;
         VarData varData;
         EqData eqData;
 
@@ -111,11 +111,11 @@ public
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
+          // init_0 is init with the homotopy calls replaced by their simplified branch
+          (partitions, varData, eqData, twins) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func, Util.getOptionOrDefault(bdae.init_0, {}));
           bdae.init := partitions;
           if isSome(bdae.init_0) then
-            (partitions, varData, eqData) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, bdae.funcMap, func);
-            bdae.init_0 := SOME(partitions);
+            bdae.init_0 := SOME(twins);
           end if;
           bdae.varData := varData;
           bdae.eqData := eqData;
@@ -143,15 +143,25 @@ public
     input output EqData eqData;
     input UnorderedMap<Path, Function> funcMap;
     input Module.causalizeInterface func;
+    input list<Partition> twins = {} "partitions of nearly the same systems, paired by index";
+    output list<Partition> new_twins = {};
   protected
     Partition new_partition;
+    list<Partition> paired, unpaired = twins;
     Boolean violated = false "true if any partition violated variability consistency";
   algorithm
     for partition in partitions loop
-      (new_partition, varData, eqData) := func(partition, varData, eqData, funcMap);
+      (paired, unpaired) := List.splitOnTrue(unpaired, function Partition.hasIndex(index = partition.index));
+      (new_partition, varData, eqData, paired) := func(partition, varData, eqData, funcMap, paired);
       new_partitions := if Partition.isEmpty(new_partition) then new_partitions else new_partition :: new_partitions;
+      new_twins := List.append_reverse(list(twin for twin guard(not Partition.isEmpty(twin)) in paired), new_twins);
+    end for;
+    for twin in unpaired loop
+      (new_partition, varData, eqData) := func(twin, varData, eqData, funcMap, {});
+      new_twins := if Partition.isEmpty(new_partition) then new_twins else new_partition :: new_twins;
     end for;
     new_partitions := listReverse(new_partitions);
+    new_twins := listReverse(new_twins);
 
     if not Partition.kindIsInitial(kind) then
       for partition in new_partitions loop
@@ -251,6 +261,7 @@ protected
     Adjacency.Matrix full, adj_matching, adj_sorting;
     Matching matching;
     list<StrongComponent> comps;
+    list<Partition> new_twins = {};
   algorithm
     (variables, equations, full, matching, comps) := match kind
       local
@@ -332,7 +343,55 @@ protected
     partition.adjacencyMatrix := SOME(full);
     partition.matching := SOME(matching);
     partition.strongComponents := SOME(listArray(comps));
+
+    for twin in twins loop
+      (twin, varData, eqData) := causalizeTwin(twin, partition, adj_matching, adj_sorting, funcMap, varData, eqData);
+      new_twins := twin :: new_twins;
+    end for;
+    twins := listReverse(new_twins);
   end causalizePseudoArray;
+
+  function causalizeTwin
+    "causalizes a partition over the same variables as the causalized seed and
+    nearly the same equations: the rows of equal equations are taken from the
+    seed's matrices and its matching is the starting point"
+    input output Partition twin;
+    input Partition seed;
+    input Adjacency.Matrix seed_matching;
+    input Adjacency.Matrix seed_sorting;
+    input UnorderedMap<Path, Function> funcMap;
+    input output VarData varData;
+    input output EqData eqData;
+  protected
+    BPartition.Kind kind = Partition.getKind(twin);
+    VariablePointers variables;
+    EquationPointers equations;
+    Adjacency.Matrix full, balanced, adj_matching, adj_sorting;
+    Matching matching;
+    array<Integer> seed_index;
+    list<StrongComponent> comps;
+  algorithm
+    twin.unknowns  := VariablePointers.compress(twin.unknowns);
+    twin.equations := EquationPointers.compress(twin.equations);
+    full := Adjacency.Matrix.createFull(twin.unknowns, twin.equations, kind);
+    seed_index := Adjacency.Matrix.equalRows(seed.equations, seed.unknowns, twin.equations, twin.unknowns);
+    adj_matching := Adjacency.Matrix.upgradeFrom(NBAdjacency.Matrix.EMPTY(NBAdjacency.MatrixStrictness.FULL), full, twin.unknowns.map, twin.equations.map, twin.equations, NBAdjacency.MatrixStrictness.MATCHING, seed_matching, seed_index);
+    matching := Matching.fromSeed(seed, adj_matching, twin.unknowns, twin.equations);
+    (matching, adj_matching, balanced, variables, equations, varData, eqData) := Matching.singular(matching, adj_matching, full, twin.unknowns, twin.equations, funcMap, varData, eqData, kind, false, false);
+    if referenceEq(balanced, full) then
+      adj_sorting := Adjacency.Matrix.upgradeFrom(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING, seed_sorting, seed_index);
+    else
+      full := balanced;
+      adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
+    end if;
+    comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+
+    twin.unknowns := variables;
+    twin.equations := equations;
+    twin.adjacencyMatrix := SOME(full);
+    twin.matching := SOME(matching);
+    twin.strongComponents := SOME(listArray(comps));
+  end causalizeTwin;
 
   function causalizeDAEMode extends Module.causalizeInterface;
   algorithm

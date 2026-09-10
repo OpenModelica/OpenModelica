@@ -5,10 +5,10 @@
 - [1 Build dependencies](#1-build-dependencies)
   - [1.1 Debian/Ubuntu](#11-debianubuntu)
   - [1.2 Linux/BSD](#12-linuxbsd)
+  - [1.3 Rust toolchain](#13-rust-toolchain)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 CMake build](#21-cmake-build)
   - [2.2 Make build](#22-make-build)
-  - [2.3 CORBA support](#23-corba-support)
 - [3 Test Suite](#3-test-suite)
 - [4 General Notes](#4-general-notes)
 
@@ -85,18 +85,57 @@ First you need to install the dependencies:
 - [cmake](http://www.cmake.org)
 - hwloc (optional; queries the number of hardware CPU cores instead of logical
   CPU cores)
-- Java JRE (JDK is option; compiles the Java CORBA interface)
 - Lapack/BLAS
 - libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica)
   tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but
   we do not compile those and it's better to use the OS-provided dynamically
   linked version)
-- omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
 - libcurl (libcurl4-gnutls-dev)
 - ncurses, readline (optional, used by OMShell-terminal)
 - OpenSceneGraph (optional, used by OMEdit)
 - Qt6 or Qt5, Webkit, QtOpenGL (optional, used by OMEdit)
+- rustc and cargo (optional if you disable it; see [1.3 Rust toolchain](#13-rust-toolchain)
+for how to install or disable)
+
+### 1.3 Rust toolchain
+
+Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed for
+a default build: the C simulation runtime writes its result files through
+`libomc_result` (`OM_RUST_RESULT_WRITERS`) and the GUI clients read them back
+through the same library (`OM_RUST_RESULT_READERS`). Both are on by default and
+CMake stops at configure time if `cargo` is not on the `PATH`.
+
+Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
+so `rustc`/`cargo` 1.85 or newer:
+
+```bash
+sudo apt-get install rustc cargo
+cargo --version
+```
+
+If your distribution packages something older (Ubuntu 24.04 for instance),
+install [rustup](https://rustup.rs) and let it manage the toolchain instead:
+
+```bash
+sudo apt-get install rustup
+# Or, if there is no rustup package:
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup default stable
+```
+
+To build without Rust, turn both options off. You then lose the `.arrow` result
+format; the C readers and writers handle `.mat`, `.csv` and `.plt` only:
+
+```bash
+cmake -S . -B build_cmake -DOM_RUST_RESULT_READERS=OFF -DOM_RUST_RESULT_WRITERS=OFF
+```
+
+Two larger Rust components are off by default. `-DOM_ENABLE_RUST_SIM_RUNTIME=ON`
+builds the simulation runtime `--simCodeTarget=C+Rust` links, and also works
+with a stable toolchain. `-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as
+the Rust port, which needs the pinned nightly toolchain described in
+[Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 ## 2 Compile OpenModelica
 
@@ -153,26 +192,6 @@ make
 sudo make install
 ```
 
-### 2.3 CORBA support
-
-If you plan to use mico corba with OMC you need to:
-
-- set the `PATH` to `path/to/mico/bin` (for the idl compiler and mico-cpp)
-- set the `LD_LIBRARY_PATH` to `path/to/installed/mico/lib` (for mico libs)
-- set the `PATH` (for executables: idl, mico-cpp and mico-config):
-
-  ```bash
-  export PATH=${PATH}:/path/to/installed/mico/bin
-  ```
-
-```bash
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-# One of the following configure lines
-./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
-./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
-./configure --without-CORBA            (if you want omc to use sockets)
-```
-
 ## 3 Test suite
 
 If you compiled the OpenModelica compiler successfully you can run the test
@@ -211,4 +230,4 @@ and then sent us an email at
 
 --------------
 
-Last updated 2026-02-16.
+Last updated 2026-09-07.

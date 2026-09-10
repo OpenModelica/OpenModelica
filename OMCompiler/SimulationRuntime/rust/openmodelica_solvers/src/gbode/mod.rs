@@ -24,6 +24,7 @@ mod nls_generic;
 mod tableau;
 mod tableau_data;
 
+use crate::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
@@ -330,7 +331,7 @@ impl Gbode {
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;
-            let i = (libm::round(n_states as f64 * conf.ratio).max(1.0) as usize)
+            let i = (fmath::round(n_states as f64 * conf.ratio).max(1.0) as usize)
                 .min(n_states.saturating_sub(1));
             omclog::info!(
                 omclog::SOLVER,

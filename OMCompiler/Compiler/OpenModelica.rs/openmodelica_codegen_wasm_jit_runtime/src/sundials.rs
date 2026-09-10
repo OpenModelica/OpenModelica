@@ -96,12 +96,12 @@ pub(crate) fn have_umfpack() -> bool {
 }
 
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports
-/// success and its values land where [`klu::Common`] mirrors them, and KINSOL
+/// success and its values land where the shared mirror puts them, and KINSOL
 /// allocates.
 #[cfg(sundials)]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sundials_selftest() -> i32 {
-    let common_ok = klu::Common::defaults().is_some();
+    let common_ok = openmodelica_solvers::klu::layout_ok();
     (common_ok && openmodelica_nls::kinsol::sun::probe()) as i32
 }
 
@@ -157,140 +157,35 @@ impl Transposed {
 
 #[cfg(sundials)]
 pub(crate) mod klu {
-    use core::ffi::c_void;
+    use openmodelica_solvers::klu::Factorization;
 
-    /// `klu_common` of the `SUNDIALS_INDEX_SIZE=32` build (`Int` = `int`), mirrored
-    /// rather than opaque because the factor/refactor decision reads `status` and
-    /// `rgrowth`. [`Common::defaults`] validates the layout against what
-    /// `klu_defaults` writes.
-    #[repr(C)]
-    pub struct Common {
-        pub tol: f64,
-        pub memgrow: f64,
-        pub initmem_amd: f64,
-        pub initmem: f64,
-        pub maxwork: f64,
-        pub btf: i32,
-        pub ordering: i32,
-        pub scale: i32,
-        pub user_order: *mut c_void,
-        pub user_data: *mut c_void,
-        pub halt_if_singular: i32,
-        pub status: i32,
-        pub nrealloc: i32,
-        pub structural_rank: i32,
-        pub numerical_rank: i32,
-        pub singular_col: i32,
-        pub noffdiag: i32,
-        pub flops: f64,
-        pub rcond: f64,
-        pub condest: f64,
-        pub rgrowth: f64,
-        pub work: f64,
-        pub memusage: usize,
-        pub mempeak: usize,
-    }
-
-    unsafe extern "C" {
-        pub fn klu_defaults(common: *mut Common) -> i32;
-        pub fn klu_analyze(n: i32, ap: *mut i32, ai: *mut i32, common: *mut Common) -> *mut c_void;
-        pub fn klu_factor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, common: *mut Common) -> *mut c_void;
-        pub fn klu_refactor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
-        pub fn klu_rgrowth(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
-        pub fn klu_solve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
-        pub fn klu_tsolve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
-        pub fn klu_free_symbolic(symbolic: *mut *mut c_void, common: *mut Common) -> i32;
-        pub fn klu_free_numeric(numeric: *mut *mut c_void, common: *mut Common) -> i32;
-    }
-
-    impl Common {
-        /// `klu_defaults`, `None` if the values did not land where this mirror puts
-        /// them — a layout mismatch would otherwise show up as silent nonsense.
-        pub fn defaults() -> Option<Common> {
-            let mut c: Common = unsafe { core::mem::zeroed() };
-            if unsafe { klu_defaults(&mut c) } != 1 {
-                return None;
-            }
-            let laid_out = c.tol == 0.001
-                && c.initmem == 10.0
-                && c.btf == 1
-                && c.scale == 2
-                && c.halt_if_singular == 1
-                && c.status == 0
-                && c.structural_rank == -1
-                && c.rgrowth == -1.0
-                && c.memusage == 0;
-            laid_out.then_some(c)
-        }
-    }
-
-    /// C's `DATA_KLU` (`linearSolverKlu.c`): symbolic analysis once per system,
-    /// numeric factorization refactored per solve.
+    /// C's `DATA_KLU` over a CSC pattern: the transpose is built here and handed
+    /// to the shared [`Factorization`], which carries C's refactor policy.
     ///
     /// KLU gets `Aᵀ` and a transpose solve, as in C. Factorizing `A` instead holds
     /// `rgrowth` under the 1e-3 threshold on a MultiBody chain, so the pivots are
     /// rechosen every solve and `functionODE` stops being a function of the states
     /// alone — which quietly ruins any finite-difference Jacobian taken through it.
     pub struct Solver {
-        common: Common,
-        symbolic: *mut c_void,
-        numeric: *mut c_void,
+        fact: Factorization,
         t: super::Transposed,
     }
-
-    /// Below this reciprocal pivot growth the reused pivots are no longer good
-    /// enough and the factorization is redone (C's threshold).
-    const MIN_RGROWTH: f64 = 1e-3;
 
     impl Solver {
         /// `colptr`/`rowidx` are the caller's CSC of `A`; the transpose is built here.
         pub fn new(n: usize, colptr: &[i32], rowidx: &[i32]) -> Option<Solver> {
-            let mut s = Solver {
-                common: Common::defaults()?,
-                symbolic: core::ptr::null_mut(),
-                numeric: core::ptr::null_mut(),
-                t: super::Transposed::new(n, colptr, rowidx)?,
-            };
-            s.symbolic = unsafe {
-                klu_analyze(n as i32, s.t.ap.as_mut_ptr(), s.t.ai.as_mut_ptr(), &mut s.common)
-            };
-            (!s.symbolic.is_null()).then_some(s)
+            let mut t = super::Transposed::new(n, colptr, rowidx)?;
+            let fact = Factorization::analyze(n, &mut t.ap, &mut t.ai)?;
+            Some(Solver { fact, t })
         }
 
         /// Factorize with `values` (the caller's CSC-of-`A` order) and solve
         /// `A x = b` in place. `false` if the matrix is singular or a KLU call failed.
         pub fn solve(&mut self, values: *const f64, b: *mut f64, n: usize) -> bool {
             self.t.gather(values);
-            let ax = self.t.ax.as_mut_ptr();
-            let (ap, ai) = (self.t.ap.as_mut_ptr(), self.t.ai.as_mut_ptr());
-            if !self.numeric.is_null() {
-                let ok = unsafe {
-                    klu_refactor(ap, ai, ax, self.symbolic, self.numeric, &mut self.common) != 0
-                        && klu_rgrowth(ap, ai, ax, self.symbolic, self.numeric, &mut self.common) != 0
-                };
-                if !ok || self.common.rgrowth < MIN_RGROWTH {
-                    unsafe { klu_free_numeric(&mut self.numeric, &mut self.common) };
-                    self.numeric = core::ptr::null_mut();
-                }
-            }
-            if self.numeric.is_null() {
-                self.numeric = unsafe { klu_factor(ap, ai, ax, self.symbolic, &mut self.common) };
-            }
-            if self.numeric.is_null() || self.common.status != 0 {
-                return false;
-            }
-            unsafe { klu_tsolve(self.symbolic, self.numeric, n as i32, 1, b, &mut self.common) != 0 }
-        }
-    }
-
-    impl Drop for Solver {
-        fn drop(&mut self) {
-            unsafe {
-                if !self.numeric.is_null() {
-                    klu_free_numeric(&mut self.numeric, &mut self.common);
-                }
-                klu_free_symbolic(&mut self.symbolic, &mut self.common);
-            }
+            let t = &mut self.t;
+            self.fact.factor(&mut t.ap, &mut t.ai, &mut t.ax)
+                && self.fact.tsolve(unsafe { core::slice::from_raw_parts_mut(b, n) })
         }
     }
 }

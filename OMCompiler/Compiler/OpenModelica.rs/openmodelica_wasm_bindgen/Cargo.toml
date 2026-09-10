@@ -1,0 +1,30 @@
+# `wasm-bindgen` as a crate the build resolves, replacing the `cargo install
+# wasm-bindgen-cli` the web target used to need on PATH. Cargo pins the schema
+# version to the `wasm-bindgen` the wasm crates depend on, so the two cannot
+# drift; an installed CLI can, and the mismatch only shows up mid-build.
+#
+# `openmodelica_result_web_embed` does the same thing from a build.rs. This is
+# the form CMake needs: a program it can put where `${WASM_BINDGEN_EXECUTABLE}`
+# used to point.
+[package]
+name = "openmodelica_wasm_bindgen"
+version = "0.1.0"
+edition = "2024"
+
+# Its own workspace root: the compiler workspace must not resolve against
+# walrus/wasmparser, nor build this when it builds omc.
+[workspace]
+
+[[bin]]
+name = "omc-wasm-bindgen"
+path = "src/main.rs"
+
+[dependencies]
+# Keep equal to the `wasm-bindgen` pinned by the crates that are bindgen'd
+# (libopenmodelica_compiler, openmodelica_animation_wasm, omshell_*,
+# openmodelica_result_web).
+wasm-bindgen-cli-support = "=0.2.125"
+
+[profile.release]
+opt-level = 2
+strip = true

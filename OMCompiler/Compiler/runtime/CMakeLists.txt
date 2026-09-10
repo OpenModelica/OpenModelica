@@ -44,6 +44,7 @@ set(OMC_RUNTIME_SOURCES
     ErrorMessage.cpp
     System_omc.c
     Lapack_omc.cpp
+    omc_lapack.c
     Settings_omc.cpp
     UnitParserExt_omc.cpp
     unitparser.cpp
@@ -94,7 +95,32 @@ if(OM_OMC_ENABLE_COLPACK)
 endif()
 
 if(OM_OMC_USE_LAPACK)
-  target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  if(WIN32)
+    # Do not import LAPACK into the compiler on Windows. OpenBLAS allocates its
+    # per-thread buffers in DllMain, which Windows charges as committed memory
+    # (~128 MB per hardware thread) on every omc process even though the
+    # compiler never writes to them. lapackimpl.c loads the library on demand
+    # instead, with the thread count pinned to one across the load. See #16638.
+    #
+    # Hand it the library the build resolved so it does not have to guess: an
+    # import library such as libopenblas.dll.a names the DLL beside it. Only the
+    # first entry is needed, it is the one carrying the LAPACK routines, and the
+    # loader in lapackimpl.c falls back to the usual names if it does not open.
+    list(GET LAPACK_LIBRARIES 0 OMC_LAPACK_DLL)
+    if(OMC_LAPACK_DLL MATCHES "^-l(.+)$")
+      # A bare linker flag rather than a path, e.g. -lopenblas.
+      set(OMC_LAPACK_DLL "lib${CMAKE_MATCH_1}")
+    endif()
+    get_filename_component(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}" NAME)
+    string(REGEX REPLACE "\\.(a|lib)$" "" OMC_LAPACK_DLL "${OMC_LAPACK_DLL}")
+    if(NOT OMC_LAPACK_DLL MATCHES "\\.dll$")
+      set(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}.dll")
+    endif()
+    message(STATUS "omc will load LAPACK on demand from ${OMC_LAPACK_DLL}")
+    target_compile_definitions(omcruntime PRIVATE OMC_LAPACK_DLL_NAMES="${OMC_LAPACK_DLL}")
+  else()
+    target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  endif()
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
@@ -105,42 +131,6 @@ target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
-
-# Corba support
-if(OM_OMC_USE_CORBA)
-  if(MINGW)
-    if(DEFINED ENV{MSYSTEM_PREFIX})
-      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
-      if(IS_UCRT64)
-        message(FATAL_ERROR "No corba support on UCRT64")
-      endif()
-    endif()
-    # setup omniORB for MinGW OMDev
-    include(.cmake/omdev_omniorb_setup.cmake)
-    # Include the macro for compiling corba targets.
-    include(.cmake/omc_omniorb_corba_target.cmake)
-
-    # Make a directory specifically for generated files
-    set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
-
-    # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
-    omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
-                                 ${GENERATED_DIRECTORY})
-    # Add the generated files to the sources of the library
-    target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
-                                      Corba_omc.cpp)
-
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omnithread40_rt)
-    target_compile_definitions(omcruntime PRIVATE USE_CORBA)
-    target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
-  else() # Not MinGW
-    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
-  endif()
-else() # No corba support requested. Use the stub file.
-  target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OM_OMC_USE_CORBA)
 
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)

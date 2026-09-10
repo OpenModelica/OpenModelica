@@ -124,22 +124,20 @@ protected function findFieldExpInList "author: KS
   output Absyn.Exp outExp;
   output list<Absyn.NamedArg> outNamedArgList;
 algorithm
-  (outExp,outNamedArgList) := matchcontinue (firstFieldName,namedArgList)
+  (outExp,outNamedArgList) := match (firstFieldName,namedArgList)
     local
       Absyn.Exp e;
       Absyn.Ident localFieldName,aName;
       list<Absyn.NamedArg> rest;
       Absyn.NamedArg first;
     case (_,{}) then (Absyn.CREF(Absyn.WILD()),{});
-    case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest)
-      algorithm
-        true := stringEq(localFieldName,aName);
+    case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest) guard stringEq(localFieldName,aName)
       then (e,rest);
     case (localFieldName,first::rest)
       algorithm
         (e,rest) := findFieldExpInList(localFieldName,rest);
       then (e,first::rest);
-  end matchcontinue;
+  end match;
 end findFieldExpInList;
 
 protected function checkInvalidPatternNamedArgs
@@ -661,21 +659,11 @@ protected function validUniontype
   input SourceInfo info;
   input Absyn.Exp lhs;
 algorithm
-  () := matchcontinue lhs
-    local
-      String s,s1,s2;
-    case _
-      algorithm
-        true := AbsynUtil.pathEqual(path1,path2);
-      then ();
-    else
-      algorithm
-        s := Dump.printExpStr(lhs);
-        s1 := AbsynUtil.pathString(path1);
-        s2 := AbsynUtil.pathString(path2);
-        Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
-      then fail();
-  end matchcontinue;
+  if not AbsynUtil.pathEqual(path1,path2) then
+    Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE,
+      {Dump.printExpStr(lhs), AbsynUtil.pathString(path1), AbsynUtil.pathString(path2)}, info);
+    fail();
+  end if;
 end validUniontype;
 
 public function elabMatchExpression

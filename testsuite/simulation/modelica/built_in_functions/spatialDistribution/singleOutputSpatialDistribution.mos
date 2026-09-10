@@ -8,13 +8,10 @@
 // pointer and the runtime must not dereference it.
 // Regression test for #15431.
 
-loadModel(Modelica); getErrorString();
-
 // Only the first output is used, second output pointer is NULL.
 loadString("
   model SingleOutputFirst
     \"Only uses the first output of spatialDistribution (negative velocity).\"
-  extends Modelica.Icons.Example;
   Real input_ = time*2;
   Real leftOutput;
   constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
@@ -33,19 +30,16 @@ end SingleOutputFirst;"); getErrorString();
 loadString("
   model SingleOutputSecond
     \"Only uses the second output of spatialDistribution (positive velocity).\"
-  extends Modelica.Icons.Example;
   Real input_ = time*2;
   Real rightOutput;
   constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
   constant Real[:] initialValues = {1.0, 1.0};
   Real v;
-  Boolean posV;
   Real x(start=0, fixed=true);
 equation
   v = der(x);
   v = 1;
-  posV = v >= 0;
-  (, rightOutput) = spatialDistribution(input_, input_, x, posV, initialPoints, initialValues);
+  (, rightOutput) = spatialDistribution(input_, input_, x, true, initialPoints, initialValues);
 end SingleOutputSecond;"); getErrorString();
 
 simulate(SingleOutputFirst, stopTime=2.0); getErrorString();
@@ -59,8 +53,6 @@ val(rightOutput, 1.0);
 val(rightOutput, 2.0);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

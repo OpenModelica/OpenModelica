@@ -4,7 +4,7 @@
 //! [`crate::Main`] (`init` / `readSettings` / `handleCommand`). It exists so the
 //! separate `libopenmodelica_compiler` crate can wrap these in an `extern "C"`
 //! interface and build `libOpenModelicaCompiler.so`, the shared library OMEdit
-//! links against to drive omc in-process (instead of over ZeroMQ/Corba IPC).
+//! links against to drive omc in-process (instead of over ZeroMQ IPC).
 //!
 //! The functions here mirror exactly what `Main.interactivemodeZMQ` does around
 //! the socket loop: initialise the runtime once, then evaluate command strings
@@ -36,7 +36,7 @@ use crate::Main;
 /// default configuration (the installation directory is then taken from the
 /// `OPENMODELICAHOME` environment variable).
 pub fn init(args: &[ArcStr]) -> Result<()> {
-    let arglist: Arc<metamodelica::List<ArcStr>> = Arc::new(args.iter().cloned().collect());
+    let arglist: metamodelica::List<ArcStr> = args.iter().cloned().collect();
     let arglist = Main::init(arglist)?;
     Main::readSettings(arglist)?;
     Ok(())

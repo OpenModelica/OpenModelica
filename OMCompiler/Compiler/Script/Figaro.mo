@@ -863,22 +863,19 @@ protected function removeTokens
   input list<Token> inTokenList;
   output list<Token> outTokenList;
 algorithm
-  outTokenList := matchcontinue inTokenList
+  outTokenList := match inTokenList
     local
       Token first;
       list<Token> rest, r;
       String tn;
     case {}
       then {};
-    case OPENTAG(tagName = tn) :: rest
+    case OPENTAG(tagName = tn) :: rest guard isKnownTag(tn) and not isInfoTag(tn)
       algorithm
-        true := isKnownTag(tn);
-        false := isInfoTag(tn);
         r := removeFirstIfText(rest);
       then OPENTAG(tn) :: removeTokens(r);
-    case OPENTAG(tagName = tn) :: rest
+    case OPENTAG(tagName = tn) :: rest guard not isKnownTag(tn)
       algorithm
-        false := isKnownTag(tn);
         r := removeUnknown(rest, tn);
       then removeTokens(r);
     case CLOSETAG(tagName = tn) :: rest
@@ -887,7 +884,7 @@ algorithm
       then CLOSETAG(tn) :: removeTokens(r);
     case first :: rest
       then first :: removeTokens(rest);
-  end matchcontinue;
+  end match;
 end removeTokens;
 
 protected function removeFirstIfText
@@ -909,19 +906,17 @@ protected function removeUnknown "Removes tokens until the closing tag is found.
   input String inTagName;
   output list<Token> outTokenList;
 algorithm
-  outTokenList := matchcontinue inTokenList
+  outTokenList := match inTokenList
     local
       String tn;
       list<Token> rest;
     case {}
       then {};
-    case CLOSETAG(tagName = tn) :: rest
-      algorithm
-        true := tn == inTagName;
+    case CLOSETAG(tagName = tn) :: rest guard tn == inTagName
       then removeFirstIfText(rest);
     case _ :: rest
       then removeUnknown(rest, inTagName);
-  end matchcontinue;
+  end match;
 end removeUnknown;
 
 protected function isKnownTag "Answers whether the tag contributes to the tree structure we want to
@@ -1081,36 +1076,32 @@ protected function isToBeReported "Answers whether an error should be reported."
 protected
   list<String> errorsToReport = {"FATAL" /*, "MAJOR" */} "list of errors we are interested in";
 algorithm
-  outBoolean := matchcontinue inStringTupleList
+  outBoolean := match inStringTupleList
     local
       String k, v;
       list<tuple<String, String>> rest;
     case {}
       then false;
-    case (k, v) :: _
-      algorithm
-        true := k == "CRITICITY";
+    case (k, v) :: _ guard k == "CRITICITY"
       then listMember(v, errorsToReport);
     case _ :: rest
       then isToBeReported(rest);
-  end matchcontinue;
+  end match;
 end isToBeReported;
 
 protected function getMessage "Retrieves the error message."
   input list<tuple<String, String>> inStringTupleList;
   output String outString;
 algorithm
-  outString := matchcontinue inStringTupleList
+  outString := match inStringTupleList
     local
       String k, v;
       list<tuple<String, String>> rest;
-    case (k, v) :: _
-      algorithm
-        true := k == "LABEL";
+    case (k, v) :: _ guard k == "LABEL"
       then v;
     case _ :: rest
       then getMessage(rest);
-  end matchcontinue;
+  end match;
 end getMessage;
 
 protected function reportErrors "Reports Figaro errors one by one."
@@ -1138,7 +1129,7 @@ end reportErrors;
 protected function printFigaroClassList
   input list<FigaroClass> inFigaroClassList;
 algorithm
-  () := matchcontinue inFigaroClassList
+  () := match inFigaroClassList
     local
       FigaroClass first;
       list<FigaroClass> rest;
@@ -1153,7 +1144,7 @@ algorithm
       algorithm
         printFigaroClassList(rest);
       then ();
-  end matchcontinue;
+  end match;
 end printFigaroClassList;
 
 protected function printFigaroClass
@@ -1173,7 +1164,7 @@ end printFigaroClass;
 protected function printFigaroObjectList
   input list<FigaroObject> inFigaroObjectList;
 algorithm
-  () := matchcontinue inFigaroObjectList
+  () := match inFigaroObjectList
     local
       FigaroObject first;
       list<FigaroObject> rest;
@@ -1188,13 +1179,13 @@ algorithm
       algorithm
         printFigaroObjectList(rest);
       then ();
-  end matchcontinue;
+  end match;
 end printFigaroObjectList;
 
 protected function printTokenList
   input list<Token> inTokenList;
 algorithm
-  () := matchcontinue inTokenList
+  () := match inTokenList
     local
       Token first;
       list<Token> rest;
@@ -1210,7 +1201,7 @@ algorithm
       algorithm
         printTokenList(rest);
       then ();
-  end matchcontinue;
+  end match;
 end printTokenList;
 
 protected function printToken

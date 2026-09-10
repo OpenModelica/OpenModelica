@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 world.mos \
+noemit.mos \
 EngineV6_evalParams.mos \
 Bug1687.mos \
 Bug1728.mos \

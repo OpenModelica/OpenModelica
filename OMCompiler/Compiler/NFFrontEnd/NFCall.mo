@@ -1524,12 +1524,35 @@ public
           false;
 
       case TYPED_CALL() then Expression.listContains(call.arguments, func);
-      case UNTYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
-      case TYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
-      case UNTYPED_REDUCTION() then Expression.contains(call.exp, func);
-      case TYPED_REDUCTION() then Expression.contains(call.exp, func);
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case UNTYPED_REDUCTION()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
+      case TYPED_REDUCTION()
+        then Expression.contains(call.exp, func) or itersContainExp(call.iters, func);
     end match;
   end containsExp;
+
+  function itersContainExp
+    "An iterator range is a subexpression too: `sum(x[k] for k in i:n)` uses `i`."
+    input list<tuple<InstNode, Expression>> iters;
+    input ContainsPred func;
+    output Boolean res = false;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    for iter in iters loop
+      if Expression.contains(Util.tuple22(iter), func) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end itersContainExp;
 
   function containsExpShallow
     input Call call;

@@ -5,9 +5,8 @@
 //! back as an error instead of unwinding past us.
 
 use core::ffi::{c_char, c_int, c_long};
-use core::sync::atomic::{AtomicBool, Ordering};
 
-use openmodelica_sim_meta::driver::{self, Result, SimEngine};
+use openmodelica_sim_meta::driver::{self, AssertHold, Result, SimEngine};
 
 use crate::abi::*;
 use crate::data::RtData;
@@ -34,15 +33,6 @@ unsafe extern "C" {
         gout: *mut f64,
         stage: c_int,
     ) -> c_int;
-}
-
-/// C's `noThrowAsserts`, as the driver opens and closes its window.
-static NO_THROW: AtomicBool = AtomicBool::new(false);
-/// A violated `assert()` the model only noted inside it (C's `needToReThrow`).
-static NOTED_ASSERT: AtomicBool = AtomicBool::new(false);
-
-pub fn set_no_throw(v: bool) {
-    NO_THROW.store(v, Ordering::Relaxed);
 }
 
 unsafe extern "C" {
@@ -124,7 +114,7 @@ impl CEngine {
             _ => error_stage::SIMULATION,
         };
         let si = self.rt.info();
-        si.noThrowAsserts = NO_THROW.load(Ordering::Relaxed) as modelica_boolean;
+        si.noThrowAsserts = (driver::assert_hold() != AssertHold::Throw) as modelica_boolean;
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -148,14 +138,14 @@ impl CEngine {
     }
 
     /// What a model call's return means: a violated assertion the model only
-    /// noted (`needToReThrow`) is kept for the driver to settle when it closes the
-    /// assert window; a jump it took raises the open region's `hit` word rather
-    /// than ending the run -- as long as a region is open to absorb it.
+    /// noted (`needToReThrow`) goes to the driver's window to settle when it closes;
+    /// a jump it took raises the open region's `hit` word rather than ending the
+    /// run -- as long as a region is open to absorb it.
     fn absorb(&mut self, rc: c_int) -> Result<()> {
         let si = self.rt.info();
         if si.needToReThrow != 0 {
             si.needToReThrow = 0;
-            NOTED_ASSERT.store(true, Ordering::Relaxed);
+            driver::note_no_throw_assert();
         }
         if rc != -1 {
             return Ok(());
@@ -167,6 +157,19 @@ impl CEngine {
         // The reason is already on the log, from `omr_assert_report`; naming it C's
         // own `longjmp` is what makes the driver print the initialization notice.
         Err(driver::ASSERT_ERR)
+    }
+
+    /// C's `storePreValues` closing `updateContinuousSystem`, whose C body is
+    /// stubbed out under this runtime.
+    fn store_pre_values(&mut self) {
+        let md = self.rt.model();
+        let (sd, si) = (self.rt.local(0), self.rt.info());
+        unsafe {
+            core::ptr::copy_nonoverlapping(sd.realVars, si.realVarsPre, md.nVariablesReal.max(0) as usize);
+            core::ptr::copy_nonoverlapping(sd.integerVars, si.integerVarsPre, md.nVariablesInteger.max(0) as usize);
+            core::ptr::copy_nonoverlapping(sd.booleanVars, si.booleanVarsPre, md.nVariablesBoolean.max(0) as usize);
+        }
+        self.store_pre_strings();
     }
 }
 
@@ -252,7 +255,9 @@ impl SimEngine for CEngine {
             }
             "functionAlgebraics" => {
                 self.rt.info().callStatistics.functionAlgebraics += 1;
-                self.call_cb(cb.functionAlgebraics)
+                self.call_cb(cb.functionAlgebraics)?;
+                self.store_pre_values();
+                Ok(())
             }
             "functionDAE" => {
                 self.rt.info().callStatistics.updateDiscreteSystem += 1;
@@ -460,7 +465,11 @@ impl SimEngine for CEngine {
                         self.stage,
                     )
                 };
-                self.absorb(rc)
+                self.absorb(rc)?;
+                if b == driver::eval_stage::ALGEBRAIC {
+                    self.store_pre_values();
+                }
+                Ok(())
             }
             // The driver names a sub-clock by its flat index, which is what a wasm
             // module's dispatcher takes; C's takes the `(base, sub)` pair.
@@ -566,6 +575,11 @@ impl SimEngine for CEngine {
         (k < md.nSamples.max(0) as usize).then(|| unsafe { (*md.samplesInfo.add(k)).index as i32 })
     }
 
+    fn store_pre_strings(&mut self) {
+        let n = self.rt.model().nVariablesString.max(0) as usize;
+        unsafe { core::ptr::copy_nonoverlapping(self.rt.local(0).stringVars, self.rt.info().stringVarsPre, n) };
+    }
+
     fn update_static_system_data(&mut self, linear: bool) {
         let (data, td) = (self.rt.data, self.rt.thread_data);
         let md = self.rt.model();
@@ -590,10 +604,6 @@ impl SimEngine for CEngine {
 
     fn set_rhs_final(&mut self, final_eval: bool) {
         unsafe { crate::support::RHSFinalFlag = final_eval as c_int };
-    }
-
-    fn take_noted_assert(&mut self) -> bool {
-        NOTED_ASSERT.swap(false, Ordering::Relaxed)
     }
 
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {

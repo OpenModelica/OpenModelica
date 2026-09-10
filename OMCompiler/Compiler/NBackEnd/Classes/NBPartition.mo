@@ -425,6 +425,12 @@ public
       partition.equations := EquationPointers.sort(partition.equations);
     end sort;
 
+    function hasIndex
+      input Partition partition;
+      input Integer index;
+      output Boolean b = partition.index == index;
+    end hasIndex;
+
     function isEmpty
       "returns true if the partition is empty.
       maybe check more than only equations?"

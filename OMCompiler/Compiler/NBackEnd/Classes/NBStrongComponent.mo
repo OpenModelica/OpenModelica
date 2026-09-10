@@ -1295,16 +1295,28 @@ protected
       (var_scal_idx, _)       := mapping.var_AtS[var_arr_idx];
       var                     := VariablePointers.getVarAt(vars, var_arr_idx);
       idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else list(i - var_scal_idx for i in idx_lst);
-      acc_vars                := Slice.SLICE(var, List.sort(idx_lst, intGt)) :: acc_vars;
+      acc_vars                := Slice.SLICE(var, sortAscending(idx_lst)) :: acc_vars;
     end for;
     for tpl in UnorderedMap.toList(eqn_map) loop
       (eqn_arr_idx, idx_lst)  := tpl;
       (eqn_scal_idx, _)       := mapping.eqn_AtS[eqn_arr_idx];
       eqn                     := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
       idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else list(i - eqn_scal_idx for i in idx_lst);
-      acc_eqns                := Slice.SLICE(eqn, List.sort(idx_lst, intGt)) :: acc_eqns;
+      acc_eqns                := Slice.SLICE(eqn, sortAscending(idx_lst)) :: acc_eqns;
     end for;
   end getLoopVarsAndEqns;
+
+  function sortAscending
+    "List.sort(lst, intGt) without the merge sort's allocations"
+    input list<Integer> lst;
+    output list<Integer> sorted;
+  algorithm
+    if listEmpty(lst) or listEmpty(listRest(lst)) then
+      sorted := lst;
+    else
+      sorted := arrayList(Array.heapSort(listArray(lst)));
+    end if;
+  end sortAscending;
 
   function updateDependencyMap
     input ComponentRef cref                                   "cref representing current equation";

@@ -1,9 +1,12 @@
 # Hand-written Rust omc sources copied into each build's working copy (see
 # rust_omc.cmake); mmtorust generates the rest. Paths relative to OpenModelica.rs.
 # Regenerate from a git checkout:
-#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$'
+#   git -C OpenModelica.rs ls-files | grep -vE '^(README|TODO)\.md$|check-unused-deps\.py$|^wasm/build\.sh$|^openmodelica_wasm_bindgen/'
+# openmodelica_wasm_bindgen is left out on purpose: it is a build tool, compiled
+# from the canonical tree, and nothing in the working copy refers to it.
 #
 .cargo/config.toml
+.cmake/darwin-toolchain.cmake
 .cmake/windows-deps.cmake
 .cmake/windows-qt-deploy.cmake
 .cmake/x64-windows-xwin.cmake
@@ -13,6 +16,7 @@
 Cargo.lock
 Cargo.toml
 libopenmodelica_compiler/Cargo.toml
+libopenmodelica_compiler/build.rs
 libopenmodelica_compiler/gen/gen-sim-tables.c
 libopenmodelica_compiler/gen/gen-sim-tables.sh
 libopenmodelica_compiler/include/omc_rust_embedding.h
@@ -58,6 +62,7 @@ mmtorust/src/fallibility.rs
 mmtorust/src/fix.rs
 mmtorust/src/hierarchy.rs
 mmtorust/src/main.rs
+mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs
 mmtorust/src/scripting_api_qt.rs
 mmtorust/src/typedexp.rs
@@ -137,19 +142,73 @@ openmodelica_codegen_graphml/Cargo.toml
 openmodelica_codegen_wasm_jit/Cargo.toml
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/artifact.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/aux_fns.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/datarecon.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/dylink_fmi.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/entry.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/eq_fns.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/equations.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/events.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/ext_libs.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/flags.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/fmu.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/fmu_link.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/host_hooks.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/jacobians.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/linearize.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/link_tests.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/lower_eq.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/meta.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/model.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/native_ext.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/native_fmu.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/nls.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/nls_jac.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/optimization.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/prof.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/registry.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/run.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/session.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/simulate_fn.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/sparsity.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/standalone.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/state_sets.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/util.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/var_map.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/wasm_rewrite.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/zip.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/array_literals.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/array_ops.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/assign.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/calls.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/closures.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/ctx.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/diag.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/entry.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/errors.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/expressions.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/external_calls.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/externals.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/function.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/generic_calls.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/imports.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/loops.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/math_builtins.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/module.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/records.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/relations.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_stub.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_wasmer.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/runtime_wasmtime.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/shared_lits.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sidecar.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/signatures.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_access.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_keys.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_systems.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/statements.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/strings.rs
 openmodelica_codegen_wasm_jit/testmodels/BouncingBall.mo
 openmodelica_codegen_wasm_jit/testmodels/MathEventAll.mo
 openmodelica_codegen_wasm_jit/testmodels/TestArrayParamBinding.mo
@@ -207,7 +266,6 @@ openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
 openmodelica_codegen_wasm_jit_runtime/src/prof.rs
-openmodelica_codegen_wasm_jit_runtime/src/result_out.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
@@ -336,8 +394,6 @@ openmodelica_nf_frontend/src/ffi_catch.cpp
 openmodelica_omgraphics/Cargo.toml
 openmodelica_omgraphics/src/OMGraphics.rs
 openmodelica_program_util/Cargo.toml
-openmodelica_result_web/Cargo.toml
-openmodelica_result_web/src/lib.rs
 openmodelica_revision/Cargo.toml
 openmodelica_revision/build.rs
 openmodelica_revision/src/lib.rs
@@ -358,10 +414,10 @@ openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml
 openmodelica_susan/src/main.rs
 openmodelica_tpl/Cargo.toml
+openmodelica_tpl/src/Tpl.handwritten.rs
 openmodelica_util/Cargo.toml
 openmodelica_util/build.rs
 openmodelica_util/src/Autoconf.rs
-openmodelica_util/src/Corba.rs
 openmodelica_util/src/FMIExt.rs
 openmodelica_util/src/File.rs
 openmodelica_util/src/Global.rs

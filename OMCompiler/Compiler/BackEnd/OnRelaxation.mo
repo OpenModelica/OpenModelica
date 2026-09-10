@@ -1566,7 +1566,7 @@ protected function makeGausEliminationRow "author: Frenkel TUD 2012-05"
   output DAE.Exp outExp;
   output DAE.Exp outExp1;
 algorithm
-  (outExp, outExp1) := matchcontinue lst
+  (outExp, outExp1) := match lst
     local
       Integer c;
       DAE.Exp e, e1, b;
@@ -1574,9 +1574,7 @@ algorithm
     case {}
       then
         (inExp, DAE.RCONST(0.0));
-    case (c, e)::_
-      algorithm
-        true := intGt(c, size);
+    case (c, e)::_ guard intGt(c, size)
       then
         (inExp, e);
     case (c, e)::rest
@@ -1587,7 +1585,7 @@ algorithm
         (e1, b) := makeGausEliminationRow(rest, size, vars, e1);
       then
         (e1, b);
-  end matchcontinue;
+  end match;
 end makeGausEliminationRow;
 
 protected function makeGausElimination "author: Frenkel TUD 2012-05"
@@ -1597,26 +1595,20 @@ protected function makeGausElimination "author: Frenkel TUD 2012-05"
   input array<DAE.Exp> vars;
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> oAcc;
+protected
+  DAE.Exp e, b;
+  BackendDAE.Equation eqn;
 algorithm
-  oAcc := matchcontinue iAcc
-    local
-      DAE.Exp e, b;
-      BackendDAE.Equation eqn;
-    case _
-      algorithm
-        true := intGt(row, size);
-      then
-        listReverse(iAcc);
-    case _
-      algorithm
-        (e, b) := makeGausEliminationRow(matrix[row], size, vars, DAE.RCONST(0.0));
-        //(e, _) = ExpressionSimplify.simplify(e);
-        //(b, _) = ExpressionSimplify.simplify(b);
-        //  BackendDump.debugStrExpStrExpStr(("", e, " = ", b, "\n"));
-        eqn := BackendDAE.EQUATION(e, b, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      then
-        makeGausElimination(row+1, size, matrix, vars, eqn::iAcc);
-  end matchcontinue;
+  if intGt(row, size) then
+    oAcc := listReverse(iAcc);
+  else
+    (e, b) := makeGausEliminationRow(matrix[row], size, vars, DAE.RCONST(0.0));
+    //(e, _) = ExpressionSimplify.simplify(e);
+    //(b, _) = ExpressionSimplify.simplify(b);
+    //  BackendDump.debugStrExpStrExpStr(("", e, " = ", b, "\n"));
+    eqn := BackendDAE.EQUATION(e, b, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    oAcc := makeGausElimination(row+1, size, matrix, vars, eqn::iAcc);
+  end if;
 end makeGausElimination;
 
 protected function dumpMatrix "author: Frenkel TUD 2012-05"
@@ -1624,17 +1616,11 @@ protected function dumpMatrix "author: Frenkel TUD 2012-05"
   input Integer size;
   input array<list<tuple<Integer, DAE.Exp>>> matrix;
 algorithm
-  () := matchcontinue matrix
-    case _ algorithm
-      true := intGt(row, size);
-    then ();
-
-    case _ algorithm
-      print(intString(row) + ": ");
-      BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
-      dumpMatrix(row+1, size, matrix);
-    then ();
-  end matchcontinue;
+  if not intGt(row, size) then
+    print(intString(row) + ": ");
+    BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
+    dumpMatrix(row+1, size, matrix);
+  end if;
 end dumpMatrix;
 
 protected function dumpMatrix1 "author: Frenkel TUD 2012-05"
@@ -2953,20 +2939,11 @@ protected function getOrphans "author: Frenkel TUD 2011-05"
   input list<Integer> inOrphans;
   output list<Integer> outOrphans;
 algorithm
-  outOrphans := matchcontinue inOrphans
-    local
-      list<Integer> orphans;
-    case _
-      algorithm
-        true := intGt(indx, size);
-      then
-        inOrphans;
-    case _
-      algorithm
-        orphans := List.consOnTrue(intLt(ass[indx], 1), indx, inOrphans);
-      then
-        getOrphans(indx+1, size, ass, orphans);
-  end matchcontinue;
+  if intGt(indx, size) then
+    outOrphans := inOrphans;
+  else
+    outOrphans := getOrphans(indx+1, size, ass, List.consOnTrue(intLt(ass[indx], 1), indx, inOrphans));
+  end if;
 end getOrphans;
 
 protected function expHasCref "author: Frenkel TUD 2012-05

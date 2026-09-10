@@ -3514,12 +3514,19 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
           sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
           >>
+      case SIMVAR(type_=T_INTEGER(__)) then
+        <<
+        <%cComment%>
+        sysData->nominal[i] = 1.0;
+        sysData->min[i]     = <%crefAttributes(cr)%>.min;
+        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        >>
       else
         <<
         <%cComment%>
-        sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
-        sysData->min[i]     = <%crefAttributes(cr)%>.min;
-        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        sysData->nominal[i] = 1.0;
+        sysData->min[i]     = -DBL_MAX;
+        sysData->max[i++]   = DBL_MAX;
         >>
 
   ;separator="\n")
@@ -5898,7 +5905,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -5915,7 +5922,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, String modelNamePrefix)
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
 "Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
 ::=
 match sparsity
@@ -5997,6 +6004,19 @@ match sparsity
        * sparsity) would be invalid for the runtime pattern.  Re-deriving it
        * here guarantees that no two same-color columns share a non-zero row. */
       computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
+
+      <%if isBidirectional then <<
+      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
+       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
+       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
+      {
+        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
+        // initialize adjoint Jacobian with check for error and proceed to link it to the forward Jacobian
+        if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
+        jacobian->adjointJacobian = adjJac;
+        initBidirectionalRecovery(jacobian);
+      }
+      >> %>
 
       jacobian->availability = <%availability%>;
       return 0;
@@ -6838,11 +6858,12 @@ match sparsepattern
       omc_fclose(pFile);
 
       <%if isBidirectional then <<
-      /* Initialize adjoint Jacobian and set up bidirectional evaluation */
+      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
+       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
+       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
         <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->isBidirectional = 1;
         jacobian->adjointJacobian = adjJac;
         initBidirectionalRecovery(jacobian);
       }

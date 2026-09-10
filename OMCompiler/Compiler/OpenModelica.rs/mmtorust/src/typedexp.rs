@@ -1170,7 +1170,7 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
         }
         // MetaModelica builtin: `stringListStringChar(s)` → `List<String>` of one-char strings.
         // Declared in MetaModelicaBuiltin.mo (`output List<String> chars`); the metamodelica
-        // runtime crate exposes it returning `Arc<List<ArcStr>>` to match the list convention.
+        // runtime crate exposes it returning `List<ArcStr>` to match the list convention.
         "stringListStringChar" => Ty::List(Box::new(Ty::Str)),
         // `listStringCharString` / `stringCharListString` invert that — list of one-char strings → String.
         "listStringCharString" | "stringCharListString" => Ty::Str,
@@ -2297,7 +2297,7 @@ fn infer_case<'a>(
         }
     }
 
-    fn infer_case_locals(local_decls: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::ElementItem>>>, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
+    fn infer_case_locals(local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
         let mut out = Vec::new();
         for item in (&**local_decls).into_iter() {
             let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
@@ -2414,7 +2414,7 @@ fn infer_case<'a>(
     }
 
     fn infer_eq_items_list<'a>(
-        items: &std::sync::Arc<metamodelica::List<Absyn::EquationItem>>,
+        items: &metamodelica::List<Absyn::EquationItem>,
         env: &mut HashMap<String, Ty>,
         top_level: &'a BTreeMap<String, NameNode<'a>>,
         pkg_prefix: &str,
@@ -2430,7 +2430,7 @@ fn infer_case<'a>(
     }
 
     fn infer_eq_items_list_arc<'a>(
-        items: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::EquationItem>>>,
+        items: &metamodelica::List<std::sync::Arc<Absyn::EquationItem>>,
         env: &mut HashMap<String, Ty>,
         top_level: &'a BTreeMap<String, NameNode<'a>>,
         pkg_prefix: &str,
@@ -2630,7 +2630,7 @@ fn infer_case<'a>(
 ///
 /// `type_vars` must be the function-level type variable names (e.g. `["Key"]`).
 fn infer_case_locals_standalone(
-    local_decls: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::ElementItem>>>,
+    local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
     type_vars: &[String],
     top_level: &BTreeMap<String, NameNode<'_>>,
     pkg_prefix: &str,
@@ -3070,7 +3070,15 @@ pub fn infer_pat<'a>(
                     // emitter mis-binds the bare last segment to a same-named
                     // top-level package and lists that package's members as
                     // "fields" (E0574).
-                    let ty = lookup_ctor_ty(&canonical, top_level);
+                    let mut ty = lookup_ctor_ty(&canonical, top_level);
+                    // `Sets.SETS` under `import DAE.Connect.{Sets}` resolves only
+                    // through the scope; codegen's `pat_is_irrefutable` needs the type.
+                    if ty == Ty::Unknown
+                        && let Some((q, node)) = resolve_call_node(&canonical, top_level, pkg_prefix)
+                        && crate::hierarchy::record_is_sole_shape(&q, top_level)
+                    {
+                        ty = node.ty.clone();
+                    }
                     TypedPat::Constructor { name: canonical, fields, named_fields, ty }
                 }
             }
@@ -3576,7 +3584,7 @@ fn infer_stmt<'a>(
 }
 
 fn infer_stmts_list<'a>(
-    items: &std::sync::Arc<metamodelica::List<std::sync::Arc<Absyn::AlgorithmItem>>>,
+    items: &metamodelica::List<std::sync::Arc<Absyn::AlgorithmItem>>,
     env: &mut HashMap<String, Ty>,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
     pkg_prefix: &str,

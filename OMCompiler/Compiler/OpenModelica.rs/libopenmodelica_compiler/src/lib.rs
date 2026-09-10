@@ -26,9 +26,57 @@ use openmodelica_backend_main::capi;
 use std::ffi::{CStr, CString, c_char, c_int};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+// Not the `mimalloc` crate's GlobalAlloc: that one calls `mi_malloc_aligned` for
+// every allocation, whose slow over-allocating path is taken whenever a size
+// class's page is full. `mi_malloc` already guarantees 16-byte alignment.
+#[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
+mod mi {
+    use libmimalloc_sys as mi;
+    use std::alloc::{GlobalAlloc, Layout};
+    use std::ffi::c_void;
+
+    const MI_MAX_ALIGN_SIZE: usize = 16;
+
+    pub struct MiMalloc;
+
+    unsafe impl GlobalAlloc for MiMalloc {
+        #[inline]
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_malloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_malloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_zalloc(layout.size()) as *mut u8
+            } else {
+                mi::mi_zalloc_aligned(layout.size(), layout.align()) as *mut u8
+            }
+        }
+
+        #[inline]
+        unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+            mi::mi_free(ptr as *mut c_void);
+        }
+
+        #[inline]
+        unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+            if layout.align() <= MI_MAX_ALIGN_SIZE {
+                mi::mi_realloc(ptr as *mut c_void, new_size) as *mut u8
+            } else {
+                mi::mi_realloc_aligned(ptr as *mut c_void, new_size, layout.align()) as *mut u8
+            }
+        }
+    }
+}
+
 #[cfg(all(feature = "mimalloc", not(feature = "jemalloc"), not(target_arch = "wasm32")))]
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: mi::MiMalloc = mi::MiMalloc;
 
 #[cfg(all(feature = "jemalloc", not(target_arch = "wasm32")))]
 #[global_allocator]
@@ -151,7 +199,7 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             })
             .collect()
     };
-    let arglist = std::sync::Arc::new(args.into_iter().collect());
+    let arglist: metamodelica::List<_> = args.into_iter().collect();
     let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
     // `process::exit` drops no thread-local, so flush the buffered writers here.
     openmodelica_util::File::flush_all_registered();

@@ -11,6 +11,7 @@
 //! (`SimulationRuntime/c/util/simulation_options.c`). Every selector is an
 //! `Option`: `None` keeps the built-in default.
 
+use crate::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -708,7 +709,7 @@ impl JacobianMethod {
             JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
             JacobianMethod::NumJac => "Numerical Jacobian.",
             JacobianMethod::SymJac => "Symbolical Jacobian.",
-            JacobianMethod::BicoloredSymJac => "Bicolored (bidirectional) symbolical Jacobian.",
+            JacobianMethod::BicoloredSymJac => "Bicolored symbolical bidirectional Jacobian.",
         }
     }
 }
@@ -1250,8 +1251,8 @@ pub fn jac_test_tolerances(f: &SimFlags) -> (f64, f64) {
 pub fn svd_params(f: &SimFlags) -> (i32, f64, f64) {
     (
         f.svd_count.unwrap_or(0),
-        libm::fabs(f.svd_sigma.unwrap_or(1e-8)),
-        libm::fabs(f.svd_tol.unwrap_or(1e-8)),
+        fmath::fabs(f.svd_sigma.unwrap_or(1e-8)),
+        fmath::fabs(f.svd_tol.unwrap_or(1e-8)),
     )
 }
 

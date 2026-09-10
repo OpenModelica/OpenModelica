@@ -206,32 +206,38 @@ void makeLibsAndCache() {
   }
 }
 
+// Link the shared package cache into the workspace and install the testsuite
+// libraries with the omc in build/. These are the steps of cmake's
+// libs-for-testing target (wipe, copy index.json so omc uses the repo's pinned
+// versions instead of downloading an index, run index.mos), spelled out because
+// the stages calling this unstash an install tree, not a configured build tree,
+// so no CMake target is available to them.
+void installTestLibraries() {
+  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  sh label: 'Install the testsuite libraries', script: """#!/bin/bash -xe
+  test ! -z '${env.LIBRARIES}'
+  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+  # Removes the symbolic link, or if it's a directory there... the entire thing
+  rm -rf libraries/.openmodelica/cache libraries/.openmodelica/libraries
+  mkdir -p libraries/.openmodelica/libraries
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
+  cp libraries/index.json libraries/.openmodelica/libraries/
+  ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
+  """
+}
+
 // makeLibsAndCache()'s counterpart for a CMake-built omc (see
 // partestCMakeStashed). Produces the same testsuite dependencies, but without
 // the Autoconf machinery: a CMake build has no config.status, so the top-level
-// Makefile the other variant drives does not exist. Each dependency has a
-// standalone Makefile that only needs the installed omc in build/, which is
-// exactly what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
-// their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
-// not built here: partest() rebuilds it from testsuite/difftool anyway.
+// Makefile the other variant drives does not exist. ReferenceFiles and the FFI
+// test library have standalone Makefiles of their own. omc-diff is not built
+// here: partest() rebuilds it from testsuite/difftool anyway.
 void makeLibsAndCacheCMake() {
-  sh "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
-  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
-  sh label: 'Create directory for omlibrary cache', script: """
-  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
-  # Remove the symbolic link, or if it's a directory there... the entire thing
-  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
-  mkdir -p libraries/.openmodelica/
-  test ! -e libraries/.openmodelica/cache
-  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
-  ls -lh libraries/.openmodelica/cache/
-  """
   def cmd = """#!/bin/bash -xe
-  # libs-for-testing: installs the test libraries with the CMake-built omc
-  ${makeCommand()} -C libraries lib-for-testing
   # reference-files: xz decompression only
   ${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse -C testsuite/ReferenceFiles
   # ffi-test-lib
@@ -239,9 +245,11 @@ void makeLibsAndCacheCMake() {
   """
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
+      installTestLibraries()
       sh cmd
     }
   } else {
+    installTestLibraries()
     sh cmd
   }
 }
@@ -321,7 +329,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   sh 'autoreconf --install'
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
   def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
   if (clean) {
     sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
@@ -702,11 +710,285 @@ void buildRustGUI() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Nightly cross builds. The stages are in .CI/Jenkinsfile.rust-nightly, which
+// says what runs where; here is what each stage does.
+//
+// buildRustNightlyShared() builds everything that does not depend on the target
+// platform (the transpile, the Qt scripting-API sources, the wasm half of omc,
+// the FMU loaders) and hands it over as one stash, so a target stage runs
+// neither the MetaModelica transpiler nor any wasm toolchain -- it compiles Rust
+// and C/C++ for its own target and nothing else.
+// ---------------------------------------------------------------------------
+
+// Stage 1's output, and where every later stage unstashes it. Relative to the
+// workspace: a stash cannot reach outside it.
+String nightlySharedDir() { return 'nightly-shared' }
+
+// Install prefix for one target. The omc stage and the GUI stage install into
+// the same prefix and stash it under different names, so the packaging stage
+// gets one merged tree by unstashing both.
+String nightlyInstallDir(String name) { return "install/${name}" }
+
+// One nightly cross target:
+//   triple    the rustc target triple (RUST_OMC_TARGET, and cargo's subdirectory)
+//   toolchain the CMake toolchain file for the C/C++ half of the tree
+//   configure the flags only this platform needs
+//   qt        the Qt kit for the GUI stage; empty = the image has no kit for it
+//   sccache   whether this target's C/C++ compiler can run under sccache
+//   cdylib    the file name cargo gives libOpenModelicaCompiler for it
+Map nightlyTarget(String name) {
+  String rs = 'OMCompiler/Compiler/OpenModelica.rs/.cmake'
+  // Fortran is off for both: flang compiles for either target but links for
+  // neither (no flang_rt/clang_rt.builtins), and MOO/optimization need it.
+  List noFortran = ['-DOM_OMC_ENABLE_FORTRAN=OFF',
+                    '-DOM_OMC_ENABLE_MOO=OFF',
+                    '-DOM_OMC_ENABLE_OPTIMIZATION=OFF']
+  Map all = [
+    'win64': [
+      triple: 'x86_64-pc-windows-msvc',
+      toolchain: "${rs}/xwin-toolchain.cmake",
+      // OpenBLAS, Boost and PThreads4W are fetched/built by windows-deps.cmake,
+      // which the top-level CMakeLists includes when cross-compiling to Windows.
+      configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
+      qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.10.2/msvc2022_64',
+           '-DQT_HOST_PATH=/opt/Qt/6.10.2/gcc_64',
+           // OpenSceneGraph's vcpkg port pulls in openimageio; Quick3D is the
+           // animation backend that cross-builds (as in the wasm build).
+           '-DOM_OMEDIT_ANIMATION_QUICK3D=ON'],
+      sccache: true,
+      cdylib: 'OpenModelicaCompiler.dll',
+    ],
+    'mac-x86_64': [
+      triple: 'x86_64-apple-darwin',
+      toolchain: "${rs}/darwin-toolchain.cmake",
+      // ColPack's SMPGC includes omp.h unconditionally and zig ships no OpenMP.
+      configure: noFortran + ['-DDARWIN_ARCH=x86_64',
+                              "-DDARWIN_SDK=${fmuMacosSdk()}",
+                              '-DOM_OMC_ENABLE_COLPACK=OFF'],
+      qt: [],
+      // `zig cc` reaches the compiler through a generated shell wrapper, which
+      // sccache does not recognise as a compiler.
+      sccache: false,
+      cdylib: 'libOpenModelicaCompiler.dylib',
+    ],
+    'mac-aarch64': [
+      triple: 'aarch64-apple-darwin',
+      toolchain: "${rs}/darwin-toolchain.cmake",
+      configure: noFortran + ['-DDARWIN_ARCH=arm64',
+                              "-DDARWIN_SDK=${fmuMacosSdk()}",
+                              '-DOM_OMC_ENABLE_COLPACK=OFF'],
+      qt: [],
+      sccache: false,
+      cdylib: 'libOpenModelicaCompiler.dylib',
+    ],
+  ]
+  Map t = all[name]
+  if (!t) {
+    error("unknown nightly cross target '${name}'")
+  }
+  t.name = name
+  return t
+}
+
+// The flags that hand stage 1's artifacts to a target stage. RUST_OMC_WORK_DIR
+// is where restoreNightlyShared() laid the generated Rust down.
+List nightlyHandoverFlags() {
+  String d = "${env.WORKSPACE}/${nightlySharedDir()}"
+  return ['-DRUST_OMC_PREBUILT_GENERATED_SRC=ON',
+          "-DRUST_OMC_WORK_DIR=${rustWorkDir()}",
+          "-DRUST_OMC_PREBUILT_WASM_DIR=${d}/wasm",
+          "-DRUST_OMC_FMU_LOADERS=${d}/fmu-loaders",
+          "-DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()}",
+          "-DRUST_OMC_MACOS_SDK=${fmuMacosSdk()}"]
+}
+
+// Stage 1: the target-independent half of an omc build.
+void buildRustNightlyShared() {
+  standardSetup()
+  String d = "${env.WORKSPACE}/${nightlySharedDir()}"
+  sh "rm -rf ${d} && mkdir -p ${d}"
+  sh """
+    cmake -S . -B build_cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOM_OMC_ENABLE_RUST=ON \
+      -DRUST_OMC_CI=ON \
+      -DOM_ENABLE_GUI_CLIENTS=OFF \
+      -DRUST_OMC_SCRIPTING_API=ON \
+      -DOM_USE_CCACHE=OFF \
+      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+      -DCMAKE_C_COMPILER=clang \
+      -DCMAKE_CXX_COMPILER=clang++ \
+      -DRUST_OMC_THREADS=4 \
+      -DRUST_OMC_WORK_DIR=${rustWorkDir()} \
+      -DRUST_OMC_FMU_NATIVE_TARGETS=${fmuNativeTargets()} \
+      -DRUST_OMC_MACOS_SDK=${fmuMacosSdk()} \
+      -DRUST_OMC_WASM_ARTIFACTS_OUT=${d}/wasm
+  """
+  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+    // rust_codegen is susan + mmtorust + the Qt scripting API sources;
+    // rust_wasm_runtime and rust_wasm_artifacts are the wasm blobs and the FMU
+    // loaders. The compiler itself is deliberately not built here: every byte of
+    // it is target-specific, so each target stage builds its own.
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target rust_codegen rust_wasm_runtime rust_wasm_artifacts"
+  }
+  // The generated .rs, staged flat so a target stage can lay them straight back
+  // into its own working copy (restoreNightlyShared).
+  sh """
+    rm -rf ${d}/rust-generated-src && mkdir -p ${d}/rust-generated-src
+    cd ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs
+    find . -path '*/src/*.rs' -print0 |
+      tar --null -T - -cf - | tar -C ${d}/rust-generated-src -xf -
+  """
+  sh """
+    cp -a build_cmake/OMCompiler/Compiler/fmu-loaders ${d}/fmu-loaders
+    cp -a build_cmake/OMCompiler/Compiler/scripting-api-qt ${d}/scripting-api-qt
+    du -sh ${d}/*
+  """
+  stash name: 'nightly-shared', includes: "${nightlySharedDir()}/**"
+}
+
+// Lay stage 1's hand-over back down: the stash into the workspace, and the
+// generated .rs into the working copy the cmake configure mirrors from. Must run
+// after standardSetup(), which cleans the workspace.
+void restoreNightlyShared() {
+  unstash 'nightly-shared'
+  sh """
+    mkdir -p ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs
+    cp -a ${nightlySharedDir()}/rust-generated-src/. ${rustWorkDir()}/rust-src/Compiler/OpenModelica.rs/
+  """
+}
+
+// The configure flags shared by a target's omc stage and its GUI stage.
+List nightlyCommonFlags(Map t) {
+  List flags = ["-DCMAKE_TOOLCHAIN_FILE=${t.toolchain}",
+                '-DCMAKE_BUILD_TYPE=Release',
+                '-DOM_OMC_ENABLE_RUST=ON',
+                '-DRUST_OMC_CI=ON',
+                "-DRUST_OMC_TARGET=${t.triple}",
+                '-DOM_USE_CCACHE=OFF',
+                "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
+  if (t.sccache) {
+    flags += ['-DCMAKE_C_COMPILER_LAUNCHER=sccache', '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache']
+  }
+  return flags + t.configure
+}
+
+// A cross build cannot run what it produced, so check the file format instead --
+// a host binary left in bin/ by a misconfigured stage would otherwise ship.
+void nightlyCheckArtifacts(Map t) {
+  String exe = t.triple.contains('windows') ? '.exe' : ''
+  sh """#!/bin/bash
+    set -eu
+    bin=${nightlyInstallDir(t.name)}/bin/omc${exe}
+    test -f "\$bin"
+    magic=\$(od -An -tx1 -N4 "\$bin" | tr -d ' \\n')
+    echo "\$bin: \$magic"
+    case ${t.triple} in
+      *windows*) test "\${magic:0:4}" = 4d5a ;;  # MZ
+      *darwin*)  test "\$magic" = cffaedfe ;;    # 64-bit Mach-O, little endian
+    esac
+  """
+}
+
+// Stage 2: omc and the simulation runtime for one target, GUI clients off.
+// RUST_OMC_SCRIPTING_API is forced on so the cdylib carries the OMEdit C ABI the
+// GUI stage links against, without that stage running cargo over the compiler.
+void buildRustNightlyOMC(String name) {
+  Map t = nightlyTarget(name)
+  standardSetup()
+  restoreNightlyShared()
+  List flags = nightlyCommonFlags(t) + nightlyHandoverFlags() +
+               ['-DOM_ENABLE_GUI_CLIENTS=OFF', '-DRUST_OMC_SCRIPTING_API=ON']
+  sh "cmake -S . -B build_cmake ${flags.join(' ')}"
+  withSccache(['CARGO_PROFILE_RELEASE_OPT_LEVEL=2']) {
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
+  }
+  nightlyCheckArtifacts(t)
+  // The cdylib (and on Windows its import library) for the GUI stage, staged in
+  // the workspace: the cargo target directory is in a build tree that stage does
+  // not have.
+  String cdylib = "build_cmake/OMCompiler/Compiler/rust-target/${t.triple}/release/${t.cdylib}"
+  sh """
+    rm -rf nightly-cdylib && mkdir -p nightly-cdylib
+    cp -a ${cdylib} nightly-cdylib/
+    cp -a ${cdylib}.lib nightly-cdylib/ 2>/dev/null || true
+  """
+  stash name: "nightly-cdylib-${name}", includes: 'nightly-cdylib/**'
+  stash name: "nightly-omc-${name}", includes: "${nightlyInstallDir(name)}/**"
+}
+
+// Stage 3: the Qt GUI clients for one target, linked against the cdylib the omc
+// stage built (RUST_OMC_PREBUILT_CDYLIB), so no cargo build of the compiler runs
+// here. They install into the omc stage's prefix, which the packaging stage
+// merges by unstashing both.
+void buildRustNightlyGUI(String name) {
+  Map t = nightlyTarget(name)
+  if (!t.qt) {
+    error("no Qt kit for ${name} on this image, so the GUI stage cannot run (see nightlyTarget in common.groovy)")
+  }
+  standardSetup()
+  restoreNightlyShared()
+  unstash "nightly-cdylib-${name}"
+  String d = "${env.WORKSPACE}/${nightlySharedDir()}"
+  // The hand-over flags again: rust_omc.cmake is included in this mode too, and
+  // would otherwise fetch the wasi-libc sources and the preview1 adapter for a
+  // stage that builds no wasm at all.
+  List flags = nightlyCommonFlags(t) + nightlyHandoverFlags() + t.qt +
+               ['-DOM_ENABLE_GUI_CLIENTS=ON',
+                "-DRUST_OMC_PREBUILT_CDYLIB=${env.WORKSPACE}/nightly-cdylib/${t.cdylib}",
+                "-DRUST_OMC_PREBUILT_SCRIPTING_API_QT_DIR=${d}/scripting-api-qt"]
+  sh "cmake -S . -B build_cmake ${flags.join(' ')}"
+  withSccache {
+    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target install"
+  }
+  stash name: "nightly-gui-${name}", includes: "${nightlyInstallDir(name)}/**"
+}
+
+// Stage 4, Windows: the install tree of every stage that contributed to it, as
+// one zip.
+void packageRustNightlyWindows(List stashes) {
+  standardSetup()
+  for (s in stashes) {
+    unstash s
+  }
+  String zip = "OpenModelica-${tagName()}-x86_64-windows.zip"
+  sh "rm -f ${zip} && (cd ${nightlyInstallDir('win64')} && zip -q -r -9 -y ${env.WORKSPACE}/${zip} .)"
+  sh "ls -l ${zip}"
+  archiveArtifacts artifacts: zip, fingerprint: true
+}
+
+// Stage 4, macOS: lipo the two per-architecture install trees into one universal
+// tree and ship that. Every Mach-O both trees have becomes a fat binary; see
+// .CI/scripts/mac-universal.sh.
+void packageRustNightlyMacUniversal(List stashes) {
+  standardSetup()
+  for (s in stashes) {
+    unstash s
+  }
+  String out = 'install/mac-universal'
+  sh ".CI/scripts/mac-universal.sh ${out} ${nightlyInstallDir('mac-x86_64')} ${nightlyInstallDir('mac-aarch64')}"
+  // Both architectures really in the shipped launcher, not just in the tree.
+  sh """#!/bin/bash
+    set -eu
+    lipo=\$(command -v llvm-lipo || command -v lipo || ls /usr/bin/llvm-lipo-* | sort -V | tail -1)
+    info=\$("\$lipo" -info ${out}/bin/omc)
+    echo "\$info"
+    case "\$info" in
+      *x86_64*arm64* | *arm64*x86_64*) ;;
+      *) echo "ERROR: bin/omc is not universal" >&2; exit 1 ;;
+    esac
+  """
+  String tgz = "OpenModelica-${tagName()}-macos-universal.tar.gz"
+  sh "rm -f ${tgz} && tar -C ${out} -czf ${tgz} ."
+  archiveArtifacts artifacts: tgz, fingerprint: true
+}
+
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
-// Builds the test libraries with that omc (cmake's libs-for-testing == omc
-// index.mos); the repo's index.json is copied into place first so omc uses it
-// instead of downloading. An empty simCodeTarget leaves the compiler default.
-// Without registerJUnit the results are archived artifacts instead.
+// The test libraries are installed with that omc. An empty simCodeTarget leaves
+// the compiler default. Without registerJUnit the results are archived artifacts
+// instead.
 void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
   standardSetup()
   unstash 'omc-cmake-rust'
@@ -716,16 +998,8 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
   // OMSimulator tests and the -lomcruntime bootstrapping tests respectively.
   unstash 'omsimulator'
   unstash 'omcruntime'
-  sh """#!/bin/bash -xe
-    test ! -z '${env.LIBRARIES}'
-    mkdir -p '${env.LIBRARIES}/om-pkg-cache'
-    rm -rf libraries/.openmodelica/cache
-    mkdir -p libraries/.openmodelica/libraries
-    ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
-    cp libraries/index.json libraries/.openmodelica/libraries/
-    ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
-    build/bin/omc-diff -v1.4
-  """
+  installTestLibraries()
+  sh 'build/bin/omc-diff -v1.4'
   boolean isWasmTarget = ['wasm-jit', 'wasm'].contains(simCodeTarget)
   String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   // Properties of the Rust omc itself, so excluded for every target.

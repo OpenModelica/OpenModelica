@@ -211,7 +211,7 @@ pub(crate) fn dlarfg(alpha: f64, x: &mut [f64]) -> (f64, f64) {
 }
 
 fn copysign(x: f64, sign: f64) -> f64 {
-    libm::copysign(x, sign)
+    x.copysign(sign)
 }
 
 /// LAPACK's `DLARF` for `side = 'L'`: `C := (I - tau*v*v') * C`, where `v` is

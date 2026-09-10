@@ -43,7 +43,6 @@
  */
 #![allow(non_snake_case)]
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::ArcStr;
@@ -55,13 +54,13 @@ use metamodelica::{list, List, OrderedFloat, Real};
 /// Upstream `HpcOmBenchmarkExtImpl__requiredTimeForOp` returns the hardcoded
 /// pair (1, 24) — the original RDTSC micro-benchmark is commented out there
 /// ("the values are bad for equation systems", see `HpcOmBenchmark.benchSystem`).
-pub fn requiredTimeForOp() -> Result<Arc<List<i32>>> {
+pub fn requiredTimeForOp() -> Result<List<i32>> {
     Ok(list![1, 24])
 }
 
 /// Cost coefficients (m, n) for communicating x doubles to another CPU:
 /// `y = m*x + n`. Upstream returns the hardcoded pair (4, 70).
-pub fn requiredTimeForComm() -> Result<Arc<List<i32>>> {
+pub fn requiredTimeForComm() -> Result<List<i32>> {
     Ok(list![4, 70])
 }
 
@@ -69,7 +68,7 @@ pub fn requiredTimeForComm() -> Result<Arc<List<i32>>> {
 /// mirroring the three `mmc_mk_cons` pushes per block in the C++ readers
 /// (the resulting head order count, time, id is what
 /// `HpcOmBenchmark.expandCalcTimes` destructures).
-fn push_block(acc: Arc<List<Real>>, id: f64, time: f64, count: f64) -> Arc<List<Real>> {
+fn push_block(acc: List<Real>, id: f64, time: f64, count: f64) -> List<Real> {
     let acc = metamodelica::cons(OrderedFloat(id), acc);
     let acc = metamodelica::cons(OrderedFloat(time), acc);
     metamodelica::cons(OrderedFloat(count), acc)
@@ -104,13 +103,13 @@ fn push_block(acc: Arc<List<Real>>, id: f64, time: f64, count: f64) -> Arc<List<
 /// malformed document expat returns the blocks parsed before the error, while
 /// roxmltree parses the whole document up front, so we return an empty list.
 /// Neither case occurs with runtime-written files.
-pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<Arc<List<Real>>> {
+pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<List<Real>> {
     let Ok(content) = std::fs::read_to_string(fileName.as_str()) else {
         // Mirrors the printf in HpcOmBenchmarkExtImpl__readCalcTimesFromXml.
         println!("File '{}' does not exist", fileName);
         return Err("File '{}' does not exist");
     };
-    let mut res: Arc<List<Real>> = metamodelica::nil();
+    let mut res: List<Real> = metamodelica::nil();
     let doc = match roxmltree::Document::parse(&content) {
         Ok(doc) => doc,
         Err(_) => return Ok(res), // C++: stop parsing, keep what was read so far
@@ -148,13 +147,13 @@ pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<Arc<List<Real>>> {
 /// an error *string* (ill-typed as `list<Real>`) — here the print is kept and
 /// the function fails directly. Malformed JSON / missing `profileBlocks` keep
 /// the upstream behaviour: a message on stderr and an empty result.
-pub fn readCalcTimesFromJson(fileName: ArcStr) -> Result<Arc<List<Real>>> {
+pub fn readCalcTimesFromJson(fileName: ArcStr) -> Result<List<Real>> {
     let Ok(content) = std::fs::read(fileName.as_str()) else {
         // Mirrors the printf in HpcOmBenchmarkExtImpl__readCalcTimesFromJson.
         println!("File '{}' does not exist", fileName);
         return Err("File '{}' does not exist");
     };
-    let mut res: Arc<List<Real>> = metamodelica::nil();
+    let mut res: List<Real> = metamodelica::nil();
     let Ok(root) = serde_json::from_slice::<serde_json::Value>(&content) else {
         eprintln!("no root object defined in json-file - maybe the json file is corrupt");
         return Ok(res);
@@ -182,7 +181,7 @@ pub fn readCalcTimesFromJson(fileName: ArcStr) -> Result<Arc<List<Real>>> {
 mod tests {
     use super::*;
 
-    fn to_vec(lst: Arc<List<Real>>) -> Vec<f64> {
+    fn to_vec(lst: List<Real>) -> Vec<f64> {
         (&*lst).into_iter().map(|r| r.0).collect()
     }
 

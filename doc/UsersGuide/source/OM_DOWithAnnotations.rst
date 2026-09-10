@@ -274,14 +274,14 @@ with `SIM`` initialisation:
 The three options operate as follows:
 
 * `SIM` (the default). With this option, OM first makes an ordinary simulation; the simulation result is
-the initial “point” for the optimization. During this simulation the input is constantly kept at its
-value “start”.
+  the initial “point” for the optimization. During this simulation the input is constantly kept at its
+  value “start”.
 * `CONST`. With this option, the initial "point" for optimization is with all the quantities being
-constant, and equal to their "start" values
+  constant, and equal to their "start" values
 * `FILE`. In this case the initial point for optimization is taken from a file, created by a previous
-simulation, usually with a non-constant input (otherwise it would be simpler to use `SIM`).
-OpenModelica maps the variables between file and optimization via their name. The syntax is as in
-the following example:
+  simulation, usually with a non-constant input (otherwise it would be simpler to use `SIM`).
+  OpenModelica maps the variables between file and optimization via their name. The syntax is as in
+  the following example:
 
    .. code-block :: modelica
 

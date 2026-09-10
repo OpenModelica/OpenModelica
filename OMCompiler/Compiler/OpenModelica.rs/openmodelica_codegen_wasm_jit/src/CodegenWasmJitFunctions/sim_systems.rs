@@ -109,6 +109,41 @@ pub(crate) enum NlsResiduals {
     InverseAlgorithm(Vec<Arc<DAE::ComponentRef>>),
 }
 
+/// A torn system's iteration variable: its `SimData` slot and the slot's type.
+/// The solver's `x` is f64 throughout; a discrete unknown is truncated on the
+/// way in and widened on the way out, as C's implicit conversions do.
+#[derive(Clone, Copy)]
+pub(crate) struct IterSlot {
+    pub(crate) off: u32,
+    pub(crate) wty: WTy,
+}
+
+/// `slot = x[j]` (wasm locals: 0 = `SimData`, `x_local` = the `x` pointer).
+fn emit_x_to_slot(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(0));
+    ctx.emit(I::LocalGet(x_local));
+    ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
+    coerce(ctx, WTy::F64, slot.wty);
+    match slot.wty {
+        WTy::F64 => ctx.emit(I::F64Store(mem_arg(slot.off, 3))),
+        _ => ctx.emit(I::I32Store(mem_arg(slot.off, 2))),
+    }
+}
+
+/// `x[j] = slot`.
+fn emit_slot_to_x(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(x_local));
+    ctx.emit(I::LocalGet(0));
+    match slot.wty {
+        WTy::F64 => ctx.emit(I::F64Load(mem_arg(slot.off, 3))),
+        _ => ctx.emit(I::I32Load(mem_arg(slot.off, 2))),
+    }
+    coerce(ctx, slot.wty, WTy::F64);
+    ctx.emit(I::F64Store(mem_arg((j as u32) * 8, 3)));
+}
+
 /// Emit the body of a nonlinear system's `residual(sim_data, x, r)` callback
 /// (wasm locals: 0 = `SimData`, 1 = `x` pointer, 2 = `r` pointer). Copies the
 /// `n` unknowns from `x` into their `slots`, runs the inner (torn) equations via
@@ -117,7 +152,7 @@ pub(crate) enum NlsResiduals {
 pub(crate) fn emit_nls_residual_body(
     ctx: &mut FnCtx,
     eq_index: i32,
-    slots: &[u32],
+    slots: &[IterSlot],
     residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
@@ -135,11 +170,8 @@ pub(crate) fn emit_nls_residual_body(
             ctx.emit(I::Call(rt_index("rt_prof_add_ncall")?));
         }
     }
-    for (j, &off) in slots.iter().enumerate() {
-        ctx.emit(I::LocalGet(0)); // SimData
-        ctx.emit(I::LocalGet(1)); // x
-        ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
-        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    for (j, &slot) in slots.iter().enumerate() {
+        emit_x_to_slot(ctx, 1, j, slot);
     }
     let residuals = match residuals {
         NlsResiduals::Explicit(r) => r,
@@ -362,13 +394,9 @@ fn emit_for_residual(
 /// Emit the body of a nonlinear system's `load(sim_data, x)` callback (wasm
 /// locals: 0 = `SimData`, 1 = `x` pointer): copy the current unknown `slots` into
 /// `x`, the warm start `rt_solve_nls` reads.
-pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[u32]) -> Result<()> {
-    use we::Instruction as I;
-    for (j, &off) in slots.iter().enumerate() {
-        ctx.emit(I::LocalGet(1)); // x
-        ctx.emit(I::LocalGet(0)); // SimData
-        ctx.emit(I::F64Load(mem_arg(off, 3)));
-        ctx.emit(I::F64Store(mem_arg((j as u32) * 8, 3)));
+pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot]) -> Result<()> {
+    for (j, &slot) in slots.iter().enumerate() {
+        emit_slot_to_x(ctx, 1, j, slot);
     }
     Ok(())
 }
@@ -383,7 +411,7 @@ pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[u32]) -> Result<()> {
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn emit_nls_jac_body(
     ctx: &mut FnCtx,
-    iter_slots: &[u32],
+    iter_slots: &[IterSlot],
     seed_offs: &[u32],
     result_offs: &[u32],
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
@@ -395,11 +423,8 @@ pub(crate) fn emit_nls_jac_body(
     // (C's `n × (n+1)` `fJac`).
     let n_cols = iter_slots.len();
     let n_rows = result_offs.len();
-    for (j, &off) in iter_slots.iter().enumerate() {
-        ctx.emit(I::LocalGet(0));
-        ctx.emit(I::LocalGet(1));
-        ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
-        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    for (j, &slot) in iter_slots.iter().enumerate() {
+        emit_x_to_slot(ctx, 1, j, slot);
     }
     lower_inner(ctx)?;
     lower_constant(ctx)?;
@@ -437,7 +462,7 @@ pub(crate) fn emit_nls_jac_body(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn emit_nls_jac_csc_body(
     ctx: &mut FnCtx,
-    iter_slots: &[u32],
+    iter_slots: &[IterSlot],
     seed_offs: &[u32],
     result_offs: &[u32],
     colptr: &[i32],
@@ -463,11 +488,8 @@ pub(crate) fn emit_nls_jac_csc_body(
         color_ptr[c + 1] = color_cols.len() as i32;
     }
 
-    for (j, &off) in iter_slots.iter().enumerate() {
-        ctx.emit(I::LocalGet(0));
-        ctx.emit(I::LocalGet(1));
-        ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
-        ctx.emit(I::F64Store(mem_arg(off, 3)));
+    for (j, &slot) in iter_slots.iter().enumerate() {
+        emit_x_to_slot(ctx, 1, j, slot);
     }
     lower_inner(ctx)?;
     lower_constant(ctx)?;
@@ -731,13 +753,16 @@ pub(crate) fn compile_linear_system(
     if residual_rows(residuals) != Some(n) {
         return Err("CodegenWasmJit: linear system unknown/residual count mismatch");
     }
-    // Resolve each unknown to its (real) SimData slot offset.
+    // The probe loop indexes the unknowns at run time, so they must all be f64.
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
         let sim = ctx.sim()?;
-        let off = crate::CodegenWasmJit::iteration_var_slot(&sim.vars, &sim.start_slots, cr)?
+        let slot = crate::CodegenWasmJit::iteration_var_slot(&sim.vars, &sim.start_slots, cr)?
             .ok_or("CodegenWasmJit: linear-system unknown has no slot")?;
-        slots.push(off);
+        if slot.wty != WTy::F64 {
+            return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
+        }
+        slots.push(slot.off);
     }
     let data = ctx.sim()?.data_local;
 

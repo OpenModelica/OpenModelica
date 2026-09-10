@@ -147,4 +147,4 @@ fn no_root_finding() -> bool {
     crate::simflags::with_flags(|f| f.no_root_finding)
 }
 
-use libm::fabs as abs;
+use crate::fmath::fabs as abs;

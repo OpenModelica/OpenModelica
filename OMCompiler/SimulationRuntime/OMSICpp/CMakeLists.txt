@@ -33,7 +33,7 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-cmake_minimum_required(VERSION 3.5...4.3)
+cmake_minimum_required(VERSION 3.10...4.3)
 
 # OMSICPP_SOURCE_DIR is used by sub-CMakeLists.txt to reference paths relative
 # to the OMSICpp directory. In standalone mode it equals CMAKE_SOURCE_DIR; in
@@ -73,7 +73,6 @@ option(USE_CPP_03 "USE_CPP_03" OFF)
 option(USE_FMILIB "use fmi library" ON)
 option(REDUCE_DAE "Use reduce dae method" OFF)
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -204,7 +203,6 @@ set(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 set(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 set(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -376,10 +374,6 @@ if(WIN32)
     string(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
   endif(MSVC)
 
-  #set mico paths
-  set(MICO_LIB_HOME ${OMDEV_ESCAPED}/lib/mico-msys-mingw/)
-  set(MICO_INCLUDE_HOME  ${OMDEV_ESCAPED}/include/mico-msys-mingw/)
-
   set(INSTALL_OMDEV_LIBS OFF)
 endif(WIN32)
 
@@ -549,10 +543,12 @@ endif()
 
 message(STATUS "LAPACK Libraries: ${LAPACK_LIBRARIES}")
 
-
 if(REDUCE_DAE)
   add_definitions("-DUSE_REDUCE_DAE")
-  set(OMCCAPI_INLCUDE_HOME  omcWrapper/omcCAPI/include/)
+  # libOMCDLL / omcCAPI now lives in OMCompiler/Compiler/omcCAPI. This legacy
+  # standalone-build branch (REDUCE_DAE is OFF by default and forced OFF in the
+  # integrated build) still expects a preinstalled OMCDLL under Build_CAPI/.
+  set(OMCCAPI_INLCUDE_HOME  ${CMAKE_CURRENT_SOURCE_DIR}/../../Compiler/omcCAPI/include/)
   set(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/tmp/lib)
   find_library(OMCCAPI_LIB "OMCDLL" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMCCAPI_LIBRARY_RELEASE_HOME} )
   if(NOT OMCCAPI_LIB)
@@ -796,15 +792,6 @@ else(SUITESPARSE_UMFPACK_FOUND)
 endif(SUITESPARSE_UMFPACK_FOUND)
 
 
-#Handle Mico corba
-if(USE_MICO)
-  find_library(MICO_LIBRARY  mico2313
-    PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  find_path(MICO_INCLUDE_DIR CORBA.h
-     ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-  message(STATUS ${MICO_LIBRARY})
-  message(STATUS ${MICO_INCLUDE_DIR})
-endif(USE_MICO)
 #Handle ZeroMQ
 
 
@@ -1018,10 +1005,6 @@ add_subdirectory(omsi)
 
 #install 3rdparty libraries
 if(INSTALL_OMDEV_LIBS)
-  if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-  endif()
-
   install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
   install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
 endif()

@@ -12,6 +12,7 @@
 //! selection — where C routes it through the T-transformation code it shares
 //! with the single-rate solve ([`super::nls`] has that for the outer systems).
 
+use crate::fmath;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -914,7 +915,7 @@ impl Gbode {
         let length = self.n_states;
         let last = length - 1;
         let mut target =
-            last as isize - libm::round(length as f64 * self.percentage) as isize;
+            last as isize - fmath::round(length as f64 * self.percentage) as isize;
         if target < 0 {
             target = 0;
         }

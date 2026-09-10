@@ -475,6 +475,8 @@ public
       list<Integer> var_lst, eqn_lst;
       list<list<Integer>> eqn_rows, var_rows, rest_var_rows "the rows merged into one super node, in merge order";
       UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
+      array<Integer> stamp, counts, uniq, sorted "mergeRows scratch";
+      Integer mx;
     algorithm
       phase2_adj := match phase2_adj
         case Adjacency.FINAL() algorithm
@@ -518,17 +520,22 @@ public
           // ### 4. adjust transposed matrix ###
           // 4.1. enlarge transposed matrix by the maximum possible amount of new nodes
           index := Adjacency.IntMatrix.rows(phase2_adj.mT) + 1;
+          stamp := arrayCreate(intMax(Adjacency.IntMatrix.rows(phase2_adj.m), Adjacency.IntMatrix.rows(phase2_adj.mT)) + shift, 0);
           phase2_adj.mT := Adjacency.IntMatrix.expandRows(phase2_adj.mT, shift);
           eqn_rows := listAppend(algebraic_loops, list(Value.getEquations(Util.tuple22(bucket)) for bucket in buckets));
           var_rows := list(list(phase2_matching.eqn_to_var[idx] for idx in row) for row in eqn_rows);
           Adjacency.IntMatrix.reserveData(phase2_adj.mT, mergedSize(phase2_adj.mT, var_rows));
+          mx := maxMergedRow(phase2_adj.mT, var_rows);
+          counts := arrayCreate(Util.nextPrime(mx), 0);
+          uniq := arrayCreate(mx, 0);
+          sorted := arrayCreate(mx, 0);
 
           // 4.2. merge all algebraic loop variables of one scc to one single variable
           rest_var_rows := var_rows;
           for scc in algebraic_loops loop
             var_lst :: rest_var_rows := rest_var_rows;
             mergeLoopNodes(super_nodes, var_lst, index, false);
-            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index, stamp, counts, uniq, sorted);
           end for;
 
           // 4.3. merge all array variables of one bucket to one single variable
@@ -539,7 +546,7 @@ public
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
             end match;
-            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index);
+            index := mergeRows(phase2_adj.mT, phase2_matching.var_to_eqn, super_nodes, var_lst, index, stamp, counts, uniq, sorted);
           end for;
 
           /// ### 5. adjust normal matrix ###
@@ -547,10 +554,14 @@ public
           index := Adjacency.IntMatrix.rows(phase2_adj.m) + 1;
           phase2_adj.m := Adjacency.IntMatrix.transpose(phase2_adj.mT, Adjacency.IntMatrix.rows(phase2_adj.m) + shift,
                                                         mergedSize(phase2_adj.m, eqn_rows));
+          mx := maxMergedRow(phase2_adj.m, eqn_rows);
+          counts := arrayCreate(Util.nextPrime(mx), 0);
+          uniq := arrayCreate(mx, 0);
+          sorted := arrayCreate(mx, 0);
           // 5.2 merge all algebraic loop equations of one scc to one single equation
           for scc in algebraic_loops loop
             mergeLoopNodes(super_nodes, scc, index, true);
-            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, scc, index);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, scc, index, stamp, counts, uniq, sorted);
           end for;
 
           // 5.3. merge all for-loop equations of one bucket to one single equation
@@ -561,7 +572,7 @@ public
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), true); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
             end match;
-            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, eqn_lst, index);
+            index := mergeRows(phase2_adj.m, phase2_matching.eqn_to_var, super_nodes, eqn_lst, index, stamp, counts, uniq, sorted);
           end for;
 
           // phase 3 tarjan only reads phase2_adj.m, so mT is left as it is
@@ -675,30 +686,78 @@ public
       end for;
     end mergedSize;
 
+    function maxMergedRow
+      "the largest row that merging any of rows can produce"
+      input Adjacency.IntMatrix m;
+      input list<list<Integer>> rows;
+      output Integer mx = 0;
+    protected
+      Integer total;
+    algorithm
+      for row in rows loop
+        total := 0;
+        for idx in row loop
+          total := total + m.len[idx];
+        end for;
+        mx := intMax(mx, total);
+      end for;
+    end maxMergedRow;
+
     function mergeRows
+      "merges rows_to_merge into row new_idx. The entries come out in the order
+      UnorderedSet.toList gave for a set with nextPrime(total) buckets, which
+      the reconstructed for-loops depend on: descending bucket, insertion order
+      inside a bucket."
       input Adjacency.IntMatrix m;
       input array<Integer> matching;
       input array<SuperNode> super_nodes;
       input list<Integer> rows_to_merge;
       input output Integer new_idx;
+      input array<Integer> stamp   "indexed by entry, all zero on entry and exit";
+      input array<Integer> counts  "one slot per bucket";
+      input array<Integer> uniq    "scratch of the merged size";
+      input array<Integer> sorted  "scratch of the merged size";
     protected
       array<Integer> data = Adjacency.IntMatrix.entries(m);
-      Integer total = 0, first;
-      UnorderedSet<Integer> set;
+      Integer total = 0, first, n = 0, p, h, v, acc, c;
     algorithm
-      // merge all rows to one row. Same set, and so the same row, as
-      // unique_list(List.flatten(...)) built, without copying the rows first.
       for idx in rows_to_merge loop
         total := total + m.len[idx];
       end for;
-      set := UnorderedSet.new<Integer>(Util.id, intEq, Util.nextPrime(total));
+      p := Util.nextPrime(total);
       for idx in rows_to_merge loop
         first := m.start[idx];
         for k in first:first + m.len[idx] - 1 loop
-          UnorderedSet.add(data[k], set);
+          v := data[k];
+          if stamp[v] == 0 then
+            arrayUpdate(stamp, v, 1);
+            n := n + 1;
+            arrayUpdate(uniq, n, v);
+          end if;
         end for;
       end for;
-      Adjacency.IntMatrix.setRow(m, new_idx, UnorderedSet.toList(set));
+      // counting sort by bucket, descending
+      for i in 1:p loop
+        arrayUpdate(counts, i, 0);
+      end for;
+      for i in 1:n loop
+        h := intMod(uniq[i], p) + 1;
+        arrayUpdate(counts, h, counts[h] + 1);
+      end for;
+      acc := 0;
+      for i in p:-1:1 loop
+        c := counts[i];
+        arrayUpdate(counts, i, acc);
+        acc := acc + c;
+      end for;
+      for i in 1:n loop
+        v := uniq[i];
+        h := intMod(v, p) + 1;
+        arrayUpdate(sorted, counts[h] + 1, v);
+        arrayUpdate(counts, h, counts[h] + 1);
+        arrayUpdate(stamp, v, 0);
+      end for;
+      Adjacency.IntMatrix.setRowFromArray(m, new_idx, sorted, n);
       // remove the original rows
       for idx in rows_to_merge loop
         Adjacency.IntMatrix.clearRow(m, idx);

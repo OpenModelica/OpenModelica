@@ -144,7 +144,6 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     let args = argv_strings(argc, argv);
     crate::support::install_message_hooks();
     driver::set_log_sink(log_sink);
-    driver::set_no_throw_hook(crate::engine::set_no_throw);
     driver::set_result_file_reader(crate::iif::read_result_values);
     driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);
@@ -208,7 +207,6 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     // clocks past `nProfileBlocks`, which only the `_info.json` knows.
     crate::info_json::init_profiling(md);
     let rt = crate::data::initialize(data, thread_data);
-    simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
     si.minStepSize = 4.0 * f64::EPSILON * si.startTime.abs().max(si.stopTime.abs());
     RUN.set(Box::new(Run { rt, xml, prefix }));
     0
@@ -281,10 +279,15 @@ fn start_non_interactive_simulation(
         return -1;
     }
 
+    let path = result_path(&meta, data);
+    let precision =
+        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    openmodelica_sim_meta::result::file::arm(meta.output_keep(None), precision, path.clone());
     let method = meta.method.clone();
     let (result, _label) = match driver::drive(&mut engine, &meta, 0, &method, false, false) {
         Ok(v) => v,
         Err(e) => {
+            openmodelica_sim_meta::result::file::finish();
             free_systems();
             // The driver already reported these; a second line here is one C never
             // prints.
@@ -338,12 +341,11 @@ fn start_non_interactive_simulation(
             }
         }
     }
-    if let Err(e) = write_result(&meta, &result, data) {
-        omclog::error(omclog::STDOUT, false, &e);
+    if !openmodelica_sim_meta::result::file::finish() {
+        omclog::error!(omclog::STDOUT, false, "cannot write {path}");
         return -1;
     }
     // C's `printModelInfo`, after the result file is closed: its size is reported.
-    let path = result_path(&meta, data);
     let size = std::fs::metadata(&path).map(|m| m.len() as i64).unwrap_or(-1);
     openmodelica_sim_meta::profiling::finish(&meta, &path, size);
     unsafe { (*(*data).simulationInfo).simulationSuccess = 0 };
@@ -380,27 +382,6 @@ pub extern "C" fn _main_OptimizationRuntime(
         "the Rust simulation runtime does not serve -moo yet; build with --simCodeTarget=C",
     );
     1
-}
-
-/// C's `sim_result.writeParameterData` + `emit`, deferred to the end: the driver
-/// hands back every row at once. `-r` names the file, else `modelData`'s
-/// `resultFileName`, else `<prefix>_res.<format>`.
-fn write_result(meta: &SimMeta, result: &driver::RunResult, data: *mut DATA) -> Result<(), String> {
-    let precision =
-        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-    let Some(bytes) = openmodelica_sim_meta::result::write(
-        meta,
-        &meta.output_format,
-        &result.rows,
-        result.n_reals,
-        &result.params,
-        &meta.output_keep(None),
-        precision,
-    ) else {
-        return Ok(());
-    };
-    let path = result_path(meta, data);
-    std::fs::write(&path, bytes).map_err(|e| format!("cannot write {path}: {e}"))
 }
 
 /// `-r` names the result file, else `modelData`'s `resultFileName`, else

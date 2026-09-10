@@ -2,6 +2,7 @@
 //! `kinsolSolver.c` still keeps next to KINSOL: what `-lv=LOG_NLS_DERIVATIVE_TEST`
 //! and `-lv=LOG_NLS_SVD` report about a nonlinear system's Jacobian.
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
@@ -53,7 +54,7 @@ fn dense_fd_jacobian(n: usize, x: &mut [f64], fx: &[f64], out: &mut [f64], eval:
     let mut fres = vec![0.0f64; n];
     for i in 0..n {
         let saved = x[i];
-        let dh = DELTA_H * (libm::fabs(saved) + 1.0);
+        let dh = DELTA_H * (fmath::fabs(saved) + 1.0);
         x[i] = saved + dh;
         eval(x, &mut fres);
         x[i] = saved;
@@ -147,11 +148,11 @@ pub fn derivative_test(
             if in_pattern {
                 let sym_value = sym[nz];
                 nz += 1;
-                let abs_error = libm::fabs(sym_value - num_value);
+                let abs_error = fmath::fabs(sym_value - num_value);
                 let rel_error = if abs_error < atol {
                     0.0
                 } else {
-                    abs_error / libm::fmax(libm::fabs(num_value), libm::fabs(sym_value))
+                    abs_error / fmath::fmax(fmath::fabs(num_value), fmath::fabs(sym_value))
                 };
                 if rel_error > max_error {
                     max_error = rel_error;
@@ -171,7 +172,7 @@ pub fn derivative_test(
                     );
                     numerical += 1;
                 }
-            } else if libm::fabs(num_value) > atol {
+            } else if fmath::fabs(num_value) > atol {
                 open_column(&mut found);
                 omclog::info!(
                     stream,
@@ -289,7 +290,7 @@ fn scaled_by(sign: f64, v: &[f64]) -> vec::Vec<f64> {
 fn by_magnitude(v: &[f64]) -> vec::Vec<(usize, f64)> {
     let mut e: vec::Vec<(usize, f64)> = v.iter().copied().enumerate().collect();
     e.sort_by(|a, b| {
-        libm::fabs(b.1).partial_cmp(&libm::fabs(a.1)).unwrap_or(core::cmp::Ordering::Equal)
+        fmath::fabs(b.1).partial_cmp(&fmath::fabs(a.1)).unwrap_or(core::cmp::Ordering::Equal)
     });
     e
 }
@@ -300,7 +301,7 @@ fn vector_sign(v: &[f64]) -> f64 {
     // C keeps the *first* of equal magnitudes (`>`), which `max_by` would not.
     let mut lead = 0usize;
     for i in 1..v.len() {
-        if libm::fabs(v[i]) > libm::fabs(v[lead]) {
+        if fmath::fabs(v[i]) > fmath::fabs(v[lead]) {
             lead = i;
         }
     }

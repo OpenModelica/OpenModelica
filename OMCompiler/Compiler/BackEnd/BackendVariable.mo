@@ -3288,6 +3288,10 @@ algorithm
     return;
   end if;
 
+  if isScalarQuery(cr) then
+    fail();
+  end if;
+
   try
     crlst := ComponentReference.expandCref(cr, true);
     (outVarLst as _::_, outIntegerLst) := getVarLst(crlst, inVariables);
@@ -3327,6 +3331,26 @@ algorithm
     else false;
   end match;
 end isExpandableType;
+
+protected function isScalarQuery
+  "Whether expandCref would return cr itself: every identifier fully indexed
+   with constant subscripts and the last one not a record. The hash miss
+   before this check is then final."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_IDENT()
+      then List.all(cr.subscriptLst, isIntSubscript)
+        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+        and not Types.isRecord(Types.arrayElementType(cr.identType));
+    case DAE.CREF_QUAL()
+      then List.all(cr.subscriptLst, isIntSubscript)
+        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+        and isScalarQuery(cr.componentRef);
+    else false;
+  end match;
+end isScalarQuery;
 
 protected function isElementOf
   "Whether var, which the query (depth qualifiers, last one of element type ty

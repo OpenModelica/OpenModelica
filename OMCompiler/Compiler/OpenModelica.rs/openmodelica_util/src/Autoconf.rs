@@ -44,7 +44,6 @@
  */
 #![allow(non_upper_case_globals, non_snake_case, dead_code)]
 
-use std::sync::Arc;
 
 use arcstr::{literal, ArcStr};
 use metamodelica::list;
@@ -226,13 +225,11 @@ pub const hdf5Libs: &str = match option_env!("OMC_HDF5_LDFLAGS") {
 /// with the OpenModelica build on every supported platform.
 pub const parModelicaAutoLibs: &str = " -lParModelicaAuto -ltbb ";
 
-pub const corbaLibs: &str = "";
-
 /// `@WITH_HWLOC@` defaults to 0 on every platform unless explicitly
 /// requested at configure time; mirror the default.
 pub const hwloc: &str = "";
 
-pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
+pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
     std::sync::LazyLock::new(|| {
         if isWindows {
             // Autoconf.mo.omdev.mingw: constant list<String> systemLibs = {};
@@ -242,7 +239,6 @@ pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
                 literal!("-lomcruntime"),
                 literal!("-lexpat"),
                 literal!("-lsqlite3"),
-                arcstr::literal!(corbaLibs),
                 literal!("-lomcgc"),
                 arcstr::literal!(hwloc)
             ]
@@ -277,9 +273,10 @@ const os_triple_suffix: &str = if cfg!(target_os = "macos") {
 
 /// `@host_short@` = `$host_cpu-$host_os`: the multiarch-style directory
 /// component under `lib/` where the omc runtime libraries are installed
-/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). The OMDev Windows file uses the
-/// empty string (no per-triple subdirectory on Windows installs).
-pub const triple: &str = if cfg!(windows) {
+/// (e.g. `/usr/lib/x86_64-linux-gnu/omc`). It mirrors CMake's
+/// `CMAKE_LIBRARY_ARCHITECTURE`, which is a GNU multiarch notion and empty on
+/// Windows and on macOS -- both install straight into `lib/omc`.
+pub const triple: &str = if cfg!(any(windows, target_vendor = "apple")) {
     ""
 } else {
     const_str::concat!(target_arch_str, os_triple_suffix)

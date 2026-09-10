@@ -1,4 +1,3 @@
-//! Short names for the libm calls gbode needs; the crate is `no_std` in the
-//! in-wasm build, where the inherent float methods are not all available.
+//! Short names for the libm calls gbode makes, from [`crate::fmath`].
 
-pub use libm::{fabs as abs, log as ln, pow, sqrt};
+pub use crate::fmath::{fabs as abs, log as ln, pow, sqrt};

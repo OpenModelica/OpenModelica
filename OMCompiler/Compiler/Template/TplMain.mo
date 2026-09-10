@@ -58,7 +58,7 @@ public import TplAbsyn;
 public import TplCodegen;
 
 protected
-constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
+constant Tpl.Text emptyTxt = Tpl.emptyTxt;
 constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
 
 public function main
@@ -261,7 +261,7 @@ public function tplMainTest
   input String inFile;
 algorithm
 
-  () := matchcontinue inFile
+  () := match inFile
     local
       //Tpl.Tokens toks, txttoks;
       String  str, strOut, ident, cval;
@@ -1427,7 +1427,7 @@ is\\n verbatim!
       then
         ();
 
-  end matchcontinue;
+  end match;
 end tplMainTest;
 
 

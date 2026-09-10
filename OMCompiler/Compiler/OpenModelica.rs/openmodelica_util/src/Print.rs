@@ -15,7 +15,6 @@
 #![allow(non_snake_case)]
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write as _;
 
@@ -26,8 +25,9 @@ use arcstr::ArcStr;
 struct PrintState {
     buf: String,
     err_buf: String,
-    saved: HashMap<i32, String>,
-    next_handle: i32,
+    /// Saved buffers by handle, the handle being the lowest free slot as in
+    /// `printimpl.c`.
+    saved: Vec<Option<String>>,
 }
 
 thread_local! {
@@ -67,6 +67,11 @@ pub fn printBuf(inString: ArcStr) -> Result<()> {
     Ok(())
 }
 
+/// Runs `f` on the print buffer itself; `f` must not call back into `Print`.
+pub fn with_buf<R>(f: impl FnOnce(&mut String) -> R) -> R {
+    with(|s| f(&mut s.buf))
+}
+
 pub fn printBufNewLine() -> Result<()> {
     with(|s| s.buf.push('\n'));
     Ok(())
@@ -93,7 +98,7 @@ pub fn printErrorBuf(inString: ArcStr) -> Result<()> {
 /// entry so handles are single-use.
 pub fn restoreBuf(handle: i32) -> Result<()> {
     with(|s| {
-        if let Some(prev) = s.saved.remove(&handle) {
+        if let Some(prev) = s.saved.get_mut(handle as usize).and_then(Option::take) {
             s.buf = prev;
         }
     });
@@ -106,14 +111,17 @@ pub fn restoreBuf(handle: i32) -> Result<()> {
 /// the saved text back.
 pub fn saveAndClearBuf() -> Result<i32> {
     Ok(with(|s| {
-        s.next_handle = s.next_handle.wrapping_add(1);
-        if s.next_handle == 0 {
-            s.next_handle = 1;
-        }
-        let h = s.next_handle;
         let prev = std::mem::take(&mut s.buf);
-        s.saved.insert(h, prev);
-        h
+        match s.saved.iter().position(Option::is_none) {
+            Some(h) => {
+                s.saved[h] = Some(prev);
+                h as i32
+            }
+            None => {
+                s.saved.push(Some(prev));
+                (s.saved.len() - 1) as i32
+            }
+        }
     }))
 }
 
