@@ -30,6 +30,51 @@ runScript(modelTesting); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:897:9-897:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:934:9-934:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pt was not assigned a value
+// [Modelica 3.2.1+maint.om/Media/Water/IF97_Utilities.mo:6291:5-6291:58:writable] Warning: Output parameter aux.pd was not assigned a value
+//
 // "true
 // "
 // ""
