@@ -100,11 +100,23 @@ elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND CMAKE_CROSSCOMPILING)
 
   omc_install_gui_client(OMEdit)
 
+  # QtWebEngineProcess.exe is launched at runtime, so it is not in OMEdit.exe's
+  # import table and needs its own DLLs resolved.
+  set(_om_deploy_roots "\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMEdit.exe")
+  foreach(_dir IN LISTS _om_qt_dep_dirs)
+    if(EXISTS "${_dir}/QtWebEngineProcess.exe")
+      install(PROGRAMS "${_dir}/QtWebEngineProcess.exe"
+              DESTINATION "${CMAKE_INSTALL_BINDIR}")
+      list(APPEND _om_deploy_roots "${_dir}/QtWebEngineProcess.exe")
+      break()
+    endif()
+  endforeach()
+
   # install(TARGETS RUNTIME_DEPENDENCIES) is rejected when cross-compiling, and
   # file(GET_RUNTIME_DEPENDENCIES) does not resolve PE deps on a Linux host, so
   # walk the import closure ourselves with llvm-objdump.
   install(CODE "
-    set(OMDEPLOY_EXE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMEdit.exe\")
+    set(OMDEPLOY_EXE \"${_om_deploy_roots}\")
     set(OMDEPLOY_DEST \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
     set(OMDEPLOY_OBJDUMP \"${CMAKE_OBJDUMP}\")
     set(OMDEPLOY_DIRS \"${_om_qt_dep_dirs}\")
@@ -123,12 +135,23 @@ elseif(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MSVC AND CMAKE_CROSSCOMPILING)
     endif()
   endforeach()
 
-  # QML modules (loaded at runtime by the Quick3D animation backend; the whole
-  # qml/ tree is small). WebEngine is stubbed on MSVC (OM_OMEDIT_NO_WEBENGINE),
-  # so its QML and Chromium runtime assets (QtWebEngineProcess.exe, resources,
-  # locales) are intentionally not bundled.
+  # QML modules, loaded at runtime by Quick3D and WebEngine; the tree is small.
   if(EXISTS "${_qt_root}/qml")
     install(DIRECTORY "${_qt_root}/qml/" DESTINATION "${CMAKE_INSTALL_BINDIR}/qml")
+  endif()
+
+  # Chromium's runtime assets, under bin/ where OMEditApplication points
+  # QTWEBENGINE_RESOURCES_PATH and QTWEBENGINE_LOCALES_PATH.
+  if(DEFINED _qtx_root)
+    if(EXISTS "${_qtx_root}/resources")
+      install(DIRECTORY "${_qtx_root}/resources/"
+              DESTINATION "${CMAKE_INSTALL_BINDIR}/resources"
+              REGEX "\\.debug\\." EXCLUDE)
+    endif()
+    if(EXISTS "${_qtx_root}/translations/qtwebengine_locales")
+      install(DIRECTORY "${_qtx_root}/translations/qtwebengine_locales"
+              DESTINATION "${CMAKE_INSTALL_BINDIR}/translations")
+    endif()
   endif()
 
   install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/qt.conf\" \"[Paths]\\nPrefix = .\\nPlugins = .\\nQml = qml\\n\")")
