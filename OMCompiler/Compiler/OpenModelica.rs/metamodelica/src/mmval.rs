@@ -39,6 +39,9 @@ pub trait Traced: 'static {
     type Or<B: Traced>: Traced;
     /// The allocation a container spine uses for this kind of payload.
     type Ptr<U: MmVal>: SpinePtr<U>;
+    /// As [`Self::Ptr`], for a container that is single-threaded by
+    /// construction and so pays no atomic refcount when untraced.
+    type RcPtr<U: MmVal>: SpinePtr<U>;
 }
 
 pub struct No;
@@ -47,11 +50,13 @@ pub struct Yes;
 impl Traced for No {
     type Or<B: Traced> = B;
     type Ptr<U: MmVal> = Arc<U>;
+    type RcPtr<U: MmVal> = Rc<U>;
 }
 
 impl Traced for Yes {
     type Or<B: Traced> = Yes;
     type Ptr<U: MmVal> = GcRef<U>;
+    type RcPtr<U: MmVal> = GcRef<U>;
 }
 
 /// Shorthand for the disjunction of two flags.
@@ -127,6 +132,33 @@ impl<U: MmVal> SpinePtr<U> for GcRef<U> {
     }
 }
 
+impl<U: ?Sized> SpinePtr<U> for Rc<U> {
+    fn alloc(value: U) -> Self
+    where
+        U: Sized,
+    {
+        Rc::new(value)
+    }
+    fn spine_accept<V: Visitor>(&self, _visitor: &mut V) -> Result<(), ()> {
+        Ok(())
+    }
+    fn same(a: &Self, b: &Self) -> bool {
+        Rc::ptr_eq(a, b)
+    }
+    fn addr(this: &Self) -> *const () {
+        Rc::as_ptr(this) as *const ()
+    }
+    fn get_mut(this: &mut Self) -> Option<&mut U>
+    where
+        U: Sized,
+    {
+        Rc::get_mut(this)
+    }
+    fn is_unique(this: &Self) -> bool {
+        Rc::strong_count(this) == 1 && Rc::weak_count(this) == 0
+    }
+}
+
 impl<U: ?Sized> SpinePtr<U> for Arc<U> {
     fn alloc(value: U) -> Self
     where
@@ -167,6 +199,9 @@ pub trait MmVal: 'static {
 
 /// The spine allocation a container of `T` uses.
 pub type Spine<T, N> = <<T as MmVal>::Traced as Traced>::Ptr<N>;
+
+/// [`Spine`] for a single-threaded container; see [`Traced::RcPtr`].
+pub type RcSpine<T, N> = <<T as MmVal>::Traced as Traced>::RcPtr<N>;
 
 // ── barriers ─────────────────────────────────────────────────────────────────
 
