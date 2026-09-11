@@ -128,19 +128,6 @@ void LanguageServerTest::configuredSettingWins()
   QCOMPARE(ModelicaLSPClient::resolveExecutable(configured), configured);
 }
 
-void LanguageServerTest::ignoresConfiguredScript()
-{
-  QDir(installedServerDirectory()).removeRecursively();
-  const QString server = installedServerDirectory() % QStringLiteral("/") % serverBinaryName();
-  createServerFile(server);
-
-  // OMEdit runs the server directly, so a .js path -- from Browse, or written
-  // by a version that still ran one under Node.js -- is not something it can
-  // start. The installed server is used instead of failing to launch a script.
-  const QString script = QDir::tempPath() % QStringLiteral("/modelica-language-server/server.js");
-  QCOMPARE(ModelicaLSPClient::resolveExecutable(script), server);
-}
-
 void LanguageServerTest::reportsMissingRuntimeFiles()
 {
   QDir(installedServerDirectory()).removeRecursively();

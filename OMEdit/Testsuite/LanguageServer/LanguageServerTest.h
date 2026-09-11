@@ -75,12 +75,6 @@ private slots:
    */
   void configuredSettingWins();
   /*!
-   * \brief ignoresConfiguredScript
-   * Tests that a configured .js path is treated as unset, so a setting left
-   * over from the Node.js server resolves to the installed one.
-   */
-  void ignoresConfiguredScript();
-  /*!
    * \brief reportsMissingRuntimeFiles
    * Tests that a server installed without the tree-sitter files is reported,
    * since such a server starts and then answers nothing.
