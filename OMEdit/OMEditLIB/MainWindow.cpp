@@ -797,6 +797,10 @@ void MainWindow::addRecentModel(const QString &nameStructure)
       path = pTopLevelLibraryTreeItem->getFileName();
     }
   }
+  // Skip models that do not have any file attached to them yet, e.g. newly created and not yet saved models.
+  if (path.isEmpty()) {
+    return;
+  }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
   // remove the already present RecentFile instance from the list.
