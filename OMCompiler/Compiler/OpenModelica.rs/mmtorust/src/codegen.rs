@@ -3695,7 +3695,7 @@ fn emit_struct<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cl
                 // `MMTrace + 'static` on the content type.
                 let bounded: Vec<String> = type_vars
                     .iter()
-                    .map(|v| format!("{v}: Clone + 'static + metamodelica::gc::MMTrace"))
+                    .map(|v| format!("{v}: Clone + 'static + metamodelica::gc::MMTrace + metamodelica::mmval::MmVal"))
                     .collect();
                 format!("<{}>", bounded.join(", "))
             };
@@ -6838,7 +6838,7 @@ fn function_source_replacement(qname: &str) -> Option<&'static str> {
     }
 }
 
-const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace>(inList: metamodelica::List<T>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<metamodelica::List<T>> {
+const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc::MMTrace + metamodelica::mmval::MmVal>(inList: metamodelica::List<T>, inCompFunc: Arc<dyn ::std::ops::Fn(T, T) -> Result<bool> + 'static>) -> Result<metamodelica::List<T>> {
     fn sort_slice<T: Clone>(v: &[T], comp: &dyn Fn(T, T) -> Result<bool>) -> Result<Vec<T>> {
         let n = v.len();
         if n < 2 {
@@ -7913,7 +7913,14 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         // runtime containers, scalar/borrow/function-value leaves), so the
         // bound never locks an instantiation out.
         let bounded: Vec<String> = all_type_vars.iter().map(|v| {
-            let mut bounds = vec!["Clone", "'static", "metamodelica::gc::MMTrace"];
+            let mut bounds = vec![
+                "Clone",
+                "'static",
+                "metamodelica::gc::MMTrace",
+                // A type parameter may flow into a container whose spine
+                // allocation follows its payload, so it has to carry the flag.
+                "metamodelica::mmval::MmVal",
+            ];
             if eq_vars.contains(v) { bounds.push("PartialEq"); }
             if default_vars.contains(v) { bounds.push("Default"); }
             if refeq_vars.contains(v) { bounds.push("metamodelica::ReferenceEq"); }
