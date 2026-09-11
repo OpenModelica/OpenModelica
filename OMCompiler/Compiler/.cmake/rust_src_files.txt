@@ -56,6 +56,7 @@ mmtorust/Cargo.toml
 mmtorust/src/MM.rs
 mmtorust/src/codegen.rs
 mmtorust/src/const_patterns.rs
+mmtorust/src/cyclic_fix.rs
 mmtorust/src/dep_analysis.rs
 mmtorust/src/external_c_calls.rs
 mmtorust/src/fallibility.rs
