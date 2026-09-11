@@ -11,19 +11,22 @@
 //!   Boolean -> bool
 //!   String -> String
 //!   list<T> -> List<T>                (persistent singly-linked list; Option<Arc<ListNode<T>>>)
-//!   array<T> -> Array<T> = Rc<RefCell<Vec<T>>>
+//!   array<T> -> Array<T>              (shared RefCell<Vec<T>>; see `array_ty`)
 //!
 //! Note: MetaModelica uses 1-based indexing; Rust uses 0-based.
 //! Functions that take indices expect 1-based indexing to match MetaModelica semantics.
 //!
 //! Array semantics: MetaModelica `array<T>` has reference (aliasing) semantics —
 //! `arrayUpdate` mutates the underlying storage in place and the change is visible
-//! through every alias of the array. We model that with `Rc<RefCell<Vec<T>>>`.
+//! through every alias of the array, so the storage is shared and interior-mutable.
 //! The compiler the bootstrap targets is single-threaded at the MM level, so
-//! `Rc`/`RefCell` (no synchronization cost, deterministic borrow-violation panics)
-//! is preferred over `Arc<Mutex<...>>` (lock+unlock per access, deadlock risk on
-//! re-entrant callbacks). If MM-level concurrency is ever introduced, this alias
-//! is the only thing that needs to change.
+//! `RefCell` (no synchronization cost, deterministic borrow-violation panics)
+//! is preferred over `Mutex` (lock+unlock per access, deadlock risk on re-entrant
+//! callbacks), and the untraced spine is `Rc` rather than `Arc`.
+//!
+//! `list<T>` is persistent, so its spine is shared but never written; `array<T>`
+//! is the mutable one. Both pick their spine from the element type — see
+//! [`mmval`].
 
 // The derives expand to `metamodelica::…` paths, also inside this crate.
 extern crate self as metamodelica;
@@ -31,8 +34,6 @@ extern crate self as metamodelica;
 pub use ordered_float::OrderedFloat;
 pub use num_traits::Float;
 
-use std::rc::Rc;
-use std::cell::RefCell;
 
 /// The MetaModelica failure type. MetaModelica exceptions carry no payload
 /// (all diagnostics go through the `Error` message buffer), so the failure
@@ -44,8 +45,8 @@ pub mod gc;
 pub mod mmval;
 pub mod cancel;
 
-/// MetaModelica `array<T>`. See module-level docs for rationale.
-pub type Array<A> = Rc<RefCell<Vec<A>>>;
+pub mod array_ty;
+pub use array_ty::Array;
 
 /// MetaModelica `Real`. Wraps `f64` with `OrderedFloat` so that values
 /// containing `Real` can implement `Ord` / `Eq` / `Hash` — required for

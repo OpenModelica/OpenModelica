@@ -3593,7 +3593,10 @@ fn emit_struct<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cl
     let type_params = if type_vars.is_empty() {
         String::new()
     } else {
-        let bounded: Vec<String> = type_vars.iter().map(|v| format!("{v}: Clone")).collect();
+        let bounded: Vec<String> = type_vars
+            .iter()
+            .map(|v| format!("{v}: Clone + metamodelica::mmval::MmVal"))
+            .collect();
         format!("<{}>", bounded.join(", "))
     };
     // `Default` is added to record derives so they can flow as element types
@@ -3820,7 +3823,7 @@ fn emit_mm_trace_impl(
     } else {
         let bounded: Vec<String> = type_vars
             .iter()
-            .map(|v| format!("{v}: Clone + metamodelica::gc::MMTrace"))
+            .map(|v| format!("{v}: Clone + metamodelica::gc::MMTrace + metamodelica::mmval::MmVal"))
             .collect();
         format!("<{}>", bounded.join(", "))
     };
@@ -4108,7 +4111,7 @@ fn emit_dyn_fn_container_impls(
             return String::new();
         }
         let bounded: Vec<String> = type_vars.iter().map(|v| {
-            let mut bounds = vec!["Clone", "'static"];
+            let mut bounds = vec!["Clone", "'static", "metamodelica::mmval::MmVal"];
             bounds.extend(extra.iter().copied());
             format!("{v}: {}", bounds.join(" + "))
         }).collect();

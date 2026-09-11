@@ -38,10 +38,10 @@ pub trait Traced: 'static {
     /// Disjunction, for types built out of several others (tuples, records).
     type Or<B: Traced>: Traced;
     /// The allocation a container spine uses for this kind of payload.
-    type Ptr<U: MmVal>: SpinePtr<U>;
+    type Ptr<U: MmVal>: SpinePtr<U> + MmVal;
     /// As [`Self::Ptr`], for a container that is single-threaded by
     /// construction and so pays no atomic refcount when untraced.
-    type RcPtr<U: MmVal>: SpinePtr<U>;
+    type RcPtr<U: MmVal>: SpinePtr<U> + MmVal;
 }
 
 pub struct No;
@@ -92,6 +92,48 @@ impl<U: MmVal> std::ops::Deref for GcRef<U> {
     }
 }
 
+// Forwarding impls, so a traced spine is a drop-in for the `Arc`/`Rc` one at
+// every derived use site (`#[derive(PartialEq)]` on a record holding one, a
+// `BTreeMap` keyed by a list, ...).
+
+impl<U: MmVal + std::fmt::Debug> std::fmt::Debug for GcRef<U> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        (**self).fmt(f)
+    }
+}
+
+impl<U: MmVal + PartialEq> PartialEq for GcRef<U> {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+}
+
+impl<U: MmVal + Eq> Eq for GcRef<U> {}
+
+impl<U: MmVal + PartialOrd> PartialOrd for GcRef<U> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        (**self).partial_cmp(&**other)
+    }
+}
+
+impl<U: MmVal + Ord> Ord for GcRef<U> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (**self).cmp(&**other)
+    }
+}
+
+impl<U: MmVal + std::hash::Hash> std::hash::Hash for GcRef<U> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (**self).hash(state)
+    }
+}
+
+impl<U: MmVal + Default> Default for GcRef<U> {
+    fn default() -> Self {
+        Self::alloc(U::default())
+    }
+}
+
 /// What a shared container allocation must provide. The two implementations
 /// differ in `spine_accept`: the traced arm reports itself to the collector,
 /// the `Arc` arm is the barrier.
@@ -109,6 +151,7 @@ pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
         U: Sized;
     /// Whether this is the only handle. Same caveat as `get_mut`.
     fn is_unique(this: &Self) -> bool;
+    fn strong_count(this: &Self) -> usize;
 }
 
 impl<U: MmVal> SpinePtr<U> for GcRef<U> {
@@ -129,6 +172,9 @@ impl<U: MmVal> SpinePtr<U> for GcRef<U> {
     }
     fn is_unique(_: &Self) -> bool {
         false
+    }
+    fn strong_count(this: &Self) -> usize {
+        Gc::ref_count(&this.0).get()
     }
 }
 
@@ -157,6 +203,9 @@ impl<U: ?Sized> SpinePtr<U> for Rc<U> {
     fn is_unique(this: &Self) -> bool {
         Rc::strong_count(this) == 1 && Rc::weak_count(this) == 0
     }
+    fn strong_count(this: &Self) -> usize {
+        Rc::strong_count(this)
+    }
 }
 
 impl<U: ?Sized> SpinePtr<U> for Arc<U> {
@@ -183,6 +232,9 @@ impl<U: ?Sized> SpinePtr<U> for Arc<U> {
     }
     fn is_unique(this: &Self) -> bool {
         Arc::strong_count(this) == 1 && Arc::weak_count(this) == 0
+    }
+    fn strong_count(this: &Self) -> usize {
+        Arc::strong_count(this)
     }
 }
 

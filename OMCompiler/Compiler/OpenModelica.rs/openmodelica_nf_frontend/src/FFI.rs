@@ -82,6 +82,10 @@ impl Ord for ArgSpec {
 impl Default for ArgSpec {
     fn default() -> Self { Self::INPUT }
 }
+impl metamodelica::mmval::MmVal for ArgSpec {
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, _: &mut V) -> Result<(), ()> { Ok(()) }
+}
 
 /// The C type an expression or type maps to at the ffi level
 /// (`type_to_type_spec` / the return value of `exp_alignment_and_type`).
@@ -460,7 +464,7 @@ unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Exp
 
     Ok(Arc::new(Expression::NFExpression::ARRAY {
         ty: ty.clone(),
-        elements: std::rc::Rc::new(std::cell::RefCell::new(elems)),
+        elements: metamodelica::Array::from_vec(elems),
         literal: true,
     }))
 }

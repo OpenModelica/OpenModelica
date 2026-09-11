@@ -3,10 +3,11 @@
 use std::sync::Arc;
 use arcstr::ArcStr;
 pub use crate::*;
+use crate::mmval::MmVal;
 
 /// Unsafe array get without bounds checking.
 /// Panics in debug mode if index is out of bounds due to Rust's bounds checking on indexing.
-pub fn arrayGetNoBoundsChecking<A: Clone>(arr: Array<A>, index: i32) -> A {
+pub fn arrayGetNoBoundsChecking<A: MmVal + Clone>(arr: Array<A>, index: i32) -> A {
     let idx = (index - 1) as usize; // 1-based to 0-based
     let v = arr.borrow();
     // SAFETY: Caller must ensure index is in bounds.
@@ -15,7 +16,7 @@ pub fn arrayGetNoBoundsChecking<A: Clone>(arr: Array<A>, index: i32) -> A {
 
 /// Unsafe array update without bounds checking.
 /// Mutates the underlying storage in place; visible through every alias.
-pub fn arrayUpdateNoBoundsChecking<A: Clone>(arr: Array<A>, index: i32, new_value: A) -> Array<A> {
+pub fn arrayUpdateNoBoundsChecking<A: MmVal + Clone>(arr: Array<A>, index: i32, new_value: A) -> Array<A> {
     let idx = (index - 1) as usize; // 1-based to 0-based
     {
         let mut v = arr.borrow_mut();
@@ -39,7 +40,7 @@ pub fn arrayUpdateNoBoundsChecking<A: Clone>(arr: Array<A>, index: i32, new_valu
 /// `Vec::drop` would later try to drop that zeroed value, which dereferences
 /// a null pointer → SIGSEGV.
 #[inline(always)]
-pub fn arrayClearIndex<A: Clone>(_arr: Array<A>, _index: i32) {}
+pub fn arrayClearIndex<A: MmVal + Clone>(_arr: Array<A>, _index: i32) {}
 
 /// Write `val` into an uninitialised slot created by `arrayCreateNoInit`.
 ///
@@ -53,7 +54,7 @@ pub fn arrayClearIndex<A: Clone>(_arr: Array<A>, _index: i32) {}
 /// * The slot at `index - 1` must be genuinely uninitialised — it must
 ///   never have been written via this function or via a regular assignment.
 ///   Writing into an already-initialised slot leaks the old value.
-pub unsafe fn arrayInitSlot<A>(arr: Array<A>, index: i32, val: A) -> Array<A> {
+pub unsafe fn arrayInitSlot<A: MmVal>(arr: Array<A>, index: i32, val: A) -> Array<A> {
     {
         let mut borrow = arr.borrow_mut();
         // SAFETY: contract requires index to be in-bounds and the slot uninitialised.
@@ -69,7 +70,7 @@ pub unsafe fn arrayInitSlot<A>(arr: Array<A>, index: i32, val: A) -> Array<A> {
 ///
 /// # Safety
 /// As [`arrayInitSlot`], minus the in-bounds requirement.
-pub unsafe fn arrayInitSlotChecked<A>(arr: Array<A>, index: i32, val: A) -> Result<Array<A>> {
+pub unsafe fn arrayInitSlotChecked<A: MmVal>(arr: Array<A>, index: i32, val: A) -> Result<Array<A>> {
     if index < 1 || index as usize > arr.borrow().len() {
         return Err("array index out of bounds");
     }
@@ -80,8 +81,8 @@ pub unsafe fn arrayInitSlotChecked<A>(arr: Array<A>, index: i32, val: A) -> Resu
 /// Creates a new array with uninitialized elements.
 /// The MetaModelica signature takes a `dummy` argument purely as a type witness;
 /// the codegen drops it because Rust generics already carry the element type.
-pub fn arrayCreateNoInit<A: Clone>(size: i32) -> Array<A> {
-    let mut v = Vec::with_capacity(size as usize);
+pub fn arrayCreateNoInit<A: MmVal + Clone>(size: i32) -> Array<A> {
+    let mut v: Vec<A> = Vec::with_capacity(size as usize);
     // SAFETY:
     // 1. We allocated capacity for `size` elements.
     // 2. Caller guarantees every element is initialized before being read.

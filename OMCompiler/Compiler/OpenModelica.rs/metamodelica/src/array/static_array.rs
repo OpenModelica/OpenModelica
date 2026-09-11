@@ -8,7 +8,7 @@ use crate::array::arrayFromVec;
 /// `MetaModelica.Dangerous.listArrayLiteral` and similar constant
 /// `array<T>` declarations).
 ///
-/// The mutable [`Array<T>`] type is `Rc<RefCell<Vec<T>>>`, which is **not**
+/// The mutable [`Array<T>`] type is built on `Rc<RefCell<..>>`, which is **not**
 /// `Sync` and therefore cannot be placed inside `pub static LazyLock<...>`.
 /// MM-level concurrency is single-threaded, so the unsync-ness is the right
 /// trade-off for general-purpose arrays — but constant tables, which are
@@ -69,7 +69,7 @@ impl<T> StaticArray<T> {
     }
 }
 
-impl<T: Clone> StaticArray<T> {
+impl<T: crate::mmval::MmVal + Clone> StaticArray<T> {
     /// Materialises a fresh mutable [`Array<T>`] by element-wise cloning
     /// the static storage. See the type-level docs for the rationale —
     /// this is the form expected by MM-translated call sites that pass
