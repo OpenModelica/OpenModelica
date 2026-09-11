@@ -107,6 +107,14 @@ endif()
 # may hold the autotools build's copy); source dir provides omc_config.h itself.
 target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
+# omc_config.h quote-includes revision.h on the MinGW/MSVC branch, so everything
+# linking omc::config needs it — including the simulation runtime, which is built
+# in Rust mode too. Generated here rather than in Compiler/runtime/CMakeLists.txt,
+# which Compiler/CMakeLists.txt's Rust early return() skips. SOURCE_REVISION comes
+# from cmake/omc_git_revision.cmake. Written in-source next to omc_config.h, where
+# the quoted include finds it ahead of any -I.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
+
 
 ## Subdirectories ##########################################################################################
 # We always link a Fortran-ABI BLAS, but SuiteSparse guesses *no* underscore
