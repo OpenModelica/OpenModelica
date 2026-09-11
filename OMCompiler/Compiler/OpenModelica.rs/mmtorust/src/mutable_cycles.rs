@@ -150,6 +150,9 @@ pub struct Report {
     /// Types that can reach a *declared* cyclic cell — the set that actually
     /// needs the traced pointer once the sources are migrated.
     pub traced_declared: BTreeSet<String>,
+    /// [`Report::traced_declared`] recomputed with `MMTORUST_BARRIER_PREFIXES`
+    /// treated as untraced.
+    pub traced_behind_barrier: BTreeSet<String>,
 }
 
 /// If `ty` is a cell type, return its kind and content type. The `Mutable`
@@ -232,6 +235,34 @@ pub fn types_reaching_cyclic_cell(graph: &BTreeMap<String, Vec<Ty>>) -> BTreeSet
 ///
 /// Cheap enough to run in the codegen pipeline — it needs only the containment
 /// graph, not the typed function bodies the cycle analysis builds.
+/// How large the traced set becomes if the types named in `barrier` are treated
+/// as untraced — i.e. a traversal stops there instead of descending.
+///
+/// Sound only where no collectable cycle passes through a barrier type: an
+/// unreported reference makes its target look externally rooted, so a cycle
+/// hidden behind one leaks. The NF frontend qualifies: it is its own SCC,
+/// separate from the backend's, and is pinned by global roots for the life of
+/// the process, so it is never garbage anyway.
+pub fn traced_behind_barrier(
+    hier: &InstanceHierarchy<'_>,
+    barrier: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    let mut graph: BTreeMap<String, Vec<Ty>> = BTreeMap::new();
+    hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
+    graph.retain(|q, _| !barrier.contains(q));
+    for tys in graph.values_mut() {
+        tys.retain(|t| {
+            let mut named = BTreeSet::new();
+            collect_named_types(t, &mut named);
+            !named.iter().any(|n| barrier.contains(n))
+        });
+    }
+    types_reaching_cyclic_cell(&graph)
+        .into_iter()
+        .filter(|q| graph.contains_key(q))
+        .collect()
+}
+
 pub fn detect_traced_types(hier: &mut InstanceHierarchy<'_>) {
     let mut graph: BTreeMap<String, Vec<Ty>> = BTreeMap::new();
     hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
@@ -686,6 +717,125 @@ fn cell_cyclic_types(
             }
         }
     }
+    // Greedy feedback arc set over the cell edges: the smallest set we can
+    // find whose removal leaves no cycle. Each one is a field that would have
+    // to become a weak reference for plain refcounting to reclaim everything.
+    if let Ok(path) = std::env::var("MMTORUST_WEAK_EDGES_OUT") {
+        let sccs_with_cell_edges = |dropped: &BTreeSet<(usize, usize)>| -> Vec<(usize, usize)> {
+            let mut idx = vec![usize::MAX; n];
+            let mut low = vec![0usize; n];
+            let mut comp = vec![usize::MAX; n];
+            let mut on = vec![false; n];
+            let (mut st, mut ctr, mut nc) = (Vec::new(), 0usize, 0usize);
+            for root in 0..n {
+                if idx[root] != usize::MAX {
+                    continue;
+                }
+                let mut call: Vec<(usize, usize)> = vec![(root, 0)];
+                while let Some(&mut (v, ref mut pi)) = call.last_mut() {
+                    if *pi == 0 {
+                        idx[v] = ctr;
+                        low[v] = ctr;
+                        ctr += 1;
+                        st.push(v);
+                        on[v] = true;
+                    }
+                    if *pi < adj[v].len() {
+                        let (w, _) = adj[v][*pi];
+                        *pi += 1;
+                        if dropped.contains(&(v, w)) {
+                            continue;
+                        }
+                        if idx[w] == usize::MAX {
+                            call.push((w, 0));
+                        } else if on[w] {
+                            low[v] = low[v].min(idx[w]);
+                        }
+                    } else {
+                        if low[v] == idx[v] {
+                            while let Some(w) = st.pop() {
+                                on[w] = false;
+                                comp[w] = nc;
+                                if w == v {
+                                    break;
+                                }
+                            }
+                            nc += 1;
+                        }
+                        call.pop();
+                        if let Some(&(parent, _)) = call.last() {
+                            low[parent] = low[parent].min(low[v]);
+                        }
+                    }
+                }
+            }
+            let mut out = Vec::new();
+            for v in 0..n {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && comp[v] == comp[w] && !dropped.contains(&(v, w)) {
+                        out.push((v, w));
+                    }
+                }
+            }
+            out
+        };
+
+        let mut dropped: BTreeSet<(usize, usize)> = BTreeSet::new();
+        let mut order: Vec<(usize, usize)> = Vec::new();
+        loop {
+            let remaining = sccs_with_cell_edges(&dropped);
+            if remaining.is_empty() {
+                break;
+            }
+            // Drop whichever edge occurs most often; ties broken by name so the
+            // result is reproducible.
+            let mut count: BTreeMap<(usize, usize), usize> = BTreeMap::new();
+            for e in &remaining {
+                *count.entry(*e).or_default() += 1;
+            }
+            let best = *remaining
+                .iter()
+                .max_by_key(|e| (count[*e], std::cmp::Reverse(names[e.0].clone())))
+                .expect("non-empty");
+            dropped.insert(best);
+            order.push(best);
+        }
+        let mut out = format!(
+            "{} cell edges must become weak references for refcounting alone:\n",
+            order.len()
+        );
+        for (v, w) in &order {
+            out.push_str(&format!("    {} -> {}\n", names[*v], names[*w]));
+        }
+        std::fs::write(&path, out).expect("could not write weak edges");
+    }
+
+    if let Ok(path) = std::env::var("MMTORUST_CYCLE_EDGES_OUT") {
+        let mut out = String::new();
+        for scc in 0..scc_count {
+            if !scc_cyclic[scc] {
+                continue;
+            }
+            let members: Vec<&str> =
+                (0..n).filter(|&v| scc_of[v] == scc).map(|v| names[v].as_str()).collect();
+            out.push_str(&format!("SCC of {} types:\n", members.len()));
+            for m in &members {
+                out.push_str(&format!("    {m}\n"));
+            }
+            // The edges that close the cycle: an in-SCC edge crossing a cell.
+            // Making these weak would break the cycle without a collector.
+            for v in (0..n).filter(|&v| scc_of[v] == scc) {
+                for &(w, crosses) in &adj[v] {
+                    if crosses && scc_of[w] == scc {
+                        out.push_str(&format!("  cell edge: {} -> {}\n", names[v], names[w]));
+                    }
+                }
+            }
+            out.push('\n');
+        }
+        std::fs::write(&path, out).expect("could not write cycle edges");
+    }
+
     (0..n)
         .filter(|&v| scc_cyclic[scc_of[v]])
         .map(|v| names[v].clone())
@@ -914,6 +1064,18 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         .filter(|q| graph.contains_key(q))
         .collect();
     let all_types: BTreeSet<String> = graph.keys().cloned().collect();
+    let traced_behind_barrier = match std::env::var("MMTORUST_BARRIER_PREFIXES") {
+        Ok(p) => {
+            let pfx: Vec<&str> = p.split(',').filter(|x| !x.is_empty()).collect();
+            let barrier: BTreeSet<String> = all_types
+                .iter()
+                .filter(|q| pfx.iter().any(|x| q.starts_with(x)))
+                .cloned()
+                .collect();
+            traced_behind_barrier(hier, &barrier)
+        }
+        Err(_) => BTreeSet::new(),
+    };
 
     Report {
         sites,
@@ -927,6 +1089,7 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> Report {
         traced_types,
         traced_cells_only,
         traced_declared,
+        traced_behind_barrier,
         cyclic_uses,
     }
 }
@@ -939,6 +1102,21 @@ pub fn print_report(report: &Report) {
     let by_kind = |kind: CellKind| report.sites.iter().filter(move |s| s.kind == kind);
 
     {
+        if let Ok(prefixes) = std::env::var("MMTORUST_BARRIER_PREFIXES") {
+            let pfx: Vec<&str> = prefixes.split(',').filter(|p| !p.is_empty()).collect();
+            let barrier: BTreeSet<String> = report
+                .all_types
+                .iter()
+                .filter(|q| pfx.iter().any(|p| q.starts_with(p)))
+                .cloned()
+                .collect();
+            println!(
+                "  with {} types behind a barrier ({}): traced set would be {}",
+                barrier.len(),
+                prefixes,
+                report.traced_behind_barrier.len()
+            );
+        }
         let total = report.all_types.len();
         let traced = report.traced_types.len();
         println!(
