@@ -51,6 +51,7 @@ import AvlTreePathFunction;
 import DAE;
 import Mutable;
 import MutableCyclic;
+import MutableWeak;
 import SCode;
 
 protected
@@ -84,13 +85,18 @@ uniontype ImportTable
   end IMPORT_TABLE;
 end ImportTable;
 
-type Ref = MutableCyclic<Node> "one mutable slot; a node's identity is its cell";
+type Ref = Mutable<Node> "one mutable slot; a node's identity is its cell";
+type WeakRef = MutableWeak<Node> "a parent, held without owning it";
 
 uniontype Node
   record N
     Name     name       "node name, class/component/extends name, etc. see also *NodeName in above";
     Id       id         "Unique node id";
-    Parents  parents    "A node can have several parents depending on the context";
+    WeakParents parents "A node can have several parents depending on the context.
+                         Held weakly: a parent owns its children, so owning the
+                         parent back would make the graph unreclaimable by
+                         reference counting. The graph is rooted at the top node,
+                         which keeps every parent alive while it is reachable.";
     Children children   "List of uniquely named classes and variables";
     Data     data       "More data for this node, Class, Var, etc";
   end N;
@@ -244,7 +250,8 @@ uniontype Data
 end Data;
 
 type Refs = list<Ref>;
-type Parents = Refs;
+type Parents = Refs "as handed out by FNode.parents, already upgraded";
+type WeakParents = list<WeakRef> "as stored in a node; see Node.N.parents";
 type Scope = Refs;
 type Children = RefTree.Tree;
 
@@ -268,7 +275,7 @@ encapsulated package RefTree
 
   redeclare function extends valueStr
   algorithm
-    Node.N(name = outString) := MutableCyclic.access(inValue);
+    Node.N(name = outString) := Mutable.access(inValue);
   end valueStr;
 
   redeclare function extends keyCompare

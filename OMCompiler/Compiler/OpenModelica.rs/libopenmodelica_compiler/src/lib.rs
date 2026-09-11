@@ -176,6 +176,7 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     use std::io::Write;
     set_revision();
     metamodelica::mmval::init_collect_condition();
+    let gc_stats = std::env::var_os("OPENMODELICA_GC_STATS").is_some();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
     // and stop. For the build; not a user-facing flag.
     #[cfg(not(target_arch = "wasm32"))]
@@ -215,6 +216,10 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
     // `process::exit` drops no thread-local, so flush the buffered writers here.
     openmodelica_util::File::flush_all_registered();
+    if gc_stats {
+        let (existing, dropped) = metamodelica::mmval::gc_stats();
+        eprintln!("gc-stats: live_gc_allocations={existing} drops_since_collect={dropped}");
+    }
     match status {
         Ok(Ok(())) => 0,
         // Mirror the launcher's old inline `run()`: flush stdout, report on

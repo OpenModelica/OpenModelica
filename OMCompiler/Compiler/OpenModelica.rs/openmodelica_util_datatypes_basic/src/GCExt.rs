@@ -39,13 +39,33 @@ pub fn free<T>(data: T) {}
 // MetaModelica `GCExt.gcollect` maps to one run of the cycle collector: the
 // refcounted heap frees acyclic garbage eagerly on its own, so an explicit
 // collection only needs to reclaim cycles closed through cyclic cells.
-pub fn gcollect() {
+/// `OPENMODELICA_GC_CYCLE_LOG=1`: report which types were actually on a
+/// reclaimed cycle. Pair it with `OPENMODELICA_GC_DISABLE=1` so nothing is
+/// collected until this call and the report covers the whole run. A static
+/// analysis cannot answer this — it sees a cycle wherever two types refer to
+/// each other, even when the values form a tree.
+fn collect_reporting() {
+    if std::env::var_os("OPENMODELICA_GC_CYCLE_LOG").is_none() {
+        metamodelica::mmval::collect();
+        return;
+    }
+    metamodelica::mmval::log_cycles();
     metamodelica::mmval::collect();
+    let log = metamodelica::mmval::take_cycle_log();
+    let total: usize = log.iter().map(|(_, n)| n).sum();
+    eprintln!("gc-cycle-log: reclaimed {total} allocations across {} types", log.len());
+    for (ty, n) in log.iter().take(40) {
+        eprintln!("  {n:>9}  {ty}");
+    }
+}
+
+pub fn gcollect() {
+    collect_reporting();
 }
 
 pub fn gcollectAndUnmap() {
     // No unmapping concept on the refcounted heap; same as `gcollect`.
-    metamodelica::mmval::collect();
+    collect_reporting();
 }
 
 pub fn getForceUnmapOnGcollect() -> bool {

@@ -2302,6 +2302,30 @@ pub fn detect_recursive_types(hier: &mut InstanceHierarchy<'_>) {
 /// Collect, for every user-defined struct/enum/uniontype `qname`, the resolved
 /// `Ty`s of all of its component fields (variant fields in the enum/uniontype
 /// case). Used as the input to the `Mutable`-containment fixed point.
+/// Fields to drop from the containment graph, as `Type.field` or `.field`,
+/// from `MMTORUST_WEAK_FIELDS`. A weak reference owns nothing, so it carries no
+/// edge — this is how to ask what the cycle structure would look like if a given
+/// back-pointer were weakened, before weakening it for real.
+fn weak_fields() -> &'static BTreeSet<String> {
+    static WEAK: std::sync::OnceLock<BTreeSet<String>> = std::sync::OnceLock::new();
+    WEAK.get_or_init(|| {
+        std::env::var("MMTORUST_WEAK_FIELDS")
+            .map(|v| v.split(',').map(|s| s.trim().to_owned()).filter(|s| !s.is_empty()).collect())
+            .unwrap_or_default()
+    })
+}
+
+fn is_weak_field(owner: &str, field: &str) -> bool {
+    let w = weak_fields();
+    if w.is_empty() {
+        return false;
+    }
+    let short = owner.rsplit('.').next().unwrap_or(owner);
+    w.contains(&format!(".{field}"))
+        || w.contains(&format!("{owner}.{field}"))
+        || w.contains(&format!("{short}.{field}"))
+}
+
 pub(crate) fn collect_struct_field_tys(
     nodes: &BTreeMap<String, NameNode<'_>>,
     prefix: &str,
@@ -2311,9 +2335,10 @@ pub(crate) fn collect_struct_field_tys(
         let qname = qualify(prefix, name);
         match &node.ty {
             Ty::RustStruct(_) => {
-                let tys: Vec<Ty> = node.children.values()
-                    .filter(|c| matches!(c.kind, NodeKind::Component(_)))
-                    .map(|c| c.ty.clone())
+                let tys: Vec<Ty> = node.children.iter()
+                    .filter(|(_, c)| matches!(c.kind, NodeKind::Component(_)))
+                    .filter(|(fname, _)| !is_weak_field(&qname, fname))
+                    .map(|(_, c)| c.ty.clone())
                     .collect();
                 out.insert(qname.clone(), tys);
             }
@@ -2329,9 +2354,10 @@ pub(crate) fn collect_struct_field_tys(
                 // parameter in some sibling function).
                 let tys: Vec<Ty> = node.children.values()
                     .filter(|v| matches!(v.ty, Ty::RustStruct(_) | Ty::RustUnitVariant))
-                    .flat_map(|variant| variant.children.values()
-                        .filter(|c| matches!(c.kind, NodeKind::Component(_)))
-                        .map(|c| c.ty.clone()))
+                    .flat_map(|variant| variant.children.iter()
+                        .filter(|(_, c)| matches!(c.kind, NodeKind::Component(_)))
+                        .filter(|(fname, _)| !is_weak_field(&qname, fname))
+                        .map(|(_, c)| c.ty.clone()))
                     .collect();
                 out.insert(qname.clone(), tys);
             }

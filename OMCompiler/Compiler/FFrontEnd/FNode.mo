@@ -50,7 +50,7 @@ import DAE;
 import SCode;
 import FCore;
 import Mutable;
-import MutableCyclic;
+import MutableWeak;
 
 // protected imports
 protected
@@ -122,7 +122,7 @@ public function toRef
   input Node inNode;
   output Ref outRef;
 algorithm
-  outRef := MutableCyclic.create(inNode);
+  outRef := Mutable.create(inNode);
 end toRef;
 
 public function fromRef
@@ -131,7 +131,7 @@ public function fromRef
   input Ref inRef;
   output Node outNode;
 algorithm
-  outNode := MutableCyclic.access(inRef);
+  outNode := Mutable.access(inRef);
 end fromRef;
 
 public function updateRef
@@ -141,7 +141,7 @@ public function updateRef
   input Node inNode;
   output Ref outRef;
 algorithm
-  MutableCyclic.update(inRef, inNode);
+  Mutable.update(inRef, inNode);
   outRef := inRef;
 end updateRef;
 
@@ -153,24 +153,34 @@ algorithm
 end id;
 
 public function parents
+  "The parents as owning references. They are stored weakly (see FCore.Node.N),
+   so this upgrades; it fails if a parent is already gone, which would mean the
+   node outlived the graph that owns it."
   input Node inNode;
   output Parents p;
+protected
+  FCore.WeakParents w;
 algorithm
-  FCore.N(parents = p) := inNode;
+  FCore.N(parents = w) := inNode;
+  p := list(MutableWeak.upgrade(r) for r in w);
 end parents;
 
 public function hasParents
   input Node inNode;
   output Boolean b;
+protected
+  FCore.WeakParents w;
 algorithm
-  b := not listEmpty(parents(inNode));
+  // Deliberately does not upgrade: only the count matters here.
+  FCore.N(parents = w) := inNode;
+  b := not listEmpty(w);
 end hasParents;
 
 public function refParents
   input Ref inRef;
   output Parents p;
 algorithm
-  FCore.N(parents = p) := fromRef(inRef);
+  p := parents(fromRef(inRef));
 end refParents;
 
 public function refPushParents
@@ -180,12 +190,12 @@ public function refPushParents
 protected
   Name n;
   Id i;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Data d;
 algorithm
   FCore.N(n, i, p, c, d) := fromRef(inRef);
-  p := listAppend(inParents, p);
+  p := listAppend(list(MutableWeak.downgrade(r) for r in inParents), p);
   outRef := updateRef(inRef, FCore.N(n, i, p, c, d));
 end refPushParents;
 
@@ -196,12 +206,12 @@ public function setParents
 protected
   Name n;
   Id i;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Data d;
 algorithm
   FCore.N(n, i, p, c, d) := inNode;
-  outNode := FCore.N(n, i, inParents, c, d);
+  outNode := FCore.N(n, i, list(MutableWeak.downgrade(r) for r in inParents), c, d);
 end setParents;
 
 public function target
@@ -229,7 +239,7 @@ public function new
   input Data inData;
   output Node node;
 algorithm
-  node := FCore.N(inName, inId, inParents, RefTree.new(), inData);
+  node := FCore.N(inName, inId, list(MutableWeak.downgrade(r) for r in inParents), RefTree.new(), inData);
 end new;
 
 public function addImport
@@ -342,7 +352,7 @@ public function addChildRef
 protected
   Name n;
   Integer i;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Data d;
   Ref parent;
@@ -377,7 +387,7 @@ public function addImportToRef
 protected
   Name n;
   Integer id;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   ImportTable it;
   Ref r;
@@ -393,7 +403,7 @@ public function addTypesToRef
 protected
   Name n;
   Integer id;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   list<DAE.Type> tys;
   Ref r;
@@ -472,7 +482,7 @@ public function addIteratorsToRef
 protected
   Name n;
   Integer id;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Absyn.ForIterators it;
   Ref r;
@@ -488,7 +498,7 @@ public function addDefinedUnitToRef
 protected
   Name n;
   Integer id;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Ref r;
   list<SCode.Element> dus;
@@ -582,7 +592,7 @@ public function setChildren
 protected
   Name n;
   Id i;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
   Data d;
 algorithm
@@ -597,7 +607,7 @@ public function setData
 protected
   Name n;
   Id i;
-  Parents p;
+  FCore.WeakParents p;
   Children c;
 algorithm
   FCore.N(n, i, p, c, _) := inNode;
@@ -705,14 +715,14 @@ algorithm
   outStr := matchcontinue inNode
     local
      Id i;
-     Parents p;
+     FCore.WeakParents p;
      Data d;
 
     case FCore.N(_, i, p, _, d)
       algorithm
         outStr :=
            "[i:" + intString(i) + "] " +
-           "[p:" + stringDelimitList(List.map(List.map(List.map(p, fromRef), id), intString), ", ") + "] " +
+           "[p:" + stringDelimitList(List.map(List.map(List.map(list(MutableWeak.upgrade(w) for w in p), fromRef), id), intString), ", ") + "] " +
            "[n:" + name(inNode) + "] " +
            "[d:" + dataStr(d) + "]";
       then
@@ -730,7 +740,7 @@ public function toPathStr
 algorithm
   outStr := matchcontinue inNode
     local
-     Parents p;
+     FCore.WeakParents p;
      Ref nr;
      String s;
 
@@ -743,7 +753,9 @@ algorithm
 
     case FCore.N(_, _, p, _, _)
       algorithm
-        nr := contextual(p);
+        // The contextual parent is the first one; upgrade just that, rather
+        // than the whole list.
+        nr := MutableWeak.upgrade(listHead(p));
         true := hasParents(fromRef(nr));
         s := toPathStr(fromRef(nr));
         outStr := s + "." + name(inNode);
@@ -752,7 +764,7 @@ algorithm
 
     case FCore.N(_, _, p, _, _)
       algorithm
-        nr := contextual(p);
+        nr := MutableWeak.upgrade(listHead(p));
         false := hasParents(fromRef(nr));
         outStr := "." + name(inNode);
       then
@@ -1021,10 +1033,10 @@ public function isClone
   output Boolean b;
 algorithm
   b := match inNode
-    local Ref r;
+    local FCore.WeakRef r;
     case FCore.N(parents = r::_)
       algorithm
-        b := isRefVersion(r);
+        b := isRefVersion(MutableWeak.upgrade(r));
       then b;
     else false;
   end match;
@@ -1709,16 +1721,17 @@ algorithm
       Ref r;
       Name name;
       Id id;
-      Parents parents;
+      FCore.WeakParents parents;
       Children children;
       Data data;
 
     case (FCore.N(name, id, parents, children, data), g)
       algorithm
         // add parent
-        parents := inParentRef::parents;
+        parents := MutableWeak.downgrade(inParentRef)::parents;
         // create node clone
-        (g, n as FCore.N(name, id, parents, _, data)) := FGraph.node(g, name, parents, data);
+        (g, n as FCore.N(name, id, parents, _, data)) :=
+          FGraph.node(g, name, list(MutableWeak.upgrade(p) for p in parents), data);
         // make the reference to the new node
         r := toRef(n);
         // clone children
@@ -1821,7 +1834,7 @@ algorithm
       Graph g;
       Name n;
       Id i;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       Data d;
 
@@ -1829,7 +1842,7 @@ algorithm
       algorithm
         // print("Updating references in node: " + toStr(fromRef(inRef)) + " / [" + toPathStr(fromRef(inRef)) + "]\n");
         FCore.N(n, i, p, c, d) := fromRef(inRef);
-        p := List.map1r(p, lookupRefFromRef, t);
+        p := list(MutableWeak.downgrade(lookupRefFromRef(t, MutableWeak.upgrade(w))) for w in p);
         d := updateRefInData(d, t);
         updateRef(inRef, FCore.N(n, i, p, c, d));
       then

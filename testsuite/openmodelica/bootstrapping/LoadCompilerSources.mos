@@ -265,6 +265,7 @@ if true then /* Suppress output */
     prefixPath + "Util/List.mo",
     prefixPath + "Util/Mutable.mo",
     prefixPath + "Util/MutableCyclic.mo",
+    prefixPath + "Util/MutableWeak.mo",
     prefixPath + "Util/Pointer.mo",
     prefixPath + "Util/PointerCyclic.mo",
     prefixPath + "Util/Print.mo",

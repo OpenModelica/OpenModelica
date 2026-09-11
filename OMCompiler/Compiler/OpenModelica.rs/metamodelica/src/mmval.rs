@@ -31,15 +31,45 @@ use std::sync::Arc;
 pub use dumpster::unsync::{collect, Gc};
 pub use dumpster::Visitor;
 
-/// Turn automatic collection off for this thread when `OPENMODELICA_GC_DISABLE`
-/// is set, so the collector's cost can be measured against the same binary
-/// rather than against a differently-built one.
+thread_local! {
+    /// `(live Gc allocations, drops since the last collection)`, sampled every
+    /// time the collect condition runs. RSS cannot answer "is the collector
+    /// reclaiming cycles" — it counts pages the allocator has freed but not
+    /// returned, and the collector's own candidate set. A live-allocation count
+    /// is immune to both.
+    static GC_STATS: std::cell::Cell<(usize, usize)> = const { std::cell::Cell::new((0, 0)) };
+}
+
+fn record(info: &dumpster::unsync::CollectInfo) -> (usize, usize) {
+    let s = (info.n_gcs_existing(), info.n_gcs_dropped_since_last_collect());
+    GC_STATS.with(|c| c.set(s));
+    s
+}
+
+fn record_and_collect(info: &dumpster::unsync::CollectInfo) -> bool {
+    let (existing, dropped) = record(info);
+    dropped > existing
+}
+
+fn record_and_never(info: &dumpster::unsync::CollectInfo) -> bool {
+    record(info);
+    false
+}
+
+/// Live `Gc` allocations as of the last collect-condition check, and drops
+/// since the last collection.
+pub fn gc_stats() -> (usize, usize) {
+    GC_STATS.with(|c| c.get())
+}
+
+/// `OPENMODELICA_GC_DISABLE` turns automatic collection off for this thread, so
+/// the collector's cost can be measured against the same binary rather than
+/// against a differently-built one. Either way the condition records its stats.
 pub fn init_collect_condition() {
     if std::env::var_os("OPENMODELICA_GC_DISABLE").is_some() {
-        fn never(_: &dumpster::unsync::CollectInfo) -> bool {
-            false
-        }
-        dumpster::unsync::set_collect_condition(never);
+        dumpster::unsync::set_collect_condition(record_and_never);
+    } else {
+        dumpster::unsync::set_collect_condition(record_and_collect);
     }
 }
 
@@ -81,6 +111,47 @@ pub type Or<A, B> = <<A as MmVal>::Traced as Traced>::Or<<B as MmVal>::Traced>;
 /// value; wrapping one local type that forwards to `mm_accept` is what lets any
 /// `MmVal` sit inside a `Gc`.
 pub struct Cell<T: MmVal>(pub T);
+
+thread_local! {
+    /// Type names of the allocations reclaimed while [`log_cycles`] is armed.
+    ///
+    /// A static analysis cannot answer "which values are actually on a cycle" —
+    /// `InstNode -> Class -> ClassTree -> InstNode` is a cycle among *types*
+    /// even when the values form a strict tree, so every recursive type looks
+    /// cyclic. The collector knows the difference: what it reclaims was, by
+    /// construction, unreachable and cyclic. Arm this, run a workload with
+    /// automatic collection off, then force one `collect()`.
+    static CYCLE_LOG: std::cell::RefCell<Option<std::collections::BTreeMap<&'static str, usize>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Start recording reclaimed allocations by type.
+pub fn log_cycles() {
+    CYCLE_LOG.with(|c| *c.borrow_mut() = Some(Default::default()));
+}
+
+/// Stop recording and return what was reclaimed, most frequent first.
+pub fn take_cycle_log() -> Vec<(&'static str, usize)> {
+    CYCLE_LOG.with(|c| {
+        let mut v: Vec<_> = c.borrow_mut().take().unwrap_or_default().into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1));
+        v
+    })
+}
+
+impl<T: MmVal> Drop for Cell<T> {
+    fn drop(&mut self) {
+        // `try_with`: a thread-local holding `Gc` values is itself dropped
+        // during TLS teardown, by which point this log may already be gone.
+        let _ = CYCLE_LOG.try_with(|c| {
+            if let Ok(mut g) = c.try_borrow_mut()
+                && let Some(m) = g.as_mut()
+            {
+                *m.entry(std::any::type_name::<T>()).or_insert(0) += 1;
+            }
+        });
+    }
+}
 
 unsafe impl<V: Visitor, T: MmVal> dumpster::TraceWith<V> for Cell<T> {
     fn accept(&self, visitor: &mut V) -> Result<(), ()> {

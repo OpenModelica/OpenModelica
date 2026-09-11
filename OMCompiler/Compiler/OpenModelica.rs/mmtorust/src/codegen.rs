@@ -122,7 +122,7 @@ pub(crate) fn is_cell_ctor(name: &str) -> bool {
 }
 
 const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
-    "Mutable", "MutableCyclic", "GCExt", "Pointer", "PointerCyclic",
+    "Mutable", "MutableCyclic", "MutableWeak", "GCExt", "Pointer", "PointerCyclic",
     "File", "Global", "Vector",
     "ErrorExt", "Print", "ParserExt", "System", "Settings",
     "StackOverflow", "BackendDAEEXT",
@@ -844,6 +844,9 @@ impl GenCtx {
             "generated type {qn} is unknown to the containment graph; \
              the traced flag would silently be `No`"
         );
+        if crate::mutable_cycles::barrier_prefixes().iter().any(|b| qn.starts_with(b.as_str())) {
+            return false;
+        }
         self.traced_types.contains(&qn)
     }
 

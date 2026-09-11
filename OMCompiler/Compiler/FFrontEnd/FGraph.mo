@@ -285,7 +285,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       DAE.Var v;
@@ -392,7 +392,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       DAE.Var v;
@@ -442,7 +442,7 @@ algorithm
       Ref pr, r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       Kind k;
@@ -486,7 +486,7 @@ algorithm
       Ref r;
       Name n;
       Id id;
-      Parents p;
+      FCore.WeakParents p;
       Children c;
       SCode.Element e;
       Kind k;

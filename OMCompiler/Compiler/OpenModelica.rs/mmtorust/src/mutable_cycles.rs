@@ -263,10 +263,28 @@ pub fn traced_behind_barrier(
         .collect()
 }
 
+/// Type-name prefixes held untraced even though they reach a cyclic cell
+/// (`MMTORUST_BARRIER_PREFIXES`). Their cycles leak, as they do with no
+/// collector at all — worth it for a package that allocates on the hot path but
+/// does not measurably leak. Under-tracing is safe: an untraced handle makes its
+/// target look externally rooted, so the collector keeps too much, never too
+/// little.
+pub fn barrier_prefixes() -> &'static [String] {
+    static P: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    P.get_or_init(|| {
+        std::env::var("MMTORUST_BARRIER_PREFIXES")
+            .map(|v| v.split(',').map(|s| s.trim().to_owned()).filter(|s| !s.is_empty()).collect())
+            .unwrap_or_default()
+    })
+}
+
 pub fn detect_traced_types(hier: &mut InstanceHierarchy<'_>) {
     let mut graph: BTreeMap<String, Vec<Ty>> = BTreeMap::new();
     hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
     hier.all_named_types = graph.keys().cloned().collect();
+    // Every type that can reach a cyclic cell. The barrier set is applied later,
+    // when codegen picks each type's `Traced` flag — not here, because a
+    // barriered type still *holds* a `Gc` cell and so is still not `Sync`.
     hier.traced_types = types_reaching_cyclic_cell(&graph)
         .into_iter()
         .filter(|q| graph.contains_key(q))

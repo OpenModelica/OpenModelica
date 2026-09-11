@@ -191,6 +191,7 @@ if true then /* Suppress output */
     "../Util/List.mo",
     "../Util/Mutable.mo",
     "../Util/MutableCyclic.mo",
+    "../Util/MutableWeak.mo",
     "../Util/Pointer.mo",
     "../Util/PointerCyclic.mo",
     "../Util/Print.mo",
