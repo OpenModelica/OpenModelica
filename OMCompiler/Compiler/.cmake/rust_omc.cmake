@@ -785,11 +785,12 @@ endif()
 # Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
 # so the cargo build.rs uses them rather than rebuilding.
 # ---------------------------------------------------------------------------
-# The revision this omc reports, tagged "-rust" where the C build says "-cmake".
+# The revision this omc reports, tagged "rust" where the C build says "cmake"
+# (SOURCE_REVISION_RUST, see cmake/omc_git_revision.cmake).
 # file(GENERATE), not file(WRITE): it keeps the timestamp when the revision is
 # unchanged, so reconfiguring alone rebuilds nothing.
 set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
-file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-rust\n")
+file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_RUST}\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"

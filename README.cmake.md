@@ -26,6 +26,8 @@
     - [4.2.2 Enabling Verbose Output](#422-enabling-verbose-output)
 - [5. Integration with Editors/Tools](#5-integration-with-editorstools)
 - [6. Running Tests (rtest)](#6-running-tests-rtest)
+- [7. Modelica libraries (omlibrary)](#7-modelica-libraries-omlibrary)
+- [8. Packing with CPack](#8-packing-with-cpack)
 
 ## 1. Quick start
 
@@ -493,3 +495,109 @@ Installing honors `DESTDIR`, e.g., `make install DESTDIR=/some/where`.
 
 The libraries used by the testsuite are a different, larger set (`libraries/index.json`) and
 are handled by the `libs-for-testing` target instead.
+
+## 8. Packing with CPack
+
+CPack turns an OpenModelica installation into `.deb`, `.rpm` or archive packages. It is
+configured in [cmake/packaging/](cmake/packaging/) and needs no separate build: it runs the
+project's own install rules into a staging directory and packs the result.
+
+### What gets packed
+
+Every `install()` rule in the tree is tagged with a *component*, and CPack builds one
+package per component. The components, their contents and what they depend on are declared
+in [cmake/packaging/components.cmake](cmake/packaging/components.cmake):
+
+| Component | Package | Contents |
+| --- | --- | --- |
+| `omc` | `openmodelica-omc` | The compiler: `omc`, its libraries, the builtin `.mo` files, the scripting API header |
+| `simrt` | `openmodelica-simrt` | The C simulation runtime and the libraries generated code links against |
+| `simrtcpp` | `openmodelica-simrtcpp` | The C++ simulation runtime |
+| `fmu` | `openmodelica-fmu` | The headers and libraries needed to build an FMU, including source-code FMUs |
+| `omsimulator` | `openmodelica-omsimulator` | `OMSimulator`, its library and the Python bindings |
+| `omlibrary` | `openmodelica-omlibrary` | The Modelica library cache, so `installPackage()` works offline |
+| `omplot` | `openmodelica-omplot` | `OMPlot`, which `plot()` needs |
+| `omedit` | `openmodelica-omedit` | The connection editor |
+| `omshell` / `omshellterminal` | `openmodelica-omshell…` | The Qt and the readline shell |
+| `omnotebook` | `openmodelica-omnotebook` | OMNotebook and DrModelica |
+| `omsens` | `openmodelica-omsens` | The OMSens sensitivity-analysis plugin for OMEdit |
+| `omoptim` | `openmodelica-omoptim` | The legacy optimization GUI (off by default) |
+
+Only the components this build actually configured are packed, so a build with
+`-DOM_ENABLE_GUI_CLIENTS=OFF` produces no `omedit` package. Components belonging to the
+third-party projects built in-tree (SuiteSparse, libzmq, oneTBB, zlib, …) are deliberately
+left out; see the list at the top of `components.cmake`.
+
+`Depends:` is worked out by `dpkg-shlibdeps` from what the binaries link, plus a short
+hand-written list for what `omc` needs at *run* time — a compiler, `make` and `cmake`, which
+it shells out to when it compiles a model.
+
+> **Note**
+> The packages are not yet a drop-in replacement for the ones on
+> [build.openmodelica.org](https://build.openmodelica.org/apt/): they install under
+> `/usr/local`, they are named `openmodelica-<component>` rather than `omc`, `omedit`, …,
+> and there is no `openmodelica` metapackage. See
+> [#16377](https://github.com/OpenModelica/OpenModelica/issues/16377).
+
+### Building the packages
+
+The packages contain what `install` installs, so build and install first. `omlibrary` needs
+an installed `omc` to download with, so it comes after that (see
+[7. Modelica libraries](#7-modelica-libraries-omlibrary)):
+
+```sh
+cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release
+cmake --build build_cmake --target install --parallel <Nr. of cores>
+cmake --build build_cmake --target omlibrary   # optional, for the omlibrary package
+cd build_cmake && cpack -G DEB                 # or: cpack --config build_cmake/CPackConfig.cmake -G DEB
+```
+
+The packages land in `build_cmake/_packages/`. Use `-G RPM` for RPMs, `-G TXZ` for a plain
+archive, and `cpack -G DEB -D CPACK_COMPONENTS_ALL="omc;simrt"` to pack only some components.
+
+A package is only usable on the distribution it was built on — it links that distribution's
+glibc and Qt — so build it in a container of the distribution you are targeting rather than
+on the host, unless the two happen to match.
+
+### Trying the packages in a clean container
+
+```sh
+docker run --rm -it -v "$PWD/build_cmake/_packages:/pkg:ro" ubuntu:26.04 bash
+```
+
+Inside the container, put the packages in a local apt repository. That is what lets apt
+resolve the dependencies *between* them, so you find out whether the packaging is right:
+
+```sh
+apt-get update && apt-get install -y dpkg-dev
+mkdir /repo && cp /pkg/*.deb /repo/ && (cd /repo && dpkg-scanpackages . > Packages)
+echo "deb [trusted=yes] file:/repo ./" > /etc/apt/sources.list.d/local.list
+apt-get update
+
+apt-get install -y openmodelica-omc     # pulls openmodelica-simrt with it
+omc --version
+```
+
+Two ways to get this wrong:
+
+- `dpkg -i` does not resolve dependencies at all. It reports success and leaves you with an
+  `omc` that cannot start, or that fails at the first `simulate()` with
+  `fatal error: 'omc_simulation_settings.h' file not found`.
+- `apt-get install /pkg/openmodelica-omc_*.deb` installs a *file*. apt pulls the missing
+  system libraries, but it does not go looking for `openmodelica-simrt` in `/pkg` — it only
+  knows about the file you named — so it stops with an unmet dependency. Either name every
+  package you want on the command line, or use the local repository above.
+
+### Source packages
+
+Not supported. `cpack --config build_cmake/CPackSourceConfig.cmake` stops with an error
+telling you so.
+
+CPack's source packaging archives the whole source directory while ignoring only the VCS
+directories, which includes the build directory — and therefore the multi-gigabyte archive it
+is at that moment writing into it. It never errors, it just grows, which looks like `cpack`
+hanging. Release tarballs are made with `git-archive-all` in the `apt-build` repository
+instead.
+
+For an archive of an *installation* rather than of the sources, use an archive generator on
+the normal config: `cpack --config build_cmake/CPackConfig.cmake -G TXZ`.

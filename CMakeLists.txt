@@ -358,9 +358,41 @@ endif()
 omc_add_subdirectory(doc)
 
 ## Packaging ##########################################################################################
+# Settings that hold for every package generator. These have to be set *before*
+# include(CPack) below, which is what writes them into CPackConfig.cmake -- and which also
+# derives CPACK_PACKAGE_FILE_NAME from the name and the version, so setting them later (in
+# the project config file) would leave that name built from CPack's own 0.1.1 default.
+# Generator-specific settings go in OpenModelicaCPackOptions.in.cmake instead: that one is
+# read by cpack once per generator, with CPACK_GENERATOR set.
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VENDOR "Open Source Modelica Consortium")
+set(CPACK_PACKAGE_CONTACT "openmodelica@openmodelica.org")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/OSMC-License.txt")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_BINARY_DIR}/_packages")
+set(CPACK_VERBATIM_VARIABLES ON)
+
+# OM_PACKAGE_VERSION is empty when the source tree has no version to derive one from; see
+# cmake/omc_git_revision.cmake. Leave CPack's defaults alone in that case rather than
+# writing an unusable version into the config -- the DEB and RPM generators refuse to run
+# on it, and the others (TGZ, the developer's `cpack` on a shallow clone) still work.
+if(OM_PACKAGE_VERSION)
+  set(CPACK_PACKAGE_VERSION ${OM_PACKAGE_VERSION})
+  set(CPACK_PACKAGE_VERSION_MAJOR ${OM_PACKAGE_VERSION_MAJOR})
+  set(CPACK_PACKAGE_VERSION_MINOR ${OM_PACKAGE_VERSION_MINOR})
+  set(CPACK_PACKAGE_VERSION_PATCH ${OM_PACKAGE_VERSION_PATCH})
+endif()
+
 # Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.
 # This will generate the output file in the build directory.
-configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
+#
+# @ONLY: cpack runs this file itself, long after this configure, with the CPACK_ variables
+# from CPackConfig.cmake in scope. Only what cpack cannot know -- our version, our source
+# directory -- is substituted here, as @VAR@; a ${VAR} is left for cpack to expand. Without
+# @ONLY every ${CPACK_...} reference in there would be replaced by whatever it happened to
+# hold at configure time, which is how CPACK_DEBIAN_PACKAGE_MAINTAINER used to end up as
+# "OpenModelica Build System <>".
+configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake @ONLY)
 # Tell CPack to use this configured file when it is invoked to create packages.
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
 # Tell CPack about our components (dispaly names, descriptions, dependencies ...)
