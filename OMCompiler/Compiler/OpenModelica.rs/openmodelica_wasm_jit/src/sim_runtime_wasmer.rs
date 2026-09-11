@@ -252,6 +252,9 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
 
 pub fn ensure_prepared(_model: &SimModel) {}
 
+/// One engine, whatever the module: nothing to select.
+pub fn select_engine_for(_wasm: &[u8]) {}
+
 type Store = wasmer::Store;
 
 /// `SimEngine`-trait / host-import errors: collapse to the crate `&'static str`
