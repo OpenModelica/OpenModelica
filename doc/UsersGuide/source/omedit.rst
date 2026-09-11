@@ -1981,6 +1981,93 @@ Sensitivity Optimization Options
 
   -  *python* - sets the Python executable to run OMSens scripts.
 
+.. _omedit-options-language-server:
+
+Language Server Options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OMEdit can connect to an external Modelica language server that speaks the
+`Language Server Protocol (LSP) <https://microsoft.github.io/language-server-protocol/>`_
+over stdin/stdout. When enabled, the language server provides:
+
+-  **Hover** - hover the mouse over a symbol in the text editor to see its
+   documentation in a tooltip.
+
+-  **Go to definition** - Ctrl+Click a symbol, or use *Go to Definition* from
+   the right-click menu, to navigate to where it is defined (including across
+   files).  When the language server cannot resolve the symbol, OMEdit falls
+   back to its built-in class navigation.
+
+The feature is on by default and can be turned off here.
+
+-  Language Server Protocol (LSP)
+
+  -  *Language Server Protocol (LSP)* - when this group is checked, OMEdit
+     starts the language server process and connects to it.
+
+  -  *Server Executable* - path to the language server executable.  Leave it
+     blank (recommended) to run the server installed with OpenModelica.  Use
+     *Download...* below to fetch a different release, *Browse* to select a
+     server you already have, or *Auto Detect* to search for one.
+
+  -  *Restart Server* - stops the language server and starts it again.  The
+     library list is kept in step with OMC automatically, so this is only
+     needed if the server stopped after repeated crashes, or if a library
+     changed on disk.  It acts immediately; changes to the fields above are
+     applied when you click *OK*.
+
+  -  *Download...* - fetches a standalone language server and points *Server
+     Executable* at it.  The drop-down next to the button chooses the release:
+     the version marked *(recommended)* is the one installed with OMEdit, and
+     *Latest release* takes the newest release published on GitHub.
+
+  The libraries the server searches are the ones loaded in OMEdit; there is no
+  separate list to maintain.  Loading a library makes it resolvable for *Go to
+  Definition* and hover, and unloading it removes it again.
+
+  -  *Log language server messages to the Messages Browser* - when checked,
+     messages from the language server are shown in the Messages Browser,
+     prefixed with ``LSP``.
+
+Hover information is shown as a tooltip.  Navigation works both with Ctrl+Click
+and from the editor right-click menu (*Go to Definition*, marked with the
+language server icon while the server is running).  Enabling or disabling the
+language server takes effect immediately; a restart is not required.
+
+**The language server installed with OpenModelica**
+
+OpenModelica installs a
+`Modelica language server <https://github.com/OpenModelica/modelica-language-server>`_
+alongside OMEdit, and it is what runs when *Server Executable* is left blank -
+which is the default, so there is nothing to set up.  It brings its own
+runtime, so nothing else has to be installed.
+
+It is installed in ``share/omedit/ls/modelica`` as three files: the server
+itself and the two ``.wasm`` files it parses Modelica with.  They belong
+together - a server without them starts, and then answers nothing.
+
+**Using a different server**
+
+*Download...* on the options page fetches another release of the same
+standalone server and points *Server Executable* at it.  It is installed under
+your user configuration directory, beside ``omedit.ini``, so no administrator
+rights are needed.
+
+You can also point *Server Executable* at a server you built yourself - which is
+how to try a change to the language server before it is released.  Keep
+``tree-sitter-modelica.wasm`` and ``web-tree-sitter.wasm`` in the same directory
+as the binary; without them the server starts but reports nothing, and OMEdit
+says so in the Messages Browser.
+
+**If the server stops**
+
+If the server process exits unexpectedly, OMEdit restarts it automatically
+after a short delay, up to 5 times within a 3 minute window.  Past that it
+stops retrying and reports the failure as an error message.  Every crash and
+restart attempt is appended to ``languageserver_crash.log`` in OMEdit's
+temporary directory (*Tools > Open Temporary Directory*), so the log can be
+attached to a bug report.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 

@@ -47,12 +47,14 @@
 #include "Util/DirectoryOrFileSelector.h"
 
 #include <QFontComboBox>
+#include <QProgressDialog>
 #include <QStackedWidget>
 #include <QDialogButtonBox>
 #include <QRadioButton>
 #include <QTreeWidget>
 #include <QDialog>
 #include <QLineEdit>
+#include <QHash>
 
 class GeneralSettingsPage;
 class LibrariesPage;
@@ -75,6 +77,7 @@ class FigaroPage;
 class CRMLPage;
 class DebuggerPage;
 class FMIPage;
+class LanguageServerPage;
 class OMSimulatorPage;
 class SensitivityOptimizationPage;
 class TraceabilityPage;
@@ -127,6 +130,7 @@ public:
   void readOMSimulatorSettings();
   void readSensitivityOptimizationSettings();
   void readTraceabilitySettings();
+  void readLanguageServerSettings();
   void readCloudStorageSettings();
   void saveGeneralSettings();
   void saveNFAPISettings();
@@ -142,6 +146,7 @@ public:
   void saveOMSimulatorSettings();
   void saveSensitivityOptimizationSettings();
   void saveTraceabilitySettings();
+  void saveLanguageServerSettings();
   void saveCloudStorageSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -183,6 +188,7 @@ public:
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
+  LanguageServerPage* getLanguageServerPage() {return mpLanguageServerPage;}
   CloudStoragePage* getCloudStoragePage() {return mpCloudStoragePage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
@@ -238,6 +244,7 @@ private:
   OMSimulatorPage *mpOMSimulatorPage;
   SensitivityOptimizationPage *mpSensitivityOptimizationPage;
   TraceabilityPage *mpTraceabilityPage;
+  LanguageServerPage *mpLanguageServerPage;
   CloudStoragePage *mpCloudStoragePage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
@@ -1173,6 +1180,46 @@ private slots:
   void browseCompilerJar();
   void browseCompilerProcessFile();
   void resetCompilerProcessPath();
+};
+
+class LanguageServerPage : public QWidget
+{
+  Q_OBJECT
+public:
+  LanguageServerPage(OptionsDialog *pOptionsDialog);
+  QGroupBox* getLanguageServerGroupBox() {return mpLanguageServerGroupBox;}
+  QCheckBox* getEnableLoggingCheckBox() {return mpEnableLoggingCheckBox;}
+  QLineEdit* getServerExecutableTextBox() {return mpServerExecutableTextBox;}
+  /*!
+   * \brief setServerRestartEnabled
+   * Restarting acts on the saved configuration, so it follows the stored
+   * enabled flag rather than the group box's unsaved check state.
+   * \param enabled
+   */
+  void setServerRestartEnabled(bool enabled) {mpRestartServerButton->setEnabled(enabled);}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpLanguageServerGroupBox;
+  QCheckBox *mpEnableLoggingCheckBox;
+  Label *mpServerExecutableLabel;
+  QLineEdit *mpServerExecutableTextBox;
+  QPushButton *mpBrowseServerExecutableButton;
+  QPushButton *mpAutoDetectButton;
+  QPushButton *mpRestartServerButton;
+  QPushButton *mpDownloadServerButton;
+  QComboBox *mpDownloadVersionComboBox;
+
+  static QString platformServerAsset();
+  static QString installedServerVersion();
+  QString selectedReleaseTag() const;
+  bool fetchAssetDigests(const QString &tag, QHash<QString, QString> *pDigests, QProgressDialog *pProgressDialog);
+  bool downloadReleaseAsset(const QString &tag, const QString &asset, const QString &destination, const QString &expectedSha256,
+                            QProgressDialog *pProgressDialog);
+private slots:
+  void browseServerExecutable();
+  void autoDetectServerExecutable();
+  void restartServer();
+  void downloadServerExecutable();
 };
 
 /*!
