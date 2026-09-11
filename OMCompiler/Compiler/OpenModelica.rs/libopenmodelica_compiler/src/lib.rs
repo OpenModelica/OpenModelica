@@ -113,6 +113,17 @@ mod sim_metadata;
 #[cfg(not(target_arch = "wasm32"))]
 mod omedit_runtime;
 
+// malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) unsafe fn malloc_dup(s: *const std::ffi::c_char) -> *mut std::ffi::c_char {
+    let n = unsafe { libc::strlen(s) } + 1;
+    let p = unsafe { libc::malloc(n) } as *mut std::ffi::c_char;
+    if !p.is_null() {
+        unsafe { std::ptr::copy_nonoverlapping(s, p, n) };
+    }
+    p
+}
+
 // Re-export the generated typed OMEdit interface ABI (the `extern "C"` wrappers
 // behind OpenModelicaScriptingAPIQt, in the `openmodelica_scripting_qt` crate).
 // The `pub use` makes the `#[no_mangle]` symbols reachable from this cdylib's

@@ -68,9 +68,17 @@ fn cstr(p: *const c_char) -> String {
     if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
 }
 
+// malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
 pub(crate) fn malloc_str(s: &str) -> *mut c_char {
     let c = CString::new(s.replace('\0', " ")).unwrap_or_default();
-    unsafe { libc::strdup(c.as_ptr()) }
+    let b = c.as_bytes_with_nul();
+    unsafe {
+        let p = libc::malloc(b.len()) as *mut c_char;
+        if !p.is_null() {
+            ptr::copy_nonoverlapping(b.as_ptr(), p as *mut u8, b.len());
+        }
+        p
+    }
 }
 
 pub(crate) fn set_error(error: *mut *mut c_char, msg: &str) {

@@ -962,7 +962,8 @@ pub mod native_stdout {
             // Whatever an external left in libc's buffers happened before this line.
             libc::fflush(std::ptr::null_mut());
             while !rest.is_empty() {
-                let n = libc::write(fd, rest.as_ptr() as *const _, rest.len());
+                // Windows counts bytes in a c_uint, POSIX in a size_t.
+                let n = libc::write(fd, rest.as_ptr() as *const _, rest.len() as _);
                 if n <= 0 {
                     break;
                 }
