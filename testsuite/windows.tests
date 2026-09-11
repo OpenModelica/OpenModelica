@@ -1,0 +1,47 @@
+# Tests run on the Windows (MSYS2/UCRT64) CI build, see .CI/common.groovy's
+# sanityCheck() and testsuite/runWindowsTests.sh.
+#
+# We do not run the whole testsuite on Windows: it is roughly ten times slower
+# there (https://github.com/OpenModelica/OpenModelica/issues/16279). This is a
+# smoke set instead - enough to catch a broken toolchain, a missing DLL or a
+# path handling bug, not to check compiler semantics, which the Linux runs
+# already cover.
+#
+# Every test here must run with nothing but an installed omc: no library from
+# libs-for-testing (the Windows job git-cleans the workspace, so
+# libraries/.openmodelica is empty) and no file from reference-files. The one
+# exception is FFITestLib, which runWindowsTests.sh builds first.
+#
+# Paths are relative to the testsuite root, one per line; '#' starts a comment.
+
+# MetaModelica code generation and the C compile of the generated code.
+./metamodelica/meta/AlgPatternm.mos
+
+# External C, the Windows failure everybody hits: finding the shared library.
+# countLines goes to ModelicaExternalC, which ships with omc; Integer1 goes to
+# FFITestLib.dll, which we build beside the test.
+./flattening/modelica/ffi/ModelicaInternal_countLines.mos
+./flattening/modelica/ffi/Integer1.mos
+
+# An external C library compiled and linked while building the simulation, and
+# a model calling LAPACK - i.e. the Fortran side of the toolchain.
+./simulation/modelica/external_functions/ExternalLibraries.mos
+./simulation/modelica/external_functions/LapackInverse.mos
+
+# C runtime: a nonlinear system solved by KINSOL, so the SUNDIALS libraries
+# have to be there and usable.
+./simulation/modelica/nonlinear_system/problem1_kinsol.mos
+
+# Linearization, which writes and reads back a generated Modelica file.
+./openmodelica/linearization/simVanDerPol.mos
+
+# C++ runtime: events, a .mat result file and comparing it against a reference
+# checked into the test directory.
+./openmodelica/cppruntime/BouncingBall.mos
+
+# FMI export. The 2.0 test links against libfmilib, zips the FMU, imports it
+# back and simulates it; the 3.0 one exports arrays with the new backend. A
+# co-simulation test would be worth adding once this stage is green, but it
+# needs OMSimulator to run the FMU.
+./openmodelica/fmi/ModelExchange/2.0/HelloFMIWorld.mos
+./openmodelica/fmi/ModelExchange/3.0/fmi3_arrays.mos

@@ -258,7 +258,8 @@ void makeLibsAndCacheCMake() {
  * Perform sanity check.
  *
  * Run script testsuite/sanity-check/runSanity.sh for C and C++ runtime.
- * On Windows a install directory with spaces and three tests with rtest are run as well.
+ * On Windows an install directory with spaces and the smoke set of testsuite
+ * tests in testsuite/windows.tests are run as well.
  *
  * @param installDir  Path to omc installation directory.
  * @param buildCpp    True if omc was build with Cpp runtime.
@@ -285,35 +286,16 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces" "${installDir}"
     """)
+    // The tests are listed in testsuite/windows.tests rather than here, so that
+    // a developer on Windows can run exactly what CI runs. runWindowsTests.sh
+    // returns non-zero if any of them fails; the shell script this replaced ran
+    // rtest line by line and only ever reported the last one's status.
     bat (label: "Sanity check - testsuite", script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      echo on
-      (
-      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-      echo cd \${MSYS_WORKSPACE}
-      echo echo Unset OPENMODELICALIBRARY to make sure the default is used
-      echo unset OPENMODELICALIBRARY
-      echo echo Testing some models from testsuite, ffi, meta, fmi
-      echo cd testsuite/flattening/libraries/biochem
-      echo ../../../rtest --return-with-error-code EnzMM.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/flattening/modelica/ffi
-      echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
-      echo ../../../rtest --return-with-error-code Integer1.mos
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/metamodelica/meta
-      echo ../../rtest --return-with-error-code AlgPatternm.mos
-      echo echo FMI export+import roundtrip, guards Windows -lfmilib linking against libfmilib.dll
-      echo cd \${MSYS_WORKSPACE}
-      echo cd testsuite/openmodelica/fmi/ModelExchange/2.0
-      echo ../../../../rtest --return-with-error-code HelloFMIWorld.mos
-      ) > miniTestsuite.sh
-
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin;${WORKSPACE}\\${installDir}\\lib\\omc\\omsicpp;${WORKSPACE}\\${installDir}\\lib\\omc\\cpp
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/runWindowsTests.sh"
     """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
@@ -378,6 +360,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         echo cd \${MSYS_WORKSPACE}
         echo which cmake
         echo set -ex
+        echo trap 'echo "buildOMCWindows.sh: command failed, exit code \$?"' ERR
         echo mkdir build_cmake
         echo ${cmake_exe} --version
         echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
