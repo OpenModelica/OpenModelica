@@ -629,6 +629,49 @@ pub fn sim_bench_enabled() -> bool {
         || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
 }
 
+/// The largest function body in a wasm module; see `sim_runtime::select_engine_for`.
+/// Walks the code section's length prefixes only. An unparsable module reports 0 and
+/// leaves the compiler to report the real problem.
+pub fn max_function_body(wasm: &[u8]) -> usize {
+    fn uleb(b: &[u8], i: &mut usize) -> Option<usize> {
+        let (mut v, mut shift) = (0usize, 0u32);
+        loop {
+            let byte = *b.get(*i)?;
+            *i += 1;
+            v |= ((byte & 0x7f) as usize) << shift;
+            if byte & 0x80 == 0 {
+                return Some(v);
+            }
+            shift += 7;
+            if shift > 63 {
+                return None;
+            }
+        }
+    }
+    fn scan(wasm: &[u8]) -> Option<usize> {
+        let mut i = 8; // magic + version
+        while i < wasm.len() {
+            let id = *wasm.get(i)?;
+            i += 1;
+            let size = uleb(wasm, &mut i)?;
+            if id != 10 {
+                i = i.checked_add(size)?;
+                continue;
+            }
+            let mut max = 0;
+            let n = uleb(wasm, &mut i)?;
+            for _ in 0..n {
+                let body = uleb(wasm, &mut i)?;
+                max = max.max(body);
+                i = i.checked_add(body)?;
+            }
+            return Some(max);
+        }
+        Some(0)
+    }
+    scan(wasm).unwrap_or(0)
+}
+
 /// Set from `-n`: one processor means no background precompile and no parallel
 /// module compilation, so each phase is timed where it runs.
 #[cfg(feature = "jit")]

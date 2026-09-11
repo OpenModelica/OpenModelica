@@ -40,6 +40,9 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
 
 pub fn ensure_prepared(_model: &SimModel) {}
 
+/// One engine, whatever the module: nothing to select.
+pub fn select_engine_for(_wasm: &[u8]) {}
+
 pub fn run(
     _model: &SimModel,
     _meta: &openmodelica_sim_meta::SimMeta,

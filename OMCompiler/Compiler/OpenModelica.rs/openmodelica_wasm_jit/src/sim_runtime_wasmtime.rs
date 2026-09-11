@@ -154,31 +154,63 @@ fn start_epoch_ticker(engine: wasmtime::Engine) {
     });
 }
 
+/// Whether the module a compile is about to run on can afford Cranelift's
+/// inliner; see [`select_engine_for`].
+static INLINING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// Cranelift's inliner is superlinear in the body it inlines into, so one enormous
+/// function can decide a whole compile. Inlining is worth several per cent of an
+/// ordinary run, so keep it while every function is small enough for it to stay
+/// cheap; `OMC_WASM_INLINE_MAX_BODY` moves the line.
+fn inline_max_body() -> usize {
+    static N: OnceLock<usize> = OnceLock::new();
+    *N.get_or_init(|| {
+        std::env::var("OMC_WASM_INLINE_MAX_BODY")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(256 * 1024)
+    })
+}
+
+/// Point the engine selection at the module that is about to be compiled or
+/// instantiated. Every module of one run has to land on the same engine (a module
+/// belongs to the engine that compiled it), so this is set from the *model*'s
+/// bytes and the runtime module follows.
+pub fn select_engine_for(wasm: &[u8]) {
+    let pays = crate::model::max_function_body(wasm) <= inline_max_body();
+    INLINING.store(pays, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn inlining() -> bool {
+    std::env::var("OMC_WASM_NO_INLINE").is_err()
+        && INLINING.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// One process-wide wasmtime `Engine`, so the (model-independent) runtime module
 /// can be JIT-compiled once and reused, and so model modules built on background
 /// threads share the same engine the run instantiates them on.
-/// Two of them: see [`ALARM_SECS`].
+/// One per configuration: see [`ALARM_SECS`] and [`select_engine_for`].
 pub fn sim_engine() -> &'static wasmtime::Engine {
-    if alarm_secs() != 0 { alarm_engine() } else { plain_engine() }
+    engine_for(alarm_secs() != 0, inlining())
 }
 
-fn alarm_engine() -> &'static wasmtime::Engine {
-    static ENGINE: OnceLock<wasmtime::Engine> = OnceLock::new();
-    ENGINE.get_or_init(|| {
-        let engine = build_engine_cfg(|cfg| {
-            cfg.epoch_interruption(true);
+fn engine_for(epoch: bool, inlining: bool) -> &'static wasmtime::Engine {
+    static ENGINES: [OnceLock<wasmtime::Engine>; 4] =
+        [OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    ENGINES[epoch as usize * 2 + inlining as usize].get_or_init(|| {
+        let engine = build_engine_cfg(inlining, |cfg| {
+            if epoch {
+                cfg.epoch_interruption(true);
+            }
         });
-        start_epoch_ticker(engine.clone());
+        if epoch {
+            start_epoch_ticker(engine.clone());
+        }
         engine
     })
 }
 
-fn plain_engine() -> &'static wasmtime::Engine {
-    static ENGINE: OnceLock<wasmtime::Engine> = OnceLock::new();
-    ENGINE.get_or_init(|| build_engine_cfg(|_| {}))
-}
-
-fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engine {
+fn build_engine_cfg(inlining: bool, extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engine {
     let mut cfg = wasmtime::Config::new();
     crate::tune_memory(&mut cfg);
     // A model with external "C" carries the `model_error` tag its `ext` call sites
@@ -197,8 +229,9 @@ fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engi
     // `rt_*` helpers as *imported* functions, and wasmtime's default is no
     // inlining at all, so a handful of instructions cost a call; `Yes` also
     // covers inter-module. Costs module compilation time, which the on-disk
-    // AOT cache pays once for the runtime.
-    if std::env::var("OMC_WASM_NO_INLINE").is_err() {
+    // AOT cache pays once for the runtime — and which [`select_engine_for`]
+    // refuses to pay on a model with an enormous function.
+    if inlining {
         cfg.compiler_inlining(wasmtime::Inlining::Yes);
     }
     extra(&mut cfg);
@@ -214,11 +247,11 @@ fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engi
 /// is rejected and we transparently fall back to JIT (then refresh the cache).
 /// One cache per engine: a module belongs to the engine that compiled it.
 pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String> {
-    static PLAIN: OnceLock<std::result::Result<wasmtime::Module, String>> = OnceLock::new();
-    static ALARM: OnceLock<std::result::Result<wasmtime::Module, String>> = OnceLock::new();
-    let armed = alarm_secs() != 0;
-    if armed { &ALARM } else { &PLAIN }
-        .get_or_init(|| load_or_compile_runtime(armed))
+    type Cached = OnceLock<std::result::Result<wasmtime::Module, String>>;
+    static MODULES: [Cached; 4] = [OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    let (armed, inlining) = (alarm_secs() != 0, inlining());
+    MODULES[armed as usize * 2 + inlining as usize]
+        .get_or_init(|| load_or_compile_runtime(armed, inlining))
         .as_ref()
         .map_err(|e| format!("obtaining runtime module: {e}"))
 }
@@ -232,13 +265,13 @@ pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String
 /// reboots and not shared between users (unlike a world-writable temp dir, where
 /// the sticky bit would stop other users refreshing it). Falls back to the
 /// system temp dir if `$HOME` is unset or the cache dir can't be created.
-fn aot_cache_key(blob: &[u8], epoch: bool) -> u64 {
+fn aot_cache_key(blob: &[u8], epoch: bool, inlining: bool) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
     blob.len().hash(&mut h);
     blob.hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
-    std::env::var("OMC_WASM_NO_INLINE").is_ok().hash(&mut h);
+    inlining.hash(&mut h);
     epoch.hash(&mut h);
     h.finish()
 }
@@ -276,7 +309,7 @@ fn aot_installed_path(tag: &str, key: u64) -> Option<std::path::PathBuf> {
 /// Compile a *fixed* wasm blob through the on-disk AOT cache: the `external "C"`
 /// side libraries take ~0.7 s to compile against ~6 ms to load the artifact.
 fn aot_module(engine: &wasmtime::Engine, tag: &str, blob: &[u8], epoch: bool) -> std::result::Result<wasmtime::Module, String> {
-    let key = aot_cache_key(blob, epoch);
+    let key = aot_cache_key(blob, epoch, inlining());
     let path = aot_cache_path(tag, key);
     // Try the AOT artifact first (microseconds): the one the build installed, else
     // the one a previous run left in the per-user cache. `deserialize_file` is
@@ -313,7 +346,7 @@ pub fn library_module(
     blob: &[u8],
     fixed: bool,
 ) -> std::result::Result<wasmtime::Module, String> {
-    let key = aot_cache_key(blob, alarm_secs() != 0);
+    let key = aot_cache_key(blob, alarm_secs() != 0, inlining());
     // A module's types belong to the engine that compiled it.
     type Memo = std::sync::Mutex<HashMap<u64, (wasmtime::Engine, wasmtime::Module)>>;
     static MEMO: OnceLock<Memo> = OnceLock::new();
@@ -337,9 +370,6 @@ pub fn library_module(
 /// build did not produce is skipped.
 pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    // `alarm_secs()` is 0 here, so this is the plain (non-epoch) engine — the one
-    // a run uses unless it asked for the hard alarm.
-    let engine = sim_engine();
     let mut blobs: Vec<(String, &[u8])> = vec![
         ("runtime".to_string(), runtime_blob()),
         ("fused".to_string(), crate::FMI3_FUSED_WASIP1),
@@ -350,8 +380,19 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         ("lib-usertab".to_string(), openmodelica_wasi_libc::USERTAB_DYLINK),
     ];
     blobs.retain(|(_, b)| !b.is_empty());
-    let current: Vec<String> =
-        blobs.iter().map(|(tag, blob)| aot_cache_name(tag, aot_cache_key(blob, false))).collect();
+    // Both engines [`select_engine_for`] can land on: a model with one enormous
+    // function turns the inliner off, and would otherwise miss every installed
+    // artifact and compile the runtime and the side libraries for itself.
+    // `alarm_secs()` is 0 here, so these are the plain (non-epoch) engines — the
+    // ones a run uses unless it asked for the hard alarm.
+    let engines: Vec<(bool, &wasmtime::Engine)> =
+        [true, false].iter().map(|&inl| (inl, engine_for(false, inl))).collect();
+    let current: Vec<String> = blobs
+        .iter()
+        .flat_map(|(tag, blob)| {
+            engines.iter().map(move |&(inl, _)| aot_cache_name(tag, aot_cache_key(blob, false, inl)))
+        })
+        .collect();
     // What an earlier build left for a blob that has since changed. Keyed by the
     // blob's hash, so it will never be looked up again; without this every change
     // adds another artifact to the install.
@@ -367,30 +408,32 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     }
     let mut written = Vec::new();
     for (tag, blob) in blobs {
-        let name = aot_cache_name(&tag, aot_cache_key(blob, false));
-        // Rebuilt on every build, so skip what is already there: only a blob that
-        // actually changed is worth minutes of Cranelift.
-        if dir.join(&name).is_file() {
-            continue;
+        for &(inl, engine) in &engines {
+            let name = aot_cache_name(&tag, aot_cache_key(blob, false, inl));
+            // Rebuilt on every build, so skip what is already there: only a blob that
+            // actually changed is worth minutes of Cranelift.
+            if dir.join(&name).is_file() {
+                continue;
+            }
+            let module = wts(wasmtime::Module::new(engine, blob))?;
+            let bytes = wts(module.serialize())?;
+            let path = dir.join(&name);
+            std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+            written.push(name);
         }
-        let module = wts(wasmtime::Module::new(engine, blob))?;
-        let bytes = wts(module.serialize())?;
-        let path = dir.join(&name);
-        std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-        written.push(name);
     }
     Ok(written)
 }
 
-fn load_or_compile_runtime(epoch: bool) -> std::result::Result<wasmtime::Module, String> {
-    let engine = if epoch { alarm_engine() } else { plain_engine() };
-    aot_module(engine, "runtime", runtime_blob(), epoch)
+fn load_or_compile_runtime(epoch: bool, inlining: bool) -> std::result::Result<wasmtime::Module, String> {
+    aot_module(engine_for(epoch, inlining), "runtime", runtime_blob(), epoch)
 }
 
 /// JIT-compile a generated model module on the shared engine. Called either on a
 /// background thread from `translateModel` (overlapping the rest of the OMC
 /// pipeline) or inline from `run` as a fallback.
 pub fn compile_model_module(wasm: &[u8]) -> std::result::Result<wasmtime::Module, String> {
+    select_engine_for(wasm);
     wts(wasmtime::Module::new(sim_engine(), wasm))
 }
 
@@ -1431,6 +1474,7 @@ struct Instantiated {
 fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<Instantiated, String> {
     let bench = crate::model::sim_bench_enabled();
     crate::host::lin_solve::reset(); // drop the previous run's host-side LSS cache
+    select_engine_for(&model.wasm);
     let engine = sim_engine();
     let mut linker = wasmtime::Linker::new(engine);
     add_host_builtins(&mut linker)?;
@@ -2376,6 +2420,7 @@ impl DylinkFmu {
                         wasm32-unknown-unknown toolchain)"
                 .to_string());
         }
+        select_engine_for(model);
         let engine = sim_engine();
         let mut linker = wasmtime::Linker::new(engine);
         add_host_builtins(&mut linker)?;
@@ -2530,6 +2575,7 @@ impl DylinkFmu {
             return Err("CodegenWasmJit: this omc has no fused wasip1 artifact runtime".to_string());
         }
         crate::host::lin_solve::reset(); // drop the previous run's host-side LSS cache
+        select_engine_for(model);
         let engine = sim_engine();
         let mut linker = wasmtime::Linker::new(engine);
         add_host_builtins(&mut linker)?;
