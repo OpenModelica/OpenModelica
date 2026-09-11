@@ -33,12 +33,12 @@ pub use dumpster::Visitor;
 
 // ── type-level booleans ──────────────────────────────────────────────────────
 
-/// Whether a value can reach a [`Gc`]. See the module docs.
+/// Whether a value can reach a traced allocation. See the module docs.
 pub trait Traced: 'static {
     /// Disjunction, for types built out of several others (tuples, records).
     type Or<B: Traced>: Traced;
     /// The allocation a container spine uses for this kind of payload.
-    type Ptr<U: dumpster::Trace + 'static>: SpinePtr<U>;
+    type Ptr<U: MmVal>: SpinePtr<U>;
 }
 
 pub struct No;
@@ -46,12 +46,12 @@ pub struct Yes;
 
 impl Traced for No {
     type Or<B: Traced> = B;
-    type Ptr<U: dumpster::Trace + 'static> = Arc<U>;
+    type Ptr<U: MmVal> = Arc<U>;
 }
 
 impl Traced for Yes {
     type Or<B: Traced> = Yes;
-    type Ptr<U: dumpster::Trace + 'static> = Gc<U>;
+    type Ptr<U: MmVal> = GcRef<U>;
 }
 
 /// Shorthand for the disjunction of two flags.
@@ -59,8 +59,36 @@ pub type Or<A, B> = <<A as MmVal>::Traced as Traced>::Or<<B as MmVal>::Traced>;
 
 // ── the two spine allocations ────────────────────────────────────────────────
 
+/// Adapts an [`MmVal`] to dumpster's own trait. `Gc<T>` demands `T: Trace`,
+/// which is foreign and cannot be implemented for a generic MetaModelica
+/// value; wrapping one local type that forwards to `mm_accept` is what lets any
+/// `MmVal` sit inside a `Gc`.
+pub struct Cell<T: MmVal>(pub T);
+
+unsafe impl<V: Visitor, T: MmVal> dumpster::TraceWith<V> for Cell<T> {
+    fn accept(&self, visitor: &mut V) -> Result<(), ()> {
+        self.0.mm_accept(visitor)
+    }
+}
+
+/// The traced spine. Hides the [`Cell`] hop so both arms deref to the payload.
+pub struct GcRef<U: MmVal>(Gc<Cell<U>>);
+
+impl<U: MmVal> Clone for GcRef<U> {
+    fn clone(&self) -> Self {
+        GcRef(self.0.clone())
+    }
+}
+
+impl<U: MmVal> std::ops::Deref for GcRef<U> {
+    type Target = U;
+    fn deref(&self) -> &U {
+        &self.0.0
+    }
+}
+
 /// What a shared container allocation must provide. The two implementations
-/// differ only in `spine_accept`: the `Gc` arm reports itself to the collector,
+/// differ in `spine_accept`: the traced arm reports itself to the collector,
 /// the `Arc` arm is the barrier.
 pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
     fn alloc(value: U) -> Self
@@ -78,18 +106,18 @@ pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
     fn is_unique(this: &Self) -> bool;
 }
 
-impl<U: dumpster::Trace + 'static> SpinePtr<U> for Gc<U> {
+impl<U: MmVal> SpinePtr<U> for GcRef<U> {
     fn alloc(value: U) -> Self {
-        Gc::new(value)
+        GcRef(Gc::new(Cell(value)))
     }
     fn spine_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
-        dumpster::TraceWith::accept(self, visitor)
+        dumpster::TraceWith::accept(&self.0, visitor)
     }
     fn same(a: &Self, b: &Self) -> bool {
-        Gc::ptr_eq(a, b)
+        Gc::ptr_eq(&a.0, &b.0)
     }
     fn addr(this: &Self) -> *const () {
-        Gc::as_ptr(this) as *const ()
+        Gc::as_ptr(&this.0) as *const ()
     }
     fn get_mut(_: &mut Self) -> Option<&mut U> {
         None
@@ -156,10 +184,17 @@ impl<T: ?Sized + 'static> MmVal for Rc<T> {
     }
 }
 
-impl<T: dumpster::Trace + ?Sized + 'static> MmVal for Gc<T> {
+impl<T: MmVal> MmVal for Gc<Cell<T>> {
     type Traced = Yes;
     fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
         dumpster::TraceWith::accept(self, visitor)
+    }
+}
+
+impl<T: MmVal> MmVal for GcRef<T> {
+    type Traced = Yes;
+    fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        self.spine_accept(visitor)
     }
 }
 
@@ -288,12 +323,12 @@ mod tests {
     #[test]
     fn spine_is_selected_per_instantiation() {
         assert!(type_name::<Spine<Arc<i32>, u8>>().contains("Arc"));
-        assert!(type_name::<Spine<Gc<i32>, u8>>().contains("Gc"));
+        assert!(type_name::<Spine<GcRef<i32>, u8>>().contains("Gc"));
         // Tuples and nesting propagate the flag.
         assert!(type_name::<Spine<(Arc<i32>, i32), u8>>().contains("Arc"));
-        assert!(type_name::<Spine<(Arc<i32>, Gc<i32>), u8>>().contains("Gc"));
+        assert!(type_name::<Spine<(Arc<i32>, GcRef<i32>), u8>>().contains("Gc"));
         assert!(type_name::<Spine<Option<Vec<Arc<i32>>>, u8>>().contains("Arc"));
-        assert!(type_name::<Spine<Option<Vec<Gc<i32>>>, u8>>().contains("Gc"));
+        assert!(type_name::<Spine<Option<Vec<GcRef<i32>>>, u8>>().contains("Gc"));
         // A leaf the orphan rule blocks from dumpster's own trait.
         assert!(type_name::<Spine<arcstr::ArcStr, u8>>().contains("Arc"));
     }
