@@ -648,6 +648,23 @@ void buildRustWeb() {
   stash name: 'web-partial', includes: 'install_web/share/omc/web/**'
 }
 
+// OMEdit's cloud-storage OAuth registrations, from the secret-file credential
+// `OMEDIT_CLOUD_API_KEYS_WEB` (see OMEdit/OMEditGUI/wasm/CLOUD-STORAGE.md).
+// Master only: the registration names playground.openmodelica.org. `body` gets
+// the cmake flag, always passed since the variable is cached.
+void withOmeditCloudConfig(Closure body) {
+  if (isPR() || env.BRANCH_NAME != 'master') {
+    echo "${env.BRANCH_NAME} is not master: building OMEdit-qt web without the cloud-storage configuration"
+    body('-DOMEDIT_CLOUD_CONFIG=')
+    return
+  }
+  // The bound file exists for the closure only, so configure/build/install are
+  // all inside it. Expanded by the shell, not Groovy, to keep it out of the log.
+  withCredentials([file(credentialsId: 'OMEDIT_CLOUD_API_KEYS_WEB', variable: 'OMEDIT_CLOUD_CONFIG')]) {
+    body('-DOMEDIT_CLOUD_CONFIG=$OMEDIT_CLOUD_CONFIG')
+  }
+}
+
 // The Qt web pages (OMShell/OMNotebook/OMEdit-qt) alone, off the stage-1 prebuilt
 // omc. OMEDIT_WASM_OPTIMIZE=ON always: an -O0 OMEdit link does not run in the
 // browser (see rust_omc.cmake).
@@ -657,11 +674,13 @@ void buildRustWebQt() {
   unstash 'runtime-sources-mo'
   restoreGeneratedSrc()
   unstash 'omc-cmake-rust-gui-inputs'
-  configureWeb('-DRUST_OMC_WEB_QT=OFF -DRUST_OMC_WEB_QT_STANDALONE=ON -DOMEDIT_WASM_OPTIMIZE=ON')
-  withEmSccache {
-    sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target rust_omshell_qt_web rust_omnotebook_qt_web rust_omedit_qt_web"
+  withOmeditCloudConfig { cloudConfigFlag ->
+    configureWeb("-DRUST_OMC_WEB_QT=OFF -DRUST_OMC_WEB_QT_STANDALONE=ON -DOMEDIT_WASM_OPTIMIZE=ON ${cloudConfigFlag}")
+    withEmSccache {
+      sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target rust_omshell_qt_web rust_omnotebook_qt_web rust_omedit_qt_web"
+    }
+    sh "cmake --install build_cmake --component web"
   }
-  sh "cmake --install build_cmake --component web"
   stash name: 'web-qt', includes: 'install_web/share/omc/web/OMShell-qt/**, install_web/share/omc/web/OMNotebook-qt/**, install_web/share/omc/web/OMEdit-qt/**'
 }
 

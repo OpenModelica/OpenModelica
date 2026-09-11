@@ -1,12 +1,16 @@
-//! Where the result readers get their bytes: `openmodelica_wasi`'s in-memory
-//! store with the `vfs` feature (what omc and the wasm modules need), plain
-//! `std::fs` without it. The store is the *only* filesystem on
-//! wasm32-unknown-unknown, hence the refusal below.
+//! Where the result readers get their bytes: plain `std::fs`, or
+//! `openmodelica_wasi`'s in-memory store with the `vfs` feature. The store is the
+//! only filesystem on wasm32-unknown-unknown, hence the refusal below.
 
-#[cfg(all(target_arch = "wasm32", not(target_os = "wasi"), not(feature = "vfs")))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(target_os = "wasi"),
+    not(target_os = "emscripten"),
+    not(feature = "vfs")
+))]
 compile_error!(
     "wasm32-unknown-unknown has no OS filesystem: build openmodelica_mat_reader \
-     with the `vfs` feature (its default) so the readers go through openmodelica_wasi's store"
+     with the `vfs` feature so the readers go through openmodelica_wasi's store"
 );
 
 #[cfg(feature = "vfs")]

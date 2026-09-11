@@ -60,13 +60,22 @@ if(NOT CARGO_EXECUTABLE)
                       "libomc_result. Install a nightly Rust toolchain with the rust-src "
                       "component and `rustup target add wasm32-unknown-emscripten`.")
 endif()
-file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS
-     ${RESULT_CRATE}/src/*.rs ${RESULT_CRATE}/Cargo.toml
-     ${RESULT_CRATE}/include/omc_result.h
-     ${RESULT_WORKSPACE}/openmodelica_result_files/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_mat_reader/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_arrow_writer/src/*.rs
-     ${RESULT_WORKSPACE}/openmodelica_mat_writer/src/*.rs)
+# Every crate cargo compiles for this library; one left out is one cmake will not
+# rebuild for, and the stale archive looks fine from the outside.
+set(RESULT_CRATES
+    ${RESULT_CRATE}
+    ${RESULT_WORKSPACE}/openmodelica_result_files
+    ${RESULT_WORKSPACE}/openmodelica_result_diff
+    ${RESULT_WORKSPACE}/openmodelica_mat_reader
+    ${RESULT_WORKSPACE}/openmodelica_arrow_writer
+    ${RESULT_WORKSPACE}/openmodelica_mat_writer
+    ${RESULT_WORKSPACE}/openmodelica_plt_writer
+    ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs/openmodelica_wasi)
+set(RESULT_GLOBS ${RESULT_CRATE}/include/omc_result.h)
+foreach(crate ${RESULT_CRATES})
+  list(APPEND RESULT_GLOBS ${crate}/src/*.rs ${crate}/Cargo.toml)
+endforeach()
+file(GLOB_RECURSE RESULT_SOURCES CONFIGURE_DEPENDS ${RESULT_GLOBS})
 add_custom_command(
   OUTPUT ${RESULT_LIB}
   WORKING_DIRECTORY ${RESULT_WORKSPACE}

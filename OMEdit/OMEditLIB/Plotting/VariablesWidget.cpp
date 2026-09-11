@@ -756,7 +756,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   } else {
     toolTip = tr("Simulation Result File: %1\n%2: %3/%4").arg(fileName).arg(Helper::fileLocation).arg(filePath).arg(fileName);
   }
-  QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
+  QRegularExpression resultTypeRegExp("(\\.mat|\\.plt|\\.csv|\\.arrow|_res.mat|_res.plt|_res.csv|_res.arrow)");
   QString text(QString(fileName).remove(resultTypeRegExp));
   QVector<QVariant> variabledata;
   variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QStringList() << QStringList() << QStringList() << "dummy.json" << false;
@@ -1376,7 +1376,7 @@ bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
       if (pVariablesTreeItem) {
         QString variableName = pVariablesTreeItem->getVariableName();
-        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
+        variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|\\.arrow|_res.mat|_res.plt|_res.csv|_res.arrow)"));
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return variableName.contains(filterRegularExpression());
 #else
