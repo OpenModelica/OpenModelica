@@ -1827,8 +1827,10 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
       }
       /* Ticket #2531
        * Do not show the protected & final parameters.
+       * Issue #14750
+       * Do not show the outer elements.
        */
-      if (!pElement->isPublic() || pElement->isFinal()) {
+      if (!pElement->isPublic() || pElement->isFinal() || pElement->isOuter()) {
         continue;
       }
       /* Ticket #12898

@@ -953,7 +953,7 @@ void MainWindow::addRecentModel(const QString &nameStructure)
   LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem) {
     LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    if (pTopLevelLibraryTreeItem) {
+    if (pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isFilePathValid()) {
       path = pTopLevelLibraryTreeItem->getFileName();
     }
   }
