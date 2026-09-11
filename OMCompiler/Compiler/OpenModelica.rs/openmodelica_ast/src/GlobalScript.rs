@@ -36,7 +36,6 @@
 #![allow(warnings)]
 #![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
 
-use std::sync::Arc;
 use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::*; // Built-in types and functions
@@ -51,10 +50,10 @@ use crate::Absyn;
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Statement {
     IALG {
-        algItem: Arc<Absyn::AlgorithmItem>,
+        algItem: metamodelica::Ref<Absyn::AlgorithmItem>,
     },
     IEXP {
-        exp: Arc<Absyn::Exp>,
+        exp: metamodelica::Ref<Absyn::Exp>,
         info: SourceInfo,
     },
 }
@@ -71,6 +70,14 @@ impl metamodelica::gc::MMTrace for Statement {
                 Ok(())
             }
         }
+    }
+}
+impl metamodelica::mmval::MmVal for Statement {
+    // GlobalScript.Statement
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
+        Ok(())
     }
 }
 impl Default for Statement {
@@ -96,6 +103,14 @@ impl metamodelica::gc::MMTrace for Statements {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         metamodelica::gc::MMTrace::mm_accept(&self.interactiveStmtLst, __mmv)?;
         metamodelica::gc::MMTrace::mm_accept(&self.semicolon, __mmv)?;
+        Ok(())
+    }
+}
+impl metamodelica::mmval::MmVal for Statements {
+    // GlobalScript.Statements
+    type Traced = metamodelica::mmval::No;
+    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {
+        let _ = __mmv;
         Ok(())
     }
 }

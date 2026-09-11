@@ -22,12 +22,12 @@ use crate::typedexp::resolve_call_node;
 /// binding scope shared by every case (function components plus the match's own
 /// `local` declarations); each case's own `local`s are layered on per case.
 pub(crate) fn cases_pairwise_disjoint(
-    cases: &metamodelica::List<Arc<Absyn::Case>>,
+    cases: &metamodelica::List<metamodelica::Ref<Absyn::Case>>,
     scope: &BTreeSet<String>,
     top_level: &BTreeMap<String, NameNode<'_>>,
     caller_qname: &str,
 ) -> bool {
-    let mut pats: Vec<(Arc<Absyn::Exp>, BTreeSet<String>)> = Vec::new();
+    let mut pats: Vec<(metamodelica::Ref<Absyn::Exp>, BTreeSet<String>)> = Vec::new();
     for case in cases {
         match &**case {
             // `else` matches everything, so it overlaps every other case.
@@ -75,7 +75,7 @@ fn pats_disjoint(
     if absyn_pat_is_irrefutable(p1, s1) || absyn_pat_is_irrefutable(p2, s2) {
         return false;
     }
-    let elems = |e: &Absyn::Exp| -> Option<Vec<Arc<Absyn::Exp>>> {
+    let elems = |e: &Absyn::Exp| -> Option<Vec<metamodelica::Ref<Absyn::Exp>>> {
         match e {
             ARRAY { arrayExp } => Some((&**arrayExp).into_iter().cloned().collect()),
             LIST { exps } => Some((&**exps).into_iter().cloned().collect()),
@@ -87,8 +87,8 @@ fn pats_disjoint(
             pats_disjoint(h1, h2, s1, s2, top_level, caller_qname)
                 || pats_disjoint(r1, r2, s1, s2, top_level, caller_qname),
         (TUPLE { expressions: e1 }, TUPLE { expressions: e2 }) => {
-            let v1: Vec<&Arc<Absyn::Exp>> = (&**e1).into_iter().collect();
-            let v2: Vec<&Arc<Absyn::Exp>> = (&**e2).into_iter().collect();
+            let v1: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**e1).into_iter().collect();
+            let v2: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**e2).into_iter().collect();
             v1.len() == v2.len()
                 && v1.iter().zip(&v2).any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname))
         }
@@ -103,11 +103,11 @@ fn pats_disjoint(
                 else { return false };
             // Named-field patterns list a subset of the fields, so a positional
             // comparison would pair up unrelated fields; compare field by name.
-            let v1: Vec<&Arc<Absyn::Exp>> = (&**args1).into_iter().collect();
-            let v2: Vec<&Arc<Absyn::Exp>> = (&**args2).into_iter().collect();
-            let named1: BTreeMap<&str, &Arc<Absyn::Exp>> =
+            let v1: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**args1).into_iter().collect();
+            let v2: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**args2).into_iter().collect();
+            let named1: BTreeMap<&str, &metamodelica::Ref<Absyn::Exp>> =
                 (&**names1).into_iter().map(|n| (&*n.argName, &n.argValue)).collect();
-            let named2: BTreeMap<&str, &Arc<Absyn::Exp>> =
+            let named2: BTreeMap<&str, &metamodelica::Ref<Absyn::Exp>> =
                 (&**names2).into_iter().map(|n| (&*n.argName, &n.argValue)).collect();
             (v1.len() == v2.len()
                 && v1.iter().zip(&v2).any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname)))

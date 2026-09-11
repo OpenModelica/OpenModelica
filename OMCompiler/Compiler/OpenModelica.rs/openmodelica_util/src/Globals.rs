@@ -80,7 +80,7 @@ thread_local! {
         RefCell::new(DoubleEnded::fromList(metamodelica::nil()).expect("DoubleEnded::fromList(nil) is infallible"));
 
     // Index 3 — symbolTable
-    // Declared in openmodelica_backend::Globals (type Arc<SymbolTable::SymbolTable>
+    // Declared in openmodelica_backend::Globals (type metamodelica::Ref<SymbolTable::SymbolTable>
     // from openmodelica_backend::SymbolTable; circular dep if declared here).
 
     // Indices 4–8 are unused in the MetaModelica sources seen so far.
@@ -99,20 +99,20 @@ thread_local! {
 
     // Index 10 — instNFInstCacheIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: List<((Absyn::Program, Arc<Absyn::Path>),
-    //               (List<Arc<SCode::Element>>, ArcStr, Arc<InstNode::InstNode>))>
+    // Type: List<((Absyn::Program, metamodelica::Ref<Absyn::Path>),
+    //               (List<metamodelica::Ref<SCode::Element>>, ArcStr, metamodelica::Ref<InstNode::InstNode>))>
 
     // Index 11 — instNFNodeCacheIndex
     // Declared in openmodelica_frontend::Globals.
     // Type: List<(Absyn::Program,
-    //               (List<Arc<SCode::Element>>, Arc<InstNode::InstNode>))>
+    //               (List<metamodelica::Ref<SCode::Element>>, metamodelica::Ref<InstNode::InstNode>))>
 
     // Index 12 — instNFLookupCacheIndex
     // Declared in openmodelica_frontend::Globals. Same type as index 10.
 
     // Index 13 — builtinIndex
     // Declared in openmodelica_frontend::Globals.
-    // Type: List<((i32, bool), (Absyn::Program, List<Arc<SCode::Element>>))>
+    // Type: List<((i32, bool), (Absyn::Program, List<metamodelica::Ref<SCode::Element>>))>
 
     // Index 14 — builtinEnvIndex
     // Type: unknown; not used in generated code seen so far.
@@ -207,8 +207,8 @@ thread_local! {
 
     // Index 24 — operatorOverloadingCache
     // Declared in openmodelica_frontend::Globals.
-    // Type: (Arc<OperatorOverloading::AvlTreePathPathEnv::Tree>,
-    //        Arc<OperatorOverloading::AvlTreePathOperatorTypes::Tree>)
+    // Type: (metamodelica::Ref<OperatorOverloading::AvlTreePathPathEnv::Tree>,
+    //        metamodelica::Ref<OperatorOverloading::AvlTreePathOperatorTypes::Tree>)
 
     // Index 25 — optionSimCode
     // Declared in openmodelica_backend::Globals.
@@ -216,7 +216,7 @@ thread_local! {
 
     // Index 26 — interactiveCache
     // Declared in openmodelica_backend::Globals.
-    // Type: Option<List<(Absyn::Program, Arc<Absyn::Path>, Interactive::GraphicEnvCache)>>
+    // Type: Option<List<(Absyn::Program, metamodelica::Ref<Absyn::Path>, Interactive::GraphicEnvCache)>>
 
     /// Index 27 — Whether currently processing stream connectors.
     ///
@@ -230,14 +230,14 @@ thread_local! {
     // Type: unknown — JuliaLink list. Not used in known generated code.
 
     // Index 29 — packageIndexCacheIndex
-    // Type: Option<Arc<openmodelica_util::JSON::JSON>> — JSON is in
+    // Type: Option<metamodelica::Ref<openmodelica_util::JSON::JSON>> — JSON is in
     // openmodelica_util so there is no circular dep.  This is a nullable root:
     // `PackageManagement`/`CevalScript` clear it via `setGlobalRoot(idx, 0)`,
     // the MetaModelica "empty" sentinel.  mmtorust detects that 0-clear
     // program-wide (see `compute_nullable_global_roots` in codegen.rs) and
     // lowers the slot as `Option`: clear → `None`, store → `Some(..)`, read →
     // unwrap-or-fail (so the surrounding `try` recomputes on a miss).
-    pub static packageIndexCacheIndex: RefCell<Option<Arc<crate::JSON::JSON>>> =
+    pub static packageIndexCacheIndex: RefCell<Option<metamodelica::Ref<crate::JSON::JSON>>> =
         const { RefCell::new(None) };
 
     /// Index 30 — Shared-library lookup cache.

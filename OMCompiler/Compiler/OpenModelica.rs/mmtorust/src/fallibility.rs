@@ -75,7 +75,6 @@
 //!   inference out of codegen and share the result.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Arc;
 
 use openmodelica_ast::Absyn;
 
@@ -410,7 +409,7 @@ struct McLint {
     /// The cases and their shared binding scope, for the pattern-disjointness
     /// route to the same verdict ([`crate::mc_disjoint`]); constructor names
     /// need the hierarchy, so it is decided in [`resolve_walk`].
-    cases: metamodelica::List<Arc<Absyn::Case>>,
+    cases: metamodelica::List<metamodelica::Ref<Absyn::Case>>,
     scope: BTreeSet<String>,
     /// The last arm is an `else`.
     has_else: bool,
@@ -864,7 +863,7 @@ impl Walk {
     /// fallible call inside such a binding escapes the match, even for
     /// `matchcontinue`. Mirrors the component-binding scan in
     /// [`Walk::scan_class`].
-    fn scan_local_decl_defaults(&mut self, decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>) {
+    fn scan_local_decl_defaults(&mut self, decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>) {
         for item in decls {
             let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
             let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
@@ -995,7 +994,7 @@ fn assign_lhs_cover_key(e: &Absyn::Exp, scope: &BTreeSet<String>) -> CoverKey {
 /// Lexer comment / TEXT / DEFINEUNIT items are silently skipped — they
 /// don't introduce variable bindings.
 pub(crate) fn collect_local_decl_names(
-    decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
+    decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
     out: &mut BTreeSet<String>,
 ) {
     for item in decls {
@@ -1224,8 +1223,8 @@ fn cover_keys_exhaustive(keys: &[CoverKey]) -> bool {
 /// Coverage keys of an Absyn case set, for [`cover_keys_exhaustive`]. Cases
 /// with a guard never contribute coverage — a guard can fail.
 fn match_cover_keys(
-    cases: &metamodelica::List<Arc<Absyn::Case>>,
-    match_local_decls: &metamodelica::List<std::sync::Arc<Absyn::ElementItem>>,
+    cases: &metamodelica::List<metamodelica::Ref<Absyn::Case>>,
+    match_local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
     outer_scope: &BTreeSet<String>,
 ) -> Vec<CoverKey> {
     // The full set of names in scope as variable bindings for any pattern

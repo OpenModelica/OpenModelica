@@ -24,7 +24,7 @@ use winnow::stream::Stream;
 use metamodelica::{cons, nil, SourceInfo};
 
 use winnow::{Parser, ModalResult, combinator::{opt, alt, cut_err}, error::{AddContext, ContextError, StrContext, StrContextValue, ErrMode}};
-use std::sync::Arc;
+use metamodelica::mmval::MmVal;
 use std::cell::{Cell, RefCell};
 use arcstr::{ArcStr, literal};
 
@@ -708,7 +708,7 @@ pub enum ClassBodyItem {
     InitialEquations(List<EquationItem>),
     Algorithms(List<AlgorithmItem>),
     InitialAlgorithms(List<AlgorithmItem>),
-    Constraints(List<Arc<Absyn::Exp>>),
+    Constraints(List<metamodelica::Ref<Absyn::Exp>>),
     External {
         /// Language tag from the `external "C"` clause (Modelica allows "C"
         /// and "FORTRAN 77"; OpenModelica only uses "C"). Absent for the bare
@@ -723,7 +723,7 @@ pub enum ClassBodyItem {
         /// through a Modelica `output` declaration position.
         output_: Option<Absyn::ComponentRef>,
         /// Positional argument expressions passed to the C function.
-        args: List<Arc<Absyn::Exp>>,
+        args: List<metamodelica::Ref<Absyn::Exp>>,
         annotation_opt: Option<Absyn::Annotation>,
     },
 }
@@ -733,8 +733,8 @@ pub enum SectionKind { Public, Protected }
 
 #[derive(Debug, Clone)]
 pub enum ClassSpecifier {
-    Normal  { name: Ident, body: Arc<ClassDef> },
-    Extends { name: Ident, body: Arc<ClassDef> },
+    Normal  { name: Ident, body: metamodelica::Ref<ClassDef> },
+    Extends { name: Ident, body: metamodelica::Ref<ClassDef> },
 }
 
 impl ClassSpecifier {
@@ -744,7 +744,7 @@ impl ClassSpecifier {
             ClassSpecifier::Extends { name, .. } => name.clone(),
         }
     }
-    pub fn body(&self) -> Arc<ClassDef> {
+    pub fn body(&self) -> metamodelica::Ref<ClassDef> {
         match self {
             ClassSpecifier::Normal  { body, .. } => body.clone(),
             ClassSpecifier::Extends { body, .. } => body.clone(),
@@ -755,7 +755,7 @@ impl ClassSpecifier {
 #[derive(Debug, Clone)]
 struct ExtendsClause {
     path: Path,
-    modification: Option<List<Arc<ElementArg>>>,
+    modification: Option<List<metamodelica::Ref<ElementArg>>>,
     annotation_opt: Option<Annotation>,
 }
 
@@ -763,7 +763,7 @@ struct ExtendsClause {
 struct ComponentClause {
     typePrefix: ElementAttributes,
     typeSpec: TypeSpec,
-    components: List<Arc<ComponentItem>>,
+    components: List<metamodelica::Ref<ComponentItem>>,
 }
 
 /// End column for a span, replicating an ANTLR3 line-1 quirk. `PARSER_INFO`
@@ -841,19 +841,19 @@ fn parser_info_from(first: &Token, start: &TokenInput, input: &TokenInput) -> So
 /// public/protected section (when the class has top-level public/protected blocks) are
 /// both promoted to class-level annotations.
 /// Returns `(non_annotation_items, annotations)`.
-fn split_annotations(items: List<ClassBodyItem>) -> (List<ClassBodyItem>, List<Arc<Absyn::Annotation>>) {
+fn split_annotations(items: List<ClassBodyItem>) -> (List<ClassBodyItem>, List<metamodelica::Ref<Absyn::Annotation>>) {
     let mut parts: List<ClassBodyItem> = metamodelica::nil();
-    let mut anns:  List<Arc<Absyn::Annotation>> = metamodelica::nil();
+    let mut anns:  List<metamodelica::Ref<Absyn::Annotation>> = metamodelica::nil();
     for item in &*items {
         match item {
-            ClassBodyItem::Annotation(ann) => anns = cons(Arc::new(ann.clone()), anns),
+            ClassBodyItem::Annotation(ann) => anns = cons(metamodelica::Ref::new(ann.clone()), anns),
             ClassBodyItem::Section { section, items: sec_items } => {
                 // Annotations that appear directly in a section's element list are
                 // class-level annotations (function-level ones are nested inside element bodies).
                 let (inner_parts, inner_anns) = split_annotations(sec_items.clone());
                 // inner_anns is already reversed; re-consing restores the
                 // inner source order relative to this level's accumulator.
-                for ann in &*inner_anns.reverse() { anns = cons(Arc::clone(ann), anns); }
+                for ann in &*inner_anns.reverse() { anns = cons(ann.clone(), anns); }
                 parts = cons(ClassBodyItem::Section { section: *section, items: inner_parts }, parts);
             }
             other => parts = cons(other.clone(), parts),
@@ -867,8 +867,8 @@ fn split_annotations(items: List<ClassBodyItem>) -> (List<ClassBodyItem>, List<A
     (parts.reverse(), anns)
 }
 
-fn body_items_to_classparts(items: List<ClassBodyItem>) -> List<Arc<ClassPart>> {
-    let mut res: List<Arc<ClassPart>> = metamodelica::nil();
+fn body_items_to_classparts(items: List<ClassBodyItem>) -> List<metamodelica::Ref<ClassPart>> {
+    let mut res: List<metamodelica::Ref<ClassPart>> = metamodelica::nil();
     // Consecutive bare elements (and lexer comments between them) form ONE
     // implicit `public` part, exactly like the leading `element_list` of the
     // ANTLR `composition` rule. Emitting one part per element made
@@ -885,26 +885,26 @@ fn body_items_to_classparts(items: List<ClassBodyItem>) -> List<Arc<ClassPart>> 
     // fresh empty `PUBLIC` at the end (index ≠ 0) when no public part exists,
     // which the dump renders as a spurious trailing `public` keyword (whereas
     // replacing the leading one at index 0 renders nothing).
-    let mut pending: Vec<Arc<ElementItem>> = Vec::new();
+    let mut pending: Vec<metamodelica::Ref<ElementItem>> = Vec::new();
     let mut leading_public_emitted = false;
-    fn flush(pending: &mut Vec<Arc<ElementItem>>, res: &mut List<Arc<ClassPart>>, force: bool) {
+    fn flush(pending: &mut Vec<metamodelica::Ref<ElementItem>>, res: &mut List<metamodelica::Ref<ClassPart>>, force: bool) {
         if pending.is_empty() && !force {
             return;
         }
-        let mut contents: List<Arc<ElementItem>> = metamodelica::nil();
+        let mut contents: List<metamodelica::Ref<ElementItem>> = metamodelica::nil();
         for ei in pending.drain(..).rev() {
             contents = cons(ei, contents);
         }
-        *res = cons(Arc::new(ClassPart::PUBLIC { contents }), res.clone());
+        *res = cons(metamodelica::Ref::new(ClassPart::PUBLIC { contents }), res.clone());
     }
     for item in &*items {
         match item {
             ClassBodyItem::Element(elem) => {
-                pending.push(Arc::new(ElementItem::ELEMENTITEM { element: Arc::new(elem.clone()) }));
+                pending.push(metamodelica::Ref::new(ElementItem::ELEMENTITEM { element: metamodelica::Ref::new(elem.clone()) }));
                 continue;
             }
             ClassBodyItem::LexerComment(text) => {
-                pending.push(Arc::new(ElementItem::LEXER_COMMENT { comment: text.clone() }));
+                pending.push(metamodelica::Ref::new(ElementItem::LEXER_COMMENT { comment: text.clone() }));
                 continue;
             }
             // Force-emit the leading `public` part (even if empty) before the
@@ -930,17 +930,17 @@ fn body_items_to_classparts(items: List<ClassBodyItem>) -> List<Arc<ClassPart>> 
             ClassBodyItem::InitialAlgorithms(items)=> ClassPart::INITIALALGORITHMS{ contents: to_rc_list(items.clone()) },
             ClassBodyItem::Constraints(contents)   => ClassPart::CONSTRAINTS      { contents: contents.clone() },
             ClassBodyItem::External { lang, funcName, output_, args, annotation_opt } => ClassPart::EXTERNAL {
-                externalDecl: Arc::new(ExternalDecl {
+                externalDecl: metamodelica::Ref::new(ExternalDecl {
                     funcName: funcName.clone(),
                     lang: lang.clone(),
-                    output_: output_.clone().map(Arc::new),
+                    output_: output_.clone().map(metamodelica::Ref::new),
                     args: args.clone(),
-                    annotation_: annotation_opt.clone().map(Arc::new),
+                    annotation_: annotation_opt.clone().map(metamodelica::Ref::new),
                 }),
                 annotation_: None,
             },
         };
-        res = cons(Arc::new(converted), res);
+        res = cons(metamodelica::Ref::new(converted), res);
     }
     // Trailing flush: if no section was ever seen (body is only leading
     // elements, or entirely empty) this emits the always-present leading
@@ -949,30 +949,30 @@ fn body_items_to_classparts(items: List<ClassBodyItem>) -> List<Arc<ClassPart>> 
     res.reverse()
 }
 
-fn body_items_to_element_items(items: List<ClassBodyItem>) -> List<Arc<ElementItem>> {
+fn body_items_to_element_items(items: List<ClassBodyItem>) -> List<metamodelica::Ref<ElementItem>> {
     match &*items {
         metamodelica::ListNode::Nil => metamodelica::nil(),
         metamodelica::ListNode::Cons { head, tail } => {
             let converted = match head {
-                ClassBodyItem::Element(elem)         => ElementItem::ELEMENTITEM { element: Arc::new(elem.clone()) },
+                ClassBodyItem::Element(elem)         => ElementItem::ELEMENTITEM { element: metamodelica::Ref::new(elem.clone()) },
                 ClassBodyItem::LexerComment(text)    => ElementItem::LEXER_COMMENT { comment: text.clone() },
                 _ => panic!("only Element/LexerComment items can appear inside public/protected sections, but found {:?}", head),
             };
-            cons(Arc::new(converted), body_items_to_element_items(tail.clone()))
+            cons(metamodelica::Ref::new(converted), body_items_to_element_items(tail.clone()))
         }
     }
 }
 
-fn to_rc_list<T: Clone>(lst: List<T>) -> List<Arc<T>> {
-    let mut result: List<Arc<T>> = metamodelica::nil();
+fn to_rc_list<T: MmVal + Clone>(lst: List<T>) -> List<metamodelica::Ref<T>> {
+    let mut result: List<metamodelica::Ref<T>> = metamodelica::nil();
     let rev = lst.reverse();
-    for item in &rev { result = cons(Arc::new(item.clone()), result); }
+    for item in &rev { result = cons(metamodelica::Ref::new(item.clone()), result); }
     result
 }
 
-/// Convenience: wrap a value in `Arc::new`.
+/// Convenience: wrap a value in `Ref::new`.
 #[allow(dead_code)]
-fn arc<T>(t: T) -> Arc<T> { Arc::new(t) }
+fn arc<T: MmVal>(t: T) -> metamodelica::Ref<T> { metamodelica::Ref::new(t) }
 
 fn default_element_attrs() -> ElementAttributes {
     ElementAttributes {
@@ -1003,7 +1003,7 @@ fn stored_definition(input: &mut TokenInput) -> ModalResult<Program> {
             .context(StrContext::Label("';' after within clause"))
             .parse_next(input)?;
         match path {
-            Some(path) => Within::WITHIN { path: Arc::new(path) },
+            Some(path) => Within::WITHIN { path: metamodelica::Ref::new(path) },
             None       => Within::TOP {},
         }
     } else {
@@ -1203,13 +1203,13 @@ fn class_specifier(input: &mut TokenInput) -> ModalResult<ClassSpecifier> {
                 t(TK::Semi).parse_next(input)?;
                 // body_ann is in reverse source order (see split_annotations); the
                 // `end Name annotation(...)` is the latest, so it goes in front.
-                cons(Arc::new(ann), body_ann)
+                cons(metamodelica::Ref::new(ann), body_ann)
             },
             None => body_ann,
         };
         Ok(ClassSpecifier::Extends {
             name: name.clone(),
-            body: Arc::new(ClassDef::CLASS_EXTENDS {
+            body: metamodelica::Ref::new(ClassDef::CLASS_EXTENDS {
                 baseClassName: name, modifications, comment, parts: classParts, ann,
             }),
         })
@@ -1224,11 +1224,11 @@ fn class_specifier(input: &mut TokenInput) -> ModalResult<ClassSpecifier> {
 /// [`class_specifier`]; the long-form (`… end Name;`) branch checks the
 /// closing identifier against it (the `modelicaParserAssert` at
 /// `Modelica.g` `class_specifier`).
-fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32, start_col: u32) -> ModalResult<Arc<ClassDef>> {
+fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32, start_col: u32) -> ModalResult<metamodelica::Ref<ClassDef>> {
     if opt(t(TK::Subtypeof)).parse_next(input)?.is_some() {
         let ts = type_specifier(input)?;
-        return Ok(Arc::new(ClassDef::DERIVED {
-            typeSpec: Arc::new(TypeSpec::TCOMPLEX { path: Arc::new(Path::IDENT{name: "polymorphic".into()}), typeSpecs: List::new(Arc::new(ts)), arrayDim: None }), attributes: default_element_attrs(), arguments: metamodelica::nil(), comment: None,
+        return Ok(metamodelica::Ref::new(ClassDef::DERIVED {
+            typeSpec: metamodelica::Ref::new(TypeSpec::TCOMPLEX { path: metamodelica::Ref::new(Path::IDENT{name: "polymorphic".into()}), typeSpecs: List::new(metamodelica::Ref::new(ts)), arrayDim: None }), attributes: default_element_attrs(), arguments: metamodelica::nil(), comment: None,
         }));
     }
 
@@ -1240,9 +1240,9 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
                 // `enumeration(:)` takes a trailing comment just like the
                 // literal-list form (`enumeration(:) "Substances in Fluid"`).
                 let comment = comment.parse_next(input)?;
-                return Ok(Arc::new(ClassDef::ENUMERATION {
-                    enumLiterals: Arc::new(EnumDef::ENUM_COLON {}),
-                    comment: comment.map(Arc::new),
+                return Ok(metamodelica::Ref::new(ClassDef::ENUMERATION {
+                    enumLiterals: metamodelica::Ref::new(EnumDef::ENUM_COLON {}),
+                    comment: comment.map(metamodelica::Ref::new),
                 }));
             }
             let literals = cut_err(enum_list)
@@ -1250,9 +1250,9 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
                 .parse_next(input)?;
             t(TK::RParen).parse_next(input)?;
             let comment = comment.parse_next(input)?;
-            return Ok(Arc::new(ClassDef::ENUMERATION {
-                enumLiterals: Arc::new(EnumDef::ENUMLITERALS { enumLiterals: to_rc_list(literals) }),
-                comment: comment.map(Arc::new),
+            return Ok(metamodelica::Ref::new(ClassDef::ENUMERATION {
+                enumLiterals: metamodelica::Ref::new(EnumDef::ENUMLITERALS { enumLiterals: to_rc_list(literals) }),
+                comment: comment.map(metamodelica::Ref::new),
             }));
         }
         if opt(t(TK::Der)).parse_next(input)?.is_some() {
@@ -1267,10 +1267,10 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
             }
             t(TK::RParen).parse_next(input)?;
             let comment = comment.parse_next(input)?;
-            return Ok(Arc::new(ClassDef::PDER {
-                functionName: Arc::new(functionName),
+            return Ok(metamodelica::Ref::new(ClassDef::PDER {
+                functionName: metamodelica::Ref::new(functionName),
                 vars: vars.reverse(),
-                comment: comment.map(Arc::new),
+                comment: comment.map(metamodelica::Ref::new),
             }));
         }
         if opt(t(TK::Overload)).parse_next(input)?.is_some() {
@@ -1285,21 +1285,21 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
             // The cons-built list is back to front; restore the source order —
             // overload resolution tries the candidates in declaration order.
             let functionNames = functionNames.reverse();
-            return Ok(Arc::new(ClassDef::OVERLOAD { functionNames: to_rc_list(functionNames), comment: comment.map(Arc::new) }));
+            return Ok(metamodelica::Ref::new(ClassDef::OVERLOAD { functionNames: to_rc_list(functionNames), comment: comment.map(metamodelica::Ref::new) }));
         }
         let attributes = type_prefix.parse_next(input)?;
         let typeSpec = cut_err(type_specifier)
             .context(StrContext::Label("type specifier after '='"))
             .parse_next(input)?;
-        let arguments: List<Arc<ElementArg>> = opt(class_modification).parse_next(input)?.unwrap_or_else(|| metamodelica::nil());
+        let arguments: List<metamodelica::Ref<ElementArg>> = opt(class_modification).parse_next(input)?.unwrap_or_else(|| metamodelica::nil());
         let comment = comment.parse_next(input)?;
-        return Ok(Arc::new(ClassDef::DERIVED {
-            typeSpec: Arc::new(typeSpec), attributes, arguments, comment: comment.map(Arc::new),
+        return Ok(metamodelica::Ref::new(ClassDef::DERIVED {
+            typeSpec: metamodelica::Ref::new(typeSpec), attributes, arguments, comment: comment.map(metamodelica::Ref::new),
         }));
     }
 
     let mut typeVars: List<ArcStr> = metamodelica::nil();
-    let mut classAttrs: List<Arc<Absyn::NamedArg>> = metamodelica::nil();
+    let mut classAttrs: List<metamodelica::Ref<Absyn::NamedArg>> = metamodelica::nil();
     if opt(t(TK::Less)).parse_next(input)?.is_some() {
         loop {
             let id = t_ident(input)?;
@@ -1358,12 +1358,12 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
             cut_err(t(TK::Semi)).context(StrContext::Label("';' after annotation")).parse_next(input)?;
             // body_ann is in reverse source order (see split_annotations); the
                 // `end Name annotation(...)` is the latest, so it goes in front.
-                cons(Arc::new(ann), body_ann)
+                cons(metamodelica::Ref::new(ann), body_ann)
         },
         None => body_ann
     };
 
-    Ok(Arc::new(ClassDef::PARTS {
+    Ok(metamodelica::Ref::new(ClassDef::PARTS {
         typeVars, classAttrs, classParts, ann, comment,
     }))
 }
@@ -1444,7 +1444,7 @@ fn composition2(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             // Algorithm nodes in CONSTRAINTS' list<Exp> — only the expression
             // form is used by real Optimica code, so only that is supported.
             next_tok(input)?;
-            let mut constraints: List<Arc<Absyn::Exp>> = metamodelica::nil();
+            let mut constraints: List<metamodelica::Ref<Absyn::Exp>> = metamodelica::nil();
             loop {
                 if matches!(
                     peek_kind(input),
@@ -1466,7 +1466,7 @@ fn composition2(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
                 cut_err(t(TK::Semi))
                     .context(StrContext::Label("';' after constraint"))
                     .parse_next(input)?;
-                constraints = cons(Arc::new(e), constraints);
+                constraints = cons(metamodelica::Ref::new(e), constraints);
             }
             parts = cons(ClassBodyItem::Constraints(constraints.reverse()), parts);
             continue;
@@ -1493,8 +1493,8 @@ fn opt_constraining_clause(input: &mut TokenInput, replaceable_: bool) -> ModalR
     let elementArg = opt(class_modification).parse_next(input)?.unwrap_or_else(|| metamodelica::nil());
     let cmt        = comment(input)?;
     Ok(Some(ConstrainClass {
-        elementSpec: Arc::new(ElementSpec::EXTENDS { path: Arc::new(path), elementArg, annotationOpt: None }),
-        comment: cmt.map(Arc::new),
+        elementSpec: metamodelica::Ref::new(ElementSpec::EXTENDS { path: metamodelica::Ref::new(path), elementArg, annotationOpt: None }),
+        comment: cmt.map(metamodelica::Ref::new),
     }))
 }
 
@@ -1554,7 +1554,7 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             let info = source_info(first_tok, last_tok);
             let elem = Absyn::Element::ELEMENT {
                 finalPrefix: false, redeclareKeywords: None,
-                innerOuter: InnerOuter::NOT_INNER_OUTER, specification: Arc::new(ElementSpec::IMPORT { import_: imp, comment: comment.map(Arc::new), info: info.clone() }),
+                innerOuter: InnerOuter::NOT_INNER_OUTER, specification: metamodelica::Ref::new(ElementSpec::IMPORT { import_: imp, comment: comment.map(metamodelica::Ref::new), info: info.clone() }),
                 info, constrainClass: None,
             };
             items = cons(ClassBodyItem::Element(elem), items); continue;
@@ -1567,10 +1567,10 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
                 finalPrefix: false,
                 redeclareKeywords: None,
                 innerOuter: InnerOuter::NOT_INNER_OUTER {},
-                specification: Arc::new(ElementSpec::EXTENDS {
-                    path: Arc::new(ext.path),
+                specification: metamodelica::Ref::new(ElementSpec::EXTENDS {
+                    path: metamodelica::Ref::new(ext.path),
                     elementArg: ext.modification.unwrap_or_else(|| metamodelica::nil()),
-                    annotationOpt: ext.annotation_opt.map(Arc::new),
+                    annotationOpt: ext.annotation_opt.map(metamodelica::Ref::new),
                 }),
                 info,
                 constrainClass: None,
@@ -1607,8 +1607,8 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             cut_err(t(TK::Semi)).context(StrContext::Label("';' after class definition")).parse_next(input)?;
             let elem = Absyn::Element::ELEMENT {
                 finalPrefix: final_, redeclareKeywords, innerOuter,
-                specification: Arc::new(ElementSpec::CLASSDEF { replaceable_, class_: Arc::new(cls) }),
-                info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(Arc::new),
+                specification: metamodelica::Ref::new(ElementSpec::CLASSDEF { replaceable_, class_: metamodelica::Ref::new(cls) }),
+                info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(metamodelica::Ref::new),
             };
             items = cons(ClassBodyItem::Element(elem), items); continue;
         }
@@ -1617,10 +1617,10 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             let last_tok = &input[0];
             let elem = Absyn::Element::ELEMENT {
                 finalPrefix: final_, redeclareKeywords, innerOuter,
-                specification: Arc::new(ElementSpec::COMPONENTS {
-                    attributes: cc.typePrefix, typeSpec: Arc::new(cc.typeSpec), components: cc.components,
+                specification: metamodelica::Ref::new(ElementSpec::COMPONENTS {
+                    attributes: cc.typePrefix, typeSpec: metamodelica::Ref::new(cc.typeSpec), components: cc.components,
                 }),
-                info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(Arc::new),
+                info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(metamodelica::Ref::new),
             };
             cut_err(t(TK::Semi))
                 .context(StrContext::Label("';' after component list"))
@@ -1648,7 +1648,7 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
         let info = source_info(first_tok, last_tok);
         let elem = Absyn::Element::ELEMENT {
             finalPrefix: false, redeclareKeywords: None,
-            innerOuter: InnerOuter::NOT_INNER_OUTER, specification: Arc::new(ElementSpec::IMPORT { import_: imp, comment: comment.map(Arc::new), info: info.clone() }),
+            innerOuter: InnerOuter::NOT_INNER_OUTER, specification: metamodelica::Ref::new(ElementSpec::IMPORT { import_: imp, comment: comment.map(metamodelica::Ref::new), info: info.clone() }),
             info, constrainClass: None,
         };
         return Ok(elem);
@@ -1661,10 +1661,10 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
             finalPrefix: false,
             redeclareKeywords: None,
             innerOuter: InnerOuter::NOT_INNER_OUTER {},
-            specification: Arc::new(ElementSpec::EXTENDS {
-                path: Arc::new(ext.path),
+            specification: metamodelica::Ref::new(ElementSpec::EXTENDS {
+                path: metamodelica::Ref::new(ext.path),
                 elementArg: ext.modification.unwrap_or_else(|| metamodelica::nil()),
-                annotationOpt: ext.annotation_opt.map(Arc::new),
+                annotationOpt: ext.annotation_opt.map(metamodelica::Ref::new),
             }),
             info,
             constrainClass: None,
@@ -1701,8 +1701,8 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
         cut_err(t(TK::Semi)).context(StrContext::Label("';' after class definition")).parse_next(input)?;
         let elem = Absyn::Element::ELEMENT {
             finalPrefix: final_, redeclareKeywords, innerOuter,
-            specification: Arc::new(ElementSpec::CLASSDEF { replaceable_, class_: Arc::new(cls) }),
-            info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(Arc::new),
+            specification: metamodelica::Ref::new(ElementSpec::CLASSDEF { replaceable_, class_: metamodelica::Ref::new(cls) }),
+            info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(metamodelica::Ref::new),
         };
         return Ok(elem);
     }
@@ -1711,10 +1711,10 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
         let last_tok = &input[0];
         let elem = Absyn::Element::ELEMENT {
             finalPrefix: final_, redeclareKeywords, innerOuter,
-            specification: Arc::new(ElementSpec::COMPONENTS {
-                attributes: cc.typePrefix, typeSpec: Arc::new(cc.typeSpec), components: cc.components,
+            specification: metamodelica::Ref::new(ElementSpec::COMPONENTS {
+                attributes: cc.typePrefix, typeSpec: metamodelica::Ref::new(cc.typeSpec), components: cc.components,
             }),
-            info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(Arc::new),
+            info: source_info(first_tok, last_tok), constrainClass: constrainClass.map(metamodelica::Ref::new),
         };
         cut_err(t(TK::Semi))
             .context(StrContext::Label("';' after component list"))
@@ -1790,12 +1790,12 @@ fn component_clause(input: &mut TokenInput) -> ModalResult<ComponentClause> {
     Ok(ComponentClause { typePrefix, typeSpec, components })
 }
 
-fn component_list(input: &mut TokenInput) -> ModalResult<List<Arc<ComponentItem>>> {
+fn component_list(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<ComponentItem>>> {
     let first = component_declaration(input)?;
-    let mut items = List::new(Arc::new(first));
+    let mut items = List::new(metamodelica::Ref::new(first));
     loop {
         if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
-        items = cons(Arc::new(component_declaration(input)?), items);
+        items = cons(metamodelica::Ref::new(component_declaration(input)?), items);
     }
     Ok(items.reverse())
 }
@@ -1817,9 +1817,9 @@ fn component_declaration(input: &mut TokenInput) -> ModalResult<ComponentItem> {
     } else { None };
     let cmt = comment(input)?;
     Ok(ComponentItem {
-        component: Component { name, arrayDim, modification: m.map(Arc::new) },
-        condition: condition.map(Arc::new),
-        comment: cmt.map(Arc::new),
+        component: Component { name, arrayDim, modification: m.map(metamodelica::Ref::new) },
+        condition: condition.map(metamodelica::Ref::new),
+        comment: cmt.map(metamodelica::Ref::new),
     })
 }
 
@@ -1833,13 +1833,13 @@ fn modification(input: &mut TokenInput) -> ModalResult<Modification> {
                 .context(StrContext::Label("modification expression"))
                 .parse_next(input)?;
         Absyn::EqMod::EQMOD {
-            exp: Arc::new(exp),
+            exp: metamodelica::Ref::new(exp),
             info: parser_info(&eq_start, input),
         }
     } else {
         Absyn::EqMod::NOMOD
     };
-    Ok(Modification { elementArgLst: cm, eqMod: Arc::new(eq) })
+    Ok(Modification { elementArgLst: cm, eqMod: metamodelica::Ref::new(eq) })
 }
 
 fn modification_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
@@ -1849,7 +1849,7 @@ fn modification_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
     expression(input)
 }
 
-fn class_modification(input: &mut TokenInput) -> ModalResult<List<Arc<ElementArg>>> {
+fn class_modification(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<ElementArg>>> {
     class_modification_impl(input, false)
 }
 
@@ -1857,11 +1857,11 @@ fn class_modification(input: &mut TokenInput) -> ModalResult<List<Arc<ElementArg
 /// [`class_modification`] but the arguments may also be `break ...`
 /// inheritance modifications (`extends A(break x)`). Only extends clauses
 /// accept these (`argument_list[1]` in the ANTLR grammar).
-fn class_or_inheritance_modification(input: &mut TokenInput) -> ModalResult<List<Arc<ElementArg>>> {
+fn class_or_inheritance_modification(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<ElementArg>>> {
     class_modification_impl(input, true)
 }
 
-fn class_modification_impl(input: &mut TokenInput, can_have_break: bool) -> ModalResult<List<Arc<ElementArg>>> {
+fn class_modification_impl(input: &mut TokenInput, can_have_break: bool) -> ModalResult<List<metamodelica::Ref<ElementArg>>> {
     t(TK::LParen).parse_next(input)?;
     let arguments = opt(|i: &mut TokenInput| argument_list(i, can_have_break))
         .parse_next(input)?
@@ -1870,7 +1870,7 @@ fn class_modification_impl(input: &mut TokenInput, can_have_break: bool) -> Moda
     Ok(arguments)
 }
 
-fn argument_list(input: &mut TokenInput, can_have_break: bool) -> ModalResult<List<Arc<ElementArg>>> {
+fn argument_list(input: &mut TokenInput, can_have_break: bool) -> ModalResult<List<metamodelica::Ref<ElementArg>>> {
     // Mirror the ANTLR3 `argument_list` rule's comment handling: a line/block
     // comment that precedes an argument is preserved as an
     // `Absyn.ELEMENTARGCOMMENT` spliced into the list right before that
@@ -1881,18 +1881,18 @@ fn argument_list(input: &mut TokenInput, can_have_break: bool) -> ModalResult<Li
     // the leading comment leaks forward and is swallowed by the next inner
     // expression's `EXPRESSIONCOMMENT`.
     let cursor = save_comment_cursor();
-    let mut out: Vec<Arc<ElementArg>> = Vec::new();
+    let mut out: Vec<metamodelica::Ref<ElementArg>> = Vec::new();
 
-    let push_comments_before = |out: &mut Vec<Arc<ElementArg>>, input: &TokenInput| {
+    let push_comments_before = |out: &mut Vec<metamodelica::Ref<ElementArg>>, input: &TokenInput| {
         let (line, col) = next_pos(input);
         for txt in take_comments_before(line, col) {
-            out.push(Arc::new(ElementArg::ELEMENTARGCOMMENT { comment: txt }));
+            out.push(metamodelica::Ref::new(ElementArg::ELEMENTARGCOMMENT { comment: txt }));
         }
     };
 
     push_comments_before(&mut out, input);
     match argument_or_break(input, can_have_break) {
-        Ok(a) => out.push(Arc::new(a)),
+        Ok(a) => out.push(metamodelica::Ref::new(a)),
         // No (further) argument: an empty `()` reaches here via `opt`. Restore
         // the comment cursor so the drained comments are reclaimed by the
         // surrounding checkpoint rather than lost on backtrack.
@@ -1901,12 +1901,12 @@ fn argument_list(input: &mut TokenInput, can_have_break: bool) -> ModalResult<Li
     loop {
         if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
         push_comments_before(&mut out, input);
-        out.push(Arc::new(argument_or_break(input, can_have_break)?));
+        out.push(metamodelica::Ref::new(argument_or_break(input, can_have_break)?));
     }
     // Comments between the last argument and the closing `)`.
     push_comments_before(&mut out, input);
 
-    let mut res: List<Arc<ElementArg>> = metamodelica::nil();
+    let mut res: List<metamodelica::Ref<ElementArg>> = metamodelica::nil();
     for e in out.into_iter().rev() { res = cons(e, res); }
     Ok(res)
 }
@@ -1931,17 +1931,17 @@ fn inheritance_modification(input: &mut TokenInput) -> ModalResult<ElementArg> {
     } else {
         let name = t_ident(input)?;
         Equation::EQ_CONNECT {
-            connector1: Arc::new(ComponentRef::CREF_IDENT {
+            connector1: metamodelica::Ref::new(ComponentRef::CREF_IDENT {
                 name: literal!("break"),
                 subscripts: metamodelica::nil(),
             }),
-            connector2: Arc::new(ComponentRef::CREF_IDENT {
+            connector2: metamodelica::Ref::new(ComponentRef::CREF_IDENT {
                 name,
                 subscripts: metamodelica::nil(),
             }),
         }
     };
-    Ok(ElementArg::INHERITANCEBREAK { cnct: Arc::new(cnct), info: parser_info(&start, input) })
+    Ok(ElementArg::INHERITANCEBREAK { cnct: metamodelica::Ref::new(cnct), info: parser_info(&start, input) })
 }
 
 fn argument(input: &mut TokenInput) -> ModalResult<ElementArg> {
@@ -1968,7 +1968,7 @@ fn argument(input: &mut TokenInput) -> ModalResult<ElementArg> {
 // and the REDECLARE_REPLACEABLE branch of element_redeclaration.
 fn parse_replaceable_spec(input: &mut TokenInput) -> ModalResult<(ElementSpec, Option<ConstrainClass>)> {
     let elementSpec = if let Some(cls) = opt(class_definition).parse_next(input)? {
-        ElementSpec::CLASSDEF { replaceable_: true, class_: Arc::new(cls) }
+        ElementSpec::CLASSDEF { replaceable_: true, class_: metamodelica::Ref::new(cls) }
     } else {
         let typePrefix = type_prefix(input)?;
         let typeSpec   = cut_err(type_specifier_no_dims)
@@ -1977,7 +1977,7 @@ fn parse_replaceable_spec(input: &mut TokenInput) -> ModalResult<(ElementSpec, O
         let comp       = cut_err(component_declaration)
             .context(StrContext::Label("component declaration in replaceable"))
             .parse_next(input)?;
-        ElementSpec::COMPONENTS { attributes: typePrefix, typeSpec: Arc::new(typeSpec), components: List::new(Arc::new(comp)) }
+        ElementSpec::COMPONENTS { attributes: typePrefix, typeSpec: metamodelica::Ref::new(typeSpec), components: List::new(metamodelica::Ref::new(comp)) }
     };
     let constrainClass = opt_constraining_clause(input, true)?;
     Ok((elementSpec, constrainClass))
@@ -1999,7 +1999,7 @@ fn element_redeclaration(input: &mut TokenInput) -> ModalResult<ElementArg> {
             let (es, cc) = parse_replaceable_spec(input)?;
             (RedeclareKeywords::REDECLARE_REPLACEABLE {}, es, cc, parser_info(&repl_start, input))
         } else if let Some(cls) = opt(class_definition).parse_next(input)? {
-            (RedeclareKeywords::REDECLARE, ElementSpec::CLASSDEF { replaceable_: false, class_: Arc::new(cls) }, None, parser_info(&start, input))
+            (RedeclareKeywords::REDECLARE, ElementSpec::CLASSDEF { replaceable_: false, class_: metamodelica::Ref::new(cls) }, None, parser_info(&start, input))
         } else {
             let typePrefix = type_prefix(input)?;
             let typeSpec   = cut_err(type_specifier_no_dims)
@@ -2009,14 +2009,14 @@ fn element_redeclaration(input: &mut TokenInput) -> ModalResult<ElementArg> {
                 .context(StrContext::Label("component declaration in redeclaration"))
                 .parse_next(input)?;
             (RedeclareKeywords::REDECLARE, ElementSpec::COMPONENTS {
-                attributes: typePrefix, typeSpec: Arc::new(typeSpec), components: List::new(Arc::new(comp)),
+                attributes: typePrefix, typeSpec: metamodelica::Ref::new(typeSpec), components: List::new(metamodelica::Ref::new(comp)),
             }, None, parser_info(&start, input))
         };
 
     Ok(ElementArg::REDECLARATION {
         finalPrefix: final_,
         eachPrefix: if each_ { Each::EACH } else { Each::NON_EACH },
-        redeclareKeywords, elementSpec: Arc::new(elementSpec), constrainClass: constrainClass.map(Arc::new), info,
+        redeclareKeywords, elementSpec: metamodelica::Ref::new(elementSpec), constrainClass: constrainClass.map(metamodelica::Ref::new), info,
     })
 }
 
@@ -2043,7 +2043,7 @@ fn element_modification(input: &mut TokenInput) -> ModalResult<ElementArg> {
     let comment      = string_comment(input)?;
     Ok(Absyn::ElementArg::MODIFICATION {
         eachPrefix: Each::NON_EACH {}, finalPrefix: false,
-        modification: modification.map(Arc::new), comment, path: Arc::new(path), info: parser_info(&start, input),
+        modification: modification.map(metamodelica::Ref::new), comment, path: metamodelica::Ref::new(path), info: parser_info(&start, input),
     })
 }
 
@@ -2054,7 +2054,7 @@ fn element_replaceable(input: &mut TokenInput) -> ModalResult<ElementArg> {
     Ok(ElementArg::REDECLARATION {
         finalPrefix: false, eachPrefix: Each::NON_EACH {},
         redeclareKeywords: RedeclareKeywords::REPLACEABLE {},
-        elementSpec: Arc::new(elementSpec), constrainClass: constrainClass.map(Arc::new), info: parser_info(&start, input),
+        elementSpec: metamodelica::Ref::new(elementSpec), constrainClass: constrainClass.map(metamodelica::Ref::new), info: parser_info(&start, input),
     })
 }
 
@@ -2079,9 +2079,9 @@ fn import_clause(input: &mut TokenInput) -> ModalResult<Import> {
     // Group import: import Path.{Name, NewName = OldName, ...}
     // The dot before '{' is not consumed by name_path (it only follows dots to idents).
     match opt(alt((t(TK::StarEw), t(TK::Dot), t(TK::Equal)))).parse_next(input)? {
-        Some(TK::StarEw) => Ok(Import::UNQUAL_IMPORT { path: Arc::new(path) }),
+        Some(TK::StarEw) => Ok(Import::UNQUAL_IMPORT { path: metamodelica::Ref::new(path) }),
         Some(TK::Dot) => match alt((t(TK::LBrace),t(TK::Star))).parse_next(input)? {
-            TK::Star => Ok(Import::UNQUAL_IMPORT { path: Arc::new(path) }), // Modelica 2 where .* is not a separate token
+            TK::Star => Ok(Import::UNQUAL_IMPORT { path: metamodelica::Ref::new(path) }), // Modelica 2 where .* is not a separate token
             TK::LBrace => {
                 let mut groups: List<GroupImport> = metamodelica::nil();
                 loop {
@@ -2097,7 +2097,7 @@ fn import_clause(input: &mut TokenInput) -> ModalResult<Import> {
                 cut_err(t(TK::RBrace))
                     .context(StrContext::Label("'}' closing group import"))
                     .parse_next(input)?;
-                Ok(Import::GROUP_IMPORT { prefix: Arc::new(path), groups: groups.reverse() })
+                Ok(Import::GROUP_IMPORT { prefix: metamodelica::Ref::new(path), groups: groups.reverse() })
             }
             _ => unreachable!(),
         },
@@ -2111,9 +2111,9 @@ fn import_clause(input: &mut TokenInput) -> ModalResult<Import> {
                 )))
             };
             let path = name_path.parse_next(input)?;
-            Ok(Import::NAMED_IMPORT { name, path: Arc::new(path) })
+            Ok(Import::NAMED_IMPORT { name, path: metamodelica::Ref::new(path) })
         }
-        _ => Ok(Import::QUAL_IMPORT { path: Arc::new(path) }),
+        _ => Ok(Import::QUAL_IMPORT { path: metamodelica::Ref::new(path) }),
     }
 }
 
@@ -2161,7 +2161,7 @@ fn external_part(input: &mut TokenInput) -> ModalResult<ClassBodyItem> {
     // `=`) or the function name (followed by `(`).
     let mut output_: Option<Absyn::ComponentRef> = None;
     let mut func_name: Option<ArcStr> = None;
-    let mut args: List<Arc<Absyn::Exp>> = nil();
+    let mut args: List<metamodelica::Ref<Absyn::Exp>> = nil();
 
     // The function-call body is only present when the next token is an
     // identifier; otherwise we are looking at `annotation` or `;`.
@@ -2325,8 +2325,8 @@ fn equation_item(input: &mut TokenInput) -> ModalResult<EquationItem> {
     };
     let comment = comment(input)?;
     Ok(EquationItem::EQUATIONITEM {
-        equation_: Arc::new(eq),
-        comment: comment.map(Arc::new),
+        equation_: metamodelica::Ref::new(eq),
+        comment: comment.map(metamodelica::Ref::new),
         info: parser_info(&start, input),
     })
 }
@@ -2360,16 +2360,16 @@ fn equality_or_noretcall_equation(input: &mut TokenInput) -> ModalResult<Equatio
                 .context(StrContext::Label("domain of indomain equation"))
                 .parse_next(input)?;
             return Ok(Equation::EQ_PDE {
-                leftSide: Arc::new(lhs),
-                rightSide: Arc::new(rhs),
-                domain: Arc::new(domain),
+                leftSide: metamodelica::Ref::new(lhs),
+                rightSide: metamodelica::Ref::new(rhs),
+                domain: metamodelica::Ref::new(domain),
             });
         }
-        Ok(Equation::EQ_EQUALS { leftSide: Arc::new(lhs), rightSide: Arc::new(rhs) })
+        Ok(Equation::EQ_EQUALS { leftSide: metamodelica::Ref::new(lhs), rightSide: metamodelica::Ref::new(rhs) })
     } else {
         match lhs {
             Absyn::Exp::CALL { function_, functionArgs, .. } =>
-                Ok(Equation::EQ_NORETCALL { functionName: Arc::new((*function_).clone()), functionArgs }),
+                Ok(Equation::EQ_NORETCALL { functionName: metamodelica::Ref::new((*function_).clone()), functionArgs }),
             _ => {
                 // `modelicaParserAssert(isCall(e1), …)` — a hard error, like
                 // the standalone-expression case in `assign_clause_a`.
@@ -2397,7 +2397,7 @@ fn if_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
         _        => return Err(ErrMode::Cut(ContextError::default())),
     }
     let true_items = equation_list(input)?;
-    let mut else_if_branches: Vec<(Arc<Absyn::Exp>, List<Arc<EquationItem>>)> = Vec::new();
+    let mut else_if_branches: Vec<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<EquationItem>>)> = Vec::new();
     loop {
         if !matches!(peek_kind(input), Some(TK::Elseif)) { break; }
         next_tok(input)?;
@@ -2406,7 +2406,7 @@ fn if_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
             TK::Then => {}
             _        => return Err(ErrMode::Cut(ContextError::default())),
         }
-        else_if_branches.push((Arc::new(elif_cond), to_rc_list(equation_list(input)?)));
+        else_if_branches.push((metamodelica::Ref::new(elif_cond), to_rc_list(equation_list(input)?)));
     }
     let mut has_else = false;
     let else_items = if matches!(peek_kind(input), Some(TK::Else)) {
@@ -2450,10 +2450,10 @@ fn if_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
             )));
         }
     }
-    let mut elseif_list: List<(Arc<Absyn::Exp>, List<Arc<EquationItem>>)> = metamodelica::nil();
+    let mut elseif_list: List<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<EquationItem>>)> = metamodelica::nil();
     for branch in else_if_branches.into_iter().rev() { elseif_list = cons(branch, elseif_list); }
     Ok(Equation::EQ_IF {
-        ifExp: Arc::new(cond),
+        ifExp: metamodelica::Ref::new(cond),
         equationTrueItems: to_rc_list(true_items),
         elseIfBranches: elseif_list,
         equationElseItems: to_rc_list(else_items),
@@ -2493,7 +2493,7 @@ fn when_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
         _        => return Err(ErrMode::Cut(ContextError::default())),
     }
     let when_body = equation_list(input)?;
-    let mut else_when: Vec<(Arc<Absyn::Exp>, List<Arc<EquationItem>>)> = Vec::new();
+    let mut else_when: Vec<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<EquationItem>>)> = Vec::new();
     loop {
         if !matches!(peek_kind(input), Some(TK::Elsewhen)) { break; }
         next_tok(input)?;
@@ -2502,7 +2502,7 @@ fn when_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
             TK::Then => {}
             _        => return Err(ErrMode::Cut(ContextError::default())),
         }
-        else_when.push((Arc::new(ew_cond), to_rc_list(equation_list(input)?)));
+        else_when.push((metamodelica::Ref::new(ew_cond), to_rc_list(equation_list(input)?)));
     }
     match cut_err(next_tok)
         .context(StrContext::Label("'end' closing when-equation"))
@@ -2512,10 +2512,10 @@ fn when_equation_e(input: &mut TokenInput) -> ModalResult<Equation> {
         _       => return Err(ErrMode::Cut(ContextError::default())),
     }
     next_tok(input)?; // "when"
-    let mut ew_list: List<(Arc<Absyn::Exp>, List<Arc<EquationItem>>)> = metamodelica::nil();
+    let mut ew_list: List<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<EquationItem>>)> = metamodelica::nil();
     for branch in else_when.into_iter().rev() { ew_list = cons(branch, ew_list); }
     Ok(Equation::EQ_WHEN_E {
-        whenExp: Arc::new(when_cond),
+        whenExp: metamodelica::Ref::new(when_cond),
         whenEquations: to_rc_list(when_body),
         elseWhenEquations: ew_list,
     })
@@ -2526,7 +2526,7 @@ fn failure_equation(input: &mut TokenInput) -> ModalResult<Equation> {
     t(TK::LParen).parse_next(input)?;
     let body = equation_item(input)?;
     t(TK::RParen).parse_next(input)?;
-    Ok(Equation::EQ_FAILURE { equ: Arc::new(body) })
+    Ok(Equation::EQ_FAILURE { equ: metamodelica::Ref::new(body) })
 }
 
 /// `equality(e1 = e2)` — MetaModelica's primitive equality equation
@@ -2549,9 +2549,9 @@ fn equality_equation(input: &mut TokenInput) -> ModalResult<Equation> {
         .context(StrContext::Label("')' closing equality()"))
         .parse_next(input)?;
     Ok(Equation::EQ_NORETCALL {
-        functionName: Arc::new(ComponentRef::CREF_IDENT { name: literal!("equality"), subscripts: nil() }),
-        functionArgs: Arc::new(FunctionArgs::FUNCTIONARGS {
-            args: cons(Arc::new(lhs), cons(Arc::new(rhs), nil())),
+        functionName: metamodelica::Ref::new(ComponentRef::CREF_IDENT { name: literal!("equality"), subscripts: nil() }),
+        functionArgs: metamodelica::Ref::new(FunctionArgs::FUNCTIONARGS {
+            args: cons(metamodelica::Ref::new(lhs), cons(metamodelica::Ref::new(rhs), nil())),
             argNames: nil(),
         }),
     })
@@ -2575,9 +2575,9 @@ fn equality_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
         .context(StrContext::Label("')' closing equality()"))
         .parse_next(input)?;
     Ok(Algorithm::ALG_NORETCALL {
-        functionCall: Arc::new(ComponentRef::CREF_IDENT { name: literal!("equality"), subscripts: nil() }),
-        functionArgs: Arc::new(FunctionArgs::FUNCTIONARGS {
-            args: cons(Arc::new(lhs), cons(Arc::new(rhs), nil())),
+        functionCall: metamodelica::Ref::new(ComponentRef::CREF_IDENT { name: literal!("equality"), subscripts: nil() }),
+        functionArgs: metamodelica::Ref::new(FunctionArgs::FUNCTIONARGS {
+            args: cons(metamodelica::Ref::new(lhs), cons(metamodelica::Ref::new(rhs), nil())),
             argNames: nil(),
         }),
     })
@@ -2594,7 +2594,7 @@ fn connect_equation(input: &mut TokenInput) -> ModalResult<Equation> {
         .context(StrContext::Label("second connector in connect equation"))
         .parse_next(input)?;
     t(TK::RParen).parse_next(input)?;
-    Ok(Equation::EQ_CONNECT { connector1: Arc::new(connector1), connector2: Arc::new(connector2) })
+    Ok(Equation::EQ_CONNECT { connector1: metamodelica::Ref::new(connector1), connector2: metamodelica::Ref::new(connector2) })
 }
 
 /// Algorithm statements stopping at Then / Else / Elseif / Elsewhen / End.
@@ -2642,8 +2642,8 @@ fn algorithm_item(input: &mut TokenInput) -> ModalResult<AlgorithmItem> {
     };
     let comment = comment(input)?;
     Ok(AlgorithmItem::ALGORITHMITEM {
-        algorithm_: Arc::new(alg),
-        comment: comment.map(Arc::new),
+        algorithm_: metamodelica::Ref::new(alg),
+        comment: comment.map(metamodelica::Ref::new),
         info: parser_info(&start, input),
     })
 }
@@ -2716,11 +2716,11 @@ fn assign_clause_a(input: &mut TokenInput) -> ModalResult<Algorithm> {
                 );
             }
         }
-        Ok(Algorithm::ALG_ASSIGN { assignComponent: Arc::new(lhs), value: Arc::new(value) })
+        Ok(Algorithm::ALG_ASSIGN { assignComponent: metamodelica::Ref::new(lhs), value: metamodelica::Ref::new(value) })
     } else {
         match lhs {
             Absyn::Exp::CALL { function_, functionArgs, .. } =>
-                Ok(Algorithm::ALG_NORETCALL { functionCall: Arc::new((*function_).clone()), functionArgs }),
+                Ok(Algorithm::ALG_NORETCALL { functionCall: metamodelica::Ref::new((*function_).clone()), functionArgs }),
             _ => {
                 // `modelicaParserAssert(isCall(e1), …)`: a standalone
                 // non-call expression is a hard syntax error, not a
@@ -2749,7 +2749,7 @@ fn top_assign_clause_a(input: &mut TokenInput) -> ModalResult<Algorithm> {
     let value = cut_err(expression)
         .context(StrContext::Label("right-hand side of assignment"))
         .parse_next(input)?;
-    Ok(Algorithm::ALG_ASSIGN { assignComponent: Arc::new(lhs), value: Arc::new(value) })
+    Ok(Algorithm::ALG_ASSIGN { assignComponent: metamodelica::Ref::new(lhs), value: metamodelica::Ref::new(value) })
 }
 
 fn if_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
@@ -2760,7 +2760,7 @@ fn if_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
         _        => return Err(ErrMode::Cut(ContextError::default())),
     }
     let true_items = algorithm_list(input)?;
-    let mut else_if_branches: Vec<(Arc<Absyn::Exp>, List<Arc<AlgorithmItem>>)> = Vec::new();
+    let mut else_if_branches: Vec<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<AlgorithmItem>>)> = Vec::new();
     loop {
         if !matches!(peek_kind(input), Some(TK::Elseif)) { break; }
         next_tok(input)?;
@@ -2769,7 +2769,7 @@ fn if_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
             TK::Then => {}
             _        => return Err(ErrMode::Cut(ContextError::default())),
         }
-        else_if_branches.push((Arc::new(elif_cond), to_rc_list(algorithm_list(input)?)));
+        else_if_branches.push((metamodelica::Ref::new(elif_cond), to_rc_list(algorithm_list(input)?)));
     }
     let mut has_else = false;
     let else_items = if matches!(peek_kind(input), Some(TK::Else)) {
@@ -2808,10 +2808,10 @@ fn if_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
             )));
         }
     }
-    let mut elseif_list: List<(Arc<Absyn::Exp>, List<Arc<AlgorithmItem>>)> = metamodelica::nil();
+    let mut elseif_list: List<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<AlgorithmItem>>)> = metamodelica::nil();
     for branch in else_if_branches.into_iter().rev() { elseif_list = cons(branch, elseif_list); }
     Ok(Algorithm::ALG_IF {
-        ifExp: Arc::new(cond), trueBranch: to_rc_list(true_items),
+        ifExp: metamodelica::Ref::new(cond), trueBranch: to_rc_list(true_items),
         elseIfAlgorithmBranch: elseif_list, elseBranch: to_rc_list(else_items),
     })
 }
@@ -2845,7 +2845,7 @@ fn while_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
         _       => return Err(ErrMode::Cut(ContextError::default())),
     }
     next_tok(input)?; // "while"
-    Ok(Algorithm::ALG_WHILE { boolExpr: Arc::new(cond), whileBody: to_rc_list(body) })
+    Ok(Algorithm::ALG_WHILE { boolExpr: metamodelica::Ref::new(cond), whileBody: to_rc_list(body) })
 }
 
 fn when_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
@@ -2856,7 +2856,7 @@ fn when_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
         _        => return Err(ErrMode::Cut(ContextError::default())),
     }
     let when_body = algorithm_list(input)?;
-    let mut else_when: Vec<(Arc<Absyn::Exp>, List<Arc<AlgorithmItem>>)> = Vec::new();
+    let mut else_when: Vec<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<AlgorithmItem>>)> = Vec::new();
     loop {
         if !matches!(peek_kind(input), Some(TK::Elsewhen)) { break; }
         next_tok(input)?;
@@ -2865,17 +2865,17 @@ fn when_algorithm(input: &mut TokenInput) -> ModalResult<Algorithm> {
             TK::Then => {}
             _        => return Err(ErrMode::Cut(ContextError::default())),
         }
-        else_when.push((Arc::new(ew_cond), to_rc_list(algorithm_list(input)?)));
+        else_when.push((metamodelica::Ref::new(ew_cond), to_rc_list(algorithm_list(input)?)));
     }
     match cut_err(next_tok).context(StrContext::Label("'end' closing when-algorithm")).parse_next(input)? {
         TK::End => {}
         _       => return Err(ErrMode::Cut(ContextError::default())),
     }
     next_tok(input)?; // "when"
-    let mut ew_list: List<(Arc<Absyn::Exp>, List<Arc<AlgorithmItem>>)> = metamodelica::nil();
+    let mut ew_list: List<(metamodelica::Ref<Absyn::Exp>, List<metamodelica::Ref<AlgorithmItem>>)> = metamodelica::nil();
     for branch in else_when.into_iter().rev() { ew_list = cons(branch, ew_list); }
     Ok(Algorithm::ALG_WHEN_A {
-        boolExpr: Arc::new(when_cond), whenBody: to_rc_list(when_body), elseWhenAlgorithmBranch: ew_list,
+        boolExpr: metamodelica::Ref::new(when_cond), whenBody: to_rc_list(when_body), elseWhenAlgorithmBranch: ew_list,
     })
 }
 
@@ -2955,7 +2955,7 @@ fn top_algorithm(input: &mut TokenInput) -> ModalResult<crate::GlobalScript::Sta
     match expression(input) {
         Ok(e) if input.is_empty() || matches!(peek_kind(input), Some(TK::Semi)) => {
             return Ok(crate::GlobalScript::Statement::IEXP {
-                exp: Arc::new(e),
+                exp: metamodelica::Ref::new(e),
                 info: parser_info(&start, input),
             });
         }
@@ -2980,9 +2980,9 @@ fn top_algorithm(input: &mut TokenInput) -> ModalResult<crate::GlobalScript::Sta
     };
     let cmt = comment(input)?;
     Ok(crate::GlobalScript::Statement::IALG {
-        algItem: Arc::new(AlgorithmItem::ALGORITHMITEM {
-            algorithm_: Arc::new(alg),
-            comment: cmt.map(Arc::new),
+        algItem: metamodelica::Ref::new(AlgorithmItem::ALGORITHMITEM {
+            algorithm_: metamodelica::Ref::new(alg),
+            comment: cmt.map(metamodelica::Ref::new),
             info: parser_info(&start, input),
         }),
     })
@@ -3047,18 +3047,18 @@ fn match_case_body(input: &mut TokenInput) -> ModalResult<Absyn::ClassPart> {
     }
 }
 
-fn local_clause(input: &mut TokenInput) -> ModalResult<List<Arc<Absyn::ElementItem>>> {
+fn local_clause(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<Absyn::ElementItem>>> {
     if !matches!(peek_kind(input), Some(TK::Local)) { return Ok(metamodelica::nil()); }
     next_tok(input)?; // Local
     let items = element_list(input)?;
-    let mut result: List<Arc<Absyn::ElementItem>> = metamodelica::nil();
+    let mut result: List<metamodelica::Ref<Absyn::ElementItem>> = metamodelica::nil();
     for item in &*items {
         let ei = match item {
-            ClassBodyItem::Element(elem)   => Absyn::ElementItem::ELEMENTITEM { element: Arc::new(elem.clone()) },
+            ClassBodyItem::Element(elem)   => Absyn::ElementItem::ELEMENTITEM { element: metamodelica::Ref::new(elem.clone()) },
             ClassBodyItem::Annotation(ann) => Absyn::ElementItem::LEXER_COMMENT { comment: arcstr::format!("{ann:?}") },
             _ => continue,
         };
-        result = cons(Arc::new(ei), result);
+        result = cons(metamodelica::Ref::new(ei), result);
     }
     Ok(result.reverse())
 }
@@ -3075,7 +3075,7 @@ fn match_onecase(input: &mut TokenInput) -> ModalResult<Absyn::Case> {
     // so the end is the start of whatever follows (guard/`then`/...).
     let patternInfo = parser_info(&start_pattern, input);
     let patternGuard = if opt(alt((t(TK::If),t(TK::Guard)))).parse_next(input)?.is_some() {
-        Some(Arc::new(expression(input)?))
+        Some(metamodelica::Ref::new(expression(input)?))
     } else {
         None
     };
@@ -3091,8 +3091,8 @@ fn match_onecase(input: &mut TokenInput) -> ModalResult<Absyn::Case> {
     let result = expression(input)?;
     t(TK::Semi).parse_next(input)?;
     Ok(Absyn::Case::CASE {
-        pattern: Arc::new(pattern), patternGuard, patternInfo,
-        localDecls, classPart: Arc::new(classPart), result: Arc::new(result),
+        pattern: metamodelica::Ref::new(pattern), patternGuard, patternInfo,
+        localDecls, classPart: metamodelica::Ref::new(classPart), result: metamodelica::Ref::new(result),
         resultInfo: parser_info(&then_start, input),
         comment, info: parser_info(&case_start, input),
     })
@@ -3131,7 +3131,7 @@ fn match_cases(input: &mut TokenInput) -> ModalResult<List<Absyn::Case>> {
                 let result = expression(input)?;
                 opt(t(TK::Semi)).parse_next(input)?;
                 cases = cons(Absyn::Case::ELSE {
-                    localDecls, classPart: Arc::new(classPart), result: Arc::new(result),
+                    localDecls, classPart: metamodelica::Ref::new(classPart), result: metamodelica::Ref::new(result),
                     resultInfo: parser_info(&result_start, input), comment, info: parser_info(&else_start, input),
                 }, cases);
                 break;
@@ -3161,7 +3161,7 @@ fn match_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         TK::Match | TK::Matchcontinue => {}
         _                              => return Err(ErrMode::Backtrack(ContextError::default())),
     }
-    Ok(Absyn::Exp::MATCHEXP { matchTy, inputExp: Arc::new(inputExp), localDecls, cases: to_rc_list(cases), comment })
+    Ok(Absyn::Exp::MATCHEXP { matchTy, inputExp: metamodelica::Ref::new(inputExp), localDecls, cases: to_rc_list(cases), comment })
 }
 
 // ---------------------------------------------------------------------------
@@ -3171,7 +3171,7 @@ fn match_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
 fn name_path(input: &mut TokenInput) -> ModalResult<Path> {
     let fq  = opt(t(TK::Dot)).parse_next(input)?.is_some();
     let res = name_path2(input)?;
-    if fq { Ok(Path::FULLYQUALIFIED { path: Arc::new(res) }) } else { Ok(res) }
+    if fq { Ok(Path::FULLYQUALIFIED { path: metamodelica::Ref::new(res) }) } else { Ok(res) }
 }
 
 fn name_path2(input: &mut TokenInput) -> ModalResult<Path> {
@@ -3194,7 +3194,7 @@ fn name_path2(input: &mut TokenInput) -> ModalResult<Path> {
     }
     let mut res = Path::IDENT { name: last_id };
     for id in parts.iter().rev() {
-        res = Path::QUALIFIED { name: id.clone(), path: Arc::new(res) };
+        res = Path::QUALIFIED { name: id.clone(), path: metamodelica::Ref::new(res) };
     }
     Ok(res)
 }
@@ -3202,7 +3202,7 @@ fn name_path2(input: &mut TokenInput) -> ModalResult<Path> {
 fn component_reference(input: &mut TokenInput) -> ModalResult<Absyn::ComponentRef> {
     let fq = opt(t(TK::Dot)).parse_next(input)?.is_some();
     let cr = component_reference2(input)?;
-    if fq { Ok(Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef: Arc::new(cr) }) }
+    if fq { Ok(Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef: metamodelica::Ref::new(cr) }) }
     else  { Ok(cr) }
 }
 
@@ -3216,7 +3216,7 @@ fn component_reference2(input: &mut TokenInput) -> ModalResult<Absyn::ComponentR
         t_ident(input)?
     };
     let raw_subs = opt(array_subscripts).parse_next(input)?.unwrap_or_else(|| metamodelica::nil());
-    let mut subscripts: List<Arc<Absyn::Subscript>> = metamodelica::nil();
+    let mut subscripts: List<metamodelica::Ref<Absyn::Subscript>> = metamodelica::nil();
     for s in &*raw_subs.reverse() { subscripts = cons(s.clone(), subscripts); }
     if input.len() >= 2
         && input[0].kind == TK::Dot
@@ -3224,7 +3224,7 @@ fn component_reference2(input: &mut TokenInput) -> ModalResult<Absyn::ComponentR
     {
         *input = &input[1..]; // consume Dot
         let rest = component_reference2(input)?;
-        Ok(Absyn::ComponentRef::CREF_QUAL { name, subscripts, componentRef: Arc::new(rest) })
+        Ok(Absyn::ComponentRef::CREF_QUAL { name, subscripts, componentRef: metamodelica::Ref::new(rest) })
     } else {
         Ok(Absyn::ComponentRef::CREF_IDENT { name, subscripts })
     }
@@ -3314,7 +3314,7 @@ fn expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                 for t in after.into_iter().rev() { a = cons(t, a); }
                 Ok(Absyn::Exp::EXPRESSIONCOMMENT {
                     commentsBefore: b,
-                    exp: Arc::new(exp),
+                    exp: metamodelica::Ref::new(exp),
                     commentsAfter: a,
                 })
             }
@@ -3334,19 +3334,19 @@ fn if_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
     let cond    = expression(input)?;
     match next_tok(input)? { TK::Then => {} _ => return Err(ErrMode::Backtrack(ContextError::default())) }
     let true_br = expression(input)?;
-    let mut elseif: List<(Arc<Absyn::Exp>, Arc<Absyn::Exp>)> = nil();
+    let mut elseif: List<(metamodelica::Ref<Absyn::Exp>, metamodelica::Ref<Absyn::Exp>)> = nil();
     loop {
         if !matches!(peek_kind(input), Some(TK::Elseif)) { break; }
         next_tok(input)?;
         let ec = expression(input)?;
         match next_tok(input)? { TK::Then => {} _ => return Err(ErrMode::Backtrack(ContextError::default())) }
         let et = expression(input)?;
-        elseif = cons((Arc::new(ec), Arc::new(et)), elseif);
+        elseif = cons((metamodelica::Ref::new(ec), metamodelica::Ref::new(et)), elseif);
     }
     match next_tok(input)? { TK::Else => {} _ => return Err(ErrMode::Backtrack(ContextError::default())) }
     let false_br = expression(input)?;
     Ok(Absyn::Exp::IFEXP {
-        ifExp: Arc::new(cond), trueBranch: Arc::new(true_br), elseBranch: Arc::new(false_br),
+        ifExp: metamodelica::Ref::new(cond), trueBranch: metamodelica::Ref::new(true_br), elseBranch: metamodelica::Ref::new(false_br),
         elseIfBranch: elseif.reverse(),
     })
 }
@@ -3369,23 +3369,23 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
             t(TK::LParen).parse_next(input)?;
             let path = name_path(input)?;
             t(TK::RParen).parse_next(input)?;
-            return Ok(Exp::CODE { code: Arc::new(CodeNode::C_TYPENAME { path: Arc::new(path) }) });
+            return Ok(Exp::CODE { code: metamodelica::Ref::new(CodeNode::C_TYPENAME { path: metamodelica::Ref::new(path) }) });
         },
         TK::CodeExp => {
             t(TK::LParen).parse_next(input)?;
             let exp = expression(input)?;
             t(TK::RParen).parse_next(input)?;
-            return Ok(Exp::CODE { code: Arc::new(CodeNode::C_EXPRESSION { exp: Arc::new(exp) }) });
+            return Ok(Exp::CODE { code: metamodelica::Ref::new(CodeNode::C_EXPRESSION { exp: metamodelica::Ref::new(exp) }) });
         },
         TK::CodeVar => {
             t(TK::LParen).parse_next(input)?;
             let componentRef = component_reference(input)?;
             t(TK::RParen).parse_next(input)?;
-            return Ok(Exp::CODE { code: Arc::new(CodeNode::C_VARIABLENAME { componentRef: Arc::new(componentRef) }) });
+            return Ok(Exp::CODE { code: metamodelica::Ref::new(CodeNode::C_VARIABLENAME { componentRef: metamodelica::Ref::new(componentRef) }) });
         },
         TK::CodeAnnotation => {
             let elementArgLst = class_modification(input)?;
-            return Ok(Exp::CODE { code: Arc::new(CodeNode::C_MODIFICATION { modification: Arc::new(Modification { elementArgLst, eqMod: Arc::new(EqMod::NOMOD) }) }) });
+            return Ok(Exp::CODE { code: metamodelica::Ref::new(CodeNode::C_MODIFICATION { modification: metamodelica::Ref::new(Modification { elementArgLst, eqMod: metamodelica::Ref::new(EqMod::NOMOD) }) }) });
         },
         TK::Code => {
                 t(TK::LParen)
@@ -3405,7 +3405,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                         .context(StrContext::Label("')' closing $Code equation"))
                         .parse_next(input)?;
                     return Ok(Exp::CODE {
-                        code: Arc::new(CodeNode::C_EQUATIONSECTION { boolean: initial, equationItemLst: eq }),
+                        code: metamodelica::Ref::new(CodeNode::C_EQUATIONSECTION { boolean: initial, equationItemLst: eq }),
                     });
                 }
 
@@ -3419,7 +3419,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                         .context(StrContext::Label("')' closing $Code constraint"))
                         .parse_next(input)?;
                     return Ok(Exp::CODE {
-                        code: Arc::new(CodeNode::C_CONSTRAINTSECTION { boolean: initial, equationItemLst: constr }),
+                        code: metamodelica::Ref::new(CodeNode::C_CONSTRAINTSECTION { boolean: initial, equationItemLst: constr }),
                     });
                 }
 
@@ -3433,7 +3433,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                         .context(StrContext::Label("')' closing $Code algorithm"))
                         .parse_next(input)?;
                     return Ok(Exp::CODE {
-                        code: Arc::new(CodeNode::C_ALGORITHMSECTION { boolean: initial, algorithmItemLst: alg }),
+                        code: metamodelica::Ref::new(CodeNode::C_ALGORITHMSECTION { boolean: initial, algorithmItemLst: alg }),
                     });
                 }
 
@@ -3457,7 +3457,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                         && matches!(peek_kind(input), Some(TK::RParen))
                     {
                         next_tok(input)?;
-                        return Ok(Exp::CODE { code: Arc::new(CodeNode::C_MODIFICATION { modification: Arc::new(m) }) });
+                        return Ok(Exp::CODE { code: metamodelica::Ref::new(CodeNode::C_MODIFICATION { modification: metamodelica::Ref::new(m) }) });
                     }
                     input.reset(&checkpoint);
                 }
@@ -3472,7 +3472,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                             .context(StrContext::Label("')' closing $Code expression"))
                             .parse_next(input)?;
                         return Ok(Exp::CODE {
-                            code: Arc::new(CodeNode::C_EXPRESSION { exp: Arc::new(e) }),
+                            code: metamodelica::Ref::new(CodeNode::C_EXPRESSION { exp: metamodelica::Ref::new(e) }),
                         });
                     }
                 input.reset(&checkpoint);
@@ -3485,7 +3485,7 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                         .context(StrContext::Label("')' closing $Code element"))
                         .parse_next(input)?;
                     return Ok(Exp::CODE {
-                        code: Arc::new(CodeNode::C_ELEMENT { element: Arc::new(element) }),
+                        code: metamodelica::Ref::new(CodeNode::C_ELEMENT { element: metamodelica::Ref::new(element) }),
                     });
                 }
 
@@ -3503,24 +3503,24 @@ fn code_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
 }
 
 /// code_equation_clause: equation SEMICOLON code_equation_clause?
-fn code_equation_clause(input: &mut TokenInput) -> ModalResult<List<Arc<EquationItem>>> {
-    let eq = Arc::new(equation_item(input)?);
+fn code_equation_clause(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<EquationItem>>> {
+    let eq = metamodelica::Ref::new(equation_item(input)?);
     t(TK::Semi).parse_next(input)?;
     let rest = opt(code_equation_clause).parse_next(input)?.unwrap_or(nil());
     Ok(cons(eq, rest))
 }
 
 /// code_constraint_clause: equation SEMICOLON code_constraint_clause?
-fn code_constraint_clause(input: &mut TokenInput) -> ModalResult<List<Arc<EquationItem>>> {
-    let eq = Arc::new(equation_item(input)?);
+fn code_constraint_clause(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<EquationItem>>> {
+    let eq = metamodelica::Ref::new(equation_item(input)?);
     t(TK::Semi).parse_next(input)?;
     let rest = opt(code_constraint_clause).parse_next(input)?.unwrap_or(nil());
     Ok(cons(eq, rest))
 }
 
 /// code_algorithm_clause: algorithm SEMICOLON code_algorithm_clause?
-fn code_algorithm_clause(input: &mut TokenInput) -> ModalResult<List<Arc<AlgorithmItem>>> {
-    let alg = Arc::new(algorithm_item(input)?);
+fn code_algorithm_clause(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<AlgorithmItem>>> {
+    let alg = metamodelica::Ref::new(algorithm_item(input)?);
     t(TK::Semi).parse_next(input)?;
     let rest = opt(code_algorithm_clause).parse_next(input)?.unwrap_or(nil());
     Ok(cons(alg, rest))
@@ -3533,8 +3533,8 @@ fn part_eval_function_expression(input: &mut TokenInput) -> ModalResult<Absyn::E
     let argNames = opt(named_arguments).parse_next(input)?.unwrap_or(nil());
     t(TK::RParen).parse_next(input)?;
     Ok(Absyn::Exp::PARTEVALFUNCTION {
-        function_: Arc::new(cr),
-        functionArgs: Arc::new(Absyn::FunctionArgs::FUNCTIONARGS { args: nil(), argNames }),
+        function_: metamodelica::Ref::new(cr),
+        functionArgs: metamodelica::Ref::new(Absyn::FunctionArgs::FUNCTIONARGS { args: nil(), argNames }),
     })
 }
 
@@ -3560,7 +3560,7 @@ fn simple_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         match as_result {
             Some(id) => {
                 let e = simple_expression(input)?;
-                return Ok(Absyn::Exp::AS { id, exp: Arc::new(e) });
+                return Ok(Absyn::Exp::AS { id, exp: metamodelica::Ref::new(e) });
             }
             None => { *input = saved; }
         }
@@ -3570,7 +3570,7 @@ fn simple_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
     if matches!(peek_kind(input), Some(TK::ColonColon)) {
         next_tok(input)?;
         let e2 = simple_expression(input)?;
-        Ok(Absyn::Exp::CONS { head: Arc::new(e1), rest: Arc::new(e2) })
+        Ok(Absyn::Exp::CONS { head: metamodelica::Ref::new(e1), rest: metamodelica::Ref::new(e2) })
     } else {
         Ok(e1)
     }
@@ -3587,9 +3587,9 @@ fn simple_expr(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
     if matches!(peek_kind(input), Some(TK::Colon)) {
         next_tok(input)?; // ':'
         let e3 = logical_expression(input)?;
-        Ok(Absyn::Exp::RANGE { start: Arc::new(e1), step: Some(Arc::new(e2)), stop: Arc::new(e3) })
+        Ok(Absyn::Exp::RANGE { start: metamodelica::Ref::new(e1), step: Some(metamodelica::Ref::new(e2)), stop: metamodelica::Ref::new(e3) })
     } else {
-        Ok(Absyn::Exp::RANGE { start: Arc::new(e1), step: None, stop: Arc::new(e2) })
+        Ok(Absyn::Exp::RANGE { start: metamodelica::Ref::new(e1), step: None, stop: metamodelica::Ref::new(e2) })
     }
 }
 
@@ -3599,7 +3599,7 @@ fn logical_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         if !matches!(peek_kind(input), Some(TK::Or)) { break; }
         next_tok(input)?;
         let e2 = logical_term(input)?;
-        e = Absyn::Exp::LBINARY { exp1: Arc::new(e), op: Absyn::Operator::OR {}, exp2: Arc::new(e2) };
+        e = Absyn::Exp::LBINARY { exp1: metamodelica::Ref::new(e), op: Absyn::Operator::OR {}, exp2: metamodelica::Ref::new(e2) };
     }
     Ok(e)
 }
@@ -3610,7 +3610,7 @@ fn logical_term(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         if !matches!(peek_kind(input), Some(TK::And)) { break; }
         next_tok(input)?;
         let e2 = logical_factor(input)?;
-        e = Absyn::Exp::LBINARY { exp1: Arc::new(e), op: Absyn::Operator::AND {}, exp2: Arc::new(e2) };
+        e = Absyn::Exp::LBINARY { exp1: metamodelica::Ref::new(e), op: Absyn::Operator::AND {}, exp2: metamodelica::Ref::new(e2) };
     }
     Ok(e)
 }
@@ -3619,7 +3619,7 @@ fn logical_factor(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
     let has_not = matches!(peek_kind(input), Some(TK::Not));
     if has_not { next_tok(input)?; }
     let e = relation(input)?;
-    if has_not { Ok(Absyn::Exp::LUNARY { op: Absyn::Operator::NOT {}, exp: Arc::new(e) }) }
+    if has_not { Ok(Absyn::Exp::LUNARY { op: Absyn::Operator::NOT {}, exp: metamodelica::Ref::new(e) }) }
     else       { Ok(e) }
 }
 
@@ -3635,7 +3635,7 @@ fn relation(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         _                 => None,
     };
     match op {
-        Some(op) => Ok(Absyn::Exp::RELATION { exp1: Arc::new(e1), op, exp2: Arc::new(arithmetic_expression(input)?) }),
+        Some(op) => Ok(Absyn::Exp::RELATION { exp1: metamodelica::Ref::new(e1), op, exp2: metamodelica::Ref::new(arithmetic_expression(input)?) }),
         None     => Ok(e1),
     }
 }
@@ -3651,7 +3651,7 @@ fn arithmetic_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
             _                 => None,
         };
         match op {
-            Some(op) => { let e2 = term(input)?; e = Absyn::Exp::BINARY { exp1: Arc::new(e), op, exp2: Arc::new(e2) }; }
+            Some(op) => { let e2 = term(input)?; e = Absyn::Exp::BINARY { exp1: metamodelica::Ref::new(e), op, exp2: metamodelica::Ref::new(e2) }; }
             None     => break,
         }
     }
@@ -3668,7 +3668,7 @@ fn unary_arithmetic_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp
     };
     let t_expr = term(input)?;
     match op {
-        Some(op) => Ok(Absyn::Exp::UNARY { op, exp: Arc::new(t_expr) }),
+        Some(op) => Ok(Absyn::Exp::UNARY { op, exp: metamodelica::Ref::new(t_expr) }),
         None     => Ok(t_expr),
     }
 }
@@ -3684,7 +3684,7 @@ fn term(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
             _                 => None,
         };
         match op {
-            Some(op) => { let e2 = factor(input)?; e = Absyn::Exp::BINARY { exp1: Arc::new(e), op, exp2: Arc::new(e2) }; }
+            Some(op) => { let e2 = factor(input)?; e = Absyn::Exp::BINARY { exp1: metamodelica::Ref::new(e), op, exp2: metamodelica::Ref::new(e2) }; }
             None     => break,
         }
     }
@@ -3699,7 +3699,7 @@ fn factor(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         _                 => None,
     };
     match op {
-        Some(op) => Ok(Absyn::Exp::BINARY { exp1: Arc::new(e1), op, exp2: Arc::new(primary(input)?) }),
+        Some(op) => Ok(Absyn::Exp::BINARY { exp1: metamodelica::Ref::new(e1), op, exp2: metamodelica::Ref::new(primary(input)?) }),
         None     => Ok(e1),
     }
 }
@@ -3749,7 +3749,7 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                     // a non-tuple result always has exactly one element.
                     metamodelica::ListNode::Nil => unreachable!("non-tuple output_expression_list returned no expression"),
                 };
-                let mut rc_subs: List<Arc<Subscript>> = nil();
+                let mut rc_subs: List<metamodelica::Ref<Subscript>> = nil();
                 for s in &*(subs.reverse()) { rc_subs = cons(s.clone(), rc_subs); }
                 return Ok(Absyn::Exp::SUBSCRIPTED_EXP { exp, subscripts: rc_subs });
             }
@@ -3778,8 +3778,8 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
                 Absyn::FunctionArgs::FOR_ITER_FARG { exp, iterType, iterators } => {
                     let cr = Absyn::ComponentRef::CREF_IDENT { name: "$array".into(), subscripts: nil() };
                     Ok(Absyn::Exp::CALL {
-                        function_: Arc::new(cr),
-                        functionArgs: Arc::new(Absyn::FunctionArgs::FOR_ITER_FARG { exp, iterType, iterators }),
+                        function_: metamodelica::Ref::new(cr),
+                        functionArgs: metamodelica::Ref::new(Absyn::FunctionArgs::FOR_ITER_FARG { exp, iterType, iterators }),
                         typeVars: nil(),
                     })
                 }
@@ -3806,21 +3806,21 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
             next_tok(input)?;
             let fa = function_call(input)?;
             let cr = Absyn::ComponentRef::CREF_IDENT { name: "der".into(), subscripts: nil() };
-            return Ok(Absyn::Exp::CALL { function_: Arc::new(cr), functionArgs: Arc::new(fa), typeVars: nil() });
+            return Ok(Absyn::Exp::CALL { function_: metamodelica::Ref::new(cr), functionArgs: metamodelica::Ref::new(fa), typeVars: nil() });
         }
         Some(TK::Pure) => {
             next_tok(input)?;
             let fa = function_call(input)?;
             let cr = Absyn::ComponentRef::CREF_IDENT { name: "pure".into(), subscripts: nil() };
-            return Ok(Absyn::Exp::CALL { function_: Arc::new(cr), functionArgs: Arc::new(fa), typeVars: nil() });
+            return Ok(Absyn::Exp::CALL { function_: metamodelica::Ref::new(cr), functionArgs: metamodelica::Ref::new(fa), typeVars: nil() });
         }
         Some(TK::Wild) => {
             next_tok(input)?;
-            return Ok(Absyn::Exp::CREF { componentRef: Arc::new(Absyn::ComponentRef::WILD {}) });
+            return Ok(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::WILD {}) });
         }
         Some(TK::Allwild) => {
             next_tok(input)?;
-            return Ok(Absyn::Exp::CREF { componentRef: Arc::new(Absyn::ComponentRef::ALLWILD {}) });
+            return Ok(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::ALLWILD {}) });
         }
         _ => {}
     }
@@ -3844,15 +3844,15 @@ fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Abs
             t(TK::RParen).parse_next(input)?;
             let cr = Absyn::ComponentRef::CREF_IDENT { name: "initial".into(), subscripts: nil() };
             return Ok(Absyn::Exp::CALL {
-                function_: Arc::new(cr),
-                functionArgs: Arc::new(Absyn::FunctionArgs::FUNCTIONARGS { args: nil(), argNames: nil() }),
+                function_: metamodelica::Ref::new(cr),
+                functionArgs: metamodelica::Ref::new(Absyn::FunctionArgs::FUNCTIONARGS { args: nil(), argNames: nil() }),
                 typeVars: nil(),
             });
         }
         // Not initial() — treat 'initial' as an identifier.
         // Fall through with synthetic cref.
         return Ok(Absyn::Exp::CREF {
-            componentRef: Arc::new(Absyn::ComponentRef::CREF_IDENT { name: "initial".into(), subscripts: nil() }),
+            componentRef: metamodelica::Ref::new(Absyn::ComponentRef::CREF_IDENT { name: "initial".into(), subscripts: nil() }),
         });
     }
 
@@ -3874,7 +3874,7 @@ fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Abs
         })() {
             if matches!(peek_kind(input), Some(TK::LParen)) {
                 let fa = function_call(input)?;
-                return Ok(Absyn::Exp::CALL { function_: Arc::new(cr), functionArgs: Arc::new(fa), typeVars: to_rc_list(type_vars) });
+                return Ok(Absyn::Exp::CALL { function_: metamodelica::Ref::new(cr), functionArgs: metamodelica::Ref::new(fa), typeVars: to_rc_list(type_vars) });
             }
             *input = saved;
         } else {
@@ -3893,14 +3893,14 @@ fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Abs
             next_tok(input)?; // Dot
             let field = expression(input)?;
             return Ok(Absyn::Exp::DOT {
-                exp:   Arc::new(Absyn::Exp::CALL { function_: Arc::new(cr), functionArgs: Arc::new(fa), typeVars: nil() }),
-                index: Arc::new(field),
+                exp:   metamodelica::Ref::new(Absyn::Exp::CALL { function_: metamodelica::Ref::new(cr), functionArgs: metamodelica::Ref::new(fa), typeVars: nil() }),
+                index: metamodelica::Ref::new(field),
             });
         }
-        return Ok(Absyn::Exp::CALL { function_: Arc::new(cr), functionArgs: Arc::new(fa), typeVars: nil() });
+        return Ok(Absyn::Exp::CALL { function_: metamodelica::Ref::new(cr), functionArgs: metamodelica::Ref::new(fa), typeVars: nil() });
     }
 
-    Ok(Absyn::Exp::CREF { componentRef: Arc::new(cr) })
+    Ok(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(cr) })
 }
 
 fn function_call(input: &mut TokenInput) -> ModalResult<Absyn::FunctionArgs> {
@@ -3955,15 +3955,15 @@ fn for_or_expression_list(input: &mut TokenInput) -> ModalResult<Absyn::Function
         t(TK::For).parse_next(input)?;
         let iterators = for_indices(input)?;
         return Ok(Absyn::FunctionArgs::FOR_ITER_FARG {
-            exp: Arc::new(exp),
+            exp: metamodelica::Ref::new(exp),
             iterType: if threaded { Absyn::ReductionIterType::THREAD {} } else { Absyn::ReductionIterType::COMBINE {} },
             iterators,
         });
     }
 
     // Expression list, possibly ending with named arguments.
-    let mut args: List<Arc<Absyn::Exp>> = nil();
-    let mut arg_names: List<Arc<Absyn::NamedArg>> = nil();
+    let mut args: List<metamodelica::Ref<Absyn::Exp>> = nil();
+    let mut arg_names: List<metamodelica::Ref<Absyn::NamedArg>> = nil();
     loop {
         let is_plain_ident = matches!(
             &exp,
@@ -3978,7 +3978,7 @@ fn for_or_expression_list(input: &mut TokenInput) -> ModalResult<Absyn::Function
                 Err(_) => { *input = saved; }
             }
         }
-        args = cons(Arc::new(exp), args);
+        args = cons(metamodelica::Ref::new(exp), args);
         if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
         checkpoint = input.checkpoint();
         exp = arg_expression(input)?;
@@ -3993,17 +3993,17 @@ fn for_or_expression_list(input: &mut TokenInput) -> ModalResult<Absyn::Function
 fn named_argument(input: &mut TokenInput) -> ModalResult<Absyn::NamedArg> {
     let argName  = t_any_ident(input)?;
     t(TK::Equal).parse_next(input)?;
-    let argValue = Arc::new(arg_expression(input)?);
+    let argValue = metamodelica::Ref::new(arg_expression(input)?);
     Ok(Absyn::NamedArg { argName, argValue })
 }
 
-fn named_arguments(input: &mut TokenInput) -> ModalResult<List<Arc<Absyn::NamedArg>>> {
+fn named_arguments(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<Absyn::NamedArg>>> {
     let first = named_argument(input)?;
-    let mut args: List<Arc<Absyn::NamedArg>> = cons(Arc::new(first), nil());
+    let mut args: List<metamodelica::Ref<Absyn::NamedArg>> = cons(metamodelica::Ref::new(first), nil());
     loop {
         if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
         match named_argument(input) {
-            Ok(arg) => args = cons(Arc::new(arg), args),
+            Ok(arg) => args = cons(metamodelica::Ref::new(arg), args),
             Err(_)  => break,
         }
     }
@@ -4028,24 +4028,24 @@ fn for_index(input: &mut TokenInput) -> ModalResult<Absyn::ForIterator> {
     let guardExp = match peek_kind(input) {
         Some(TK::If) | Some(TK::Guard) => {
             next_tok(input)?;
-            Some(Arc::new(expression(input)?))
+            Some(metamodelica::Ref::new(expression(input)?))
         }
         _ => None,
     };
     let range = if matches!(peek_kind(input), Some(TK::In)) {
         next_tok(input)?;
-        Some(Arc::new(expression(input)?))
+        Some(metamodelica::Ref::new(expression(input)?))
     } else { None };
     Ok(Absyn::ForIterator { name, guardExp, range })
 }
 
-fn expression_list(input: &mut TokenInput) -> ModalResult<List<Arc<Absyn::Exp>>> {
+fn expression_list(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<Absyn::Exp>>> {
     let e = expression(input)?;
-    let mut result: List<Arc<Absyn::Exp>> = cons(Arc::new(e), nil());
+    let mut result: List<metamodelica::Ref<Absyn::Exp>> = cons(metamodelica::Ref::new(e), nil());
     loop {
         if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
         match expression(input) {
-            Ok(e)  => result = cons(Arc::new(e), result),
+            Ok(e)  => result = cons(metamodelica::Ref::new(e), result),
             Err(_) => break,
         }
     }
@@ -4053,7 +4053,7 @@ fn expression_list(input: &mut TokenInput) -> ModalResult<List<Arc<Absyn::Exp>>>
 }
 
 /// Consumes up to and including ')'; returns (expressions, isTuple).
-fn output_expression_list(input: &mut TokenInput) -> ModalResult<(List<Arc<Absyn::Exp>>, bool)> {
+fn output_expression_list(input: &mut TokenInput) -> ModalResult<(List<metamodelica::Ref<Absyn::Exp>>, bool)> {
     // ()
     if opt(t(TK::RParen)).parse_next(input)?.is_some() {
         return Ok((nil(), true));
@@ -4061,23 +4061,23 @@ fn output_expression_list(input: &mut TokenInput) -> ModalResult<(List<Arc<Absyn
     // Leading comma: (, b) → WILD, b
     if opt(t(TK::Comma)).parse_next(input)?.is_some() {
         let (rest, _) = output_expression_list(input)?;
-        let wild_exp = Arc::new(Absyn::Exp::CREF { componentRef: Arc::new(Absyn::ComponentRef::WILD {}) });
+        let wild_exp = metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::WILD {}) });
         return Ok((cons(wild_exp, rest), true));
     }
     let e1 = expression(input)?;
     if opt(t(TK::Comma)).parse_next(input)?.is_some() {
         let (mut result, _) = output_expression_list(input)?;
         if result.is_empty() {
-            let wild = Arc::new(Absyn::Exp::CREF { componentRef: Arc::new(Absyn::ComponentRef::WILD {}) });
+            let wild = metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::WILD {}) });
             result = cons(wild, result);
         }
-        return Ok((cons(Arc::new(e1), result), true));
+        return Ok((cons(metamodelica::Ref::new(e1), result), true));
     }
     t(TK::RParen).parse_next(input)?;
-    Ok((cons(Arc::new(e1), nil()), false))
+    Ok((cons(metamodelica::Ref::new(e1), nil()), false))
 }
 
-fn matrix_expression_list(input: &mut TokenInput) -> ModalResult<List<List<Arc<Absyn::Exp>>>> {
+fn matrix_expression_list(input: &mut TokenInput) -> ModalResult<List<List<metamodelica::Ref<Absyn::Exp>>>> {
     let row = expression_list(input)?;
     let mut rows = cons(row, nil());
     loop {
@@ -4120,7 +4120,7 @@ fn comment(input: &mut TokenInput) -> ModalResult<Option<Comment>> {
     if comment.is_none() && annotation_.is_none() {
         return Ok(None);
     }
-    Ok(Some(Comment { comment, annotation_: annotation_.map(Arc::new) }))
+    Ok(Some(Comment { comment, annotation_: annotation_.map(metamodelica::Ref::new) }))
 }
 
 fn type_specifier(input: &mut TokenInput) -> ModalResult<TypeSpec> {
@@ -4136,12 +4136,12 @@ fn type_specifier_no_dims(input: &mut TokenInput) -> ModalResult<TypeSpec> {
 
 fn type_specifier_impl(input: &mut TokenInput, allow_dims: bool) -> ModalResult<TypeSpec> {
     let path = name_path(input)?;
-    let mut ts: List<Arc<TypeSpec>> = nil();
+    let mut ts: List<metamodelica::Ref<TypeSpec>> = nil();
     if opt(t(TK::Less)).parse_next(input)?.is_some() {
         loop {
             if matches!(peek_kind(input), Some(TK::Greater)) || input.is_empty() { break; }
             let inner_ts = type_specifier(input)?;
-            ts = cons(Arc::new(inner_ts), ts);
+            ts = cons(metamodelica::Ref::new(inner_ts), ts);
             if opt(t(TK::Comma)).parse_next(input)?.is_some() { continue; }
             break;
         }
@@ -4150,9 +4150,9 @@ fn type_specifier_impl(input: &mut TokenInput, allow_dims: bool) -> ModalResult<
     }
     let arrayDim = if allow_dims { opt(array_subscripts).parse_next(input)? } else { None };
     if ts.is_empty() {
-        Ok(TypeSpec::TPATH { path: Arc::new(path), arrayDim })
+        Ok(TypeSpec::TPATH { path: metamodelica::Ref::new(path), arrayDim })
     } else {
-        Ok(TypeSpec::TCOMPLEX { path: Arc::new(path), typeSpecs: ts, arrayDim })
+        Ok(TypeSpec::TCOMPLEX { path: metamodelica::Ref::new(path), typeSpecs: ts, arrayDim })
     }
 }
 
@@ -4161,7 +4161,7 @@ fn subscript(input: &mut TokenInput) -> ModalResult<Subscript> {
         next_tok(input)?;
         return Ok(Subscript::NOSUB {});
     }
-    Ok(Subscript::SUBSCRIPT { subscript: Arc::new(expression(input)?) })
+    Ok(Subscript::SUBSCRIPT { subscript: metamodelica::Ref::new(expression(input)?) })
 }
 
 fn array_subscripts(input: &mut TokenInput) -> ModalResult<ArrayDim> {
@@ -4197,7 +4197,7 @@ fn enum_list(input: &mut TokenInput) -> ModalResult<List<EnumLiteral>> {
 fn enum_literal(input: &mut TokenInput) -> ModalResult<EnumLiteral> {
     let literal = t_ident(input)?;
     let comment = comment.parse_next(input)?;
-    Ok(EnumLiteral { literal, comment: comment.map(Arc::new) })
+    Ok(EnumLiteral { literal, comment: comment.map(metamodelica::Ref::new) })
 }
 
 // ---------------------------------------------------------------------------
@@ -4434,7 +4434,7 @@ end P;\n\
         let first = match &*classes { metamodelica::ListNode::Cons { head, .. } => head.clone(), _ => panic!("no classes") };
         let Class { body, .. } = &*first;
         let ClassDef::PARTS { classParts, .. } = &**body else { panic!("expected PARTS"); };
-        let mut assigns: Vec<(Arc<Exp>, Arc<Exp>)> = Vec::new();
+        let mut assigns: Vec<(metamodelica::Ref<Exp>, metamodelica::Ref<Exp>)> = Vec::new();
         for cp in &**classParts {
             if let ClassPart::ALGORITHMS { contents } = &**cp {
                 for ai in &**contents {

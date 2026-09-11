@@ -132,7 +132,7 @@ pub(crate) struct SimCtx {
     /// `None` when the variable has no explicit start (defaults to the type's
     /// zero). Stored separately from `vars` because `$START` reads the start
     /// attribute, not the live value.
-    pub(crate) starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
+    pub(crate) starts: Arc<HashMap<String, Option<metamodelica::Ref<DAE::Exp>>>>,
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
     pub(crate) start_slots: Arc<HashMap<String, u32>>,
@@ -147,7 +147,7 @@ pub(crate) struct SimCtx {
     pub(crate) scatter_groups: Arc<HashMap<String, ScatterGroup>>,
     /// `varKind = CONST` variables own no slot: a reference is the binding
     /// literal, as in C's `varArrayNameValues`.
-    pub(crate) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
+    pub(crate) consts: Arc<HashMap<String, metamodelica::Ref<DAE::Exp>>>,
     pub(crate) const_groups: Arc<HashMap<String, ConstGroup>>,
     /// External object cref key -> the mangled name of its class's destructor.
     pub(crate) extobj_dtors: Arc<HashMap<String, String>>,
@@ -225,18 +225,18 @@ pub(crate) struct SimCtx {
 pub(crate) struct ClockInit {
     pub(crate) off: u32,
     /// `RATIONAL_CLOCK`'s `resolution`; `None` is C's default of 1.
-    pub(crate) resolution: Option<Arc<DAE::Exp>>,
+    pub(crate) resolution: Option<metamodelica::Ref<DAE::Exp>>,
     /// `EVENT_CLOCK`'s `startInterval`, C's initial `stats.previousInterval`.
-    pub(crate) start_interval: Option<Arc<DAE::Exp>>,
+    pub(crate) start_interval: Option<metamodelica::Ref<DAE::Exp>>,
     pub(crate) sub_offs: Vec<u32>,
 }
 
 /// What one base clock's arm of `functionUpdateSynchronous` recomputes.
 pub(crate) enum ClockUpdate {
     /// `RATIONAL_CLOCK`: `intervalCounter`, and `interval` from it.
-    Rational(Arc<DAE::Exp>),
+    Rational(metamodelica::Ref<DAE::Exp>),
     /// `REAL_CLOCK`: `interval` directly.
-    Real(Arc<DAE::Exp>),
+    Real(metamodelica::Ref<DAE::Exp>),
     /// `INFERRED_CLOCK`, defaulted to `Clock(1, 1)`.
     Inferred,
     /// An event or solver clock has no interval to recompute.
@@ -388,7 +388,7 @@ pub(crate) struct ScatterGroup {
 pub(crate) struct ConstGroup {
     pub(crate) wty: WTy,
     pub(crate) dims: Vec<u32>,
-    pub(crate) values: Vec<Arc<DAE::Exp>>,
+    pub(crate) values: Vec<metamodelica::Ref<DAE::Exp>>,
 }
 
 /// A scalar model variable's location within the `SimData` block.
@@ -605,7 +605,7 @@ impl<'a> FnCtx<'a> {
     }
 
     /// Lower a list of algorithm statements into this context.
-    pub(crate) fn sim_stmts(&mut self, stmts: &List<Arc<DAE::Statement>>) -> Result<()> {
+    pub(crate) fn sim_stmts(&mut self, stmts: &List<metamodelica::Ref<DAE::Statement>>) -> Result<()> {
         compile_stmts(self, stmts)
     }
 
@@ -637,7 +637,7 @@ impl<'a> FnCtx<'a> {
     /// the time events. `samples[k] = (startExp, intervalExp)`.
     pub(crate) fn emit_init_sample(
         &mut self,
-        samples: &[(Arc<DAE::Exp>, Arc<DAE::Exp>)],
+        samples: &[(metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)],
         sample_off: u32,
     ) -> Result<()> {
         let data = self.sim()?.data_local;
@@ -756,7 +756,7 @@ impl<'a> FnCtx<'a> {
         &mut self,
         defaults: &[(u32, f64)],
         int_defaults: &[(u32, i32)],
-        attrs: &[(Attr, Arc<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
+        attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (off, value) in defaults {
@@ -913,7 +913,7 @@ impl<'a> FnCtx<'a> {
     /// the band direction. `None` entries keep their index without a store.
     pub(crate) fn emit_update_relations(
         &mut self,
-        relations: &[Option<Arc<DAE::Exp>>],
+        relations: &[Option<metamodelica::Ref<DAE::Exp>>],
         relations_off: u32,
     ) -> Result<()> {
         let data = self.sim()?.data_local;
@@ -937,7 +937,7 @@ impl<'a> FnCtx<'a> {
     /// `delay(...)` expression (C's `function_storeDelayed`).
     pub(crate) fn emit_store_delayed(
         &mut self,
-        delayed: &[(i32, Arc<DAE::Exp>, Arc<DAE::Exp>, Arc<DAE::Exp>)],
+        delayed: &[(i32, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (idx, e, d, dmax) in delayed {
@@ -1068,12 +1068,12 @@ impl<'a> FnCtx<'a> {
     /// must be saved after each step.
     pub(crate) fn sim_when(
         &mut self,
-        conditions: &List<Arc<DAE::ComponentRef>>,
+        conditions: &List<metamodelica::Ref<DAE::ComponentRef>>,
         stmts: &List<openmodelica_backend_types::BackendDAE::WhenOperator>,
-        else_when: &Option<Arc<openmodelica_simcode_types::SimCode::SimEqSystem>>,
+        else_when: &Option<metamodelica::Ref<openmodelica_simcode_types::SimCode::SimEqSystem>>,
     ) -> Result<()> {
         use we::Instruction as I;
-        let conds: Vec<&Arc<DAE::ComponentRef>> = (&**conditions).into_iter().collect();
+        let conds: Vec<&metamodelica::Ref<DAE::ComponentRef>> = (&**conditions).into_iter().collect();
         // Edge guard: OR of `cond && !pre(cond)`; an empty condition list never
         // fires (C emits `0`).
         if conds.is_empty() {

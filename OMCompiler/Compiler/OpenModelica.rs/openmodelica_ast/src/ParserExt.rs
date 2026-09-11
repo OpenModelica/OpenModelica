@@ -270,10 +270,10 @@ pub fn stringPath(
     acceptedGram: i32,
     languageStandardInt: i32,
     _runningTestsuite: bool,
-) -> Result<Arc<Absyn::Path>> {
+) -> Result<metamodelica::Ref<Absyn::Path>> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_path(r#str.as_str(), infoFilename.as_str(), grammar)
-        .map(Arc::new)
+        .map(metamodelica::Ref::new)
         .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
@@ -285,10 +285,10 @@ pub fn stringCref(
     acceptedGram: i32,
     languageStandardInt: i32,
     _runningTestsuite: bool,
-) -> Result<Arc<Absyn::ComponentRef>> {
+) -> Result<metamodelica::Ref<Absyn::ComponentRef>> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_cref(r#str.as_str(), infoFilename.as_str(), grammar)
-        .map(Arc::new)
+        .map(metamodelica::Ref::new)
         .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
@@ -300,10 +300,10 @@ pub fn stringMod(
     acceptedGram: i32,
     languageStandardInt: i32,
     _runningTestsuite: bool,
-) -> Result<Arc<Absyn::ElementArg>> {
+) -> Result<metamodelica::Ref<Absyn::ElementArg>> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_modification(r#str.as_str(), infoFilename.as_str(), grammar)
-        .map(Arc::new)
+        .map(metamodelica::Ref::new)
         .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
@@ -315,10 +315,10 @@ pub fn stringEq(
     acceptedGram: i32,
     languageStandardInt: i32,
     _runningTestsuite: bool,
-) -> Result<Arc<Absyn::EquationItem>> {
+) -> Result<metamodelica::Ref<Absyn::EquationItem>> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let result = parser::parse_equation(r#str.as_str(), infoFilename.as_str(), grammar)
-        .map(Arc::new)
+        .map(metamodelica::Ref::new)
         .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result

@@ -518,7 +518,7 @@ struct GenCtx {
     /// [`compute_defaultable_struct_qnames`] before code generation.  Records
     /// not in this set must not get `#[derive(Default)]` because the derive
     /// requires every field to implement `Default`; uniontype enums lack a
-    /// `#[default]` variant marker so any record holding an `Arc<Enum>` field
+    /// `#[default]` variant marker so any record holding an `metamodelica::Ref<Enum>` field
     /// would fail to compile.
     defaultable_struct_qnames: HashSet<String>,
     /// Subset of [`Self::defaultable_struct_qnames`] for which the workspace
@@ -2285,7 +2285,7 @@ fn collect_nested_partial_aliases(
 fn compute_nullable_global_roots(nodes: &BTreeMap<String, NameNode<'_>>, out: &mut HashSet<String>) {
     for node in nodes.values() {
         if let NodeKind::Class(c) = &node.kind {
-            let algos: &[Arc<Absyn::AlgorithmItem>] = match &c.body {
+            let algos: &[metamodelica::Ref<Absyn::AlgorithmItem>] = match &c.body {
                 MM::ClassDef::Parts { algorithms, .. }
                 | MM::ClassDef::ClassExtends { algorithms, .. } => algorithms,
                 _ => &[],
@@ -2652,7 +2652,7 @@ fn emit_node<'a>(out: &mut String, name: &str, node: &NameNode<'_>, indent: &str
                     && !is_arc_wrapped(&node.ty, ctx)
                 {
                     // If the destination type is Arc-wrapped (recursive uniontype
-                    // stored as `Arc<Enum>` everywhere), the unit-variant expression
+                    // stored as `metamodelica::Ref<Enum>` everywhere), the unit-variant expression
                     // `Enum::VARIANT` needs an `Arc::new(...)` wrap to match — but
                     // `Arc::new` is not a const fn, so we cannot emit a `pub static`
                     // / `pub const`. Fall through to the `LazyLock` path below,
@@ -3246,6 +3246,15 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
                 _ => vec![],
             };
             let type_params = if type_vars.is_empty() { String::new() } else { format!("<{}>", type_vars.join(", ")) };
+            // Declaration position: a field of type `Ref<Self>` is only
+            // well-formed once the parameters carry the bounds `MmVal` needs.
+            let decl_params = if type_vars.is_empty() {
+                String::new()
+            } else {
+                format!("<{}>", type_vars.iter()
+                    .map(|v| format!("{v}: Clone + metamodelica::mmval::MmVal"))
+                    .collect::<Vec<_>>().join(", "))
+            };
             let mut emitted_variants: Vec<String> = Vec::new();
             // Fieldless variants of Arc-wrapped enums get an interned
             // singleton getter (see below after the enum body).
@@ -3255,7 +3264,7 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
             emit_doc_comment(out, &inner, class_doc(c));
             writeln!(out, "{inner}{}", ctx.type_derives(qname)).unwrap();
             let vis = ctx.vis_for_qname(qname);
-            writeln!(out, "{inner}{vis}enum {ename}{type_params} {{").unwrap();
+            writeln!(out, "{inner}{vis}enum {ename}{decl_params} {{").unwrap();
             let variant_indent = format!("{inner}    ");
             for rec_name in &records_in_order(c) {
                 let Some(rec_node) = node.children.get(rec_name) else { continue };
@@ -3337,8 +3346,8 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
                 for v in &fieldless_variants {
                     let vesc = escape_ident(v);
                     if is_sync {
-                        writeln!(out, "{inner}    pub fn interned_{v}() -> Arc<{ename}> {{").unwrap();
-                        writeln!(out, "{inner}        static INTERNED: std::sync::LazyLock<Arc<{ename}>> = std::sync::LazyLock::new(|| Arc::new({ename}::{vesc}));").unwrap();
+                        writeln!(out, "{inner}    pub fn interned_{v}() -> metamodelica::Ref<{ename}> {{").unwrap();
+                        writeln!(out, "{inner}        static INTERNED: std::sync::LazyLock<metamodelica::Ref<{ename}>> = std::sync::LazyLock::new(|| metamodelica::Ref::new({ename}::{vesc}));").unwrap();
                         writeln!(out, "{inner}        (*INTERNED).clone()").unwrap();
                         writeln!(out, "{inner}    }}").unwrap();
                     } else {
@@ -3346,9 +3355,9 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
                         // `dyn Fn`): a `static` would not compile; intern
                         // per-thread instead. referenceEq still holds within a
                         // thread, which is where all traversals run.
-                        writeln!(out, "{inner}    pub fn interned_{v}() -> Arc<{ename}> {{").unwrap();
+                        writeln!(out, "{inner}    pub fn interned_{v}() -> metamodelica::Ref<{ename}> {{").unwrap();
                         writeln!(out, "{inner}        thread_local! {{").unwrap();
-                        writeln!(out, "{inner}            static INTERNED: Arc<{ename}> = Arc::new({ename}::{vesc});").unwrap();
+                        writeln!(out, "{inner}            static INTERNED: metamodelica::Ref<{ename}> = metamodelica::Ref::new({ename}::{vesc});").unwrap();
                         writeln!(out, "{inner}        }}").unwrap();
                         writeln!(out, "{inner}        INTERNED.with(|i| i.clone())").unwrap();
                         writeln!(out, "{inner}    }}").unwrap();
@@ -3368,7 +3377,7 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
                 // spellings are never ambiguous; variant re-export uniqueness
                 // guarantees the free-fn names don't collide.)
                 for v in &fieldless_variants {
-                    writeln!(out, "{inner}pub fn interned_{v}() -> Arc<{ename}> {{ {ename}::interned_{v}() }}").unwrap();
+                    writeln!(out, "{inner}pub fn interned_{v}() -> metamodelica::Ref<{ename}> {{ {ename}::interned_{v}() }}").unwrap();
                 }
             }
             // Hand-rolled trait impls for enums that *directly* embed an
@@ -3427,13 +3436,13 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
             // therefore beat record-shaped variants whenever present, but
             // record-shaped variants are eligible too when no unit variant
             // exists (e.g. uniontypes that only carry data). Required so
-            // `Arc<JSON>: Default` and similar transitively-needed bounds
+            // `metamodelica::Ref<JSON>: Default` and similar transitively-needed bounds
             // (e.g. `UnorderedMap::add(... value: T ...)` where `T = JSON`)
             // type-check.
             if ctx.defaultable_struct_qnames.contains(qname)
                 && ctx.types_needing_default.contains(qname)
                 && let Some((variant_name, fields)) = pick_default_variant_for_enum(node, &ctx.defaultable_struct_qnames) {
-                writeln!(out, "{inner}impl{type_params} Default for {ename}{type_params} {{").unwrap();
+                writeln!(out, "{inner}impl{decl_params} Default for {ename}{type_params} {{").unwrap();
                 if fields.is_empty() {
                     writeln!(out, "{inner}    fn default() -> Self {{ Self::{variant_name} }}").unwrap();
                 } else {
@@ -3501,7 +3510,14 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
                 } else {
                     format!("<{}>", type_vars.join(", "))
                 };
-                writeln!(out, "{inner}pub type {alias_name}{type_params} = {ename_alias}{type_params};").unwrap();
+                let decl_params = if type_vars.is_empty() {
+                    String::new()
+                } else {
+                    format!("<{}>", type_vars.iter()
+                        .map(|v| format!("{v}: Clone + metamodelica::mmval::MmVal"))
+                        .collect::<Vec<_>>().join(", "))
+                };
+                writeln!(out, "{inner}pub type {alias_name}{decl_params} = {ename_alias}{type_params};").unwrap();
                 writeln!(out).unwrap();
             }
         }
@@ -5441,7 +5457,7 @@ fn case_uses_local_name(case: &typedexp::TypedCase, name: &str) -> bool {
 
 fn plan_tail_call_lowering<'a>(
     typed_stmts: &[typedexp::TypedStmt],
-    outputs: &[(String, Ty, Option<Arc<Absyn::Modification>>, bool)],
+    outputs: &[(String, Ty, Option<metamodelica::Ref<Absyn::Modification>>, bool)],
     input_names: &HashSet<String>,
     fn_short_name: &str,
     is_fallible_fn: bool,
@@ -6891,7 +6907,7 @@ const LIST_SORT_SRC: &str = r#"pub fn sort<T: Clone + 'static + metamodelica::gc
 // `collect_from_class` inheritance pass.)
 
 /// The EQMOD right-hand side of a modification, if any.
-fn extends_eqmod_exp(m: &Option<Arc<Absyn::Modification>>) -> Option<Arc<Absyn::Exp>> {
+fn extends_eqmod_exp(m: &Option<metamodelica::Ref<Absyn::Modification>>) -> Option<metamodelica::Ref<Absyn::Exp>> {
     match &*m.as_ref()?.eqMod {
         Absyn::EqMod::EQMOD { exp, .. } => Some(exp.clone()),
         Absyn::EqMod::NOMOD => None,
@@ -6905,8 +6921,8 @@ fn extends_eqmod_exp(m: &Option<Arc<Absyn::Modification>>) -> Option<Arc<Absyn::
 fn build_extends_const_subst(
     base_c: &MM::Class,
     element_args: &[Absyn::ElementArg],
-) -> HashMap<String, Arc<Absyn::Exp>> {
-    let mut map: HashMap<String, Arc<Absyn::Exp>> = HashMap::new();
+) -> HashMap<String, metamodelica::Ref<Absyn::Exp>> {
+    let mut map: HashMap<String, metamodelica::Ref<Absyn::Exp>> = HashMap::new();
     let base_members: &[MM::ClassMember] = match &base_c.body {
         MM::ClassDef::Parts { members, .. } | MM::ClassDef::ClassExtends { members, .. } => members,
         _ => &[],
@@ -6965,25 +6981,25 @@ fn cref_dotted2(cref: &Absyn::ComponentRef) -> Option<String> {
 }
 
 fn subst_exp_list(
-    l: &metamodelica::List<Arc<Absyn::Exp>>,
-    map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> metamodelica::List<Arc<Absyn::Exp>> {
+    l: &metamodelica::List<metamodelica::Ref<Absyn::Exp>>,
+    map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>,
+) -> metamodelica::List<metamodelica::Ref<Absyn::Exp>> {
     metamodelica::List::from_iter(l.into_iter().map(|e| subst_exp(e, map)))
 }
 
 fn subst_subscripts(
-    l: &metamodelica::List<Arc<Absyn::Subscript>>,
-    map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> metamodelica::List<Arc<Absyn::Subscript>> {
+    l: &metamodelica::List<metamodelica::Ref<Absyn::Subscript>>,
+    map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>,
+) -> metamodelica::List<metamodelica::Ref<Absyn::Subscript>> {
     metamodelica::List::from_iter(l.into_iter().map(|s| match &**s {
         Absyn::Subscript::SUBSCRIPT { subscript } =>
-            Arc::new(Absyn::Subscript::SUBSCRIPT { subscript: subst_exp(subscript, map) }),
+            metamodelica::Ref::new(Absyn::Subscript::SUBSCRIPT { subscript: subst_exp(subscript, map) }),
         Absyn::Subscript::NOSUB => s.clone(),
     }))
 }
 
 /// Rewrite every `Pkg.const` component reference in an expression.
-fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::Exp> {
+fn subst_exp(e: &metamodelica::Ref<Absyn::Exp>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::Exp> {
     use Absyn::Exp as E;
     match &**e {
         E::CREF { componentRef } => {
@@ -6993,12 +7009,12 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
                 }
             e.clone()
         }
-        E::BINARY { exp1, op, exp2 } => Arc::new(E::BINARY { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
-        E::LBINARY { exp1, op, exp2 } => Arc::new(E::LBINARY { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
-        E::RELATION { exp1, op, exp2 } => Arc::new(E::RELATION { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
-        E::UNARY { op, exp } => Arc::new(E::UNARY { op: op.clone(), exp: subst_exp(exp, map) }),
-        E::LUNARY { op, exp } => Arc::new(E::LUNARY { op: op.clone(), exp: subst_exp(exp, map) }),
-        E::IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => Arc::new(E::IFEXP {
+        E::BINARY { exp1, op, exp2 } => metamodelica::Ref::new(E::BINARY { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
+        E::LBINARY { exp1, op, exp2 } => metamodelica::Ref::new(E::LBINARY { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
+        E::RELATION { exp1, op, exp2 } => metamodelica::Ref::new(E::RELATION { exp1: subst_exp(exp1, map), op: op.clone(), exp2: subst_exp(exp2, map) }),
+        E::UNARY { op, exp } => metamodelica::Ref::new(E::UNARY { op: op.clone(), exp: subst_exp(exp, map) }),
+        E::LUNARY { op, exp } => metamodelica::Ref::new(E::LUNARY { op: op.clone(), exp: subst_exp(exp, map) }),
+        E::IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => metamodelica::Ref::new(E::IFEXP {
             ifExp: subst_exp(ifExp, map),
             trueBranch: subst_exp(trueBranch, map),
             elseBranch: subst_exp(elseBranch, map),
@@ -7006,31 +7022,31 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
                 elseIfBranch.into_iter().map(|(c, t)| (subst_exp(c, map), subst_exp(t, map))),
             ),
         }),
-        E::CALL { function_, functionArgs, typeVars } => Arc::new(E::CALL {
+        E::CALL { function_, functionArgs, typeVars } => metamodelica::Ref::new(E::CALL {
             function_: function_.clone(), functionArgs: subst_fargs(functionArgs, map), typeVars: typeVars.clone(),
         }),
-        E::PARTEVALFUNCTION { function_, functionArgs } => Arc::new(E::PARTEVALFUNCTION {
+        E::PARTEVALFUNCTION { function_, functionArgs } => metamodelica::Ref::new(E::PARTEVALFUNCTION {
             function_: function_.clone(), functionArgs: subst_fargs(functionArgs, map),
         }),
-        E::ARRAY { arrayExp } => Arc::new(E::ARRAY { arrayExp: subst_exp_list(arrayExp, map) }),
-        E::MATRIX { matrix } => Arc::new(E::MATRIX {
+        E::ARRAY { arrayExp } => metamodelica::Ref::new(E::ARRAY { arrayExp: subst_exp_list(arrayExp, map) }),
+        E::MATRIX { matrix } => metamodelica::Ref::new(E::MATRIX {
             matrix: metamodelica::List::from_iter(matrix.into_iter().map(|row| subst_exp_list(row, map))),
         }),
-        E::RANGE { start, step, stop } => Arc::new(E::RANGE {
+        E::RANGE { start, step, stop } => metamodelica::Ref::new(E::RANGE {
             start: subst_exp(start, map), step: step.as_ref().map(|s| subst_exp(s, map)), stop: subst_exp(stop, map),
         }),
-        E::TUPLE { expressions } => Arc::new(E::TUPLE { expressions: subst_exp_list(expressions, map) }),
-        E::CONS { head, rest } => Arc::new(E::CONS { head: subst_exp(head, map), rest: subst_exp(rest, map) }),
-        E::AS { id, exp } => Arc::new(E::AS { id: id.clone(), exp: subst_exp(exp, map) }),
-        E::LIST { exps } => Arc::new(E::LIST { exps: subst_exp_list(exps, map) }),
-        E::DOT { exp, index } => Arc::new(E::DOT { exp: subst_exp(exp, map), index: subst_exp(index, map) }),
-        E::SUBSCRIPTED_EXP { exp, subscripts } => Arc::new(E::SUBSCRIPTED_EXP {
+        E::TUPLE { expressions } => metamodelica::Ref::new(E::TUPLE { expressions: subst_exp_list(expressions, map) }),
+        E::CONS { head, rest } => metamodelica::Ref::new(E::CONS { head: subst_exp(head, map), rest: subst_exp(rest, map) }),
+        E::AS { id, exp } => metamodelica::Ref::new(E::AS { id: id.clone(), exp: subst_exp(exp, map) }),
+        E::LIST { exps } => metamodelica::Ref::new(E::LIST { exps: subst_exp_list(exps, map) }),
+        E::DOT { exp, index } => metamodelica::Ref::new(E::DOT { exp: subst_exp(exp, map), index: subst_exp(index, map) }),
+        E::SUBSCRIPTED_EXP { exp, subscripts } => metamodelica::Ref::new(E::SUBSCRIPTED_EXP {
             exp: subst_exp(exp, map), subscripts: subst_subscripts(subscripts, map),
         }),
-        E::EXPRESSIONCOMMENT { commentsBefore, exp, commentsAfter } => Arc::new(E::EXPRESSIONCOMMENT {
+        E::EXPRESSIONCOMMENT { commentsBefore, exp, commentsAfter } => metamodelica::Ref::new(E::EXPRESSIONCOMMENT {
             commentsBefore: commentsBefore.clone(), exp: subst_exp(exp, map), commentsAfter: commentsAfter.clone(),
         }),
-        E::MATCHEXP { matchTy, inputExp, localDecls, cases, comment } => Arc::new(E::MATCHEXP {
+        E::MATCHEXP { matchTy, inputExp, localDecls, cases, comment } => metamodelica::Ref::new(E::MATCHEXP {
             matchTy: matchTy.clone(), inputExp: subst_exp(inputExp, map), localDecls: localDecls.clone(),
             cases: metamodelica::List::from_iter(cases.into_iter().map(|cse| subst_case(cse, map))),
             comment: comment.clone(),
@@ -7041,17 +7057,17 @@ fn subst_exp(e: &Arc<Absyn::Exp>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc
     }
 }
 
-fn subst_fargs(fa: &Arc<Absyn::FunctionArgs>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::FunctionArgs> {
+fn subst_fargs(fa: &metamodelica::Ref<Absyn::FunctionArgs>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::FunctionArgs> {
     use Absyn::FunctionArgs as F;
     match &**fa {
-        F::FUNCTIONARGS { args, argNames } => Arc::new(F::FUNCTIONARGS {
+        F::FUNCTIONARGS { args, argNames } => metamodelica::Ref::new(F::FUNCTIONARGS {
             args: subst_exp_list(args, map),
             argNames: metamodelica::List::from_iter(argNames.into_iter().map(|na| {
                 let Absyn::NamedArg { argName, argValue } = &**na;
-                Arc::new(Absyn::NamedArg { argName: argName.clone(), argValue: subst_exp(argValue, map) })
+                metamodelica::Ref::new(Absyn::NamedArg { argName: argName.clone(), argValue: subst_exp(argValue, map) })
             })),
         }),
-        F::FOR_ITER_FARG { exp, iterType, iterators } => Arc::new(F::FOR_ITER_FARG {
+        F::FOR_ITER_FARG { exp, iterType, iterators } => metamodelica::Ref::new(F::FOR_ITER_FARG {
             exp: subst_exp(exp, map), iterType: iterType.clone(), iterators: subst_for_iterators(iterators, map),
         }),
     }
@@ -7059,11 +7075,11 @@ fn subst_fargs(fa: &Arc<Absyn::FunctionArgs>, map: &HashMap<String, Arc<Absyn::E
 
 fn subst_for_iterators(
     l: &Absyn::ForIterators,
-    map: &HashMap<String, Arc<Absyn::Exp>>,
+    map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>,
 ) -> Absyn::ForIterators {
     metamodelica::List::from_iter(l.into_iter().map(|it| {
         let Absyn::ForIterator { name, guardExp, range } = &**it;
-        Arc::new(Absyn::ForIterator {
+        metamodelica::Ref::new(Absyn::ForIterator {
             name: name.clone(),
             guardExp: guardExp.as_ref().map(|g| subst_exp(g, map)),
             range: range.as_ref().map(|r| subst_exp(r, map)),
@@ -7072,73 +7088,73 @@ fn subst_for_iterators(
 }
 
 fn subst_alg_item_list(
-    l: &metamodelica::List<Arc<Absyn::AlgorithmItem>>,
-    map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> metamodelica::List<Arc<Absyn::AlgorithmItem>> {
+    l: &metamodelica::List<metamodelica::Ref<Absyn::AlgorithmItem>>,
+    map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>,
+) -> metamodelica::List<metamodelica::Ref<Absyn::AlgorithmItem>> {
     metamodelica::List::from_iter(l.into_iter().map(|it| subst_alg_item(it, map)))
 }
 
 fn subst_alg_elseif(
-    l: &metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)>,
-    map: &HashMap<String, Arc<Absyn::Exp>>,
-) -> metamodelica::List<(Arc<Absyn::Exp>, metamodelica::List<Arc<Absyn::AlgorithmItem>>)> {
+    l: &metamodelica::List<(metamodelica::Ref<Absyn::Exp>, metamodelica::List<metamodelica::Ref<Absyn::AlgorithmItem>>)>,
+    map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>,
+) -> metamodelica::List<(metamodelica::Ref<Absyn::Exp>, metamodelica::List<metamodelica::Ref<Absyn::AlgorithmItem>>)> {
     metamodelica::List::from_iter(
         l.into_iter().map(|(cond, body)| (subst_exp(cond, map), subst_alg_item_list(body, map))),
     )
 }
 
-fn subst_alg_item(it: &Arc<Absyn::AlgorithmItem>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::AlgorithmItem> {
+fn subst_alg_item(it: &metamodelica::Ref<Absyn::AlgorithmItem>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::AlgorithmItem> {
     use Absyn::AlgorithmItem as AI;
     match &**it {
-        AI::ALGORITHMITEM { algorithm_, comment, info } => Arc::new(AI::ALGORITHMITEM {
+        AI::ALGORITHMITEM { algorithm_, comment, info } => metamodelica::Ref::new(AI::ALGORITHMITEM {
             algorithm_: subst_algorithm(algorithm_, map), comment: comment.clone(), info: info.clone(),
         }),
         AI::ALGORITHMITEMCOMMENT { .. } => it.clone(),
     }
 }
 
-fn subst_algorithm(a: &Arc<Absyn::Algorithm>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::Algorithm> {
+fn subst_algorithm(a: &metamodelica::Ref<Absyn::Algorithm>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::Algorithm> {
     use Absyn::Algorithm as A;
     match &**a {
-        A::ALG_ASSIGN { assignComponent, value } => Arc::new(A::ALG_ASSIGN {
+        A::ALG_ASSIGN { assignComponent, value } => metamodelica::Ref::new(A::ALG_ASSIGN {
             assignComponent: subst_exp(assignComponent, map), value: subst_exp(value, map),
         }),
-        A::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => Arc::new(A::ALG_IF {
+        A::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => metamodelica::Ref::new(A::ALG_IF {
             ifExp: subst_exp(ifExp, map),
             trueBranch: subst_alg_item_list(trueBranch, map),
             elseIfAlgorithmBranch: subst_alg_elseif(elseIfAlgorithmBranch, map),
             elseBranch: subst_alg_item_list(elseBranch, map),
         }),
-        A::ALG_FOR { iterators, forBody } => Arc::new(A::ALG_FOR {
+        A::ALG_FOR { iterators, forBody } => metamodelica::Ref::new(A::ALG_FOR {
             iterators: subst_for_iterators(iterators, map), forBody: subst_alg_item_list(forBody, map),
         }),
-        A::ALG_PARFOR { iterators, parforBody } => Arc::new(A::ALG_PARFOR {
+        A::ALG_PARFOR { iterators, parforBody } => metamodelica::Ref::new(A::ALG_PARFOR {
             iterators: subst_for_iterators(iterators, map), parforBody: subst_alg_item_list(parforBody, map),
         }),
-        A::ALG_WHILE { boolExpr, whileBody } => Arc::new(A::ALG_WHILE {
+        A::ALG_WHILE { boolExpr, whileBody } => metamodelica::Ref::new(A::ALG_WHILE {
             boolExpr: subst_exp(boolExpr, map), whileBody: subst_alg_item_list(whileBody, map),
         }),
-        A::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => Arc::new(A::ALG_WHEN_A {
+        A::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => metamodelica::Ref::new(A::ALG_WHEN_A {
             boolExpr: subst_exp(boolExpr, map),
             whenBody: subst_alg_item_list(whenBody, map),
             elseWhenAlgorithmBranch: subst_alg_elseif(elseWhenAlgorithmBranch, map),
         }),
-        A::ALG_NORETCALL { functionCall, functionArgs } => Arc::new(A::ALG_NORETCALL {
+        A::ALG_NORETCALL { functionCall, functionArgs } => metamodelica::Ref::new(A::ALG_NORETCALL {
             functionCall: functionCall.clone(), functionArgs: subst_fargs(functionArgs, map),
         }),
-        A::ALG_FAILURE { equ } => Arc::new(A::ALG_FAILURE { equ: subst_alg_item_list(equ, map) }),
-        A::ALG_TRY { body, elseBody } => Arc::new(A::ALG_TRY {
+        A::ALG_FAILURE { equ } => metamodelica::Ref::new(A::ALG_FAILURE { equ: subst_alg_item_list(equ, map) }),
+        A::ALG_TRY { body, elseBody } => metamodelica::Ref::new(A::ALG_TRY {
             body: subst_alg_item_list(body, map), elseBody: subst_alg_item_list(elseBody, map),
         }),
         A::ALG_RETURN | A::ALG_BREAK | A::ALG_CONTINUE => a.clone(),
     }
 }
 
-fn subst_case(cse: &Arc<Absyn::Case>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::Case> {
+fn subst_case(cse: &metamodelica::Ref<Absyn::Case>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::Case> {
     use Absyn::Case as K;
     match &**cse {
         K::CASE { pattern, patternGuard, patternInfo, localDecls, classPart, result, resultInfo, comment, info } =>
-            Arc::new(K::CASE {
+            metamodelica::Ref::new(K::CASE {
                 pattern: subst_exp(pattern, map),
                 patternGuard: patternGuard.as_ref().map(|g| subst_exp(g, map)),
                 patternInfo: patternInfo.clone(),
@@ -7150,7 +7166,7 @@ fn subst_case(cse: &Arc<Absyn::Case>, map: &HashMap<String, Arc<Absyn::Exp>>) ->
                 info: info.clone(),
             }),
         K::ELSE { localDecls, classPart, result, resultInfo, comment, info } =>
-            Arc::new(K::ELSE {
+            metamodelica::Ref::new(K::ELSE {
                 localDecls: localDecls.clone(),
                 classPart: subst_classpart(classPart, map),
                 result: subst_exp(result, map),
@@ -7161,11 +7177,11 @@ fn subst_case(cse: &Arc<Absyn::Case>, map: &HashMap<String, Arc<Absyn::Exp>>) ->
     }
 }
 
-fn subst_classpart(cp: &Arc<Absyn::ClassPart>, map: &HashMap<String, Arc<Absyn::Exp>>) -> Arc<Absyn::ClassPart> {
+fn subst_classpart(cp: &metamodelica::Ref<Absyn::ClassPart>, map: &HashMap<String, metamodelica::Ref<Absyn::Exp>>) -> metamodelica::Ref<Absyn::ClassPart> {
     use Absyn::ClassPart as CP;
     match &**cp {
-        CP::ALGORITHMS { contents } => Arc::new(CP::ALGORITHMS { contents: subst_alg_item_list(contents, map) }),
-        CP::INITIALALGORITHMS { contents } => Arc::new(CP::INITIALALGORITHMS { contents: subst_alg_item_list(contents, map) }),
+        CP::ALGORITHMS { contents } => metamodelica::Ref::new(CP::ALGORITHMS { contents: subst_alg_item_list(contents, map) }),
+        CP::INITIALALGORITHMS { contents } => metamodelica::Ref::new(CP::INITIALALGORITHMS { contents: subst_alg_item_list(contents, map) }),
         // Match-case `then`-form bodies use an (empty) ALGORITHMS section; other
         // class-part kinds don't appear in inheritable function bodies.
         _ => cp.clone(),
@@ -7659,8 +7675,8 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     let saved_imports = apply_local_imports(node, ctx, top_level);
 
     // Walk components to find outputs (with names) and protected locals.
-    let mut outputs: Vec<(String, Ty, Option<Arc<Absyn::Modification>>, bool)> = Vec::new();
-    let mut protected: Vec<(String, Ty, Option<Arc<Absyn::Modification>>, bool)> = Vec::new();
+    let mut outputs: Vec<(String, Ty, Option<metamodelica::Ref<Absyn::Modification>>, bool)> = Vec::new();
+    let mut protected: Vec<(String, Ty, Option<metamodelica::Ref<Absyn::Modification>>, bool)> = Vec::new();
     let mut input_names: HashSet<String> = HashSet::new();
     for inp in fn_inputs_eff.iter() { input_names.insert(inp.name.clone()); }
     let pkg_prefix_for_typespec = if ctx.current_path.is_empty() {
@@ -7747,7 +7763,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     for (n, t, _, _) in &outputs { infer_env.insert(n.clone(), t.clone()); }
     for (n, t, _, _) in &protected { infer_env.insert(n.clone(), t.clone()); }
 
-    let local_alg_items: &[Arc<Absyn::AlgorithmItem>] = match &c.body {
+    let local_alg_items: &[metamodelica::Ref<Absyn::AlgorithmItem>] = match &c.body {
         MM::ClassDef::Parts { algorithms, .. } | MM::ClassDef::ClassExtends { algorithms, .. } => algorithms,
         _ => &[],
     };
@@ -7757,10 +7773,10 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     // overrides from the `extends` modification substituted in (see the
     // `subst_*` helpers above). This realises MetaModelica function inheritance
     // for partial base functions parameterised over a constant package.
-    let inherited_alg_items: Option<Vec<Arc<Absyn::AlgorithmItem>>> =
+    let inherited_alg_items: Option<Vec<metamodelica::Ref<Absyn::AlgorithmItem>>> =
         if local_alg_items.is_empty() {
             inherited_alg_base.as_ref().map(|(base_c, element_args)| {
-                let base_algs: &[Arc<Absyn::AlgorithmItem>] = match &base_c.body {
+                let base_algs: &[metamodelica::Ref<Absyn::AlgorithmItem>] = match &base_c.body {
                     MM::ClassDef::Parts { algorithms, .. } | MM::ClassDef::ClassExtends { algorithms, .. } => algorithms,
                     _ => &[],
                 };
@@ -7770,7 +7786,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         } else {
             None
         };
-    let alg_items: &[Arc<Absyn::AlgorithmItem>] = match &inherited_alg_items {
+    let alg_items: &[metamodelica::Ref<Absyn::AlgorithmItem>] = match &inherited_alg_items {
         Some(v) => v,
         None => local_alg_items,
     };
@@ -8165,7 +8181,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         // `/* ? */`, invalid in a `let` annotation (E0107 — `List<>` once the
         // comment is stripped). Default such leaves to `_` for inference.
         let ty_s = try_alias(n, None).unwrap_or_else(|| fmt_ty(t, ctx)).replace("/* ? */", "_");
-        let modif_opt: Option<Arc<Absyn::Modification>> = modif.clone();
+        let modif_opt: Option<metamodelica::Ref<Absyn::Modification>> = modif.clone();
         // Carry along the inferred type of the initializer so we can detect a
         // multi-output call assigned into a single-valued local. MetaModelica
         // silently drops the extra outputs in that case; we model it as a
@@ -9028,7 +9044,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // `SCode.Element min`; `is_infallible_builtin("min")` would
             // otherwise classify the reference as the builtin function and the
             // `Ty::Function` arm below would wrap it in `fnptr!(min)`, which
-            // produces an Arc<dyn Fn() -> Result<()>> where an Arc<Element> is
+            // produces an Arc<dyn Fn() -> Result<()>> where an metamodelica::Ref<Element> is
             // expected). Skip when the first segment is a local pattern
             // binding (those shadow module-level constants).
             let first_seg_is_local2 = segments.first()
@@ -10300,7 +10316,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // wouldn't match and an enum-variant constructor with fields
             // would fall through to an emit branch that lacks the
             // variant-path machinery (e.g. `Arc::new(FunctionArgs { … })`
-            // instead of `Arc::new(FunctionArgs::FUNCTIONARGS { … })`).
+            // instead of `metamodelica::Ref::new(FunctionArgs::FUNCTIONARGS { … })`).
             let parent_qname_for_variant: Option<String> = match ty {
                 Ty::UnionTypeVariant(parent, _) => Some(parent.clone()),
                 _ => None,
@@ -10362,7 +10378,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         let val = if struct_field_is_arc(qname, fname, top_level, ctx)
                             && !value_emitted_as_arc(fa, ctx)
                         {
-                            format!("Arc::new({val})")
+                            format!("metamodelica::Ref::new({val})")
                         } else if field_is_fn_callback(fname)
                             && matches!(fa, TypedExp::PartEval { .. })
                         {
@@ -10388,7 +10404,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let val = if struct_field_is_arc(qname, &n, top_level, ctx)
                         && !value_emitted_as_arc(&na, ctx)
                     {
-                        format!("Arc::new({val})")
+                        format!("metamodelica::Ref::new({val})")
                     } else if field_is_fn_callback(&n)
                         && matches!(&na, TypedExp::PartEval { .. })
                     {
@@ -10469,7 +10485,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     {
                         format!("{enum_path}::interned_{variant}()")
                     } else {
-                        format!("Arc::new({ctor_expr})")
+                        format!("metamodelica::Ref::new({ctor_expr})")
                     }
                 } else {
                     ctor_expr
@@ -10483,7 +10499,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 // Unit variant: no fields, no parentheses.
                 //
                 // If the enclosing uniontype is recursive, its values are stored as
-                // `Arc<Enum>` everywhere they appear (variable slots, struct fields,
+                // `metamodelica::Ref<Enum>` everywhere they appear (variable slots, struct fields,
                 // function parameters and returns). The unit-variant *expression*
                 // however evaluates to a bare `Enum`. To keep types consistent at
                 // use sites we wrap the variant value in `Arc::new(...)` — unless
@@ -10513,7 +10529,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     {
                         format!("{enum_path}::interned_{variant}()")
                     } else {
-                        format!("Arc::new({path})")
+                        format!("metamodelica::Ref::new({path})")
                     }
                 } else {
                     path
@@ -10533,7 +10549,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let val = if struct_field_is_arc(enum_qname, fname, top_level, ctx)
                         && !value_emitted_as_arc(a, ctx)
                     {
-                        format!("Arc::new({val})")
+                        format!("metamodelica::Ref::new({val})")
                     } else {
                         // Same Int→Real coercion as the RustStruct/RustEnum
                         // branch above — without it, an `Integer` expression
@@ -10550,7 +10566,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let val = if struct_field_is_arc(enum_qname, n, top_level, ctx)
                         && !value_emitted_as_arc(na, ctx)
                     {
-                        format!("Arc::new({val})")
+                        format!("metamodelica::Ref::new({val})")
                     } else {
                         let ft = field_ty_lookup(n);
                         coerce_assign_expr_pub(val, &na.ty(), ft.as_ref())
@@ -10563,7 +10579,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     format!("{variant_rust} {{ {} }}", arg_strs.join(", "))
                 };
                 if !is_const && constructor_needs_arc(ty, ctx) {
-                    format!("Arc::new({ctor_expr})")
+                    format!("metamodelica::Ref::new({ctor_expr})")
                 } else {
                     ctor_expr
                 }
@@ -14972,7 +14988,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // bodies picks `VarShape::Arc` (vs `Owned`) based on whether the scrutinee
     // expression is Arc-wrapped. Without this, `cls.elements` inside a
     // `match cls as expr` arm emits as `var_field!(cls.elements, …)` which
-    // expands to `match &cls { … }` — but `cls: Arc<Enum>` doesn't auto-deref
+    // expands to `match &cls { … }` — but `cls: metamodelica::Ref<Enum>` doesn't auto-deref
     // through Arc on stable Rust, so the variant match fails to bind fields.
     let saved_as_binding_env = if let Some(name) = as_binding {
         // The `as`-binding is materialised as `let mut {name} = {scrutinee};`
@@ -14990,7 +15006,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     // The macro provides stable-Rust replacements for nightly's `deref_patterns`:
     // a `::match_deref::Deref @ <inner>` token sequence inside an arm pattern
     // desugars to `if let inner = Deref::deref(binding) { … }`. This lets us match
-    // through `List<T>`, recursive `Arc<Enum>` variants, and `ArcStr` literal
+    // through `List<T>`, recursive `metamodelica::Ref<Enum>` variants, and `ArcStr` literal
     // patterns — all of which were the previous use cases for the
     // `#![feature(deref_patterns)]` attribute.
     //
@@ -15006,7 +15022,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     //
     // When NOT in match_deref scope, we keep the legacy `match subject { … }`
     // form. `match_uses_match_deref` covers every case the old `input_is_arc`
-    // check covered (recursive Arc<Enum>) plus tuples-containing-Arc and
+    // check covered (recursive metamodelica::Ref<Enum>) plus tuples-containing-Arc and
     // string-literal patterns, so this is a strict broadening.
     // Loop-lowered tail-call bodies use `match_deref!` exactly like any other
     // body: the loop emits `continue '__tco` / `return` directly into the arms,
@@ -15031,7 +15047,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         || matches!(input_ty, Ty::List(_));
     // A `matchcontinue` with a tuple scrutinee whose elements include `Arc<…>`
     // values needs the subject rebuilt as a tuple of references: each
-    // `List<T>` / `Arc<Enum>` element gets `.as_ref()` (yielding
+    // `List<T>` / `metamodelica::Ref<Enum>` element gets `.as_ref()` (yielding
     // `&List<T>` / `&Enum`), every other element is passed by value. Rust's
     // match ergonomics then makes all bindings inside the tuple pattern
     // by-reference, which is exactly the regime `emit_pat_with_implicit_bind`
@@ -15291,7 +15307,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // `match e as v case Variant(..) => …`: the as-bound name
                     // also denotes the scrutinee, narrowed to this arm's
                     // variant. Without registering this, `v.field` reads in
-                    // the arm body emit as plain `Arc<Enum>.field` accesses
+                    // the arm body emit as plain `metamodelica::Ref<Enum>.field` accesses
                     // (E0609) instead of `var_field!`.
                     if let Some(name) = as_binding {
                         let inner_pat = match &case.pattern {
@@ -15924,7 +15940,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // `match e as v case Variant(..) => …`: the as-bound name
                     // also denotes the scrutinee, narrowed to this arm's
                     // variant. Without registering this, `v.field` reads in
-                    // the arm body emit as plain `Arc<Enum>.field` accesses
+                    // the arm body emit as plain `metamodelica::Ref<Enum>.field` accesses
                     // (E0609) instead of `var_field!`.
                     if let Some(name) = as_binding {
                         let inner_pat = match &case.pattern {
@@ -16967,7 +16983,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     //
     // `implicit_ref` only enters via the outer `emit_match` call (which
     // tracks whether the match is wrapped in `match_deref!{ ... }`). Don't
-    // re-derive it from inner scrut_ty: a nested `(List<T>, Arc<Tree>)`
+    // re-derive it from inner scrut_ty: a nested `(List<T>, metamodelica::Ref<Tree>)`
     // tuple scrutinee is *not* implicit-borrowed even though its second
     // element is a recursive Arc-wrapped uniontype — `emit_match` decides at
     // the outer level whether match_deref is in scope. Just propagate what
@@ -17008,10 +17024,10 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
     //   * a scrutinee whose type didn't infer (`Ty::Unknown` — e.g. a
     //     `List.select1`/`List.flatten` chain over a generic return), and
     //   * a scrutinee narrowed to the *variant record* (`Absyn.Exp.STRING`),
-    //     which lives behind the same `Arc<Enum>` but is not itself in
+    //     which lives behind the same `metamodelica::Ref<Enum>` but is not itself in
     //     `recursive_types` (e.g. `let STRING(v) := getNamedAnnotationExp(...)`).
     // A `Constructor` for a recursive-uniontype variant is ALWAYS matched against
-    // an `Arc<Enum>` value (such values are uniformly Arc-wrapped — as fields,
+    // an `metamodelica::Ref<Enum>` value (such values are uniformly Arc-wrapped — as fields,
     // list elements, Option contents, and bindings), so the `Deref @` peel is
     // unconditionally correct here; no scrutinee-type guard is needed (and the
     // single `arc_prefix` is idempotent if the scrutinee type also said so).
@@ -17145,7 +17161,7 @@ fn emit_pat_with_implicit_bind_md<'a>(pat: &TypedPat, allow_implicit_bind: bool,
         TypedPat::Constructor { name, fields, named_fields, ty, .. } => {
             // The Constructor arm emits a record-style pattern (`Foo { f: p, .. }`)
             // or a bare-name variant. When the value being matched is an
-            // `Arc<Enum>` (recursive uniontype) AND we're inside a `match_deref!`
+            // `metamodelica::Ref<Enum>` (recursive uniontype) AND we're inside a `match_deref!`
             // block, the variant pattern lives behind the Arc and needs a
             // `::match_deref::Deref @` prefix; that's what `arc_prefix` carries.
             // We compute the inner pattern body first then apply the prefix
@@ -18049,21 +18065,25 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
         // live in a `pub static`. `emit_node` consults this to route
         // such constants to a `thread_local! + getter` emission instead.
         Ty::Function { .. } | Ty::FunctionAlias { .. } => false,
+        // A traced type's box is a `Gc`, which is neither `Send` nor `Sync`.
         Ty::Option(t) | Ty::List(t) | Ty::Range(t) => ty_is_sync(t, ctx),
         Ty::Tuple(ts) => ts.iter().all(|t| ty_is_sync(t, ctx)),
         Ty::Generic(name, args) => {
             let dotted = name.replace("::", ".");
             if ctx.types_containing_array.contains(&dotted) { return false; }
             if ctx.types_containing_dyn_fn.contains(&dotted) { return false; }
+            if ctx.traced_types.contains(&dotted) { return false; }
             args.iter().all(|a| ty_is_sync(a, ctx))
         }
         Ty::RustStruct(qname) | Ty::RustEnum(qname) | Ty::AliasTo(qname) | Ty::ExternalObject(qname) => {
             !ctx.types_containing_array.contains(qname)
                 && !ctx.types_containing_dyn_fn.contains(qname)
+                && !ctx.traced_types.contains(qname)
         }
         Ty::UnionTypeVariant(qname, _) => {
             !ctx.types_containing_array.contains(qname)
                 && !ctx.types_containing_dyn_fn.contains(qname)
+                && !ctx.traced_types.contains(qname)
         }
         // Primitives, type variables, Unknown — all Sync (see fn doc).
         _ => true,
@@ -18071,7 +18091,7 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
 }
 
 /// Whether a value of this type is represented at the Rust level as a
-/// shared-pointer *handle* (`Arc<Enum>` for recursive uniontypes,
+/// shared-pointer *handle* (`metamodelica::Ref<Enum>` for recursive uniontypes,
 /// `List<T>` for lists, `ArcStr` for strings, `Rc<RefCell<Vec<T>>>` for
 /// arrays) whose clones all designate the same MetaModelica heap object.
 ///
@@ -18085,7 +18105,7 @@ fn referenceeq_derefs_to_pointee(ty: &Ty, ctx: &GenCtx) -> bool {
         // list<T> → List<T>; String → ArcStr; array<T> → Rc<RefCell<Vec<T>>>.
         Ty::List(_) | Ty::Str | Ty::Array(_) => true,
         // Recursive uniontypes / variant-narrowed values / recursive generics
-        // → Arc<Enum>.
+        // → metamodelica::Ref<Enum>.
         _ => is_arc_wrapped(ty, ctx),
     }
 }
@@ -18304,11 +18324,11 @@ fn is_arc_wrapped(ty: &Ty, ctx: &GenCtx) -> bool {
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) | Ty::ExternalObject(n) => n.as_str(),
         Ty::Generic(name, _) => return ctx.recursive_types.contains(&name.replace("::", ".")),
         // Variant-narrowed types (a uniontype field narrowed to one of its
-        // records by an outer match) still live behind an `Arc<Enum>` at the
+        // records by an outer match) still live behind an `metamodelica::Ref<Enum>` at the
         // Rust level — the narrowing is a typing-level concept that doesn't
         // change the runtime representation. Without this, a nested `match`
         // on the narrowed variable emits patterns without the `Deref @`
-        // prefix even though the scrutinee is still `&Arc<Enum>` (see e.g.
+        // prefix even though the scrutinee is still `&metamodelica::Ref<Enum>` (see e.g.
         // `filterSubMods` in `SCodeUtil.mo`).
         Ty::UnionTypeVariant(parent, _) => return ctx.recursive_types.contains(parent.as_str()),
         _ => return false,
@@ -18361,7 +18381,7 @@ fn pat_requires_arc_deref(pat: &TypedPat, ctx: &GenCtx) -> bool {
         TypedPat::Tuple(ps) => ps.iter().any(|p| pat_requires_arc_deref(p, ctx)),
         // A Constructor pattern crosses an Arc edge when EITHER:
         //   * its own variant belongs to a recursive uniontype — those values
-        //     live behind `Arc<Enum>` everywhere, so destructuring the variant
+        //     live behind `metamodelica::Ref<Enum>` everywhere, so destructuring the variant
         //     requires peeling the Arc (this is the type-driven signal the
         //     normal `match` path gets from the scrutinee type, but a
         //     pattern-let against a value whose type didn't infer — e.g. a
@@ -18375,13 +18395,13 @@ fn pat_requires_arc_deref(pat: &TypedPat, ctx: &GenCtx) -> bool {
             // `is_arc_wrapped` only recognises the bare recursive-uniontype
             // *enum* qname (e.g. `Absyn.Exp`); a pattern's `ty` is typically the
             // narrower *variant record* (`Absyn.Exp.STRING`), which lives behind
-            // the same `Arc<Enum>` but isn't itself in `recursive_types`.
+            // the same `metamodelica::Ref<Enum>` but isn't itself in `recursive_types`.
             // `constructor_needs_arc` resolves the variant→parent-enum link
             // precisely (via `variant_record_qnames`/`rust_enum_qnames`), so a
             // refutable `let Absyn::STRING { .. } = fn()? else { … }` against a
             // scrutinee whose type didn't infer (`Ty::Unknown`) still routes
             // through `match_deref!` with the required `Deref @` peel instead of
-            // a bare `let`-else that tries to match `Exp` against `Arc<Exp>`.
+            // a bare `let`-else that tries to match `Exp` against `metamodelica::Ref<Exp>`.
             is_arc_wrapped(ty, ctx)
                 || constructor_needs_arc(ty, ctx)
                 || fields.iter().any(|p| pat_requires_arc_deref(p, ctx))
@@ -18702,7 +18722,7 @@ fn emit_pat_assign<'a>(
             //
             // We must also recurse through Tuple types: a let-let pattern
             // `(STRING{r#str=key}, tokens) := parse_string(..)` has
-            // scrut_ty = (Arc<JSON>, List<Token>), where the outer tuple
+            // scrut_ty = (metamodelica::Ref<JSON>, List<Token>), where the outer tuple
             // itself isn't Arc-wrapped but the first element is. Without
             // borrowing the whole tuple, the inner Constructor pattern would
             // still trigger Arc deref_patterns and fail to move non-Copy
@@ -19473,7 +19493,7 @@ fn emit_stmts<'a>(
         // Look for a run of consecutive `Assign` statements of the form
         // `<same-base>.<field> := <expr>;` that all dispatch to the same
         // record-update macro (`assign_field!` for Arc<Struct> or
-        // `assign_variant_field!` for an Arc<Enum> with a known matched
+        // `assign_variant_field!` for an metamodelica::Ref<Enum> with a known matched
         // variant). A run of length ≥ 2 is emitted as a single macro call:
         // one line per field, but only one `(*base).clone()` and one
         // `Arc::new(..)` at runtime.
@@ -19658,8 +19678,8 @@ impl<'s> FieldAssignPlan<'s> {
         // call (MetaModelica's implicit "first-output" coercion for
         // multi-output functions like `evalExpPartial`), the *materialised*
         // value type is the first tuple element, not the tuple itself. Check
-        // that element's Arc-ness so we don't re-wrap an `Arc<NFExpression>`
-        // returned as `(Arc<NFExpression>, Boolean)`'s first slot.
+        // that element's Arc-ness so we don't re-wrap an `metamodelica::Ref<NFExpression>`
+        // returned as `(metamodelica::Ref<NFExpression>, Boolean)`'s first slot.
         let post_coerce_is_arc = match (&scrut_ty, lhs_ty.as_ref()) {
             (Ty::Tuple(elems), lhs) if !matches!(lhs, Some(Ty::Tuple(_))) => {
                 elems.first().is_some_and(|t| is_arc_wrapped(t, ctx))
@@ -19669,7 +19689,7 @@ impl<'s> FieldAssignPlan<'s> {
         let value = if struct_field_is_arc(&record_qname, field, top_level, ctx)
             && !post_coerce_is_arc
         {
-            format!("Arc::new({expr})")
+            format!("metamodelica::Ref::new({expr})")
         } else {
             expr
         };
@@ -20310,7 +20330,7 @@ fn record_constructor_pattern_bindings<'a>(
         // the binding in `fields[0]`, not in `named_fields` — without this loop
         // the variant narrowing for the binding (here `call -> TYPED_CALL`)
         // would never be recorded and downstream `var_field!` on `call.<f>`
-        // would fall back to plain field access on an `Arc<Enum>` (E0609).
+        // would fall back to plain field access on an `metamodelica::Ref<Enum>` (E0609).
         let positional: Vec<(String, &TypedPat)> = fields.iter().enumerate()
             .filter_map(|(i, p)| field_tys.get(i).map(|(n, _)| (n.clone(), p)))
             .collect();
@@ -20356,7 +20376,7 @@ fn record_constructor_pattern_bindings<'a>(
             //      E.g. `Some(Annotation { modification: r#mod @ MOD { .. } })`:
             //      without recursion, `r#mod`'s MOD variant is never recorded
             //      and `r#mod.subModLst` lowers as a plain field access on
-            //      `Arc<Mod>` (E0609) instead of `var_field!`.
+            //      `metamodelica::Ref<Mod>` (E0609) instead of `var_field!`.
             let sub_pat = match fpat {
                 TypedPat::As { pat: inner_as, .. } => inner_as.as_ref(),
                 other => other,
@@ -22466,7 +22486,7 @@ pub(crate) fn typedexp_function_body_for_analysis<'a>(
         env.insert(name.clone(), child.ty.clone());
     }
 
-    let alg_items: &[Arc<Absyn::AlgorithmItem>] = match &c.body {
+    let alg_items: &[metamodelica::Ref<Absyn::AlgorithmItem>] = match &c.body {
         MM::ClassDef::Parts { algorithms, .. } | MM::ClassDef::ClassExtends { algorithms, .. } => algorithms,
         _ => return Vec::new(),
     };
@@ -23370,7 +23390,7 @@ fn pick_default_variant_for_enum<'a>(
     // constructing this very enum again. We exclude the enum's own qname from
     // the defaultable set while testing each candidate, so a variant that
     // eagerly holds `Self` (e.g. NFImport::CONFLICTING_IMPORT with two
-    // `Arc<NFImport>`) is rejected, while variants reaching `Self` only through
+    // `metamodelica::Ref<NFImport>`) is rejected, while variants reaching `Self` only through
     // `Option`/`list`/`array` (which default to `None`/empty) stay eligible.
     // For any enum in `defaultable_qnames` at least one non-self-recursive
     // variant exists (that is how it entered the set), so this never spuriously
@@ -23864,8 +23884,8 @@ fn is_ty_defaultable(ty: &Ty, defaultable_qnames: &HashSet<String>, exclude: Opt
 fn collect_default_type_vars_for_fn(
     stmts: &[typedexp::TypedStmt],
     inputs: &[crate::hierarchy::FunctionInput],
-    outputs: &[(String, crate::hierarchy::Ty, Option<Arc<crate::Absyn::Modification>>, bool)],
-    protected: &[(String, crate::hierarchy::Ty, Option<Arc<crate::Absyn::Modification>>, bool)],
+    outputs: &[(String, crate::hierarchy::Ty, Option<metamodelica::Ref<crate::Absyn::Modification>>, bool)],
+    protected: &[(String, crate::hierarchy::Ty, Option<metamodelica::Ref<crate::Absyn::Modification>>, bool)],
 ) -> std::collections::HashSet<String> {
     // Vars that are inputs are always assigned (by the caller).
     let mut ever_assigned: std::collections::HashSet<String> =
@@ -24120,7 +24140,7 @@ fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTree
             let NodeKind::Class(c) = &node.kind else { return None };
             let MM::ClassDef::Enumeration { enum_literals, .. } = &c.body else { return None };
             let Absyn::EnumDef::ENUMLITERALS { enumLiterals } = &**enum_literals else { return None };
-            // List<Arc<EnumLiteral>> — take the head.
+            // List<metamodelica::Ref<EnumLiteral>> — take the head.
             let mut iter = (&**enumLiterals).into_iter();
             let first = iter.next()?;
             let path = ctx.shorten(qname);
@@ -24147,10 +24167,10 @@ fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTree
             if let Some(v) = first_unit_variant {
                 let enum_path = ctx.shorten(qname);
                 let bare = format!("{enum_path}::{}", escape_ident(&v));
-                // Recursive uniontypes are stored as `Arc<Enum>` everywhere
+                // Recursive uniontypes are stored as `metamodelica::Ref<Enum>` everywhere
                 // they're referenced; wrap the unit-variant in `Arc::new(...)`.
                 return Some(if ctx.recursive_types.contains(qname.as_str()) {
-                    format!("Arc::new({bare})")
+                    format!("metamodelica::Ref::new({bare})")
                 } else {
                     bare
                 });
@@ -24179,7 +24199,7 @@ fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTree
                     && rendered.ends_with('>');
                 let inner = if is_arc { rendered[4..rendered.len()-1].to_owned() } else { rendered };
                 let bare = format!("<{inner} as ::std::default::Default>::default()");
-                Some(if is_arc { format!("Arc::new({bare})") } else { bare })
+                Some(if is_arc { format!("metamodelica::Ref::new({bare})") } else { bare })
             } else {
                 None
             }
@@ -24211,7 +24231,7 @@ fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTree
                 && rendered.ends_with('>');
             let inner = if is_arc { rendered[4..rendered.len()-1].to_owned() } else { rendered };
             let bare = format!("<{inner} as ::std::default::Default>::default()");
-            if is_arc { Some(format!("Arc::new({bare})")) } else { Some(bare) }
+            if is_arc { Some(format!("metamodelica::Ref::new({bare})")) } else { Some(bare) }
         }
         // Generic single-record uniontypes (e.g. `DoubleEnded.MutableList<T>`)
         // lower to a generic struct for which the codegen emits a self-
@@ -24221,7 +24241,7 @@ fn ty_default_init_with_hier<'a>(ty: &Ty, ctx: &mut GenCtx, top_level: &'a BTree
         // both sets). Exclude hand-written runtime packages (`Mutable<T>`,
         // `Pointer<T>`, …): their `Default` impl is bounded on the *inner*
         // type being `Default` (`impl<T: Clone + Default>`), so a concrete
-        // instantiation like `Mutable<Arc<Tree>>` is only defaultable when
+        // instantiation like `Mutable<metamodelica::Ref<Tree>>` is only defaultable when
         // `Tree` is — a condition this branch cannot verify. Such locals stay
         // bare (their MM code assigns them before use).
         Ty::Generic(name, _args)
@@ -24293,7 +24313,7 @@ fn fmt_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
                 shortened
             };
             if ctx.recursive_types.contains(name.as_str()) {
-                format!("Arc<{base}>")
+                format!("metamodelica::Ref<{base}>")
             } else {
                 base
             }
@@ -24321,7 +24341,7 @@ fn fmt_ty(ty: &Ty, ctx: &mut GenCtx) -> String {
                 shortened
             };
             if ctx.recursive_types.contains(name.as_str()) {
-                format!("Arc<{base}>")
+                format!("metamodelica::Ref<{base}>")
             } else {
                 base
             }
@@ -24460,7 +24480,7 @@ format!("Arc<dyn ::std::ops::Fn({ins}) -> Result<{}> + 'static>", fmt_ty(output,
             };
             let ty = format!("{base}<{}>", args.iter().map(|t| fmt_ty(t, ctx)).collect::<Vec<_>>().join(", "));
             if ctx.recursive_types.contains(dotted.as_str()) {
-                format!("Arc<{ty}>")
+                format!("metamodelica::Ref<{ty}>")
             } else {
                 ty
             }
@@ -24739,7 +24759,7 @@ fn component_ref_simple_name(cref: &Absyn::ComponentRef) -> String {
 /// function input parameter — anything more complex (a literal, a nested
 /// expression) is rejected with a placeholder so the broken case shows
 /// up at compile time instead of silently dropping arguments.
-fn collect_external_arg_names(args: &metamodelica::List<std::sync::Arc<Absyn::Exp>>) -> Vec<String> {
+fn collect_external_arg_names(args: &metamodelica::List<metamodelica::Ref<Absyn::Exp>>) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = args.clone();
     while let metamodelica::ListNode::Cons { head, tail } = &*cur {

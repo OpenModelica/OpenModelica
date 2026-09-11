@@ -187,14 +187,14 @@ fn array_scalar_count(ty: &Type::NFType) -> usize {
 }
 
 /// `unlift_array_type`: the array type with its first dimension removed.
-fn unlift_array_type(ty: &Arc<Type::NFType>) -> Arc<Type::NFType> {
+fn unlift_array_type(ty: &metamodelica::Ref<Type::NFType>) -> metamodelica::Ref<Type::NFType> {
     match &**ty {
         Type::NFType::ARRAY { elementType, dimensions } => {
             let rest = match &**dimensions {
                 metamodelica::ListNode::Cons { tail, .. } => tail.clone(),
                 metamodelica::ListNode::Nil => metamodelica::nil(),
             };
-            Arc::new(Type::NFType::ARRAY { elementType: elementType.clone(), dimensions: rest })
+            metamodelica::Ref::new(Type::NFType::ARRAY { elementType: elementType.clone(), dimensions: rest })
         }
         _ => ty.clone(),
     }
@@ -367,40 +367,40 @@ unsafe fn write_exp_value(
     }
 }
 
-unsafe fn mk_int_exp(ptr: *const u8) -> Arc<Expression::NFExpression> {
-    Arc::new(Expression::NFExpression::INTEGER {
+unsafe fn mk_int_exp(ptr: *const u8) -> metamodelica::Ref<Expression::NFExpression> {
+    metamodelica::Ref::new(Expression::NFExpression::INTEGER {
         value: unsafe { (ptr as *const i32).read_unaligned() },
     })
 }
 
-unsafe fn mk_bool_exp(ptr: *const u8) -> Arc<Expression::NFExpression> {
-    Arc::new(Expression::NFExpression::BOOLEAN {
+unsafe fn mk_bool_exp(ptr: *const u8) -> metamodelica::Ref<Expression::NFExpression> {
+    metamodelica::Ref::new(Expression::NFExpression::BOOLEAN {
         value: unsafe { (ptr as *const i32).read_unaligned() } != 0,
     })
 }
 
-unsafe fn mk_real_exp(ptr: *const u8) -> Arc<Expression::NFExpression> {
-    Arc::new(Expression::NFExpression::REAL {
+unsafe fn mk_real_exp(ptr: *const u8) -> metamodelica::Ref<Expression::NFExpression> {
+    metamodelica::Ref::new(Expression::NFExpression::REAL {
         value: metamodelica::OrderedFloat(unsafe { (ptr as *const f64).read_unaligned() }),
     })
 }
 
-unsafe fn mk_string_exp(ptr: *const u8) -> Result<Arc<Expression::NFExpression>> {
+unsafe fn mk_string_exp(ptr: *const u8) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     let s = unsafe { (ptr as *const *const libc::c_char).read_unaligned() };
     if s.is_null() {
         // The C version would crash here; fail instead.
         return Err("FFI.callFunction: external function returned a NULL string");
     }
     let value = ArcStr::from(unsafe { CStr::from_ptr(s) }.to_string_lossy().as_ref());
-    Ok(Arc::new(Expression::NFExpression::STRING { value }))
+    Ok(metamodelica::Ref::new(Expression::NFExpression::STRING { value }))
 }
 
 /// `lookup_enum_literal_name` + `mk_enum_exp`: read a 1-based enumeration
 /// index and build the corresponding literal expression.
 unsafe fn mk_enum_exp(
     ptr: *const u8,
-    enum_ty: &Arc<Type::NFType>,
-) -> Result<Arc<Expression::NFExpression>> {
+    enum_ty: &metamodelica::Ref<Type::NFType>,
+) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     let index = unsafe { (ptr as *const i32).read_unaligned() };
     let Type::NFType::ENUMERATION { literals, .. } = &**enum_ty else {
         return Err("FFI.callFunction: expected an enumeration type");
@@ -412,7 +412,7 @@ unsafe fn mk_enum_exp(
     let mut i = 1;
     while let metamodelica::ListNode::Cons { head, tail } = &**cur {
         if i == index {
-            return Ok(Arc::new(Expression::NFExpression::ENUM_LITERAL {
+            return Ok(metamodelica::Ref::new(Expression::NFExpression::ENUM_LITERAL {
                 ty: enum_ty.clone(),
                 name: head.clone(),
                 index,
@@ -426,7 +426,7 @@ unsafe fn mk_enum_exp(
 
 /// `mk_array_exp` / `mk_array_exp_2`: deserialise a contiguous C array into
 /// a (possibly nested) ARRAY expression of the given array type.
-unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Expression::NFExpression>> {
+unsafe fn mk_array_exp(ptr: *const u8, ty: &metamodelica::Ref<Type::NFType>) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     let Type::NFType::ARRAY { elementType, dimensions } = &**ty else {
         return Err("FFI.callFunction: expected an array type");
     };
@@ -434,7 +434,7 @@ unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Exp
     let elem_count = array_scalar_count(ty);
     let elem_size = size_of_type(elementType);
 
-    let elems: Vec<Arc<Expression::NFExpression>> = if dim_count <= 1 {
+    let elems: Vec<metamodelica::Ref<Expression::NFExpression>> = if dim_count <= 1 {
         let mut v = Vec::with_capacity(elem_count);
         for i in 0..elem_count {
             let p = unsafe { ptr.add(i * elem_size) };
@@ -462,7 +462,7 @@ unsafe fn mk_array_exp(ptr: *const u8, ty: &Arc<Type::NFType>) -> Result<Arc<Exp
         v
     };
 
-    Ok(Arc::new(Expression::NFExpression::ARRAY {
+    Ok(metamodelica::Ref::new(Expression::NFExpression::ARRAY {
         ty: ty.clone(),
         elements: metamodelica::Array::from_vec(elems),
         literal: true,
@@ -475,11 +475,11 @@ unsafe fn mk_record_exp(
     ptr: *const u8,
     arg: &Expression::NFExpression,
     align: &Alignment,
-) -> Result<Arc<Expression::NFExpression>> {
+) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     let Expression::NFExpression::RECORD { path, ty, elements } = arg else {
         return Err("FFI.callFunction: expected a record expression");
     };
-    let mut out: Vec<Arc<Expression::NFExpression>> = Vec::with_capacity(align.fields.len());
+    let mut out: Vec<metamodelica::Ref<Expression::NFExpression>> = Vec::with_capacity(align.fields.len());
     let mut cur = elements;
     let mut i = 0usize;
     while let metamodelica::ListNode::Cons { head, tail } = &**cur {
@@ -494,7 +494,7 @@ unsafe fn mk_record_exp(
     for e in out.into_iter().rev() {
         list = metamodelica::cons(e, list);
     }
-    Ok(Arc::new(Expression::NFExpression::RECORD {
+    Ok(metamodelica::Ref::new(Expression::NFExpression::RECORD {
         path: path.clone(),
         ty: ty.clone(),
         elements: list,
@@ -503,9 +503,9 @@ unsafe fn mk_record_exp(
 
 /// `mk_exp_from_type`: deserialise a C value into an expression of `ty`.
 unsafe fn mk_exp_from_type(
-    ty: &Arc<Type::NFType>,
+    ty: &metamodelica::Ref<Type::NFType>,
     ptr: *const u8,
-) -> Result<Arc<Expression::NFExpression>> {
+) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     Ok(match &**ty {
         Type::NFType::INTEGER => unsafe { mk_int_exp(ptr) },
         Type::NFType::BOOLEAN => unsafe { mk_bool_exp(ptr) },
@@ -515,7 +515,7 @@ unsafe fn mk_exp_from_type(
         Type::NFType::ARRAY { .. } => unsafe { mk_array_exp(ptr, ty) }?,
         // No return value (NORETCALL etc.) or an unsupported type: an
         // EMPTY expression, same as the C default branch.
-        _ => Arc::new(Expression::NFExpression::EMPTY { ty: ty.clone() }),
+        _ => metamodelica::Ref::new(Expression::NFExpression::EMPTY { ty: ty.clone() }),
     })
 }
 
@@ -525,7 +525,7 @@ unsafe fn mk_exp_from_arg(
     arg: &Expression::NFExpression,
     ptr: *const u8,
     align: &Alignment,
-) -> Result<Arc<Expression::NFExpression>> {
+) -> Result<metamodelica::Ref<Expression::NFExpression>> {
     Ok(match arg {
         Expression::NFExpression::INTEGER { .. } => unsafe { mk_int_exp(ptr) },
         Expression::NFExpression::BOOLEAN { .. } => unsafe { mk_bool_exp(ptr) },
@@ -563,13 +563,13 @@ impl MarshalledArg {
 /// declaration order.
 pub fn callFunction(
     fnHandle: i32,
-    args: metamodelica::Array<Arc<Expression::NFExpression>>,
+    args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,
     specs: metamodelica::Array<ArgSpec>,
-    returnType: Arc<Type::NFType>,
-) -> Result<(Arc<Expression::NFExpression>, metamodelica::List<Arc<Expression::NFExpression>>)> {
+    returnType: metamodelica::Ref<Type::NFType>,
+) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
     let fn_addr = openmodelica_util::dynload::function_addr(fnHandle)?;
 
-    let args_vec: Vec<Arc<Expression::NFExpression>> = args.borrow().clone();
+    let args_vec: Vec<metamodelica::Ref<Expression::NFExpression>> = args.borrow().clone();
     let specs_vec: Vec<ArgSpec> = specs.borrow().clone();
     if args_vec.len() != specs_vec.len() {
         return Err("FFI.callFunction: argument/spec count mismatch");
@@ -619,7 +619,7 @@ pub fn callFunction(
     }
 
     // Read back the OUTPUT arguments, in declaration order.
-    let mut outputs: Vec<Arc<Expression::NFExpression>> = Vec::new();
+    let mut outputs: Vec<metamodelica::Ref<Expression::NFExpression>> = Vec::new();
     for (i, spec) in specs_vec.iter().enumerate() {
         if *spec == ArgSpec::OUTPUT {
             let value =

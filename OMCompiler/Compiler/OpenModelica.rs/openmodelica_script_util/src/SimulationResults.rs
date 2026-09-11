@@ -268,19 +268,19 @@ fn lock_reader(filename: &ArcStr) -> Result<Option<MutexGuard<'static, Option<Ca
 }
 
 /// Build a `Values.REAL`.
-fn mk_real(x: f64) -> Arc<Values::Value> {
-    Arc::new(Values::REAL { real: OrderedFloat(x) })
+fn mk_real(x: f64) -> metamodelica::Ref<Values::Value> {
+    metamodelica::Ref::new(Values::REAL { real: OrderedFloat(x) })
 }
 
 /// Wrap a row of `Values` in a `Values.ARRAY`, mirroring `ValuesMake.makeArray`:
 /// the new outer dimension is prepended to the inner array's `dimLst`.
-fn make_array(vals: Vec<Arc<Values::Value>>) -> Arc<Values::Value> {
+fn make_array(vals: Vec<metamodelica::Ref<Values::Value>>) -> metamodelica::Ref<Values::Value> {
     let n = vals.len() as i32;
     let inner_dims: List<i32> = match vals.first().map(|v| &**v) {
         Some(Values::ARRAY { dimLst, .. }) => dimLst.clone(),
         _ => metamodelica::nil(),
     };
-    Arc::new(Values::ARRAY {
+    metamodelica::Ref::new(Values::ARRAY {
         valueLst: List::from_iter(vals),
         dimLst: metamodelica::cons(n, inner_dims),
     })
@@ -393,7 +393,7 @@ pub fn readVariables(mut filename: ArcStr, mut readParameters: bool, mut openmod
     Ok(List::from_iter(names))
 }
 
-pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, mut dimsize: i32) -> Result<Arc<Values::Value>> {
+pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, mut dimsize: i32) -> Result<metamodelica::Ref<Values::Value>> {
     // C: SimulationResults_readDataset — read the full trajectories of the
     // given variables, returning a Values.ARRAY matrix (variable-major rows,
     // time-major columns). This combines the external `readDataset_work`
@@ -415,7 +415,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, m
                 return Err("readDataset: dimension size mismatch for {filename}");
             }
             let dim = dim as usize;
-            let mut rows: Vec<Arc<Values::Value>> = Vec::new();
+            let mut rows: Vec<metamodelica::Ref<Values::Value>> = Vec::new();
             for var in vars.as_ref() {
                 let idx = match reader.find_var(var.as_str()) {
                     Some(i) => i,
@@ -428,7 +428,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, m
                 let info = &reader.all_info()[idx];
                 let isParam = info.isParam;
                 let index = info.index;
-                let col: Vec<Arc<Values::Value>> = if isParam {
+                let col: Vec<metamodelica::Ref<Values::Value>> = if isParam {
                     let p = reader.params()[(index.unsigned_abs() as usize) - 1];
                     let p = if index < 0 { -p } else { p };
                     (0..dim).map(|_| mk_real(p)).collect()
@@ -466,7 +466,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, m
                 }
                 interval
             };
-            let mut rows: Vec<Arc<Values::Value>> = Vec::new();
+            let mut rows: Vec<metamodelica::Ref<Values::Value>> = Vec::new();
             for var in vars.as_ref() {
                 let Some(vals) = reader.dataset(var.as_str(), dim) else {
                     drop(guard);
@@ -483,7 +483,7 @@ pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, m
             // dimsize > numsteps reads out of bounds). Mirror the empty
             // case, but turn the out-of-bounds read into an error.
             let dim = dimsize as usize;
-            let mut rows: Vec<Arc<Values::Value>> = Vec::new();
+            let mut rows: Vec<metamodelica::Ref<Values::Value>> = Vec::new();
             for var in vars.as_ref() {
                 let col = match reader.dataset(var.as_str()) {
                     Some(c) if dim <= c.len() => &c[..dim],

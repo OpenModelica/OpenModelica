@@ -34,9 +34,9 @@ impl Default for ArgSpec {
 
 pub fn callFunction(
     _fnHandle: i32,
-    _args: metamodelica::Array<Arc<Expression::NFExpression>>,
+    _args: metamodelica::Array<metamodelica::Ref<Expression::NFExpression>>,
     _specs: metamodelica::Array<ArgSpec>,
-    _returnType: Arc<Type::NFType>,
-) -> Result<(Arc<Expression::NFExpression>, metamodelica::List<Arc<Expression::NFExpression>>)> {
+    _returnType: metamodelica::Ref<Type::NFType>,
+) -> Result<(metamodelica::Ref<Expression::NFExpression>, metamodelica::List<metamodelica::Ref<Expression::NFExpression>>)> {
     return Err("FFI.callFunction: external \"C\" evaluation (dlopen+libffi) is unavailable on this target")
 }

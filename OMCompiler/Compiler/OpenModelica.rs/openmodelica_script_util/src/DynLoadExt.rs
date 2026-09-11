@@ -243,7 +243,7 @@ fn value_to_mmc(rt: &MmcAlloc, v: &Values::Value) -> Result<usize> {
 /// and never frees): the generated function may keep the record value — and
 /// with it the description pointer — alive across calls, so no scope bounds
 /// its lifetime. The handful of bytes per interactive call is acceptable.
-fn leak_record_description(path: &Arc<Absyn::Path>, field_names: &List<ArcStr>) -> Result<usize> {
+fn leak_record_description(path: &metamodelica::Ref<Absyn::Path>, field_names: &List<ArcStr>) -> Result<usize> {
     let name = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)?;
     let fields: Vec<&str> = field_names.into_iter().map(|f| f.as_str()).collect();
     leak_record_description_raw(&underscore_path_string(path), name.as_str(), &fields)
@@ -269,8 +269,8 @@ fn leak_record_description_raw(mangled_path: &str, dotted_name: &str, field_name
 /// descriptions, read back by the generated `read_modelica_record` call.
 fn record_to_desc(
     rt: &MmcAlloc,
-    path: &Arc<Absyn::Path>,
-    fields: &List<Arc<Values::Value>>,
+    path: &metamodelica::Ref<Absyn::Path>,
+    fields: &List<metamodelica::Ref<Values::Value>>,
     field_names: &List<ArcStr>,
     store: &mut ArgStorage,
 ) -> Result<TypeDesc> {
@@ -300,7 +300,7 @@ fn record_to_desc(
 
 /// The scalar element type of a Modelica array argument, from its first leaf
 /// element (an empty array marshals as a real array, like the C runtime).
-fn array_element_tag(values: &List<Arc<Values::Value>>) -> Result<i32> {
+fn array_element_tag(values: &List<metamodelica::Ref<Values::Value>>) -> Result<i32> {
     match values.into_iter().next().map(|v| &**v) {
         None => Ok(TD_REAL_ARRAY),
         Some(Values::Value::INTEGER { .. }) | Some(Values::Value::ENUM_LITERAL { .. }) => Ok(TD_INT_ARRAY),
@@ -315,7 +315,7 @@ fn array_element_tag(values: &List<Arc<Values::Value>>) -> Result<i32> {
 /// Flatten a (possibly nested) `Values.ARRAY` into `out` in row-major order.
 /// `depth` counts the remaining dimensions; leaves must be scalars of the
 /// array's element type.
-fn flatten_array(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, depth: usize, out: &mut dyn FnMut(&Values::Value) -> Result<()>) -> Result<()> {
+fn flatten_array(rt: &MmcAlloc, values: &List<metamodelica::Ref<Values::Value>>, depth: usize, out: &mut dyn FnMut(&Values::Value) -> Result<()>) -> Result<()> {
     for v in values {
         match (&**v, depth) {
             (Values::Value::ARRAY { valueLst, .. }, 2..) => flatten_array(rt, valueLst, depth - 1, out)?,
@@ -328,7 +328,7 @@ fn flatten_array(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, depth: usize,
 
 /// A Modelica array argument becomes a typed `TYPE_DESC_*_ARRAY` with a
 /// `base_array_t` payload (row-major data, like `parse_array` in Dynload.cpp).
-fn array_to_desc(rt: &MmcAlloc, values: &List<Arc<Values::Value>>, dim_lst: &List<i32>, store: &mut ArgStorage) -> Result<TypeDesc> {
+fn array_to_desc(rt: &MmcAlloc, values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List<i32>, store: &mut ArgStorage) -> Result<TypeDesc> {
     let tag = array_element_tag(values)?;
     let dims: Box<[i64]> = dim_lst.into_iter().map(|d| *d as i64).collect();
     let ndims = dims.len();
@@ -423,7 +423,7 @@ fn underscore_path_string(path: &Absyn::Path) -> String {
 /// Parse a `_`-delimited `record_description` path (`__` is a literal
 /// underscore) back into an `Absyn.Path`. Mirrors `name_to_path` in
 /// Dynload.cpp.
-fn underscore_name_to_path(name: &str) -> Arc<Absyn::Path> {
+fn underscore_name_to_path(name: &str) -> metamodelica::Ref<Absyn::Path> {
     let mut parts: Vec<String> = vec![String::new()];
     let mut chars = name.chars().peekable();
     while let Some(c) = chars.next() {
@@ -438,9 +438,9 @@ fn underscore_name_to_path(name: &str) -> Arc<Absyn::Path> {
             parts.last_mut().unwrap().push(c);
         }
     }
-    let mut path = Arc::new(Absyn::Path::IDENT { name: ArcStr::from(parts.pop().unwrap()) });
+    let mut path = metamodelica::Ref::new(Absyn::Path::IDENT { name: ArcStr::from(parts.pop().unwrap()) });
     for part in parts.into_iter().rev() {
-        path = Arc::new(Absyn::Path::QUALIFIED { name: ArcStr::from(part), path });
+        path = metamodelica::Ref::new(Absyn::Path::QUALIFIED { name: ArcStr::from(part), path });
     }
     path
 }
@@ -475,24 +475,24 @@ fn read_c_str(p: *const c_char) -> Result<String> {
 /// Read a `type_description` produced by `in_*` back into a `Value`. Multiple
 /// function outputs arrive as a `TYPE_DESC_TUPLE` and become a `Values.TUPLE`.
 /// Mirrors `type_desc_to_value`.
-fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
+fn desc_to_value(d: &TypeDesc) -> Result<metamodelica::Ref<Values::Value>> {
     match d.tag {
-        TD_INT => Ok(Arc::new(Values::Value::INTEGER { integer: d.d0 as i64 as i32 })),
-        TD_REAL => Ok(Arc::new(Values::Value::REAL { real: metamodelica::Real::from(f64::from_bits(d.d0)) })),
-        TD_BOOL => Ok(Arc::new(Values::Value::BOOL { boolean: (d.d0 as i32) != 0 })),
-        TD_NORETCALL => Ok(Arc::new(Values::Value::NORETCALL)),
+        TD_INT => Ok(metamodelica::Ref::new(Values::Value::INTEGER { integer: d.d0 as i64 as i32 })),
+        TD_REAL => Ok(metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(f64::from_bits(d.d0)) })),
+        TD_BOOL => Ok(metamodelica::Ref::new(Values::Value::BOOL { boolean: (d.d0 as i32) != 0 })),
+        TD_NORETCALL => Ok(metamodelica::Ref::new(Values::Value::NORETCALL)),
         TD_TUPLE => {
             let n = d.d0 as usize;
             let elems = d.d1 as *const TypeDesc;
             if n != 0 && elems.is_null() {
                 return Err("DynLoad.executeFunction: malformed result tuple");
             }
-            let mut vals: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
+            let mut vals: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n);
             for i in 0..n {
                 let e = unsafe { &*elems.add(i) };
                 vals.push(desc_to_value(e)?);
             }
-            Ok(Arc::new(Values::Value::TUPLE { valueLst: List::from_iter(vals) }))
+            Ok(metamodelica::Ref::new(Values::Value::TUPLE { valueLst: List::from_iter(vals) }))
         }
         TD_RECORD => {
             // union: d0 = record name, d1 = count, d2 = names, d3 = elements.
@@ -504,13 +504,13 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
             if n != 0 && (names.is_null() || elems.is_null()) {
                 return Err("DynLoad.executeFunction: malformed result record");
             }
-            let mut vals: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
+            let mut vals: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n);
             let mut comps: Vec<ArcStr> = Vec::with_capacity(n);
             for i in 0..n {
                 vals.push(desc_to_value(unsafe { &*elems.add(i) })?);
                 comps.push(ArcStr::from(read_c_str(unsafe { *names.add(i) })?));
             }
-            Ok(Arc::new(Values::Value::RECORD {
+            Ok(metamodelica::Ref::new(Values::Value::RECORD {
                 record_: underscore_name_to_path(&read_c_str(d.d0 as *const c_char)?),
                 orderd: List::from_iter(vals),
                 comp: List::from_iter(comps),
@@ -528,7 +528,7 @@ fn desc_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
 /// Decode a `TYPE_DESC_*_ARRAY` result (`base_array_t` payload) into nested
 /// `Values.ARRAY`s, the same shape `generate_array` in Dynload.cpp produces:
 /// each nesting level carries the dimension list from that level outwards.
-fn desc_array_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
+fn desc_array_to_value(d: &TypeDesc) -> Result<metamodelica::Ref<Values::Value>> {
     let ndims = d.d0 as i32;
     let dim_size = d.d1 as *const i64;
     let data = d.d2 as *const u8;
@@ -543,7 +543,7 @@ fn desc_array_to_value(d: &TypeDesc) -> Result<Arc<Values::Value>> {
     decode_array_level(d.tag, &dims, &mut cursor)
 }
 
-fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<Arc<Values::Value>> {
+fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<metamodelica::Ref<Values::Value>> {
     /// Read one element of `T` and advance the row-major cursor.
     unsafe fn take<T: Copy>(cursor: &mut *const u8) -> T {
         let v = unsafe { (*cursor as *const T).read() };
@@ -551,13 +551,13 @@ fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<
         v
     }
     let n = dims[0].max(0) as usize;
-    let mut items: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
+    let mut items: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n);
     if dims.len() == 1 {
         for _ in 0..n {
             items.push(match tag {
-                TD_REAL_ARRAY => Arc::new(Values::Value::REAL { real: metamodelica::Real::from(unsafe { take::<f64>(cursor) }) }),
-                TD_INT_ARRAY => Arc::new(Values::Value::INTEGER { integer: unsafe { take::<i64>(cursor) } as i32 }),
-                TD_BOOL_ARRAY => Arc::new(Values::Value::BOOL { boolean: unsafe { take::<i32>(cursor) } != 0 }),
+                TD_REAL_ARRAY => metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(unsafe { take::<f64>(cursor) }) }),
+                TD_INT_ARRAY => metamodelica::Ref::new(Values::Value::INTEGER { integer: unsafe { take::<i64>(cursor) } as i32 }),
+                TD_BOOL_ARRAY => metamodelica::Ref::new(Values::Value::BOOL { boolean: unsafe { take::<i32>(cursor) } != 0 }),
                 TD_STRING_ARRAY => decode_metatype(unsafe { take::<usize>(cursor) })?,
                 _ => unreachable!("desc_array_to_value passes array tags only"),
             });
@@ -567,7 +567,7 @@ fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<
             items.push(decode_array_level(tag, &dims[1..], cursor)?);
         }
     }
-    Ok(Arc::new(Values::Value::ARRAY {
+    Ok(metamodelica::Ref::new(Values::Value::ARRAY {
         valueLst: List::from_iter(items),
         dimLst: List::from_iter(dims.iter().map(|d| *d as i32)),
     }))
@@ -584,10 +584,10 @@ unsafe fn slot(base: usize, i: usize) -> usize {
 /// options, tuples, MetaModelica arrays (constructor 255) and record/uniontype
 /// instances (constructor >= 2, field names from the `record_description` in
 /// slot 1).
-fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
+fn decode_metatype(m: usize) -> Result<metamodelica::Ref<Values::Value>> {
     // Immediate integer: bit 0 clear, value is an arithmetic right shift.
     if m & 1 == 0 {
-        return Ok(Arc::new(Values::Value::INTEGER { integer: ((m as isize) >> 1) as i32 }));
+        return Ok(metamodelica::Ref::new(Values::Value::INTEGER { integer: ((m as isize) >> 1) as i32 }));
     }
     let base = m - 3; // untag the pointer
     let hdr = unsafe { *(base as *const usize) };
@@ -597,19 +597,19 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
             let len = (hdr >> 3) - MMC_SIZE_INT;
             let data = (base + std::mem::size_of::<usize>()) as *const u8;
             let bytes = unsafe { std::slice::from_raw_parts(data, len) };
-            return Ok(Arc::new(Values::Value::STRING { string: arcstr::ArcStr::from(String::from_utf8_lossy(bytes)) }));
+            return Ok(metamodelica::Ref::new(Values::Value::STRING { string: arcstr::ArcStr::from(String::from_utf8_lossy(bytes)) }));
         }
         let val = f64::from_bits(unsafe { slot(base, 1) } as u64);
-        return Ok(Arc::new(Values::Value::REAL { real: metamodelica::Real::from(val) }));
+        return Ok(metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(val) }));
     }
     // Struct: distinguish by constructor / slot count.
     let ctor = (hdr >> 2) & 0xff;
     let slots = hdr >> 10;
     match (ctor, slots) {
-        _ if hdr == MMC_NILHDR => Ok(Arc::new(Values::Value::LIST { valueLst: metamodelica::nil() })),
+        _ if hdr == MMC_NILHDR => Ok(metamodelica::Ref::new(Values::Value::LIST { valueLst: metamodelica::nil() })),
         _ if hdr == MMC_CONSHDR => {
             // Walk the cons spine, decoding each element.
-            let mut items: Vec<Arc<Values::Value>> = Vec::new();
+            let mut items: Vec<metamodelica::Ref<Values::Value>> = Vec::new();
             let mut cur = m;
             loop {
                 let b = cur - 3;
@@ -623,34 +623,34 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
                 items.push(decode_metatype(unsafe { slot(b, 1) })?);
                 cur = unsafe { slot(b, 2) };
             }
-            Ok(Arc::new(Values::Value::LIST { valueLst: List::from_iter(items) }))
+            Ok(metamodelica::Ref::new(Values::Value::LIST { valueLst: List::from_iter(items) }))
         }
-        _ if hdr == MMC_NONEHDR => Ok(Arc::new(Values::Value::OPTION { some: None })),
+        _ if hdr == MMC_NONEHDR => Ok(metamodelica::Ref::new(Values::Value::OPTION { some: None })),
         _ if hdr == MMC_SOMEHDR => {
-            Ok(Arc::new(Values::Value::OPTION { some: Some(decode_metatype(unsafe { slot(base, 1) })?) }))
+            Ok(metamodelica::Ref::new(Values::Value::OPTION { some: Some(decode_metatype(unsafe { slot(base, 1) })?) }))
         }
         // MetaModelica array (`arrayCreate`): every slot is an element.
         (MMC_ARRAY_CTOR, n) => {
-            let mut items: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
+            let mut items: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n);
             for i in 1..=n {
                 items.push(decode_metatype(unsafe { slot(base, i) })?);
             }
-            Ok(Arc::new(Values::Value::META_ARRAY { valueLst: List::from_iter(items) }))
+            Ok(metamodelica::Ref::new(Values::Value::META_ARRAY { valueLst: List::from_iter(items) }))
         }
         // Constructor 0 with at least one field is a MetaModelica tuple.
         (0, n) if n >= 1 => {
-            let mut items: Vec<Arc<Values::Value>> = Vec::with_capacity(n);
+            let mut items: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n);
             for i in 1..=n {
                 items.push(decode_metatype(unsafe { slot(base, i) })?);
             }
-            Ok(Arc::new(Values::Value::META_TUPLE { valueLst: List::from_iter(items) }))
+            Ok(metamodelica::Ref::new(Values::Value::META_TUPLE { valueLst: List::from_iter(items) }))
         }
         // Constructor >= 2 is a record/uniontype instance: slot 1 points
         // (untagged) at the generated `record_description`, the fields follow.
         // ctor == Values.RECORD index + 3, so ctor 2 is a plain record (-1).
         (c, n) if c >= 2 && n >= 1 => {
             let desc = unsafe { &*(slot(base, 1) as *const RecordDescription) };
-            let mut vals: Vec<Arc<Values::Value>> = Vec::with_capacity(n - 1);
+            let mut vals: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(n - 1);
             let mut comps: Vec<ArcStr> = Vec::with_capacity(n - 1);
             for i in 2..=n {
                 vals.push(decode_metatype(unsafe { slot(base, i) })?);
@@ -658,7 +658,7 @@ fn decode_metatype(m: usize) -> Result<Arc<Values::Value>> {
                 let fname = unsafe { *desc.field_names.add(i - 2) };
                 comps.push(if fname.is_null() { arcstr::literal!("(null)") } else { ArcStr::from(read_c_str(fname)?) });
             }
-            Ok(Arc::new(Values::Value::RECORD {
+            Ok(metamodelica::Ref::new(Values::Value::RECORD {
                 record_: underscore_name_to_path(&read_c_str(desc.path)?),
                 orderd: List::from_iter(vals),
                 comp: List::from_iter(comps),
@@ -817,7 +817,7 @@ pub extern "C" fn omc_Error_getCurrentComponent(
     str_box as *mut c_void
 }
 
-pub fn executeFunction(handle: i32, values: List<Arc<Values::Value>>, _debug: bool) -> Result<Arc<Values::Value>> {
+pub fn executeFunction(handle: i32, values: List<metamodelica::Ref<Values::Value>>, _debug: bool) -> Result<metamodelica::Ref<Values::Value>> {
     let addr = dynload::function_addr(handle)?;
     let thread_data = dynload::thread_data()? as *mut c_void;
 
@@ -841,7 +841,7 @@ pub fn executeFunction(handle: i32, values: List<Arc<Values::Value>>, _debug: bo
     result
 }
 
-fn executeFunctionGuarded(addr: usize, thread_data: *mut c_void, values: &List<Arc<Values::Value>>) -> Result<Arc<Values::Value>> {
+fn executeFunctionGuarded(addr: usize, thread_data: *mut c_void, values: &List<metamodelica::Ref<Values::Value>>) -> Result<metamodelica::Ref<Values::Value>> {
     let rt = MmcAlloc::resolve()?;
     // Generated functions read the compiler flags through the dlopened
     // runtime's global roots; keep them in sync with the host's (see
@@ -882,7 +882,7 @@ fn executeFunctionGuarded(addr: usize, thread_data: *mut c_void, values: &List<A
     }
 
     if rc != 0 {
-        return Ok(Arc::new(Values::Value::META_FAIL));
+        return Ok(metamodelica::Ref::new(Values::Value::META_FAIL));
     }
 
     let result = desc_to_value(&out);

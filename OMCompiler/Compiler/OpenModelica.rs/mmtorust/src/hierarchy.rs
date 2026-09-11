@@ -1726,7 +1726,7 @@ fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &Scoped
     match ts {
         Absyn::TypeSpec::TPATH { path, .. } => resolve_path(path, known, aliases, type_vars, module_prefix, wctx),
         Absyn::TypeSpec::TCOMPLEX { path, typeSpecs, .. } => {
-            let args: Vec<Arc<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
+            let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
             let ctor = path_last(path);
             match ctor {
                 "tuple" => {
@@ -1972,7 +1972,7 @@ pub(crate) fn strip_exp_wrappers(mut e: &Absyn::Exp) -> &Absyn::Exp {
 /// Extract the raw `Absyn::Exp` from a modification, for typed inference in codegen.
 /// Comment and parenthesis wrappers are stripped so callers can match on the
 /// expression's shape (literal constant folding, self-reference checks, …).
-pub(crate) fn extract_default_exp(modification: &Option<std::sync::Arc<Absyn::Modification>>) -> Option<&Absyn::Exp> {
+pub(crate) fn extract_default_exp(modification: &Option<metamodelica::Ref<Absyn::Modification>>) -> Option<&Absyn::Exp> {
     match modification {
         Some(m) => match &*m.eqMod {
             Absyn::EqMod::EQMOD { exp, .. } => Some(strip_exp_wrappers(exp)),
@@ -1984,7 +1984,7 @@ pub(crate) fn extract_default_exp(modification: &Option<std::sync::Arc<Absyn::Mo
 
 // ── Expression helpers ────────────────────────────────────────────────────────
 
-pub(crate) fn extract_default(modification: &Option<std::sync::Arc<Absyn::Modification>>) -> Option<String> {
+pub(crate) fn extract_default(modification: &Option<metamodelica::Ref<Absyn::Modification>>) -> Option<String> {
     match modification {
         Some(m) => match &*m.eqMod {
             Absyn::EqMod::EQMOD { exp, .. } => Some(fmt_exp(exp)),

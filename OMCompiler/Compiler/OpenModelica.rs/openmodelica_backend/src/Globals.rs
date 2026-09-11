@@ -24,8 +24,8 @@ thread_local! {
     // before `reset()` could store anything. Seed with the default empty
     // `SymbolTable` (same shape `reset()` builds) so the slot is valid on
     // first touch; it is overwritten by `reset()`/`update()` as before.
-    pub static symbolTable: RefCell<Arc<crate::SymbolTable::SymbolTable>> =
-        RefCell::new(Arc::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
+    pub static symbolTable: RefCell<metamodelica::Ref<crate::SymbolTable::SymbolTable>> =
+        RefCell::new(metamodelica::Ref::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
 
     // Index 19 — rewriteRulesIndex
     //

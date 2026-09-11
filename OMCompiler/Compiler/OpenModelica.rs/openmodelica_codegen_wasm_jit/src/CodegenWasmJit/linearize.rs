@@ -24,7 +24,7 @@ pub(crate) struct Frames {
 }
 
 /// C's `crefStrNoUnderscore`.
-fn cref_str(cr: &Arc<DAE::ComponentRef>) -> String {
+fn cref_str(cr: &metamodelica::Ref<DAE::ComponentRef>) -> String {
     use DAE::ComponentRef as C;
     match &**cr {
         C::CREF_IDENT { ident, subscriptLst, .. } => format!("{ident}{}", subscripts(subscriptLst, false)),
@@ -42,7 +42,7 @@ fn cref_str(cr: &Arc<DAE::ComponentRef>) -> String {
 }
 
 /// C's `crefStrMatlabSafe`: an identifier for the target language's name list.
-fn cref_str_safe(cr: &Arc<DAE::ComponentRef>) -> String {
+fn cref_str_safe(cr: &metamodelica::Ref<DAE::ComponentRef>) -> String {
     use DAE::ComponentRef as C;
     match &**cr {
         C::CREF_IDENT { ident, subscriptLst, .. } => format!("{ident}{}", subscripts(subscriptLst, true)),
@@ -59,7 +59,7 @@ fn cref_str_safe(cr: &Arc<DAE::ComponentRef>) -> String {
     }
 }
 
-fn subscripts(subs: &List<Arc<DAE::Subscript>>, matlab_safe: bool) -> String {
+fn subscripts(subs: &List<metamodelica::Ref<DAE::Subscript>>, matlab_safe: bool) -> String {
     let items: Vec<String> = lst(subs).map(|s| subscript_str(s)).collect();
     if items.is_empty() {
         return String::new();
@@ -313,7 +313,7 @@ fn covers_sparsity(jm: &SimCode::JacobianMatrix, rows: u32) -> bool {
 /// expects and only lets the linearization use the ones that match.
 pub(crate) fn symbolic_jacobians(
     sim_code: &SimCode::SimCode,
-) -> [Option<(Arc<SimCode::JacobianMatrix>, u32, u32)>; 4] {
+) -> [Option<(metamodelica::Ref<SimCode::JacobianMatrix>, u32, u32)>; 4] {
     let names = ["A", "B", "C", "D"];
     core::array::from_fn(|k| {
         let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();

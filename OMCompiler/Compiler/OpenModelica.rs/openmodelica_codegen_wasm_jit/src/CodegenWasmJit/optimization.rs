@@ -235,7 +235,7 @@ pub(crate) fn opt_jac(
 /// `constantEqns` once per evaluation point, `columnEqns` once per colour.
 pub(crate) fn jac_eqns(
     jm: &SimCode::JacobianMatrix,
-) -> (Vec<Arc<SimCode::SimEqSystem>>, Vec<Arc<SimCode::SimEqSystem>>) {
+) -> (Vec<metamodelica::Ref<SimCode::SimEqSystem>>, Vec<metamodelica::Ref<SimCode::SimEqSystem>>) {
     let Some(col) = lst(&jm.columns).next() else { return (Vec::new(), Vec::new()) };
     (
         lst(&col.constantEqns).cloned().collect(),

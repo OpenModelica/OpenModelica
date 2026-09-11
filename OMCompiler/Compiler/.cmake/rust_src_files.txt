@@ -42,6 +42,7 @@ metamodelica/src/lib.rs
 metamodelica/src/list/macros.rs
 metamodelica/src/list/mod.rs
 metamodelica/src/misc.rs
+metamodelica/src/reference.rs
 metamodelica/src/real/mod.rs
 metamodelica/src/real/ryu.rs
 metamodelica/src/source_info.rs

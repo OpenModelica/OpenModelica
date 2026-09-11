@@ -28,7 +28,7 @@ use crate::AvlTreeString as T;
 /// `ConflictFunc` is now `Arc<dyn Fn(...) + 'static>` (see `fmt_param_ty`
 /// in mmtorust); pass it by clone to keep the original handle alive for
 /// subsequent `T::add` calls.
-fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<Arc<T::Tree>> {
+fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<metamodelica::Ref<T::Tree>> {
     let mut t = T::new();
     for (k, v) in pairs {
         t = T::add(t, arcstr::format!("{}", k), *v, cf.clone())?;
@@ -37,7 +37,7 @@ fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<Arc<T::Tree>> {
 }
 
 /// Keys in ascending order.
-fn keys_vec(t: Arc<T::Tree>) -> Vec<String> {
+fn keys_vec(t: metamodelica::Ref<T::Tree>) -> Vec<String> {
     let list = T::listKeys(t, metamodelica::nil());
     let mut v = vec![];
     for k in &*list { v.push(k.to_string()); }
@@ -45,7 +45,7 @@ fn keys_vec(t: Arc<T::Tree>) -> Vec<String> {
 }
 
 /// Values in key-ascending order.
-fn vals_vec(t: Arc<T::Tree>) -> Vec<i32> {
+fn vals_vec(t: metamodelica::Ref<T::Tree>) -> Vec<i32> {
     let list = T::listValues(t, metamodelica::nil());
     let mut v = vec![];
     for val in &*list { v.push(*val); }
@@ -68,10 +68,10 @@ fn conflict_replace() -> T::ConflictFunc {
     Arc::new(fnptr!(T::addConflictReplace, i32, i32, ArcStr))
 }
 fn conflict_fail() -> T::ConflictFunc {
-    Arc::new(T::addConflictFail)
+    metamodelica::Ref::new(T::addConflictFail)
 }
 fn conflict_default() -> T::ConflictFunc {
-    Arc::new(T::addConflictDefault)
+    metamodelica::Ref::new(T::addConflictDefault)
 }
 
 // ── new / isEmpty ─────────────────────────────────────────────────────────────

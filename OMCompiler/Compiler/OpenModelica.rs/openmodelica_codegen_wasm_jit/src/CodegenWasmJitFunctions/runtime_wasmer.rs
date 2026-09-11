@@ -126,8 +126,8 @@ fn value_as_i32(v: &Values::Value) -> Result<i32> {
 pub(super) fn load_and_execute(
     file_name: &str,
     _name: &str,
-    args: &List<Arc<Values::Value>>,
-) -> Result<Arc<Values::Value>> {
+    args: &List<metamodelica::Ref<Values::Value>>,
+) -> Result<metamodelica::Ref<Values::Value>> {
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
     let bytes = openmodelica_wasi::fs::read(&wasm_path)
@@ -183,7 +183,7 @@ pub(super) fn load_and_execute(
         .clone();
 
     // Marshal the arguments according to the input signature.
-    let argv: Vec<&Arc<Values::Value>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<Values::Value>> = (&**args).into_iter().collect();
     if argv.len() != sig.inputs.len() {
         return Err("CodegenWasmJit: function argument count mismatch");
     }
@@ -210,7 +210,7 @@ pub(super) fn load_and_execute(
             // stderr by `loadAndExecute`.
             if let Some(pa) = openmodelica_wasm_jit::host::take_pending_assert_raw() {
                 report_pending_assert(&mut store, &rt, &pa)?;
-                return Ok(Arc::new(Values::Value::META_FAIL));
+                return Ok(metamodelica::Ref::new(Values::Value::META_FAIL));
             }
             return Err("CodegenWasmJit: wasm function call trapped");
         }
@@ -220,15 +220,15 @@ pub(super) fn load_and_execute(
         return Err("CodegenWasmJit: wasm return-value/signature count mismatch");
     }
 
-    let mut out: Vec<Arc<Values::Value>> = Vec::with_capacity(results.len());
+    let mut out: Vec<metamodelica::Ref<Values::Value>> = Vec::with_capacity(results.len());
     for (val, ty) in results.iter().zip(sig.outputs.iter()) {
         out.push(Arc::new(marshal_out(&mut store, &rt, ty, val)?));
     }
 
     Ok(match out.len() {
-        0 => Arc::new(Values::Value::NORETCALL),
+        0 => metamodelica::Ref::new(Values::Value::NORETCALL),
         1 => out.pop().unwrap(),
-        _ => Arc::new(Values::Value::TUPLE { valueLst: List::from_iter(out) }),
+        _ => metamodelica::Ref::new(Values::Value::TUPLE { valueLst: List::from_iter(out) }),
     })
 }
 
@@ -319,7 +319,7 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
     }
     // Match the provided values to fields by name.
     let names: Vec<&ArcStr> = (&**comp).into_iter().collect();
-    let vals: Vec<&Arc<Values::Value>> = (&**orderd).into_iter().collect();
+    let vals: Vec<&metamodelica::Ref<Values::Value>> = (&**orderd).into_iter().collect();
     let by_name: std::collections::HashMap<&str, &Values::Value> =
         names.iter().zip(vals.iter()).map(|(n, v)| (n.as_str(), &***v)).collect();
     for (i, (fname, fty)) in fields.iter().enumerate() {
@@ -465,7 +465,7 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
 
 /// Rebuild an `Absyn.Path` from a dotted record name. A record declaration's name
 /// is fully qualified (`".A.B"`): the leading `.` is a marker, not an identifier.
-fn path_from_dotted(s: &str) -> Arc<Absyn::Path> {
+fn path_from_dotted(s: &str) -> metamodelica::Ref<Absyn::Path> {
     let parts: Vec<&str> = s.trim_start_matches('.').split('.').collect();
     let mut it = parts.iter().rev();
     let last = it.next().copied().unwrap_or("");
@@ -542,7 +542,7 @@ fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Res
 /// at and below it.
 fn nest_values(dims: &[i32], flat: &[Values::Value]) -> Values::Value {
     let d = dims[0];
-    let values: Vec<Arc<Values::Value>> = if dims.len() == 1 {
+    let values: Vec<metamodelica::Ref<Values::Value>> = if dims.len() == 1 {
         flat.iter().cloned().map(Arc::new).collect()
     } else {
         let chunk = flat.len() / d.max(1) as usize;
@@ -854,8 +854,8 @@ mod tests {
             &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
         );
         let args = List::from_iter([
-            Arc::new(Values::Value::INTEGER { integer: 3 }),
-            Arc::new(Values::Value::INTEGER { integer: 4 }),
+            metamodelica::Ref::new(Values::Value::INTEGER { integer: 3 }),
+            metamodelica::Ref::new(Values::Value::INTEGER { integer: 4 }),
         ]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         assert_eq!(ival(&r), 7);
@@ -876,7 +876,7 @@ mod tests {
                 we::Instruction::End,
             ],
         );
-        let args = List::from_iter([Arc::new(Values::Value::REAL { real: metamodelica::Real::from(21.0) })]);
+        let args = List::from_iter([metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(21.0) })]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         assert_eq!(rval(&r), 42.0);
     }
@@ -897,7 +897,7 @@ mod tests {
                 we::Instruction::End,
             ],
         );
-        let args = List::from_iter([Arc::new(Values::Value::INTEGER { integer: 41 })]);
+        let args = List::from_iter([metamodelica::Ref::new(Values::Value::INTEGER { integer: 41 })]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         match &*r {
             Values::Value::TUPLE { valueLst } => {
@@ -922,8 +922,8 @@ mod tests {
             &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
         );
         let args = List::from_iter([
-            Arc::new(Values::Value::INTEGER { integer: 5 }),
-            Arc::new(Values::Value::INTEGER { integer: 7 }),
+            metamodelica::Ref::new(Values::Value::INTEGER { integer: 5 }),
+            metamodelica::Ref::new(Values::Value::INTEGER { integer: 7 }),
         ]);
         assert_eq!(ival(&load_and_execute(&base, "main", &args).unwrap()), 12);
         assert_eq!(ival(&load_and_execute(&base, "main", &args).unwrap()), 12);
@@ -971,7 +971,7 @@ mod tests {
         std::fs::write(format!("{path}.wasm"), m.finish()).unwrap();
         std::fs::write(format!("{path}.wasm.sig"), "R\nR\n").unwrap();
 
-        let args = List::from_iter([Arc::new(Values::Value::REAL {
+        let args = List::from_iter([metamodelica::Ref::new(Values::Value::REAL {
             real: metamodelica::Real::from(std::f64::consts::FRAC_PI_2),
         })]);
         let r = load_and_execute(&path, "main", &args).unwrap();

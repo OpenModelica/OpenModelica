@@ -10,7 +10,7 @@ fn emit_range_iter(
     ctx: &mut FnCtx,
     id: &ArcStr,
     start: &DAE::Exp,
-    step: &Option<Arc<DAE::Exp>>,
+    step: &Option<metamodelica::Ref<DAE::Exp>>,
     stop: &DAE::Exp,
 ) -> Result<(u32, u32, u32)> {
     let it = ctx.alloc_temp(WTy::I32);
@@ -35,7 +35,7 @@ fn emit_range_iter(
     Ok((it, step_l, stop_l))
 }
 
-fn const_step(step: &Option<Arc<DAE::Exp>>) -> Option<i32> {
+fn const_step(step: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<i32> {
     match step {
         None => Some(1),
         Some(e) => match &**e {
@@ -47,7 +47,7 @@ fn const_step(step: &Option<Arc<DAE::Exp>>) -> Option<i32> {
 
 /// Leave `it` has passed `stop` on the stack — which way, per C's
 /// `in_range_integer`, is the step's sign.
-pub(super) fn emit_range_done(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, it: u32, step_l: u32, stop_l: u32) {
+pub(super) fn emit_range_done(ctx: &mut FnCtx, step: &Option<metamodelica::Ref<DAE::Exp>>, it: u32, step_l: u32, stop_l: u32) {
     ctx.emit(we::Instruction::LocalGet(it));
     ctx.emit(we::Instruction::LocalGet(stop_l));
     match const_step(step) {
@@ -69,7 +69,7 @@ pub(super) fn emit_range_done(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, it:
 const ZERO_STEP: &str = "assertion range step != 0 failed";
 
 /// A zero step never reaches `stop`; C's generated code asserts on it.
-pub(super) fn emit_step_check(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, step_l: u32) -> Result<()> {
+pub(super) fn emit_step_check(ctx: &mut FnCtx, step: &Option<metamodelica::Ref<DAE::Exp>>, step_l: u32) -> Result<()> {
     match const_step(step) {
         Some(0) => emit_runtime_error(ctx, ZERO_STEP),
         Some(_) => Ok(()),
@@ -89,7 +89,7 @@ pub(super) fn emit_step_check(ctx: &mut FnCtx, step: &Option<Arc<DAE::Exp>>, ste
 fn emit_range_count(
     ctx: &mut FnCtx,
     start: &DAE::Exp,
-    step: &Option<Arc<DAE::Exp>>,
+    step: &Option<metamodelica::Ref<DAE::Exp>>,
     stop: &DAE::Exp,
 ) -> Result<u32> {
     let cnt = ctx.alloc_temp(WTy::I32);
@@ -143,7 +143,7 @@ fn emit_range_count(
 fn emit_red_iteration(
     ctx: &mut FnCtx,
     thread: bool,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     if thread && iters.len() > 1 {
@@ -166,7 +166,7 @@ const THREAD_LEN: &str = "thread reduction over iterators of different lengths";
 /// front here, which leaves one counter to drive them all.
 fn emit_red_thread(
     ctx: &mut FnCtx,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -247,7 +247,7 @@ impl ThreadIter {
 }
 
 /// Bind one `THREAD` iterator ahead of the loop: its iterator local and length.
-fn bind_thread_iter(ctx: &mut FnCtx, iter: &Arc<DAE::ReductionIterator>) -> Result<ThreadIter> {
+fn bind_thread_iter(ctx: &mut FnCtx, iter: &metamodelica::Ref<DAE::ReductionIterator>) -> Result<ThreadIter> {
     use we::Instruction as I;
     if let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp {
         let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
@@ -276,7 +276,7 @@ fn bind_thread_iter(ctx: &mut FnCtx, iter: &Arc<DAE::ReductionIterator>) -> Resu
 /// The `THREAD` body, run under every iterator's `guardExp`.
 fn emit_red_thread_guarded(
     ctx: &mut FnCtx,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     let Some((iter, rest)) = iters.split_first() else {
@@ -301,7 +301,7 @@ fn emit_red_thread_guarded(
 /// `daeExpReduction`). Relative branch depths make the nesting compose.
 fn emit_red_nest(
     ctx: &mut FnCtx,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     let Some((iter, rest)) = iters.split_first() else {
@@ -333,8 +333,8 @@ fn emit_red_nest(
 /// As in [`compile_for_array`] the element is *borrowed*.
 fn emit_red_nest_array(
     ctx: &mut FnCtx,
-    iter: &Arc<DAE::ReductionIterator>,
-    rest: &[&Arc<DAE::ReductionIterator>],
+    iter: &metamodelica::Ref<DAE::ReductionIterator>,
+    rest: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     let elem = red_iter_elem_sigty(iter)?;
@@ -383,8 +383,8 @@ fn emit_red_nest_array(
 /// The inner levels of [`emit_red_nest`], run under this iterator's `guardExp`.
 fn emit_red_guarded(
     ctx: &mut FnCtx,
-    iter: &Arc<DAE::ReductionIterator>,
-    rest: &[&Arc<DAE::ReductionIterator>],
+    iter: &metamodelica::Ref<DAE::ReductionIterator>,
+    rest: &[&metamodelica::Ref<DAE::ReductionIterator>],
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     match &iter.guardExp {
@@ -473,7 +473,7 @@ pub(super) fn compile_reduction(
     expr: &DAE::Exp,
     iterators: &DAE::ReductionIterators,
 ) -> Result<WTy> {
-    let iters: Vec<&Arc<DAE::ReductionIterator>> = (&**iterators).into_iter().collect();
+    let iters: Vec<&metamodelica::Ref<DAE::ReductionIterator>> = (&**iterators).into_iter().collect();
     if iters.is_empty() {
         return Err("CodegenWasmJit: reduction with no iterators");
     }
@@ -559,7 +559,7 @@ pub(super) fn compile_reduction(
     let idx = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::I32Const(0));
     ctx.emit(we::Instruction::LocalSet(idx));
-    let rev: Vec<&Arc<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
+    let rev: Vec<&metamodelica::Ref<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
     let store_sty = elem_sty.clone();
     emit_red_iteration(ctx, thread, &rev, &mut |ctx| {
         ctx.emit(we::Instruction::LocalGet(res));
@@ -588,7 +588,7 @@ fn compile_fold_heap(
     info: &DAE::ReductionInfo,
     fold: &DAE::Exp,
     expr: &DAE::Exp,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     elem_sty: SigTy,
 ) -> Result<WTy> {
     use we::Instruction as I;
@@ -663,7 +663,7 @@ fn compile_array_comprehension_flat(
     ctx: &mut FnCtx,
     expr: &DAE::Exp,
     thread: bool,
-    iters: &[&Arc<DAE::ReductionIterator>],
+    iters: &[&metamodelica::Ref<DAE::ReductionIterator>],
     base: &SigTy,
     erank: u32,
 ) -> Result<WTy> {
@@ -701,7 +701,7 @@ fn compile_array_comprehension_flat(
         }
         Ok(())
     };
-    let rev: Vec<&Arc<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
+    let rev: Vec<&metamodelica::Ref<DAE::ReductionIterator>> = iters.iter().rev().cloned().collect();
     emit_red_iteration(ctx, thread, &rev, &mut |ctx| {
         let h = ctx.alloc_temp(WTy::I32);
         compile_exp(ctx, expr)?; // owned element array
@@ -766,16 +766,16 @@ fn compile_array_comprehension_flat(
 /// `der(x)` (cref `$DER.x`) keys distinctly from `x`.
 /// The `pre(cr)` component reference: `cr` wrapped in a `$PRE` qualifier, as the
 /// backend emits it. Reused for reading a variable's pre-value.
-pub(super) fn pre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
+pub(super) fn pre_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::ComponentRef> {
     use DAE::ComponentRef as C;
     let identType = match cr {
         C::CREF_IDENT { identType, .. } | C::CREF_QUAL { identType, .. } => identType.clone(),
         _ => crate::CodegenWasmJit::t_real(),
     };
-    Arc::new(C::CREF_QUAL {
+    metamodelica::Ref::new(C::CREF_QUAL {
         ident: arcstr::literal!("$PRE"),
         identType,
         subscriptLst: metamodelica::nil(),
-        componentRef: Arc::new(cr.clone()),
+        componentRef: metamodelica::Ref::new(cr.clone()),
     })
 }

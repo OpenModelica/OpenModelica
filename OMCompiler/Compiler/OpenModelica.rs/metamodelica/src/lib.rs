@@ -47,6 +47,8 @@ pub mod cancel;
 
 pub mod array_ty;
 pub use array_ty::Array;
+pub mod reference;
+pub use reference::Ref;
 
 /// MetaModelica `Real`. Wraps `f64` with `OrderedFloat` so that values
 /// containing `Real` can implement `Ord` / `Eq` / `Hash` — required for

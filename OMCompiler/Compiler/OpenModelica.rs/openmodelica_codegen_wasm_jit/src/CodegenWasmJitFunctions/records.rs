@@ -7,9 +7,9 @@ use super::*;
 /// is what [`emit_record_default`] builds the default constructor from.
 pub(crate) struct RecDeclField {
     pub(super) name: ArcStr,
-    pub(super) ty: Arc<DAE::Type>,
+    pub(super) ty: metamodelica::Ref<DAE::Type>,
     /// The declared binding, evaluated in the record's own scope.
-    value: Option<Arc<DAE::Exp>>,
+    value: Option<metamodelica::Ref<DAE::Exp>>,
     /// The binding came from a derived record (`record A = B(k=exp)`) and is
     /// evaluated in the using scope instead.
     bind_outside: bool,
@@ -130,7 +130,7 @@ pub(super) fn emit_record_alloc(ctx: &mut FnCtx, layout: &RecordLayout) -> Resul
 /// table, then store each field value (`field_exps` in declaration order). The
 /// record owns heap field values. Leaves the owned (+1) record handle on the
 /// stack.
-pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&Arc<DAE::Exp>]) -> Result<()> {
+pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     let layout = record_layout(fields);
     let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
@@ -164,7 +164,7 @@ pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy
 /// The class default of record field `v` — the C target's `<Rec>_construct_p`
 /// field init plus `recordInitOutsideBindings`. A binding synthesized from a
 /// variable's own submods (`R r(i=2)`) is applied at its declaration, not here.
-fn record_field_default(v: &DAE::Var) -> Option<Arc<DAE::Exp>> {
+fn record_field_default(v: &DAE::Var) -> Option<metamodelica::Ref<DAE::Exp>> {
     match &*v.binding {
         DAE::Binding::EQBOUND { source: DAE::BindingSource::BINDING_FROM_RECORD_SUBMODS, .. }
             if !v.bind_from_outside => None,
@@ -178,8 +178,8 @@ fn record_field_default(v: &DAE::Var) -> Option<Arc<DAE::Exp>> {
 pub(super) struct RecField {
     pub(super) name: ArcStr,
     pub(super) sig: SigTy,
-    pub(super) ty: Arc<DAE::Type>,
-    default: Option<Arc<DAE::Exp>>,
+    pub(super) ty: metamodelica::Ref<DAE::Type>,
+    default: Option<metamodelica::Ref<DAE::Exp>>,
     /// This use site binds the field from outside, so `default` belongs to the
     /// using scope (see [`RecDeclField::bind_outside`]).
     bind_outside: bool,
@@ -192,8 +192,8 @@ pub(super) fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
         return Ok(None);
     };
     let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
-    let vars: Vec<&Arc<DAE::Var>> = (&**varLst).into_iter().collect();
-    let declared: Vec<(ArcStr, Arc<DAE::Type>)> = match record_decl_fields(&path_str) {
+    let vars: Vec<&metamodelica::Ref<DAE::Var>> = (&**varLst).into_iter().collect();
+    let declared: Vec<(ArcStr, metamodelica::Ref<DAE::Type>)> = match record_decl_fields(&path_str) {
         Some(d) => d.iter().map(|f| (f.name.clone(), f.ty.clone())).collect(),
         None => vars.iter().map(|v| (v.name.clone(), v.ty.clone())).collect(),
     };
@@ -365,11 +365,11 @@ pub(super) fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE:
 
 /// A record literal `R(field=…, …)` (`E::RECORD`): the field values are matched
 /// to the type's declaration order by component name.
-pub(super) fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &List<Arc<DAE::Exp>>, comp: &List<ArcStr>) -> Result<()> {
+pub(super) fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &List<metamodelica::Ref<DAE::Exp>>, comp: &List<ArcStr>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor with non-record type");
     };
-    let expv: Vec<&Arc<DAE::Exp>> = (&**exps).into_iter().collect();
+    let expv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**exps).into_iter().collect();
     let compv: Vec<&ArcStr> = (&**comp).into_iter().collect();
     if expv.len() != compv.len() || expv.len() != fields.len() {
         return Err("CodegenWasmJit: record constructor arity mismatch");
@@ -387,7 +387,7 @@ pub(super) fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &List<Arc<DA
 
 /// A `METARECORDCALL` carries no `T_COMPLEX`, so its layout comes from the
 /// module's record declarations.
-pub(super) fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
+pub(super) fn metarecord_sigty(path: &metamodelica::Ref<Absyn::Path>) -> Result<SigTy> {
     let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
     let Some(declared) = record_decl_fields(&path_str) else {
         crate::CodegenWasmJit::record_error(format!(
@@ -407,14 +407,14 @@ pub(super) fn metarecord_sigty(path: &Arc<Absyn::Path>) -> Result<SigTy> {
 /// args…)`). Our closures hold values unboxed, so it builds a plain record.
 pub(super) fn compile_metarecord(
     ctx: &mut FnCtx,
-    path: &Arc<Absyn::Path>,
-    args: &List<Arc<DAE::Exp>>,
+    path: &metamodelica::Ref<Absyn::Path>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
     fieldNames: &List<ArcStr>,
 ) -> Result<()> {
     let SigTy::Record { fields, .. } = metarecord_sigty(path)? else {
         return Err("CodegenWasmJit: boxed record constructor with non-record type");
     };
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     let namev: Vec<&ArcStr> = (&**fieldNames).into_iter().collect();
     if argv.len() != fields.len() || namev.len() != argv.len() {
         return Err("CodegenWasmJit: boxed record constructor arity mismatch");
@@ -433,11 +433,11 @@ pub(super) fn compile_metarecord(
 /// A record-constructor *call* `R(v1, v2, …)` (a `CALL` whose result is a record
 /// and which is not a generated function): the positional arguments are the
 /// fields in declaration order.
-pub(super) fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &List<Arc<DAE::Exp>>) -> Result<()> {
+pub(super) fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &List<metamodelica::Ref<DAE::Exp>>) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor call with non-record type");
     };
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != fields.len() {
         return Err("CodegenWasmJit: record constructor call arity mismatch");
     }
@@ -516,7 +516,7 @@ fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr,
 fn push_record_base(
     ctx: &mut FnCtx,
     ident: &str,
-    subs: &List<Arc<DAE::Subscript>>,
+    subs: &List<metamodelica::Ref<DAE::Subscript>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
     let (idx, sty) = ctx
         .locals
@@ -586,7 +586,7 @@ fn step_into_record(
     rec: u32,
     fields: &[(ArcStr, SigTy)],
     field: &str,
-    fsubs: &List<Arc<DAE::Subscript>>,
+    fsubs: &List<metamodelica::Ref<DAE::Subscript>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
     let (vt, fty) = load_field(ctx, rec, fields, field)?;
     if fsubs.is_empty() {
@@ -667,7 +667,7 @@ pub(super) fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) 
 pub(super) fn navigate_qual<'c>(
     ctx: &mut FnCtx,
     cref: &'c DAE::ComponentRef,
-) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c List<Arc<DAE::Subscript>>)> {
+) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c List<metamodelica::Ref<DAE::Subscript>>)> {
     let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
         return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
@@ -720,7 +720,7 @@ pub(super) fn compile_cref_assign_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef
 /// (which privately owns its buffer). For a heap element the previous handle in
 /// the slot is released and the new owned value moved in; the old value is
 /// released only *after* the rhs is computed, in case the rhs reads it.
-pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
+pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>], rhs: &DAE::Exp) -> Result<()> {
     emit_elem_addr(ctx, arr_idx, elem, idx_exps)?;
     let addr_t = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(addr_t));
@@ -749,7 +749,7 @@ pub(super) fn compile_elem_assign(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, i
 /// Emit the byte address of array element `a[idx_exps...]`, reading the array
 /// handle from local `arr_idx` (the local owns it — no retain/release). Leaves
 /// the address on the stack. Same row-major linear index as [`index_loaded`].
-pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+pub(super) fn emit_elem_addr(ctx: &mut FnCtx, arr_idx: u32, elem: &SigTy, idx_exps: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     let acc = ctx.alloc_temp(WTy::I32);
     emit_subscript_index(ctx, &idx_exps[0])?;
     ctx.emit(we::Instruction::I32Const(1));

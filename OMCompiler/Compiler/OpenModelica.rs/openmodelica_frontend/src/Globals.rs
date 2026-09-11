@@ -34,9 +34,9 @@ thread_local! {
         RefCell::new(openmodelica_util::BaseHashTable::emptyHashTableWork(
             openmodelica_util::Flags::getConfigInt(openmodelica_util::Flags::INST_CACHE_SIZE.clone()).unwrap_or(25343),
             (
-                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathHash, Arc<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
-                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathEqual, Arc<Absyn::Path>, Arc<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>, Arc<Absyn::Path>) -> metamodelica::Result<bool> + 'static>),
-                (Arc::new(AbsynUtil::pathStringDefault) as Arc<dyn ::std::ops::Fn(Arc<Absyn::Path>) -> metamodelica::Result<ArcStr> + 'static>),
+                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathHash, metamodelica::Ref<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<i32> + 'static>),
+                (Arc::new(metamodelica::fnptr!(AbsynUtil::pathEqual, metamodelica::Ref<Absyn::Path>, metamodelica::Ref<Absyn::Path>)) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>, metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<bool> + 'static>),
+                (Arc::new(AbsynUtil::pathStringDefault) as Arc<dyn ::std::ops::Fn(metamodelica::Ref<Absyn::Path>) -> metamodelica::Result<ArcStr> + 'static>),
                 // `opaqVal` in InstHashTable is a private helper returning the
                 // constant "OPAQUE_VALUE" (used only for debug dumping of cache
                 // values); replicate it inline so this glue file stays
@@ -59,14 +59,14 @@ thread_local! {
     // Initialised by FBuiltin.mo; reset to nil() between runs.
     pub static builtinIndex: RefCell<metamodelica::List<(
         (i32, bool),
-        (openmodelica_ast::Absyn::Program, metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>),
+        (openmodelica_ast::Absyn::Program, metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>),
     )>> = RefCell::new(metamodelica::nil());
 
     // Index 18 — builtinGraphIndex
     //
     // Builtin environment graph index: list of (flag × FCore.Graph).
     // Initialised by Builtin.mo; reset to nil() between runs.
-    pub static builtinGraphIndex: RefCell<metamodelica::List<(i32, Arc<openmodelica_frontend_dump::FCore::Graph>)>> =
+    pub static builtinGraphIndex: RefCell<metamodelica::List<(i32, metamodelica::Ref<openmodelica_frontend_dump::FCore::Graph>)>> =
         RefCell::new(metamodelica::nil());
 
     // Index 22 — inlineHashTable: moved to openmodelica_frontend_base::Globals
@@ -77,11 +77,11 @@ thread_local! {
     // Pair of AVL trees caching operator-overloading resolutions.
     // Reset to empty trees by OperatorOverloading.clearCache().
     pub static operatorOverloadingCache: RefCell<(
-        Arc<crate::OperatorOverloading::AvlTreePathPathEnv::Tree>,
-        Arc<crate::OperatorOverloading::AvlTreePathOperatorTypes::Tree>,
+        metamodelica::Ref<crate::OperatorOverloading::AvlTreePathPathEnv::Tree>,
+        metamodelica::Ref<crate::OperatorOverloading::AvlTreePathOperatorTypes::Tree>,
     )> = RefCell::new((
-        Arc::new(crate::OperatorOverloading::AvlTreePathPathEnv::Tree::EMPTY),
-        Arc::new(crate::OperatorOverloading::AvlTreePathOperatorTypes::Tree::EMPTY),
+        metamodelica::Ref::new(crate::OperatorOverloading::AvlTreePathPathEnv::Tree::EMPTY),
+        metamodelica::Ref::new(crate::OperatorOverloading::AvlTreePathOperatorTypes::Tree::EMPTY),
     ));
 
     // Index 32 — backendCevalInterface
