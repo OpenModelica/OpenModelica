@@ -360,6 +360,7 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
         echo cd \${MSYS_WORKSPACE}
         echo which cmake
         echo set -ex
+        echo trap 'echo "buildOMCWindows.sh: command failed, exit code \$?"' ERR
         echo mkdir build_cmake
         echo ${cmake_exe} --version
         echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}
