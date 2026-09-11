@@ -186,7 +186,7 @@ public
     (comp, dummy, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
-        Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(PointerCyclic.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
@@ -200,7 +200,7 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
-        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(listHead(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
@@ -214,7 +214,7 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
-        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+        Equation.map(PointerCyclic.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
@@ -265,24 +265,24 @@ public
 
   function getVariables
     input Tearing tearing;
-    output list<Pointer<Variable>> variables;
+    output list<PointerCyclic<Variable>> variables;
   algorithm
      variables := listAppend(var for var in list(Slice.getT(var) for var in tearing.iteration_vars) :: list(StrongComponent.getVariables(comp) for comp in tearing.innerEquations));
   end getVariables;
 
   function getResidualVars
     input Tearing tearing;
-    output list<Pointer<Variable>> residuals = list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
+    output list<PointerCyclic<Variable>> residuals = list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
   function getIterationVars
     input Tearing tearing;
-    output list<Pointer<Variable>> iterationVars = list(Slice.getT(var) for var in tearing.iteration_vars);
+    output list<PointerCyclic<Variable>> iterationVars = list(Slice.getT(var) for var in tearing.iteration_vars);
   end getIterationVars;
 
   function getResidualEqns
     input Tearing tearing;
-    output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
+    output list<PointerCyclic<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
   end getResidualEqns;
 
   function setResidualEqns
@@ -428,8 +428,8 @@ protected
     // only extracts discrete variables to be solved as inner equations
   protected
     Tearing strict, innerStrict;
-    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
-    list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
+    list<PointerCyclic<Variable>> vars_lst, cont_vars, disc_vars, implied_vars, alg_implied;
+    list<PointerCyclic<Equation>> eqns_lst, cont_eqns, disc_eqns, alg_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> iteration_vars = {};
     Adjacency.Matrix adj, sub;
@@ -691,22 +691,22 @@ protected
 
   function filterDiscreteVariables
     "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
-    input list<Pointer<Variable>> vars_lst;
+    input list<PointerCyclic<Variable>> vars_lst;
     input Boolean staticAsContinuous;
-    output list<Pointer<Variable>> cont_vars;
-    output list<Pointer<Variable>> disc_vars;
+    output list<PointerCyclic<Variable>> cont_vars;
+    output list<PointerCyclic<Variable>> disc_vars;
   protected
     UnorderedSet<ComponentRef> discrete_records = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    list<Pointer<Variable>> rec_disc_vars;
+    list<PointerCyclic<Variable>> rec_disc_vars;
 
     function addDiscreteRecord
       "checks if it has a record parent that needs to be added"
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input UnorderedSet<ComponentRef> discrete_records;
     algorithm
       () := match BVariable.getParent(var)
         local
-          Pointer<Variable> parent;
+          PointerCyclic<Variable> parent;
         case SOME(parent) algorithm
           UnorderedSet.add(BVariable.getVarName(parent), discrete_records);
           addDiscreteRecord(parent, discrete_records);
@@ -717,14 +717,14 @@ protected
 
     function checkDiscreteRecord
       "checks if continuous variable is part of records of which discretes are in this loop"
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input UnorderedSet<ComponentRef> discrete_records;
       input Boolean is_parent;
       output Boolean b;
     algorithm
       b := match BVariable.getParent(var)
         local
-          Pointer<Variable> parent;
+          PointerCyclic<Variable> parent;
         case SOME(parent) then checkDiscreteRecord(parent, discrete_records, true);
         else is_parent and UnorderedSet.contains(BVariable.getVarName(var), discrete_records);
       end match;
@@ -744,10 +744,10 @@ protected
   function getImpliedInnerVars
     "returns all implied inner variables if the equation is solved. necessary if e.g. trying to solve a single discrete output
     from an algorithm. The full algorithm and all outputs need to be made inner variables."
-    input Pointer<Equation> eqn;
-    output list<Pointer<Variable>> vars;
+    input PointerCyclic<Equation> eqn;
+    output list<PointerCyclic<Variable>> vars;
   algorithm
-    vars := match Pointer.access(eqn)
+    vars := match PointerCyclic.access(eqn)
       local
         Algorithm alg;
         Expression tpl;

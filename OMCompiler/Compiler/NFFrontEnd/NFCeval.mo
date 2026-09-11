@@ -253,7 +253,7 @@ algorithm
 
     case Expression.MUTABLE()
       algorithm
-        exp1 := evalExp(Mutable.access(exp.exp), target);
+        exp1 := evalExp(MutableCyclic.access(exp.exp), target);
       then
         exp1;
 
@@ -3304,7 +3304,7 @@ protected function evalArrayConstructor
 protected
   Expression exp;
   list<tuple<InstNode, Expression>> iters;
-  list<Mutable<Expression>> iter_exps;
+  list<MutableCyclic<Expression>> iter_exps;
   list<Expression> ranges;
 algorithm
   Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = exp, iters = iters)) := callExp;
@@ -3315,14 +3315,14 @@ end evalArrayConstructor;
 function evalArrayConstructor2
   input Expression exp;
   input list<Expression> ranges;
-  input list<Mutable<Expression>> iterators;
+  input list<MutableCyclic<Expression>> iterators;
   output Expression result;
 protected
   Expression range;
   list<Expression> ranges_rest, expl = {};
   array<Expression> arr;
-  Mutable<Expression> iter;
-  list<Mutable<Expression>> iters_rest;
+  MutableCyclic<Expression> iter;
+  list<MutableCyclic<Expression>> iters_rest;
   ExpressionIterator range_iter;
   Expression value;
   Type ty;
@@ -3337,7 +3337,7 @@ algorithm
 
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
-      Mutable.update(iter, value);
+      MutableCyclic.update(iter, value);
       expl := evalArrayConstructor2(exp, ranges_rest, iters_rest) :: expl;
     end while;
 

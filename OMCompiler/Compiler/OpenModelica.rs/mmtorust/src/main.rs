@@ -16,6 +16,7 @@ mod dep_analysis;
 mod unused_functions;
 mod const_patterns;
 mod mc_disjoint;
+mod cyclic_fix;
 mod mutable_cycles;
 mod scripting_api_qt;
 use rayon::prelude::*;
@@ -37,7 +38,10 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Op
     }
     println!("MM conversion: {} files, {} failures {:.2}s", results.len(), failures, t0.elapsed().as_secs_f64());
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -66,6 +70,7 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Op
     hierarchy::detect_types_containing_mutable(&mut hier);
     hierarchy::detect_types_containing_array(&mut hier);
     hierarchy::detect_types_containing_dyn_fn(&mut hier);
+    mutable_cycles::detect_traced_types(&mut hier);
     println!("Hierarchy recursive+mutable detection: {:.2}s", t0.elapsed().as_secs_f64());
     // println!("{hier}");
 
@@ -315,7 +320,10 @@ fn run_unused_functions(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -355,7 +363,10 @@ fn run_const_patterns(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -372,6 +383,54 @@ fn run_const_patterns(programs: Vec<Absyn::Program>) {
     );
     println!();
     const_patterns::print_report(&report);
+}
+
+/// `cyclic-cells [--fix]`: report, or migrate, the cells that can sit on a
+/// reference cycle. Without `--fix` it only prints what it would change.
+fn run_cyclic_cells(programs: Vec<Absyn::Program>, fix: bool, sources: Vec<String>) {
+    let mut all_classes: Vec<MM::Class> = Vec::new();
+    for program in &programs {
+        match MM::from_program(program) {
+            Ok(p) => all_classes.extend(p),
+            Err(e) => eprintln!("MM ERR: {e}"),
+        }
+    }
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
+    let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
+    hierarchy::flatten_extends(&mut hier);
+    let mut warnings = std::collections::BTreeSet::new();
+    while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
+    hierarchy::detect_types_containing_dyn_fn(&mut hier);
+    mutable_cycles::detect_traced_types(&mut hier);
+
+    let report = mutable_cycles::analyze(&hier);
+    // Declarations are matched on the simple name: MetaModelica writes a type
+    // reference unqualified (`Mutable<InstNode>`), not by qname.
+    let simple: std::collections::BTreeSet<String> = report
+        .gc_types_full
+        .iter()
+        .filter_map(|q| q.rsplit('.').next().map(str::to_owned))
+        .collect();
+    println!(
+        "cyclic cells: {} call sites over {} cyclic types",
+        report.cyclic_uses.len(),
+        report.gc_types_full.len()
+    );
+    if !fix {
+        println!("(dry run; pass --fix to rewrite the sources)");
+        return;
+    }
+    let stats = cyclic_fix::apply(report.cyclic_uses, &simple, &sources);
+    println!(
+        "  {} files changed, {} declarations, {} calls, {} ambiguous spans, {} calls without a position",
+        stats.files_changed,
+        stats.decls_rewritten,
+        stats.calls_rewritten,
+        stats.ambiguous_spans,
+        stats.calls_without_position
+    );
 }
 
 fn run_mutable_cycles(programs: Vec<Absyn::Program>) {
@@ -395,12 +454,16 @@ fn run_mutable_cycles(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
     // Needed for the dyn-fn overlap section of the report.
     hierarchy::detect_types_containing_dyn_fn(&mut hier);
+    mutable_cycles::detect_traced_types(&mut hier);
     println!(
         "Hierarchy extends+resolve types: {:.2}s",
         t0.elapsed().as_secs_f64()
@@ -502,6 +565,10 @@ fn main() {
         Some("unused-functions") => run_unused_functions(parsed),
         Some("const-patterns") => run_const_patterns(parsed),
         Some("mutable-cycles") => run_mutable_cycles(parsed),
+        Some("cyclic-cells") => {
+            let paths: Vec<String> = files.iter().map(|(f, _)| (*f).to_owned()).collect();
+            run_cyclic_cells(parsed, fix, paths)
+        }
         _ => start_compilation(parsed, fix, mc_report_path),
     }
 }

@@ -235,6 +235,17 @@ pub struct InstanceHierarchy<'a> {
     /// Propagation follows the same container rules as
     /// [`Self::types_containing_mutable`].
     pub types_containing_dyn_fn: BTreeSet<String>,
+    /// Qualified names of classes annotated `__OpenModelica_Retired = true`:
+    /// constructs the Rust port deliberately does not carry over. Their fields
+    /// are stripped before the hierarchy is built (see `MM::strip_retired`), so
+    /// they seed as unit variants; codegen lowers constructions to
+    /// `unreachable!()` and drops match arms that mention them.
+    pub retired: BTreeSet<String>,
+    /// Named types that can reach a declared cyclic cell
+    /// (`MutableCyclic`/`PointerCyclic`), and so must use the collector's
+    /// traced pointer rather than a plain `Arc`. Populated by
+    /// `mutable_cycles::detect_traced_types`.
+    pub traced_types: BTreeSet<String>,
     /// Subset of [`Self::types_containing_dyn_fn`]: types whose *own*
     /// fields/variants directly reference a function type without going
     /// through another user-defined struct/enum. These need a hand-rolled
@@ -306,6 +317,8 @@ impl<'a> InstanceHierarchy<'a> {
             types_containing_mutable: BTreeSet::new(),
             types_containing_array: BTreeSet::new(),
             types_containing_dyn_fn: BTreeSet::new(),
+            retired: BTreeSet::new(),
+            traced_types: BTreeSet::new(),
             types_directly_containing_dyn_fn: BTreeSet::new(),
             fallible_functions: BTreeSet::new(),
             keep_public: BTreeSet::new(),
@@ -1725,9 +1738,9 @@ fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &Scoped
                 "array" | "Array" if args.len() == 1 => {
                     Some(Ty::Array(Box::new(resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?)))
                 }
-                "Mutable" if args.len() == 1 => {
+                "Mutable" | "MutableCyclic" if args.len() == 1 => {
                     let inner = resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?;
-                    Some(Ty::Generic("Mutable".to_owned(), vec![inner]))
+                    Some(Ty::Generic(ctor.to_owned(), vec![inner]))
                 }
                 _ => {
                     // User-defined generic: base type must be known, all args must resolve.
@@ -2334,6 +2347,7 @@ fn ty_contains_mutable(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
             // form to match graph keys.
             let dotted = name.replace("::", ".");
             dotted == "Mutable"
+                || dotted == "MutableCyclic"
                 || tainted.contains(&dotted)
                 || args.iter().any(|a| ty_contains_mutable(a, tainted))
         }

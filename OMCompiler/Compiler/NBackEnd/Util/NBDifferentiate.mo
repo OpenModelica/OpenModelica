@@ -98,7 +98,7 @@ public
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
       ComponentRef diffCref                                     "The input will be differentiated w.r.t. this cref (only SIMPLE).";
-      list<Pointer<Variable>> new_vars                          "contains all new variables that need to be added to the system";
+      list<PointerCyclic<Variable>> new_vars                          "contains all new variables that need to be added to the system";
       Option<UnorderedMap<ComponentRef, ComponentRef>> diff_map "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
@@ -191,8 +191,8 @@ public
   algorithm
     comp := match comp
       local
-        Pointer<Variable> new_var;
-        Pointer<Equation> new_eqn;
+        PointerCyclic<Variable> new_var;
+        PointerCyclic<Equation> new_eqn;
         list<Slice<VariablePointer>> new_var_slices;
         ComponentRef new_cref;
         Slice<VariablePointer> new_var_slice;
@@ -281,7 +281,7 @@ public
   function differentiateEquationPointerList
     "author: kabdelhak
     Differentiates a list of equations wrapped in pointers."
-    input output list<Pointer<Equation>> equations;
+    input output list<PointerCyclic<Equation>> equations;
     input output DifferentiationArguments diffArguments;
     input Pointer<Integer> idx;
     input String context;
@@ -297,15 +297,15 @@ public
   end differentiateEquationPointerList;
 
   function differentiateEquationPointer
-    input Pointer<Equation> eq_ptr;
+    input PointerCyclic<Equation> eq_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
     input String name = "";
-    output Pointer<Equation> derivative_ptr;
+    output PointerCyclic<Equation> derivative_ptr;
   protected
     Equation eq, diffedEq;
     DifferentiationArguments old_diffArguments, new_diffArguments;
   algorithm
-    eq := Pointer.access(eq_ptr);
+    eq := PointerCyclic.access(eq_ptr);
     old_diffArguments := Pointer.access(diffArguments_ptr);
 
     derivative_ptr := match Equation.getAttributes(eq)
@@ -318,10 +318,10 @@ public
       // else differentiate the equation
       else algorithm
         (diffedEq, new_diffArguments) := differentiateEquation(eq, old_diffArguments, name);
-        derivative_ptr := Pointer.create(diffedEq);
+        derivative_ptr := PointerCyclic.create(diffedEq);
         // save the derivative if we derive w.r.t. time
         if new_diffArguments.diffType == DifferentiationType.TIME then
-          Pointer.update(eq_ptr, Equation.setDerivative(eq, derivative_ptr));
+          PointerCyclic.update(eq_ptr, Equation.setDerivative(eq, derivative_ptr));
         end if;
         if not referenceEq(new_diffArguments, old_diffArguments) then
           Pointer.update(diffArguments_ptr, new_diffArguments);
@@ -695,7 +695,7 @@ public
     // Process then-equations in LIFO order
     allStmts := {};
     for eqPtr in body.then_eqns loop
-      bodyEqn := Pointer.access(eqPtr);
+      bodyEqn := PointerCyclic.access(eqPtr);
       (diffArguments, bodyStmts) := differentiateEquationAdjoint(bodyEqn, diffArguments);
       for s in bodyStmts loop
         allStmts := s :: allStmts;
@@ -784,7 +784,7 @@ public
     input output IfEquationBody body;
     input output Pointer<DifferentiationArguments> diffArguments_ptr;
   protected
-    list<Pointer<Equation>> then_eqns;
+    list<PointerCyclic<Equation>> then_eqns;
     IfEquationBody else_if;
   algorithm
     // ToDo: this is a little ugly
@@ -1045,15 +1045,15 @@ public
     input output Expression exp "Has to be Expression.CREF()";
     input output DifferentiationArguments diffArguments;
   protected
-    Pointer<Variable> var_ptr, der_ptr;
+    PointerCyclic<Variable> var_ptr, der_ptr;
     ComponentRef derCref, strippedCref;
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
       // function body expressions, empty and wild crefs are not lowered (maybe do it?)
-      case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
-      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
-      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -1287,18 +1287,18 @@ public
   end differentiateComponentRefNoCollect;
 
   function differentiateVariablePointer
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
-    output Pointer<Variable> diff_ptr;
+    output PointerCyclic<Variable> diff_ptr;
   protected
     DifferentiationArguments diffArguments = Pointer.access(diffArguments_ptr);
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
     Expression crefExp;
   algorithm
     (crefExp, diffArguments) := differentiateComponentRefNoCollect(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
-      case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
-      case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.EMPTY()) then PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF(cref = ComponentRef.WILD())  then PointerCyclic.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(crefExp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
@@ -2314,7 +2314,7 @@ public
     der_func := match func
       local
         InstNode node;
-        Pointer<Class> cls;
+        PointerCyclic<Class> cls;
         Class new_cls;
         DifferentiationArguments funcDiffArgs;
         UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -2328,7 +2328,7 @@ public
         list<Slot> slots;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
-        new_cls := match Pointer.access(cls)
+        new_cls := match PointerCyclic.access(cls)
           case new_cls as Class.INSTANCED_CLASS() algorithm
             // prepare outputs that become locals
             local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, lout) for lout in der_func.outputs);
@@ -2368,7 +2368,7 @@ public
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
             dummy_func      := func;
-            node.cls        := Pointer.create(new_cls);
+            node.cls        := PointerCyclic.create(new_cls);
             der_func_name   := NBVariable.FUNCTION_DERIVATIVE_STR + intString(listLength(func.derivatives));
             node.name       := der_func_name + "." + node.name;
             node.definition := SCodeUtil.setElementName(node.definition, node.name);
@@ -2409,7 +2409,7 @@ public
 
             // update the class pointer in place; the fake node created above for
             // recursive differentiation shares it and reaches codegen via the cache
-            Pointer.update(node.cls, new_cls);
+            PointerCyclic.update(node.cls, new_cls);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
@@ -2421,7 +2421,7 @@ public
             uninitialized := Function.checkUseBeforeAssignGenerated(der_func);
             if not listEmpty(uninitialized) then
               new_cls.sections := Function.initializeUninitialized(new_cls.sections, uninitialized, AbsynUtil.pathString(der_func.path));
-              Pointer.update(node.cls, new_cls);
+              PointerCyclic.update(node.cls, new_cls);
             end if;
 
             // save the function tree
@@ -2429,7 +2429,7 @@ public
           then new_cls;
 
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(PointerCyclic.access(cls), func.node) + "."});
           then fail();
         end match;
 
@@ -2506,7 +2506,7 @@ public
       diff_cref := match diff_cref
         case ComponentRef.CREF(node = d_node as InstNode.COMPONENT_NODE()) algorithm
           // differentiate bindings
-          comp := Pointer.access(d_node.component);
+          comp := PointerCyclic.access(d_node.component);
           comp := match comp
             case comp as Component.COMPONENT() algorithm
               (binding, diffArgs) := differentiateBinding(comp.binding, diffArgs);
@@ -2514,7 +2514,7 @@ public
             then comp;
             else comp;
           end match;
-          d_node.component := Pointer.create(comp);
+          d_node.component := PointerCyclic.create(comp);
           diff_cref.node := d_node;
         then diff_cref;
         else diff_cref;
@@ -2588,7 +2588,7 @@ public
   protected
     Function der_func;
     InstNode node;
-    Pointer<Class> cls, tmp_cls;
+    PointerCyclic<Class> cls, tmp_cls;
     Class new_cls, wrap_cls;
     Sections sections;
     UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -2604,10 +2604,10 @@ public
   algorithm
     func := match func
       case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
-        wrap_cls := Pointer.access(cls);
+        wrap_cls := PointerCyclic.access(cls);
         new_cls := match wrap_cls
           case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls)) algorithm
-            new_cls :=  match Pointer.access(tmp_cls)
+            new_cls :=  match PointerCyclic.access(tmp_cls)
               case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS(algorithms = algorithms)) algorithm
                 // prepare differentiation arguments
                 diffArgs.diffType     := DifferentiationType.FUNCTION;
@@ -2654,7 +2654,7 @@ public
                 new_cls.sections            := sections;
                 new_cls.ty                  := wrap_cls.ty;
                 new_cls.restriction         := wrap_cls.restriction;
-                node.cls                    := Pointer.create(new_cls);
+                node.cls                    := PointerCyclic.create(new_cls);
                 der_func.derivatives        := {};
                 der_func.derivedInputs      := {};
                 der_func.interfaceDiffInfo  := SOME(diffInfo);
@@ -3479,7 +3479,7 @@ public
   algorithm
     attr := match (attr, diffArguments)
       local
-        Pointer<Variable> residualVar, diffedResidualVar;
+        PointerCyclic<Variable> residualVar, diffedResidualVar;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
 
       case (EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)),

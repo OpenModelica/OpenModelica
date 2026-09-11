@@ -211,7 +211,7 @@ public
     input output VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
     input output VariablePointers algebraics    "Algebraic variables";
     input EquationPointers equations            "Partition equations";
-    output list<Pointer<Equation>> aux_eqns     "New auxiliary equations";
+    output list<PointerCyclic<Equation>> aux_eqns     "New auxiliary equations";
   end detectContinuousStatesInterface;
 
   partial function detectDiscreteStatesInterface

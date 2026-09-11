@@ -461,8 +461,8 @@ public
     Expression e = exp, range;
     InstNode node;
     list<Expression> ranges = {};
-    Mutable<Expression> iter;
-    list<Mutable<Expression>> iters = {};
+    MutableCyclic<Expression> iter;
+    list<MutableCyclic<Expression>> iters = {};
   algorithm
     if Type.hasKnownSize(ty) and not List.any(iterators, function usesIterator(exp = exp)) then
       result := fillArrayConstructor(expand(SimplifyExp.simplify(exp)), ty, listLength(iterators));
@@ -471,7 +471,7 @@ public
 
     for i in iterators loop
       (node, range) := i;
-      iter := Mutable.create(Expression.EMPTY(InstNode.getType(node)));
+      iter := MutableCyclic.create(Expression.EMPTY(InstNode.getType(node)));
       e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
       iters := iter :: iters;
       (range, true) := expand(range);
@@ -503,13 +503,13 @@ public
     input Expression exp;
     input Type ty;
     input list<Expression> ranges;
-    input list<Mutable<Expression>> iterators;
+    input list<MutableCyclic<Expression>> iterators;
     output Expression result;
   protected
     Expression range;
     list<Expression> ranges_rest, expl = {};
-    Mutable<Expression> iter;
-    list<Mutable<Expression>> iters_rest;
+    MutableCyclic<Expression> iter;
+    list<MutableCyclic<Expression>> iters_rest;
     ExpressionIterator range_iter;
     Expression value;
     Type el_ty;
@@ -529,7 +529,7 @@ public
 
       while ExpressionIterator.hasNext(range_iter) loop
         (range_iter, value) := ExpressionIterator.next(range_iter);
-        Mutable.update(iter, value);
+        MutableCyclic.update(iter, value);
         expl := expandArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
       end while;
 

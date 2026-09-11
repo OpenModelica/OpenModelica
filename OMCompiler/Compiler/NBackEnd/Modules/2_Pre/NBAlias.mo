@@ -173,8 +173,8 @@ protected
   uniontype AliasSet "gets accumulated to find sets of alias equations and solve them"
     record ALIAS_SET
       list<ComponentRef> simple_variables         "list of all variables in this set";
-      list<Pointer<Equation>> simple_equations    "list of all equations in this set";
-      Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
+      list<PointerCyclic<Equation>> simple_equations    "list of all equations in this set";
+      Option<PointerCyclic<Equation>> const_opt         "optional constant binding of one variable";
     end ALIAS_SET;
 
     function toString
@@ -183,7 +183,7 @@ protected
     algorithm
       if isSome(set.const_opt) then
         str := "\tConstant/Parameter Binding: "
-          + Equation.toString(Pointer.access(Util.getOption(set.const_opt))) + "\n";
+          + Equation.toString(PointerCyclic.access(Util.getOption(set.const_opt))) + "\n";
       else
         str := "\t<No Constant/Parameter Binding>\n";
       end if;
@@ -192,7 +192,7 @@ protected
       else
         str := str + "\t### Set Equations:\n";
         for eq in set.simple_equations loop
-          str := str + Equation.toString(Pointer.access(eq), "\t") + "\n";
+          str := str + Equation.toString(PointerCyclic.access(eq), "\t") + "\n";
         end for;
       end if;
     end toString;
@@ -230,8 +230,8 @@ protected
         UnorderedMap<ComponentRef, Expression> replacements;
         UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
         EquationPointers newEquations;
-        list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
-        list<Pointer<Equation>> non_trivial_eqs, auxEquations;
+        list<PointerCyclic<Variable>> alias_vars, const_vars, non_trivial_alias;
+        list<PointerCyclic<Equation>> non_trivial_eqs, auxEquations;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -306,12 +306,12 @@ protected
     input UnorderedMap<ComponentRef, Expression> replacements;
     input EqData eqData;
     output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    output list<Pointer<Equation>> auxEquations = {};
+    output list<PointerCyclic<Equation>> auxEquations = {};
   protected
     UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef cref;
     Expression exp;
-    Pointer<Equation> eqPtr;
+    PointerCyclic<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
     EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
@@ -408,13 +408,13 @@ protected
 
   function dumpReplacements
     input UnorderedMap<ComponentRef, Expression> replacements;
-    input list<Pointer<Equation>> auxEquations = {};
+    input list<PointerCyclic<Equation>> auxEquations = {};
   algorithm
     print(Replacements.simpleToString(replacements) + "\n");
     if not listEmpty(auxEquations) then
       print(StringUtil.headline_4("[dumprepl] Found But Illegal Alias Replacements (added as equations):"));
       for eqPtr in auxEquations loop
-        print("\t" + Equation.toString(Pointer.access(eqPtr)) + "\n");
+        print("\t" + Equation.toString(PointerCyclic.access(eqPtr)) + "\n");
       end for;
       print("\n");
     end if;
@@ -434,8 +434,8 @@ protected
       local
         UnorderedMap<ComponentRef, Expression> replacements;
         EquationPointers newEquations;
-        list<Pointer<Variable>> alias_vars;
-        list<Pointer<Equation>> auxEquations;
+        list<PointerCyclic<Variable>> alias_vars;
+        list<PointerCyclic<Equation>> auxEquations;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -518,14 +518,14 @@ protected
 
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
-    input Pointer<Equation> eq_ptr;
+    input PointerCyclic<Equation> eq_ptr;
     input output UnorderedMap<ComponentRef, SetPtr> map;
     output Boolean delete = false;
   protected
     Equation eq;
     CrefTpl crefTpl = EMPTY_CREF_TPL;
   algorithm
-    eq := Pointer.access(eq_ptr);
+    eq := PointerCyclic.access(eq_ptr);
     crefTpl := match eq
       case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
@@ -550,7 +550,7 @@ protected
         SetPtr set_ptr, set1_ptr, set2_ptr;
         AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
-        Pointer<Equation> new_eq_ptr;
+        PointerCyclic<Equation> new_eq_ptr;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
@@ -558,7 +558,7 @@ protected
           // the variable does not belong to a set -> create new one
           set := EMPTY_ALIAS_SET;
           set.simple_variables := {cr1};
-          set.const_opt := SOME(Pointer.create(eq));
+          set.const_opt := SOME(PointerCyclic.create(eq));
           UnorderedMap.add(cr1, Pointer.create(set), map);
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
@@ -570,7 +570,7 @@ protected
               Overdetermined Set!:" + AliasSet.toString(set)});
             fail();
           else
-            set.const_opt := SOME(Pointer.create(eq));
+            set.const_opt := SOME(PointerCyclic.create(eq));
             Pointer.update(set_ptr, set);
           end if;
         end if;
@@ -594,7 +594,7 @@ protected
                 AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
             end if;
             // add eq to set1
-            new_eq_ptr := Pointer.create(eq);
+            new_eq_ptr := PointerCyclic.create(eq);
             set1.simple_equations := new_eq_ptr :: set1.simple_equations;
             // update pointer of set1 -> set1
             Pointer.update(set1_ptr, set1);
@@ -615,9 +615,9 @@ protected
 
             // try to append the shorter to the longer lists
             if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
-              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
+              set.simple_equations := PointerCyclic.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
             else
-              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
+              set.simple_equations := PointerCyclic.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
             end if;
 
             // try to change as few pointer entries as possible
@@ -641,7 +641,7 @@ protected
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
           set.simple_variables := cr2 :: set.simple_variables;
-          set.simple_equations := Pointer.create(eq) :: set.simple_equations;
+          set.simple_equations := PointerCyclic.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c2
           UnorderedMap.add(cr2, set_ptr, map);
@@ -651,7 +651,7 @@ protected
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
           set.simple_variables := cr1 :: set.simple_variables;
-          set.simple_equations := Pointer.create(eq) :: set.simple_equations;
+          set.simple_equations := PointerCyclic.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c1
           UnorderedMap.add(cr1, set_ptr, map);
@@ -660,7 +660,7 @@ protected
           set := EMPTY_ALIAS_SET;
           // add both variables and add new equation pointer
           set.simple_variables := {cr1, cr2};
-          set.simple_equations := {Pointer.create(eq)};
+          set.simple_equations := {PointerCyclic.create(eq)};
           set_ptr := Pointer.create(set);
           // add new hash entry for both variables
           UnorderedMap.add(cr1, set_ptr, map);
@@ -696,7 +696,7 @@ protected
 
       // fail for top level inputs
       case Expression.CREF()
-        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+        guard(Variable.isTopLevelInput(PointerCyclic.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -861,15 +861,15 @@ protected
       local
         Expression rhs;
         Equation solved_eq;
-        Pointer<Equation> const_eq, eq;
-        list<Pointer<Variable>> alias_vars;
+        PointerCyclic<Equation> const_eq, eq;
+        list<PointerCyclic<Variable>> alias_vars;
         VariablePointers vars;
-        list<Pointer<Variable>> var_lst;
+        list<PointerCyclic<Variable>> var_lst;
         EquationPointers eqs;
-        list<Pointer<Equation>> eqns;
+        list<PointerCyclic<Equation>> eqns;
         list<StrongComponent> comps;
         AttributeCollector collector;
-        Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+        PointerCyclic<PointerCyclic<Variable>> var_to_keep = PointerCyclic.create(PointerCyclic.create(NBVariable.DUMMY_VARIABLE));
         Status status;
         Expression res, expr;
         DifferentiationArguments args;
@@ -908,7 +908,7 @@ protected
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
+          print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(PointerCyclic.access(var_to_keep))+"\n\n");
         end if;
 
         // create replacements from strong components
@@ -922,7 +922,7 @@ protected
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
+          (solved_eq, status, _) := Solve.solveBody(PointerCyclic.access(eq), BVariable.getVarName(PointerCyclic.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
 
@@ -934,7 +934,7 @@ protected
         checkNominalThreshold(collector.nominal_map, set);
         setNewAttributes(var_to_keep, collector, set);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n");
+          print(StringUtil.headline_3("Variable to keep (values of attributes after replacements):") + BVariable.pointerToString(PointerCyclic.access(var_to_keep))+"\n");
         end if;
       then replacements;
     end match;
@@ -942,7 +942,7 @@ protected
 
   function setNewAttributes
     "Sets new values for each attribute of kept variable, if possible. "
-    input Pointer<Pointer<Variable>> var_to_keep_ptr;
+    input PointerCyclic<PointerCyclic<Variable>> var_to_keep_ptr;
     input AttributeCollector attrcollector;
     input AliasSet set;
   protected
@@ -950,18 +950,18 @@ protected
     Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
     Option<TearingSelect> new_tearingSelect;
-    Pointer<Variable> fixed_var, var_to_keep = Pointer.access(var_to_keep_ptr);
+    PointerCyclic<Variable> fixed_var, var_to_keep = PointerCyclic.access(var_to_keep_ptr);
     UnorderedMap<ComponentRef, Expression> fixed_start_map;
   algorithm
   // function calls of different set functions in NBVariable.mo
     new_min := getMaximum(attrcollector.min_val_map);
     if isSome(new_min) then
-      Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min, true));
+      PointerCyclic.update(var_to_keep, BVariable.setMin(PointerCyclic.access(var_to_keep), new_min, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_min), attrcollector.min_val_map); // update attribute collector
     end if;
     new_max := getMinimum(attrcollector.max_val_map);
     if isSome(new_max) then
-      Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max, true));
+      PointerCyclic.update(var_to_keep, BVariable.setMax(PointerCyclic.access(var_to_keep), new_max, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_max), attrcollector.max_val_map); // update attribute collector
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
@@ -971,7 +971,7 @@ protected
       new_cref := selectStartByConfidence(attrcollector.start_map, attrcollector.start_binding_map, set);
       if isSome(new_cref) then
         new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
-        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+        PointerCyclic.update(var_to_keep, BVariable.setStartAttribute(PointerCyclic.access(var_to_keep), Util.getOption(new_start), true));
         UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
       end if;
     elseif UnorderedMap.size(fixed_start_map) == 1 then
@@ -981,32 +981,32 @@ protected
       UnorderedMap.add(BVariable.getVarName(fixed_var), Expression.BOOLEAN(false), attrcollector.fixed_map); // update attribute collector
       BVariable.setFixed(var_to_keep, overwrite=true);
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Expression.BOOLEAN(true), attrcollector.fixed_map); // update attribute collector
-      Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+      PointerCyclic.update(var_to_keep, BVariable.setStartAttribute(PointerCyclic.access(var_to_keep), Util.getOption(new_start), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
     end if;
     (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
     if isSome(new_stateSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
-      Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
+      PointerCyclic.update(var_to_keep, BVariable.setStateSelect(PointerCyclic.access(var_to_keep), Util.getOption(new_stateSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_stateSelect), attrcollector.stateSelect_map); // update attribute collector
       if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
         new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
-        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+        PointerCyclic.update(var_to_keep, BVariable.setStartAttribute(PointerCyclic.access(var_to_keep), Util.getOption(new_start), true));
         UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
       end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
     if isSome(new_tearingSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
-      Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect), true));
+      PointerCyclic.update(var_to_keep, BVariable.setTearingSelect(PointerCyclic.access(var_to_keep), Util.getOption(new_tearingSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_tearingSelect), attrcollector.tearingSelect_map); // update attribute collector
     end if;
-    Pointer.update(var_to_keep_ptr,var_to_keep);
+    PointerCyclic.update(var_to_keep_ptr,var_to_keep);
   end setNewAttributes;
 
   function chooseVariableToKeep
     "choose a variable from a list to keep. returns all variables but the one with the highest rating"
-    input list<Pointer<Variable>> var_lst;
-    input Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
-    output list<Pointer<Variable>> acc = {};
+    input list<PointerCyclic<Variable>> var_lst;
+    input PointerCyclic<PointerCyclic<Variable>> var_to_keep = PointerCyclic.create(PointerCyclic.create(NBVariable.DUMMY_VARIABLE));
+    output list<PointerCyclic<Variable>> acc = {};
     output AttributeCollector attrcollector = ATTRIBUTE_COLLECTOR(
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
@@ -1017,21 +1017,21 @@ protected
       UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual));
   protected
-    Pointer<Variable> var;
-    list<Pointer<Variable>> rest;
+    PointerCyclic<Variable> var;
+    list<PointerCyclic<Variable>> rest;
     Integer cur_rating, max_rating;
 
   algorithm
     var :: rest := var_lst;
-    Pointer.update(var_to_keep, var);
+    PointerCyclic.update(var_to_keep, var);
     (max_rating, attrcollector) := rateVar(var, attrcollector);
 
     for var in rest loop
       (cur_rating, attrcollector) := rateVar(var, attrcollector);
       if cur_rating > max_rating then
         max_rating := cur_rating;
-        acc := Pointer.access(var_to_keep) :: acc;
-        Pointer.update(var_to_keep, var);
+        acc := PointerCyclic.access(var_to_keep) :: acc;
+        PointerCyclic.update(var_to_keep, var);
       else
         // do not change anything and just keep the variable and max_rating
         acc := var :: acc;
@@ -1393,7 +1393,7 @@ protected
 
   function optionMinMax
     "Collects min and max attributes if available."
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Option<Binding> attr_min, attr_max;
     input output AttributeCollector attrcollector;
   protected
@@ -1411,7 +1411,7 @@ protected
 
   function optionStartFixed
     "Collects start and fixed attributes if available."
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Option<Binding> attr_start, attr_fixed;
     input output AttributeCollector attrcollector;
   protected
@@ -1430,7 +1430,7 @@ protected
 
   function rateVar
     "Rates a variable based on attributes"
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output Integer rating;
     input output AttributeCollector attrcollector;
   protected
@@ -1446,7 +1446,7 @@ protected
       rating := -ComponentRef.depth(name);
     end if;
 
-     () := match Pointer.access(var_ptr)
+     () := match PointerCyclic.access(var_ptr)
         local
           BackendExtension.VariableAttributes attr;
 

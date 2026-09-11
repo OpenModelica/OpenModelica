@@ -140,7 +140,7 @@ protected
     VariablePointers discrete_states"Discrete state variables";
     VariablePointers clocked_states "Clocked state variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-    list<Pointer<Equation>> aux_eqns;
+    list<PointerCyclic<Equation>> aux_eqns;
     EqData newEqData;
   algorithm
     // introduce sliced state alias before resolving the der() calls
@@ -198,9 +198,9 @@ protected
 
   function detectContinuousStatesDefault extends Module.detectContinuousStatesInterface;
   protected
-    Pointer<list<Pointer<Variable>>> acc_states = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
-    Pointer<list<Pointer<Equation>>> acc_aux_equations = Pointer.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> acc_states = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> acc_derivatives = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Equation>>> acc_aux_equations = PointerCyclic.create({});
     Pointer<Integer> uniqueIndex = Pointer.create(0);
     Differentiate.DifferentiationArguments diffArgs = Differentiate.DifferentiationArguments.default();
   algorithm
@@ -209,12 +209,12 @@ protected
     // resolve all general der(exp) expressions
     EquationPointers.mapExp(equations, function resolveGeneralDer(acc_states = acc_states, acc_derivatives = acc_derivatives, acc_aux_equations = acc_aux_equations, uniqueIndex = uniqueIndex, diffArgs = diffArgs));
     // move stuff to their correct arrays
-    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
+    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, PointerCyclic.access(acc_states), PointerCyclic.access(acc_derivatives));
 
     // promote StateSelect.prefer variables if their derivative already exists
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := promotePreferStates(variables, unknowns, knowns, initials, states, derivatives, algebraics);
 
-    aux_eqns := Pointer.access(acc_aux_equations);
+    aux_eqns := PointerCyclic.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(aux_eqns)) + ") Created auxiliary equations:"));
       print(List.toString(aux_eqns, function Equation.pointerToString(str=""), List.Style.NEWLINE_TAB) + "\n\n");
@@ -223,30 +223,30 @@ protected
 
   function detectDiscreteStatesDefault extends Module.detectDiscreteStatesInterface;
   protected
-    Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> acc_clocked_states = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> acc_clocked_states = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> acc_previous = PointerCyclic.create({});
   algorithm
     // collect all states on the lhs of a when
     EquationPointers.map(equations, function collectDiscreteStatesFromWhen(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous, scalarized = variables.scalarized));
     // collect all pre(d)
     EquationPointers.mapExp(equations, function collectPreAndPrevious(acc_previous = acc_previous, acc_clocked_states = acc_clocked_states, scalarized = variables.scalarized));
     // move stuff to their correct arrays
-    (variables, knowns, initials, discretes, discrete_states, clocked_states, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, discrete_states, clocked_states, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_clocked_states), Pointer.access(acc_previous), context);
+    (variables, knowns, initials, discretes, discrete_states, clocked_states, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, discrete_states, clocked_states, previous, PointerCyclic.access(acc_discrete_states), PointerCyclic.access(acc_clocked_states), PointerCyclic.access(acc_previous), context);
   end detectDiscreteStatesDefault;
 
   function collectStatesAndDerivatives
     "Collects all states and creates a derivative variable for each."
     input output Expression exp;
-    input Pointer<list<Pointer<Variable>>> acc_states;
-    input Pointer<list<Pointer<Variable>>> acc_derivatives;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_derivatives;
     input Boolean scalarized;
   algorithm
     exp := match exp
       local
         Expression res;
         ComponentRef state_cref, der_cref;
-        Pointer<Variable> state_var, der_var;
+        PointerCyclic<Variable> state_var, der_var;
 
       // parse all der(x) calls where x is not a state derivative. those need to be handled by resolveGeneralDer()
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),
@@ -266,8 +266,8 @@ protected
               (der_cref, der_var) := BVariable.makeDerVar(state_cref, scalarized);
               state_var := BVariable.getVarPointer(state_cref, sourceInfo());
               BVariable.setStateDerivativeVar(state_var, der_var);
-              Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
-              Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
+              PointerCyclic.update(acc_states, state_var :: PointerCyclic.access(acc_states));
+              PointerCyclic.update(acc_derivatives, der_var :: PointerCyclic.access(acc_derivatives));
             end if;
             res := Expression.fromCref(der_cref);
           end if;
@@ -280,18 +280,18 @@ protected
   function resolveGeneralDer
     "Collects all states and creates a derivative variable for each."
     input output Expression exp;
-    input Pointer<list<Pointer<Variable>>> acc_states;
-    input Pointer<list<Pointer<Variable>>> acc_derivatives;
-    input Pointer<list<Pointer<Equation>>> acc_aux_equations;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_derivatives;
+    input PointerCyclic<list<PointerCyclic<Equation>>> acc_aux_equations;
     input Pointer<Integer> uniqueIndex;
     input Differentiate.DifferentiationArguments diffArgs;
   algorithm
     exp := match exp
       local
         ComponentRef state_cref, der_cref;
-        Pointer<Variable> state_var, der_var;
+        PointerCyclic<Variable> state_var, der_var;
         Expression arg, returnExp;
-        Pointer<Equation> aux_equation;
+        PointerCyclic<Equation> aux_equation;
         Differentiate.DifferentiationArguments oDiffArgs;
 
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")), arguments = {arg}))
@@ -302,17 +302,17 @@ protected
             aux_equation := Equation.makeAssignment(Expression.fromCref(state_cref), arg, uniqueIndex, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false));
             returnExp := Expression.fromCref(der_cref);
 
-            Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
-            Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
-            Pointer.update(acc_aux_equations, aux_equation :: Pointer.access(acc_aux_equations));
+            PointerCyclic.update(acc_states, state_var :: PointerCyclic.access(acc_states));
+            PointerCyclic.update(acc_derivatives, der_var :: PointerCyclic.access(acc_derivatives));
+            PointerCyclic.update(acc_aux_equations, aux_equation :: PointerCyclic.access(acc_aux_equations));
           else
             // one or less algebraic variables > differentiate the expression
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
             returnExp := SimplifyExp.simplifyDump(returnExp, true, getInstanceName());
             if List.hasOneElement(oDiffArgs.new_vars) then
               der_var := listHead(oDiffArgs.new_vars);
-              Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
-              Pointer.update(acc_states, Util.getOption(BVariable.getVarState(der_var)) :: Pointer.access(acc_states));
+              PointerCyclic.update(acc_derivatives, der_var :: PointerCyclic.access(acc_derivatives));
+              PointerCyclic.update(acc_states, Util.getOption(BVariable.getVarState(der_var)) :: PointerCyclic.access(acc_states));
             elseif List.hasSeveralElements(oDiffArgs.new_vars) then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the number of algebraic variables were miscounted! " +
                 "Expected: 0 or 1, got: " + intString(listLength(oDiffArgs.new_vars))});
@@ -348,8 +348,8 @@ protected
     input output VariablePointers states         "States";
     input output VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
     input output VariablePointers algebraics     "Algebraic variables";
-    input list<Pointer<Variable>> acc_states;
-    input list<Pointer<Variable>> acc_derivatives;
+    input list<PointerCyclic<Variable>> acc_states;
+    input list<PointerCyclic<Variable>> acc_derivatives;
   algorithm
     // Add the new derivatives to variables, unknowns and derivative pointer arrays
     variables := VariablePointers.addList(acc_derivatives, variables);
@@ -378,8 +378,8 @@ protected
   function collectPreAndPrevious
     "Collects all pre and previous variables. Only to be used on discrete equations!"
     input output Expression exp;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
-    input Pointer<list<Pointer<Variable>>> acc_clocked_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_clocked_states;
     input Boolean scalarized;
   algorithm
     exp := match exp
@@ -408,7 +408,7 @@ protected
         (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "previous");
         () := match old_exp
           case Expression.CREF() algorithm
-            Pointer.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref, sourceInfo()) :: Pointer.access(acc_clocked_states));
+            PointerCyclic.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref, sourceInfo()) :: PointerCyclic.access(acc_clocked_states));
           then ();
 
           else algorithm
@@ -445,14 +445,14 @@ protected
     "takes a list of arguments (expected to be only one cref) and creates the pre variable from it.
     used for pre(), edge(), change()"
     input list<Expression> args;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
     input Boolean scalarized;
     input String context;
     output Expression new_exp;
     output Expression old_exp;
   protected
     ComponentRef state_cref, pre_cref;
-    Pointer<Variable> state_var;
+    PointerCyclic<Variable> state_var;
     Boolean negated;
   algorithm
     (state_var, old_exp, negated) := match args
@@ -480,9 +480,9 @@ protected
     input output VariablePointers discrete_states "Discrete state variables";
     input output VariablePointers clocked_states  "Clocked state variables";
     input output VariablePointers previous        "Previous (left limit) variables";
-    input list<Pointer<Variable>> acc_discrete_states;
-    input list<Pointer<Variable>> acc_clocked_states;
-    input list<Pointer<Variable>> acc_previous;
+    input list<PointerCyclic<Variable>> acc_discrete_states;
+    input list<PointerCyclic<Variable>> acc_clocked_states;
+    input list<PointerCyclic<Variable>> acc_previous;
     input String context                          "only for debugging";
   algorithm
     // Add the new derivatives to variables, unknowns and derivative pointer arrays
@@ -520,8 +520,8 @@ protected
   function collectDiscreteStatesFromWhen
     "All variables on the LHS in a when equation are considered discrete."
     input output Equation eqn "outputs equation just to fit the map() interface. does not change.";
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     () := match eqn
@@ -543,15 +543,15 @@ protected
   function collectDiscreteStatesFromWhenBody
     "All variables on the LHS in a when equation are considered discrete."
     input WhenEquationBody body;
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
           ComponentRef state_cref;
-          Pointer<Variable> state_var;
+          PointerCyclic<Variable> state_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
           // the function getPreVar() does all necessary collecting of information
@@ -559,7 +559,7 @@ protected
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
           BVariable.makeDiscreteStateVar(state_var);
           getPreVar(state_cref, state_var, acc_previous, scalarized);
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+          PointerCyclic.update(acc_discrete_states, state_var :: PointerCyclic.access(acc_discrete_states));
         then ();
 
         else ();
@@ -569,12 +569,12 @@ protected
 
   function collectDiscreteStatesFromWhenInIf
     input IfEquationBody body;
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
     input Boolean scalarized;
   algorithm
     for eqn in body.then_eqns loop
-      collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
+      collectDiscreteStatesFromWhen(PointerCyclic.access(eqn), acc_discrete_states, acc_previous, scalarized);
     end for;
     if isSome(body.else_if) then
       collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
@@ -583,13 +583,13 @@ protected
 
   function getPreVar
     input ComponentRef var_cref;
-    input Pointer<Variable> var_ptr;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<Variable> var_ptr;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
     input Boolean scalarized;
     output ComponentRef pre_cref;
   protected
-    Option<Pointer<Variable>> pre = BVariable.getVarPre(var_ptr);
-    Pointer<Variable> pre_var;
+    Option<PointerCyclic<Variable>> pre = BVariable.getVarPre(var_ptr);
+    PointerCyclic<Variable> pre_var;
   algorithm
     if isSome(pre) then
       SOME(pre_var) := pre;
@@ -603,31 +603,31 @@ protected
       else
         (pre_cref, pre_var) := BVariable.makePreVar(var_cref);
       end if;
-      Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
+      PointerCyclic.update(acc_previous, pre_var :: PointerCyclic.access(acc_previous));
     end if;
   end getPreVar;
 
   public function findDiscreteStatesFromWhenBody
     "All variables on the LHS in a when equation are considered discrete, add these to acc lists"
     input WhenEquationBody body;
-    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
-    input Pointer<list<Pointer<Variable>>> acc_previous;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_discrete_states;
+    input PointerCyclic<list<PointerCyclic<Variable>>> acc_previous;
   algorithm
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
           ComponentRef state_cref;
-          Pointer<Variable> state_var, pre_var;
+          PointerCyclic<Variable> state_var, pre_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
           () := match BVariable.getVarPre(state_var)
             case SOME(pre_var) algorithm
-              Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
+              PointerCyclic.update(acc_previous, pre_var :: PointerCyclic.access(acc_previous));
             then ();
             else ();
           end match;
-          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+          PointerCyclic.update(acc_discrete_states, state_var :: PointerCyclic.access(acc_discrete_states));
         then ();
         else ();
       end match;
@@ -673,10 +673,10 @@ protected
     input output VariablePointers derivatives;
     input output VariablePointers algebraics;
   protected
-    list<Pointer<Variable>> acc_prefer_states = {};
-    list<Pointer<Variable>> acc_prefer_ders = {};
+    list<PointerCyclic<Variable>> acc_prefer_states = {};
+    list<PointerCyclic<Variable>> acc_prefer_ders = {};
     ComponentRef der_cref;
-    Pointer<Variable> der_var;
+    PointerCyclic<Variable> der_var;
   algorithm
     // only promote if the model is dynamic (has at least one der() call)
     if VariablePointers.size(states) > 0 then
@@ -716,7 +716,7 @@ protected
     input ComponentRef rhs;
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
   protected
-    Pointer<Variable> state;
+    PointerCyclic<Variable> state;
   algorithm
     () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)

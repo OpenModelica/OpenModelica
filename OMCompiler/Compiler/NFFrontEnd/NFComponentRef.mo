@@ -563,9 +563,9 @@ public
   algorithm
     attrValue := match cref
       local
-        Pointer<Variable> v;
+        PointerCyclic<Variable> v;
       case CREF(node = InstNode.VAR_NODE(varPointer = v))
-        then Binding.typedExp(Variable.lookupTypeAttribute(attr_name, Pointer.access(v)));
+        then Binding.typedExp(Variable.lookupTypeAttribute(attr_name, PointerCyclic.access(v)));
       else NONE();
     end match;
   end lookupVarAttr;
@@ -577,11 +577,11 @@ public
   algorithm
     var := match cref
       local
-        Pointer<Variable> v;
+        PointerCyclic<Variable> v;
       case CREF(node = InstNode.COMPONENT_NODE())
         then Component.variability(InstNode.component(cref.node));
       case CREF(node = InstNode.CLASS_NODE()) then Variability.CONSTANT;
-      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then Variable.variability(Pointer.access(v));
+      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then Variable.variability(PointerCyclic.access(v));
       else Variability.CONTINUOUS;
     end match;
   end nodeVariability;
@@ -593,14 +593,14 @@ public
   algorithm
     b := match cref
       local
-        Pointer<Variable> v;
+        PointerCyclic<Variable> v;
 
       // frontend check
       case CREF(node = InstNode.COMPONENT_NODE())
         then Component.isResizable(InstNode.component(cref.node));
 
       // backend check
-      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then match Pointer.access(v)
+      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then match PointerCyclic.access(v)
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(annotations = Annotations.ANNOTATIONS(resizable = b))) then b;
           else false;
         end match;

@@ -56,16 +56,16 @@ public
   algorithm
     bdae := match bdae
       local
-        Pointer<Equation> bind_eqn                  "binding equation";
+        PointerCyclic<Equation> bind_eqn                  "binding equation";
         VarData varData                             "Data containing variable pointers";
         EqData eqData                               "Data containing equation pointers";
-        list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
-        list<Pointer<Variable>> bound_clocks        "list of bound clock variables";
-        list<Pointer<Equation>> binding_cont = {}   "list of created continuous binding equations";
-        list<Pointer<Equation>> binding_clck = {}   "list of created clocked binding equations";
-        list<Pointer<Equation>> binding_disc = {}   "list of created discrete binding equations";
-        list<Pointer<Equation>> binding_rec = {}    "list of created record binding equations";
-        Pointer<Variable> parent                    "optional record parent";
+        list<PointerCyclic<Variable>> bound_vars          "list of bound unknown variables";
+        list<PointerCyclic<Variable>> bound_clocks        "list of bound clock variables";
+        list<PointerCyclic<Equation>> binding_cont = {}   "list of created continuous binding equations";
+        list<PointerCyclic<Equation>> binding_clck = {}   "list of created clocked binding equations";
+        list<PointerCyclic<Equation>> binding_disc = {}   "list of created discrete binding equations";
+        list<PointerCyclic<Equation>> binding_rec = {}    "list of created record binding equations";
+        PointerCyclic<Variable> parent                    "optional record parent";
         Boolean skip_record_element                 "true if this variable is part of an array and the array variable is bound";
         UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
 

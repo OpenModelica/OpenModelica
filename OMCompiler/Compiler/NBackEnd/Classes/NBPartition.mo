@@ -143,8 +143,8 @@ public
       input UnorderedSet<ComponentRef> infer_del;
       output Association association;
     protected
-      Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
-      Pointer<Option<ComponentRef>> infer_ptr = Pointer.create(NONE());
+      PointerCyclic<Option<ClockTpl>> clock_ptr = PointerCyclic.create(NONE());
+      PointerCyclic<Option<ComponentRef>> infer_ptr = PointerCyclic.create(NONE());
       UnorderedSet<ClockTpl> failed_set = UnorderedSet.new(hashClockTpl, isEqualClockTpl);
       UnorderedSet<BClock> clock_deps = UnorderedSet.new(BClock.hash, BClock.isEqual);
       Option<ClockTpl> clock_tpl;
@@ -156,8 +156,8 @@ public
         info = info, clock_ptr = clock_ptr, infer_ptr = infer_ptr, failed_set = failed_set, clock_deps = clock_deps, infer_del = infer_del), NONE(), Expression.fakeMap);
 
       // get the clock tuple and the inferred reference
-      clock_tpl := Pointer.access(clock_ptr);
-      infer := Pointer.access(infer_ptr);
+      clock_tpl := PointerCyclic.access(clock_ptr);
+      infer := PointerCyclic.access(infer_ptr);
 
       if isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
@@ -254,8 +254,8 @@ public
       "checks if an expression is a clock and collects it. Also finds all other clock dependencies"
       input output Expression exp                     "the examined expression";
       input ClockedInfo info                          "contains all base- and sub-clocks";
-      input Pointer<Option<ClockTpl>> clock_ptr       "the first found clock";
-      input Pointer<Option<ComponentRef>> infer_ptr   "potential inferred clock dependency";
+      input PointerCyclic<Option<ClockTpl>> clock_ptr       "the first found clock";
+      input PointerCyclic<Option<ComponentRef>> infer_ptr   "potential inferred clock dependency";
       input UnorderedSet<ClockTpl> failed_set         "clocks that are not equal to the first found clock";
       input UnorderedSet<BClock> clock_deps           "clock dependencies found in sub sampling functions";
       input UnorderedSet<ComponentRef> infer_del      "inferred clocks that can be removed";
@@ -275,7 +275,7 @@ public
             clock_opt := NONE();
           end if;
 
-          () := match (clock_opt, Pointer.access(clock_ptr))
+          () := match (clock_opt, PointerCyclic.access(clock_ptr))
             local
               BClock new, old;
               ComponentRef name;
@@ -287,19 +287,19 @@ public
 
             // old base clock getting updated to new sub clock
             case (SOME(new as BClock.SUB_CLOCK()), SOME((_, BClock.BASE_CLOCK()))) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+              PointerCyclic.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 
             // old base clock is inferred --> always take new clock
             case (SOME(new), SOME((_, BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+              PointerCyclic.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 
             // clocks -> equal: success / different: fail
             case (SOME(new), SOME((_, old))) algorithm
               // if the old clock is inferred just override it
               if BClock.isInferredClock(old) then
-                Pointer.update(clock_ptr, SOME((exp.cref, new)));
+                PointerCyclic.update(clock_ptr, SOME((exp.cref, new)));
               elseif not (BClock.isInferredClock(new) or BClock.isEqual(new, old)) then
                 UnorderedSet.add((exp.cref, new), failed_set);
               end if;
@@ -307,7 +307,7 @@ public
 
             // new clock
             case (SOME(new), NONE()) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+              PointerCyclic.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 
             else ();
@@ -318,7 +318,7 @@ public
         case Expression.CALL(call = Call.TYPED_CALL(arguments = Expression.CREF(cref = arg) :: _)) guard(Expression.isClockOrSampleFunction(exp)) algorithm
           if UnorderedMap.contains(arg, info.subClocks) then
             UnorderedSet.add(UnorderedMap.getSafe(arg, info.subClocks, sourceInfo()), clock_deps);
-            Pointer.update(infer_ptr, SOME(arg));
+            PointerCyclic.update(infer_ptr, SOME(arg));
           end if;
         then exp;
 
@@ -662,7 +662,7 @@ public
 
     function getLoopResiduals
       input Partition part;
-      output list<Pointer<Variable>> residuals = {};
+      output list<PointerCyclic<Variable>> residuals = {};
     algorithm
       if isSome(part.strongComponents) then
         for comp in Util.getOption(part.strongComponents) loop

@@ -109,8 +109,21 @@ impl HandwrittenItems {
 /// analysis must not classify them as defaultable just because their MM-side
 /// fields happen to be. Any hand-written `Default` impls for such types are
 /// registered via [`EXTERNAL_DEFAULTABLE_QNAMES`] instead.
+/// The `Mutable` cell constructors. `MutableCyclic` is the flavour whose
+/// content may transitively contain the cell itself; the two differ only in
+/// the representation the Rust port gives them (see `Util/MutableCyclic.mo`).
+pub(crate) fn is_mutable_ctor(name: &str) -> bool {
+    matches!(name, "Mutable" | "MutableCyclic")
+}
+
+/// Every cell constructor, `Pointer` flavours included.
+pub(crate) fn is_cell_ctor(name: &str) -> bool {
+    is_mutable_ctor(name) || matches!(name, "Pointer" | "PointerCyclic")
+}
+
 const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
-    "Mutable", "GCExt", "Pointer", "File", "Global", "Vector",
+    "Mutable", "MutableCyclic", "GCExt", "Pointer", "PointerCyclic",
+    "File", "Global", "Vector",
     "ErrorExt", "Print", "ParserExt", "System", "Settings",
     "StackOverflow", "BackendDAEEXT",
     // Its `external "C"` bodies (`serializeJ`/`serializeC`) exist only as
@@ -3828,9 +3841,9 @@ fn emit_dyn_field_eq(ty: &Ty, l: &str, r: &str) -> String {
         // element is a tuple of `partial function` callbacks) has no `==`.
         // Lock both wrappers via the public `access` clone and compare the
         // inner values structurally with the same recursion.
-        Ty::Generic(name, args) if name == "Mutable" && args.len() == 1 => {
+        Ty::Generic(name, args) if is_mutable_ctor(name) && args.len() == 1 => {
             let inner_eq = emit_dyn_field_eq(&args[0], "(&__lmut)", "(&__rmut)");
-            format!("{{ let __lmut = Mutable::access({l}.clone()); let __rmut = Mutable::access({r}.clone()); {inner_eq} }}")
+            format!("{{ let __lmut = {name}::access({l}.clone()); let __rmut = {name}::access({r}.clone()); {inner_eq} }}")
         }
         _ => {
             // Function-tainted container we can't structurally descend
@@ -3876,9 +3889,9 @@ fn emit_dyn_field_cmp(ty: &Ty, l: &str, r: &str) -> String {
             format!("(match ({l}, {r}) {{ (Some(__lo), Some(__ro)) => {inner_cmp}, (None, None) => std::cmp::Ordering::Equal, (None, Some(_)) => std::cmp::Ordering::Less, (Some(_), None) => std::cmp::Ordering::Greater }})")
         }
         // `Mutable<T>` — see the `emit_dyn_field_eq` Mutable arm.
-        Ty::Generic(name, args) if name == "Mutable" && args.len() == 1 => {
+        Ty::Generic(name, args) if is_mutable_ctor(name) && args.len() == 1 => {
             let inner_cmp = emit_dyn_field_cmp(&args[0], "(&__lmut)", "(&__rmut)");
-            format!("{{ let __lmut = Mutable::access({l}.clone()); let __rmut = Mutable::access({r}.clone()); {inner_cmp} }}")
+            format!("{{ let __lmut = {name}::access({l}.clone()); let __rmut = {name}::access({r}.clone()); {inner_cmp} }}")
         }
         _ => {
             let shape = format!("{ty:?}").replace('\\', "/").replace('"', "'");
@@ -3910,9 +3923,9 @@ fn emit_dyn_field_hash(ty: &Ty, v: &str, state: &str) -> String {
         // one has `supports_hash == false` and no `Hash` impl is emitted —
         // this arm is defensive (descend into the inner value) for the case a
         // future change does request it.
-        Ty::Generic(name, args) if name == "Mutable" && args.len() == 1 => {
+        Ty::Generic(name, args) if is_mutable_ctor(name) && args.len() == 1 => {
             let inner_h = emit_dyn_field_hash(&args[0], "(&__hmut)", state);
-            format!("{{ let __hmut = Mutable::access({v}.clone()); {inner_h} }}")
+            format!("{{ let __hmut = {name}::access({v}.clone()); {inner_h} }}")
         }
         _ => {
             let shape = format!("{ty:?}").replace('\\', "/").replace('"', "'");
@@ -4267,9 +4280,9 @@ fn default_value_expr_for_field_ty(fty: &Ty, ctx: &mut GenCtx, top_level: &BTree
             // `T` become panicking placeholders via the recursion). Used by
             // e.g. the `MidCode` env struct's `vars: Mutable<HashTableMidVar>`
             // field, whose `HashTableMidVar` is a function-bearing tuple.
-            Ty::Generic(gname, gargs) if gname == "Mutable" && gargs.len() == 1 => {
+            Ty::Generic(gname, gargs) if is_mutable_ctor(gname) && gargs.len() == 1 => {
                 let inner = default_value_expr_for_field_ty(&gargs[0], ctx, top_level);
-                return format!("Mutable::create({inner})");
+                return format!("{gname}::create({inner})");
             }
             _ => {
                 // Unsupported function-tainted container at this position
@@ -4510,7 +4523,7 @@ fn stmts_have_tail_self_call(
 ) -> bool {
     let Some(last) = stmts.last() else { return false; };
     match last {
-        typedexp::TypedStmt::Assign { lhs, rhs } if pat_is_output_target(lhs, out_names) => {
+        typedexp::TypedStmt::Assign { lhs, rhs, .. } if pat_is_output_target(lhs, out_names) => {
             exp_has_tail_self_call(rhs, self_short_name)
         }
         typedexp::TypedStmt::If { then_, elseif, else_, .. } => {
@@ -4732,7 +4745,7 @@ fn stmt_has_nonexhaustive_match(stmt: &typedexp::TypedStmt, top_level: &BTreeMap
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => exp_has_nonexhaustive_match(rhs, top_level),
-        S::NoRetCall { call } => exp_has_nonexhaustive_match(call, top_level),
+        S::NoRetCall { call, .. } => exp_has_nonexhaustive_match(call, top_level),
         S::If { cond, then_, elseif, else_ } => {
             exp_has_nonexhaustive_match(cond, top_level)
                 || then_.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level))
@@ -4814,7 +4827,7 @@ fn body_has_nonexhaustive_nontail_match(
     let Some((last, head)) = stmts.split_last() else { return false; };
     if head.iter().any(|s| stmt_has_nonexhaustive_match(s, top_level)) { return true; }
     match last {
-        typedexp::TypedStmt::Assign { lhs, rhs } if pat_is_output_target(lhs, out_names) => {
+        typedexp::TypedStmt::Assign { lhs, rhs, .. } if pat_is_output_target(lhs, out_names) => {
             tail_exp_has_nonexhaustive_nontail_match(rhs, self_name, fallible, top_level)
         }
         typedexp::TypedStmt::If { cond, then_, elseif, else_ } => {
@@ -4852,7 +4865,7 @@ fn stmts_read_name(stmts: &[typedexp::TypedStmt], name: &str) -> bool {
 fn stmt_reads_name(stmt: &typedexp::TypedStmt, name: &str) -> bool {
     use typedexp::TypedStmt as S;
     match stmt {
-        S::Assign { lhs, rhs } => {
+        S::Assign { lhs, rhs, .. } => {
             // The LHS being exactly `Var(name)` is a write, not a read. Any
             // other LHS shape (tuple destructure, segments) doesn't have the
             // name at top-level — but if it appears nested (e.g. as a tuple
@@ -4861,7 +4874,7 @@ fn stmt_reads_name(stmt: &typedexp::TypedStmt, name: &str) -> bool {
             let lhs_write_only = matches!(lhs, TypedPat::Var(n) if n == name);
             (!lhs_write_only && pat_reads_name(lhs, name)) || exp_reads_name(rhs, name)
         }
-        S::NoRetCall { call } => exp_reads_name(call, name),
+        S::NoRetCall { call, .. } => exp_reads_name(call, name),
         S::If { cond, then_, elseif, else_ } => {
             exp_reads_name(cond, name)
                 || stmts_read_name(then_, name)
@@ -4896,7 +4909,7 @@ fn stmts_break_under_try(stmts: &[typedexp::TypedStmt], in_try: bool) -> bool {
     stmts.iter().any(|s| match s {
         S::Break | S::Continue => in_try,
         S::Assign { rhs, .. } => exp_break_under_try(rhs, in_try),
-        S::NoRetCall { call } => exp_break_under_try(call, in_try),
+        S::NoRetCall { call, .. } => exp_break_under_try(call, in_try),
         S::If { cond, then_, elseif, else_ } => {
             exp_break_under_try(cond, in_try)
                 || stmts_break_under_try(then_, in_try)
@@ -5079,7 +5092,7 @@ fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan)
     use typedexp::TypedPat as P;
     if !scan.ok { return; }
     match stmt {
-        S::Assign { lhs, rhs } => {
+        S::Assign { lhs, rhs, .. } => {
             if let P::Index { base, index } = lhs {
                 if is_bare_var(base, name) {
                     // `name[idx] := v` — a subscript write; needs borrow_mut.
@@ -5103,7 +5116,7 @@ fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan)
             }
             hoist_scan_exp(rhs, name, scan);
         }
-        S::NoRetCall { call } => hoist_scan_exp(call, name, scan),
+        S::NoRetCall { call, .. } => hoist_scan_exp(call, name, scan),
         S::If { cond, then_, elseif, else_ } => {
             hoist_scan_exp(cond, name, scan);
             hoist_scan_stmts(then_, name, scan);
@@ -5434,7 +5447,7 @@ fn exp_all_var_names(e: &TypedExp) -> Option<Vec<&str>> {
 /// algorithm-side-recursion shape, generalised to multiple outputs). Returns
 /// that RHS, else `None`.
 fn case_algo_tail_rhs(case: &typedexp::TypedCase) -> Option<&TypedExp> {
-    let typedexp::TypedStmt::Assign { lhs, rhs } = case.stmts.last()? else { return None; };
+    let typedexp::TypedStmt::Assign { lhs, rhs, .. } = case.stmts.last()? else { return None; };
     let lhs_names = pat_all_var_names(lhs)?;
     let res_names = exp_all_var_names(&case.result)?;
     if lhs_names == res_names { Some(rhs) } else { None }
@@ -5452,7 +5465,7 @@ fn body_has_return(stmts: &[typedexp::TypedStmt]) -> bool {
     stmts.iter().any(|s| match s {
         S::Return => true,
         S::Assign { rhs, .. } => exp_has_return(rhs),
-        S::NoRetCall { call } => exp_has_return(call),
+        S::NoRetCall { call, .. } => exp_has_return(call),
         S::If { cond, then_, elseif, else_ } => {
             exp_has_return(cond)
                 || body_has_return(then_)
@@ -5560,7 +5573,7 @@ fn emit_stmts_as_tail<'a>(
     };
     emit_stmts(out, indent, head, FailureMode::Function, ctx, env, top_level, fresh);
     match last {
-        typedexp::TypedStmt::Assign { lhs, rhs } if pat_is_output_target(lhs, out_names) => {
+        typedexp::TypedStmt::Assign { lhs, rhs, .. } if pat_is_output_target(lhs, out_names) => {
             let s = emit_tail_value_exp(rhs, self_name, fallible, ctx, top_level);
             writeln!(out, "{indent}{s}").unwrap();
         }
@@ -5738,7 +5751,7 @@ fn collect_type_vars_in_typed_stmts(stmts: &[typedexp::TypedStmt], out: &mut Vec
         for s in stmts {
             match s {
                 TypedStmt::Assign { rhs, .. } => visit_exp(rhs, out),
-                TypedStmt::NoRetCall { call } => visit_exp(call, out),
+                TypedStmt::NoRetCall { call, .. } => visit_exp(call, out),
                 TypedStmt::If { cond, then_, elseif, else_ } => {
                     visit_exp(cond, out); visit_stmts(then_, out); visit_stmts(else_, out);
                     for (c, body) in elseif { visit_exp(c, out); visit_stmts(body, out); }
@@ -5808,13 +5821,13 @@ fn live_stmts(stmts: &mut [TypedStmt], live: &mut HashSet<String>, outputs: &Has
 
 fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, outputs: &HashSet<String>) {
     match stmt {
-        TypedStmt::Assign { lhs, rhs } => {
+        TypedStmt::Assign { lhs, rhs, .. } => {
             // The LHS pattern (re)defines the bound names — they are dead before
             // the RHS runs — and reads any subscript/field base it targets.
             pat_kill_and_gen(lhs, live, outputs);
             live_exp(rhs, live, outputs);
         }
-        TypedStmt::NoRetCall { call } => live_exp(call, live, outputs),
+        TypedStmt::NoRetCall { call, .. } => live_exp(call, live, outputs),
         TypedStmt::If { cond, then_, elseif, else_ } => {
             // Branches are mutually exclusive: analyse each from the same
             // post-`if` live set, then union their live-ins for the enclosing
@@ -6193,7 +6206,7 @@ fn collect_moved_names(exp: &TypedExp, out: &mut HashSet<String>) {
 fn collect_moved_names_stmt(stmt: &TypedStmt, out: &mut HashSet<String>) {
     match stmt {
         TypedStmt::Assign { rhs, .. } => collect_moved_names(rhs, out),
-        TypedStmt::NoRetCall { call } => collect_moved_names(call, out),
+        TypedStmt::NoRetCall { call, .. } => collect_moved_names(call, out),
         TypedStmt::If { cond, then_, elseif, else_ } => {
             collect_moved_names(cond, out);
             for st in then_ { collect_moved_names_stmt(st, out); }
@@ -6225,7 +6238,7 @@ fn collect_moved_names_stmt(stmt: &TypedStmt, out: &mut HashSet<String>) {
 fn clear_last_use_stmt(stmt: &mut TypedStmt) {
     match stmt {
         TypedStmt::Assign { rhs, .. } => clear_last_use(rhs),
-        TypedStmt::NoRetCall { call } => clear_last_use(call),
+        TypedStmt::NoRetCall { call, .. } => clear_last_use(call),
         TypedStmt::If { cond, then_, elseif, else_ } => {
             clear_last_use(cond);
             for s in then_.iter_mut() {
@@ -6425,11 +6438,11 @@ fn collect_stmts_names(stmts: &[TypedStmt], out: &mut HashSet<String>) {
 
 fn collect_stmt_names(stmt: &TypedStmt, out: &mut HashSet<String>) {
     match stmt {
-        TypedStmt::Assign { lhs, rhs } => {
+        TypedStmt::Assign { lhs, rhs, .. } => {
             collect_pat_names(lhs, out);
             collect_exp_names(rhs, out);
         }
-        TypedStmt::NoRetCall { call } => collect_exp_names(call, out),
+        TypedStmt::NoRetCall { call, .. } => collect_exp_names(call, out),
         TypedStmt::If { cond, then_, elseif, else_ } => {
             collect_exp_names(cond, out);
             collect_stmts_names(then_, out);
@@ -10136,6 +10149,23 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
         }
 
         TypedExp::Constructor { name, args, named_args, ty, field_names } => {
+            // A retired variant is not carried over to the Rust port (see
+            // `MM::strip_retired`): its fields are gone, so there is nothing to
+            // construct. Match arms on it were already dropped in typedexp, so
+            // reaching this is a bug rather than a supported path.
+            let retired_qname = match ty {
+                Ty::UnionTypeVariant(parent, variant) => {
+                    Some(format!("{parent}.{variant}")).filter(|q| crate::MM::is_retired_qname(q))
+                }
+                Ty::RustStruct(qname) if crate::MM::is_retired_qname(qname) => Some(qname.clone()),
+                _ => None,
+            }
+            .or_else(|| crate::MM::is_retired_simple_name(name).then(|| name.clone()));
+            if let Some(q) = retired_qname {
+                return format!(
+                    "unreachable!(\"{q} is retired and not implemented in the Rust port\")"
+                );
+            }
             let mut arg_strs = Vec::new();
             // Normalise: a constructor whose static type is a
             // `UnionTypeVariant(parent, variant)` — produced by the unit-variant
@@ -16484,7 +16514,7 @@ fn stmts_need_match_deref(stmts: &[typedexp::TypedStmt], ctx: &GenCtx, top_level
     use typedexp::TypedStmt as S;
     stmts.iter().any(|s| match s {
         S::Assign { rhs, .. } => exp_needs_match_deref(rhs, ctx, top_level),
-        S::NoRetCall { call } => exp_needs_match_deref(call, ctx, top_level),
+        S::NoRetCall { call, .. } => exp_needs_match_deref(call, ctx, top_level),
         S::If { cond, then_, elseif, else_ } => {
             exp_needs_match_deref(cond, ctx, top_level)
                 || stmts_need_match_deref(then_, ctx, top_level)
@@ -16680,11 +16710,11 @@ fn stmts_assigned_var_names(stmts: &[typedexp::TypedStmt], out: &mut HashSet<Str
     use typedexp::TypedStmt as S;
     for s in stmts {
         match s {
-            S::Assign { lhs, rhs } => {
+            S::Assign { lhs, rhs, .. } => {
                 pat_assigned_names(lhs, out);
                 exp_assigned_var_names(rhs, out);
             }
-            S::NoRetCall { call } => exp_assigned_var_names(call, out),
+            S::NoRetCall { call, .. } => exp_assigned_var_names(call, out),
             S::If { cond, then_, elseif, else_ } => {
                 exp_assigned_var_names(cond, out);
                 stmts_assigned_var_names(then_, out);
@@ -18024,7 +18054,7 @@ fn try_emit_reference_eq<'a>(
         _ if referenceeq_derefs_to_pointee(ty, ctx) => {
             Some(format!("referenceEq(&*({lhs}),&*({rhs}))"))
         }
-        Ty::Generic(name, _) if matches!(name.as_str(), "Mutable" | "Pointer") => {
+        Ty::Generic(name, _) if is_cell_ctor(name) => {
             Some(format!("{name}::referenceEq(&({lhs}), &({rhs}))"))
         }
         Ty::Option(inner) => {
@@ -19474,7 +19504,7 @@ impl<'s> FieldAssignPlan<'s> {
         top_level: &'a BTreeMap<String, NameNode<'a>>,
     ) -> FieldAssignKind {
         let FieldAssignPlan { stmt, base_name, base_ty, record_qname, variant } = self;
-        let typedexp::TypedStmt::Assign { lhs, rhs } = stmt else { unreachable!() };
+        let typedexp::TypedStmt::Assign { lhs, rhs, .. } = stmt else { unreachable!() };
         let TypedPat::FieldAccess { field, .. } = lhs else { unreachable!() };
 
         let scrut_ty = rhs.ty();
@@ -20309,7 +20339,7 @@ fn else_tail_reraises(stmts: &[typedexp::TypedStmt]) -> bool {
     use typedexp::TypedStmt as S;
     let Some(last) = stmts.last() else { return false };
     match last {
-        S::NoRetCall { call } => is_plain_fail_call(call),
+        S::NoRetCall { call, .. } => is_plain_fail_call(call),
         S::If { then_, elseif, else_, .. } =>
             !else_.is_empty()
                 && else_tail_reraises(then_)
@@ -20370,13 +20400,13 @@ fn stmt_flow(s: &typedexp::TypedStmt) -> FlowResult {
     use typedexp::TypedStmt as S;
     match s {
         S::Return | S::Break | S::Continue => FlowResult::Diverges,
-        S::Assign { lhs, rhs } => {
+        S::Assign { lhs, rhs, .. } => {
             if is_fail_call(rhs) { return FlowResult::Diverges; }
             let mut set = HashSet::new();
             pat_assigned_names(lhs, &mut set);
             FlowResult::FallsThrough(set)
         }
-        S::NoRetCall { call } => {
+        S::NoRetCall { call, .. } => {
             if is_fail_call(call) { FlowResult::Diverges }
             else { FlowResult::FallsThrough(HashSet::new()) }
         }
@@ -20565,7 +20595,7 @@ impl<'a> UseBeforeDef<'a> {
     fn walk_stmt(&mut self, s: &typedexp::TypedStmt, assigned: &mut HashSet<String>) -> UbdFlow {
         use typedexp::TypedStmt as S;
         match s {
-            S::Assign { lhs, rhs } => {
+            S::Assign { lhs, rhs, .. } => {
                 self.walk_exp(rhs, assigned);
                 if is_fail_call(rhs) { return UbdFlow::Diverges; }
                 let mut defs = HashSet::new();
@@ -20573,7 +20603,7 @@ impl<'a> UseBeforeDef<'a> {
                 for d in defs { if self.tracked.contains(&d) { assigned.insert(d); } }
                 UbdFlow::Falls
             }
-            S::NoRetCall { call } => {
+            S::NoRetCall { call, .. } => {
                 self.walk_exp(call, assigned);
                 if is_fail_call(call) { UbdFlow::Diverges } else { UbdFlow::Falls }
             }
@@ -20841,7 +20871,7 @@ fn emit_else_body<'a>(
     let Some((last, prefix)) = stmts.split_last() else { return };
     emit_stmts(out, indent, prefix, fail_mode.clone(), ctx, env, top_level, fresh);
     match last {
-        S::NoRetCall { call } if is_plain_fail_call(call) => {
+        S::NoRetCall { call, .. } if is_plain_fail_call(call) => {
             writeln!(out, "{indent}return Err({err});").unwrap();
         }
         S::If { cond, then_, elseif, else_ }
@@ -20926,7 +20956,7 @@ fn emit_stmt<'a>(
         None
     };
     match stmt {
-        S::Assign { lhs, rhs } => {
+        S::Assign { lhs, rhs, .. } => {
             // True when the RHS is an arrayCreateNoInit call.  Slots of the
             // resulting array are uninitialised; the first write to each slot
             // must use ptr::write (Dangerous::arrayInitSlot) rather than plain
@@ -21074,6 +21104,8 @@ fn emit_stmt<'a>(
                     let synth = typedexp::TypedStmt::Assign {
                         lhs: p.clone(),
                         rhs: typedexp::TypedExp::Var { name: tmp, segments: vec![], ty: elem_ty, last_use: false },
+                        // Synthesised, so it has no source span of its own.
+                        info: Absyn::dummyInfo.clone(),
                     };
                     emit_stmt(out, indent, &synth, fail_mode.clone(), ctx, env, top_level, fresh);
                 }
@@ -21185,7 +21217,7 @@ fn emit_stmt<'a>(
             }
             emit_pat_assign(out, indent, lhs, &scrut_ty, &scrut_expr, fail_mode, ctx, env, top_level, fresh);
         }
-        S::NoRetCall { call } => {
+        S::NoRetCall { call, .. } => {
             let s = emit_exp(call, false, ctx, top_level);
             writeln!(out, "{indent}{s};").unwrap();
             // The `?` propagates the Err that an always-failing helper
@@ -21403,7 +21435,7 @@ fn emit_stmt<'a>(
             } else { false };
             if rhs_is_fallible_call
                 && matches!(stmts_flow(else_body), FlowResult::Diverges)
-                && let typedexp::TypedStmt::Assign { lhs, rhs } = &body[0] {
+                && let typedexp::TypedStmt::Assign { lhs, rhs, .. } = &body[0] {
                     let scrut_ty = rhs.ty();
                     let scrut_expr = ctx.with_qmode(QMode::Bare, |ctx| {
                         emit_exp(rhs, /*is_const=*/false, ctx, top_level)
@@ -22043,7 +22075,7 @@ fn visit_stmt_for_refeq(stmt: &typedexp::TypedStmt, out: &mut std::collections::
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => visit_exp_for_refeq(rhs, out),
-        S::NoRetCall { call } => visit_exp_for_refeq(call, out),
+        S::NoRetCall { call, .. } => visit_exp_for_refeq(call, out),
         S::If { cond, then_, elseif, else_ } => {
             visit_exp_for_refeq(cond, out);
             for st in then_ { visit_stmt_for_refeq(st, out); }
@@ -22336,7 +22368,7 @@ fn propagate_stmt_partial_eq<'a>(
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => propagate_exp_partial_eq(rhs, required, top_level, pkg_prefix, out),
-        S::NoRetCall { call } => propagate_exp_partial_eq(call, required, top_level, pkg_prefix, out),
+        S::NoRetCall { call, .. } => propagate_exp_partial_eq(call, required, top_level, pkg_prefix, out),
         S::If { cond, then_, elseif, else_ } => {
             propagate_exp_partial_eq(cond, required, top_level, pkg_prefix, out);
             for s in then_ { propagate_stmt_partial_eq(s, required, top_level, pkg_prefix, out); }
@@ -22711,7 +22743,7 @@ fn visit_stmt_for_static(stmt: &typedexp::TypedStmt, out: &mut std::collections:
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => visit_exp_for_static(rhs, out),
-        S::NoRetCall { call } => visit_exp_for_static(call, out),
+        S::NoRetCall { call, .. } => visit_exp_for_static(call, out),
         S::If { cond, then_, elseif, else_ } => {
             visit_exp_for_static(cond, out);
             for s in then_ { visit_stmt_for_static(s, out); }
@@ -22844,7 +22876,7 @@ fn visit_stmt_for_eq(stmt: &typedexp::TypedStmt, out: &mut std::collections::Has
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => visit_exp_for_eq(rhs, out),
-        S::NoRetCall { call } => visit_exp_for_eq(call, out),
+        S::NoRetCall { call, .. } => visit_exp_for_eq(call, out),
         S::If { cond, then_, elseif, else_ } => {
             visit_exp_for_eq(cond, out);
             for s in then_ { visit_stmt_for_eq(s, out); }
@@ -23492,7 +23524,7 @@ fn collect_concrete_default_uses_in_stmt<'a>(
     use typedexp::TypedStmt as S;
     match stmt {
         S::Assign { rhs, .. } => collect_concrete_default_uses_in_exp(rhs, ever_assigned, default_required, top_level, pkg_prefix, out),
-        S::NoRetCall { call } => collect_concrete_default_uses_in_exp(call, ever_assigned, default_required, top_level, pkg_prefix, out),
+        S::NoRetCall { call, .. } => collect_concrete_default_uses_in_exp(call, ever_assigned, default_required, top_level, pkg_prefix, out),
         S::If { cond, then_, elseif, else_ } => {
             collect_concrete_default_uses_in_exp(cond, ever_assigned, default_required, top_level, pkg_prefix, out);
             for s in then_ { collect_concrete_default_uses_in_stmt(s, ever_assigned, default_required, top_level, pkg_prefix, out); }
@@ -23672,7 +23704,7 @@ fn is_ty_defaultable(ty: &Ty, defaultable_qnames: &HashSet<String>, exclude: Opt
         // Getting this wrong makes the codegen emit an `impl Default` for a
         // record carrying a `Mutable<non-Default>` field, which then fails to
         // satisfy `Mutable`'s own bound (e.g. `NFDuplicateTree.Tree`).
-        Ty::Generic(name, args) if name == "Mutable" =>
+        Ty::Generic(name, args) if is_mutable_ctor(name) =>
             args.iter().all(|t| is_ty_defaultable(t, defaultable_qnames, exclude)),
         // Container generics (Vec, HashMap, HashSet, ExpandableArray, ...) — empty
         // containers default fine regardless of element type.
@@ -23795,7 +23827,7 @@ fn collect_default_needs_in_stmts(
     for s in stmts {
         match s {
             S::Assign { rhs, .. } => collect_default_needs_in_exp(rhs, ever_assigned, out),
-            S::NoRetCall { call } => collect_default_needs_in_exp(call, ever_assigned, out),
+            S::NoRetCall { call, .. } => collect_default_needs_in_exp(call, ever_assigned, out),
             S::If { cond, then_, elseif, else_ } => {
                 collect_default_needs_in_exp(cond, ever_assigned, out);
                 collect_default_needs_in_stmts(then_, ever_assigned, out);

@@ -46,6 +46,7 @@ import Type = NFType;
 import NFFunction.Function;
 import Sections = NFSections;
 import Pointer;
+import PointerCyclic;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
@@ -255,7 +256,7 @@ uniontype InstNode
     String name;
     SCode.Element definition;
     Visibility visibility;
-    Pointer<Class> cls;
+    PointerCyclic<Class> cls;
     array<CachedData> caches;
     InstNode parentScope;
     InstNodeType nodeType;
@@ -265,7 +266,7 @@ uniontype InstNode
     String name;
     Option<SCode.Element> definition;
     Visibility visibility;
-    Pointer<Component> component;
+    PointerCyclic<Component> component;
     InstNode parent "The instance that this component is part of.";
     InstNodeType nodeType;
   end COMPONENT_NODE;
@@ -298,7 +299,7 @@ uniontype InstNode
     NOTE: Map and traversal functions are not allowed to follow the variable
     pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
     String name;
-    Pointer<Variable> varPointer;
+    PointerCyclic<Variable> varPointer;
   end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
@@ -325,7 +326,7 @@ uniontype InstNode
   algorithm
     SCode.CLASS(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent, nodeType);
+      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent, nodeType);
   end newClass;
 
   function newComponent
@@ -338,7 +339,7 @@ uniontype InstNode
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := COMPONENT_NODE(name, SOME(definition), Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
+      PointerCyclic.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
   end newComponent;
 
   function newExtends
@@ -353,7 +354,7 @@ uniontype InstNode
     SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
     name := AbsynUtil.pathLastIdent(base_path);
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
+      PointerCyclic.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
       InstNodeType.BASE_CLASS(parent, definition, nodeType(parent)));
   end newExtends;
 
@@ -390,7 +391,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, Pointer.create(component),
+    node := COMPONENT_NODE(name, NONE(), Visibility.PUBLIC, PointerCyclic.create(component),
                            parent, InstNodeType.NORMAL_COMP());
   end fromComponent;
 
@@ -477,7 +478,7 @@ uniontype InstNode
     output Boolean isFunc;
   algorithm
     isFunc := match node
-      case CLASS_NODE()     then Class.isFunction(Pointer.access(node.cls));
+      case CLASS_NODE()     then Class.isFunction(PointerCyclic.access(node.cls));
       case COMPONENT_NODE() then Class.isFunction(getClass(node));
       else false;
     end match;
@@ -499,7 +500,7 @@ uniontype InstNode
     output Boolean iterator;
   algorithm
     iterator := match node
-      case COMPONENT_NODE() then Component.isIterator(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isIterator(PointerCyclic.access(node.component));
       else false;
     end match;
   end isIterator;
@@ -784,7 +785,7 @@ uniontype InstNode
         then scope;
 
       case CLASS_NODE() then node.parentScope;
-      case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
+      case COMPONENT_NODE() then parentScope(Component.classInstance(PointerCyclic.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
   end parentScope;
@@ -850,7 +851,7 @@ uniontype InstNode
   algorithm
     scope := match node
       case COMPONENT_NODE()
-        then Component.classInstance(Pointer.access(node.component));
+        then Component.classInstance(PointerCyclic.access(node.component));
       else node;
     end match;
   end classScope;
@@ -958,9 +959,9 @@ uniontype InstNode
     output Class cls;
   algorithm
     cls := match node
-      case CLASS_NODE() then Pointer.access(node.cls);
+      case CLASS_NODE() then PointerCyclic.access(node.cls);
       case COMPONENT_NODE()
-        then getClass(Component.classInstance(Pointer.access(node.component)));
+        then getClass(Component.classInstance(PointerCyclic.access(node.component)));
     end match;
   end getClass;
 
@@ -971,7 +972,7 @@ uniontype InstNode
     cls := match node
       case CLASS_NODE() then getClass(getDerivedNode(node));
       case COMPONENT_NODE()
-        then getClass(getDerivedNode(Component.classInstance(Pointer.access(node.component))));
+        then getClass(getDerivedNode(Component.classInstance(PointerCyclic.access(node.component))));
     end match;
   end getDerivedClass;
 
@@ -1006,7 +1007,7 @@ uniontype InstNode
     node := match node
       case CLASS_NODE()
         algorithm
-          Pointer.update(node.cls, cls);
+          PointerCyclic.update(node.cls, cls);
           CachedData.clearTypeCache(node.caches);
         then
           node;
@@ -1018,7 +1019,7 @@ uniontype InstNode
     output Component component;
   algorithm
     component := match node
-      case COMPONENT_NODE() then Pointer.access(node.component);
+      case COMPONENT_NODE() then PointerCyclic.access(node.component);
       case VAR_NODE()       then Component.WILD();
       case NAME_NODE()      then Component.WILD();
     end match;
@@ -1031,7 +1032,7 @@ uniontype InstNode
     node := match node
       case COMPONENT_NODE()
         algorithm
-          Pointer.update(node.component, component);
+          PointerCyclic.update(node.component, component);
         then
           node;
     end match;
@@ -1044,7 +1045,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          node.component := Pointer.create(component);
+          node.component := PointerCyclic.create(component);
         then
           ();
     end match;
@@ -1057,7 +1058,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          node.cls := Pointer.create(cls);
+          node.cls := PointerCyclic.create(cls);
         then
           ();
     end match;
@@ -1124,7 +1125,7 @@ uniontype InstNode
   algorithm
     definition := match node
       case CLASS_NODE()     then node.definition;
-      case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
+      case COMPONENT_NODE() then classDefinition(Component.classInstance(PointerCyclic.access(node.component)));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
@@ -1172,7 +1173,7 @@ uniontype InstNode
   algorithm
     node := match node
       case COMPONENT_NODE() algorithm
-        node.component := Pointer.create(Component.setDirection(direction, Pointer.access(node.component)));
+        node.component := PointerCyclic.create(Component.setDirection(direction, PointerCyclic.access(node.component)));
       then node;
 
       else algorithm
@@ -1191,7 +1192,7 @@ uniontype InstNode
       case CLASS_NODE(nodeType = ty as InstNodeType.BASE_CLASS())
         then SCodeUtil.elementInfo(ty.definition);
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
-      case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.info(PointerCyclic.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
       else Absyn.dummyInfo;
     end matchcontinue;
@@ -1204,10 +1205,10 @@ uniontype InstNode
     Variable var;
   algorithm
     ty := match node
-      case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
-      case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
+      case CLASS_NODE()     then Class.getType(PointerCyclic.access(node.cls), node);
+      case COMPONENT_NODE() then Component.getType(PointerCyclic.access(node.component));
       case VAR_NODE() algorithm
-        var := Pointer.access(node.varPointer);
+        var := PointerCyclic.access(node.varPointer);
       then var.ty;
       case NAME_NODE()      then Type.UNKNOWN();
     end match;
@@ -1226,7 +1227,7 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          Pointer.update(node.cls, func(arg, Pointer.access(node.cls)));
+          PointerCyclic.update(node.cls, func(arg, PointerCyclic.access(node.cls)));
         then
           ();
     end match;
@@ -1245,7 +1246,7 @@ uniontype InstNode
     () := match node
       case COMPONENT_NODE()
         algorithm
-          Pointer.update(node.component, func(arg, Pointer.access(node.component)));
+          PointerCyclic.update(node.component, func(arg, PointerCyclic.access(node.component)));
         then
           ();
     end match;
@@ -1430,7 +1431,7 @@ uniontype InstNode
     output Boolean isInput;
   algorithm
     isInput := match node
-      case COMPONENT_NODE() then Component.isInput(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isInput(PointerCyclic.access(node.component));
       else false;
     end match;
   end isInput;
@@ -1440,7 +1441,7 @@ uniontype InstNode
     output Boolean isOutput;
   algorithm
     isOutput := match node
-      case COMPONENT_NODE() then Component.isOutput(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isOutput(PointerCyclic.access(node.component));
       else false;
     end match;
   end isOutput;
@@ -1450,7 +1451,7 @@ uniontype InstNode
     output Boolean isInner;
   algorithm
     isInner := match node
-      case COMPONENT_NODE() then Component.isInner(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isInner(PointerCyclic.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isInner(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isInner(node.outerNode);
@@ -1463,7 +1464,7 @@ uniontype InstNode
     output Boolean isOuter;
   algorithm
     isOuter := match node
-      case COMPONENT_NODE() then Component.isOuter(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isOuter(PointerCyclic.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOuter(node.outerNode);
@@ -1476,7 +1477,7 @@ uniontype InstNode
     output Boolean isOuter;
   algorithm
     isOuter := match node
-      case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isOnlyOuter(PointerCyclic.access(node.component));
       case CLASS_NODE()
         then AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOnlyOuter(node.outerNode);
@@ -1645,11 +1646,11 @@ uniontype InstNode
   algorithm
     refEqual := match (node1, node2)
       case (CLASS_NODE(), CLASS_NODE())
-        then referenceEq(Pointer.access(node1.cls), Pointer.access(node2.cls));
+        then referenceEq(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        then referenceEq(Pointer.access(node1.component), Pointer.access(node2.component));
+        then referenceEq(PointerCyclic.access(node1.component), PointerCyclic.access(node2.component));
       case (VAR_NODE(), VAR_NODE())
-        then referenceEq(Pointer.access(node1.varPointer), Pointer.access(node2.varPointer));
+        then referenceEq(PointerCyclic.access(node1.varPointer), PointerCyclic.access(node2.varPointer));
       // Other nodes like ref nodes might be equal, but we neither know nor care.
       else false;
     end match;
@@ -1662,13 +1663,13 @@ uniontype InstNode
   algorithm
     res := match (node1, node2)
       case (CLASS_NODE(), CLASS_NODE())
-        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.cls));
+        then Util.referenceCompare(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.cls));
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.component));
+        then Util.referenceCompare(PointerCyclic.access(node1.component), PointerCyclic.access(node2.component));
       case (CLASS_NODE(), COMPONENT_NODE())
-        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.component));
+        then Util.referenceCompare(PointerCyclic.access(node1.cls), PointerCyclic.access(node2.component));
       case (COMPONENT_NODE(), CLASS_NODE())
-        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.cls));
+        then Util.referenceCompare(PointerCyclic.access(node1.component), PointerCyclic.access(node2.cls));
     end match;
   end refCompare;
 
@@ -1729,7 +1730,7 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toString(node.name, Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.toString(node.name, PointerCyclic.access(node.component));
       case CLASS_NODE() then SCodeDump.unparseElementStr(node.definition);
       else name(node);
     end match;
@@ -1742,8 +1743,8 @@ uniontype InstNode
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), format, indent);
-      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, format, indent);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, PointerCyclic.access(node.component), format, indent);
+      case CLASS_NODE() then Class.toFlatString(PointerCyclic.access(node.cls), node, format, indent);
       else name(node);
     end match;
   end toFlatString;
@@ -1755,8 +1756,8 @@ uniontype InstNode
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), format, indent, s);
-      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, format, indent, s);
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, PointerCyclic.access(node.component), format, indent, s);
+      case CLASS_NODE() then Class.toFlatStream(PointerCyclic.access(node.cls), node, format, indent, s);
       else IOStream.append(s, toFlatString(node, format, indent));
     end match;
   end toFlatStream;
@@ -1767,7 +1768,7 @@ uniontype InstNode
   algorithm
     isRedeclare := match node
       case CLASS_NODE() then SCodeUtil.isElementRedeclare(definition(node));
-      case COMPONENT_NODE() then Component.isRedeclare(Pointer.access(node.component));
+      case COMPONENT_NODE() then Component.isRedeclare(PointerCyclic.access(node.component));
       else false;
     end match;
   end isRedeclare;
@@ -1899,7 +1900,7 @@ uniontype InstNode
     output Boolean enc;
   algorithm
     enc := match node
-      case CLASS_NODE() then Class.isEncapsulated(Pointer.access(node.cls));
+      case CLASS_NODE() then Class.isEncapsulated(PointerCyclic.access(node.cls));
       case COMPONENT_NODE() then Class.isEncapsulated(getClass(node));
       else false;
     end match;
@@ -1910,8 +1911,8 @@ uniontype InstNode
     output Modifier mod;
   algorithm
     mod := match node
-      case CLASS_NODE() then Class.getModifier(Pointer.access(node.cls));
-      case COMPONENT_NODE() then Component.getModifier(Pointer.access(node.component));
+      case CLASS_NODE() then Class.getModifier(PointerCyclic.access(node.cls));
+      case COMPONENT_NODE() then Component.getModifier(PointerCyclic.access(node.component));
       else Modifier.NOMOD();
     end match;
   end getModifier;
@@ -1923,13 +1924,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          Pointer.update(node.cls, Class.mergeModifier(mod, Pointer.access(node.cls)));
+          PointerCyclic.update(node.cls, Class.mergeModifier(mod, PointerCyclic.access(node.cls)));
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
+          PointerCyclic.update(node.component, Component.mergeModifier(mod, PointerCyclic.access(node.component)));
         then
           ();
 
@@ -1944,13 +1945,13 @@ uniontype InstNode
     () := match node
       case CLASS_NODE()
         algorithm
-          Pointer.update(node.cls, Class.setModifier(mod, Pointer.access(node.cls)));
+          PointerCyclic.update(node.cls, Class.setModifier(mod, PointerCyclic.access(node.cls)));
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
+          PointerCyclic.update(node.component, Component.mergeModifier(mod, PointerCyclic.access(node.component)));
         then
           ();
 
@@ -1973,7 +1974,7 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := Pointer.access(clsNode.cls);
+          cls := PointerCyclic.access(clsNode.cls);
         then
           match cls
             case Class.DAE_TYPE() then stripDAETypeVars(cls.ty);
@@ -2025,7 +2026,7 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := Pointer.access(clsNode.cls);
+          cls := PointerCyclic.access(clsNode.cls);
         then
           match cls
             case Class.DAE_TYPE() then cls.ty;
@@ -2036,7 +2037,7 @@ uniontype InstNode
                 state := Restriction.toDAE(res, fullPath(clsNode));
                 vars := ConvertDAE.makeTypeVars(clsNode);
                 outType := DAE.Type.T_COMPLEX(state, vars, NONE(), Restriction.isExternalRecord(res));
-                Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
+                PointerCyclic.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;
           end match;
@@ -2069,7 +2070,7 @@ uniontype InstNode
     output Boolean isPartial;
   algorithm
     isPartial := match node
-      case CLASS_NODE() then Class.isPartial(Pointer.access(node.cls));
+      case CLASS_NODE() then Class.isPartial(PointerCyclic.access(node.cls));
       else false;
     end match;
   end isPartial;
@@ -2084,18 +2085,18 @@ uniontype InstNode
 
       case CLASS_NODE()
         algorithm
-          cls := Pointer.access(node.cls);
+          cls := PointerCyclic.access(node.cls);
           cls := Class.classTreeApply(cls, ClassTree.clone);
-          node.cls := Pointer.create(cls);
+          node.cls := PointerCyclic.create(cls);
           node.caches := CachedData.empty();
         then
           ();
 
       case COMPONENT_NODE()
         algorithm
-          comp := Pointer.access(node.component);
+          comp := PointerCyclic.access(node.component);
           comp := Component.setClassInstance(InstNode.clone(Component.classInstance(comp)), comp);
-          node.component := Pointer.create(comp);
+          node.component := PointerCyclic.create(comp);
         then
           ();
 
@@ -2111,7 +2112,7 @@ uniontype InstNode
     outComponent := match component
       case COMPONENT_NODE()
         then COMPONENT_NODE(component.name, component.definition, component.visibility,
-          Pointer.create(Pointer.access(component.component)), newParent, component.nodeType);
+          PointerCyclic.create(PointerCyclic.access(component.component)), newParent, component.nodeType);
     end match;
   end cloneComponent;
 
@@ -2126,7 +2127,7 @@ uniontype InstNode
         Class cls;
 
       case CLASS_NODE(definition = SCode.CLASS(cmt = cmt))
-        then cmt :: Class.getDerivedComments(Pointer.access(node.cls), accumCmts);
+        then cmt :: Class.getDerivedComments(PointerCyclic.access(node.cls), accumCmts);
 
       else accumCmts;
     end match;
@@ -2157,8 +2158,8 @@ uniontype InstNode
     output Boolean isRec;
   algorithm
     isRec := match node
-      case CLASS_NODE() then Restriction.isRecord(Class.restriction(Pointer.access(node.cls)));
-      case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
+      case CLASS_NODE() then Restriction.isRecord(Class.restriction(PointerCyclic.access(node.cls)));
+      case COMPONENT_NODE() then isRecord(Component.classInstance(PointerCyclic.access(node.component)));
       else false;
     end match;
   end isRecord;
@@ -2168,8 +2169,8 @@ uniontype InstNode
     output Boolean isModel;
   algorithm
     isModel := match node
-      case CLASS_NODE() then Restriction.isModel(Class.restriction(Pointer.access(node.cls)));
-      case COMPONENT_NODE() then isModel(Component.classInstance(Pointer.access(node.component)));
+      case CLASS_NODE() then Restriction.isModel(Class.restriction(PointerCyclic.access(node.cls)));
+      case COMPONENT_NODE() then isModel(Component.classInstance(PointerCyclic.access(node.component)));
       else false;
     end match;
   end isModel;
@@ -2185,7 +2186,7 @@ uniontype InstNode
   algorithm
     hasBinding := match node
       case COMPONENT_NODE()
-        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(instanceParent(node));
+        then Component.hasBinding(PointerCyclic.access(node.component)) or hasBinding(instanceParent(node));
       else false;
     end match;
   end hasBinding;
@@ -2202,13 +2203,13 @@ uniontype InstNode
       case COMPONENT_NODE() algorithm
         scope := instanceParent(node);
         try
-          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(Pointer.access(node.component), scope));
+          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(PointerCyclic.access(node.component), scope));
         else
           binding_exp := getBindingExpOpt(scope);
         end try;
       then binding_exp;
       case VAR_NODE() algorithm
-          var := Pointer.access(node.varPointer);
+          var := PointerCyclic.access(node.varPointer);
         then Binding.getExpOpt(var.binding);
       else NONE();
     end match;
@@ -2250,8 +2251,8 @@ uniontype InstNode
     output Integer count;
   algorithm
     count := match node
-      case COMPONENT_NODE() then Component.dimensionCount(Pointer.access(node.component));
-      case CLASS_NODE() then Class.dimensionCount(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Component.dimensionCount(PointerCyclic.access(node.component));
+      case CLASS_NODE() then Class.dimensionCount(PointerCyclic.access(node.cls));
       else 0;
     end match;
   end dimensionCount;
@@ -2271,8 +2272,8 @@ uniontype InstNode
     output Restriction res;
   algorithm
     res := match node
-      case CLASS_NODE() then Class.restriction(Pointer.access(node.cls));
-      case COMPONENT_NODE() then restriction(Component.classInstance(Pointer.access(node.component)));
+      case CLASS_NODE() then Class.restriction(PointerCyclic.access(node.cls));
+      case COMPONENT_NODE() then restriction(Component.classInstance(PointerCyclic.access(node.component)));
       case INNER_OUTER_NODE() then restriction(node.innerNode);
       else Restriction.UNKNOWN();
     end match;

@@ -110,12 +110,12 @@ public
     array<Boolean> excluded_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
-    Pointer<Equation> constraint, diffed_eqn;
+    PointerCyclic<Equation> constraint, diffed_eqn;
     list<Slice<VariablePointer>> states, dummy_states, sliced_dummies = {};
-    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
-    list<Pointer<Variable>> current_candidates, rest_candidates;
+    list<PointerCyclic<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
+    list<PointerCyclic<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
-    list<Pointer<Equation>> new_eqns = {};
+    list<PointerCyclic<Equation>> new_eqns = {};
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
@@ -259,8 +259,8 @@ public
         diffed_eqn := removeSlicedDerivatives(diffed_eqn, UnorderedMap.getSafe(Equation.getEqnName(constraint), slice_map, sourceInfo()), dummy_slice_set, VarData.getUniqueIndex(varData));
         new_eqns := diffed_eqn :: new_eqns;
         if Flags.isSet(Flags.DUMMY_SELECT) then
-          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
-          print("[dummyselect] differentiated eqn:\t" + Equation.toString(Pointer.access(diffed_eqn)) + "\n\n");
+          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(PointerCyclic.access(constraint)) + "\n");
+          print("[dummyselect] differentiated eqn:\t" + Equation.toString(PointerCyclic.access(diffed_eqn)) + "\n\n");
         end if;
       end for;
       diffArguments := Pointer.access(diffArguments_ptr);
@@ -364,11 +364,11 @@ public
   protected
     list<Slice<VariablePointer>> unmatched_vars;
     list<Slice<EquationPointer>> unmatched_eqns;
-    list<Pointer<Variable>> start_vars, failed_vars = {};
-    list<Pointer<Equation>> sliced_eqns, start_eqns;
-    Pointer<Variable> var_ptr;
-    Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
-    Pointer<list<Pointer<Equation>>> ptr_start_eqns = Pointer.create({});
+    list<PointerCyclic<Variable>> start_vars, failed_vars = {};
+    list<PointerCyclic<Equation>> sliced_eqns, start_eqns;
+    PointerCyclic<Variable> var_ptr;
+    PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqns = PointerCyclic.create({});
     Pointer<Integer> idx;
     String error_msg;
     UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
@@ -416,8 +416,8 @@ public
       end for;
 
       if listEmpty(failed_vars) then
-        start_vars  := Pointer.access(ptr_start_vars);
-        start_eqns  := Pointer.access(ptr_start_eqns);
+        start_vars  := PointerCyclic.access(ptr_start_vars);
+        start_eqns  := PointerCyclic.access(ptr_start_eqns);
 
         // copy old equation map to update adjacency matrices correctly
         vo          := variables.map;
@@ -445,7 +445,7 @@ public
           + List.toString(failed_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n";
         if Flags.isSet(Flags.INITIALIZATION) then
           error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
-            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), List.Style.NEWLINE_TAB) + "\n";
+            + List.toString(PointerCyclic.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), List.Style.NEWLINE_TAB) + "\n";
         else
           error_msg := error_msg + "\nUse -d=initialization for more debug output.";
         end if;
@@ -596,8 +596,8 @@ protected
     UnorderedSet<Integer> eqn_indices = UnorderedSet.new(Util.id, intEq);
     array<list<Integer>> eqn_slices = arrayCreate(EquationPointers.size(equations), {});
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    Pointer<Equation> eqn_ptr;
-    Pointer<Variable> var_ptr;
+    PointerCyclic<Equation> eqn_ptr;
+    PointerCyclic<Variable> var_ptr;
   algorithm
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
@@ -611,7 +611,7 @@ protected
       eqn_ptr := EquationPointers.getEqnAt(equations, eqn);
       constr  := EquationPointers.add(eqn_ptr, constr);
       sliced_constr := Slice.SLICE(eqn_ptr, eqn_slices[eqn]) :: sliced_constr;
-      for candidate in Equation.collectCrefs(Pointer.access(eqn_ptr), getStateCandidate) loop
+      for candidate in Equation.collectCrefs(PointerCyclic.access(eqn_ptr), getStateCandidate) loop
         UnorderedSet.add(candidate, state_candidates);
       end for;
     end for;
@@ -627,9 +627,9 @@ protected
     input output ComponentRef cref          "the cref to check";
     input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
   protected
-    Pointer<Variable> var;
+    PointerCyclic<Variable> var;
     function getStateCandidateVar
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
     algorithm
       if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var) or BVariable.isDummyState(var) or (BVariable.isForcedState(var) and not BVariable.isStateSelect(var, StateSelect.PREFER)) )) then
@@ -650,10 +650,10 @@ protected
   function candidatePriority
     "returns the priority of a variable for state selection.
     higher priority -> better chance of getting picked as a state."
-    input Pointer<Variable> candidate;
+    input PointerCyclic<Variable> candidate;
     output Integer prio;
   algorithm
-    prio := match Pointer.access(candidate)
+    prio := match PointerCyclic.access(candidate)
       local
         VariableAttributes attributes;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes))
@@ -672,9 +672,9 @@ protected
 
   function sortCandidates
     "sorts the state candidates"
-    input output list<Pointer<Variable>> candidates;
+    input output list<PointerCyclic<Variable>> candidates;
   protected
-    list<tuple<Integer,Pointer<Variable>>> priorities = {};
+    list<tuple<Integer,PointerCyclic<Variable>>> priorities = {};
   algorithm
     for candidate in candidates loop
       priorities := (candidatePriority(candidate), candidate) :: priorities;
@@ -714,7 +714,7 @@ protected
   end resolveSlicedUnmatched;
 
   function removeSlicedDerivatives
-    input output Pointer<Equation> derivative;
+    input output PointerCyclic<Equation> derivative;
     input UnorderedSet<Integer> slice_set;
     input UnorderedSet<ComponentRef> dummy_slice_set;
     input Pointer<Integer> aux_index;
@@ -723,8 +723,8 @@ protected
   algorithm
     // only do something if the set is not empty implying full occurence
     if not UnorderedSet.isEmpty(slice_set) then
-      eqn := removeSlicedDerivateEqn(Pointer.access(derivative), Iterator.EMPTY(), dummy_slice_set, aux_index);
-      Pointer.update(derivative, eqn);
+      eqn := removeSlicedDerivateEqn(PointerCyclic.access(derivative), Iterator.EMPTY(), dummy_slice_set, aux_index);
+      PointerCyclic.update(derivative, eqn);
     end if;
   end removeSlicedDerivatives;
 

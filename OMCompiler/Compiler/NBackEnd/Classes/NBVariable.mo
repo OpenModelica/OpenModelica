@@ -85,8 +85,8 @@ public
 
 public
   // mainly used for mapping purposes
-  type VariablePointer = Pointer<Variable>;
-  type VarSlice = Slice<Pointer<Variable>>;
+  type VariablePointer = PointerCyclic<Variable>;
+  type VarSlice = Slice<PointerCyclic<Variable>>;
 
   // ==========================================================================
   //               Single Variable constants and functions
@@ -132,44 +132,44 @@ public
   end toString;
 
   function pointerToString
-    input Pointer<Variable> var_ptr;
-    output String str = toString(Pointer.access(var_ptr));
+    input PointerCyclic<Variable> var_ptr;
+    output String str = toString(PointerCyclic.access(var_ptr));
   end pointerToString;
 
   function nameString
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output String str = ComponentRef.toString(getVarName(var_ptr));
   end nameString;
 
   function hash
-    input Pointer<Variable> var_ptr;
-    output Integer i = Variable.hash(Pointer.access(var_ptr));
+    input PointerCyclic<Variable> var_ptr;
+    output Integer i = Variable.hash(PointerCyclic.access(var_ptr));
   end hash;
 
   function equalName
-    input Pointer<Variable> var_ptr1;
-    input Pointer<Variable> var_ptr2;
-    output Boolean b = Variable.equalName(Pointer.access(var_ptr1), Pointer.access(var_ptr2));
+    input PointerCyclic<Variable> var_ptr1;
+    input PointerCyclic<Variable> var_ptr2;
+    output Boolean b = Variable.equalName(PointerCyclic.access(var_ptr1), PointerCyclic.access(var_ptr2));
   end equalName;
 
   function size
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Boolean resize = false;
-    output Integer s = Variable.size(Pointer.access(var_ptr), resize);
+    output Integer s = Variable.size(PointerCyclic.access(var_ptr), resize);
   end size;
 
   function applyToType
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input typeFunc func;
     partial function typeFunc
       input output Type ty;
     end typeFunc;
   protected
-    Variable new, var = Pointer.access(var_ptr);
+    Variable new, var = PointerCyclic.access(var_ptr);
   algorithm
     new := Variable.applyToType(var, func);
     if not referenceEq(var, new) then
-      Pointer.update(var_ptr, new);
+      PointerCyclic.update(var_ptr, new);
     end if;
   end applyToType;
 
@@ -208,39 +208,39 @@ public
     "Needs a prepared variable and name cref and creates a cyclic dependency between
     a pointer to the variable and its component reference."
     input Variable var;
-    output Pointer<Variable> var_ptr;
+    output PointerCyclic<Variable> var_ptr;
     input output ComponentRef name;
   algorithm
-    var_ptr := Pointer.create(var);
+    var_ptr := PointerCyclic.create(var);
     name := BackendDAE.lowerComponentReferenceInstNode(name, var_ptr);
     var.name := name;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end makeVarPtrCyclic;
 
   function connectPartners
     "sets the partner for the variable and also sets the variable pointer at the partner variable"
-    input Pointer<Variable> var_ptr;
-    input Pointer<Variable> par_ptr;
+    input PointerCyclic<Variable> var_ptr;
+    input PointerCyclic<Variable> par_ptr;
     input BackendInfo.setPartner func;
   protected
-    Variable var = Pointer.access(var_ptr);
-    Variable par = Pointer.access(par_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
+    Variable par = PointerCyclic.access(par_ptr);
   algorithm
     var.backendinfo := func(var.backendinfo, SOME(par_ptr));
     par.backendinfo := func(par.backendinfo, SOME(var_ptr));
-    Pointer.update(var_ptr, var);
-    Pointer.update(par_ptr, par);
+    PointerCyclic.update(var_ptr, var);
+    PointerCyclic.update(par_ptr, par);
   end connectPartners;
 
   function removePartner
     "removes the partner for the variable"
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input BackendInfo.setPartner func;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     var.backendinfo := func(var.backendinfo, NONE());
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end removePartner;
 
   function getVar
@@ -248,21 +248,21 @@ public
     input SourceInfo info;
     output Variable var;
   algorithm
-    var := Pointer.access(getVarPointer(cref, info));
+    var := PointerCyclic.access(getVarPointer(cref, info));
   end getVar;
 
   // The following functions provide layers of protection. Whenever accessing names or pointers use these!
   function getVarPointer
     input ComponentRef cref;
     input SourceInfo info;
-    output Pointer<Variable> var;
+    output PointerCyclic<Variable> var;
   algorithm
     var := match cref
       local
-        Pointer<Variable> varPointer;
+        PointerCyclic<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
-      case ComponentRef.CREF(node = InstNode.NAME_NODE())                       then Pointer.create(DUMMY_VARIABLE);
-      case ComponentRef.WILD()                                                  then Pointer.create(DUMMY_VARIABLE);
+      case ComponentRef.CREF(node = InstNode.NAME_NODE())                       then PointerCyclic.create(DUMMY_VARIABLE);
+      case ComponentRef.WILD()                                                  then PointerCyclic.create(DUMMY_VARIABLE);
       else algorithm
         Error.addInternalError(getInstanceName() + " failed for " + ComponentRef.toString(cref) +
           ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace.", info);
@@ -271,54 +271,54 @@ public
   end getVarPointer;
 
   function getVarName
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output ComponentRef name;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     name := var.name;
   end getVarName;
 
   function setVarName
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input ComponentRef name;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     var.name := name;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end setVarName;
 
   function subIdxName
     "creates new variable pointer to not change the old variable!"
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input Pointer<Integer> index;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     var.name := ComponentRef.rename(ComponentRef.firstName(var.name) + "_" + intString(Pointer.access(index)), var.name);
-    var_ptr := Pointer.create(var);
+    var_ptr := PointerCyclic.create(var);
   end subIdxName;
 
   function getVarKind
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output VariableKind kind;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     kind := BackendInfo.getVarKind(var.backendinfo);
   end getVarKind;
 
   function toExpression
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output Expression exp = Expression.fromCref(getVarName(var_ptr));
   end toExpression;
 
   partial function checkVar
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output Boolean b;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   end checkVar;
 
   function isArray extends checkVar;
@@ -327,12 +327,12 @@ public
   end isArray;
 
   function getDimensions
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output List<Dimension> dims;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(var_ptr);
+    var := PointerCyclic.access(var_ptr);
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
@@ -428,7 +428,7 @@ public
   algorithm
     b := match getParent(var_ptr)
       local
-        Pointer<Variable> parent;
+        PointerCyclic<Variable> parent;
       case SOME(parent) then isContinuousRecordAware(parent, staticAsContinuous);
       else isContinuous(var_ptr, staticAsContinuous);
     end match;
@@ -542,7 +542,7 @@ public
     "checks if the variable has given tearing select.
     When provided with different functions can also check other relations.
     intEq, intNe, intGt, intGe, intLt, intLe"
-    input Pointer<Variable> varPointer;
+    input PointerCyclic<Variable> varPointer;
     input TearingSelect compareTS;
     input compare func = intEq;
     output Boolean b = func(Integer(getTearingSelect(varPointer)), Integer(compareTS));
@@ -553,11 +553,11 @@ public
   end hasTearingSelect;
 
   partial function getVarPartner
-    input Pointer<Variable> var_ptr;
-    output Option<Pointer<Variable>> partner;
+    input PointerCyclic<Variable> var_ptr;
+    output Option<PointerCyclic<Variable>> partner;
     output String partnerName "for error messages";
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   end getVarPartner;
 
   function getVarPre
@@ -608,7 +608,7 @@ public
     partnerName := "state";
     partner := match var.backendinfo.varKind
       local
-        Pointer<Variable> p;
+        PointerCyclic<Variable> p;
       case VariableKind.STATE_DER(state = p) then SOME(p);
       else NONE();
     end match;
@@ -622,7 +622,7 @@ public
     partnerName := "dummy derivative";
     partner := match var.backendinfo.varKind
       local
-        Pointer<Variable> p;
+        PointerCyclic<Variable> p;
       case VariableKind.DUMMY_STATE(dummy_der = p) then SOME(p);
       else NONE();
     end match;
@@ -642,7 +642,7 @@ public
     input Boolean scalarized = false;
     output ComponentRef partner_cref;
   protected
-    Option<Pointer<Variable>> partner;
+    Option<PointerCyclic<Variable>> partner;
     String partnerName;
   algorithm
     (partner, partnerName) := func(getVarPointer(cref, sourceInfo()));
@@ -678,7 +678,7 @@ function isJacobianResultVar
   algorithm
     b := match getVarPDer(var_ptr, false)
       local
-        Pointer<Variable> der_var;
+        PointerCyclic<Variable> der_var;
       case SOME(der_var) then isJacobianResultVarPDer(der_var);
       else match getVarPDer(var_ptr, true)
         case SOME(der_var) then isJacobianResultVarPDer(der_var);
@@ -925,10 +925,10 @@ function isJacobianResultVar
   end isResizableParameter;
 
   function updateResizableParameter
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input UnorderedMap<ComponentRef, Expression> optimal_values;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
     Option<Expression> val = UnorderedMap.get(var.name, optimal_values);
   algorithm
     () := match (val, var.backendinfo)
@@ -945,10 +945,10 @@ function isJacobianResultVar
   end updateResizableParameter;
 
   function getResizableValue
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output Integer val;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     val := match var.backendinfo
       case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(val))) then val;
@@ -1122,10 +1122,10 @@ function isJacobianResultVar
   end setTearingSelect;
 
   function getTearingSelect
-    input Pointer<Variable> varPointer;
+    input PointerCyclic<Variable> varPointer;
     output BackendExtension.TearingSelect tearingSelect_val;
   algorithm
-    tearingSelect_val :=  match Pointer.access(varPointer)
+    tearingSelect_val :=  match PointerCyclic.access(varPointer)
       local
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = variableAttributes))
@@ -1138,33 +1138,33 @@ function isJacobianResultVar
 
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
-    input Pointer<Variable> varPointer;
+    input PointerCyclic<Variable> varPointer;
     input VariableKind varKind;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(varPointer);
+    var := PointerCyclic.access(varPointer);
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end setVarKind;
 
   function setParent
     "sets the record parent. only do for record elements!"
-    input output Pointer<Variable> varPointer;
-    input Pointer<Variable> parent;
+    input output PointerCyclic<Variable> varPointer;
+    input PointerCyclic<Variable> parent;
   protected
-    Variable var = Pointer.access(varPointer);
+    Variable var = PointerCyclic.access(varPointer);
   algorithm
     var.backendinfo := BackendInfo.setParent(var.backendinfo, parent);
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end setParent;
 
   function getParent
     "returns the optional record parent"
-    input Pointer<Variable> varPointer;
-    output Option<Pointer<Variable>> parent;
+    input PointerCyclic<Variable> varPointer;
+    output Option<PointerCyclic<Variable>> parent;
   protected
-    Variable var = Pointer.access(varPointer);
+    Variable var = PointerCyclic.access(varPointer);
   algorithm
     parent := var.backendinfo.parent;
   end getParent;
@@ -1200,7 +1200,7 @@ function isJacobianResultVar
   end isClockAlias;
 
   function createTimeVar
-    output Pointer<Variable> var_ptr;
+    output PointerCyclic<Variable> var_ptr;
   protected
     Variable var = TIME_VARIABLE;
   algorithm
@@ -1209,40 +1209,40 @@ function isJacobianResultVar
 
   function setStateDerivativeVar
     "Updates a variable pointer to be a state, requires the pointer to its derivative."
-    input Pointer<Variable> varPointer;
-    input Pointer<Variable> derivative;
+    input PointerCyclic<Variable> varPointer;
+    input PointerCyclic<Variable> derivative;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(varPointer);
+    var := PointerCyclic.access(varPointer);
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE(1, SOME(derivative), true));
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end setStateDerivativeVar;
 
   function setStateDerKind
     "Updates a variable pointer to STATE_DER kind, linking it to its state.
     Used when an existing frontend derivative variable is promoted to STATE_DER."
-    input Pointer<Variable> varPointer;
-    input Pointer<Variable> statePointer;
+    input PointerCyclic<Variable> varPointer;
+    input PointerCyclic<Variable> statePointer;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(varPointer);
+    var := PointerCyclic.access(varPointer);
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end setStateDerKind;
 
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
     Only if it currently is an algebraic variable, required for DAEMode."
-    input Pointer<Variable> varPointer;
+    input PointerCyclic<Variable> varPointer;
   protected
     Variable var;
   algorithm
     if isAlgebraic(varPointer) then
-      var := Pointer.access(varPointer);
+      var := PointerCyclic.access(varPointer);
       var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALG_STATE());
-      Pointer.update(varPointer, var);
+      PointerCyclic.update(varPointer, var);
     end if;
   end makeAlgStateVar;
 
@@ -1252,14 +1252,14 @@ function isJacobianResultVar
     input ComponentRef cref           "old component reference";
     input Boolean scalarized = false;
     output ComponentRef der_cref      "new component reference";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
   protected
     ComponentRef state_cref = if scalarized then cref else ComponentRef.stripSubscriptsAll(cref);
   algorithm
     () := match ComponentRef.node(state_cref)
       local
         InstNode derNode;
-        Pointer<Variable> state, dummy_ptr = Pointer.create(DUMMY_VARIABLE);
+        PointerCyclic<Variable> state, dummy_ptr = PointerCyclic.create(DUMMY_VARIABLE);
         Variable var;
       case InstNode.VAR_NODE()
         algorithm
@@ -1268,7 +1268,7 @@ function isJacobianResultVar
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
           der_cref := ComponentRef.append(state_cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(state_cref)));
           // make the actual derivative variable and make cref and the variable cyclic
-          var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
+          var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(PointerCyclic.access(state)));
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
           if not scalarized then
@@ -1283,10 +1283,10 @@ function isJacobianResultVar
   end makeDerVar;
 
   function hasDerVar
-    input Pointer<Variable> state_var;
+    input PointerCyclic<Variable> state_var;
     output Boolean b;
   algorithm
-    b := match Pointer.access(state_var)
+    b := match PointerCyclic.access(state_var)
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.STATE(derivative = SOME(_)))) then true;
       else false;
     end match;
@@ -1294,10 +1294,10 @@ function isJacobianResultVar
 
   function addRecordChild
     "adds a child to the records children. use with care, only when creating new records!"
-    input Pointer<Variable> var_ptr;
-    input Pointer<Variable> child;
+    input PointerCyclic<Variable> var_ptr;
+    input PointerCyclic<Variable> child;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     var := match var
       local
@@ -1311,15 +1311,15 @@ function isJacobianResultVar
           + ComponentRef.toString(getVarName(var_ptr)) + " because it is not a record."});
       then fail();
     end match;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end addRecordChild;
 
   function setRecordChildren
     "sets the records children. use with care, only when creating new records!"
-    input Pointer<Variable> var_ptr;
-    input list<Pointer<Variable>> children;
+    input PointerCyclic<Variable> var_ptr;
+    input list<PointerCyclic<Variable>> children;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     var := match var
       local
@@ -1333,15 +1333,15 @@ function isJacobianResultVar
           + ComponentRef.toString(getVarName(var_ptr)) + " because it is not a record."});
       then fail();
     end match;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end setRecordChildren;
 
   function getRecordChildren
     "returns all children of the variable if its a record, otherwise returns empty list"
-    input Pointer<Variable> var;
-    output list<Pointer<Variable>> children;
+    input PointerCyclic<Variable> var;
+    output list<PointerCyclic<Variable>> children;
   algorithm
-    children := match Pointer.access(var)
+    children := match PointerCyclic.access(var)
       local
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD()))
@@ -1351,8 +1351,8 @@ function isJacobianResultVar
   end getRecordChildren;
 
   function getRecordChildrenOrSelf
-    input Pointer<Variable> var;
-    output list<Pointer<Variable>> children = getRecordChildren(var);
+    input PointerCyclic<Variable> var;
+    output list<PointerCyclic<Variable>> children = getRecordChildren(var);
   algorithm
     children := if listEmpty(children) then {var} else children;
   end getRecordChildrenOrSelf;
@@ -1362,7 +1362,7 @@ function isJacobianResultVar
     output list<ComponentRef> children;
   protected
     list<Subscript> subscripts;
-    list<Pointer<Variable>> arg_children;
+    list<PointerCyclic<Variable>> arg_children;
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
     arg_children  := getRecordChildren(getVarPointer(cref, sourceInfo()));
@@ -1377,10 +1377,10 @@ function isJacobianResultVar
   end getRecordChildrenCrefOrSelf;
 
   function setRecordVariability
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Prefixes.Variability variability;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
   algorithm
     _ := match var.backendinfo.varKind
       local
@@ -1389,17 +1389,17 @@ function isJacobianResultVar
         varKind.min_var := variability;
         varKind.max_var := variability;
         var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-        Pointer.update(var_ptr, var);
+        PointerCyclic.update(var_ptr, var);
       then ();
       else();
     end match;
   end setRecordVariability;
 
   function makeDummyState
-    input Pointer<Variable> varPointer;
-    output Pointer<Variable> derivative;
+    input PointerCyclic<Variable> varPointer;
+    output PointerCyclic<Variable> derivative;
   protected
-    Variable var = Pointer.access(varPointer);
+    Variable var = PointerCyclic.access(varPointer);
   algorithm
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
@@ -1407,10 +1407,10 @@ function isJacobianResultVar
 
       case VariableKind.STATE(derivative = SOME(derivative)) algorithm
         // also update the derivative to be a dummy derivative
-        der_var := Pointer.access(derivative);
+        der_var := PointerCyclic.access(derivative);
         der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
         der_var.backendinfo := BackendInfo.setStateSelect(der_var.backendinfo, NFBackendExtension.StateSelect.AVOID);
-        Pointer.update(derivative, der_var);
+        PointerCyclic.update(derivative, der_var);
       then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
       // do nothing if its already a dummy state
@@ -1420,17 +1420,17 @@ function isJacobianResultVar
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(getVarName(varPointer)) + "."});
       then fail();
     end match;
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end makeDummyState;
 
   function makeDiscreteStateVar
     "Updates a discrete variable pointer to be a discrete state, requires the pointer to its left limit (pre) variable."
-    input Pointer<Variable> varPointer;
+    input PointerCyclic<Variable> varPointer;
   protected
-    Variable var = Pointer.access(varPointer);
+    Variable var = PointerCyclic.access(varPointer);
   algorithm
     var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.DISCRETE_STATE());
-    Pointer.update(varPointer, var);
+    PointerCyclic.update(varPointer, var);
   end makeDiscreteStateVar;
 
   function makePreVar
@@ -1438,19 +1438,19 @@ function isJacobianResultVar
     e.g. isOpen -> $PRE.isOpen"
     input ComponentRef cref           "old component reference";
     output ComponentRef pre_cref      "new component reference";
-    output Pointer<Variable> pre_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> pre_ptr  "pointer to new variable";
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> var_ptr;
+        PointerCyclic<Variable> var_ptr;
         Variable pre;
       case qual as InstNode.VAR_NODE()
         algorithm
           var_ptr := getVarPointer(cref, sourceInfo());
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
+          pre := fromCref(pre_cref, Variable.attributes(PointerCyclic.access(var_ptr)));
           pre.backendinfo := BackendInfo.setVarKind(pre.backendinfo, VariableKind.PREVIOUS());
           (pre_ptr, pre_cref) := makeVarPtrCyclic(pre, pre_cref);
           connectPartners(var_ptr, pre_ptr, BackendInfo.setVarPre);
@@ -1468,13 +1468,13 @@ function isJacobianResultVar
     e.g: (speed, 'Jac') -> $SEED_Jac.speed"
     input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this seed belongs to";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> old_var_ptr;
-        Option<Pointer<Variable>> ovar;
+        PointerCyclic<Variable> old_var_ptr;
+        Option<PointerCyclic<Variable>> ovar;
         Variable var;
         VariableKind varKind;
         ComponentRef original_cref;
@@ -1539,13 +1539,13 @@ function isJacobianResultVar
     input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this partial derivative belongs to";
     input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> res_ptr;
-        Option<Pointer<Variable>> ovar;
+        PointerCyclic<Variable> res_ptr;
+        Option<PointerCyclic<Variable>> ovar;
         VariableKind varKind;
         Variable var;
 
@@ -1565,7 +1565,7 @@ function isJacobianResultVar
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(cref, Variable.attributes(Pointer.access(res_ptr)));
+          var := fromCref(cref, Variable.attributes(PointerCyclic.access(res_ptr)));
 
           // update the variable to be a partial derivative and pass the pointer to the original variable
           // if it is a record, clear the children instead
@@ -1631,12 +1631,12 @@ function isJacobianResultVar
     e.g: angle -> $START.angle"
     input ComponentRef cref           "old component reference";
     output ComponentRef start_cref    "new component reference";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
   algorithm
     (start_cref, var_ptr) := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> old_var_ptr;
+        PointerCyclic<Variable> old_var_ptr;
         Variable var, old_var;
 
       case qual as InstNode.VAR_NODE()
@@ -1666,9 +1666,9 @@ function isJacobianResultVar
               // create the new variable pointer and safe it to the component reference
               (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
               // save the var_ptr to the old var as its start var
-              old_var := Pointer.access(old_var_ptr);
+              old_var := PointerCyclic.access(old_var_ptr);
               old_var.backendinfo := BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
-              Pointer.update(old_var_ptr, old_var);
+              PointerCyclic.update(old_var_ptr, old_var);
             then (start_cref, var_ptr);
           end match;
 
@@ -1688,14 +1688,14 @@ function isJacobianResultVar
     input String name                 "context name e.g. DAE";
     input Integer uniqueIndex         "unique identifier index";
     input Type ty                     "equation type containing dims";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
     output ComponentRef cref          "new component reference";
   protected
     InstNode node;
     Variable var;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), PointerCyclic.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
@@ -1713,7 +1713,7 @@ function isJacobianResultVar
     input Integer uniqueIndex                   "unique identifier index";
     input Type var_ty                           "variable type";
     input Iterator iterator = Iterator.EMPTY()  "optional for-loop iterator";
-    output Pointer<Variable> var_ptr            "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr            "pointer to new variable";
     output ComponentRef cref                    "new component reference";
   protected
     InstNode node;
@@ -1730,7 +1730,7 @@ function isJacobianResultVar
       ty := Type.liftArrayLeftList(var_ty, Iterator.dimensions(iterator));
     end if;
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), PointerCyclic.create(DUMMY_VARIABLE));
     cref := ComponentRef.CREF(node, iter_subs, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var_cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable
@@ -1749,7 +1749,7 @@ function isJacobianResultVar
     input Integer uniqueIndex         "unique identifier index";
     input Type ty                     "variable type containing dims";
     input Boolean makeParam           "true if it is a parameter";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
     output ComponentRef cref          "new component reference";
   protected
     InstNode node;
@@ -1764,7 +1764,7 @@ function isJacobianResultVar
     end updateBackendInfo;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node  := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), PointerCyclic.create(DUMMY_VARIABLE));
     cref  := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     var   := fromCref(cref);
 
@@ -1780,9 +1780,9 @@ function isJacobianResultVar
     e.g. der(x^2 + y) --> der(aux)"
     input Integer uniqueIndex         "unique identifier index";
     input Option<Expression> binding  "optional binding expression";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
     output ComponentRef cref          "new component reference";
-    output Pointer<Variable> der_var  "pointer to new derivative variable";
+    output PointerCyclic<Variable> der_var  "pointer to new derivative variable";
     output ComponentRef der_cref      "new derivative component reference";
   protected
     InstNode node;
@@ -1790,7 +1790,7 @@ function isJacobianResultVar
     Expression bnd;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), PointerCyclic.create(DUMMY_VARIABLE));
     cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and add optional binding
     if isSome(binding) then
@@ -1814,12 +1814,12 @@ function isJacobianResultVar
     input ComponentRef cref           "old component reference";
     output ComponentRef tmp_cref    "new component reference";
   protected
-    Pointer<Variable> var_ptr  "pointer to new variable";
+    PointerCyclic<Variable> var_ptr  "pointer to new variable";
   algorithm
     () := match ComponentRef.node(cref)
       local
         InstNode qual;
-        Pointer<Variable> old_var_ptr;
+        PointerCyclic<Variable> old_var_ptr;
         Variable var;
       case qual as InstNode.VAR_NODE()
         algorithm
@@ -1845,14 +1845,14 @@ function isJacobianResultVar
     "Creates a clock variable if an unnamed clock is used in the system"
     input Integer uniqueIndex         "unique identifier index";
     input Type ty                     "equation type containing dims";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output PointerCyclic<Variable> var_ptr  "pointer to new variable";
     output ComponentRef cref          "new component reference";
   protected
     InstNode node;
     Variable var;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
-    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), PointerCyclic.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, {}, ty, NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
@@ -1867,10 +1867,10 @@ function isJacobianResultVar
     "returns the variability of the binding, fails if it has the wrong type.
     unbound variables return the most restrictive variability because they have
     to be solved by the system."
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     output Prefixes.Variability variability;
   algorithm
-    variability := match Pointer.access(var_ptr)
+    variability := match PointerCyclic.access(var_ptr)
       local
         Prefixes.Variability tmp;
       case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = tmp))    then tmp;
@@ -1911,11 +1911,11 @@ function isJacobianResultVar
   end hasEvaluableBinding;
 
   function mapExp
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input BEquation.MapFuncExp funcExp;
     input BEquation.MapFuncExpWrapper mapFunc = Expression.map;
   protected
-    Variable var = Pointer.access(var_ptr);
+    Variable var = PointerCyclic.access(var_ptr);
     Option<Expression> opt_start;
     Expression binding, new_binding, start, new_start;
     Boolean changed = false;
@@ -1942,17 +1942,17 @@ function isJacobianResultVar
       end if;
     end if;
 
-    if changed then Pointer.update(var_ptr, var); end if;
+    if changed then PointerCyclic.update(var_ptr, var); end if;
   end mapExp;
 
   function setFixed
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input Boolean b = true;
     input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(var_ptr);
+    var := PointerCyclic.access(var_ptr);
     var := match var
       local
         BackendInfo binfo;
@@ -1966,17 +1966,17 @@ function isJacobianResultVar
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
       then fail();
     end match;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end setFixed;
 
   function setBindingAsStart
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)"
-    input Pointer<Variable> var_ptr;
+    input PointerCyclic<Variable> var_ptr;
     input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
-    var := Pointer.access(var_ptr);
+    var := PointerCyclic.access(var_ptr);
     var := match var
       local
         BackendInfo binfo;
@@ -1992,11 +1992,11 @@ function isJacobianResultVar
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
       then fail();
     end match;
-    Pointer.update(var_ptr, var);
+    PointerCyclic.update(var_ptr, var);
   end setBindingAsStart;
 
   function setBindingAsStartAndFix
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input Boolean b = true;
     input Boolean overwrite = false;
   algorithm
@@ -2005,8 +2005,8 @@ function isJacobianResultVar
   end setBindingAsStartAndFix;
 
   function getStartAttribute
-    input Pointer<Variable> var_ptr;
-    output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(Pointer.access(var_ptr)));
+    input PointerCyclic<Variable> var_ptr;
+    output Option<Expression> start =  VariableAttributes.getStartAttribute(Variable.getVariableAttributes(PointerCyclic.access(var_ptr)));
   end getStartAttribute;
 
   function hasNonTrivialAliasBinding
@@ -2095,7 +2095,7 @@ function isJacobianResultVar
   uniontype VariablePointers
     record VARIABLE_POINTERS
       UnorderedMap<ComponentRef, Integer> map   "Map for cref->index";
-      ExpandableArray<Pointer<Variable>> varArr "Array of variable pointers";
+      ExpandableArray<PointerCyclic<Variable>> varArr "Array of variable pointers";
       Boolean scalarized                        "true if the variables are scalarized";
     end VARIABLE_POINTERS;
 
@@ -2127,7 +2127,7 @@ function isJacobianResultVar
             index := "(" + intString(i) + ")";
           end if;
           index := index + StringUtil.repeat(" ", length - stringLength(index));
-          str := str + BVariable.toString(Pointer.access(ExpandableArray.get(i, variables.varArr)), index) + "\n";
+          str := str + BVariable.toString(PointerCyclic.access(ExpandableArray.get(i, variables.varArr)), index) + "\n";
         end for;
         str := str + "\n";
       else
@@ -2145,17 +2145,17 @@ function isJacobianResultVar
         input output Variable v;
       end MapFunc;
     protected
-      Pointer<Variable> var_ptr;
+      PointerCyclic<Variable> var_ptr;
       Variable var, new_var;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
         if ExpandableArray.occupied(i, variables.varArr) then
           var_ptr := ExpandableArray.get(i, variables.varArr);
-          var := Pointer.access(var_ptr);
+          var := PointerCyclic.access(var_ptr);
           new_var := func(var);
           if not referenceEq(var, new_var) then
             // Do not update the expandable array entry, but the pointer itself
-            Pointer.update(var_ptr, new_var);
+            PointerCyclic.update(var_ptr, new_var);
           end if;
         end if;
       end for;
@@ -2170,10 +2170,10 @@ function isJacobianResultVar
       input output VariablePointers variables;
       input MapFunc func;
       partial function MapFunc
-        input Pointer<Variable> v;
+        input PointerCyclic<Variable> v;
       end MapFunc;
     protected
-      Pointer<Variable> var_ptr;
+      PointerCyclic<Variable> var_ptr;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
         if ExpandableArray.occupied(i, variables.varArr) then
@@ -2189,11 +2189,11 @@ function isJacobianResultVar
       input output VariablePointers variables;
       input MapFunc func;
       partial function MapFunc
-        input Pointer<Variable> v;
+        input PointerCyclic<Variable> v;
         output Boolean delete;
       end MapFunc;
     protected
-      Pointer<Variable> var_ptr;
+      PointerCyclic<Variable> var_ptr;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
         if ExpandableArray.occupied(i, variables.varArr) then
@@ -2222,7 +2222,7 @@ function isJacobianResultVar
       else
         map := UnorderedMap.new<Integer>(ComponentRef.hashStrip, ComponentRef.isEqualStrip, bucketSize);
       end if;
-      variables := VARIABLE_POINTERS(map, ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)), scalarized);
+      variables := VARIABLE_POINTERS(map, ExpandableArray.new(arr_size, PointerCyclic.create(DUMMY_VARIABLE)), scalarized);
     end empty;
 
     function clone
@@ -2233,7 +2233,7 @@ function isJacobianResultVar
       if shallow then
         new := fromList(toList(variables));
       else
-        new := fromList(list(Pointer.create(Pointer.access(eqn)) for eqn in toList(variables)));
+        new := fromList(list(PointerCyclic.create(PointerCyclic.access(eqn)) for eqn in toList(variables)));
       end if;
     end clone;
 
@@ -2263,14 +2263,14 @@ function isJacobianResultVar
     function toList
       "Creates a VariablePointer list from VariablePointers."
       input VariablePointers variables;
-      output list<Pointer<Variable>> var_lst;
+      output list<PointerCyclic<Variable>> var_lst;
     algorithm
       var_lst := ExpandableArray.toList(variables.varArr);
     end toList;
 
     function fromList
       "Creates VariablePointers from a VariablePointer list."
-      input list<Pointer<Variable>> var_lst;
+      input list<PointerCyclic<Variable>> var_lst;
       input Boolean scalarized = false;
       output VariablePointers variables;
     algorithm
@@ -2281,7 +2281,7 @@ function isJacobianResultVar
     function addList
       "Adds a list of variables to the Variables structure. If any variable already
       exists it's updated instead."
-      input list<Pointer<Variable>> var_lst;
+      input list<PointerCyclic<Variable>> var_lst;
       input output VariablePointers variables;
     algorithm
       variables := List.fold(var_lst, function add(), variables);
@@ -2289,7 +2289,7 @@ function isJacobianResultVar
 
     function removeList
       "Removes a list of variables from the Variables structure."
-      input list<Pointer<Variable>> var_lst;
+      input list<PointerCyclic<Variable>> var_lst;
       input output VariablePointers variables;
     algorithm
       variables := List.fold(var_lst, function remove(), variables);
@@ -2300,7 +2300,7 @@ function isJacobianResultVar
       input output VariablePointers variables;
       input checkVar func;
     protected
-      list<Pointer<Variable>> vars;
+      list<PointerCyclic<Variable>> vars;
     algorithm
       vars := list(var for var guard(not func(var)) in toList(variables));
       variables := fromList(vars);
@@ -2308,13 +2308,13 @@ function isJacobianResultVar
 
     function add
       "Adds a variable pointer to the set, or updates it if it already exists."
-      input Pointer<Variable> varPointer;
+      input PointerCyclic<Variable> varPointer;
       input output VariablePointers variables;
     protected
       Variable var;
       Integer index;
     algorithm
-      var := Pointer.access(varPointer);
+      var := PointerCyclic.access(varPointer);
       () := match UnorderedMap.get(var.name, variables.map)
         case SOME(index) guard(index > 0 and (variables.scalarized or ComponentRef.isEqual(var.name, BVariable.getVarName(ExpandableArray.get(index, variables.varArr))))) algorithm
           // In non-scalarized (stripped) mode the map key ignores subscripts, so a lookup
@@ -2336,13 +2336,13 @@ function isJacobianResultVar
 
     function remove
       "Removes a variable pointer identified by its name from the set."
-      input Pointer<Variable> var_ptr;
+      input PointerCyclic<Variable> var_ptr;
       input output VariablePointers variables "only an output for mapping";
     protected
       Variable var;
       Integer index;
     algorithm
-      var := Pointer.access(var_ptr);
+      var := PointerCyclic.access(var_ptr);
       () := match UnorderedMap.get(var.name, variables.map)
         case SOME(index) guard(index > 0) algorithm
           ExpandableArray.delete(index, variables.varArr);
@@ -2357,12 +2357,12 @@ function isJacobianResultVar
       "Sets a Variable pointer at a specific index in the VariablePointers."
       input VariablePointers variables;
       input Integer idx;
-      input Pointer<Variable> var_ptr;
+      input PointerCyclic<Variable> var_ptr;
     protected
       Variable var;
     algorithm
       ExpandableArray.set(idx, var_ptr, variables.varArr);
-      var := Pointer.access(var_ptr);
+      var := PointerCyclic.access(var_ptr);
       UnorderedMap.add(var.name, idx, variables.map);
     end setVarAt;
 
@@ -2370,7 +2370,7 @@ function isJacobianResultVar
       "Returns the variable pointer at given index. If there is none it fails."
       input VariablePointers variables;
       input Integer idx;
-      output Pointer<Variable> var;
+      output PointerCyclic<Variable> var;
     algorithm
       var := ExpandableArray.get(idx, variables.varArr);
     end getVarAt;
@@ -2381,7 +2381,7 @@ function isJacobianResultVar
       input VariablePointers variables;
       input ComponentRef cref;
       input Option<SourceInfo> info = NONE();
-      output Pointer<Variable> var_ptr;
+      output PointerCyclic<Variable> var_ptr;
     protected
       Integer index;
     algorithm
@@ -2404,7 +2404,7 @@ function isJacobianResultVar
 
     function contains
       "Returns true if the variable is in the variable pointer array."
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input VariablePointers variables;
       output Boolean b = containsCref(getVarName(var), variables);
     end contains;
@@ -2421,10 +2421,10 @@ function isJacobianResultVar
       input VariablePointers variables;
       output list<ComponentRef> names;
     protected
-      Pointer<list<ComponentRef>> acc = Pointer.create({});
+      PointerCyclic<list<ComponentRef>> acc = PointerCyclic.create({});
     algorithm
       mapPtr(variables, function getVarNameTraverse(acc = acc));
-      names := listReverse(Pointer.access(acc));
+      names := listReverse(PointerCyclic.access(acc));
     end getVarNames;
 
     function getScalarVarNames
@@ -2436,7 +2436,7 @@ function isJacobianResultVar
       Variable var;
     algorithm
       for var_ptr in toList(variables) loop
-        var := Pointer.access(var_ptr);
+        var := PointerCyclic.access(var_ptr);
 
         if Type.isArray(var.ty) then
           for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize) loop
@@ -2455,7 +2455,7 @@ function isJacobianResultVar
     function getMarkedVars
       input VariablePointers variables;
       input array<Boolean> marks;
-      output list<Pointer<Variable>> marked_vars;
+      output list<PointerCyclic<Variable>> marked_vars;
     protected
       list<Integer> indices = BackendUtil.findTrueIndices(marks);
     algorithm
@@ -2476,7 +2476,7 @@ function isJacobianResultVar
       update the UnorderedMap."
       input output VariablePointers variables;
     protected
-      list<Pointer<Variable>> vars = {};
+      list<PointerCyclic<Variable>> vars = {};
     algorithm
       for i in ExpandableArray.getLastUsedIndex(variables.varArr):-1:1 loop
         if ExpandableArray.occupied(i, variables.varArr) then
@@ -2493,15 +2493,15 @@ function isJacobianResultVar
       input output VariablePointers variables;
     protected
       Integer size;
-      list<tuple<Integer, Pointer<Variable>>> hash_lst;
-      Pointer<list<tuple<Integer, Pointer<Variable>>>> hash_lst_ptr = Pointer.create({});
-      Pointer<Variable> var_ptr;
+      list<tuple<Integer, PointerCyclic<Variable>>> hash_lst;
+      PointerCyclic<list<tuple<Integer, PointerCyclic<Variable>>>> hash_lst_ptr = PointerCyclic.create({});
+      PointerCyclic<Variable> var_ptr;
     algorithm
       // use number of elements
       size := ExpandableArray.getNumberOfElements(variables.varArr);
       // hash all variables and create hash - variable tpl list
       mapPtr(variables, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
-      hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
+      hash_lst := List.sort(PointerCyclic.access(hash_lst_ptr), BackendUtil.indexTplGt);
       // create new variables and add them one by one in sorted order
       variables := empty(size, variables.scalarized);
       for tpl in hash_lst loop
@@ -2515,7 +2515,7 @@ function isJacobianResultVar
       Expands all variables to their scalar elements."
       input output VariablePointers variables;
     protected
-      list<Pointer<Variable>> vars;
+      list<PointerCyclic<Variable>> vars;
       Boolean flattened;
     algorithm
       (vars, flattened) := scalarizeList(toList(variables));
@@ -2526,21 +2526,21 @@ function isJacobianResultVar
     end scalarize;
 
     function scalarizeList
-      input list<Pointer<Variable>> vars;
-      output list<Pointer<Variable>> new_vars = {};
+      input list<PointerCyclic<Variable>> vars;
+      output list<PointerCyclic<Variable>> new_vars = {};
       output Boolean flattened = false;
     protected
       list<Variable> scalar_vars, element_vars;
       Variable var;
     algorithm
       for var_ptr in vars loop
-        var := Pointer.access(var_ptr);
+        var := PointerCyclic.access(var_ptr);
         // flatten potential arrays
         if Type.isArray(var.ty) then
           flattened := true;
           scalar_vars := Scalarize.scalarizeBackendVariable(var);
         else
-          scalar_vars := {Pointer.access(var_ptr)};
+          scalar_vars := {PointerCyclic.access(var_ptr)};
         end if;
 
         // flatten potential records
@@ -2549,10 +2549,10 @@ function isJacobianResultVar
             flattened := true;
             element_vars := Scalarize.scalarizeComplexVariable(var);
             for elem_var in listReverse(element_vars) loop
-              new_vars := Pointer.create(elem_var) :: new_vars;
+              new_vars := PointerCyclic.create(elem_var) :: new_vars;
             end for;
           else
-            new_vars := Pointer.create(var) :: new_vars;
+            new_vars := PointerCyclic.create(var) :: new_vars;
           end if;
         end for;
       end for;
@@ -2567,7 +2567,7 @@ function isJacobianResultVar
       input Boolean resize;
       output ComponentRef cref;
     protected
-      Pointer<Variable> var;
+      PointerCyclic<Variable> var;
       Integer start;
       Type ty;
       list<Dimension> dims;
@@ -2579,7 +2579,7 @@ function isJacobianResultVar
 
       // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
-      Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
+      Variable.VARIABLE(name = cref, ty = ty) := PointerCyclic.access(var);
 
       // get the dimensions, their sizes and the respective index values for the subscripts
       dims  := Type.arrayDims(ty);
@@ -2595,17 +2595,17 @@ function isJacobianResultVar
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the name and
       adds it as a tuple to the list in pointer."
-      input Pointer<Variable> var_ptr;
+      input PointerCyclic<Variable> var_ptr;
       input Integer mod;
-      input Pointer<list<tuple<Integer, Pointer<Variable>>>> hash_lst_ptr;
+      input PointerCyclic<list<tuple<Integer, PointerCyclic<Variable>>>> hash_lst_ptr;
     protected
       Variable var;
       Integer hash;
     algorithm
-      var := Pointer.access(var_ptr);
+      var := PointerCyclic.access(var_ptr);
       // create hash only from backendinfo
       hash := stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
-      Pointer.update(hash_lst_ptr, (hash, var_ptr) :: Pointer.access(hash_lst_ptr));
+      PointerCyclic.update(hash_lst_ptr, (hash, var_ptr) :: PointerCyclic.access(hash_lst_ptr));
     end createSortHashTpl;
   end VariablePointers;
 
@@ -2883,7 +2883,7 @@ function isJacobianResultVar
     function addTypedList
       "can also be used to add single variables"
       input output VarData varData;
-      input list<Pointer<Variable>> var_lst;
+      input list<PointerCyclic<Variable>> var_lst;
       input VarType varType;
     algorithm
       if listEmpty(var_lst) then return; end if;
@@ -3040,10 +3040,10 @@ function isJacobianResultVar
   // ==========================================================================
 protected
   function getVarNameTraverse
-    input Pointer<Variable> var;
-    input Pointer<list<ComponentRef>> acc;
+    input PointerCyclic<Variable> var;
+    input PointerCyclic<list<ComponentRef>> acc;
   algorithm
-    Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
+    PointerCyclic.update(acc, getVarName(var) :: PointerCyclic.access(acc));
   end getVarNameTraverse;
 
   annotation(__OpenModelica_Interface="nbackend");

@@ -128,13 +128,13 @@ public
     input tuple<Identifier, Integer> ident_tpl;
     output SimGenericCall call;
   protected
-    Pointer<Equation> eqn_ptr;
+    PointerCyclic<Equation> eqn_ptr;
     Integer index;
     Boolean resizable;
     Equation body, eqn;
   algorithm
     (Identifier.IDENTIFIER(eqn = eqn_ptr, resizable = resizable), index) := ident_tpl;
-    eqn := Pointer.access(eqn_ptr);
+    eqn := PointerCyclic.access(eqn_ptr);
     call := match eqn
       local
         list<SimIterator> iters;
@@ -373,7 +373,7 @@ public
     algorithm
       for eqn in listReverse(if_body.then_eqns) loop
         // ToDo: what if there are more complex things inside?
-        body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
+        body := (Util.getOption(Equation.getLHS(PointerCyclic.access(eqn))), Util.getOption(Equation.getRHS(PointerCyclic.access(eqn)))) :: body;
       end for;
       branch := SIM_BRANCH(if_body.condition, body);
       if isSome(if_body.else_if) then

@@ -5092,10 +5092,10 @@ protected
   Values.Value val;
   FCore.Cache cache;
   FCore.StructuralParameters structuralParameters;
-  Mutable<AvlTreePathFunction.Tree> functionTree;
+  MutableCyclic<AvlTreePathFunction.Tree> functionTree;
 algorithm
   structuralParameters := (AvlSetCR.EMPTY(),{});
-  functionTree := Mutable.create(functions);
+  functionTree := MutableCyclic.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""));
   (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(Absyn.dummyInfo),0);
   oexp := ValuesUtil.valueExp(val, SOME(exp));

@@ -315,7 +315,7 @@ public
     input Boolean pseudo;
   protected
     ComponentRef checkCref, childCref;
-    list<Pointer<Variable>> record_children;
+    list<PointerCyclic<Variable>> record_children;
   algorithm
     // if causalized in pseudo array mode, the variables will only have subscript-free variables
     checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
@@ -343,7 +343,7 @@ public
     input UnorderedSet<ComponentRef> set "unordered set to check for array crefs for relevance";
   protected
     ComponentRef checkCref, childCref;
-    list<Pointer<Variable>> record_children;
+    list<PointerCyclic<Variable>> record_children;
   algorithm
     // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
     checkCref := ComponentRef.stripSubscriptsAll(cref);
@@ -722,12 +722,12 @@ public
     list<ComponentRef> row_cref_scal, dependencies_resizable;
     Integer row_size;
     list<list<ComponentRef>> dependencies_scal;
-    Pointer<list<ComponentRef>> full_deps = Pointer.create({});
+    PointerCyclic<list<ComponentRef>> full_deps = PointerCyclic.create({});
     function fixSingleDep
       "helper function to properly add a single dependency"
       input Integer row_size;
       input output list<ComponentRef> single_dep;
-      input Pointer<list<ComponentRef>> full_deps;
+      input PointerCyclic<list<ComponentRef>> full_deps;
     protected
       Integer dep_size = listLength(single_dep);
     algorithm
@@ -742,7 +742,7 @@ public
         end if;
       elseif row_size < dep_size then
         // assume full dependency (not entirely correct but practical)
-        Pointer.update(full_deps, listAppend(single_dep, Pointer.access(full_deps)));
+        PointerCyclic.update(full_deps, listAppend(single_dep, PointerCyclic.access(full_deps)));
         single_dep := {};
       end if;
     end fixSingleDep;
@@ -759,9 +759,9 @@ public
       dependencies_scal := list(d for d guard(not listEmpty(d)) in dependencies_scal);
       // transpose it such that each list now represents one row
       if listEmpty(dependencies_scal) then
-        dependencies_scal := List.fill(Pointer.access(full_deps), row_size);
+        dependencies_scal := List.fill(PointerCyclic.access(full_deps), row_size);
       else
-        dependencies_scal := list(listAppend(Pointer.access(full_deps), d) for d in List.transposeList(dependencies_scal));
+        dependencies_scal := list(listAppend(PointerCyclic.access(full_deps), d) for d in List.transposeList(dependencies_scal));
       end if;
       tpl_lst := List.zip(row_cref_scal, dependencies_scal);
     else
@@ -1277,7 +1277,7 @@ protected
         list<Dimension> rest_dim, tail_dim;
         Type sub_ty;
         list<Type> rest_ty;
-        Pointer<Variable> parent;
+        PointerCyclic<Variable> parent;
         list<ComponentRef> crefs;
         ComponentRef field;
         list<list<Subscript>> subs;

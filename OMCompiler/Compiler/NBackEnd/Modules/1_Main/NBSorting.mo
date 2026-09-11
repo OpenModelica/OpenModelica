@@ -110,7 +110,7 @@ public
   package PseudoBucket
     // While collecting, a bucket accumulates its equations and crefs in pointers
     // so that adding one costs a single cons.
-    type Bucket = tuple<Mode, Boolean, Pointer<list<Integer>>, Pointer<list<ComponentRef>>>;
+    type Bucket = tuple<Mode, Boolean, Pointer<list<Integer>>, PointerCyclic<list<ComponentRef>>>;
 
     function create
       "recollects subsets of multi-dimensional equations that have to be solved in the same way.
@@ -134,7 +134,7 @@ public
       Integer eqn_arr_idx;
       Boolean multi, fresh;
       Pointer<list<Integer>> idx_ptr;
-      Pointer<list<ComponentRef>> cref_ptr;
+      PointerCyclic<list<ComponentRef>> cref_ptr;
       Value val;
     algorithm
       // add each equation to a bucket if solved the same way
@@ -155,7 +155,7 @@ public
           if fresh then
             order := (mode, multi, idx_ptr, cref_ptr) :: order;
           elseif multi then
-            Pointer.update(cref_ptr, cref :: Pointer.access(cref_ptr));
+            PointerCyclic.update(cref_ptr, cref :: PointerCyclic.access(cref_ptr));
           end if;
           Pointer.update(idx_ptr, eqn_scal_idx :: Pointer.access(idx_ptr));
         end if;
@@ -165,7 +165,7 @@ public
       for bucket in order loop
         (mode, multi, idx_ptr, cref_ptr) := bucket;
         if multi then
-          val := Value.MULTI_VAL(Pointer.access(cref_ptr), Pointer.access(idx_ptr));
+          val := Value.MULTI_VAL(PointerCyclic.access(cref_ptr), Pointer.access(idx_ptr));
         else
           val := Value.SINGLE_VAL(listHead(mode.crefs), Pointer.access(idx_ptr));
         end if;
@@ -188,7 +188,7 @@ public
       input Integer eqn_arr_idx;
       input array<list<Bucket>> per_eqn;
       output Pointer<list<Integer>> idx_ptr;
-      output Pointer<list<ComponentRef>> cref_ptr;
+      output PointerCyclic<list<ComponentRef>> cref_ptr;
       output Boolean fresh = false;
     protected
       Mode m;
@@ -201,7 +201,7 @@ public
         end if;
       end for;
       idx_ptr := Pointer.create({});
-      cref_ptr := Pointer.create(if multi then mode.crefs else {});
+      cref_ptr := PointerCyclic.create(if multi then mode.crefs else {});
       fresh := true;
       arrayUpdate(per_eqn, eqn_arr_idx, (mode, multi, idx_ptr, cref_ptr) :: per_eqn[eqn_arr_idx]);
     end getBucket;

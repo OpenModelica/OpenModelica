@@ -82,6 +82,7 @@ protected
   import Config;
   import Error;
   import Pointer;
+import PointerCyclic;
   import StringUtil;
   import Util;
 
@@ -269,7 +270,7 @@ public
 
     function createList
       "SimVars for scalar variables in list order, with running indices."
-      input list<Pointer<Variable>> vars;
+      input list<PointerCyclic<Variable>> vars;
       input VarType varType;
       output list<SimVar> simVars = {};
       input output SimCode.SimCodeIndices indices;
@@ -279,7 +280,7 @@ public
       Variable var;
     algorithm
       for var_ptr in vars loop
-        var := Pointer.access(var_ptr);
+        var := PointerCyclic.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
         idx := idx + 1;
@@ -292,7 +293,7 @@ public
     function createListsByType
       "One SimVar list per basic type (real, integer, boolean, string, enumeration),
       each with its own running index."
-      input list<Pointer<Variable>> vars;
+      input list<PointerCyclic<Variable>> vars;
       input VarType varType;
       output list<list<SimVar>> simVars;
       input output SimCode.SimCodeIndices indices;
@@ -305,7 +306,7 @@ public
     algorithm
       (real_idx, int_idx, bool_idx, string_idx, enum_idx) := getTypeIndices(indices, varType);
       for var_ptr in vars loop
-        var := Pointer.access(var_ptr);
+        var := PointerCyclic.access(var_ptr);
         alias := if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS();
         () := match Type.arrayElementType(var.ty)
           case Type.REAL() algorithm
@@ -441,7 +442,7 @@ public
     algorithm
       () := match comp
         case StrongComponent.SINGLE_COMPONENT() guard(Equation.isResidual(comp.eqn)) algorithm
-          traverseCreate(Pointer.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
+          traverseCreate(PointerCyclic.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
         then ();
         else ();
       end match;
@@ -818,7 +819,7 @@ public
         case VariableKind.STATE()
           algorithm
             if isSome(varKind.derivative) then
-              var := Pointer.access(Util.getOption(varKind.derivative));
+              var := PointerCyclic.access(Util.getOption(varKind.derivative));
               oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
             else
               oldCrefOpt := NONE();
@@ -1304,7 +1305,7 @@ public
       input VarType varType;
     protected
       // scalarize goes through fromList, whose cref dedupe a record and its elements rely on
-      list<Pointer<Variable>> sim_vars = VariablePointers.toList(if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars);
+      list<PointerCyclic<Variable>> sim_vars = VariablePointers.toList(if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars);
       list<SimVar> lst;
     algorithm
 
@@ -1375,7 +1376,7 @@ public
 
   protected
     function getVars
-      input Pointer<Variable> var;
+      input PointerCyclic<Variable> var;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       output list<SimVar> vars = {};
     algorithm

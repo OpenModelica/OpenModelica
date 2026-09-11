@@ -186,7 +186,9 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableCyclic.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerCyclic.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SemanticVersion.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Settings.mo

@@ -45,6 +45,7 @@ protected
   import Dump;
   import Lookup = NFLookup;
   import Mutable;
+import MutableCyclic;
   import SCode;
 
 public
@@ -60,7 +61,7 @@ public
     import NFConnectBreakTree.Entry;
 
     extends BaseAvlTree(redeclare type Key = Absyn.ComponentRef,
-                        redeclare type Value = Mutable<Entry>);
+                        redeclare type Value = MutableCyclic<Entry>);
 
     redeclare function extends keyStr
     algorithm
@@ -104,14 +105,14 @@ public
      checkUnmatchedBreaks once the connects have been processed."
     input InstNode node;
     input output Tree tree;
-          output list<Mutable<Entry>> newEntries = {};
+          output list<MutableCyclic<Entry>> newEntries = {};
   protected
     SCode.Mod mod, break_mod;
-    Mutable<Entry> entry;
+    MutableCyclic<Entry> entry;
 
     function add_entry
       input Absyn.ComponentRef name;
-      input Mutable<Entry> entry;
+      input MutableCyclic<Entry> entry;
       input Option<EntryTree.Tree> oldTree;
       output EntryTree.Tree outTree;
     algorithm
@@ -131,7 +132,7 @@ public
             () := match sm
               case SCode.NAMEMOD(mod = break_mod as SCode.Mod.BREAK_CONNECT())
                 algorithm
-                  entry := Mutable.create(Entry.ENTRY(false, break_mod));
+                  entry := MutableCyclic.create(Entry.ENTRY(false, break_mod));
                   newEntries := entry :: newEntries;
 
                   // Add both rhs->lhs and lhs->rhs to reduce the amount of lookup needed,
@@ -161,8 +162,8 @@ public
     output Boolean isBroken = false;
   protected
     Option<EntryTree.Tree> opt_entry_tree;
-    Option<Mutable<Entry>> opt_entry_ptr;
-    Mutable<Entry> entry_ptr;
+    Option<MutableCyclic<Entry>> opt_entry_ptr;
+    MutableCyclic<Entry> entry_ptr;
     Entry entry;
 
     function is_broken
@@ -187,9 +188,9 @@ public
       // be removed first, but we do it after this, so just ignore them here.
       if isSome(opt_entry_ptr) and not is_broken(lhs, scope) and not is_broken(rhs, scope) then
         SOME(entry_ptr) := opt_entry_ptr;
-        entry := Mutable.access(entry_ptr);
+        entry := MutableCyclic.access(entry_ptr);
         entry.hasMatch := true;
-        Mutable.update(entry_ptr, entry);
+        MutableCyclic.update(entry_ptr, entry);
         isBroken := true;
       end if;
     end if;
@@ -198,14 +199,14 @@ public
   function checkUnmatchedBreaks
     "Prints an error message and fails if any entry in the list hasn't been
      marked as having a matching connect."
-    input list<Mutable<Entry>> entries;
+    input list<MutableCyclic<Entry>> entries;
   protected
     Entry entry;
     Absyn.ComponentRef lhs, rhs;
     SourceInfo info;
   algorithm
     for e in entries loop
-      entry := Mutable.access(e);
+      entry := MutableCyclic.access(e);
 
       if not entry.hasMatch then
         SCode.Mod.BREAK_CONNECT(lhs = lhs, rhs = rhs, info = info) := entry.mod;

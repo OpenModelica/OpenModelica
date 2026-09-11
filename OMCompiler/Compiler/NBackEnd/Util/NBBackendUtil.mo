@@ -194,7 +194,7 @@ public
       case Expression.SUBSCRIPTED_EXP() then noNameHashExp(exp.exp, mod); // subscripts!
       case Expression.TUPLE_ELEMENT() then noNameHashExp(exp.tupleExp, mod) + exp.index;
       case Expression.RECORD_ELEMENT() then noNameHashExp(exp.recordExp, mod) + exp.index;
-      case Expression.MUTABLE() then noNameHashExp(Mutable.access(exp.exp), mod);
+      case Expression.MUTABLE() then noNameHashExp(MutableCyclic.access(exp.exp), mod);
       case Expression.EMPTY() then stringHashDjb2Mod("empty", mod);
       case Expression.PARTIAL_FUNCTION_APPLICATION() algorithm
         //should we hash function names here?

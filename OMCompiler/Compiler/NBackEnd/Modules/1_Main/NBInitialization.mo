@@ -184,16 +184,16 @@ public
     input UnorderedSet<ComponentRef> algorithm_outputs;
     input String str "only for debugging dump";
   protected
-    Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> ptr_start_vars_init = Pointer.create({});
-    Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
-    list<Pointer<Equation>> start_eqs;
+    PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars_init = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqs = PointerCyclic.create({});
+    list<PointerCyclic<Equation>> start_eqs;
   algorithm
     VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
-    start_eqs := Pointer.access(ptr_start_eqs);
+    start_eqs := PointerCyclic.access(ptr_start_eqs);
 
-    variables := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars), variables);
-    initialVars := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars_init), initialVars);
+    variables := BVariable.VariablePointers.addList(PointerCyclic.access(ptr_start_vars), variables);
+    initialVars := BVariable.VariablePointers.addList(PointerCyclic.access(ptr_start_vars_init), initialVars);
     equations := EquationPointers.addList(start_eqs, equations);
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
@@ -205,19 +205,19 @@ public
 
   function createStartEquation
     "creates a start equation for a fixed variable."
-    input Pointer<Variable> var;
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars       "new start vars that are just initialized by the init xml";
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars_init  "new start vars that are unknowns in the system";
-    input Pointer<list<Pointer<Equation>>> ptr_start_eqs        "new start equations";
+    input PointerCyclic<Variable> var;
+    input PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars       "new start vars that are just initialized by the init xml";
+    input PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars_init  "new start vars that are unknowns in the system";
+    input PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqs        "new start equations";
     input Pointer<Integer> idx;
     input UnorderedSet<ComponentRef> algorithm_outputs;
   algorithm
     if not UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) then
-      () := match Pointer.access(var)
+      () := match PointerCyclic.access(var)
         local
           ComponentRef name, start_name;
-          Pointer<Variable> start_var;
-          Pointer<Equation> start_eq;
+          PointerCyclic<Variable> start_var;
+          PointerCyclic<Equation> start_eq;
           EquationKind kind;
           Expression start_exp;
 
@@ -241,14 +241,14 @@ public
             else algorithm
               // create a start variable if it is a literal
               (_, name, start_var, start_name) := createStartVar(var, name, {});
-              Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+              PointerCyclic.update(ptr_start_vars, start_var :: PointerCyclic.access(ptr_start_vars));
             then Expression.fromCref(start_name);
           end match;
 
           // make the new start equation
           kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
           start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-          Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+          PointerCyclic.update(ptr_start_eqs, start_eq :: PointerCyclic.access(ptr_start_eqs));
         then ();
 
         // create unfixed scalar start equation
@@ -262,9 +262,9 @@ public
               // make the new start equation
               kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
               start_eq := Equation.makeAssignment(Expression.fromCref(start_name), e, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-              Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+              PointerCyclic.update(ptr_start_eqs, start_eq :: PointerCyclic.access(ptr_start_eqs));
               // add the new variable to initial unknowns
-              Pointer.update(ptr_start_vars_init, start_var :: Pointer.access(ptr_start_vars_init));
+              PointerCyclic.update(ptr_start_vars_init, start_var :: PointerCyclic.access(ptr_start_vars_init));
             then ();
 
             else ();
@@ -283,13 +283,13 @@ public
     input output EquationPointers initialEqs;
     input Pointer<Integer> idx;
   protected
-    Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
-    list<Pointer<Equation>> start_eqs;
+    PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqs = PointerCyclic.create({});
+    list<PointerCyclic<Equation>> start_eqs;
   algorithm
     for tpl in UnorderedMap.toList(cref_map) loop
       createWhenReplacementEquation(tpl, ptr_start_eqs, idx);
     end for;
-    start_eqs := Pointer.access(ptr_start_eqs);
+    start_eqs := PointerCyclic.access(ptr_start_eqs);
 
     equations := EquationPointers.addList(start_eqs, equations);
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
@@ -303,16 +303,16 @@ public
   function createWhenReplacementEquation
     "creates a start equation for a fixed state or discrete state."
     input tuple<ComponentRef, Iterator> tpl;
-    input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
+    input PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
   protected
     ComponentRef cref;
     Iterator iter;
-    Pointer<Variable> var_ptr;
-    Option<Pointer<Variable>> var_pre;
+    PointerCyclic<Variable> var_ptr;
+    Option<PointerCyclic<Variable>> var_pre;
     ComponentRef pre;
     EquationKind kind;
-    Pointer<Equation> eq;
+    PointerCyclic<Equation> eq;
   algorithm
     (cref, iter) := tpl;
     var_ptr := BVariable.getVarPointer(cref, sourceInfo());
@@ -322,7 +322,7 @@ public
       pre := ComponentRef.copySubscripts(cref, pre);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
-      Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));
+      PointerCyclic.update(ptr_start_eqs, eq :: PointerCyclic.access(ptr_start_eqs));
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " could not replace when-replacement for "
         + ComponentRef.toString(cref) + " because it has no pre-variable."});
@@ -336,13 +336,13 @@ public
     pre variable because they have to be initialized instead!.
     normal:             var = $START.var
     disc state and pre: $PRE.dst = $START.dst"
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input output ComponentRef name;
     input list<Subscript> subscripts;
-    output Pointer<Variable> start_var;
+    output PointerCyclic<Variable> start_var;
     output ComponentRef start_name;
   protected
-    Option<Pointer<Variable>> var_pre = BVariable.getVarPre(var_ptr);
+    Option<PointerCyclic<Variable>> var_pre = BVariable.getVarPre(var_ptr);
     ComponentRef merged_name;
   algorithm
     if BVariable.isPrevious(var_ptr) and isSome(var_pre) then
@@ -365,7 +365,7 @@ public
     // set the record parent if neccessary
     start_var := match BVariable.getParent(var_ptr)
       local
-        Pointer<Variable> parent, start_parent;
+        PointerCyclic<Variable> parent, start_parent;
       case SOME(parent) algorithm
         start_parent := match BVariable.getVarStart(parent)
           case SOME(start_parent) then start_parent;
@@ -391,8 +391,8 @@ public
     input Pointer<Integer> idx;
     input String str "only for debug";
   protected
-    list<Pointer<Equation>> parameter_eqs = {};
-    list<Pointer<Variable>> initial_param_vars = {};
+    list<PointerCyclic<Equation>> parameter_eqs = {};
+    list<PointerCyclic<Variable>> initial_param_vars = {};
   algorithm
     for var in VariablePointers.toList(parameters) loop
       (parameter_eqs, initial_param_vars) := createParameterEquation(var, new_iters, idx, parameter_eqs, initial_param_vars);
@@ -407,13 +407,13 @@ public
   end createParameterEquations;
 
   function createParameterEquation
-    input Pointer<Variable> var;
+    input PointerCyclic<Variable> var;
     input UnorderedSet<VariablePointer> new_iters;
     input Pointer<Integer> idx;
-    input output list<Pointer<Equation>> parameter_eqs;
-    input output list<Pointer<Variable>> initial_param_vars;
+    input output list<PointerCyclic<Equation>> parameter_eqs;
+    input output list<PointerCyclic<Variable>> initial_param_vars;
   protected
-    Pointer<Variable> parent;
+    PointerCyclic<Variable> parent;
     Boolean skip;
   algorithm
     if BVariable.isConst(var) then
@@ -469,18 +469,18 @@ public
     "creates a start equation for a sliced variable.
     usually results in a for equation, but might be scalarized if that is not possible."
     input Slice<VariablePointer> var_slice;
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars "either the new start vars initialized by init xml or intial unkowns depending on fixed=true or false";
-    input Pointer<list<Pointer<Equation>>> ptr_start_eqs  "new start equations";
+    input PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars "either the new start vars initialized by init xml or intial unkowns depending on fixed=true or false";
+    input PointerCyclic<list<PointerCyclic<Equation>>> ptr_start_eqs  "new start equations";
     input Pointer<Integer> idx;
     input Boolean fixed;
   protected
     Expression start_exp, start_var_exp, e;
-    Pointer<Variable> var_ptr, start_var;
+    PointerCyclic<Variable> var_ptr, start_var;
     ComponentRef name;
-    Option<Pointer<Equation>> start_eq = NONE();
+    Option<PointerCyclic<Equation>> start_eq = NONE();
     EquationKind kind;
     Iterator iterator;
-    list<Pointer<Equation>> sliced_eqn;
+    list<PointerCyclic<Equation>> sliced_eqn;
   algorithm
     var_ptr := Slice.getT(var_slice);
     name    := BVariable.getVarName(var_ptr);
@@ -507,7 +507,7 @@ public
         case SOME(e) guard not Expression.isLiteralXML(e) algorithm
           (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
           start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          PointerCyclic.update(ptr_start_vars, start_var :: PointerCyclic.access(ptr_start_vars));
         then start_eq;
 
         // exit the function, no start equation is created
@@ -519,9 +519,9 @@ public
       // empty list indicates full array, slice otherwise
       if not listEmpty(var_slice.indices) then
         (sliced_eqn, _) := Equation.slice(Util.getOption(start_eq), var_slice.indices);
-        Pointer.update(ptr_start_eqs, listAppend(Pointer.access(ptr_start_eqs), sliced_eqn));
+        PointerCyclic.update(ptr_start_eqs, listAppend(PointerCyclic.access(ptr_start_eqs), sliced_eqn));
       else
-        Pointer.update(ptr_start_eqs, Util.getOption(start_eq) :: Pointer.access(ptr_start_eqs));
+        PointerCyclic.update(ptr_start_eqs, Util.getOption(start_eq) :: PointerCyclic.access(ptr_start_eqs));
       end if;
     end if;
   end createStartEquationSlice;
@@ -530,9 +530,9 @@ public
     input Expression exp;
     input Slice<VariablePointer> var_slice;
     output Expression start_exp;
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input output ComponentRef name;
-    output Pointer<Variable> start_var;
+    output PointerCyclic<Variable> start_var;
     output ComponentRef start_cref;
     output Iterator iterator;
   algorithm
@@ -572,12 +572,12 @@ public
   function createStartVariableSlice
     input Slice<VariablePointer> var_slice;
     output Expression start_exp;
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input output ComponentRef name;
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
+    input PointerCyclic<list<PointerCyclic<Variable>>> ptr_start_vars;
     output Iterator iterator;
   protected
-    Pointer<Variable> start_var;
+    PointerCyclic<Variable> start_var;
     ComponentRef start_name;
     list<Subscript> subscripts;
   algorithm
@@ -587,15 +587,15 @@ public
     else
       (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name, 0);
     end if;
-    Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+    PointerCyclic.update(ptr_start_vars, start_var :: PointerCyclic.access(ptr_start_vars));
     start_exp := Expression.fromCref(start_name);
   end createStartVariableSlice;
 
   protected function createIteratedStartCref
-    input output Pointer<Variable> var_ptr;
+    input output PointerCyclic<Variable> var_ptr;
     input output ComponentRef name;
     input Integer num_dim;
-    output Pointer<Variable> start_var;
+    output PointerCyclic<Variable> start_var;
     output ComponentRef start_cref;
     output list<Subscript> subscripts;
     output list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
@@ -622,12 +622,12 @@ public
 
   public function createPreEquation
     "creates d = $PRE.d equations"
-    input Pointer<Variable> var_ptr;
-    input Pointer<list<Pointer<Equation>>> ptr_pre_eqs;
+    input PointerCyclic<Variable> var_ptr;
+    input PointerCyclic<list<PointerCyclic<Equation>>> ptr_pre_eqs;
     input Pointer<Integer> idx;
   protected
-    Option<Pointer<Variable>> pre;
-    Pointer<Equation> pre_eq;
+    Option<PointerCyclic<Variable>> pre;
+    PointerCyclic<Equation> pre_eq;
     EquationKind kind;
   algorithm
     if not BVariable.isPrevious(var_ptr) then
@@ -635,7 +635,7 @@ public
       if isSome(pre) then
         kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-        Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
+        PointerCyclic.update(ptr_pre_eqs, pre_eq :: PointerCyclic.access(ptr_pre_eqs));
       end if;
     end if;
   end createPreEquation;
@@ -644,20 +644,20 @@ public
     "creates a pre equation for a sliced variable.
     usually results in a for equation, but might be scalarized if that is not possible."
     input Slice<VariablePointer> var_slice;
-    input Pointer<list<Pointer<Equation>>> ptr_pre_eqs;
+    input PointerCyclic<list<PointerCyclic<Equation>>> ptr_pre_eqs;
     input Pointer<Integer> idx;
   protected
-    Pointer<Variable> var_ptr;
-    Option<Pointer<Variable>> pre;
+    PointerCyclic<Variable> var_ptr;
+    Option<PointerCyclic<Variable>> pre;
     ComponentRef name, pre_name;
     list<Dimension> dims;
     list<InstNode> iterators;
     list<Expression> ranges;
     list<Subscript> subscripts;
     list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
-    Pointer<Equation> pre_eq;
+    PointerCyclic<Equation> pre_eq;
     EquationKind kind;
-    list<Pointer<Equation>> sliced_eqn;
+    list<PointerCyclic<Equation>> sliced_eqn;
   algorithm
     var_ptr := Slice.getT(var_slice);
     if not BVariable.isPrevious(var_ptr) then
@@ -678,9 +678,9 @@ public
         if not listEmpty(var_slice.indices) then
           // empty list indicates full array, slice otherwise
           (sliced_eqn, _) := Equation.slice(pre_eq, var_slice.indices);
-          Pointer.update(ptr_pre_eqs, listAppend(Pointer.access(ptr_pre_eqs), sliced_eqn));
+          PointerCyclic.update(ptr_pre_eqs, listAppend(PointerCyclic.access(ptr_pre_eqs), sliced_eqn));
         else
-          Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
+          PointerCyclic.update(ptr_pre_eqs, pre_eq :: PointerCyclic.access(ptr_pre_eqs));
         end if;
       end if;
     end if;
@@ -841,8 +841,8 @@ public
       case Equation.WHEN_EQUATION() algorithm
         stmts := removeWhenEquationBody(SOME(eqn.body));
         if not listEmpty(stmts) then
-          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
-          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+          new_eqn := PointerCyclic.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(PointerCyclic.create(eqn)));
         else
           // get all the discrete crefs that where in this when equation to create cref = pre.cref
           lhs_crefs := WhenEquationBody.getAllAssigned(eqn.body);
@@ -903,7 +903,7 @@ public
     input Iterator iter;
     input UnorderedMap<ComponentRef, Iterator> cref_map;
   algorithm
-    body.then_eqns := list(Pointer.apply(e, function removeWhenEquation(iter = iter, cref_map = cref_map)) for e in body.then_eqns);
+    body.then_eqns := list(PointerCyclic.apply(e, function removeWhenEquation(iter = iter, cref_map = cref_map)) for e in body.then_eqns);
     body.else_if := Util.applyOption(body.else_if, function removeWhenEquationIfBody(iter = iter, cref_map = cref_map));
   end removeWhenEquationIfBody;
 
@@ -912,14 +912,14 @@ public
     output list<Statement> out_stmts;
   protected
     UnorderedSet<Expression> condition_set = UnorderedSet.new(Expression.hash, Expression.isEqual);
-    Pointer<list<Statement>> tail_stmts_ptr = Pointer.create({});
+    PointerCyclic<list<Statement>> tail_stmts_ptr = PointerCyclic.create({});
   algorithm
     // stage 1: remove all when statements (that not have initial() conditions) and collect removed condtitions
     out_stmts := List.flatten(list(removeWhenEquationStatement(stmt, condition_set) for stmt in in_stmts));
     // stage 2: remove all statements computing removed conditions that use a pre() variable on the rhs
     out_stmts := List.flatten(list(removeConditionEquation(stmt, condition_set, tail_stmts_ptr) for stmt in out_stmts));
     // stage 3: add all removed statements to the end of the algorithm and add pre() := post() statements for the pre() of the rhs
-    out_stmts := listAppend(out_stmts, Pointer.access(tail_stmts_ptr)) annotation(__OpenModelica_DisableListAppendWarning=true);
+    out_stmts := listAppend(out_stmts, PointerCyclic.access(tail_stmts_ptr)) annotation(__OpenModelica_DisableListAppendWarning=true);
   end removeWhenEquationAlgorithmBody;
 
   function removeWhenEquationStatement
@@ -963,7 +963,7 @@ public
   function removeConditionEquation
     input Statement stmt;
     input UnorderedSet<Expression> condition_set;
-    input Pointer<list<Statement>> tail_stmts_ptr;
+    input PointerCyclic<list<Statement>> tail_stmts_ptr;
     output list<Statement> out_stmts = {};
   algorithm
     out_stmts := match stmt
@@ -979,12 +979,12 @@ public
         if UnorderedSet.isEmpty(pre_set) then
           out_stmts := {stmt};
         else
-          tail_stmts := stmt :: Pointer.access(tail_stmts_ptr);
+          tail_stmts := stmt :: PointerCyclic.access(tail_stmts_ptr);
           for pre_cref in UnorderedSet.toList(pre_set) loop
             post_cref := BVariable.getPartnerCref(pre_cref, BVariable.getVarPre);
             tail_stmts := Statement.ASSIGNMENT(Expression.fromCref(pre_cref), Expression.fromCref(post_cref), ComponentRef.getSubscriptedType(pre_cref), DAE.emptyElementSource) :: tail_stmts;
           end for;
-          Pointer.update(tail_stmts_ptr, tail_stmts);
+          PointerCyclic.update(tail_stmts_ptr, tail_stmts);
         end if;
       then out_stmts;
       else {stmt};
@@ -1004,9 +1004,9 @@ public
   end findPreVars;
 
   function replaceClockedFunctionsEqn
-    input output Pointer<Equation> eqn;
+    input output PointerCyclic<Equation> eqn;
   algorithm
-    Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
+    PointerCyclic.update(eqn, Equation.map(PointerCyclic.access(eqn), replaceClockedFunctions));
   end replaceClockedFunctionsEqn;
 
   function replaceClockedFunctions

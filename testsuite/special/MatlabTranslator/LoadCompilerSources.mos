@@ -261,6 +261,7 @@ if true then /* Suppress output */
     prefixPath + "Util/List.mo",
     prefixPath + "Util/ModelicaExternalC.mo",
     prefixPath + "Util/Mutable.mo",
+    prefixPath + "Util/MutableCyclic.mo",
     prefixPath + "Util/Print.mo",
     prefixPath + "Util/PriorityQueue.mo",
     prefixPath + "Util/Settings.mo",

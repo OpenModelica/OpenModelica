@@ -132,13 +132,13 @@ public
     input EqData eqData;
   protected
     BPartition.Kind kind = Partition.getKind(partition);
-    type EquationPointerList = list<Pointer<Equation>>;
-    UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
+    type EquationPointerList = list<PointerCyclic<Equation>>;
+    UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> solved_comps = {};
     Integer implicit_index = Pointer.access(implicit_index_ptr);
     Pointer<Integer> sliced_idx, comp_idx = Pointer.create(1);
     ComponentRef name;
-    list<Pointer<Equation>> sliced_eqns;
+    list<PointerCyclic<Equation>> sliced_eqns;
   algorithm
     if isSome(partition.strongComponents) then
       for comp in Util.getOption(partition.strongComponents) loop
@@ -176,7 +176,7 @@ public
     input UnorderedMap<Path, Function> funcMap;
     input BPartition.Kind kind;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input VarData varData;
     input EqData eqData;
   protected
@@ -186,7 +186,7 @@ public
     try
       (solved_comps, solve_status) := match comp
         local
-          Pointer<Equation> eqn_ptr;
+          PointerCyclic<Equation> eqn_ptr;
           Equation eqn;
           Slice<VariablePointer> var_slice;
           Slice<EquationPointer> eqn_slice;
@@ -201,15 +201,15 @@ public
           list<ComponentRef> solved_crefs, inputs, outputs;
           UnorderedSet<ComponentRef> output_crefs, input_crefs, solved_inputs;
           list<tuple<ComponentRef, ComponentRef>> tmp_crefs;
-          list<Pointer<Variable>> tmp_vars;
-          list<Pointer<Equation>> tmp_eqns;
+          list<PointerCyclic<Variable>> tmp_vars;
+          list<PointerCyclic<Equation>> tmp_eqns;
           Pointer<Integer> idx;
           UnorderedMap<ComponentRef, ComponentRef> cref_repl;
           UnorderedMap<ComponentRef, Expression> exp_repl;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
-          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
-        then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
+          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(PointerCyclic.access(comp.eqn), PointerCyclic.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+        then ({StrongComponent.SINGLE_COMPONENT(comp.var, PointerCyclic.create(eqn), solve_status)}, solve_status);
 
         // solve component that was simplified
         case StrongComponent.MULTI_COMPONENT(vars = {var_slice}) guard(not Equation.isCompound(Slice.getT(comp.eqn))) algorithm
@@ -218,7 +218,7 @@ public
 
         case StrongComponent.MULTI_COMPONENT() algorithm
           eqn_ptr := Slice.getT(comp.eqn);
-          eqn := Pointer.access(eqn_ptr);
+          eqn := PointerCyclic.access(eqn_ptr);
           (solved_comp, solve_status) := match eqn
             case Equation.ALGORITHM(alg = alg) algorithm
               // X = set of solved variables
@@ -279,7 +279,7 @@ public
                 comp.status := Status.EXPLICIT;
                 eqn.alg     := alg;
                 // replace z -> z^  in the algorithm body
-                Pointer.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
+                PointerCyclic.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
                 // create the algebraic loop, already torn
                 strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
                 // ToDo: set all the booleans correctly
@@ -340,10 +340,10 @@ public
         case StrongComponent.SLICED_COMPONENT() algorithm
           // just a regular equation solved for a sliced variable
           // use cref instead of var because it has subscripts!
-          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(PointerCyclic.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
           if solve_status == Status.EXPLICIT then
             // successfully solved explicitly; use result directly
-            comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+            comp.eqn := Slice.SLICE(PointerCyclic.create(eqn), {});
           else
             // IMPLICIT (cref hidden inside array expression) or UNSOLVABLE:
             // try expanding array sums to find an explicit solution for the slice
@@ -357,9 +357,9 @@ public
           // a resizable component with trivial solution
           // ToDo 1: resolve the eval order
           // ToDo 2: resolve potential equation slicing
-          (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(comp.eqn)), comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          (eqn, solve_status, implicit_index, _) := solveEquation(PointerCyclic.access(Slice.getT(comp.eqn)), comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
           eqn := Equation.applyForOrder(eqn, comp.order);
-          comp.eqn := Slice.SLICE(Pointer.create(eqn), comp.eqn.indices);
+          comp.eqn := Slice.SLICE(PointerCyclic.create(eqn), comp.eqn.indices);
           comp.status := solve_status;
         then ({comp}, solve_status);
 
@@ -402,7 +402,7 @@ public
     input BPartition.Kind kind;
     output Status solve_status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input VarData varData;
     input EqData eqData;
   algorithm
@@ -418,21 +418,21 @@ public
 
       // ToDo: make these actually resizable inside entwined equations (?)
       case StrongComponent.RESIZABLE_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
-        eqn_slice := Slice.apply(eqn_slice, function Pointer.apply(func = function Equation.applyForOrder(order = comp.order)));
+        eqn_slice := Slice.apply(eqn_slice, function PointerCyclic.apply(func = function Equation.applyForOrder(order = comp.order)));
         (comp, solve_status, implicit_index) := solveGenericEquationSlice(var_slice, eqn_slice, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       then (comp, solve_status);
 
       // Scalar component inside an entwined block (no subscripts, full slice)
       case StrongComponent.SINGLE_COMPONENT() algorithm
-        (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
-        comp := StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status);
+        (eqn, solve_status, implicit_index) := solveSingleStrongComponent(PointerCyclic.access(comp.eqn), PointerCyclic.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+        comp := StrongComponent.SINGLE_COMPONENT(comp.var, PointerCyclic.create(eqn), solve_status);
       then (comp, solve_status);
 
       // Scalar component with subscripted variable (e.g. x[1] = ...) inside an entwined block
       case StrongComponent.SLICED_COMPONENT() algorithm
-        (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+        (eqn, solve_status, implicit_index) := solveSingleStrongComponent(PointerCyclic.access(Slice.getT(comp.eqn)), Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
         if solve_status < Status.UNSOLVABLE then
-          comp.eqn := Slice.SLICE(Pointer.create(eqn), comp.eqn.indices);
+          comp.eqn := Slice.SLICE(PointerCyclic.create(eqn), comp.eqn.indices);
         end if;
         comp.status := solve_status;
       then (comp, solve_status);
@@ -458,11 +458,11 @@ public
     input UnorderedMap<Path, Function> functions;
     input BPartition.Kind kind;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input VarData varData;
     input EqData eqData;
   protected
-    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    PointerCyclic<Equation> eqn_ptr = Slice.getT(eqn_slice);
     Equation eqn;
     Slice<EquationPointer> solved_slice;
     UnorderedMap<ComponentRef, Expression> replacements;
@@ -471,12 +471,12 @@ public
       replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
       (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, functions);
     else
-      (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
+      (eqn, solve_status, implicit_index, _) := solveEquation(PointerCyclic.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
 
     // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
     if solve_status < Status.UNSOLVABLE then
-      solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+      solved_slice := Slice.SLICE(PointerCyclic.create(eqn), eqn_slice.indices);
     else
       (solved_slice, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -496,7 +496,7 @@ public
     input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input VarData varData;
     input EqData eqData;
   protected
@@ -519,12 +519,12 @@ public
     input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input Iterator iter;
     input VarData varData;
     input EqData eqData;
   protected
-    Equation eqn = Pointer.access(Slice.getT(eqn_slice));
+    Equation eqn = PointerCyclic.access(Slice.getT(eqn_slice));
   algorithm
     (eqn_slice, status) := match eqn
       local
@@ -534,25 +534,25 @@ public
       case Equation.IF_EQUATION() algorithm
         (if_body, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(list(Slice.getT(v) for v in var_slices)), funcMap, kind, implicit_index, slicing_map, iter, varData, eqData);
         eqn.body := if_body;
-      then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), status);
+      then (Slice.SLICE(PointerCyclic.create(eqn), eqn_slice.indices), status);
 
       // ToDo: inverse algorithms
       case Equation.ALGORITHM()
-      then (Slice.SLICE(Pointer.clone(Slice.getT(eqn_slice)), eqn_slice.indices), Status.EXPLICIT);
+      then (Slice.SLICE(PointerCyclic.clone(Slice.getT(eqn_slice)), eqn_slice.indices), Status.EXPLICIT);
 
       // for now assume they are solved
       case Equation.WHEN_EQUATION()
-      then (Slice.SLICE(Pointer.clone(Slice.getT(eqn_slice)), eqn_slice.indices), Status.EXPLICIT);
+      then (Slice.SLICE(PointerCyclic.clone(Slice.getT(eqn_slice)), eqn_slice.indices), Status.EXPLICIT);
 
       // solve record and tuple equations
       case Equation.RECORD_EQUATION() algorithm
         (solved_eqn, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcMap);
-      then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), status);
+      then (Slice.SLICE(PointerCyclic.create(solved_eqn), eqn_slice.indices), status);
 
       // solve arrays of record and tuple equations
       case Equation.ARRAY_EQUATION() algorithm
         (solved_eqn, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcMap);
-      then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), status);
+      then (Slice.SLICE(PointerCyclic.create(solved_eqn), eqn_slice.indices), status);
 
       // dummy equation implies removed equation (occurs only in simulation systems)
       case Equation.DUMMY_EQUATION() then (eqn_slice, Status.EXPLICIT);
@@ -565,12 +565,12 @@ public
 
   function solveMultiRecordStrongComponent
     input Equation eqn "has to be RECORD_EQUATION or ARRAY_EQUATION";
-    input list<Slice<Pointer<Variable>>> var_slices;
+    input list<Slice<PointerCyclic<Variable>>> var_slices;
     output Equation solved_eqn = eqn;
     input UnorderedMap<Path, Function> funcMap;
     output Status status = Status.UNPROCESSED;
   protected
-    list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
+    list<PointerCyclic<Variable>> vars = list(Slice.getT(v) for v in var_slices);
     Expression lhs = Util.getOption(Equation.getLHS(eqn));
     Expression rhs = Util.getOption(Equation.getRHS(eqn));
     UnorderedSet<ComponentRef> record_crefs;
@@ -616,7 +616,7 @@ public
     input BPartition.Kind kind;
     output Status status;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     output RelationInversion invertRelation     "If the equation represents a relation, this tells if the sign should be inverted";
     input VarData varData;
     input EqData eqData;
@@ -625,7 +625,7 @@ public
       local
         Equation body;
         Slice<EquationPointer> body_slice;
-        Pointer<Variable> indexed_var;
+        PointerCyclic<Variable> indexed_var;
         Iterator dummy;
 
       // For equations are expected to only have one body equation at this point
@@ -633,8 +633,8 @@ public
         // create indexed variable to trick matching algorithm to solve for it
         indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref, sourceInfo()), cref);
         dummy := Iterator.dummy(eqn.iter);
-        (body_slice, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcMap, kind, implicit_index, slicing_map, dummy, varData, eqData);
-        eqn.body := {Pointer.access(Slice.getT(body_slice))};
+        (body_slice, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(PointerCyclic.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcMap, kind, implicit_index, slicing_map, dummy, varData, eqData);
+        eqn.body := {PointerCyclic.access(Slice.getT(body_slice))};
       then (eqn, status, RelationInversion.FALSE);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
@@ -724,14 +724,14 @@ public
     output Status status;
     input BPartition.Kind kind;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input Iterator iter;
     input VarData varData;
     input EqData eqData;
   protected
     IfEquationBody else_if;
     list<StrongComponent> comps, solved_comps;
-    list<Pointer<Equation>> new_then_eqns = {};
+    list<PointerCyclic<Equation>> new_then_eqns = {};
   algorithm
     // causalize this branch equations for the unknowns
     (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), kind, iter = iter);
@@ -899,10 +899,10 @@ protected
     end if;
 
     if status == Status.EXPLICIT and List.hasOneElement(body.then_eqns) then
-      eqn := Pointer.access(listHead(body.then_eqns));
+      eqn := PointerCyclic.access(listHead(body.then_eqns));
       (eqn, status, _) := solveSimple(eqn, cref);
       if status == Status.EXPLICIT then
-        Pointer.update(listHead(body.then_eqns), eqn);
+        PointerCyclic.update(listHead(body.then_eqns), eqn);
       end if;
     else
       status := Status.UNPROCESSED;
@@ -983,7 +983,7 @@ protected
     input output list<Expression> inverseInstructions;
     output Status status = Status.EXPLICIT; // just set this per default, since the algorithm detects implicit equations
   protected
-    Expression substExp = NBVariable.toExpression(Pointer.create(NBVariable.SUBST_VARIABLE));
+    Expression substExp = NBVariable.toExpression(PointerCyclic.create(NBVariable.SUBST_VARIABLE));
     Type ty = ComponentRef.getSubscriptedType(cref, true);
     Call call;
   algorithm
@@ -1564,7 +1564,7 @@ protected
   function tupleSolvable
     "checks if the tuple expression exactly represents the variables we need to solve for"
     input list<Expression> tuple_exps;
-    input list<Pointer<Variable>> vars;
+    input list<PointerCyclic<Variable>> vars;
     output Boolean b = false;
   protected
     list<Expression> filtered_exps = list(e for e guard(not Expression.isWildCref(e)) in tuple_exps);
@@ -1652,9 +1652,9 @@ protected
     input Equation eqn;
     output Status solve_status;
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
+    PointerCyclic<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
     list<ComponentRef> slices_lst;
-    Option<Pointer<Variable>> record_parent;
+    Option<PointerCyclic<Variable>> record_parent;
     function checkReference
       input ComponentRef var_cref;
       input Option<ComponentRef> reference_opt;
@@ -1700,7 +1700,7 @@ protected
     input UnorderedMap<Path, Function> funcMap;
     input BPartition.Kind kind;
     input output Integer implicit_index;
-    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input UnorderedMap<ComponentRef, list<PointerCyclic<Equation>>> slicing_map;
     input VarData varData;
     input EqData eqData;
     output Status solve_status;
@@ -1708,18 +1708,18 @@ protected
     Equation eqn;
     ComponentRef var_cref;
   algorithm
-    eqn := Pointer.access(Slice.getT(eqn_slice));
+    eqn := PointerCyclic.access(Slice.getT(eqn_slice));
     (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), SOME(cref), eqn);
 
     if solve_status < Status.IMPLICIT then
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
-      eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+      eqn_slice := Slice.SLICE(PointerCyclic.create(eqn), {});
     elseif solve_status == Status.IMPLICIT then
       // var_cref is a parent array containing cref as a slice; expand array sums to enable explicit solving
       eqn := Equation.map(eqn, function expandArraySumExp(arrayCref = var_cref));
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
       if solve_status < Status.UNSOLVABLE then
-        eqn_slice := Slice.SLICE(Pointer.create(eqn), {});
+        eqn_slice := Slice.SLICE(PointerCyclic.create(eqn), {});
       else
         // all expansion tactics failed; allow implicit solution as last resort
         solve_status := Status.IMPLICIT;

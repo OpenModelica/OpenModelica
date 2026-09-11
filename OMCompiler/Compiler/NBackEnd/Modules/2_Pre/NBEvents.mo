@@ -192,8 +192,8 @@ public
       input Pointer<Integer> idx;
       input list<SpatialDistribution> spatial_lst;
       output EventInfo eventInfo;
-      output list<Pointer<Variable>> auxiliary_vars = {};
-      output list<Pointer<Equation>> auxiliary_eqns = {};
+      output list<PointerCyclic<Variable>> auxiliary_vars = {};
+      output list<PointerCyclic<Equation>> auxiliary_eqns = {};
     protected
       Condition cond;
       CompositeEvent cev;
@@ -227,14 +227,14 @@ public
 
     function createAux
       input Condition cond;
-      input Pointer<Variable> aux_var;
+      input PointerCyclic<Variable> aux_var;
       input VariablePointers variables;
       input Pointer<Integer> idx;
-      input output list<Pointer<Variable>> auxiliary_vars;
-      input output list<Pointer<Equation>> auxiliary_eqns;
+      input output list<PointerCyclic<Variable>> auxiliary_vars;
+      input output list<PointerCyclic<Equation>> auxiliary_eqns;
     protected
       ComponentRef lhs_cref;
-      Pointer<Equation> aux_eqn;
+      PointerCyclic<Equation> aux_eqn;
     algorithm
       // if it has a statement index, it already has been created as a statement inside an algorithm (0 implies no index)
       if cond.stmt_index == 0 then
@@ -393,7 +393,7 @@ public
       input output Expression exp;
       input output Bucket bucket;
       input Iterator iter;
-      input Pointer<Equation> eqn;
+      input PointerCyclic<Equation> eqn;
       input UnorderedMap<Path, Function> funcMap;
       input Boolean createEqn;
       output Boolean failed = false "returns true if time event list could not be created";
@@ -434,7 +434,7 @@ public
       input output Expression exp                 "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket                  "bucket containing the events";
       input Iterator iter;
-      input Pointer<Equation> eqn;
+      input PointerCyclic<Equation> eqn;
       input UnorderedMap<Path, Function> funcMap  "function map for differentiation (solve)";
       output Boolean failed                       "true if it did not work to create a compact time event";
     algorithm
@@ -460,7 +460,7 @@ public
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.RELATION)
           algorithm
             // create auxiliary equation and solve for TIME
-            tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
+            tmpEqn := PointerCyclic.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
             Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcMap);
@@ -613,13 +613,13 @@ public
   uniontype StateEvent
     record STATE_EVENT
       Integer index                         "index for simcode";
-      Pointer<Variable> auxiliary           "auxiliary variable representing the relation";
-      UnorderedSet<Pointer<Equation>> eqns  "equations where the function occurs";
+      PointerCyclic<Variable> auxiliary           "auxiliary variable representing the relation";
+      UnorderedSet<PointerCyclic<Equation>> eqns  "equations where the function occurs";
     end STATE_EVENT;
 
     function toString
       input StateEvent sev;
-      output String str = "(" + intString(sev.index) + ") " + BVariable.toString(Pointer.access(sev.auxiliary));
+      output String str = "(" + intString(sev.index) + ") " + BVariable.toString(PointerCyclic.access(sev.auxiliary));
     end toString;
 
     function toStringList
@@ -649,7 +649,7 @@ public
     function fromStatement
       input output Statement stmt;
       input Pointer<Bucket> bucket_ptr;
-      input Pointer<Equation> eqn;
+      input PointerCyclic<Equation> eqn;
       input VariablePointers variables;
       input UnorderedMap<Path, Function> funcMap;
       input list<Frame> frames = {};
@@ -696,13 +696,13 @@ public
       input output Expression exp;
       input output Bucket bucket;
       input Iterator iter;
-      input Pointer<Equation> eqn;
+      input PointerCyclic<Equation> eqn;
       input Boolean createEqn;
     protected
       Condition condition;
       Option<StateEvent> sev_opt;
       StateEvent sev;
-      Pointer<Variable> aux_var;
+      PointerCyclic<Variable> aux_var;
       ComponentRef aux_cref = ComponentRef.EMPTY();
       Pointer<Boolean> clocked = Pointer.create(false);
     algorithm
@@ -756,7 +756,7 @@ public
     algorithm
       (cond, sev) := sev_tpl;
       iter        := convertEventIterator(cond.iter);
-      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in UnorderedSet.toList(sev.eqns));
+      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(PointerCyclic.access(eqn))) in UnorderedSet.toList(sev.eqns));
       eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
@@ -770,7 +770,7 @@ public
   uniontype CompositeEvent
     record COMPOSITE_EVENT
       Integer index;
-      Pointer<Variable> auxiliary;
+      PointerCyclic<Variable> auxiliary;
     end COMPOSITE_EVENT;
 
     function toString
@@ -895,7 +895,7 @@ public
       Condition condition;
       Option<CompositeEvent> cev_opt;
       CompositeEvent cev;
-      Pointer<Variable> aux_var;
+      PointerCyclic<Variable> aux_var;
       ComponentRef aux_cref;
     algorithm
       if createEqn then
@@ -1001,11 +1001,11 @@ public
     end SPATIAL_DISTRIBUTION;
 
     function collect
-      input output Pointer<Equation> eqn_ptr;
+      input output PointerCyclic<Equation> eqn_ptr;
       input Option<Expression> condition;
       input Pointer<list<SpatialDistribution>> spatial_lst;
     protected
-      Equation eqn = Pointer.access(eqn_ptr), new_eqn;
+      Equation eqn = PointerCyclic.access(eqn_ptr), new_eqn;
     algorithm
       new_eqn := match eqn
         // found an if-equation. capture the surrounding branch conditions
@@ -1019,7 +1019,7 @@ public
 
       // update the equation if it changed
       if not referenceEq(eqn, new_eqn) then
-        Pointer.update(eqn_ptr, new_eqn);
+        PointerCyclic.update(eqn_ptr, new_eqn);
       end if;
     end collect;
 
@@ -1130,10 +1130,10 @@ protected
       aux_stmts   = NONE(),
       stmt_index  = 1);
     Pointer<Bucket> bucket_ptr;
-    list<Pointer<Variable>> auxiliary_vars;
-    list<Pointer<Equation>> auxiliary_eqns;
-    list<Pointer<Variable>> wc_vars;
-    list<Pointer<Equation>> wc_eqns;
+    list<PointerCyclic<Variable>> auxiliary_vars;
+    list<PointerCyclic<Equation>> auxiliary_eqns;
+    list<PointerCyclic<Variable>> wc_vars;
+    list<PointerCyclic<Equation>> wc_eqns;
     Pointer<list<SpatialDistribution>> spatial_lst = Pointer.create({});
   algorithm
     eventInfo := match (varData, eqData)
@@ -1181,12 +1181,12 @@ protected
 
   function collectEvents
     "collects all events from an equation pointer."
-    input output Pointer<Equation> eqn_ptr;
+    input output PointerCyclic<Equation> eqn_ptr;
     input Pointer<Bucket> bucket_ptr;
     input VariablePointers variables;
     input UnorderedMap<Path, Function> funcMap;
   protected
-    Equation eqn = Pointer.access(eqn_ptr), body_eqn;
+    Equation eqn = PointerCyclic.access(eqn_ptr), body_eqn;
     Iterator iter;
     Boolean createEqn = not Equation.isAlgorithm(eqn_ptr);
     BEquation.MapFuncExp collector;
@@ -1239,8 +1239,8 @@ protected
       else Equation.map(eqn, collector, NONE(), Expression.fakeMap);
     end match;
 
-    if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
-      Pointer.update(eqn_ptr, eqn);
+    if not referenceEq(eqn, PointerCyclic.access(eqn_ptr)) then
+      PointerCyclic.update(eqn_ptr, eqn);
     end if;
   end collectEvents;
 
@@ -1251,7 +1251,7 @@ protected
     input output Expression exp;
     input Pointer<Bucket> bucket_ptr;
     input Iterator iter;
-    input Pointer<Equation> eqn;
+    input PointerCyclic<Equation> eqn;
     input UnorderedMap<Path, Function> funcMap;
     input Boolean createEqn;
   algorithm
@@ -1337,7 +1337,7 @@ protected
     input output Expression exp;
     input output Bucket bucket;
     input Iterator iter;
-    input Pointer<Equation> eqn;
+    input PointerCyclic<Equation> eqn;
     input UnorderedMap<Path, Function> funcMap;
     input Boolean createEqn;
   protected
@@ -1384,28 +1384,28 @@ protected
     involved zero-crossings or was a purely discrete boolean like (not x.u)."
     input EquationPointers equations;
     input Pointer<Integer> idx;
-    output list<Pointer<Variable>> new_vars = {};
-    output list<Pointer<Equation>> new_eqns = {};
+    output list<PointerCyclic<Variable>> new_vars = {};
+    output list<PointerCyclic<Equation>> new_eqns = {};
   protected
     Pointer<Integer> cnt = Pointer.create(0);
-    Pointer<list<Pointer<Variable>>> vars_ptr = Pointer.create({});
-    Pointer<list<Pointer<Equation>>> eqns_ptr = Pointer.create({});
+    PointerCyclic<list<PointerCyclic<Variable>>> vars_ptr = PointerCyclic.create({});
+    PointerCyclic<list<PointerCyclic<Equation>>> eqns_ptr = PointerCyclic.create({});
   algorithm
     EquationPointers.mapPtr(equations, function simplifyWhenConditionEqn(
       idx = idx, cnt = cnt, vars_ptr = vars_ptr, eqns_ptr = eqns_ptr));
-    new_vars := Pointer.access(vars_ptr);
-    new_eqns := Pointer.access(eqns_ptr);
+    new_vars := PointerCyclic.access(vars_ptr);
+    new_eqns := PointerCyclic.access(eqns_ptr);
   end simplifyWhenConditions;
 
   function simplifyWhenConditionEqn
     "Worker for simplifyWhenConditions: processes a single equation pointer."
-    input output Pointer<Equation> eqn_ptr;
+    input output PointerCyclic<Equation> eqn_ptr;
     input Pointer<Integer> idx;
     input Pointer<Integer> cnt;
-    input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+    input PointerCyclic<list<PointerCyclic<Variable>>> vars_ptr;
+    input PointerCyclic<list<PointerCyclic<Equation>>> eqns_ptr;
   protected
-    Equation eqn = Pointer.access(eqn_ptr);
+    Equation eqn = PointerCyclic.access(eqn_ptr);
     Equation body_eqn;
   algorithm
     eqn := match eqn
@@ -1421,8 +1421,8 @@ protected
       else eqn;
     end match;
 
-    if not referenceEq(eqn, Pointer.access(eqn_ptr)) then
-      Pointer.update(eqn_ptr, eqn);
+    if not referenceEq(eqn, PointerCyclic.access(eqn_ptr)) then
+      PointerCyclic.update(eqn_ptr, eqn);
     end if;
   end simplifyWhenConditionEqn;
 
@@ -1431,8 +1431,8 @@ protected
     input output WhenEquationBody body;
     input Pointer<Integer> idx;
     input Pointer<Integer> cnt;
-    input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+    input PointerCyclic<list<PointerCyclic<Variable>>> vars_ptr;
+    input PointerCyclic<list<PointerCyclic<Equation>>> eqns_ptr;
   algorithm
     body.condition := simplifyWhenConditionExp(body.condition, idx, cnt, vars_ptr, eqns_ptr);
     body.else_when := Util.applyOption(body.else_when,
@@ -1445,12 +1445,12 @@ protected
     input output Expression cond;
     input Pointer<Integer> idx;
     input Pointer<Integer> cnt;
-    input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<list<Pointer<Equation>>> eqns_ptr;
+    input PointerCyclic<list<PointerCyclic<Variable>>> vars_ptr;
+    input PointerCyclic<list<PointerCyclic<Equation>>> eqns_ptr;
   protected
-    Pointer<Variable> aux_var;
+    PointerCyclic<Variable> aux_var;
     ComponentRef aux_cref;
-    Pointer<Equation> aux_eqn;
+    PointerCyclic<Equation> aux_eqn;
     Integer i;
   algorithm
     cond := match cond
@@ -1475,8 +1475,8 @@ protected
         aux_eqn := Equation.makeAssignment(Expression.fromCref(aux_cref), cond, idx, "WC",
                                            Iterator.EMPTY(),
                                            EquationAttributes.default(EquationKind.DISCRETE, false));
-        Pointer.update(vars_ptr, aux_var :: Pointer.access(vars_ptr));
-        Pointer.update(eqns_ptr, aux_eqn :: Pointer.access(eqns_ptr));
+        PointerCyclic.update(vars_ptr, aux_var :: PointerCyclic.access(vars_ptr));
+        PointerCyclic.update(eqns_ptr, aux_eqn :: PointerCyclic.access(eqns_ptr));
         cond := Expression.fromCref(aux_cref);
       then cond;
     end match;

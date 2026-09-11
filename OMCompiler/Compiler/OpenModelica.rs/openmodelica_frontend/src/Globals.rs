@@ -66,7 +66,7 @@ thread_local! {
     //
     // Builtin environment graph index: list of (flag × FCore.Graph).
     // Initialised by Builtin.mo; reset to nil() between runs.
-    pub static builtinGraphIndex: RefCell<metamodelica::List<(i32, openmodelica_frontend_dump::FCore::Graph)>> =
+    pub static builtinGraphIndex: RefCell<metamodelica::List<(i32, Arc<openmodelica_frontend_dump::FCore::Graph>)>> =
         RefCell::new(metamodelica::nil());
 
     // Index 22 — inlineHashTable: moved to openmodelica_frontend_base::Globals

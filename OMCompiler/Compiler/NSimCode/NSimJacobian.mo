@@ -363,7 +363,7 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          list<Pointer<Variable>> seed_lst, res_lst, tmp_lst;
+          list<PointerCyclic<Variable>> seed_lst, res_lst, tmp_lst;
           list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           SimJacobian jac;

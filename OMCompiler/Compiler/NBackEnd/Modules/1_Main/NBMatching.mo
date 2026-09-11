@@ -318,8 +318,8 @@ public
     Adjacency.Mapping mapping;
     UnorderedMap<VariablePointer, IntLst> var_map_matched, var_map_unmatched;
     UnorderedMap<EquationPointer, IntLst> eqn_map_matched, eqn_map_unmatched;
-    Pointer<Variable> arr_var;
-    Pointer<Equation> arr_eqn;
+    PointerCyclic<Variable> arr_var;
+    PointerCyclic<Equation> arr_eqn;
     Integer start_idx;
   algorithm
     // pseudo array case
