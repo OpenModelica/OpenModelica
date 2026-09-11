@@ -417,12 +417,38 @@ pub fn start_runtime_compile() {
 pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Module, String> {
     let job = model.compiled.lock().unwrap().take();
     match job {
-        Some(handle) => match handle.join() {
-            Ok(Ok(m)) => Ok(m),
-            Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
-            Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
-        },
+        Some(handle) => {
+            // Cranelift takes minutes over a large model and cannot be interrupted,
+            // so a host that asked to stop meanwhile (omc's own alarm, a UI Cancel)
+            // is answered by giving up the wait; the detached thread finishes into
+            // nothing. Without this the alarm's second, hard stage kills omc and the
+            // caller loses the phases it had completed.
+            while !handle.is_finished() {
+                if metamodelica::cancel::check_cancel() {
+                    return Err(crate::COMPILE_CANCELLED.to_string());
+                }
+                std::thread::sleep(std::time::Duration::from_millis(25));
+            }
+            match handle.join() {
+                Ok(Ok(m)) => Ok(m),
+                Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+                Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
+            }
+        }
         None => compile_model_module(&model.wasm),
+    }
+}
+
+/// Join and stash the model module, the way `finishCompile` does, for a caller
+/// about to hand the run to a forked child: the child has no compile threads left
+/// and the work belongs to the compile phase anyway. A failure is left for the run
+/// to report.
+pub fn ensure_prepared(model: &SimModel) {
+    let mut prepared = model.prepared.lock().unwrap_or_else(|e| e.into_inner());
+    if prepared.is_none()
+        && let Ok(m) = take_compiled_model(model)
+    {
+        *prepared = Some(m);
     }
 }
 
@@ -518,13 +544,19 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
 /// Load the libraries `sigs` are to be found in, link the model's archives and
 /// build its `Include` sources. Called from `buildModel`'s compile phase; the
 /// builds are cached, so instantiation reuses them.
+///
+/// Also decides `model.ext_outside_process`: a symbol one of those files defines
+/// is code the wasm sandbox does not hold, so the run is isolated.
 pub fn prepare_native_externals(model: &SimModel, sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
     let mut native = NativeExternals::default();
+    let mut outside = false;
     for sig in sigs {
         if native.resolve(&sig.name, model).is_none() {
             return Err(unresolved_external_detail(&sig.name, model, &native.errors));
         }
+        outside |= native.from_loaded_file(&sig.name);
     }
+    model.ext_outside_process.store(outside, std::sync::atomic::Ordering::Relaxed);
     Ok(())
 }
 
@@ -647,6 +679,13 @@ impl NativeExternals {
             false => model::external_symbol_or_wrapper(&self.handles, name),
         }
         .or_else(|| openmodelica_util::dynload::symbol_in(&self.fallback, name))
+    }
+
+    /// Whether `name` comes from a file this process loaded rather than from the
+    /// omc image: the `_shippable` lookup is the same one restricted to `handles`.
+    fn from_loaded_file(&self, name: &str) -> bool {
+        model::external_symbol_or_wrapper_shippable(&self.handles, name).is_some()
+            || openmodelica_util::dynload::symbol_in(&self.fallback, name).is_some()
     }
 
     /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.

@@ -158,6 +158,11 @@ pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
     // Join the background model-module compile and stash the result.
     match sim_runtime::take_compiled_model(&model) {
         Ok(m) => *model.prepared.lock().unwrap_or_else(|e| e.into_inner()) = Some(m),
+        // A cancelled wait is the build's answer: running would start it again.
+        Err(e) if e == openmodelica_wasm_jit::COMPILE_CANCELLED => {
+            record_error(e);
+            return Err(openmodelica_wasm_jit::COMPILE_CANCELLED);
+        }
         // Deferred: `runSimulation` recompiles and reports the error via the log.
         Err(_) => {}
     }

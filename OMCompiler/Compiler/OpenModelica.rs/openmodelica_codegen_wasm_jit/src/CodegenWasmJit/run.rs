@@ -287,6 +287,53 @@ pub(super) fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &s
             String::new(),
         );
     }
+    // A model whose `external "C"` reaches outside the omc process gets the
+    // isolation C's simulation executable has: that code can crash, `exit()` or
+    // hang, and in this process it takes the compiler with it.
+    let outcome = match isolate_run(&model) {
+        true => isolated_run(&model, &flags, result_file, log_stats),
+        false => perform_run(&model, &flags, result_file, log_stats),
+    };
+    if let Some(c) = outcome.captured {
+        capture_last_sim(&model, c.written, &c.params, &c.stats, &c.keep, &c.path);
+    }
+    (outcome.res, outcome.init_output, outcome.sim_output, outcome.post)
+}
+
+/// Whether this run goes into a child process. `OMC_WASM_ISOLATE_SIM=0/1`
+/// overrides the model's own answer, which is how the two paths are compared.
+fn isolate_run(model: &SimModel) -> bool {
+    match std::env::var("OMC_WASM_ISOLATE_SIM").as_deref() {
+        Ok("0") | Ok("false") => false,
+        Ok(_) => true,
+        Err(_) => model.ext_outside_process.load(std::sync::atomic::Ordering::Relaxed),
+    }
+}
+
+/// What one run produced: the three log segments `runSimulation` assembles, and
+/// what the session's signal registry needs. Everything here survives a run in a
+/// child process ([`isolated_run`]); nothing else does.
+struct RunOutcome {
+    res: std::result::Result<(), String>,
+    init_output: Option<String>,
+    sim_output: String,
+    post: String,
+    /// `None` when the run never produced a result file to capture.
+    captured: Option<Captured>,
+}
+
+/// [`capture_last_sim`]'s arguments.
+struct Captured {
+    written: Written,
+    params: Vec<f64>,
+    stats: SolveStats,
+    keep: Vec<bool>,
+    path: String,
+}
+
+/// Run the model in this process: install the hooks, capture the model's stdout
+/// and split it into the initialization and simulation segments.
+fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, log_stats: bool) -> RunOutcome {
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
     SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
@@ -295,32 +342,33 @@ pub(super) fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &s
     openmodelica_wasm_jit::host::native_stdout::install();
     sim_driver::init_host_hooks();
     sim_driver::set_result_file_reader(read_result_values);
-    let (meta, experiment_log) = run_experiment(&model, &flags);
+    let (meta, experiment_log) = run_experiment(model, flags);
     openmodelica_wasi::wasi::start_stdout_capture();
-    let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &flags);
+    let (param_ov, start_ov, string_ov) = resolve_overrides(model, flags);
     sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
-    sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
+    sim_driver::set_start_imports(resolve_start_imports(&meta, flags));
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
     // The hard `-alarm`, if asked for: set before the modules are instantiated.
     sim_runtime::set_alarm(flags.alarm);
     let mut extra = String::new();
     let mut post = String::new();
+    let mut captured = None;
     let res = (|| -> std::result::Result<(), String> {
         // `empty` (and `-noemit`) runs the integration but writes no result file —
         // useful for benchmarking the solver in isolation from the `.mat` writer.
-        let target = result_target(&model, &meta, &flags, result_file);
+        let target = result_target(model, &meta, flags, result_file);
         check_output_format(&target.format)?;
         let (path, keep) = (target.path.clone(), target.keep.clone());
-        let (run, written) = sim_runtime::run(&model, &meta, target)?;
+        let (run, written) = sim_runtime::run(model, &meta, target)?;
         // The driver already printed the `-output` line that precedes this block.
         if log_stats {
             extra.push_str(&openmodelica_sim_meta::stats::log_stats_block(&run.stats));
         }
         // C's `printModelInfo`, after the result file is closed.
         openmodelica_sim_meta::profiling::finish(&meta, &path, output_size(&path));
-        post = write_lin_file(&meta, &run, &flags);
-        capture_last_sim(&model, written, &run.params, &run.stats, &keep, &path);
+        post = write_lin_file(&meta, &run, flags);
+        captured = Some(Captured { written, params: run.params, stats: run.stats, keep, path });
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -339,11 +387,177 @@ pub(super) fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &s
     let init_output = INIT_OUTPUT.with(|c| c.borrow_mut().take());
     // C prints the sparse-solver announcements (initializeLinear/NonlinearSystems)
     // ahead of the init-success line; prepend our pre-rendered copy to the init output.
-    let head = format!("{experiment_log}{}", flag_change_log(&flags));
+    let head = format!("{experiment_log}{}", flag_change_log(flags));
     let init_output = if head.is_empty() {
         init_output
     } else {
         Some(format!("{head}{}", init_output.unwrap_or_default()))
     };
-    (res, init_output, sim_output, post)
+    RunOutcome { res, init_output, sim_output, post, captured }
+}
+
+/// [`perform_run`] in a child process, so that a crashing, exiting or wedged
+/// `external "C"` ends the simulation and not omc. The child writes the result
+/// file itself and hands back everything else through the pipe; a child that
+/// never answers becomes the failure C would have reported for its executable.
+fn isolated_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, log_stats: bool) -> RunOutcome {
+    // The child must not have to JIT-compile: it has no thread pool left, and the
+    // work belongs to the compile phase anyway.
+    sim_runtime::ensure_prepared(model);
+    let run = || encode_outcome(&perform_run(model, flags, result_file, log_stats));
+    let failed = |why: String| RunOutcome {
+        res: Err(why),
+        init_output: None,
+        sim_output: String::new(),
+        post: String::new(),
+        captured: None,
+    };
+    match openmodelica_wasm_jit::isolate::run(flags.alarm, run) {
+        Some(openmodelica_wasm_jit::isolate::Outcome::Answered(bytes)) => decode_outcome(&bytes)
+            .unwrap_or_else(|| failed("the simulation process reported an unreadable result".to_string())),
+        Some(openmodelica_wasm_jit::isolate::Outcome::Died(why)) => failed(why),
+        Some(openmodelica_wasm_jit::isolate::Outcome::TimedOut) => {
+            failed(sim_driver::ALARM_ABORT_ERR.to_string())
+        }
+        Some(openmodelica_wasm_jit::isolate::Outcome::Cancelled) => {
+            failed("CodegenWasmJit: simulation cancelled".to_string())
+        }
+        // No child: run it here, as every other target does.
+        None => perform_run(model, flags, result_file, log_stats),
+    }
+}
+
+// --- The child's answer ---------------------------------------------------
+//
+// A [`RunOutcome`] as bytes. Both ends are in this file and the two processes
+// are the same binary, so the encoding is private, unversioned and positional:
+// little-endian scalars, `u32`-prefixed strings and `f64`/`u64` vectors.
+
+fn put_str(b: &mut Vec<u8>, s: &str) {
+    b.extend_from_slice(&(s.len() as u32).to_le_bytes());
+    b.extend_from_slice(s.as_bytes());
+}
+
+fn put_f64s(b: &mut Vec<u8>, v: &[f64]) {
+    b.extend_from_slice(&(v.len() as u32).to_le_bytes());
+    v.iter().for_each(|x| b.extend_from_slice(&x.to_le_bytes()));
+}
+
+fn put_u64s(b: &mut Vec<u8>, v: &[u64]) {
+    b.extend_from_slice(&(v.len() as u32).to_le_bytes());
+    v.iter().for_each(|x| b.extend_from_slice(&x.to_le_bytes()));
+}
+
+fn encode_outcome(o: &RunOutcome) -> Vec<u8> {
+    let mut b = Vec::new();
+    match &o.res {
+        Ok(()) => b.push(0),
+        Err(e) => {
+            b.push(1);
+            put_str(&mut b, e);
+        }
+    }
+    b.push(o.init_output.is_some() as u8);
+    put_str(&mut b, o.init_output.as_deref().unwrap_or(""));
+    put_str(&mut b, &o.sim_output);
+    put_str(&mut b, &o.post);
+    b.push(o.captured.is_some() as u8);
+    if let Some(c) = &o.captured {
+        b.extend_from_slice(&(c.written.n_rows as u64).to_le_bytes());
+        put_f64s(&mut b, &c.written.first_row);
+        put_f64s(&mut b, &c.params);
+        b.extend_from_slice(&(c.keep.len() as u32).to_le_bytes());
+        b.extend(c.keep.iter().map(|&k| k as u8));
+        put_str(&mut b, &c.path);
+        let s = &c.stats;
+        put_str(&mut b, s.method);
+        put_u64s(
+            &mut b,
+            &[
+                s.steps, s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails,
+                s.state_events, s.time_events, s.lin_solves,
+            ],
+        );
+        put_f64s(&mut b, &s.timers);
+        put_u64s(&mut b, &s.tcalls);
+    }
+    b
+}
+
+/// Reads what [`encode_outcome`] wrote; `None` for a truncated or malformed
+/// frame, which the caller reports as a failed run.
+fn decode_outcome(bytes: &[u8]) -> Option<RunOutcome> {
+    let mut r = Reader(bytes);
+    let res = match r.u8()? {
+        0 => Ok(()),
+        _ => Err(r.str()?),
+    };
+    let has_init = r.u8()? != 0;
+    let init = r.str()?;
+    let init_output = has_init.then_some(init);
+    let sim_output = r.str()?;
+    let post = r.str()?;
+    let captured = match r.u8()? {
+        0 => None,
+        _ => {
+            let n_rows = r.u64()? as usize;
+            let first_row = r.f64s()?;
+            let params = r.f64s()?;
+            let keep = (0..r.u32()?).map(|_| r.u8().map(|k| k != 0)).collect::<Option<Vec<bool>>>()?;
+            let path = r.str()?;
+            let method = r.str()?;
+            let c = r.u64s()?;
+            let mut stats = SolveStats {
+                // The counters travel; `method` is one of the driver's labels, and
+                // interning the copy read back is cheaper than mapping every label.
+                method: String::leak(method),
+                ..Default::default()
+            };
+            [
+                &mut stats.steps, &mut stats.res_evals, &mut stats.jac_evals,
+                &mut stats.err_test_fails, &mut stats.conv_test_fails, &mut stats.state_events,
+                &mut stats.time_events, &mut stats.lin_solves,
+            ]
+            .into_iter()
+            .zip(c)
+            .for_each(|(slot, v)| *slot = v);
+            let timers = r.f64s()?;
+            let tcalls = r.u64s()?;
+            stats.timers.iter_mut().zip(timers).for_each(|(s, v)| *s = v);
+            stats.tcalls.iter_mut().zip(tcalls).for_each(|(s, v)| *s = v);
+            Some(Captured { written: Written { n_rows, first_row }, params, stats, keep, path })
+        }
+    };
+    Some(RunOutcome { res, init_output, sim_output, post, captured })
+}
+
+struct Reader<'a>(&'a [u8]);
+
+impl Reader<'_> {
+    fn take(&mut self, n: usize) -> Option<&[u8]> {
+        let (head, rest) = self.0.split_at_checked(n)?;
+        self.0 = rest;
+        Some(head)
+    }
+    fn u8(&mut self) -> Option<u8> {
+        Some(self.take(1)?[0])
+    }
+    fn u32(&mut self) -> Option<u32> {
+        Some(u32::from_le_bytes(self.take(4)?.try_into().ok()?))
+    }
+    fn u64(&mut self) -> Option<u64> {
+        Some(u64::from_le_bytes(self.take(8)?.try_into().ok()?))
+    }
+    fn str(&mut self) -> Option<String> {
+        let n = self.u32()? as usize;
+        String::from_utf8(self.take(n)?.to_vec()).ok()
+    }
+    fn f64s(&mut self) -> Option<Vec<f64>> {
+        let n = self.u32()? as usize;
+        Some(self.take(8 * n)?.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+    }
+    fn u64s(&mut self) -> Option<Vec<u64>> {
+        let n = self.u32()? as usize;
+        Some(self.take(8 * n)?.chunks_exact(8).map(|c| u64::from_le_bytes(c.try_into().unwrap())).collect())
+    }
 }
