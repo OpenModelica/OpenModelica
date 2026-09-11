@@ -85,6 +85,10 @@ set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)
 add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
 
+set(OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES OuterParameterDialog/OuterParameterDialogTest.cpp
+                                            OuterParameterDialog/OuterParameterDialogTest.h)
+add_omedit_test(OuterParameterDialog "${OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES}")
+
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)
 add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")
