@@ -41,6 +41,7 @@ use std::cell::RefCell;
 pub type Result<T, E = &'static str> = ::core::result::Result<T, E>;
 
 pub mod gc;
+pub mod mmval;
 pub mod cancel;
 
 /// MetaModelica `array<T>`. See module-level docs for rationale.
