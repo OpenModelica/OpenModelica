@@ -319,6 +319,10 @@ struct GenCtx {
     /// Fully-qualified names of types that are recursive (form size cycles); their field
     /// references are wrapped in `Arc<>` to give Rust a fixed-size indirection.
     recursive_types: BTreeSet<String>,
+    /// Types that can reach a declared cyclic cell, so must use the traced
+    /// pointer and report their handles to the collector.
+    traced_types: BTreeSet<String>,
+    all_named_types: BTreeSet<String>,
     /// Fully-qualified names of struct/enum/uniontype types that transitively
     /// embed a `Mutable<T>` field. Such types cannot derive `PartialEq` / `Eq`
     /// / `Hash` because `Mutex<T>` doesn't implement those traits. Populated
@@ -734,7 +738,7 @@ enum VarShape {
 }
 
 impl GenCtx {
-    fn new(top_name: &str, current_crate: Option<String>, crate_map: BTreeMap<String, String>, nullable_global_roots: HashSet<String>, top_level_uniontype_names: HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, fn_type_vars: BTreeMap<String, Vec<String>>, fallible_functions: BTreeSet<String>, partial_eq_required: BTreeMap<String, HashSet<String>>, reference_eq_required: BTreeMap<String, HashSet<String>>, default_required: BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: HashSet<String>, types_needing_default: HashSet<String>, copy_type_qnames: HashSet<String>) -> Self {
+    fn new(top_name: &str, current_crate: Option<String>, crate_map: BTreeMap<String, String>, nullable_global_roots: HashSet<String>, top_level_uniontype_names: HashSet<String>, recursive_types: BTreeSet<String>, traced_types: BTreeSet<String>, all_named_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, fn_type_vars: BTreeMap<String, Vec<String>>, fallible_functions: BTreeSet<String>, partial_eq_required: BTreeMap<String, HashSet<String>>, reference_eq_required: BTreeMap<String, HashSet<String>>, default_required: BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: HashSet<String>, types_needing_default: HashSet<String>, copy_type_qnames: HashSet<String>) -> Self {
         Self {
             top_name: top_name.to_owned(),
             current_path: Vec::new(),
@@ -752,6 +756,8 @@ impl GenCtx {
             nullable_global_roots,
             top_level_uniontype_names,
             recursive_types,
+            traced_types,
+            all_named_types,
             types_containing_mutable,
             types_containing_array,
             types_containing_dyn_fn,
@@ -825,6 +831,34 @@ impl GenCtx {
     /// current emission scope (top package + nested-package path). Matches the
     /// FQN convention used by [`crate::visibility::analyze`] and the constant /
     /// function `keep_public` lookups.
+    /// [`Self::item_qname`] for a type whose own scope is already on the path:
+    /// emission descends into a uniontype before emitting its impls, so naming
+    /// it again would give `NFInstNode.InstNode.InstNode`.
+    /// [`Self::type_qname`], checked. A name the containment graph does not
+    /// know means the two disagree about naming, and the silent answer would
+    /// be "not traced" — the failure that leaves a cyclic type uncollected.
+    fn traced_flag(&self, name: &str) -> bool {
+        let qn = self.type_qname(name);
+        debug_assert!(
+            self.all_named_types.is_empty() || self.all_named_types.contains(&qn),
+            "generated type {qn} is unknown to the containment graph; \
+             the traced flag would silently be `No`"
+        );
+        self.traced_types.contains(&qn)
+    }
+
+    fn type_qname(&self, name: &str) -> String {
+        // A package whose main uniontype shares its name (`NFClass.NFClass`)
+        // is known to the analysis by the package name alone.
+        if self.current_path.is_empty() && name == self.top_name {
+            self.top_name.clone()
+        } else if self.current_path.last().map(String::as_str) == Some(name) {
+            format!("{}.{}", self.top_name, self.current_path.join("."))
+        } else {
+            self.item_qname(name)
+        }
+    }
+
     fn item_qname(&self, name: &str) -> String {
         if self.current_path.is_empty() {
             format!("{}.{}", self.top_name, name)
@@ -1821,7 +1855,7 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
         }
         let file_t0 = std::time::Instant::now();
         let handwritten = HandwrittenItems::read(dir, name)?;
-        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames, &handwritten);
+        let (content, file_missing) = generate_file(name, node, &crate_map, current_crate, &nullable_global_roots, &top_level_uniontype_names, hier.recursive_types.clone(), hier.traced_types.clone(), hier.all_named_types.clone(), hier.types_containing_mutable.clone(), hier.types_containing_array.clone(), hier.types_containing_dyn_fn.clone(), hier.types_directly_containing_dyn_fn.clone(), &no_mod_uniontypes, &hier.top_level, &fn_type_vars, &hier.fallible_functions, &hier.keep_public, &hier.partial_eq_required, &hier.reference_eq_required, &hier.default_required, &defaultable_struct_qnames, &types_needing_default, &copy_type_qnames, &handwritten);
         if !file_missing.is_empty() {
             missing_imports.lock().unwrap().extend(file_missing);
         }
@@ -2391,8 +2425,8 @@ fn collect_no_mod_uniontypes(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &st
     }
 }
 
-fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>, handwritten: &HandwrittenItems) -> (String, BTreeSet<String>) {
-    let mut ctx = GenCtx::new(top_name, current_crate, crate_map.clone(), nullable_global_roots.clone(), top_level_uniontype_names.clone(), recursive_types, types_containing_mutable, types_containing_array, types_containing_dyn_fn, types_directly_containing_dyn_fn, fn_type_vars.clone(), fallible_functions.clone(), partial_eq_required.clone(), reference_eq_required.clone(), default_required.clone(), defaultable_struct_qnames.clone(), types_needing_default.clone(), copy_type_qnames.clone());
+fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<String, String>, current_crate: Option<String>, nullable_global_roots: &HashSet<String>, top_level_uniontype_names: &HashSet<String>, recursive_types: BTreeSet<String>, traced_types: BTreeSet<String>, all_named_types: BTreeSet<String>, types_containing_mutable: BTreeSet<String>, types_containing_array: BTreeSet<String>, types_containing_dyn_fn: BTreeSet<String>, types_directly_containing_dyn_fn: BTreeSet<String>, no_mod_uniontypes: &HashSet<String>, top_level: &'a BTreeMap<String, NameNode<'a>>, fn_type_vars: &BTreeMap<String, Vec<String>>, fallible_functions: &BTreeSet<String>, keep_public: &BTreeSet<String>, partial_eq_required: &BTreeMap<String, HashSet<String>>, reference_eq_required: &BTreeMap<String, HashSet<String>>, default_required: &BTreeMap<String, HashSet<String>>, defaultable_struct_qnames: &HashSet<String>, types_needing_default: &HashSet<String>, copy_type_qnames: &HashSet<String>, handwritten: &HandwrittenItems) -> (String, BTreeSet<String>) {
+    let mut ctx = GenCtx::new(top_name, current_crate, crate_map.clone(), nullable_global_roots.clone(), top_level_uniontype_names.clone(), recursive_types, traced_types, all_named_types, types_containing_mutable, types_containing_array, types_containing_dyn_fn, types_directly_containing_dyn_fn, fn_type_vars.clone(), fallible_functions.clone(), partial_eq_required.clone(), reference_eq_required.clone(), default_required.clone(), defaultable_struct_qnames.clone(), types_needing_default.clone(), copy_type_qnames.clone());
     ctx.keep_public = keep_public.clone();
     ctx.handwritten = handwritten.clone();
     ctx.no_mod_uniontypes = no_mod_uniontypes.clone();
@@ -3072,6 +3106,7 @@ fn emit_external_object<'a>(
     writeln!(out).unwrap();
     // Opaque handle; nothing to trace.
     emit_mm_trace_leaf_impl(out, indent, &ename);
+    emit_mm_val_leaf_impl(out, indent, &ename);
 
     // Locate the constructor and destructor child functions.
     let members: &[MM::ClassMember] = match &c.body {
@@ -3273,6 +3308,11 @@ fn emit_uniontype<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM:
             }
             writeln!(out, "{inner}}}").unwrap();
             emit_mm_trace_impl(out, &inner, &ename, &type_vars, &type_params, /*is_enum=*/true, &mm_variants);
+            {
+                let qn = ctx.type_qname(name);
+                let traced = ctx.traced_flag(name);
+                emit_mm_val_impl(out, &inner, &ename, &qn, &type_vars, &type_params, /*is_enum=*/true, &mm_variants, traced);
+            }
             // Interned singletons for fieldless constructors of Arc-wrapped
             // enums. MMC compiles a fieldless record constructor to a static
             // immediate shared by every use, so `referenceEq(NOELSE(),
@@ -3596,6 +3636,11 @@ fn emit_struct<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cl
         };
         let variants = vec![(String::new(), mm_fields)];
         emit_mm_trace_impl(out, indent, &ename, &type_vars, &use_params, /*is_enum=*/false, &variants);
+        {
+            let qn = ctx.type_qname(name);
+            let traced = ctx.traced_flag(name);
+            emit_mm_val_impl(out, indent, &ename, &qn, &type_vars, &use_params, /*is_enum=*/false, &variants, traced);
+        }
     }
 
     // Hand-rolled trait impls for structs that *directly* embed an
@@ -3692,6 +3737,75 @@ fn emit_struct<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cl
 /// struct passes a single entry with an empty variant name. The visitor
 /// binding and its type parameter use `__mmv` names so they can never
 /// collide with MM type variables (`V` is a common one) or field names.
+/// Emit `impl metamodelica::mmval::MmVal` beside the tracing impl: the
+/// type-level flag saying whether this type can reach a traced allocation, plus
+/// the same structural walk. `Traced` is declared, not derived from the fields,
+/// so the trait solver never recurses through a type cycle.
+fn emit_mm_val_impl(
+    out: &mut String,
+    indent: &str,
+    ename: &str,
+    qname: &str,
+    type_vars: &[String],
+    use_params: &str,
+    is_enum: bool,
+    variants: &[(String, Vec<String>)],
+    traced: bool,
+) {
+    let impl_params = if type_vars.is_empty() {
+        String::new()
+    } else {
+        let bounded: Vec<String> = type_vars
+            .iter()
+            .map(|v| format!("{v}: Clone + metamodelica::mmval::MmVal"))
+            .collect();
+        format!("<{}>", bounded.join(", "))
+    };
+    let flag = if traced { "Yes" } else { "No" };
+    writeln!(out, "{indent}impl{impl_params} metamodelica::mmval::MmVal for {ename}{use_params} {{").unwrap();
+    writeln!(out, "{indent}    // {qname}").unwrap();
+    writeln!(out, "{indent}    type Traced = metamodelica::mmval::{flag};").unwrap();
+    writeln!(out, "{indent}    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, __mmv: &mut __V) -> Result<(), ()> {{").unwrap();
+    if !traced {
+        // Nothing below can hold a traced handle, so the walk would find
+        // nothing; stopping here is what keeps a collection off the rest of
+        // the heap.
+        writeln!(out, "{indent}        let _ = __mmv;").unwrap();
+        writeln!(out, "{indent}        Ok(())").unwrap();
+    } else if is_enum {
+        writeln!(out, "{indent}        match self {{").unwrap();
+        for (vname, fields) in variants {
+            if fields.is_empty() {
+                writeln!(out, "{indent}            {ename}::{vname} => Ok(()),").unwrap();
+            } else {
+                writeln!(out, "{indent}            {ename}::{vname} {{ {} }} => {{", fields.join(", ")).unwrap();
+                for f in fields {
+                    writeln!(out, "{indent}                metamodelica::mmval::MmVal::mm_accept({f}, __mmv)?;").unwrap();
+                }
+                writeln!(out, "{indent}                Ok(())").unwrap();
+                writeln!(out, "{indent}            }}").unwrap();
+            }
+        }
+        writeln!(out, "{indent}        }}").unwrap();
+    } else {
+        let fields = variants.first().map(|(_, f)| f.as_slice()).unwrap_or(&[]);
+        for f in fields {
+            writeln!(out, "{indent}        metamodelica::mmval::MmVal::mm_accept(&self.{f}, __mmv)?;").unwrap();
+        }
+        writeln!(out, "{indent}        Ok(())").unwrap();
+    }
+    writeln!(out, "{indent}    }}").unwrap();
+    writeln!(out, "{indent}}}").unwrap();
+}
+
+/// Leaf form of [`emit_mm_val_impl`].
+fn emit_mm_val_leaf_impl(out: &mut String, indent: &str, ename: &str) {
+    writeln!(out, "{indent}impl metamodelica::mmval::MmVal for {ename} {{").unwrap();
+    writeln!(out, "{indent}    type Traced = metamodelica::mmval::No;").unwrap();
+    writeln!(out, "{indent}    fn mm_accept<__V: metamodelica::mmval::Visitor>(&self, _: &mut __V) -> Result<(), ()> {{ Ok(()) }}").unwrap();
+    writeln!(out, "{indent}}}").unwrap();
+}
+
 fn emit_mm_trace_impl(
     out: &mut String,
     indent: &str,
@@ -4368,6 +4482,7 @@ fn emit_type_item(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cla
                 writeln!(out, "{indent}}}").unwrap();
                 // Enumeration values are scalars; nothing to trace.
                 emit_mm_trace_leaf_impl(out, indent, &ename);
+                emit_mm_val_leaf_impl(out, indent, &ename);
                 // Emit `Default` for enumerations the demand-side analysis
                 // marked as needed (e.g. a field of a uniontype record that
                 // is itself in `types_needing_default`). Modelica enumeration

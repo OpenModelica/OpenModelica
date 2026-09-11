@@ -246,6 +246,11 @@ pub struct InstanceHierarchy<'a> {
     /// traced pointer rather than a plain `Arc`. Populated by
     /// `mutable_cycles::detect_traced_types`.
     pub traced_types: BTreeSet<String>,
+    /// Every named type the containment graph knows. Codegen checks the names
+    /// it looks `traced_types` up by against this: a name that is absent is a
+    /// codegen bug, and silently answers "not traced", which disables the
+    /// collector exactly where it is needed.
+    pub all_named_types: BTreeSet<String>,
     /// Subset of [`Self::types_containing_dyn_fn`]: types whose *own*
     /// fields/variants directly reference a function type without going
     /// through another user-defined struct/enum. These need a hand-rolled
@@ -319,6 +324,7 @@ impl<'a> InstanceHierarchy<'a> {
             types_containing_dyn_fn: BTreeSet::new(),
             retired: BTreeSet::new(),
             traced_types: BTreeSet::new(),
+            all_named_types: BTreeSet::new(),
             types_directly_containing_dyn_fn: BTreeSet::new(),
             fallible_functions: BTreeSet::new(),
             keep_public: BTreeSet::new(),

@@ -266,6 +266,7 @@ pub fn traced_behind_barrier(
 pub fn detect_traced_types(hier: &mut InstanceHierarchy<'_>) {
     let mut graph: BTreeMap<String, Vec<Ty>> = BTreeMap::new();
     hierarchy::collect_struct_field_tys(&hier.top_level, "", &mut graph);
+    hier.all_named_types = graph.keys().cloned().collect();
     hier.traced_types = types_reaching_cyclic_cell(&graph)
         .into_iter()
         .filter(|q| graph.contains_key(q))

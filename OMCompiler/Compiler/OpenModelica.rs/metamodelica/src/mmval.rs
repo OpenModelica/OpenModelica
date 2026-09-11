@@ -28,9 +28,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use dumpster::Visitor;
-
 pub use dumpster::unsync::{collect, Gc};
+pub use dumpster::Visitor;
 
 // ── type-level booleans ──────────────────────────────────────────────────────
 
@@ -70,6 +69,13 @@ pub trait SpinePtr<U: ?Sized>: Clone + std::ops::Deref<Target = U> {
     fn spine_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()>;
     fn same(a: &Self, b: &Self) -> bool;
     fn addr(this: &Self) -> *const ();
+    /// Unique access, for the in-place list optimisations. The traced arm has
+    /// no equivalent and always declines, so those paths fall back to copying.
+    fn get_mut(this: &mut Self) -> Option<&mut U>
+    where
+        U: Sized;
+    /// Whether this is the only handle. Same caveat as `get_mut`.
+    fn is_unique(this: &Self) -> bool;
 }
 
 impl<U: dumpster::Trace + 'static> SpinePtr<U> for Gc<U> {
@@ -84,6 +90,12 @@ impl<U: dumpster::Trace + 'static> SpinePtr<U> for Gc<U> {
     }
     fn addr(this: &Self) -> *const () {
         Gc::as_ptr(this) as *const ()
+    }
+    fn get_mut(_: &mut Self) -> Option<&mut U> {
+        None
+    }
+    fn is_unique(_: &Self) -> bool {
+        false
     }
 }
 
@@ -102,6 +114,15 @@ impl<U: ?Sized> SpinePtr<U> for Arc<U> {
     }
     fn addr(this: &Self) -> *const () {
         Arc::as_ptr(this) as *const ()
+    }
+    fn get_mut(this: &mut Self) -> Option<&mut U>
+    where
+        U: Sized,
+    {
+        Arc::get_mut(this)
+    }
+    fn is_unique(this: &Self) -> bool {
+        Arc::strong_count(this) == 1 && Arc::weak_count(this) == 0
     }
 }
 
@@ -210,6 +231,24 @@ impl<T: MmVal> MmVal for RefCell<T> {
     type Traced = T::Traced;
     fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
         self.try_borrow().map_err(|_| ())?.mm_accept(visitor)
+    }
+}
+
+/// The persistent list. Its spine is shared, so tracing *through* it would
+/// count the handles a shared tail owns once per path that reaches it. That is
+/// safe only while the spine cannot hold a traced allocation; when the payload
+/// can, the spine itself has to become one (see [`Spine`]).
+impl<T: MmVal + Clone> MmVal for crate::List<T> {
+    type Traced = T::Traced;
+    fn mm_accept<V: Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        // Iterative: lists run to tens of thousands of elements.
+        let mut cur = self;
+        loop {
+            let Some(node) = &cur.0 else { return Ok(()) };
+            let crate::ListNode::Cons { head, tail } = &**node else { return Ok(()) };
+            head.mm_accept(visitor)?;
+            cur = tail;
+        }
     }
 }
 

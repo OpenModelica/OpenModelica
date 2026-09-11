@@ -201,3 +201,16 @@ impl<T: Clone + MMTrace> MMTrace for Mutable<T> {
         }
     }
 }
+
+/// A cell is where a cycle is closed, so it always reports as traced; the
+/// collector needs to see the handle even when the content happens not to
+/// reach another one.
+impl<T: Clone + metamodelica::mmval::MmVal> metamodelica::mmval::MmVal for Mutable<T> {
+    type Traced = metamodelica::mmval::Yes;
+    fn mm_accept<V: metamodelica::mmval::Visitor>(&self, visitor: &mut V) -> Result<(), ()> {
+        // Still an `Arc` cell: nothing to report to the collector yet. Reading
+        // the content keeps the walk shape correct for when it becomes traced.
+        let _ = visitor;
+        Ok(())
+    }
+}
