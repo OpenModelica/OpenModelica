@@ -43,6 +43,10 @@ pub struct SimModel {
     /// The system libraries among `ext_native_libs`/`ext_native_fallback`: an
     /// export declares these rather than shipping them.
     pub ext_native_system: Vec<String>,
+    /// An `external "C"` of this model is defined by a file this process loaded,
+    /// not by wasm and not by the omc image. Decided by the compile phase; such a
+    /// run is isolated in a child process ([`crate::isolate`]).
+    pub ext_outside_process: std::sync::atomic::AtomicBool,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,

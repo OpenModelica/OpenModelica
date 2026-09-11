@@ -1786,6 +1786,7 @@ pub(super) fn build_sim_model(
         ext_native_libs: ext_libs.native,
         ext_native_fallback: ext_libs.fallback,
         ext_native_system: ext_libs.native_system,
+        ext_outside_process: Default::default(),
         ext_archives,
         ext_includes,
         ext_lib_notes,

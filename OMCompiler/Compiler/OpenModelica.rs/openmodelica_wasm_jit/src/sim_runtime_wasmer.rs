@@ -244,10 +244,13 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmer::Modu
 }
 
 /// Nothing to prepare: the `external "C"` implementations are in the
-/// ModelicaExternalC side module, built into omc.
+/// ModelicaExternalC side module, built into omc. Which is also why no run on
+/// this engine is ever isolated, so [`ensure_prepared`] has nothing to do.
 pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
     Ok(())
 }
+
+pub fn ensure_prepared(_model: &SimModel) {}
 
 type Store = wasmer::Store;
 

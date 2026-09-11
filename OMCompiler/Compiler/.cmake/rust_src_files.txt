@@ -476,6 +476,7 @@ openmodelica_wasm_jit/src/dylink.rs
 openmodelica_wasm_jit/src/dylink_wasmtime.rs
 openmodelica_wasm_jit/src/engine_config.rs
 openmodelica_wasm_jit/src/host.rs
+openmodelica_wasm_jit/src/isolate.rs
 openmodelica_wasm_jit/src/lib.rs
 openmodelica_wasm_jit/src/model.rs
 openmodelica_wasm_jit/src/result_sink.rs

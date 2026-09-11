@@ -80,6 +80,11 @@ pub static LAPACK_DYLINK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/libl
 /// build script cross-compiled the archives), so a `-lss=klu` run can be served.
 pub const SUNDIALS: bool = cfg!(sundials);
 
+/// What `take_compiled_model` reports when the host asked to stop while the
+/// model module was still compiling: the compiler itself cannot be interrupted,
+/// so the *wait* is what gives way.
+pub const COMPILE_CANCELLED: &str = "CodegenWasmJit: model compilation cancelled";
+
 pub mod sig;
 pub mod model;
 pub mod dylink;
@@ -116,6 +121,10 @@ pub fn split_lin_blob(bytes: &[u8]) -> Option<openmodelica_sim_meta::linearize::
         content: String::from_utf8_lossy(&bytes[i + 1..]).into_owned(),
     })
 }
+
+// Running one simulation in a child process, for a model whose `external "C"`
+// reaches code the wasm sandbox does not hold.
+pub mod isolate;
 
 // A thin facade over openmodelica_sim_meta::driver; present even in the no-jit
 // stub build, which reads its result types.

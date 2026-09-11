@@ -38,6 +38,8 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
     Ok(())
 }
 
+pub fn ensure_prepared(_model: &SimModel) {}
+
 pub fn run(
     _model: &SimModel,
     _meta: &openmodelica_sim_meta::SimMeta,
